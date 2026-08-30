@@ -179,6 +179,13 @@ import {
 } from '../src/lib/expectedWin.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
+import {
+  collectScanBoardProvenPositions,
+  collectScanSoftKeys,
+  mapPositionsToStakeWalletDetails,
+  mergeScanBoardIntoLive,
+  positionSoftKey,
+} from './lib/hydrateLivePositionsFromScan.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveInstrument, ticketAmerican, coherentTicket } from '../src/lib/ticketInstrument.js';
 import {
@@ -672,7 +679,7 @@ function refreshClimateBySport({ groups = null, pickDocs = null } = {}) {
         rows.push({
           sport,
           side,
-          walletDetails: posList.map(positionToWalletDetail).filter(Boolean),
+          walletDetails: mapPositionsToStakeWalletDetails(posList, sport, walletProfiles),
         });
       }
     }
@@ -2479,7 +2486,7 @@ function computeSideAnalytics(
   if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) {
     return null;
   }
-  const walletDetails = positions.map(positionToWalletDetail);
+  const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles);
   const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
   const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
   const aggV12 = walletPriorStatsFn ? aggregateSideV12(walletDetails, side, sport, walletPriorStatsFn) : null;
@@ -2597,7 +2604,7 @@ async function createMissingLockedPicks({
   /** True if any side in this group has PENDING CONFIRMED×Q1×sized≥0.5. */
   function groupHasConfirmedQ1Sized(positions, sport, marketType) {
     if (!isConfirmedQ1PromoteLive(TARGET_DATE)) return false;
-    const wd = positions.map(positionToWalletDetail).filter(Boolean);
+    const wd = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles);
     const trialSides = marketType === 'TOTAL' ? ['over', 'under']
       : sport === 'SOC' ? ['away', 'home', 'draw']
       : ['away', 'home'];
@@ -2698,8 +2705,8 @@ async function createMissingLockedPicks({
       // Quick-skip: no whitelist activity at all on this side.
       if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) continue;
 
-      // Build walletDetails for AGS-U.
-      const walletDetails = positions.map(positionToWalletDetail).filter(Boolean);
+      // Build walletDetails for AGS-U (sport-local size — Action parity).
+      const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles);
       const q1Early = isConfirmedQ1PromoteLive(TARGET_DATE)
         ? computeConfirmedQ1Sized(
           walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
@@ -3830,7 +3837,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Does NOT touch units, lockStage, health, or stake tier.
   if (!isStakeSide) {
     const liveWdMeta = Array.isArray(group) && group.length > 0
-      ? group.map(positionToWalletDetail).filter(Boolean)
+      ? mapPositionsToStakeWalletDetails(group, sport, walletProfiles)
       : null;
     const frozenWdMeta = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
     const wdMeta = (liveWdMeta && liveWdMeta.length > 0) ? liveWdMeta : frozenWdMeta;
@@ -3935,7 +3942,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // prior behavior for that edge. The T-15 freeze above still applies, so the
   // last pre-T-15 live re-score is what locks in near game time.
   const liveWd = Array.isArray(group) && group.length > 0
-    ? group.map(positionToWalletDetail).filter(Boolean)
+    ? mapPositionsToStakeWalletDetails(group, sport, walletProfiles)
     : null;
   const frozenWd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
   const wd = (liveWd && liveWd.length > 0) ? liveWd : frozenWd;
@@ -5981,14 +5988,40 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Persist the refreshed live snapshot so peak.v8Scoring no longer carries
   // the stale create-time wallet set. This hardens the cron-only fallback:
   // on a future empty-group cycle we fall back to the LAST GOOD live snapshot
-  // instead of the original (often single-wallet) create-time freeze. Only
-  // written on cycles we're already writing, and only when live data exists.
-  if (wroteAnything && liveWd && liveWd.length > 0) {
-    patch.peak = {
-      ...(patch.peak || {}),
-      v8Scoring: { walletDetails: liveWd, consensusSide: side },
-      updatedAt: now,
-    };
+  // instead of the original (often single-wallet) create-time freeze.
+  //
+  // Refresh whenever the live bag differs from the stamped peak — not only
+  // when units/status change. A no-change FOOLS cycle used to leave
+  // peak.walletDetails frozen without a later-arriving Action CONFIRMED
+  // Tier A (phi_laa …4417bc), so Map/Vault/audit read a dead bag.
+  if (liveWd && liveWd.length > 0) {
+    const liveSig = liveWd
+      .map((w) => `${String(w.wallet || '').toLowerCase()}|${w.side}|${Math.round(Number(w.invested) || 0)}`)
+      .sort()
+      .join(';');
+    const stamped = frozenWd || [];
+    const stampedSig = stamped
+      .map((w) => `${String(w.wallet || '').toLowerCase()}|${w.side}|${Math.round(Number(w.invested) || 0)}`)
+      .sort()
+      .join(';');
+    if (liveSig !== stampedSig) {
+      patch.peak = {
+        ...(patch.peak || {}),
+        v8Scoring: { walletDetails: liveWd, consensusSide: side },
+        updatedAt: now,
+      };
+      if (!wroteAnything) {
+        wroteAnything = true;
+        changes.push('peak.v8Scoring.walletDetails: live bag refresh');
+      }
+    } else if (wroteAnything) {
+      // Units/status already changing — keep bag in lock-step with this write.
+      patch.peak = {
+        ...(patch.peak || {}),
+        v8Scoring: { walletDetails: liveWd, consensusSide: side },
+        updatedAt: now,
+      };
+    }
   }
 
   return {
@@ -6313,6 +6346,27 @@ async function main() {
   // this cycle simply don't reappear, even when still holding. The 90s
   // window treated silence as exit and demoted LOCKED picks pre-T-15.
   // See docs/CLOSED_POSITIONS.md.
+  //
+  // 2026-08-30 — scan-board exempt. Action reads sharp_positions*.json.
+  // If a ticket is still on that board, freshness must NOT drop it from
+  // staking math (Tier A CONFIRMED invisible → FOOLS FLAT-only mute).
+  const loadPosJson = (name) => {
+    try {
+      const p = join(PUBLIC, name);
+      if (!existsSync(p)) return null;
+      return JSON.parse(readFileSync(p, 'utf8'));
+    } catch (err) {
+      console.warn(`WARNING: failed to load ${name}:`, err.message);
+      return null;
+    }
+  };
+  const scanPosFiles = [
+    { data: loadPosJson('sharp_positions.json'), mkt: 'ML' },
+    { data: loadPosJson('sharp_spread_positions.json'), mkt: 'SPREAD' },
+    { data: loadPosJson('sharp_total_positions.json'), mkt: 'TOTAL' },
+  ];
+  const scanSoftKeys = collectScanSoftKeys(scanPosFiles);
+
   const tsMs = (p) => {
     const ts = p.updatedAt;
     if (!ts) return 0;
@@ -6324,17 +6378,44 @@ async function main() {
   const maxUpdatedMs = rawAfterExclusion.reduce((m, p) => Math.max(m, tsMs(p)), 0);
   const FRESHNESS_WINDOW_MS = 30 * 60 * 1000; // 30 min — see comment above (was 90s pre-2026-05-10)
   let prunedStale = 0;
-  const positions = maxUpdatedMs > 0
+  let keptByScanBoard = 0;
+  const positionsFresh = maxUpdatedMs > 0
     ? rawAfterExclusion.filter(p => {
         const t = tsMs(p);
         if (t === 0) return true; // missing updatedAt — keep, can't judge
         const fresh = t >= maxUpdatedMs - FRESHNESS_WINDOW_MS;
-        if (!fresh) prunedStale++;
-        return fresh;
+        if (fresh) return true;
+        if (scanSoftKeys.has(positionSoftKey(p))) {
+          keptByScanBoard++;
+          return true;
+        }
+        prunedStale++;
+        return false;
       })
     : rawAfterExclusion;
   if (prunedStale > 0) {
     console.log(`  ↳ pruned ${prunedStale} stale position(s) outside ${FRESHNESS_WINDOW_MS/60000}min of latest scan (${new Date(maxUpdatedMs).toISOString()})`);
+  }
+  if (keptByScanBoard > 0) {
+    console.log(`  ↳ kept ${keptByScanBoard} stale-but-on-scan-board position(s) (Action/v12 feed parity)`);
+  }
+
+  // ── Rehydrate missing Action-board proven tickets into the live bag ───
+  // Firestore can miss a CONFIRMED Tier A that Action still shows (EXITED
+  // race, write lag, mis-prune). Seed from the same JSON Action reads so
+  // v12 / FOOLS / HC cannot stake blind to Tier A money.
+  const scanBoardProven = collectScanBoardProvenPositions({
+    posFiles: scanPosFiles,
+    walletProfiles,
+    excludedSet,
+    date: TARGET_DATE,
+  });
+  const { positions, added: hydratedAdded } = mergeScanBoardIntoLive(
+    positionsFresh,
+    scanBoardProven,
+  );
+  if (hydratedAdded > 0) {
+    console.log(`  ↳ hydrated ${hydratedAdded} scan-board proven position(s) missing from Firestore live set`);
   }
 
   const groups = buildPositionGroupsFromFirestore(positions);
