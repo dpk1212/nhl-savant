@@ -661,8 +661,12 @@ let CLIMATE_BY_SPORT = new Map();
 /**
  * Rebuild sport-day climate from live position groups + today's pick docs.
  * RED = no Sharp A on any FOR side that sport-day → half exposure at size time.
+ *
+ * walletProfiles MUST be passed in — it lives on main()'s stack, not module
+ * scope. PR #103 closed over it here and ReferenceError'd every fetch cycle
+ * (2026-08-30: zero shipped locks) before createMissingLockedPicks ran.
  */
-function refreshClimateBySport({ groups = null, pickDocs = null } = {}) {
+function refreshClimateBySport({ groups = null, pickDocs = null, walletProfiles = null } = {}) {
   const rows = [];
   if (groups && typeof groups.entries === 'function') {
     for (const [key, positions] of groups.entries()) {
@@ -6476,17 +6480,26 @@ async function main() {
       todayPickDocsForClimate.push({ col, pick: { _id: docSnap.id, ...docSnap.data() } });
     }
   }
-  refreshClimateBySport({
-    groups,
-    pickDocs: todayPickDocsForClimate.map((x) => x.pick),
-  });
-  {
+  // Climate is a size overlay. Never let it kill lock create / reconcile.
+  // 2026-08-30: unscoped walletProfiles here aborted the writer for the day.
+  try {
+    refreshClimateBySport({
+      groups,
+      pickDocs: todayPickDocsForClimate.map((x) => x.pick),
+      walletProfiles,
+    });
     const climateSummary = [...CLIMATE_BY_SPORT.entries()]
       .map(([sp, c]) => `${sp}:${c.color}(A${c.activeA}/AB${c.activeAB}/${c.pctABRoster}%)`)
       .join(' ');
     console.log(
       `climate turnout (gate ${isClimateTurnoutGateLive(TARGET_DATE) ? 'LIVE' : 'off'} `
       + `from ${CLIMATE_TURNOUT_GATE_FROM}; RED→×${0.5}; live∪locked): ${climateSummary || '—'}`,
+    );
+  } catch (err) {
+    CLIMATE_BY_SPORT = new Map();
+    console.warn(
+      'WARNING: refreshClimateBySport failed — climate CAP skipped this cycle; lock writes continue:',
+      err?.message || err,
     );
   }
 
