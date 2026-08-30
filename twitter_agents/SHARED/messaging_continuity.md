@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/30 | Hero Under 7.5 mix | Yesterday 3-1 +4u → $6K sized-up Under · loser $2.1K · Pin 1875→7500 | **S + C** | none | **Staged** |
+| 8/30 | Hero Under 7.5 mix | 3-1 +4u → $6K sized-up Under by line 3 · loser $2.1K · Pin 1875→7500 | **S + C** | none | **Staged** |
 | 8/29 night | Hero Brewers ML | Stomped → 2u toe behind +$545K A-tier · contested 3 | **L + S** | none | Staged |
 | 8/28 eve | Hero Over 7.5 | Golfing slow day · same tear printer pressed · loser honesty · wait lock | **P + C** | none | Staged |
 | 8/28 PM | QT folder dream | Lonely Savant · one day that folder | L + P | none | Staged |

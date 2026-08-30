@@ -61,7 +61,7 @@ YESTERDAY: 3-1 (+4u).
 Today a proven wallet sized up to $6K
 on SEA @ TOR Under 7.5.
 ```
-- Screenshot: C in line 1 · S by line 3 ✓
+- Screenshot: C in line 1 · S ($6K size-up) by line 3 ✓
 - What / how / so what: printed → size-up on this number → mix in body ✓
 - Not soft diary ✓
 - Silhouette: `$XK at Y×` + loser split (window S+C) ✓
@@ -81,14 +81,14 @@ Delete until you’d add back · dinner-table Dale · no ask · stuff > containe
 ```
 YESTERDAY: 3-1 (+4u).
 
-Today a lot of sharp action is locking in.
-This is the one I like the look of.
-
-SEA @ TOR Under 7.5.
+Today a proven wallet sized up to $6K
+on SEA @ TOR Under 7.5.
 5.4u at +103.
 
-Proven wallet sized up to $6K
-(usual is $5.5K — 1.1×).
+A lot of sharp action is locking in.
+This is the one I like the look of.
+
+Usual is $5.5K — 1.1×.
 +$26K last 30.
 
 Other side: $2.1K
