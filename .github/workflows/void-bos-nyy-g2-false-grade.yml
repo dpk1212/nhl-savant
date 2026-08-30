@@ -1,0 +1,22 @@
+# One-shot: void false bos_nyy__2 Yankees ML -4u (DH G1 score on G2)
+name: void-bos-nyy-g2-false-grade
+
+on:
+  workflow_dispatch:
+
+jobs:
+  void:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Void ghost Game-2 Yankees ML
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/_void_bos_nyy_g2_false_grade.mjs

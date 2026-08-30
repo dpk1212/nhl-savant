@@ -28,6 +28,10 @@ import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
 import { resolveCFBTeam, cfbTeamsMatch } from './lib/cfbTeams.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
+import { baseGameKey } from './lib/doubleheaderKey.js';
+
+/** Same-day DH: reject a final whose tip is >3h from the pick's commence. */
+const DH_COMMENCE_MATCH_MS = 3 * 60 * 60 * 1000;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -266,7 +270,10 @@ function espnEventDateET(e) {
 async function fetchMLBFinalsFromStatsApi(dateStr) {
   if (!dateStr) return [];
   try {
-    const url = `${STATSAPI_MLB_URL}?sportId=1&date=${dateStr}&hydrate=linescore,team`;
+    // MM/DD/YYYY for StatsAPI schedule; dateStr is YYYY-MM-DD (ET board date).
+    const [y, m, d] = String(dateStr).split('-');
+    const statsDate = (y && m && d) ? `${m}/${d}/${y}` : dateStr;
+    const url = `${STATSAPI_MLB_URL}?sportId=1&date=${statsDate}&hydrate=linescore,team`;
     const res = await fetch(url, { headers: { 'User-Agent': 'nhl-savant' } });
     if (!res.ok) {
       console.warn(`MLB StatsAPI HTTP ${res.status} for ${dateStr}`);
@@ -283,6 +290,7 @@ async function fetchMLBFinalsFromStatsApi(dateStr) {
         const home = g.teams?.home;
         const awayAbbr = away?.team?.abbreviation || '';
         const homeAbbr = home?.team?.abbreviation || '';
+        const commenceMs = g.gameDate ? Date.parse(g.gameDate) : null;
         games.push({
           dateET,
           awayCode: STATSAPI_MLB_TO_CODE[awayAbbr] || awayAbbr.toLowerCase(),
@@ -291,6 +299,9 @@ async function fetchMLBFinalsFromStatsApi(dateStr) {
           homeTeam: home?.team?.name || homeAbbr,
           awayScore: parseInt(away?.score, 10) || 0,
           homeScore: parseInt(home?.score, 10) || 0,
+          commenceMs: Number.isFinite(commenceMs) ? commenceMs : null,
+          gameNumber: Number(g.gameNumber) || null,
+          gamePk: g.gamePk ?? null,
         });
       }
     }
@@ -302,6 +313,13 @@ async function fetchMLBFinalsFromStatsApi(dateStr) {
 }
 
 async function fetchMLBFinalGames(dateStr) {
+  // StatsAPI first — stamps gameNumber + gameDate so same-day DH
+  // (bos_nyy vs bos_nyy__2) cannot share one final.
+  const stats = await fetchMLBFinalsFromStatsApi(dateStr);
+  if (stats.length) {
+    console.log(`  MLB StatsAPI: ${stats.length} finals for ${dateStr || 'undated'} (DH-safe)`);
+    return stats;
+  }
   try {
     const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
     const data = await espnJson(`${ESPN_MLB_URL}${ymd}`);
@@ -315,6 +333,7 @@ async function fetchMLBFinalGames(dateStr) {
         const comps = comp.competitors || [];
         const away = comps.find(c => c.homeAway === 'away') || {};
         const home = comps.find(c => c.homeAway === 'home') || {};
+        const commenceMs = e.date ? Date.parse(e.date) : null;
         return {
           dateET: espnEventDateET(e),
           awayCode: ESPN_MLB_TO_CODE[away.team?.abbreviation] || away.team?.abbreviation?.toLowerCase(),
@@ -323,15 +342,16 @@ async function fetchMLBFinalGames(dateStr) {
           homeTeam: home.team?.displayName || '',
           awayScore: parseInt(away.score) || 0,
           homeScore: parseInt(home.score) || 0,
+          commenceMs: Number.isFinite(commenceMs) ? commenceMs : null,
+          gameNumber: null,
+          espnEventId: e.id ?? null,
         };
       });
     if (espnGames.length) return espnGames;
   } catch (e) {
     console.error('ESPN MLB fetch error:', e.message);
   }
-  const stats = await fetchMLBFinalsFromStatsApi(dateStr);
-  if (stats.length) console.log(`  MLB StatsAPI fallback: ${stats.length} finals for ${dateStr || 'undated'}`);
-  return stats;
+  return [];
 }
 
 async function fetchNBAFinalGames(dateStr) {
@@ -800,6 +820,57 @@ function finalDateMatches(g, pos) {
   return g.dateET != null && g.dateET === pos.date;
 }
 
+/**
+ * MLB same-day doubleheader disambiguation.
+ * Incident 2026-08-29 bos_nyy__2: G1 final (BOS 6–0) graded onto G2 ~2 min
+ * after first pitch while G2 was Top 5th. Team+date alone is not enough.
+ *
+ * Prefer commence proximity; fall back to gameNumber / __2 suffix.
+ * Fail-closed when tip is >3h from pick commence (or G2 key vs G1-only final).
+ */
+function pickMlbFinalForPick(candidates, pos) {
+  if (!candidates?.length) return null;
+  const rawKey = (pos.gameKey || '').replace(/^MLB:/, '');
+  const isDh2 = /__2$/.test(rawKey);
+  const ct = Number(pos.commenceTime);
+  const withTip = candidates.filter((g) => Number.isFinite(g.commenceMs));
+
+  if (Number.isFinite(ct) && withTip.length) {
+    let best = null;
+    let bestD = Infinity;
+    for (const g of withTip) {
+      const d = Math.abs(ct - g.commenceMs);
+      if (d < bestD) {
+        bestD = d;
+        best = g;
+      }
+    }
+    if (best && bestD <= DH_COMMENCE_MATCH_MS) return best;
+    // Tip too far from every final → do not grade (G2 still live, only G1 final).
+    return null;
+  }
+
+  if (isDh2) {
+    const g2 = candidates.find((g) => Number(g.gameNumber) === 2);
+    if (g2) return g2;
+    // Only G1 finished — refuse to stamp G1 onto __2.
+    if (candidates.every((g) => Number(g.gameNumber) === 1)) return null;
+    return null;
+  }
+
+  const g1 = candidates.find((g) => Number(g.gameNumber) === 1);
+  if (g1) return g1;
+  if (candidates.length === 1) return candidates[0];
+  // Multiple undated finals, no commence on pick — refuse (fail-closed).
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
+function mlbCodeParts(rawKey) {
+  const base = baseGameKey(String(rawKey || '').replace(/^MLB:/, ''));
+  const parts = base.split('_').filter(Boolean);
+  return { awayCode: parts[0] || null, homeCode: parts[1] || null };
+}
+
 function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = [], wnbaFinals = [], nflFinals = [], cfbFinals = []) {
   const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB):/, '');
   const parts = rawKey.split('_');
@@ -813,14 +884,16 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
 
   if (pos.sport === 'MLB') {
     const dated = mlbFinals.filter(g => finalDateMatches(g, pos));
-    if (parts.length >= 2) {
-      const match = dated.find(g => g.awayCode === parts[0] && g.homeCode === parts[1]);
-      if (match) return match;
+    const { awayCode, homeCode } = mlbCodeParts(rawKey);
+    let candidates = [];
+    if (awayCode && homeCode) {
+      candidates = dated.filter(g => g.awayCode === awayCode && g.homeCode === homeCode);
     }
-    for (const g of dated) {
-      if (teamNamesMatch(pos.away, g.awayTeam) && teamNamesMatch(pos.home, g.homeTeam)) return g;
+    if (!candidates.length) {
+      candidates = dated.filter(g =>
+        teamNamesMatch(pos.away, g.awayTeam) && teamNamesMatch(pos.home, g.homeTeam));
     }
-    return null;
+    return pickMlbFinalForPick(candidates, pos);
   }
 
   if (pos.sport === 'NBA') {
@@ -1528,7 +1601,7 @@ async function main() {
 }
 
 // Exported for tests (tests/testGradeDateGuard.mjs) — pure helpers, no I/O.
-export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone };
+export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone, pickMlbFinalForPick };
 
 // Only run when executed directly (node scripts/gradeSharpActions.js), so
 // tests can import the helpers without triggering a live grading pass.

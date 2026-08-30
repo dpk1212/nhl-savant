@@ -62,6 +62,7 @@ import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
 import { compareLockedPicks } from '../lib/lockedPickSort.js';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
+import { isVoidedLockSide } from '../lib/voidedLocks.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -2863,8 +2864,9 @@ function tallySides(snap) {
   snap.forEach(d => {
     const data = d.data();
     if (data.sides) {
-      for (const sideData of Object.values(data.sides)) {
+      for (const [sideKey, sideData] of Object.entries(data.sides)) {
         if (sideData.status !== 'COMPLETED') continue;
+        if (isVoidedLockSide(d.id, sideKey)) continue;
         // v5.6: MUTED plays are excluded from totals exactly like CANCELLED — a
         // muted play is one we explicitly told the user to stand down on (health
         // signal degraded post-lock), so its outcome must not pollute win-rate,
@@ -3007,7 +3009,7 @@ async function loadAllTimePnL() {
       const mt = data._marketType || data.marketType || 'ml';
       const isPostDeploy = data.date >= STARS_LIVE_DATE;
       const isPostAgsuCutover = (data.date || '') >= AGS_U_CUTOVER;
-      const processSide = (sd) => {
+      const processSide = (sd, sideKey) => {
         // v5.6: treat MUTED the same as CANCELLED for tallying purposes — both
         // mean "the live signal told us to stand down before tip", so the graded
         // outcome should not count toward record / ROI / PnL graphs. The pick
@@ -3017,6 +3019,7 @@ async function loadAllTimePnL() {
         // explicitly tracked-only and never bet, so they don't pollute PnL.
         // AGS-U v9: tracked iff grader stamped result.tracked === true. Tier
         // is no longer a proxy (LEAN ships 0.5× under v9).
+        if (isVoidedLockSide(d.id, sideKey)) return;
         const u = sd.finalUnits
           ?? sd.v8_agsUnitsApplied
           ?? sd.peak?.units
@@ -3133,7 +3136,7 @@ async function loadAllTimePnL() {
         }
       };
       if (data.sides) {
-        for (const sd of Object.values(data.sides)) processSide(sd);
+        for (const [sideKey, sd] of Object.entries(data.sides)) processSide(sd, sideKey);
       } else {
         const s = data.stars ?? estimateStarsFromSnap(data);
         const key = starBucket(s);
@@ -12650,6 +12653,8 @@ export default function SharpFlow() {
                       if (!docId.startsWith(targetDate)) continue;
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
+                        // Hard-void false grades (e.g. DH G1 score on G2).
+                        if (isVoidedLockSide(docId, sideKey)) continue;
                         // Hide SHADOW. Superseded sides stay hidden UNLESS
                         // they are the only cron ticket left (LOCKED + u>0 +
                         // v12>0) — browser flip races can leave that shape.
