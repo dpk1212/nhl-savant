@@ -1,98 +1,104 @@
-# Twitter — 2026-08-29 · night · Brewers ML 2u toe-dip
-**Pathway — FULL (Hormozi OS)**
+# Twitter — 2026-08-30 night · Cubs ML + -1.5 · too hard to pass up
+**Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Strategist/Editor loop
 
 ### 0 · Spine (Dale — law)
-- dipping my toe back in the water tonight after getting stomped yesterday
-- trusting this A tier sharp
-- some opposition so not a full play just 2u
-- pick the right angle · crush engagement
+- one more write-up
+- **these sharps too hard to pass up**
+- Assets: …07152f $120K 2.0× Cubs ML · scatter 07 · lock card 3.0u −153 · spread wallet $8.9K 1.6× Cubs −1.5 +138
 
 ### 0b–0c · Continuity / forward look
-- Ask temp warm-cool · feed needs live board with **S or P** (not philosophy / promo)
-- Hot window: **S+P** same-printer cash-return · **S+C** split · **L+C** when confession carries receipts
-- Soft diary alone = kill → land scarce $ by line 2–3
-- Dale spine overrides soft-open ban *if* pudding is immediate
-- Angle: stomped → 2u toe + **same printer** that pressed Sox 4.2× / Braves 1.7× · contested 3 = why not smash
-- **NOT:** promo · lecture · ✅ scoreboard · brochure all-four SPCL · hard ask
+- Last beat: QT bounce (−30u → two 10+ · Under cashed) · ask **cool-warm**
+- Forward look #1 was **live board / next mix** — this is that (new receipt)
+- Do **not** recap bounce · do **not** rerun Sox/Braves same-printer hero · do **not** restage Under
+- Ask is earned but Dale said write-up — **PURPOSE = give**, ask waits
+- **NOT:** promo · AGS/HC/Tier A-D · fake unopposed · EV −0.6% · PIN −136 vs ticket −153 as “odds in our favor” · Under 8.5 toss
 
 ### 1 · WHO
-Bettors who just got stomped and want proof + discipline — not revenge sizing or tipster “lock of the day”
+Bettors staring at a split, contested Cubs board who need to see *why* we’re still on it
 
 ### 2 · PURPOSE
-**Give / buzz** — unfinished watch · sharp-vs-sharp tension · human toe-dip  
-**Ask:** none (desire plant only if anything — profile does the rest)
+**Give / educate** — these wallets are too hard to pass up  
+**Ask:** none
 
 ### 3 · ONE
-Got stomped yesterday → dipping **2u** on Brewers ML behind an A-tier printer who’s **+$545K L30** — contested by 3 sharps so it’s a toe, not a smash
+Cubs sharps are too hard to pass up: the +$545K printer just put **$120K at 2×** on the ML, and a +41% spread book steamed **−1.5 at +138**.
+
+| Test | |
+|------|---|
+| Understand | sized-up printers on Cubs — can’t fade them |
+| Believe | UI $120K 2.0× · +$545K · $8.9K · +41% spread $ ROI |
+| Unique | “too hard to pass up” is the spear — both tickets only prove that |
 
 ### 4 · SPCL ★
-**L + S** (P rides on same-wallet trail — not a third pillar)
-- **L** — Dale stomped → toe in water · 2u authorship (his words)
-- **S** — scarce control: +$545K L30 · $32.6K lead · A-tier board we track
-- Contested 3 + against −6.3% = whole-truth **C** seasoning for the 2u so-what — not owned as brochure letter
+**S + C** (P seasons — Braves $102K W on the card, not owned)
+- **S** — $120K at 2× usual ($59.6K) · proven $129K / 97% on Cubs
+- **C** — +$545K L30 · 12-4 · 75% · loser $244K / 83% on Reds · spread +41% L30 $ ROI
+- Contested 4 + other side $133.2K (56.5% WR / +10.8% ROI) = whole-truth seasoning — not a fake “zero against”
+- **L** = Dale’s line
 
-### 5 · STUFF (receipts only)
-- TEX @ MIL · **Brewers ML** · ticket **−164** · **2.0u** · LOCKED+SET
-- Lead wallet …07152f · **$32.6K** · **0.6× usual** (~$59.6K) · best on price 77%
-- Sharp Tier A · 0.5x Lean · **Sharp contested — 3**
-- L30 card: **+$545K** · **+57% ROI** · **12-4 · 75%** · Beat Close **77%**
-- MLB ML slice: **+$520K · 11-3 · 79%**
-- Board: **$33.9K** Brewers (85%) · Proven **79%** · Against **$6.4K** (48% WR · −6.3% ROI)
-- Same-printer trail (history on card): Aug 24 **Sox ML 4.2× $249.1K W** · Aug 28 **Braves ML 1.7× $102K W**
-- Do **not** mix “why we trust” +38% with L30 +57% in the same beat — use L30 card numbers
+### 5 · STUFF (UI Dale showed; JSON does **not** overwrite $120K)
+- CIN @ CHC · **Cubs ML** · ticket **−153** · **3.0u** to win +1.96u · LOCKED+SET · 7:21 PM ET
+- Lead …07152f Proven/Vault: **$120.0K** · usual **$59.6K** · **2.0×** · L30 **+$545K** · 12-4 · 75% WR · +57% $ ROI (MLB) · +38% on the trust card · beat close **77%** · best on price
+- MLB ML slice: 11-3 · +$520K · +59% $ ROI · 79% WR
+- Plays like this: 65.6% WR · +37.4% ROI
+- Scatter: $131.3K / 53% · Proven 44 / Sec 9 / Against 47 · other side Reds **$133.2K** · 56.5% WR · 56.8% CLV · +10.8% ROI · **sharp contested · 4**
+- Confirmed winners: **97% ($129K)** Cubs · 3% ($4.3K) Reds
+- Losing wallets: **83% ($244K)** Reds · 17% ($51K) Cubs
+- Full split: Cubs $248K (45%) vs Reds $309K (55%)
+- Second sharp …0cd77e: **Cubs −1.5** · **+138** · **$8.9K** · **1.6×** press · steam 5.6% open · unopposed on that card
+- That wallet MLB spread L30: 15-15 · **+$50K** · **+41% $ ROI** · all-time 34-29 · **+47% $ ROI** · L30 book +$26K
+- JSON check: 07152f row shows ~$60K invested (stale/split) — **use UI $120K** · spread $8,926 matches $8.9K
+- Skip: EV −0.6% · PIN −136 / NOW −153 · HC 100% · Tier A/D · L10 2-8 as the open · Under 8.5 · bounce recap · Sox 4.2× rerun
 
 ### 6 · HOOK QA
 ```
-GOT STOMPED YESTERDAY.
-
-Dipping a toe back in tonight —
-behind a wallet that's +$545K L30.
+$120K AT 2× USUAL
+on Cubs ML.
 ```
-- Screenshot test: scarce $ by line 3 ✓
-- What / how / so what ✓ (stomped → toe · printer · contested = 2u)
-- Not soft diary alone ✓
-- Silhouette: same-printer cash-return (window hero #1) ✓
-- Kill: promo · Upgrade · hide contested · invent units · tipster smash energy
+- Screenshot: S ($120K / 2×) in 2 lines ✓
+- What / how / so what: sized-up printer → Cubs · second sharp reinforces ✓
+- Not soft diary ✓
+- Silhouette: `$XK at Y×` + L30 (window hot) ✓
+- Kill: bounce echo · promo · ask · fake unopposed · invent spread units
 
 ### 7–8 · Algorithm
-Delete until you’d add back · dinner-table Dale · no system-label leak without plain English · no ask
+Delete Braves/Sox trail · delete Under 8.5 · dinner-table Dale · his line once · no ask
 
 ---
 
 ## HERO — single tweet
 
-**Attach:** (1) lead-wallet L30 tear card (+$545K curve + contested badge) · (2) Brewers ML lock board (Proven 79% / Against −6.3% visible)
+**Attach:** (1) lock card — Cubs ML 3.0u −153 · $120K / 2.0× / +$545K readable · (2) lead-wallet +$545K tear (2.0× press) · optional 3rd: −1.5 +138 / +41% spread card
 
 ### Copy this ↓
 
 ```
-GOT STOMPED YESTERDAY.
-
-Dipping a toe back in tonight —
-trusting this A-tier sharp.
+$120K AT 2× USUAL
+on Cubs ML.
 
 +$545K the last 30 days.
-12-4 · 75% · +57% ROI.
+12-4 · 75%.
 
-TEX @ MIL · Brewers ML · 2.0u.
+CIN @ CHC · 3.0u at −153.
 
-$32.6K on our side
-(0.6× his usual — even he's light).
+97% of the proven money is here.
+83% of the losing money is on the Reds.
 
-Same wallet that pressed the Sox
-at 4.2× ($249K) and cashed.
-Pressed the Braves yesterday too.
+It’s contested. Four sharps fighting him.
 
-Some opposition.
-Three sharps fighting him.
-Their side: $6.4K of −6.3% ROI money.
+Same game — another sharp
+steamed Cubs −1.5 at +138.
+$8.9K at 1.6×.
++41% $ ROI on MLB spreads L30.
 
-Not a full smash. Just 2u.
-Toe in the water.
+Too hard to pass up.
 ```
 
 ### Attach note
-Lead with the **+$545K L30 card** (contested-3 badge in frame). Second image = battle-bar board so strangers see Proven vs Against without us lecturing.
+Lead with the **lock card** ($120K · 2.0× · +$545K). Second = +$545K tear so the 2.0× press is visible. Third only if you want the −1.5 steam card in frame.
 
 ### SR
-**None.** PURPOSE = give/buzz. Soft trial lives in profile / later ask after this free SPCL lands.
+**None.** PURPOSE = give. Ask is earned for a *later* beat — not this write-up.
+
+### RT line
+`Too hard to pass up.`
