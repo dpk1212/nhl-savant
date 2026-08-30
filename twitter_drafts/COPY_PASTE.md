@@ -1,98 +1,112 @@
-# Twitter — 2026-08-29 · night · Brewers ML 2u toe-dip
-**Pathway — FULL (Hormozi OS)**
+# Twitter — 2026-08-30 · SEA @ TOR Under 7.5 · the mix
+**Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Strategist/Editor loop
 
 ### 0 · Spine (Dale — law)
-- dipping my toe back in the water tonight after getting stomped yesterday
-- trusting this A tier sharp
-- some opposition so not a full play just 2u
-- pick the right angle · crush engagement
+- build off a strong yesterday
+- lots of sharp action locking in today
+- this ticket has the **right mix**
+- sharp **sizes up** with a **loser against**
+- **Pinnacle limits up**
+- **odds in our favor**
+- “like the look of this”
 
 ### 0b–0c · Continuity / forward look
-- Ask temp warm-cool · feed needs live board with **S or P** (not philosophy / promo)
-- Hot window: **S+P** same-printer cash-return · **S+C** split · **L+C** when confession carries receipts
-- Soft diary alone = kill → land scarce $ by line 2–3
-- Dale spine overrides soft-open ban *if* pudding is immediate
-- Angle: stomped → 2u toe + **same printer** that pressed Sox 4.2× / Braves 1.7× · contested 3 = why not smash
-- **NOT:** promo · lecture · ✅ scoreboard · brochure all-four SPCL · hard ask
+- Last beat: Brewers ML 2u toe-dip (L+S) · ask temp **cool** · no convert
+- Feed needed: live board with **S or P** (size-press / split) — not philosophy / promo
+- Hot window: **S+P** same-printer · **S+C** loser-money split
+- Forward-look wanted Brewers grade first — **Dale spine overrides** (this lock, now)
+- Do **not** invent Brewers / Over 7.5 grades · do **not** reopen 8/28 −35.70u
+- Yesterday = graded **2026-08-29: 3-1 · +4.03u** (4 live · 17.20u · 23.4% ROI)
+- **NOT:** promo · become-sharp lecture · soft diary · ask · brochure all-four SPCL · fake “zero against”
 
 ### 1 · WHO
-Bettors who just got stomped and want proof + discipline — not revenge sizing or tipster “lock of the day”
+Bettors on a busy Sunday lock board who want *which* ticket has the mix — not a menu
 
 ### 2 · PURPOSE
-**Give / buzz** — unfinished watch · sharp-vs-sharp tension · human toe-dip  
-**Ask:** none (desire plant only if anything — profile does the rest)
+**Give / educate** — printed day → today’s locks → this Under is the mix  
+**Ask:** none (temp cool · last post was free SPCL · this is another give)
 
 ### 3 · ONE
-Got stomped yesterday → dipping **2u** on Brewers ML behind an A-tier printer who’s **+$545K L30** — contested by 3 sharps so it’s a toe, not a smash
+Yesterday printed. Today the sharps we track are locking. This Under 7.5 is the mix: proven money sized up, loser money on the Over, Pinnacle limits up, plus-money still ours.
+
+| Test | |
+|------|---|
+| Understand | printed day → this ticket has the mix |
+| Believe | UI $ + Pin limits this run |
+| Unique | the *mix* is the spear — not “here’s a pick” |
 
 ### 4 · SPCL ★
-**L + S** (P rides on same-wallet trail — not a third pillar)
-- **L** — Dale stomped → toe in water · 2u authorship (his words)
-- **S** — scarce control: +$545K L30 · $32.6K lead · A-tier board we track
-- Contested 3 + against −6.3% = whole-truth **C** seasoning for the 2u so-what — not owned as brochure letter
+**S + C** (P seasons — not a third pillar)
+- **S** — scarce board we control: $6.0K sized-up proven vs $2.1K loser · Pin maxTotal $1,875 → $7,500
+- **C** — 1.1× usual · against 22% WR / −51% ROI · PIN 7.5 under opener +109 · ticket +103
+- **P** seasoning: yesterday 3-1 +4u (say–do, not owned)
+- **L** = voice only
 
-### 5 · STUFF (receipts only)
-- TEX @ MIL · **Brewers ML** · ticket **−164** · **2.0u** · LOCKED+SET
-- Lead wallet …07152f · **$32.6K** · **0.6× usual** (~$59.6K) · best on price 77%
-- Sharp Tier A · 0.5x Lean · **Sharp contested — 3**
-- L30 card: **+$545K** · **+57% ROI** · **12-4 · 75%** · Beat Close **77%**
-- MLB ML slice: **+$520K · 11-3 · 79%**
-- Board: **$33.9K** Brewers (85%) · Proven **79%** · Against **$6.4K** (48% WR · −6.3% ROI)
-- Same-printer trail (history on card): Aug 24 **Sox ML 4.2× $249.1K W** · Aug 28 **Braves ML 1.7× $102K W**
-- Do **not** mix “why we trust” +38% with L30 +57% in the same beat — use L30 card numbers
+### 5 · STUFF (receipts only — UI $ Dale showed; Pin from origin/main)
+- **2026-08-29** graded: 4 live · **3-1** · **+4.03u** · 23.4% ROI · 17.20u staked
+- SEA Mariners @ TOR Blue Jays · **Under 7.5** · LOCKED+SET · **5.4u** to win +5.56u · ticket **+103**
+- Lead …0cd77e: **$6.0K** · usual **$5.5K** · **1.1×** sizes up · 160-136 · 54% WR · +10% ROI · beat close 65% · L30 **+$26K**
+- Against Over: **$2.1K** · 22% WR · −51% ROI · 0 proven / 1 secondary (do **not** say zero against)
+- Proven money **100%** on Under $6.0K
+- PIN 7.5 under opener **+109** · NOW ticket **+103** · MOVE +1.4pp
+- Pin **maxTotal $1,875 → $7,500** (main total later sat 8; 7.5 still +103 @ 7500)
+- Commence 17:38 UTC / ~1:38 PM ET — first-pitch window · lock stack OK
+- JSON check (do **not** overwrite UI): under $6083 / over $2103 · avgSportBet 3629 ≠ UI usual $5.5K
+- Skip: EV −0.4% (fights “odds in our favor”) · totals L30 30-32 · plays-like 58% (toss) · system labels (HC / AGS / ELITE / SET)
 
 ### 6 · HOOK QA
 ```
-GOT STOMPED YESTERDAY.
+YESTERDAY: 3-1 (+4u).
 
-Dipping a toe back in tonight —
-behind a wallet that's +$545K L30.
+Today a proven wallet sized up to $6K
+on SEA @ TOR Under 7.5.
 ```
-- Screenshot test: scarce $ by line 3 ✓
-- What / how / so what ✓ (stomped → toe · printer · contested = 2u)
-- Not soft diary alone ✓
-- Silhouette: same-printer cash-return (window hero #1) ✓
-- Kill: promo · Upgrade · hide contested · invent units · tipster smash energy
+- Screenshot: C in line 1 · S by line 3 ✓
+- What / how / so what: printed → size-up on this number → mix in body ✓
+- Not soft diary ✓
+- Silhouette: `$XK at Y×` + loser split (window S+C) ✓
+- Kill: promo · ask · fake unopposed · invent Brewers grade · UFC recap toss · EV −0.4%
 
 ### 7–8 · Algorithm
-Delete until you’d add back · dinner-table Dale · no system-label leak without plain English · no ask
+Delete until you’d add back · dinner-table Dale · no ask · stuff > container
 
 ---
 
 ## HERO — single tweet
 
-**Attach:** (1) lead-wallet L30 tear card (+$545K curve + contested badge) · (2) Brewers ML lock board (Proven 79% / Against −6.3% visible)
+**Attach:** (1) lock card — Under 7.5 · 5.4u · +103 · $6.0K / 1.1× readable · (2) battle bars — Proven Under $6.0K vs Against Over $2.1K / 22% / −51%
 
 ### Copy this ↓
 
 ```
-GOT STOMPED YESTERDAY.
+YESTERDAY: 3-1 (+4u).
 
-Dipping a toe back in tonight —
-trusting this A-tier sharp.
+Today a lot of sharp action is locking in.
+This is the one I like the look of.
 
-+$545K the last 30 days.
-12-4 · 75% · +57% ROI.
+SEA @ TOR Under 7.5.
+5.4u at +103.
 
-TEX @ MIL · Brewers ML · 2.0u.
+Proven wallet sized up to $6K
+(usual is $5.5K — 1.1×).
++$26K last 30.
 
-$32.6K on our side
-(0.6× his usual — even he's light).
+Other side: $2.1K
+from a 22% WR / −51% ROI wallet.
+A loser on the Over.
 
-Same wallet that pressed the Sox
-at 4.2× ($249K) and cashed.
-Pressed the Braves yesterday too.
+Pinnacle’s total limit:
+$1,875 → $7,500.
+We’re still plus-money.
 
-Some opposition.
-Three sharps fighting him.
-Their side: $6.4K of −6.3% ROI money.
-
-Not a full smash. Just 2u.
-Toe in the water.
+That’s the mix.
 ```
 
 ### Attach note
-Lead with the **+$545K L30 card** (contested-3 badge in frame). Second image = battle-bar board so strangers see Proven vs Against without us lecturing.
+Lead with the **lock card** ($6.0K · 1.1× · +103). Second image = battle bars so the loser $2.1K is visible without us lecturing.
 
 ### SR
-**None.** PURPOSE = give/buzz. Soft trial lives in profile / later ask after this free SPCL lands.
+**None.** PURPOSE = give. Soft trial stays in profile / later ask after this free SPCL lands.
+
+### RT line
+`That’s the mix.`
