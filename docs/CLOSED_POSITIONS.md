@@ -54,6 +54,8 @@ If an EXITED position reappears in the scan → reset to `PENDING` and clear exi
 
 `syncPickStateAuthoritative` keeps **only `PENDING`** for HC / RANK / AGS. Freshness (30 min) remains as a silence safety net for wallets not in `okWallets`.
 
+**Action ↔ v12 parity (2026-08-30):** tickets still present on `sharp_positions*.json` are **exempt** from freshness prune, and any CONFIRMED/FLAT scan-board row (≥0.10× sport-usual) missing from the Firestore live set is **rehydrated** into the staking bag. Prevents Action Tier A from vanishing from FOOLS/v12 while still painted on the Action desk.
+
 ### 5. Grading
 
 `gradeSharpActions` still queries `status == 'PENDING'` only. Closed-before-settle rows stay `EXITED` and are not graded as game W/L (correct: their PnL is the exit price, not the final).
