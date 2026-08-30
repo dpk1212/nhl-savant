@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-30T21:46:42.722Z",
-  "elapsedSec": 38.8,
+  "scannedAt": "2026-08-30T21:52:12.650Z",
+  "elapsedSec": 38.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 120,
   "summary": {
     "total": 291,
     "coveredByMain": 25,
     "recovered": 19,
-    "recoveredPositions": 68,
+    "recoveredPositions": 69,
     "noPositions": 247,
     "apiError": 0,
     "addressNotFound": 0,
@@ -17,7 +17,7 @@
       "spread": 3,
       "total": 1,
       "dropped_shadow_gate": 33,
-      "dropped_excluded": 23,
+      "dropped_excluded": 24,
       "dropped_duplicate": 0
     }
   },
@@ -588,21 +588,21 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "cin_chc",
+          "marketType": "total",
+          "side": "over",
+          "invested": 2546,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
           "sport": "WNBA",
           "gameKey": "con_dal",
           "marketType": "ml",
           "side": "home",
           "invested": 3956,
           "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "cin_chc",
-          "marketType": "total",
-          "side": "over",
-          "invested": 2526,
-          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -1705,10 +1705,10 @@
       "sports": "SOC,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x224a89dbe0db0d6124b335edabd15b3f877da3d5",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 17993,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -1727,6 +1727,15 @@
           "side": "home",
           "invested": 13312,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "con_dal",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 6017,
+          "entryLine": 14.5,
           "passesShadow": true
         }
       ]
