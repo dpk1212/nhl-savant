@@ -155,6 +155,8 @@ Killing arriving 1u (D) lands closer to 5.7/day and gives back +5u. Killing all 
 
 08-30 under C is still 13 locks (mid-size heavy). Optional later dial: if a day is over 6, rank arriving → steam-confirmed fat → 5u → 4u → 2–3u and keep six. Not in these numbers.
 
+Steam on the 2u–5.39u spine (August 147 · 82-65 · 56% · +27u): arriving mid is hot (6 · 5-1 · +12u) and A/B steam-at-lock mid is 13 · 9-4 · +10u. **Mid with no steam is not a dog** — 43 · 25-18 · 58% · +4.7u. Requiring A/B steam on mid under recipe C takes August from +86u / 6.8 a day to +79u / 3.0 a day. WR barely moves (60.8% → 61.1%). Leave mid alone.
+
 ---
 
 ## August book, unit tiers, extra strength signal
