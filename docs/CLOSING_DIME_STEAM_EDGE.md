@@ -31,6 +31,37 @@ Almost every gold ticket already has a Source A/B CONFIRMED on our side (7 of 8)
 
 ---
 
+## Since we implemented steam (2026-08-19 → 08-31)
+
+Schema v15/v16 went live **2026-08-19**. That is the whole steam sample. **July cannot confirm steam** — 230 staked graded July tickets, **0** with a tape log.
+
+Steam-live book: **187 · 101-86 · 54% · +1.9% ROI**. Split with no retune:
+
+| Window | N | W-L | WR | ROI |
+|--------|--:|:---:|---:|----:|
+| Early 08-19–08-24 | 93 | 49-44 | 53% | +1.7% |
+| Late 08-25–08-30 | 94 | 52-42 | 55% | +2.2% |
+
+**Best chance of a new edge:** Source A/B CONFIRMED already on our side, then Pin steam **turns on after we flag** (off→on).
+
+| Cell | Since 08-19 | Early | Late | Hold-up |
+|------|-------------|-------|------|---------|
+| **A/B + arriving** | **24 · 18-6 · 75% (55–88) · +48%** | 14 · 10-4 · 71% · +59% | 10 · 8-2 · 80% · +35% | direction holds, late thin |
+| steam arriving (any) | 25 · 18-7 · 72% (52–86) · +46% | 15 · 10-5 · 67% · +55% | 10 · 8-2 · 80% · +35% | same 24 tickets + 1 loser |
+| **A/B + steam at lock** | **45 · 29-16 · 64% (50–77) · +25%** | 24 · 15-9 · 62% · +41% | 21 · 14-7 · 67% · +14% | **HOLDS, n≥21 both halves** |
+| steam on at lock | 50 · 31-19 · 62% · +23% | 28 · 16-12 · 57% · +32% | 22 · 15-7 · 68% · +16% | HOLDS (diluted by 5 no-A/B) |
+| steam already on (on→on) | 25 · 13-12 · 52% · +0.9% | — | — | flat — not the edge |
+| gold 4.5%+ | 8 · 6-2 · 75% (41–93) · +69% | 4 | 4 | thin both |
+| gold+limits | 2 · 2-0 | 0 | 2 | not a sample |
+
+Steam that was **already on** at first flag is a coin flip. Steam that **arrives after we have A/B** is the split. The thicker cell that survives the early/late cut with real n is **A/B + steam at lock** (n=45). Arriving is the hotter subset (n=24, Wilson lo 55%) and the realistic next edge to keep measuring — not to size.
+
+Not one sport and not one night. A/B arriving: MLB 15 (10-5, +51%), WNBA 7 (6-1, +43%), NFL 2 (2-0). 08-23 WNBA was 4-0 and about half the arriving PnL (+14.6u of +29u). Strip that night and A/B arriving is still **20 · 14-6 · 70%**. Direction is not a one-card spike.
+
+**Do not size this.** Fetch already stamps it at T-15. Product move if any: paint / don’t-cut when A/B is on our side and steam arrives. Gold+limits is not the play. Mute-no-steam still kills ~70 wins.
+
+---
+
 ## What they are selling
 
 Two stacked signals on CIN @ CHC **Over 8.5**, 2026-08-30:

@@ -470,9 +470,12 @@ for (const a of earlySteam) {
   const lateOk = b && (b.score.startsWith('best') || b.score.startsWith('explore') || b.score.startsWith('weak'));
   const lateNo = b && (b.score === 'no split' || b.score === 'none');
   const earlyThin = a.score.startsWith('thin');
+  const lateDir = !!(b?.hit?.n >= 8 && b.hit.wrPct > b.rest.wrPct && b.hit.roi > b.rest.roi);
   let hold = `${a.score} → ${b?.score || '—'}`;
-  if (earlyThin && b?.score.startsWith('thin')) hold = 'thin both — keep tracking';
-  else if (earlyOk && lateOk) hold = 'HOLDS direction';
+  if (earlyThin && b?.score.startsWith('thin') && !lateDir) hold = 'thin both — keep tracking';
+  else if ((earlyOk || (earlyThin && a.hit?.n >= 8 && a.hit.wrPct > a.rest.wrPct && a.hit.roi > a.rest.roi)) && lateDir) {
+    hold = b.hit.n < 12 ? 'HOLDS direction (late thin)' : 'HOLDS direction';
+  } else if (earlyOk && lateOk) hold = 'HOLDS direction';
   else if (earlyOk && lateNo) hold = 'FAILS late window';
   else if (earlyThin && lateOk) hold = 'late only (not a discover)';
   else if (a.score === 'no split' && lateOk) hold = 'late only';
