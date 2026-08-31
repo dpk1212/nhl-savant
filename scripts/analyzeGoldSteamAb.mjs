@@ -253,6 +253,7 @@ for (const { mkt, docs } of packs) {
         edge: Number.isFinite(sd.v8_winnerAlignEdge) ? sd.v8_winnerAlignEdge : null,
         tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
         tapeAction: sd.v8_tapeAction || null,
+        unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
         net: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
         hcConfFor: Number(sd.v8_hcConfFor) || 0,
         provenFor: Number(sd.v8_agsProvenForCount) || 0,
@@ -791,6 +792,109 @@ for (const d of [...new Set(window.map((r) => r.date))].sort()) {
   const day = byD.get(d) || [];
   push(`  ${d}  ${day.length ? fmt(agg(day)) : '—  (no lock)'}`);
 }
+
+push('');
+push('=== 11. Size overlays on the steam-window book (same tickets, different u) ===');
+push('Not a gate. Every ticket still ships. Steam only changes size. Early vs late, no retune.');
+push('');
+
+function sized(r, newU) {
+  const old = Number(r.units) || 0;
+  const u = Math.max(0, Number(newU) || 0);
+  if (!(old > 0)) return { ...r, units: u, profit: 0 };
+  return { ...r, units: u, profit: (Number(r.profit) || 0) * (u / old) };
+}
+
+function applySize(label, pool, mapper) {
+  const outRows = pool.map(mapper);
+  const a = agg(outRows);
+  const b = agg(pool);
+  const dPnl = a.pnl - b.pnl;
+  const dU = a.stake - b.stake;
+  push(`${label}`);
+  push(`  ${fmt(a)}  ΔPnL ${dPnl >= 0 ? '+' : ''}${dPnl.toFixed(1)}u  Δstake ${dU >= 0 ? '+' : ''}${dU.toFixed(1)}u`);
+  return { label, agg: a, dPnl, dU };
+}
+
+function splitEL(name, mapper) {
+  const e = agg(early.map(mapper));
+  const l = agg(late.map(mapper));
+  const eb = agg(early);
+  const lb = agg(late);
+  const eOk = e.pnl > eb.pnl;
+  const lOk = l.pnl > lb.pnl;
+  const hold = eOk && lOk ? 'HOLDS both halves' : eOk && !lOk ? 'early only' : !eOk && lOk ? 'late only' : 'neither';
+  push(`  early Δ ${(e.pnl - eb.pnl) >= 0 ? '+' : ''}${(e.pnl - eb.pnl).toFixed(1)}u  late Δ ${(l.pnl - lb.pnl) >= 0 ? '+' : ''}${(l.pnl - lb.pnl).toFixed(1)}u  ${hold}`);
+  return hold;
+}
+
+push(line('actual steam-window book', window));
+push('A/B arriving tapeAction / preTape:');
+for (const r of core.sort((a, b) => String(a.date).localeCompare(b.date))) {
+  push(`  ${r.date} ${r.team}  ${r.won ? 'W' : 'L'}  ${r.units}u  tape=${r.tapeAction || '—'}  preTape=${r.unitsPreTape ?? '—'}  path${r.path}`);
+}
+
+push('');
+push('-- Size UP A/B arriving (rest of book unchanged) --');
+const upFloor2 = (r) => (r.sharpAB && r.steamArriving && r.units < 2) ? sized(r, 2) : r;
+const upFloor3 = (r) => (r.sharpAB && r.steamArriving && r.units < 3) ? sized(r, 3) : r;
+const upFloor4 = (r) => (r.sharpAB && r.steamArriving && r.units < 4) ? sized(r, 4) : r;
+const up125 = (r) => (r.sharpAB && r.steamArriving) ? sized(r, +(r.units * 1.25).toFixed(2)) : r;
+const upPlus1 = (r) => (r.sharpAB && r.steamArriving && r.units < 4) ? sized(r, r.units + 1) : r;
+applySize('floor arriving <2u → 2u', window, upFloor2);
+splitEL('floor2', upFloor2);
+applySize('floor arriving <3u → 3u', window, upFloor3);
+splitEL('floor3', upFloor3);
+applySize('floor arriving <4u → 4u (the aggressive one)', window, upFloor4);
+splitEL('floor4', upFloor4);
+applySize('arriving ×1.25 (tape-like bump)', window, up125);
+splitEL('x125', up125);
+applySize('arriving lean +1u', window, upPlus1);
+splitEL('plus1', upPlus1);
+
+push('');
+push('-- Size DOWN fat tickets that do NOT have steam confirmation --');
+const TAPE_BOOST_MULT = 1.35;
+function unboost(r) {
+  if (r.tapeAction !== 'BOOST') return r;
+  const pre = Number.isFinite(r.unitsPreTape) && r.unitsPreTape > 0
+    ? r.unitsPreTape
+    : r.units / TAPE_BOOST_MULT;
+  return sized(r, +pre.toFixed(2));
+}
+const noArr = (r) => !(r.sharpAB && r.steamArriving);
+const noSteamAB = (r) => !(r.sharpAB && r.steamOn);
+applySize('unboost tape BOOST unless A/B arriving', window, (r) => (r.tapeAction === 'BOOST' && noArr(r) ? unboost(r) : r));
+splitEL('unboost unless arriving', (r) => (r.tapeAction === 'BOOST' && noArr(r) ? unboost(r) : r));
+applySize('unboost tape BOOST unless A/B steam at lock', window, (r) => (r.tapeAction === 'BOOST' && noSteamAB(r) ? unboost(r) : r));
+splitEL('unboost unless steamAB', (r) => (r.tapeAction === 'BOOST' && noSteamAB(r) ? unboost(r) : r));
+applySize('cap 5.4u+ at 4u unless A/B arriving', window, (r) => (r.units >= 5.4 && noArr(r) ? sized(r, 4) : r));
+splitEL('cap54 unless arriving', (r) => (r.units >= 5.4 && noArr(r) ? sized(r, 4) : r));
+applySize('cap 5.4u+ at 4u unless A/B steam at lock', window, (r) => (r.units >= 5.4 && noSteamAB(r) ? sized(r, 4) : r));
+splitEL('cap54 unless steamAB', (r) => (r.units >= 5.4 && noSteamAB(r) ? sized(r, 4) : r));
+
+push('');
+push('-- Combo: bump lean arriving AND haircut BOOST without A/B steam-at-lock --');
+const combo = (r) => {
+  let x = r;
+  if (x.sharpAB && x.steamArriving && x.units < 2) x = sized(x, 2);
+  if (x.tapeAction === 'BOOST' && !(x.sharpAB && x.steamOn)) x = unboost(x);
+  return x;
+};
+applySize('floor arriving 2u + unboost BOOST without A/B steam', window, combo);
+splitEL('combo', combo);
+
+push('');
+push('-- What the 5.4u+ pile actually did --');
+push(line('all 5.4u+', window.filter((r) => r.units >= 5.4)));
+push(line('5.4u+ A/B arriving', window.filter((r) => r.units >= 5.4 && r.sharpAB && r.steamArriving)));
+push(line('5.4u+ A/B steam at lock', window.filter((r) => r.units >= 5.4 && r.sharpAB && r.steamOn)));
+push(line('5.4u+ no A/B steam', window.filter((r) => r.units >= 5.4 && !(r.sharpAB && r.steamOn))));
+push(line('tape BOOST', window.filter((r) => r.tapeAction === 'BOOST')));
+push(line('tape BOOST + A/B arriving', window.filter((r) => r.tapeAction === 'BOOST' && r.sharpAB && r.steamArriving)));
+push(line('tape BOOST, no A/B steam', window.filter((r) => r.tapeAction === 'BOOST' && !(r.sharpAB && r.steamOn))));
+push(line('≤1u A/B arriving (the bump candidates)', window.filter((r) => r.sharpAB && r.steamArriving && r.units < 1.25)));
+push(line('≤1u rest of book', window.filter((r) => !(r.sharpAB && r.steamArriving) && r.units < 1.25)));
 
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 const payload = {
