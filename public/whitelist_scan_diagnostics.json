@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-31T03:00:28.852Z",
-  "elapsedSec": 34.3,
+  "scannedAt": "2026-08-31T03:04:31.726Z",
+  "elapsedSec": 33.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 113,
   "summary": {
     "total": 291,
     "coveredByMain": 14,
     "recovered": 15,
-    "recoveredPositions": 55,
+    "recoveredPositions": 54,
     "noPositions": 262,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 7,
       "spread": 2,
       "total": 0,
-      "dropped_shadow_gate": 35,
+      "dropped_shadow_gate": 34,
       "dropped_excluded": 11,
       "dropped_duplicate": 0
     }
@@ -251,11 +251,11 @@
       "sports": "SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x821dab0565ebf5b327f51db06223fdcfe01acf16",
-      "positionsCount": 8,
+      "positionsCount": 10,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 30637,
       "willPassShadowGate": 2,
-      "willDropAtShadowGate": 6,
+      "willDropAtShadowGate": 8,
       "positions": [
         {
           "sport": "SOC",
@@ -327,6 +327,24 @@
           "side": "away",
           "invested": 29,
           "entryLine": 2.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "get_osa",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 13,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "liv_ips",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 23,
+          "entryLine": null,
           "passesShadow": false
         }
       ]
@@ -585,11 +603,11 @@
       "sports": "MLB,WNBA,SOC,UFC,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 27,
+      "positionsCount": 24,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 91702,
       "willPassShadowGate": 6,
-      "willDropAtShadowGate": 21,
+      "willDropAtShadowGate": 18,
       "positions": [
         {
           "sport": "SOC",
@@ -632,7 +650,7 @@
           "gameKey": "nym_tbr",
           "marketType": "total",
           "side": "under",
-          "invested": 801,
+          "invested": 796,
           "entryLine": 7.5,
           "passesShadow": true
         },
@@ -641,7 +659,7 @@
           "gameKey": "oak_tex",
           "marketType": "total",
           "side": "under",
-          "invested": 392,
+          "invested": 388,
           "entryLine": 7.5,
           "passesShadow": false
         },
@@ -790,48 +808,21 @@
           "passesShadow": false
         },
         {
-          "sport": "MLB",
-          "gameKey": "det_min",
-          "marketType": "total",
-          "side": "under",
-          "invested": 6,
-          "entryLine": 8.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "det_min",
-          "marketType": "total",
-          "side": "over",
-          "invested": 5,
-          "entryLine": 8.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "oak_tex",
-          "marketType": "total",
-          "side": "over",
-          "invested": 5,
-          "entryLine": 7.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "nym_tbr",
-          "marketType": "total",
-          "side": "over",
-          "invested": 5,
-          "entryLine": 7.5,
-          "passesShadow": false
-        },
-        {
           "sport": "UFC",
           "gameKey": "oumarsy_modestasbukauskas",
           "marketType": "ml",
           "side": "away",
           "invested": 3,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "det_min",
+          "marketType": "total",
+          "side": "under",
+          "invested": 2,
+          "entryLine": 8.5,
           "passesShadow": false
         }
       ]
