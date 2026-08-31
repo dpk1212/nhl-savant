@@ -1,104 +1,136 @@
-# Twitter — 2026-08-30 night · Cubs ML + -1.5 · too hard to pass up
-**Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Strategist/Editor loop
+# Twitter — 2026-08-31 · August MTD · sized-up printed
+**Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Researcher/Strategist/Editor loop
 
 ### 0 · Spine (Dale — law)
-- one more write-up
-- **these sharps too hard to pass up**
-- Assets: …07152f $120K 2.0× Cubs ML · scatter 07 · lock card 3.0u −153 · spread wallet $8.9K 1.6× Cubs −1.5 +138
+- perfect post for the performance of the month so far
+- added a new sport · great month
+- highlight **actual performance by unit tiers**
+- tease **NFL / CFB locking plays soon**
+- updates to performance with another month of data
+- **Big September is loading**
 
 ### 0b–0c · Continuity / forward look
-- Last beat: QT bounce (−30u → two 10+ · Under cashed) · ask **cool-warm**
-- Forward look #1 was **live board / next mix** — this is that (new receipt)
-- Do **not** recap bounce · do **not** rerun Sox/Braves same-printer hero · do **not** restage Under
-- Ask is earned but Dale said write-up — **PURPOSE = give**, ask waits
-- **NOT:** promo · AGS/HC/Tier A-D · fake unopposed · EV −0.6% · PIN −136 vs ticket −153 as “odds in our favor” · Under 8.5 toss
+- Last beat: Cubs $120K 2× / −1.5 steam · ask **warm** (forward look wanted grade Cubs / soft ask)
+- Dale spine **overrides** — this is a month-so-far give, not an ask and not another live-board lock
+- Timeline hot: **S+C** split / **S+P** size-press · unfinished `>5u` book as Status spear (update the book, don’t re-explain)
+- ATH valley (−76u) already shipped 8/28 — **do not rerun**. This is the August update with another month of tape
+- **NOT:** promo/SUMMER · philosophy “most people try to become sharp” · Cubs restage · bounce recap · AGS/HC/MAX/TOP+ labels · sport-by-sport toss salad · hard ask
 
 ### 1 · WHO
-Bettors staring at a split, contested Cubs board who need to see *why* we’re still on it
+Bettors who score a month by win rate (or spray 1u everywhere) and need to see that **size** is the product
 
 ### 2 · PURPOSE
-**Give / educate** — these wallets are too hard to pass up  
-**Ask:** none
+**Give / connect** — August receipt · unit-tier ladder is the pudding · September plant  
+**Ask:** none (temperature is warm; Dale asked for the month, not a convert. Soft trial waits.)
 
 ### 3 · ONE
-Cubs sharps are too hard to pass up: the +$545K printer just put **$120K at 2×** on the ML, and a +41% spread book steamed **−1.5 at +138**.
+August printed because we sized up: **5u+ went 56-22 for +65.6u**. The 1u book lost 20u. The 53% win rate is the disguise.
 
 | Test | |
 |------|---|
-| Understand | sized-up printers on Cubs — can’t fade them |
-| Believe | UI $120K 2.0× · +$545K · $8.9K · +41% spread $ ROI |
-| Unique | “too hard to pass up” is the spear — both tickets only prove that |
+| Understand | small tickets leaked · sized-up tickets printed |
+| Believe | live Firestore 8/01–8/30 · 1u −20.3u vs 5u+ +65.6u · book +46.8u |
+| Unique | month is not the 53% — it’s the ladder |
 
 ### 4 · SPCL ★
-**S + C** (P seasons — Braves $102K W on the card, not owned)
-- **S** — $120K at 2× usual ($59.6K) · proven $129K / 97% on Cubs
-- **C** — +$545K L30 · 12-4 · 75% · loser $244K / 83% on Reds · spread +41% L30 $ ROI
-- Contested 4 + other side $133.2K (56.5% WR / +10.8% ROI) = whole-truth seasoning — not a fake “zero against”
-- **L** = Dale’s line
+**S + C** (P seasons — size-up say–do with another month of data, not owned as a third brochure letter)
+- **S** — we control the sized board: 5u+ conviction is the scarce book
+- **C** — hard ladder (1u 76-92 −20.3u · 5u+ 56-22 +65.6u · month +46.8u vs July +17.0u)
+- **L** = Dale’s September line, not a content pillar
+- Whole-truth seasoning: 2–3u even / −6.6u · 4u starts printing · NFL preseason −0.42u (do **not** flex NFL PnL)
 
-### 5 · STUFF (UI Dale showed; JSON does **not** overwrite $120K)
-- CIN @ CHC · **Cubs ML** · ticket **−153** · **3.0u** to win +1.96u · LOCKED+SET · 7:21 PM ET
-- Lead …07152f Proven/Vault: **$120.0K** · usual **$59.6K** · **2.0×** · L30 **+$545K** · 12-4 · 75% WR · +57% $ ROI (MLB) · +38% on the trust card · beat close **77%** · best on price
-- MLB ML slice: 11-3 · +$520K · +59% $ ROI · 79% WR
-- Plays like this: 65.6% WR · +37.4% ROI
-- Scatter: $131.3K / 53% · Proven 44 / Sec 9 / Against 47 · other side Reds **$133.2K** · 56.5% WR · 56.8% CLV · +10.8% ROI · **sharp contested · 4**
-- Confirmed winners: **97% ($129K)** Cubs · 3% ($4.3K) Reds
-- Losing wallets: **83% ($244K)** Reds · 17% ($51K) Cubs
-- Full split: Cubs $248K (45%) vs Reds $309K (55%)
-- Second sharp …0cd77e: **Cubs −1.5** · **+138** · **$8.9K** · **1.6×** press · steam 5.6% open · unopposed on that card
-- That wallet MLB spread L30: 15-15 · **+$50K** · **+41% $ ROI** · all-time 34-29 · **+47% $ ROI** · L30 book +$26K
-- JSON check: 07152f row shows ~$60K invested (stale/split) — **use UI $120K** · spread $8,926 matches $8.9K
-- Skip: EV −0.6% · PIN −136 / NOW −153 · HC 100% · Tier A/D · L10 2-8 as the open · Under 8.5 · bounce recap · Sox 4.2× rerun
+### 5 · STUFF (live public Firestore this run · AGSU completed · units>0 · WIN/LOSS · pulled 2026-08-31T15:32Z)
+- **August (8/01–8/30):** 372 · 198-174 · **53.2%** · **+46.8u** · +4.9% ROI
+- **July:** 230 · 127-103 · 55.2% · **+17.04u** · +2.3% → August ≈ **2.75×** July (“almost 3×”)
+- **1u:** 168 · 76-92 · 45.2% · **−20.27u** · −12.2%
+- **2–3u:** 94 · 47-47 · 50% · **−6.62u** · −2.7%
+- **4u:** 32 · 19-13 · 59.4% · **+8.07u** · +6.3%
+- **5u:** 21 · 16-5 · 76.2% · +25.72u
+- **5.4u:** 49 · 34-15 · 69.4% · +26.9u
+- **6u:** 8 · 6-2 · 75% · +13.0u
+- **5u+ combined:** 78 · **56-22** · 71.8% · **+65.62u** · +15.7% ROI
+- NFL on the book (preseason): 15 · 9-6 · 60% · **−0.42u** — tease locking, don’t flex
+- CFB: none yet — “locks soon”
+- Kill / don’t use in hero: all-time +113.61u · MLB/UFC/WNBA split · WNBA −15.41u as a second leak · display labels MAX/TOP/SHARP/AGS · V12 · −76u valley rerun · 8/31 (not graded yet)
 
 ### 6 · HOOK QA
 ```
-$120K AT 2× USUAL
-on Cubs ML.
+1u TICKETS LOST 20u IN AUGUST.
+
+5u+ went 56-22.
++65.6u.
 ```
-- Screenshot: S ($120K / 2×) in 2 lines ✓
-- What / how / so what: sized-up printer → Cubs · second sharp reinforces ✓
+- Screenshot: S (1u vs 5u+) + C (units / W-L) in 3 lines ✓
+- What / how / so what: junk leaked → sized printed → that’s the month ✓
 - Not soft diary ✓
-- Silhouette: `$XK at Y×` + L30 (window hot) ✓
-- Kill: bounce echo · promo · ask · fake unopposed · invent spread units
+- Silhouette: “Looks even. It isn’t.” applied to 53% vs the ladder — not an empty clone of Sox/Cubs $ ✓
+- Kill: promo · ask · sport menu · ATH valley · system-label leak
 
 ### 7–8 · Algorithm
-Delete Braves/Sox trail · delete Under 8.5 · dinner-table Dale · his line once · no ask
+Delete sport-by-sport · delete all-time · delete 5u / 5.4u / 6u as three competing flexes (combine to 5u+) · dinner-table Dale · his September line once · no ask
 
 ---
 
 ## HERO — single tweet
 
-**Attach:** (1) lock card — Cubs ML 3.0u −153 · $120K / 2.0× / +$545K readable · (2) lead-wallet +$545K tear (2.0× press) · optional 3rd: −1.5 +138 / +41% spread card
+**Attach:** unit-tier / PnL screenshot if you’ve got one in the product (ladder readable: 1u red · 5u+ green). Text holds without it.
 
 ### Copy this ↓
 
 ```
-$120K AT 2× USUAL
-on Cubs ML.
+1u TICKETS LOST 20u IN AUGUST.
 
-+$545K the last 30 days.
-12-4 · 75%.
+5u+ went 56-22.
++65.6u.
 
-CIN @ CHC · 3.0u at −153.
+Win rate on the month: 53%.
+Looks mid. It isn’t.
 
-97% of the proven money is here.
-83% of the losing money is on the Reds.
++46.8u on the book.
+Almost 3× July.
 
-It’s contested. Four sharps fighting him.
+We sized up when the sharps
+we track were actually confident.
 
-Same game — another sharp
-steamed Cubs −1.5 at +138.
-$8.9K at 1.6×.
-+41% $ ROI on MLB spreads L30.
+1u · 76-92 · −20.3u
+2–3u · 47-47 · −6.6u
+4u · 19-13 · +8.1u
+5u+ · 56-22 · +65.6u
 
-Too hard to pass up.
+NFL’s on the board now.
+College football starts locking soon.
+
+Big September is loading.
 ```
 
 ### Attach note
-Lead with the **lock card** ($120K · 2.0× · +$545K). Second = +$545K tear so the 2.0× press is visible. Third only if you want the −1.5 steam card in frame.
+If you screenshot the month, lead with the **unit ladder** (1u vs 5u+), not a sport menu and not MAX/TOP labels.
 
 ### SR
-**None.** PURPOSE = give. Ask is earned for a *later* beat — not this write-up.
+**None.** PURPOSE = give. Ask temperature is warm — next beat can convert (SR only) after this free SPCL lands.
 
-### RT line
-`Too hard to pass up.`
+---
+
+## Open alt (only if you want flex-first instead of leak-first)
+
+```
+5u+ IN AUGUST:
+56-22.
++65.6u.
+
+The 1u tickets lost 20u.
+
+That’s why a 53% month
+is still +46.8u —
+almost 3× July.
+
+1u · 76-92 · −20.3u
+2–3u · 47-47 · −6.6u
+4u · 19-13 · +8.1u
+5u+ · 56-22 · +65.6u
+
+NFL’s on the board.
+CFB locks soon.
+
+Big September is loading.
+```
