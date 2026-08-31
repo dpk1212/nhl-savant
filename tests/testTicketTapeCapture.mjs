@@ -18,6 +18,8 @@ import {
   analyzeTicketTapeLog,
   applyActionTicketTape,
   hoursUntilMs,
+  enrichTicketTapeFromSide,
+  steamGoldLockLabel,
 } from '../src/lib/ticketTapeCapture.js';
 
 let n = 0;
@@ -139,6 +141,49 @@ ok(ax.steamOnFirst === true, 'steam was on at first');
 ok(ax.evFirst === 3.1 && ax.evLock === 1.2, `first vs lock EV ${ax.evFirst} → ${ax.evLock}`);
 ok(ax.dEvFirstToLock === -1.9, 'EV faded from first to t15');
 ok(ax.t15.hoursOut === 0.3, 't15 hoursOut is true distance');
+
+ok(doc.v8_ticketTapeLog[0].limitRising === true, 'limitRising persisted on first log row');
+ok(snap.steam?.limitRising === true, 'phi 1875→7500 is limit rising');
+ok(
+  !snap.steam?.goldConfirmed || doc.v8_ticketTapeLog[0].goldConfirmed === true,
+  'goldConfirmed persisted when steam is gold+limits',
+);
+ok(
+  !snap.steam?.goldConfirmed || analyzeTicketTapeLog(doc.v8_ticketTapeLog).goldConfirmedFirst === true,
+  'analyze reads goldConfirmed',
+);
+
+// Historical logs omitted the flags — freeze v8_steam still has the combo.
+{
+  const oldLog = [
+    { gate: 'first', tier: 'gold', evPct: 1.7 },
+    { gate: 't15', tier: 'gold', evPct: 1.5 },
+  ];
+  ok(analyzeTicketTapeLog(oldLog).goldConfirmedLock === false, 'old log has no goldConfirmed');
+  ok(steamGoldLockLabel(analyzeTicketTapeLog(oldLog)) === 'gold-flat', 'gold without limits flag is gold-flat');
+  const en = enrichTicketTapeFromSide({
+    v8_ticketTapeLog: oldLog,
+    v8_steam: { tier: 'gold', goldConfirmed: true, limitRising: true },
+  });
+  ok(en.ticketTape.goldConfirmedLock === true, 'freeze scalar fills goldConfirmed');
+  ok(steamGoldLockLabel(en.ticketTape, en.steam) === 'gold+limits', 'Closing Dime combo label');
+  ok(steamGoldLockLabel({ steamOnLock: true }, { tier: 'steam' }) === 'steam', 'plain steam label');
+  ok(steamGoldLockLabel({ limitRisingLock: true }, null) === 'limits-only', 'limits without steam');
+  ok(steamGoldLockLabel({}, null) === 'none', 'neither');
+}
+
+// Closing Dime Novig −133 vs Pin no-vig −138: our card EV is ~0.9pp; dollar EV is ~1.6%.
+{
+  const pinAfterSteam = [-150, 130];
+  const fair = noVigFairAmerican(pinAfterSteam, 0);
+  const fairP = fairProbFromNoVig(pinAfterSteam, 0);
+  ok(fair === -138, `Pin −150/+130 no-vig fair is −138 (got ${fair})`);
+  const gap = evPctVsFairProb(-133, fairP);
+  ok(gap >= 0.8 && gap <= 1.1, `probability-point EV ~0.9 (got ${gap})`);
+  const offerDec = 1 + 100 / 133;
+  const dollarEv = +((fairP * (offerDec - 1) - (1 - fairP)) * 100).toFixed(1);
+  ok(dollarEv >= 1.5 && dollarEv <= 1.8, `dollar EV ~1.6% matches their 1.7% card (got ${dollarEv})`);
+}
 
 const actionDoc = {};
 applyActionTicketTape(actionDoc, snap, { nowMs: t0, hoursUntilGame: 8 });

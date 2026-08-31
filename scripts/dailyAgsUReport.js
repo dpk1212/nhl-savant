@@ -36,7 +36,7 @@ import {
   AGS_V12_DISPLAY_TIERS,
   AGS_V12_STAKE_TIER_META,
 } from '../src/lib/ags.js';
-import { analyzeTicketTapeLog } from '../src/lib/ticketTapeCapture.js';
+import { enrichTicketTapeFromSide, steamGoldLockLabel } from '../src/lib/ticketTapeCapture.js';
 import {
   TAPE_MUTE_BELOW,
   TAPE_BOOST_ABOVE,
@@ -707,9 +707,7 @@ async function loadAllAgsuGradedPicks() {
           healthStatus: sd.health?.status || 'ACTIVE',
           schemaVersion,
           walletDetails,
-          ticketEvPct: Number.isFinite(sd.v8_ticketEvPct) ? sd.v8_ticketEvPct : null,
-          ticketTapeLog: Array.isArray(sd.v8_ticketTapeLog) ? sd.v8_ticketTapeLog : [],
-          ticketTape: analyzeTicketTapeLog(sd.v8_ticketTapeLog),
+          ...tapeFieldsFromSide(sd),
         });
       }
     }
@@ -1529,9 +1527,7 @@ async function loadAllGradedAndShadowPicks() {
           // walletDetails needed for §5 skill-band as-of EDGE/net (stamp-else-asof)
           walletDetails: (peak.v8Scoring?.walletDetails || lock.v8Scoring?.walletDetails || [])
             .filter(w => w && w.wallet && w.side),
-          ticketEvPct: Number.isFinite(sd.v8_ticketEvPct) ? sd.v8_ticketEvPct : null,
-          ticketTapeLog: Array.isArray(sd.v8_ticketTapeLog) ? sd.v8_ticketTapeLog : [],
-          ticketTape: analyzeTicketTapeLog(sd.v8_ticketTapeLog),
+          ...tapeFieldsFromSide(sd),
         });
       }
     }
@@ -3880,6 +3876,17 @@ function tapeAgg(rows) {
   return { n, w, l, stake, pnl, roi: stake > 0 ? (pnl / stake) * 100 : null };
 }
 
+function tapeFieldsFromSide(sd) {
+  const en = enrichTicketTapeFromSide(sd);
+  return {
+    ticketEvPct: en.ticketEvPct,
+    ticketTapeLog: en.ticketTapeLog,
+    ticketTape: en.ticketTape,
+    steam: en.steam,
+    steamGoldLock: steamGoldLockLabel(en.ticketTape, en.steam),
+  };
+}
+
 function steamPathLabel(t) {
   if (!t) return 'no-log';
   const a = t.steamOnFirst ? 'on' : 'off';
@@ -3899,7 +3906,7 @@ function evLockBucket(ev) {
 function buildTicketTapeLifecycle(report, stats) {
   report.push(`### 5d — Ticket EV / steam lifecycle (tracking only)`);
   report.push('');
-  report.push(`\`v8_ticketTapeLog\` keeps **first / hourly / T-60 / T-15 / grade** samples of card EV and Pinnacle steam. Scalars still freeze at T-15; the log is the path. Does **not** size units. See \`docs/SKILL_FEATURES.md\`.`);
+  report.push(`\`v8_ticketTapeLog\` keeps **first / hourly / T-60 / T-15 / grade** samples of card EV and Pinnacle steam. Scalars still freeze at T-15; the log is the path. Does **not** size units. Gold + rising limits (Closing Dime combo) uses log flags when present, else freeze \`v8_steam\`. See \`docs/SKILL_FEATURES.md\` and \`docs/CLOSING_DIME_STEAM_EDGE.md\`.`);
   report.push('');
   if (!stats) {
     report.push(`_(no V12-era picks yet.)_`);
@@ -3952,6 +3959,29 @@ function buildTicketTapeLifecycle(report, stats) {
     const a = tapeAgg(rows);
     report.push(
       `| ${b} | ${a.n} | ${a.w}-${a.l} | ${a.n ? ((100 * a.w / a.n).toFixed(1) + '%') : '—'} | ${a.stake.toFixed(2)}u | ${fmtSigned(a.pnl)}u | ${a.roi != null ? ((a.roi >= 0 ? '+' : '') + a.roi.toFixed(1) + '%') : '—'} |`,
+    );
+  }
+  report.push('');
+
+  report.push(`#### Gold steam + rising limits (Closing Dime combo)`);
+  report.push('');
+  report.push(`Gold = last-hour (else since-open) drop ≥ 4.5%. Limits rising = Pinnacle max +$2,000 or ×1.45 vs open. **gold+limits** is the gold card. Tracking only — do not size from this table until N is honest.`);
+  report.push('');
+  report.push(`| Signal at lock | N | W-L | Win % | Stake | PnL (u) | ROI |`);
+  report.push(`|----------------|--:|:---:|------:|------:|--------:|----:|`);
+  const goldLabels = [
+    ['gold+limits', 'gold+limits'],
+    ['gold-flat', 'gold, limits flat'],
+    ['steam', 'steam, not gold'],
+    ['limits-only', 'limits↑, no steam'],
+    ['none', 'neither'],
+  ];
+  for (const [key, label] of goldLabels) {
+    const rows = graded.filter((r) => (r.steamGoldLock || steamGoldLockLabel(r.ticketTape, r.steam)) === key);
+    if (!rows.length) continue;
+    const a = tapeAgg(rows);
+    report.push(
+      `| ${label} | ${a.n} | ${a.w}-${a.l} | ${a.n ? ((100 * a.w / a.n).toFixed(1) + '%') : '—'} | ${a.stake.toFixed(2)}u | ${fmtSigned(a.pnl)}u | ${a.roi != null ? ((a.roi >= 0 ? '+' : '') + a.roi.toFixed(1) + '%') : '—'} |`,
     );
   }
   report.push('');

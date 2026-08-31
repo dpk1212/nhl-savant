@@ -119,7 +119,7 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_ticketEvFair` / `v8_ticketEvOffer` | fair American · ticket American used for that EV |
 | `v8_steam` | compact steam object (`lastHourPct`, `sinceOpenPct`, `tier`, `goldConfirmed`, …) |
 | `v8_steamLastHourPct` / `v8_steamSinceOpenPct` / `v8_steamTier` | flat copies for queries |
-| `v8_ticketTapeLog` | compact lifecycle `[{ at, gate, hoursOut, evPct, fair, offer, lastHourPct, sinceOpenPct, tier }]`. Gates: `first` · `hourly` (≤1/UTC hour) · `t60` · `t15` · `grade`. Cap 24; named gates kept. Tracking only. |
+| `v8_ticketTapeLog` | compact lifecycle `[{ at, gate, hoursOut, evPct, fair, offer, lastHourPct, sinceOpenPct, tier, goldConfirmed?, limitRising? }]`. Gates: `first` · `hourly` (≤1/UTC hour) · `t60` · `t15` · `grade`. Cap 24; named gates kept. `goldConfirmed` / `limitRising` stored only when true. Tracking only. |
 | `v8_skillAgsV12` | AGS v12 score at stamp time |
 | `v8_skillFeatureVersion` | schema version (**16**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
@@ -183,9 +183,13 @@ group by steamOnFirst × steamOnLock
 → W/L, ROI, mean CLV, dEvFirstToLock
 
 evLock quintile → W/L
+
+# Closing Dime gold-card combo (gold steam + Pinnacle limits rising)
+enrichTicketTapeFromSide(side)   // log flags, else freeze v8_steam
+group by steamGoldLockLabel → gold+limits | gold-flat | steam | limits-only | none
 ```
 
-Helper: `analyzeTicketTapeLog(log)` in `src/lib/ticketTapeCapture.js` (also § 5d in `dailyAgsUReport.js`).
+Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLabel` in `src/lib/ticketTapeCapture.js` (also § 5d in `dailyAgsUReport.js`). Write-up: [`CLOSING_DIME_STEAM_EDGE.md`](./CLOSING_DIME_STEAM_EDGE.md).
 
 ---
 
