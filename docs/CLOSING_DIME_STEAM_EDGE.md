@@ -62,6 +62,53 @@ Not one sport and not one night. A/B arriving: MLB 15 (10-5, +51%), WNBA 7 (6-1,
 
 ---
 
+## August book, unit tiers, extra strength signal
+
+Live pull 2026-08-31. These three cells already shipped — they are not a hypothetical filter.
+
+| Book | N | W-L | ROI | PnL |
+|------|--:|:---:|----:|----:|
+| Full August staked | 372 | 198-174 | +4.9% | **+46.8u** |
+| Aug 1–18 (no steam stamps) | 182 | 95-87 | +7.1% | +33.8u |
+| Aug 19–31 tape-log | 187 | 101-86 | +1.9% | +9.2u |
+
+| Cell | Tickets | Share of Aug tickets / units | PnL | Share of **full August** PnL | Aug 19–31 without them |
+|------|--------:|-----------------------------:|----:|-----------------------------:|------------------------|
+| **A/B + arriving** | 24 | 6% / 6% | **+29.0u** | **62%** | 163 · 83-80 · **−4.8%** |
+| steam arriving (any) | 25 | 7% / 6% | +28.0u | 60% | 162 · 83-79 · −4.5% |
+| **A/B + steam at lock** | 45 | 12% / 12% | **+29.6u** | **63%** | 142 · 72-70 · −5.7% |
+
+24 tickets carried **62% of August profit**. Without them the steam-window book is underwater. The extra 21 tickets in “A/B + steam at lock” that were **already on** at first flag are **11-10 · +0.6u** — they add almost no dollars. Same PnL, fatter n, because arriving is doing the work.
+
+### Unit tiers (HIT vs other tickets of the same size)
+
+| Cell | ≤1u | 2–3u | 4u | 5.4u | 6u |
+|------|-----|------|----|------|----|
+| **A/B arriving** | **13 · 9-4 · 69% · +42%** vs rest 1u 42% / −21% | 4 · 3-1 thin | 1 thin | 2 · 1-1 thin | 3 · 3-0 thin |
+| A/B steam at lock | 23 · 13-10 · 57% · +12% vs rest 1u 42% / −20% | 8 · 5-3 · +15% vs +6% | 3 thin | **5 · 4-1 · 80% · +44%** vs rest 5.4u −14% | 4 · 3-1 thin |
+
+Lean vs believed inside arriving: **<4u 17 · 12-5 · 71% · +50%** and **4u+ 7 · 6-1 · 86% · +47%**. Not a 1u trick. The only band with real n for arriving is **≤1u**, and that is exactly where the August 1u book is bad (92 tickets, 46% WR, −12% ROI). Arriving is what separates those 1u tickets.
+
+5.4u arriving is **1-1**. Do not size 5.4u tickets from arriving. A/B + steam at lock is the cell that still holds at 5.4u (5 tickets). Thin, but same direction.
+
+### Counterfactuals (do not ship)
+
+- Floor lean arriving at 4u → steam-window +9u becomes +25u. That is 13 tickets of 9-4 going 1u→4u. Looks pretty, not a sample for a size rule.
+- ×1.25 on the 24 → +9u becomes +16u. Same objection.
+- 0 muted 0u tickets in this window have a tape log, so we cannot count “don’t-cut a mute.” Don’t-cut here means: do not treat the 1u arriving tickets as junk. They already shipped. They went 9-4.
+
+### Extra signal of strength?
+
+**Yes — name arriving. No — do not size. No — do not lean on Gold Steam.**
+
+The Locked card already paints **Steam With Entry** when steam is ON at lock. All 24 arriving tickets would light that. So would the 21 already-on A/B tickets that went **11-10 · +1%**. The chip the card has today **cannot tell the +48% cell from the coin-flip cell.**
+
+Gold Steam is 6 of those 24 (4-2). Not the filter.
+
+Practical paint: a distinct chip when Source A/B is on our side **and** steam turned on after first flag — “Pin moved with us” / “Steam arrived.” That is a strength label on tickets we already staked, especially the 1u ones. It does not change units. It does not replace Sharp Consensus or Steam With Entry; it is the lifecycle bit those two do not capture.
+
+---
+
 ## What they are selling
 
 Two stacked signals on CIN @ CHC **Over 8.5**, 2026-08-30:
