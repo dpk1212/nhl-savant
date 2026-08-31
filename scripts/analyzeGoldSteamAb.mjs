@@ -973,6 +973,30 @@ const recipes = [
     name: 'G. Spine only: arriving OR 2–4.99u (cut 1u and all 5.4u+)',
     pred: (r) => isArr(r) || (r.units >= 1.25 && r.units < 5.4),
   },
+  {
+    name: 'H. Cut ≤1u except arriving + MUTE 4u+ unless A/B steam (fail-open pre-steam)',
+    pred: (r) => {
+      if (isLean(r) && !isArr(r)) return false;
+      if (r.units >= 4 && hasSteam(r) && !isSteamAB(r)) return false;
+      return true;
+    },
+  },
+  {
+    name: 'I. Cut ALL ≤1u + MUTE 4u+ unless A/B steam',
+    pred: (r) => {
+      if (isLean(r)) return false;
+      if (r.units >= 4 && hasSteam(r) && !isSteamAB(r)) return false;
+      return true;
+    },
+  },
+  {
+    name: 'J. Cut ≤1u except arriving + MUTE 4u+ unless A/B arriving',
+    pred: (r) => {
+      if (isLean(r) && !isArr(r)) return false;
+      if (r.units >= 4 && hasSteam(r) && !isArr(r)) return false;
+      return true;
+    },
+  },
 ];
 
 function dayStats(shipped) {
@@ -1023,7 +1047,7 @@ push('-- Recipe C day-by-day (cut junk 1u, keep arriving 1u, mute fat unless A/B
 
 push('');
 push('-- Recipe C vs D vs A on steam-window only (where steam can actually fire) --');
-for (const rec of recipes.filter((x) => x.name.startsWith('A.') || x.name.startsWith('B.') || x.name.startsWith('C.') || x.name.startsWith('D.') || x.name.startsWith('F.'))) {
+for (const rec of recipes.filter((x) => /^(A|B|C|D|F|H|I|J)\./.test(x.name))) {
   const shipped = gateKeep(augLog, rec.pred);
   push(`${rec.name.padEnd(72)} ${fmt(agg(shipped))}`);
 }
@@ -1086,6 +1110,52 @@ push('Recipe C as shipped, then ALSO mute mid without A/B steam (steam-window on
   push(`C (mid untouched)     ${fmt(agg(cOnly))}  daily steam ${dayStats(cOnly).steamAvg.toFixed(1)}`);
   push(`C + mute mid w/o A/B steam  ${fmt(agg(cPlus))}  daily steam ${dayStats(cPlus).steamAvg.toFixed(1)}`);
   push(`C + mute mid w/o arriving   ${fmt(agg(cPlusArr))}  daily steam ${dayStats(cPlusArr).steamAvg.toFixed(1)}`);
+}
+
+push('');
+push('=== 14. Policy: 1u + 4u+ steam, leave 2–3u alone ===');
+push('4u+ = units ≥ 4 (4u, 5u, 5.4u, 6u). 2–3u untouched. Fail-open pre-steam on 4u+.');
+push('');
+
+function is4up(r) { return r.units >= 4; }
+function is23(r) { return r.units >= 1.25 && r.units < 4; }
+const aug4 = augAll.filter(is4up);
+const steam4 = augLog.filter(is4up);
+const pre4 = augPre.filter(is4up);
+const steam23 = augLog.filter(is23);
+
+push(line('August 4u+', aug4));
+push(line('Aug 1–18 4u+ (fail-open)', pre4));
+push(line('Aug 19–31 4u+', steam4));
+push(line('August 2–3u (leave alone)', augAll.filter(is23)));
+push(line('Aug 19–31 2–3u', steam23));
+push('');
+push('Steam-window 4u+ × steam:');
+push(line('4u+ A/B arriving', steam4.filter(isArr)));
+push(line('4u+ A/B steam at lock', steam4.filter(isSteamAB)));
+push(line('4u+ no A/B steam  (would mute)', steam4.filter((r) => !isSteamAB(r))));
+push(line('  of which 4.00–5.39u no A/B steam', steam4.filter((r) => !isSteamAB(r) && r.units < 5.4)));
+push(line('  of which 5.4u+ no A/B steam (already in C)', steam4.filter((r) => !isSteamAB(r) && r.units >= 5.4)));
+push('');
+push('4.00–5.39u steam-window (the EXTRA mute vs recipe C):');
+const extra = steam4.filter((r) => r.units < 5.4);
+push(line('4.00–5.39u all', extra));
+push(line('4.00–5.39u A/B steam', extra.filter(isSteamAB)));
+push(line('4.00–5.39u no A/B steam', extra.filter((r) => !isSteamAB(r))));
+
+push('');
+push('-- Recipe H day-by-day --');
+{
+  const rec = recipes.find((x) => x.name.startsWith('H.'));
+  const shipped = gateKeep(augAll, rec.pred);
+  const d = dayStats(shipped);
+  push(`H SHIP ${fmt(agg(shipped))}  Aug avg ${d.avgAll.toFixed(1)}  steam avg ${d.steamAvg.toFixed(1)}`);
+  for (const date of d.dates) {
+    const dayAll = augAll.filter((r) => r.date === date);
+    const dayShip = d.by.get(date) || [];
+    const mark = date >= STEAM_LIVE ? 'steam' : 'pre  ';
+    push(`${date} ${mark}  actual ${String(dayAll.length).padStart(2)} / ${agg(dayAll).stake.toFixed(1)}u   gated ${String(dayShip.length).padStart(2)} / ${agg(dayShip).stake.toFixed(1)}u  ${dayShip.length ? fmt(agg(dayShip)) : '—'}`);
+  }
 }
 
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
