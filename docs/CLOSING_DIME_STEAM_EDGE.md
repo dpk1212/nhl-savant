@@ -62,6 +62,39 @@ Not one sport and not one night. A/B arriving: MLB 15 (10-5, +51%), WNBA 7 (6-1,
 
 ---
 
+## Only-ship on the steam window (same sizer, rest 0u)
+
+Universe: **187** graded tape-log tickets, 08-19–08-30. Units unchanged. Gate = ship iff the row matches, else 0u.
+
+Today: **187 · 101-86 · 54% · +1.9% · +9.2u**.
+
+| Gate | SHIP | WR | ROI | PnL | Wins kept / cut | Days with a lock |
+|------|------|---:|----:|----:|----------------:|-----------------:|
+| **A/B + arriving** | **24 · 18-6** | **75% (55–88)** | **+48%** | **+29.0u** | 18 / 83 | 11/12 (empty 08-20) |
+| A/B + arriving, keep live Ev-drift | 23 · 18-5 | 78% (58–90) | +63% | **+34.4u** | 18 / 83 | 11/12 |
+| steam arriving (no A/B required) | 25 · 18-7 | 72% | +46% | +28.0u | 18 / 83 | 12/12 |
+| A/B + steam at lock | 45 · 29-16 | 64% (50–77) | +25% | +29.6u | 29 / 72 | 11/12 |
+| any steam at lock | 50 · 31-19 | 62% | +23% | +28.6u | 31 / 70 | 12/12 |
+| gold 4.5%+ | 8 · 6-2 | 75% (41–93) | +69% | +14.7u | 6 / 95 | 7/12 |
+| A/B only (not a steam gate) | 169 · 95-74 | 56% | +7% | +31.3u | 95 / 6 | 12/12 |
+
+Incremental build — this is the cut:
+
+| Step | Add | N | W-L | PnL |
+|------|-----|--:|:---:|----:|
+| **1. CORE** | A/B + arriving | 24 | 18-6 | **+29.0u** |
+| 2 | A/B already-on steam | 21 | 11-10 | **+0.6u** |
+| 3 | steam, no A/B | 5 | 2-3 | **−1.1u** |
+| 4 | gold not already in core | 2 | 2-0 | +5.8u |
+
+**Optimal steam gate: Source A/B CONFIRMED on our side, and steam turns on after we flag.** Same units. Do not widen to “steam at lock” — that is 21 coin-flip tickets for +0.6u. Do not drop A/B — the extra arriving ticket is a loser and is the only thing filling 08-20. Keep the live Ev-drift mute; it would have zeroed the one arriving 5.4u loser (08-25 WNBA Under 167.5) and the core becomes **18-5 · +34u**. Do not add a wider fade cut on arriving (that also kills a win).
+
+This is a **featured slate**, not the current lock list. Users would see **18 wins instead of 101** on this window (~2 locks/day). PnL of the window goes +9u → +29u because we stop shipping the −20u rest, not because we found more winners.
+
+If the product still needs a full slate, do not turn this into a hard gate. Paint arriving; keep shipping the rest. The only volume-friendly cut in this window that is actually +PnL is “require A/B” (drop 18 no-A/B tickets, 6-12 · −42% · −22u) — that is a wallet-tape gate, not a steam gate.
+
+---
+
 ## August book, unit tiers, extra strength signal
 
 Live pull 2026-08-31. These three cells already shipped — they are not a hypothetical filter.
