@@ -137,6 +137,18 @@ function line(label, rows) {
   return `${label.padEnd(42)} ${fmt(agg(rows))}`;
 }
 
+function unitBand(u) {
+  const x = Number(u) || 0;
+  if (x < 1.25) return '≤1u';
+  if (x < 3.5) return '2–3u';
+  if (x < 4.75) return '4u';
+  if (x < 5.35) return '5u';
+  if (x < 5.9) return '5.4u';
+  return '6u';
+}
+
+const UNIT_BANDS = ['≤1u', '2–3u', '4u', '5u', '5.4u', '6u'];
+
 const profilesJson = JSON.parse(readFileSync(join(ROOT, 'data/wallet-profiles.json'), 'utf8'));
 const profiles = profilesJson.profiles || profilesJson;
 
@@ -165,7 +177,7 @@ for (const { mkt, docs } of packs) {
       const lock = sd.lock || {};
       const peak = sd.peak || lock;
       const units = sd.finalUnits ?? sd.v8_agsUnitsApplied ?? peak.units ?? lock.units ?? 0;
-      if (!(units > 0) || res.tracked === true) continue;
+      if (res.tracked === true) continue;
       const odds = peak.odds || lock.odds || 0;
       const computedProfit = won
         ? (odds < 0 ? units * (100 / Math.abs(odds)) : units * (odds / 100))
@@ -244,9 +256,18 @@ for (const { mkt, docs } of packs) {
         net: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
         hcConfFor: Number(sd.v8_hcConfFor) || 0,
         provenFor: Number(sd.v8_agsProvenForCount) || 0,
+        mutedBy: sd.mutedBy || null,
+        staked: units > 0,
       });
     }
   }
+}
+
+const muted = rows.filter((r) => !r.staked);
+{
+  const stakedOnly = rows.filter((r) => r.staked);
+  rows.length = 0;
+  rows.push(...stakedOnly);
 }
 
 const withLog = rows.filter((r) => r.hasLog);
@@ -255,7 +276,7 @@ const out = [];
 const push = (s = '') => { out.push(s); console.log(s); };
 
 push(`Gold steam × Source A/B  ·  ${new Date().toISOString()}`);
-push(`Graded staked AGSU sides: ${rows.length}  ·  with tape log: ${withLog.length}`);
+push(`Graded staked AGSU sides: ${rows.length}  ·  with tape log: ${withLog.length}  ·  muted 0u graded: ${muted.length}`);
 push('');
 push('Format: N  W-L  WR (95% Wilson)  stake  PnL  ROI');
 push('');
@@ -521,8 +542,164 @@ for (const s of sports) {
 push('');
 push('A/B + arriving tickets:');
 for (const r of abArrAll.sort((a, b) => String(a.date).localeCompare(b.date))) {
-  push(`  ${r.date} ${r.sport} ${r.mkt} ${r.team}  ${r.won ? 'W' : 'L'}  ${r.units}u  ev=${r.ev ?? '—'}  dEv=${r.dEv ?? '—'}  lh=${r.lastHourLock ?? '—'}`);
+  push(`  ${r.date} ${r.sport} ${r.mkt} ${r.team}  ${r.won ? 'W' : 'L'}  ${r.units}u  ${unitBand(r.units)}  path${r.path}  ev=${r.ev ?? '—'}  dEv=${r.dEv ?? '—'}  lh=${r.lastHourLock ?? '—'}`);
 }
+
+push('');
+push('=== 9. Top 3 steam cells on the AUGUST book + unit tiers ===');
+push('These tickets already shipped. Question is how much of August they carried, and whether that split is a 1u trick or holds at 4u / 5.4u / 6u.');
+push('');
+
+const augAll = rows.filter((r) => r.date >= '2026-08-01' && r.date <= '2026-08-31');
+const augPre = augAll.filter((r) => r.date < STEAM_LIVE);
+const augSteam = augAll.filter((r) => r.date >= STEAM_LIVE);
+const augLog = augSteam.filter((r) => r.hasLog);
+
+push(line('August staked (all)', augAll));
+push(line('Aug 1–18 (no steam stamps)', augPre));
+push(line('Aug 19–31 staked', augSteam));
+push(line('Aug 19–31 tape-log', augLog));
+push('');
+
+const top3 = [
+  { name: 'A/B + arriving', pred: (r) => r.sharpAB && r.steamArriving },
+  { name: 'steam arriving (any)', pred: (r) => r.steamArriving },
+  { name: 'A/B + steam at lock', pred: (r) => r.sharpAB && r.steamOn },
+];
+
+function shareLine(label, hit, book) {
+  const h = agg(hit);
+  const b = agg(book);
+  const rest = agg(book.filter((r) => !hit.includes(r)));
+  const nPct = b.n ? (100 * h.n / b.n).toFixed(0) : '—';
+  const uPct = b.stake ? (100 * h.stake / b.stake).toFixed(0) : '—';
+  const pnlPct = (b.pnl && Math.abs(b.pnl) > 0.01) ? (100 * h.pnl / b.pnl).toFixed(0) : '—';
+  push(`${label}`);
+  push(`  HIT  ${fmt(h)}  · ${nPct}% of tickets · ${uPct}% of units · ${pnlPct}% of book PnL`);
+  push(`  REST ${fmt(rest)}`);
+  return { hit: h, rest, book: b };
+}
+
+push('-- Contribution to August (already on the book) --');
+push('Tape-log window is the only place these cells exist. Full August includes 08-01–18 with no steam tag.');
+for (const cell of top3) {
+  const hitLog = augLog.filter(cell.pred);
+  shareLine(`${cell.name} vs Aug 19–31 tape-log`, hitLog, augLog);
+}
+push('');
+push('Same cells vs FULL August staked book (pre-steam days sit in REST):');
+for (const cell of top3) {
+  const hit = augAll.filter((r) => r.hasLog && cell.pred(r));
+  shareLine(`${cell.name} vs full August`, hit, augAll);
+}
+
+push('');
+push('-- Unit-tier hold-up (Aug 19–31 tape-log). HIT vs other tickets in the SAME size band --');
+function unitHold(name, pred, pool) {
+  push(`${name}`);
+  const rowsOut = [];
+  for (const band of UNIT_BANDS) {
+    const inBand = pool.filter((r) => unitBand(r.units) === band);
+    if (!inBand.length) continue;
+    const hit = inBand.filter(pred);
+    const rest = inBand.filter((r) => !pred(r));
+    const h = agg(hit);
+    const o = agg(rest);
+    const b = agg(inBand);
+    let note = '—';
+    if (!h.n) note = 'none in band';
+    else if (h.n < 5) note = 'thin';
+    else if (h.wrPct > o.wrPct && h.roi > o.roi) note = 'HOLDS vs same-size rest';
+    else if (h.wrPct > o.wrPct) note = 'WR up, ROI not';
+    else note = 'does not beat same-size rest';
+    push(`  ${band.padEnd(8)} book ${fmt(b)}`);
+    push(`           HIT  ${fmt(h)} | ${note}`);
+    if (o.n) push(`           REST ${fmt(o)}`);
+    rowsOut.push({ band, hit: h, rest: o, book: b, note });
+  }
+  return rowsOut;
+}
+const unitHoldRows = {};
+for (const cell of top3) {
+  unitHoldRows[cell.name] = unitHold(cell.name, cell.pred, augLog);
+  push('');
+}
+
+push('-- Fat vs lean inside A/B + arriving --');
+const abArr = augLog.filter((r) => r.sharpAB && r.steamArriving);
+const lean = abArr.filter((r) => r.units < 4);
+const fat = abArr.filter((r) => r.units >= 4);
+push(line('A/B arriving <4u (lean)', lean));
+push(line('A/B arriving 4u+ (believed)', fat));
+push(line('A/B arriving 5.4u+', abArr.filter((r) => r.units >= 5.4)));
+push('');
+push('Path mix on A/B arriving:');
+for (const p of ['A', 'B', 'C', 'D', 'E', '?']) {
+  const sub = abArr.filter((r) => r.path === p);
+  if (sub.length) push(line(`path ${p}`, sub));
+}
+
+push('');
+push('-- Counterfactuals (do not ship). Linear rescale of actual profit. --');
+function rescale(r, newU) {
+  const old = Number(r.units) || 0;
+  if (!(old > 0)) return 0;
+  return (Number(r.profit) || 0) * (newU / old);
+}
+function cfBook(label, pool, mapper) {
+  const cloned = pool.map(mapper);
+  push(`${label.padEnd(52)} ${fmt(agg(cloned))}`);
+}
+const augLogPnl = agg(augLog);
+push(`actual Aug 19–31 tape-log                         ${fmt(augLogPnl)}`);
+cfBook('if A/B arriving never shipped (0u those 24)', augLog, (r) => (
+  (r.sharpAB && r.steamArriving) ? { ...r, units: 0, profit: 0, won: null } : r
+));
+cfBook('if A/B arriving floored at 4u (lean only)', augLog, (r) => {
+  if (!(r.sharpAB && r.steamArriving) || r.units >= 4) return r;
+  const u = 4;
+  return { ...r, units: u, profit: rescale(r, u) };
+});
+cfBook('if A/B arriving ×1.25 (all 24)', augLog, (r) => {
+  if (!(r.sharpAB && r.steamArriving)) return r;
+  const u = +(r.units * 1.25).toFixed(2);
+  return { ...r, units: u, profit: rescale(r, u) };
+});
+cfBook('if A/B steam-at-lock ×1.25 (the 45)', augLog, (r) => {
+  if (!(r.sharpAB && r.steamOn)) return r;
+  const u = +(r.units * 1.25).toFixed(2);
+  return { ...r, units: u, profit: rescale(r, u) };
+});
+
+push('');
+push('-- 0u mutes that WOULD have been these cells (don’t-cut evidence) --');
+const mutedLog = muted.filter((r) => r.date >= STEAM_LIVE && r.hasLog);
+push(`muted 0u graded with tape log since 08-19: ${mutedLog.length}`);
+for (const cell of top3) {
+  const hit = mutedLog.filter(cell.pred);
+  const a = agg(hit.map((r) => {
+    const u = 1;
+    const odds = r.odds || 0;
+    const profit = r.won === 1
+      ? (odds < 0 ? u * (100 / Math.abs(odds)) : u * (odds / 100))
+      : -u;
+    return { ...r, units: u, profit };
+  }));
+  const by = {};
+  for (const r of hit) {
+    const k = r.mutedBy || r.tapeAction || 'unknown';
+    by[k] = (by[k] || 0) + 1;
+  }
+  push(`${cell.name} muted  ${hit.length}  cf-1u ${fmt(a)}  mutedBy=${JSON.stringify(by)}`);
+}
+
+push('');
+push('-- Card already paints steam-ON, not arriving. Overlap --');
+push(line('A/B arriving AND steamOn (card Steam With Entry analog)', abArr.filter((r) => r.steamOn)));
+push(line('A/B steam-at-lock minus arriving (already-on)', augLog.filter((r) => r.sharpAB && r.steamOn && !r.steamArriving)));
+push(line('A/B arriving that is gold', abArr.filter((r) => r.gold)));
+push('Steam With Entry on the Locked card fires when steam is ON at lock (3%+). That covers A/B + steam at lock.');
+push('Arriving (off→on) is a lifecycle flag the card does not currently name. Gold Steam is n=2.');
 
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 const payload = {
@@ -530,7 +707,7 @@ const payload = {
   nRows: rows.length,
   nWithLog: withLog.length,
   nJuly: jul.length,
-  nJulyLog: jul.filter((r) => r.hasLog).length,
+  nMutedLog: muted.filter((r) => r.hasLog).length,
   steamLiveFrom: STEAM_LIVE,
   cells: {
     withLog: agg(withLog),
