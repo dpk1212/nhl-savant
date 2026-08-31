@@ -95,6 +95,38 @@ If the product still needs a full slate, do not turn this into a hard gate. Pain
 
 ---
 
+## Can steam size the book?
+
+Same 187 tickets, units change only. Early vs late, no retune.
+
+**A little, as a BOOST permission — not as a new ladder.**
+
+Size **up** A/B arriving (everyone else unchanged):
+
+| Overlay | ΔPnL | Δstake | Early / late |
+|---------|-----:|-------:|--------------|
+| Floor arriving &lt;2u → 2u | **+4.3u** | +13.5u | +1.7 / +2.6 **HOLDS** |
+| Arriving ×1.25 | +7.2u | +15.1u | +4.8 / +2.4 **HOLDS** |
+| Lean arriving +1u | +6.8u | +17.0u | +2.8 / +4.0 **HOLDS** |
+| Floor arriving &lt;4u → 4u | +15.8u | +45.5u | holds on paper, **13 tickets of 9-4** |
+
+The 13 ≤1u arriving tickets were native 1u (`tape=HOLD`, preTape=1), not leftover cuts. They went **9-4 · +42%** vs the rest of 1u **33-46 · −21%**. A 2u floor is the only bump with both a hold-up and a sane jump. 1u→4u is not a size rule.
+
+Size **down** fat tickets without steam:
+
+| Overlay | ΔPnL | Δstake | Early / late |
+|---------|-----:|-------:|--------------|
+| Unboost tape BOOST unless **A/B + steam at lock** | **+5.8u** | **−37u** | +2.0 / +3.8 **HOLDS** |
+| Cap 5.4u+ at 4u unless A/B steam at lock | +3.1u | −41u | HOLDS |
+
+Tape BOOST with no A/B steam: **29 · 17-12 · −9.5% · −14.5u**. 5.4u+ with A/B steam at lock: **9 · 7-2 · +34%**. 5.4u+ without it: **28 · 16-12 · −8.9%**.
+
+Combo (floor arriving at 2u **and** unboost BOOST without A/B steam): steam-window **+9.2u → +19.3u**, stake **476u → 453u**, both halves. That is the sizing shape that matches the fetch: tape still dials, steam says whether the ×1.35 is earned, and 1u arriving can take a 2u floor.
+
+Do **not**: replace the sizer, size gold, or add more units to tickets that are already 5.4u/6u arriving (one of those five is the 5.4u Under 167.5 loser).
+
+---
+
 ## August book, unit tiers, extra strength signal
 
 Live pull 2026-08-31. These three cells already shipped — they are not a hypothetical filter.
