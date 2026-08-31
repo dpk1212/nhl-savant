@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/31 | Hero August MTD | 1u lost 20u · 5u+ 56-22 +65.6u · 53% is the disguise · September loading | **S + C** | none | **Staged** |
+| 8/31 | Hero August MTD | +46.8u · almost 3× July · 5u+ 56-22 +65.6u · ladder · September loading | **S + C** | none | **Staged** |
 | 8/30 late | Hero Cubs | $120K at 2× · +$545K · proven 97% vs losers 83% · −1.5 +138 steam · too hard to pass up | **S + C** | none | Staged |
 | 8/30 night | QT Under 7.5 grade | −30u worst day → two 10+ · +112.91u · picked up / 7–0 cashed | **P + C** | none | Staged |
 | 8/30 | Hero Under 7.5 mix | 3-1 +4u → $6K sized-up Under by line 3 · loser $2.1K · Pin 1875→7500 | **S + C** | none | Staged |
@@ -26,12 +26,12 @@
 ---
 
 ## Angle lock
-**S + C:** August so far (8/01–8/30) printed because we sized up. 5u+ **56-22 / +65.6u**. 1u **76-92 / −20.3u**. Book **+46.8u** on 53.2% (~2.75× July +17.0u). NFL on the board (preseason −0.42u — don’t flex) · CFB locks soon · “Big September is loading.” No ask.
+**S + C:** August so far (8/01–8/30) printed because we sized up. Open on the **month printer** (`+46.8u` / almost 3× July) — not the 1u leak. 5u+ **56-22 / +65.6u**. Ladder holds the 1u scar. NFL on the board (preseason −0.42u — don’t flex) · CFB locks soon · “Big September is loading.” No ask.
 
 ---
 
 ## Themes spent / open
-**Spent this beat:** August MTD · unit-tier ladder · 1u leak vs 5u+ printer · 53% disguise · almost-3× July · NFL/CFB September plant  
+**Spent this beat:** August MTD · **+46.8u / almost 3× July open** (killed 1u-loss hook) · 5u+ 56-22 +65.6u · unit ladder · NFL/CFB September plant  
 **Still open:** Cubs grade (if not posted) · onboarding FAQ · folder dream · bounce recap (don’t rerun) · soft ask (now warm-hot)
 
 ---
@@ -55,7 +55,7 @@
 ## Agent close-out
 - [x] Full Hormozi pathway (WHO · PURPOSE · ONE · 1–2 SPCL) — **not** Coach/Researcher
 - [x] Timeline + continuity read this run
-- [x] Hook QA — 1u vs 5u+ units in 3 lines · Dale spine kept
+- [x] Hook QA — killed 1u-loss open (Dale: miserable) · month printer in 2 lines
 - [x] Unit ladder whole truth · NFL PnL not flexed
 - [x] Live Firestore receipts 2026-08-31T15:32Z
 - [x] No ask

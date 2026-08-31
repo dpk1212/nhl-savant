@@ -54,20 +54,23 @@ August printed because we sized up: **5u+ went 56-22 for +65.6u**. The 1u book l
 - Kill / don’t use in hero: all-time +113.61u · MLB/UFC/WNBA split · WNBA −15.41u as a second leak · display labels MAX/TOP/SHARP/AGS · V12 · −76u valley rerun · 8/31 (not graded yet)
 
 ### 6 · HOOK QA
-```
-1u TICKETS LOST 20u IN AUGUST.
+**Killed (Dale 8/31):** `1u TICKETS LOST 20u IN AUGUST.` — miserable. Leak-first confession on a **great month** give. Old Coach scar-open, not Hormozi. Whole truth stays in the ladder, not line 1.
 
-5u+ went 56-22.
-+65.6u.
+**Also killed:** `5u+ IN AUGUST:` — category furniture. Timeline winners open on the **number**, not the bucket label (`+$14K THIS MONTH` · `+42.06u OVER THE LAST 30 DAYS` · `$249,100. IT CASHED.`).
+
 ```
-- Screenshot: S (1u vs 5u+) + C (units / W-L) in 3 lines ✓
-- What / how / so what: junk leaked → sized printed → that’s the month ✓
-- Not soft diary ✓
-- Silhouette: “Looks even. It isn’t.” applied to 53% vs the ladder — not an empty clone of Sox/Cubs $ ✓
-- Kill: promo · ask · sport menu · ATH valley · system-label leak
++46.8u IN AUGUST.
+ALMOST 3× JULY.
+```
+- Screenshot: S/C in 2 lines — month units + vs-July contrast ✓
+- What / how / so what: crushed July → 5u+ 56-22 is how → ladder is the proof ✓
+- Not soft diary · not a loss ledger ✓
+- Silhouette: month-$ open (window #6 / #9) applied to OUR book, not a wallet L30 clone ✓
+- Dale spine: great month first · unit tiers as stuff · September last ✓
+- Kill: promo · ask · 1u-loss open · sport menu · ATH valley · AGS labels
 
 ### 7–8 · Algorithm
-Delete sport-by-sport · delete all-time · delete 5u / 5.4u / 6u as three competing flexes (combine to 5u+) · dinner-table Dale · his September line once · no ask
+Delete leak-first open · delete “we sized up when…” slogan (the 56-22 line is that) · delete sport-by-sport · delete all-time · combine 5u/5.4u/6u → 5u+ · his September line once · no ask
 
 ---
 
@@ -78,19 +81,13 @@ Delete sport-by-sport · delete all-time · delete 5u / 5.4u / 6u as three compe
 ### Copy this ↓
 
 ```
-1u TICKETS LOST 20u IN AUGUST.
++46.8u IN AUGUST.
+ALMOST 3× JULY.
 
-5u+ went 56-22.
-+65.6u.
+56-22 ON EVERYTHING WE SIZED TO 5u+.
++$65.6u.
 
-Win rate on the month: 53%.
-Looks mid. It isn’t.
-
-+46.8u on the book.
-Almost 3× July.
-
-We sized up when the sharps
-we track were actually confident.
+Win rate was 53%.
 
 1u · 76-92 · −20.3u
 2–3u · 47-47 · −6.6u
@@ -111,17 +108,16 @@ If you screenshot the month, lead with the **unit ladder** (1u vs 5u+), not a sp
 
 ---
 
-## Open alt (only if you want flex-first instead of leak-first)
+## Open alt (filter-first — if you want the 5u+ printer as line 1)
 
 ```
-5u+ IN AUGUST:
++$65.6u.
 56-22.
-+65.6u.
 
-The 1u tickets lost 20u.
+EVERY TICKET WE SIZED TO 5u+ THIS MONTH.
 
-That’s why a 53% month
-is still +46.8u —
+That’s how August does +46.8u
+on a 53% win rate —
 almost 3× July.
 
 1u · 76-92 · −20.3u
@@ -129,8 +125,8 @@ almost 3× July.
 4u · 19-13 · +8.1u
 5u+ · 56-22 · +65.6u
 
-NFL’s on the board.
-CFB locks soon.
+NFL’s on the board now.
+College football starts locking soon.
 
 Big September is loading.
 ```
