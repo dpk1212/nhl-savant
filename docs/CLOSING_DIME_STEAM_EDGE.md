@@ -1,10 +1,33 @@
 # Closing Dime gold card — do we have this edge?
 
-_Status: research · 2026-08-31 · tracking only, do not size yet_  
+_Status: verified on live book 2026-08-31 · tracking only, do not size yet_  
 _Tweet: [Closing Dime · CIN @ CHC Over 8.5](https://x.com/closingdime/status/2094044189302411580)_  
-_Code: `src/lib/steamMove.js` · `src/lib/ticketTapeCapture.js` · daily § 5d_
+_Code: `src/lib/steamMove.js` · `src/lib/ticketTapeCapture.js` · `scripts/analyzeGoldSteamAb.mjs` · daily § 5d_
 
-**Short answer:** Yes, there is something here, and we already collect the same two signals. On **our** booked plays the analog prints. We should not copy their product (Novig vs Pinnacle shop). We should measure gold+limits as its own slice, then decide whether to size.
+## Verdict
+
+**Their exact gold card (4.5%+ Pin steam AND limits exploding) is not verified on our plays.** We have **2** graded tickets. Both won. That is not a sample.
+
+**A nearby signal is worth exploring:** steam that **turns on after we flag** (off→on), especially when a **Source A or B CONFIRMED** wallet is already on that side.
+
+Live book 2026-08-31 (Firestore, AGSU staked + graded, tape log n=187):
+
+| Cell | N | W-L | WR (95% Wilson) | ROI |
+|------|--:|:---:|----------------:|----:|
+| Tape-log book | 187 | 101-86 | 54% (47–61) | +1.9% |
+| gold+limits (their card) | 2 | 2-0 | 100% (34–100) | +60% |
+| any gold (4.5%+ steam) | 8 | 6-2 | 75% (41–93) | +69% |
+| **steam arriving off→on** | **25** | **18-7** | **72% (52–86)** | **+46%** |
+| no steam at lock | 137 | 70-67 | 51% (43–59) | −5.5% |
+| EV 0–2% (their ~1.7% analog) | 44 | 26-18 | 59% (44–72) | +19% |
+| **A/B + steam at lock** | **45** | **29-16** | **64% (50–77)** | **+25%** |
+| A/B + no steam | 124 | 66-58 | 53% (44–62) | +0.5% |
+| **A/B + steam arriving** | **24** | **18-6** | **75% (55–88)** | **+48%** |
+| steam at lock, no A/B | 5 | 2-3 | 40% (12–77) | −13% |
+
+Wilson lower bound on gold (n=8) is 41% — coin flip is still in the interval. Steam arriving (n=25) and A/B+steam (n=45) are the first cells whose lower bound sits at or above 50% with material ROI. That is “explore more,” not “size on it.”
+
+Almost every gold ticket already has a Source A/B CONFIRMED on our side (7 of 8). We cannot claim gold-without-sharps vs gold-with-sharps. The testable combo is **wallet tape plus steam**, not gold instead of wallets.
 
 ---
 
@@ -12,7 +35,7 @@ _Code: `src/lib/steamMove.js` · `src/lib/ticketTapeCapture.js` · daily § 5d_
 
 Two stacked signals on CIN @ CHC **Over 8.5**, 2026-08-30:
 
-1. **Soft-book lag.** Novig still **−133** (57.1%) while Pinnacle no-vig fair is **−138** (58.0%) → they paint **~1.7% EV**.
+1. **Soft-book lag.** Novig **−133** (57.1%) while Pinnacle no-vig fair is **−138** (58.0%) → they paint **~1.7% EV**.
 2. **Sharp-book confirmation.** Pinnacle Over shortens ~**−118/−122 → ~−150** in the last hour **and** the limit jumps **~$1k → ~$4k**. Price + limit together = the gold card.
 
 Their 1.7% is **dollar EV on the stake** (`p × profit − (1−p) × risk`). Our card EV is a **probability-point gap** (`(p_fair − p_offer) × 100`). Same ticket is ~**0.9pp** on our scale, ~**1.6%** on theirs. Their gold card lands in our **0–2% EV** bucket, not our 4%+ bucket.
@@ -39,59 +62,57 @@ What we bet is **Polymarket**, not Novig. EV here is “did we get a better numb
 
 ---
 
-## What our booked plays already say
+## Gold × Source A/B on the same side
 
-`DAILY_AGSU_REPORT.md` § 5d, generated 2026-08-30 on `main`. Window: **981** staked · **186** with log · **168** graded with log.
+Source A = featured-pick book (`whitelistSource` contains A). Source B = on-chain positions (contains B). CONFIRMED only.
 
-### Steam on at first vs lock
+Gold itself is rare (8 tickets). 7 of those 8 already have A **and** B on FOR. The one gold+limits without A/B is Washington Mystics ML (Path B RANK, 3u, won).
 
-| Path | N | W-L | WR | ROI | mean ΔEV |
-|------|--:|:---:|---:|----:|---------:|
-| on→on | 22 | 12-10 | 54.5% | **+6.1%** | −0.7 |
-| on→off | 9 | 3-6 | 33.3% | **−47.4%** | −3.0 |
-| **off→on** | 23 | 16-7 | **69.6%** | **+41.4%** | **+3.2** |
-| off→off | 114 | 59-55 | 51.8% | −3.9% | −0.7 |
+The split that has sample:
 
-Steam **arriving** after we flagged (off→on) is the monster. Steam **dying** (on→off) is toxic. Steam that stays on is modestly fine. The majority of the book never sees steam and is slightly negative.
+- A/B tickets **with** steam at lock: **+25% ROI** (45, 29-16)
+- A/B tickets **without** steam: **+0.5% ROI** (124, 66-58)
+- Steam **without** an A/B CONFIRMED: **−13% ROI** (5, 2-3)
 
-### EV at lock (our Novig-vs-Pin analog)
+Steam arriving on a Source B side is the same 24-ticket +48% cell (every arriving A/B ticket in this window had Source B). Source A is 19 of those 24.
 
-| EV@t15 | N | W-L | WR | ROI |
-|--------|--:|:---:|---:|----:|
-| **&lt;0** | 105 | 51-54 | 48.6% | **−5.9%** |
-| **0–2** | 40 | 24-16 | 60.0% | **+22.2%** |
-| **2–4** | 9 | 7-2 | 77.8% | **+22.1%** |
-| **4+** | 14 | 8-6 | 57.1% | **−10.9%** |
+All 8 gold tickets (2026-08-31 pull):
 
-The 0–2% bucket **is** their ~1.7% gold-card analog, and it prints. 2–4% also prints (small N). **4%+ is not a gold mine** — alt-line mismatch or a trap number is the live hypothesis. Most of the book is still **negative-EV vs Pin**; wallet flow is the engine, Pin EV is confirmation.
+| Date | Play | Result | Gold | Path | A/B | EV |
+|------|------|--------|------|------|-----|---:|
+| 08-19 | Athletics ML | L 1u | gold-flat | ? | 1/2 | 6.6 |
+| 08-22 | Ravens ML | W 1u | gold-flat | ? | 1/1 | 0 |
+| 08-22 | Cowboys ML | W 5.4u | gold-flat | C | 1/1 | −2.3 |
+| 08-23 | Tempo −spread | W 5.4u | gold-flat | C | 2/2 | −1 |
+| 08-26 | Under 8.5 | W 1u | **gold+limits** | A | 1/1 | 2.1 |
+| 08-27 | Mystics ML | W 3u | **gold+limits** | B | 0/0 | 3.1 |
+| 08-28 | Falcons ML | W 4u | gold-flat | C | 2/1 | 3.2 |
+| 08-29 | Under 7.5 | L 0.5u | gold-flat | C | 3/4 | 6.3 |
 
-### Gap this report did not have
+Two gold losers were the high-EV (6%+) tickets — same warning as the 4%+ EV bucket.
 
-§ 5d grouped steam on/off and EV buckets. It did **not** split `goldConfirmed` vs gold-without-limits vs steam-only. The freeze scalar `v8_steam.goldConfirmed` exists on picks; the compact log dropped the flags. Next daily report run fills **Gold steam + rising limits** using freeze `v8_steam` (historical) plus log flags (new rows).
+---
+
+## What our booked plays already said (daily § 5d, 2026-08-30)
+
+`DAILY_AGSU_REPORT.md` § 5d on `main`. Window then: **981** staked · **186** with log · **168** graded with log. Live pull above is 187 graded with log (one day later). Same shape: off→on is the monster, negative EV is the majority of the book.
 
 ---
 
 ## Brainstorm — what to do with it
 
-Keep this tracking. Do not ship a sizer from n=23 / n=9.
+Keep this tracking. Do not ship a sizer from n=8 gold or n=2 gold+limits.
 
-1. **Read the next § 5d gold+limits table.** That is the actual Closing Dime combo on *our* tickets. If gold+limits ≫ steam-only, paint it louder and consider a hold/boost overlay. If it does not separate, the 0–2% EV bucket is the usable piece and gold is theater.
-
-2. **Steam-off is a mute candidate, not a law.** on→off is −47% on **9** tickets. Ev-drift × EDGE mute (`dEv≤−1.5` and `currentEv&lt;−1` and `EDGE≥15`) already covers the ugly cousin. Wait for more N before a dedicated steam-off mute.
-
-3. **Steam-on (off→on) is a don’t-cut candidate.** +41% on 23 is the best cell in the lifecycle table. Natural join: proven-$ size-up **and** steam arriving **and** EV 0–4%. Unique to us — they do not have wallet tape.
-
-4. **Do not chase 4%+ EV.** It lost money in this sample. Prefer 0–4% vs Pin fair.
-
-5. **Do not become a Novig shopper.** Different product, different bankroll, different CLV. Only add sportsbook routing if we actually want to bet those numbers. Polymarket + Pin fair is the analog we can measure.
-
-6. **NFL / CFB is where $1k→$4k will fire.** Pin totals/MLs start tiny; goldConfirmed events should cluster as those books open. Sport-unlock caps still 1u CFB / 2u NFL until the CONFIRMED pool deepens. Measure there first; do not override the cap because a gold card looked pretty.
-
-7. **Same-game honesty.** Closing Dime Over 8.5 cashed. Our Cubs ML / −1.5 / Under 8.5 lost. Steam with the Over was a veto we did not take. A “steam against the ticket” flag on totals vs our ML/spread is worth a column in the next report, not a tweet.
+1. **Explore steam-arriving on A/B sides.** Best powered cell. Candidate overlay: don’t-cut / hold size when Path A/B/C already staked and steam flips on. Still wait for n≈50 before a mute/boost rule.
+2. **Do not treat gold+limits as a standalone strategy yet.** n=2. Let § 5d fill.
+3. **Steam without an A/B CONFIRMED is not our game.** n=5 and it lost. We are not Closing Dime; we need the wallet.
+4. **Do not chase 4%+ / 6%+ card EV.** Two gold losers sat there. Prefer 0–4% vs Pin fair.
+5. **Do not become a Novig shopper.**
+6. **NFL / CFB is where $1k→$4k gold+limits should cluster** as Pin limits open. Sport-unlock caps stay 1u / 2u.
 
 ---
 
-## Detector check (this PR)
+## Detector check
 
 Reconstructed CIN @ CHC Over 8.5 at Pin **−118 → −150**, limits **$1,000 → $4,000**:
 
@@ -99,4 +120,4 @@ Reconstructed CIN @ CHC Over 8.5 at Pin **−118 → −150**, limits **$1,000 �
 - limits +$3,000 and ×4 → `limitRising`
 - both → `goldConfirmed`
 
-Under on the same line is **not** goldConfirmed (steamed-against). Tests: `tests/testSteamMove.mjs`, `tests/testTicketTapeCapture.mjs`.
+Under on the same line is **not** goldConfirmed (steamed-against). Tests: `tests/testSteamMove.mjs`, `tests/testTicketTapeCapture.mjs`. Re-run: `node scripts/analyzeGoldSteamAb.mjs`.

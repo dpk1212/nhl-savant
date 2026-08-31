@@ -3876,6 +3876,28 @@ function tapeAgg(rows) {
   return { n, w, l, stake, pnl, roi: stake > 0 ? (pnl / stake) * 100 : null };
 }
 
+function forSideHasConfirmedAB(r, walletProfiles) {
+  const empty = { a: false, b: false, any: false };
+  if (!r || !walletProfiles) return empty;
+  const wd = Array.isArray(r.walletDetails) ? r.walletDetails : [];
+  const seen = new Set();
+  let a = false;
+  let b = false;
+  for (const w of wd) {
+    if (!w || w.side !== r.sideKey) continue;
+    const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    const prof = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
+    const rec = prof?.bySport?.[r.sport];
+    if (String(rec?.whitelistTier || '').toUpperCase() !== 'CONFIRMED') continue;
+    const src = String(rec?.whitelistSource || '').toUpperCase();
+    if (src.includes('A')) a = true;
+    if (src.includes('B')) b = true;
+  }
+  return { a, b, any: a || b };
+}
+
 function tapeFieldsFromSide(sd) {
   const en = enrichTicketTapeFromSide(sd);
   return {
@@ -3903,7 +3925,7 @@ function evLockBucket(ev) {
   return '4+';
 }
 
-function buildTicketTapeLifecycle(report, stats) {
+function buildTicketTapeLifecycle(report, stats, walletProfiles = null) {
   report.push(`### 5d — Ticket EV / steam lifecycle (tracking only)`);
   report.push('');
   report.push(`\`v8_ticketTapeLog\` keeps **first / hourly / T-60 / T-15 / grade** samples of card EV and Pinnacle steam. Scalars still freeze at T-15; the log is the path. Does **not** size units. Gold + rising limits (Closing Dime combo) uses log flags when present, else freeze \`v8_steam\`. See \`docs/SKILL_FEATURES.md\` and \`docs/CLOSING_DIME_STEAM_EDGE.md\`.`);
@@ -3985,6 +4007,41 @@ function buildTicketTapeLifecycle(report, stats) {
     );
   }
   report.push('');
+
+  report.push(`#### Steam × Source A/B CONFIRMED on the same side`);
+  report.push('');
+  report.push(`CONFIRMED wallet on FOR with \`whitelistSource\` A (featured) and/or B (on-chain). Uses current profiles (same mild look-ahead as § 5a RANK). Tracking only.`);
+  report.push('');
+  if (!walletProfiles || !walletProfiles.size) {
+    report.push(`_Wallet profiles unavailable — A/B cross skipped._`);
+    report.push('');
+  } else {
+    const tagged = graded.map((r) => ({ r, ab: forSideHasConfirmedAB(r, walletProfiles) }));
+    const steamOn = (r) => !!r.ticketTape?.steamOnLock;
+    const arriving = (r) => steamPathLabel(r.ticketTape) === 'off→on';
+    const goldish = (r) => {
+      const k = r.steamGoldLock || steamGoldLockLabel(r.ticketTape, r.steam);
+      return k === 'gold+limits' || k === 'gold-flat';
+    };
+    report.push(`| Cell | N | W-L | Win % | Stake | PnL (u) | ROI |`);
+    report.push(`|------|--:|:---:|------:|------:|--------:|----:|`);
+    const abCells = [
+      ['A/B + steam at lock', tagged.filter((x) => x.ab.any && steamOn(x.r)).map((x) => x.r)],
+      ['A/B + no steam', tagged.filter((x) => x.ab.any && !steamOn(x.r)).map((x) => x.r)],
+      ['A/B + steam arriving', tagged.filter((x) => x.ab.any && arriving(x.r)).map((x) => x.r)],
+      ['A/B + gold', tagged.filter((x) => x.ab.any && goldish(x.r)).map((x) => x.r)],
+      ['steam at lock, no A/B', tagged.filter((x) => !x.ab.any && steamOn(x.r)).map((x) => x.r)],
+      ['Source B + steam arriving', tagged.filter((x) => x.ab.b && arriving(x.r)).map((x) => x.r)],
+    ];
+    for (const [label, rows] of abCells) {
+      if (!rows.length) continue;
+      const a = tapeAgg(rows);
+      report.push(
+        `| ${label} | ${a.n} | ${a.w}-${a.l} | ${a.n ? ((100 * a.w / a.n).toFixed(1) + '%') : '—'} | ${a.stake.toFixed(2)}u | ${fmtSigned(a.pnl)}u | ${a.roi != null ? ((a.roi >= 0 ? '+' : '') + a.roi.toFixed(1) + '%') : '—'} |`,
+      );
+    }
+    report.push('');
+  }
 }
 
 function buildV12TapeSizing(report, stats) {
@@ -5981,7 +6038,7 @@ async function main() {
   await buildV12QConvMute(report, v12Stats);
   await buildSkillBandWindows(report, allRows);
   buildV12SideProfileAnalysis(report, v12Stats);
-  buildTicketTapeLifecycle(report, v12Stats);
+  buildTicketTapeLifecycle(report, v12Stats, walletProfiles);
   buildV12SportMarketAnalysis(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);
   buildV12RecentLivePicks(report, v12Stats, 30, walletProfiles);
