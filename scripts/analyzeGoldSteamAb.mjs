@@ -225,6 +225,9 @@ for (const { mkt, docs } of packs) {
         steamArriving,
         steamDying,
         dEv,
+        lastHourLock: Number.isFinite(tape.ticketTape?.lastHourLock)
+          ? tape.ticketTape.lastHourLock
+          : null,
         evBucket,
         ev,
         hasLog: (tape.ticketTape?.n || 0) > 0,
@@ -236,6 +239,11 @@ for (const { mkt, docs } of packs) {
         sharpAB: forA + forB > 0,
         pathAB: PATH_AB.has(path),
         edge: Number.isFinite(sd.v8_winnerAlignEdge) ? sd.v8_winnerAlignEdge : null,
+        tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
+        tapeAction: sd.v8_tapeAction || null,
+        net: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
+        hcConfFor: Number(sd.v8_hcConfFor) || 0,
+        provenFor: Number(sd.v8_agsProvenForCount) || 0,
       });
     }
   }
@@ -371,13 +379,161 @@ for (const r of withLog.filter((r) => r.gold)) {
   push(`  ${r.date} ${r.sport} ${r.mkt} ${r.team}  ${r.won ? 'W' : 'L'}  ${r.units}u  ${r.goldLabel}  path${r.path}  A${r.forA}/B${r.forB}  ev=${r.ev ?? '—'}`);
 }
 
+push('');
+push('=== 8. Steam since go-live (schema v15/16, 2026-08-19) ===');
+push('July cannot confirm steam: ticket tape log did not exist. Hold-up is early steam days vs late steam days, no retune.');
+push('');
+
+const STEAM_LIVE = '2026-08-19';
+const jul = rows.filter((r) => r.date >= '2026-07-01' && r.date <= '2026-07-31');
+const since = withLog.filter((r) => r.date >= STEAM_LIVE);
+const early = since.filter((r) => r.date >= STEAM_LIVE && r.date <= '2026-08-24');
+const late = since.filter((r) => r.date >= '2026-08-25');
+
+push(`July staked graded: ${jul.length}  ·  tape log: ${jul.filter((r) => r.hasLog).length}  ← cannot confirm steam`);
+push(`Steam-live tape-log book (${STEAM_LIVE}+): ${fmt(agg(since))}`);
+push(`  early ${STEAM_LIVE}–08-24  ${fmt(agg(early))}`);
+push(`  late  08-25–end           ${fmt(agg(late))}`);
+push('');
+
+push('-- Steam 2×2 (first → lock) since go-live --');
+push(line('off → off', since.filter((r) => !r.steamOnFirst && !r.steamOn)));
+push(line('off → on  (arriving)', since.filter((r) => r.steamArriving)));
+push(line('on  → on  (already on)', since.filter((r) => r.steamOnFirst && r.steamOn)));
+push(line('on  → off (dying)', since.filter((r) => r.steamDying)));
+push('');
+push('-- A/B CONFIRMED × steam (the testable combo) --');
+push(line('A/B + arriving', since.filter((r) => r.sharpAB && r.steamArriving)));
+push(line('A/B + steam at lock', since.filter((r) => r.sharpAB && r.steamOn)));
+push(line('A/B + no steam', since.filter((r) => r.sharpAB && !r.steamOn)));
+push(line('no A/B + steam at lock', since.filter((r) => !r.sharpAB && r.steamOn)));
+push(line('HC-FOR≥1 + arriving', since.filter((r) => r.hcConfFor >= 1 && r.steamArriving)));
+push(line('gold+limits', since.filter((r) => r.goldConfirmed)));
+push(line('any gold 4.5%+', since.filter((r) => r.gold)));
+push(line('steam 3–4.5% (not gold)', since.filter((r) => r.steamOn && !r.gold)));
+push('');
+
+function steamScore(keep, rest) {
+  if (!keep.n) return 'none';
+  if (keep.n < 12) return 'thin — not an edge yet';
+  const lo = keep.wrLo;
+  const lift = (keep.roi == null || rest.roi == null) ? null : keep.roi - rest.roi;
+  if (!(keep.wrPct > rest.wrPct) || !(keep.roi > rest.roi)) return 'no split';
+  if (keep.n >= 20 && lo >= 50 && lift >= 15) return 'best shot (still tracking)';
+  if (keep.n >= 15 && keep.wrPct >= 58 && lift >= 8) return 'explore (not size)';
+  return 'weak / watch';
+}
+
+const steamCells = [
+  { name: 'A/B + steam arriving', pred: (r) => r.sharpAB && r.steamArriving },
+  { name: 'steam arriving (any)', pred: (r) => r.steamArriving },
+  { name: 'HC-FOR≥1 + arriving', pred: (r) => r.hcConfFor >= 1 && r.steamArriving },
+  { name: 'A/B + steam at lock', pred: (r) => r.sharpAB && r.steamOn },
+  { name: 'steam on at lock', pred: (r) => r.steamOn },
+  { name: 'any gold 4.5%+', pred: (r) => r.gold },
+  { name: 'gold+limits', pred: (r) => r.goldConfirmed },
+];
+
+function runSteamSplit(label, pool) {
+  push(`-- ${label} n=${pool.length} --`);
+  const outRows = [];
+  for (const cell of steamCells) {
+    const hit = pool.filter(cell.pred);
+    const rest = pool.filter((r) => !cell.pred(r));
+    const h = agg(hit);
+    const o = agg(rest);
+    const score = steamScore(h, o);
+    push(`${cell.name}`);
+    push(`  HIT  ${fmt(h)} | ${score}`);
+    push(`  REST ${fmt(o)}`);
+    outRows.push({ name: cell.name, score, hit: h, rest: o });
+  }
+  return outRows;
+}
+
+push('STEP 1 — Discover on EARLY steam days (08-19–08-24). Do not peek at late yet.');
+const earlySteam = runSteamSplit('early steam', early);
+push('');
+push('STEP 2 — Freeze those cells, apply to LATE steam days (08-25+). No retune.');
+const lateSteam = runSteamSplit('late steam', late);
+push('');
+push('Full steam-live book (since implementation):');
+const sinceSteam = runSteamSplit('since 08-19', since);
+
+push('');
+push('Hold-up scorecard (early discover → late confirm). July = cannot (no tape).');
+const holdRows = [];
+for (const a of earlySteam) {
+  const b = lateSteam.find((x) => x.name === a.name);
+  const full = sinceSteam.find((x) => x.name === a.name);
+  const earlyOk = a.score.startsWith('best') || a.score.startsWith('explore') || a.score.startsWith('weak');
+  const lateOk = b && (b.score.startsWith('best') || b.score.startsWith('explore') || b.score.startsWith('weak'));
+  const lateNo = b && (b.score === 'no split' || b.score === 'none');
+  const earlyThin = a.score.startsWith('thin');
+  let hold = `${a.score} → ${b?.score || '—'}`;
+  if (earlyThin && b?.score.startsWith('thin')) hold = 'thin both — keep tracking';
+  else if (earlyOk && lateOk) hold = 'HOLDS direction';
+  else if (earlyOk && lateNo) hold = 'FAILS late window';
+  else if (earlyThin && lateOk) hold = 'late only (not a discover)';
+  else if (a.score === 'no split' && lateOk) hold = 'late only';
+  push(`${a.name.padEnd(28)} early=${String(a.score).padEnd(26)} late=${String(b?.score || '—').padEnd(26)} ${hold}`);
+  holdRows.push({
+    name: a.name,
+    early: a.score,
+    late: b?.score,
+    since: full?.score,
+    hold,
+    earlyN: a.hit?.n,
+    lateN: b?.hit?.n,
+    sinceN: full?.hit?.n,
+    earlyHit: a.hit,
+    lateHit: b?.hit,
+    sinceHit: full?.hit,
+  });
+}
+
+push('');
+push('-- Day-by-day steam arriving (cluster check) --');
+const byDate = new Map();
+for (const r of since) {
+  if (!byDate.has(r.date)) byDate.set(r.date, []);
+  byDate.get(r.date).push(r);
+}
+for (const d of [...byDate.keys()].sort()) {
+  const day = byDate.get(d);
+  const arr = day.filter((r) => r.steamArriving);
+  const abArr = day.filter((r) => r.sharpAB && r.steamArriving);
+  push(`${d}  book ${fmt(agg(day))}`);
+  if (arr.length) push(`         arriving     ${fmt(agg(arr))}`);
+  if (abArr.length) push(`         A/B arriving ${fmt(agg(abArr))}`);
+}
+
+push('');
+push('-- Sport mix on A/B + arriving (is this one sport?) --');
+const abArrAll = since.filter((r) => r.sharpAB && r.steamArriving);
+const sports = [...new Set(abArrAll.map((r) => r.sport))].sort();
+for (const s of sports) {
+  push(line(`A/B arriving · ${s}`, abArrAll.filter((r) => r.sport === s)));
+}
+push('');
+push('A/B + arriving tickets:');
+for (const r of abArrAll.sort((a, b) => String(a.date).localeCompare(b.date))) {
+  push(`  ${r.date} ${r.sport} ${r.mkt} ${r.team}  ${r.won ? 'W' : 'L'}  ${r.units}u  ev=${r.ev ?? '—'}  dEv=${r.dEv ?? '—'}  lh=${r.lastHourLock ?? '—'}`);
+}
+
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 const payload = {
   generatedAt: new Date().toISOString(),
   nRows: rows.length,
   nWithLog: withLog.length,
+  nJuly: jul.length,
+  nJulyLog: jul.filter((r) => r.hasLog).length,
+  steamLiveFrom: STEAM_LIVE,
   cells: {
     withLog: agg(withLog),
+    sinceSteam: agg(since),
+    earlySteam: agg(early),
+    lateSteam: agg(late),
     goldConfirmed: agg(withLog.filter((r) => r.goldConfirmed)),
     gold: agg(withLog.filter((r) => r.gold)),
     steamArriving: agg(withLog.filter((r) => r.steamArriving)),
@@ -389,10 +545,15 @@ const payload = {
     ev02AndAB: agg(withLog.filter((r) => r.evBucket === '0-2' && r.sharpAB)),
     ev02NoAB: agg(withLog.filter((r) => r.evBucket === '0-2' && !r.sharpAB)),
   },
+  holdRows,
   goldABSample: goldAB.map((r) => ({
     date: r.date, sport: r.sport, mkt: r.mkt, team: r.team,
     won: r.won, units: r.units, goldLabel: r.goldLabel, path: r.path,
     forA: r.forA, forB: r.forB, ev: r.ev,
+  })),
+  abArrivingSample: abArrAll.map((r) => ({
+    date: r.date, sport: r.sport, mkt: r.mkt, team: r.team,
+    won: r.won, units: r.units, ev: r.ev, dEv: r.dEv, lastHourLock: r.lastHourLock,
   })),
 };
 writeFileSync('/opt/cursor/artifacts/gold_steam_ab_analysis.json', JSON.stringify(payload, null, 2));
