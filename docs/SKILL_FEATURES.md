@@ -187,6 +187,11 @@ evLock quintile → W/L
 # Closing Dime gold-card combo (gold steam + Pinnacle limits rising)
 enrichTicketTapeFromSide(side)   // log flags, else freeze v8_steam
 group by steamGoldLockLabel → gold+limits | gold-flat | steam | limits-only | none
+
+# Gold × Source A/B CONFIRMED on FOR
+forSideHasConfirmedAB(row, walletProfiles)
+group by (A/B × steamOnLock) and (A/B × off→on)
+
 ```
 
 Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLabel` in `src/lib/ticketTapeCapture.js` (also § 5d in `dailyAgsUReport.js`). Write-up: [`CLOSING_DIME_STEAM_EDGE.md`](./CLOSING_DIME_STEAM_EDGE.md).
