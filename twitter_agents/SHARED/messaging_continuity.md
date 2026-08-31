@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/31 | Hero August MTD | WHO=football WR-scorers walking in · PURPOSE=educate size-not-53% · +46.8u / 3× July · 5u+ 56-22 | **S + C** | none | **Staged** |
+| 8/31 | Hero August MTD | Educate: worse WR, 3× July, 168 1u leaked / 78 sized ate · Sunday-slate trap | **S + C** | none | **Staged** |
 | 8/30 late | Hero Cubs | $120K at 2× · +$545K · proven 97% vs losers 83% · −1.5 +138 steam · too hard to pass up | **S + C** | none | Staged |
 | 8/30 night | QT Under 7.5 grade | −30u worst day → two 10+ · +112.91u · picked up / 7–0 cashed | **P + C** | none | Staged |
 | 8/30 | Hero Under 7.5 mix | 3-1 +4u → $6K sized-up Under by line 3 · loser $2.1K · Pin 1875→7500 | **S + C** | none | Staged |
@@ -26,12 +26,12 @@
 ---
 
 ## Angle lock
-**S + C · Educate (not recap):** WHO = football bettors walking into September scoring on WR. PURPOSE = August proves **size** is how this prints — watch those tickets when NFL/CFB lock. Open `+46.8u` / almost 3× July. 5u+ **56-22 / +65.6u**. Close: don’t watch the 53%. No ask.
+**S + C · Educate:** WHO = football WR-scorers walking into September. PURPOSE = size is how this prints. Depth: July **55% / +17u** vs August **53% / +46.8u** · **168** 1u leaked vs **78** 5u+ (56-22 / +65.6u) · close = Sunday slate without the 56-22. Open `+46.8u` / 3× July. No ask.
 
 ---
 
 ## Themes spent / open
-**Spent this beat:** August MTD educate · +46.8u / 3× July open · 5u+ 56-22 · unit split · “don’t watch the 53% / watch the ones we size” · September loading  
+**Spent this beat:** August MTD depth · July WR paradox · 168 vs 78 · Sunday-slate trap · “watch the ones we size” · September loading  
 **Still open:** Cubs grade (if not posted) · onboarding FAQ · folder dream · bounce recap (don’t rerun) · soft ask (now warm-hot)
 
 ---
@@ -53,8 +53,7 @@
 ---
 
 ## Agent close-out
-- [x] WHO locked (football WR-scorers walking into September) — not dual avatar
-- [x] PURPOSE locked (educate size-not-53%) — not recap + plant
-- [x] Hook kept (Dale: good) · close now does the job for them
-- [x] No ask · NFL PnL not flexed
-- [x] FORWARD LOOK refreshed · staged `twitter_drafts/COPY_PASTE.md`
+- [x] WHO + PURPOSE still locked (football · educate)
+- [x] Depth pass — July paradox + 168 vs 78 + Sunday trap (not a longer table)
+- [x] Hook kept · no ATH clone · no ask
+- [x] Staged `twitter_drafts/COPY_PASTE.md`
