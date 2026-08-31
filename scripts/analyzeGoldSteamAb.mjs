@@ -701,6 +701,97 @@ push(line('A/B arriving that is gold', abArr.filter((r) => r.gold)));
 push('Steam With Entry on the Locked card fires when steam is ON at lock (3%+). That covers A/B + steam at lock.');
 push('Arriving (off→on) is a lifecycle flag the card does not currently name. Gold Steam is n=2.');
 
+push('');
+push('=== 10. Only-ship gates on the STEAM WINDOW (same units, rest 0u) ===');
+push('Universe = Aug 19–31 tape-log staked book. Sizer unchanged. Gate = ship iff pred, else 0u.');
+push('');
+
+const window = augLog;
+const baseW = agg(window);
+push(`KEEP-ALL (today)                              ${fmt(baseW)}`);
+
+const fadeMute = (r) => Number.isFinite(r.dEv) && r.dEv <= -1.5 && Number(r.ev) < -1;
+const liveMute = (r) => Number(r.edge) >= 15 && fadeMute(r);
+
+const gates = [
+  { name: 'A/B + arriving', pred: (r) => r.sharpAB && r.steamArriving },
+  { name: 'steam arriving (drop A/B)', pred: (r) => r.steamArriving },
+  { name: 'A/B + steam at lock', pred: (r) => r.sharpAB && r.steamOn },
+  { name: 'any steam at lock', pred: (r) => r.steamOn },
+  { name: 'A/B + arriving, skip live Ev-drift', pred: (r) => r.sharpAB && r.steamArriving && !liveMute(r) },
+  { name: 'A/B + arriving, skip fade+EV<−1', pred: (r) => r.sharpAB && r.steamArriving && !fadeMute(r) },
+  { name: 'A/B + steam lock, skip fade+EV<−1', pred: (r) => r.sharpAB && r.steamOn && !fadeMute(r) },
+  { name: 'A/B + arriving OR gold', pred: (r) => (r.sharpAB && r.steamArriving) || r.gold },
+  { name: 'gold 4.5%+', pred: (r) => r.gold },
+  { name: 'A/B only (no steam required)', pred: (r) => r.sharpAB },
+];
+
+function daysCovered(hit) {
+  const ds = new Set(hit.map((r) => r.date));
+  const all = [...new Set(window.map((r) => r.date))].sort();
+  const empty = all.filter((d) => !ds.has(d));
+  return { nDays: ds.size, nAll: all.length, empty };
+}
+
+function gateScore(h, cut) {
+  if (!h.n) return 'none';
+  if (h.n < 12) return 'thin — not a book';
+  const lo = h.wrLo;
+  if (h.n >= 20 && lo >= 50 && h.roi >= 15 && h.pnl >= 20) return 'viable gate';
+  if (h.n >= 15 && h.wrPct >= 65 && h.roi >= 30) return 'tight / high-quality';
+  if (h.wrPct > baseW.wrPct && h.roi > baseW.roi) return 'better than book, watch n';
+  return 'not better';
+}
+
+const gateRows = [];
+push('');
+push('SHIP = tickets that pass. CUT = rest of steam window zeroed. Wins cut = real wins users would not see.');
+for (const g of gates) {
+  const ship = window.filter(g.pred);
+  const cut = window.filter((r) => !g.pred(r));
+  const h = agg(ship);
+  const c = agg(cut);
+  const days = daysCovered(ship);
+  const score = gateScore(h, c);
+  const earlyHit = agg(early.filter(g.pred));
+  const lateHit = agg(late.filter(g.pred));
+  push(`${g.name}`);
+  push(`  SHIP ${fmt(h)} | ${score}`);
+  push(`  CUT  ${fmt(c)} | wins cut ${c.w}  losses cut ${c.l}`);
+  push(`  days ${days.nDays}/${days.nAll} with ≥1 lock${days.empty.length ? `  empty ${days.empty.join(',')}` : ''}`);
+  push(`  early ${fmt(earlyHit)}  late ${fmt(lateHit)}`);
+  gateRows.push({ name: g.name, ship: h, cut: c, score, days, early: earlyHit, late: lateHit });
+}
+
+push('');
+push('-- Incremental build (this is the optimality cut) --');
+const core = window.filter((r) => r.sharpAB && r.steamArriving);
+const already = window.filter((r) => r.sharpAB && r.steamOn && !r.steamArriving);
+const steamNoAB = window.filter((r) => r.steamOn && !r.sharpAB);
+const arrivingNoAB = window.filter((r) => r.steamArriving && !r.sharpAB);
+push(line('1. CORE  A/B + arriving', core));
+push(line('2. add A/B already-on steam', already));
+push(line('   CORE + already-on  (= A/B steam at lock)', window.filter((r) => r.sharpAB && r.steamOn)));
+push(line('3. add steam, no A/B', steamNoAB));
+push(line('   arriving with no A/B (inside 3)', arrivingNoAB));
+push(line('4. add gold not already in core', window.filter((r) => r.gold && !(r.sharpAB && r.steamArriving))));
+
+push('');
+push('Read: step 2 adds volume and almost no PnL. Step 3 adds losers. Core is the gate. Expanding to steam-at-lock is a slate choice, not an edge choice.');
+
+const emptyCore = daysCovered(core).empty;
+push(`Core empty days: ${emptyCore.length ? emptyCore.join(', ') : 'none'}`);
+push('Core tickets/day:');
+const byD = new Map();
+for (const r of core) {
+  if (!byD.has(r.date)) byD.set(r.date, []);
+  byD.get(r.date).push(r);
+}
+for (const d of [...new Set(window.map((r) => r.date))].sort()) {
+  const day = byD.get(d) || [];
+  push(`  ${d}  ${day.length ? fmt(agg(day)) : '—  (no lock)'}`);
+}
+
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 const payload = {
   generatedAt: new Date().toISOString(),
