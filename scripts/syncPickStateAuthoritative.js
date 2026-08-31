@@ -1131,7 +1131,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 18; // v18: steam-tail policy T (cut junk 1u, floor arriving 2u, steam-confirm 4u/5.4u+)
+const SKILL_FEATURE_VERSION = 19; // v19: clear stale v8_steamTailReason when T HOLDs (reason null)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1370,7 +1370,13 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreSteamTail != null && Number.isFinite(unitsPreSteamTail)) {
     target.v8_unitsPreSteamTail = unitsPreSteamTail;
   }
-  if (steamTailReason != null) target.v8_steamTailReason = steamTailReason;
+  if (steamTailReason != null) {
+    target.v8_steamTailReason = steamTailReason;
+  } else if (steamTailAction != null) {
+    // HOLD / PASS leave reason null — delete leftover MUTE reasons
+    // (lean_no_arriving stuck on NYY 1.5u HOLD after a prior lean cycle).
+    target.v8_steamTailReason = admin.firestore.FieldValue.delete();
+  }
   if (steamTailArriving != null) target.v8_steamTailArriving = !!steamTailArriving;
   if (steamTailOnLock != null) target.v8_steamTailOnLock = !!steamTailOnLock;
   if (steamTailSharpAB != null) target.v8_steamTailSharpAB = !!steamTailSharpAB;
@@ -1452,6 +1458,7 @@ function skillStampsDrifted(sd, bundle, {
   sportUnlockAction = null,
   climateAction = null,
   steamTailAction = null,
+  steamTailReason = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1498,6 +1505,7 @@ function skillStampsDrifted(sd, bundle, {
   if (sportUnlockAction != null && (sd.v8_sportUnlockAction || null) !== sportUnlockAction) return true;
   if (climateAction != null && (sd.v8_climateAction || null) !== climateAction) return true;
   if (steamTailAction != null && (sd.v8_steamTailAction || null) !== steamTailAction) return true;
+  if (steamTailAction != null && (sd.v8_steamTailReason || null) !== (steamTailReason || null)) return true;
   return false;
 }
 
@@ -5505,6 +5513,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       sportUnlockAction: sportUnlockPolicy?.action ?? null,
       climateAction: climatePolicy?.action ?? null,
       steamTailAction: steamTailPolicy?.action ?? null,
+      steamTailReason: steamTailPolicy?.reason ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
