@@ -157,6 +157,8 @@ Killing arriving 1u (D) lands closer to 5.7/day and gives back +5u. Killing all 
 
 Steam on the 2u–5.39u spine (August 147 · 82-65 · 56% · +27u): arriving mid is hot (6 · 5-1 · +12u) and A/B steam-at-lock mid is 13 · 9-4 · +10u. **Mid with no steam is not a dog** — 43 · 25-18 · 58% · +4.7u. Requiring A/B steam on mid under recipe C takes August from +86u / 6.8 a day to +79u / 3.0 a day. WR barely moves (60.8% → 61.1%). Leave mid alone.
 
+Pulling the steam check down through **all 4u+** (leave 2–3u): **176 · 107-69 · 61% · +84u · 5.9/day**. Same WR as C, **−2u vs C**. The extra mute is 13 tickets at 4.00–5.39u with no A/B steam (**8-5 · +1.6u**) — you cut a small winner pile because one 5u win outweighs twelve 4u that went 7-5 · −3u. If the intent is “RANK 4u needs steam,” mute **4.00–4.99u** only, not 5u.
+
 ---
 
 ## August book, unit tiers, extra strength signal
