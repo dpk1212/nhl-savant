@@ -127,6 +127,36 @@ Do **not**: replace the sizer, size gold, or add more units to tickets that are 
 
 ---
 
+## Practical August recipes (5–6 locks/day)
+
+Actual August staked book: **372 · 198-174 · 53% · +46.8u · ~12/day**.
+
+≤1u is the junk: **168 · 76-92 · 45% · −20.3u**. 5.4u+ as a whole is **not** junk (**57 · 40-17 · 70% · +39.9u**). The leak is steam-window 5.4u+ **without** A/B steam: **28 · 16-12 · −8.9% · −13.7u**. Do not mute all fat tickets.
+
+| Recipe | N | WR | PnL | vs today | Locks/day (Aug / steam) |
+|--------|--:|---:|----:|---------:|-------------------------|
+| Today | 372 | 53% | +46.8u | — | ~12 / ~16 |
+| A. Cut all ≤1u | 204 | 60% | +67.1u | +20u | 6.8 / 8.0 |
+| B. Cut ≤1u except arriving | 217 | 60% | +72.4u | +26u | 7.2 / 9.1 |
+| **C. B + mute 5.4u+ unless A/B steam** | **189** | **61%** | **+86.0u** | **+39u** | **6.3 / 6.8** |
+| D. Cut all ≤1u + mute unconfirmed fat | 176 | 60% | +80.7u | +34u | 5.9 / 5.7 |
+| F. B + mute BOOST unless A/B steam | 188 | 61% | +86.9u | +40u | 6.3 / 6.7 |
+| G. Cut 1u **and** all 5.4u+ | 165 | 58% | +44.4u | **−2u** | 5.5 / 6.4 |
+
+**C is the one that matches the goal.** Same sizer. Three rules:
+
+1. **≤1u → 0u**, except A/B arriving (those 13 went 9-4; killing them costs +5u).
+2. **Once a tape log exists (08-19+): 5.4u+ ships only if Source A/B is on our side and steam is on at lock.** Otherwise 0u. Fail-open before steam existed.
+3. **2–5u keep shipping.** That is the 5–6/day spine. Do not require steam on mid size — that is how you fall back to 2 locks/day.
+
+You do **not** get arriving’s 75% WR at this volume. 61% is what 6 locks/day buys on this book. Steam-window only, under C, is **80 · 52-28 · 65% · +39u**. Pre-steam still has some 50% days after the 1u cut.
+
+Killing arriving 1u (D) lands closer to 5.7/day and gives back +5u. Killing all fat (G) throws away the +40u 5.4u+ pile and loses to today. Don’t.
+
+08-30 under C is still 13 locks (mid-size heavy). Optional later dial: if a day is over 6, rank arriving → steam-confirmed fat → 5u → 4u → 2–3u and keep six. Not in these numbers.
+
+---
+
 ## August book, unit tiers, extra strength signal
 
 Live pull 2026-08-31. These three cells already shipped — they are not a hypothetical filter.
