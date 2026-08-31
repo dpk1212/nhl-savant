@@ -127,37 +127,97 @@ Do **not**: replace the sizer, size gold, or add more units to tickets that are 
 
 ---
 
-## Practical August recipes (5–6 locks/day)
+## Practical August recipes (volume from the size rules, no hard cap)
 
 Actual August staked book: **372 · 198-174 · 53% · +46.8u · ~12/day**.
 
-≤1u is the junk: **168 · 76-92 · 45% · −20.3u**. 5.4u+ as a whole is **not** junk (**57 · 40-17 · 70% · +39.9u**). The leak is steam-window 5.4u+ **without** A/B steam: **28 · 16-12 · −8.9% · −13.7u**. Do not mute all fat tickets.
+≤1u is the junk: **168 · 76-92 · 45% · −20.3u**. 5.4u+ as a whole is **not** junk (**57 · 40-17 · 70% · +39.9u**). The leak is steam-window 5.4u+ **without** A/B steam: **28 · 16-12 · −8.9% · −13.7u**. Do not mute all fat tickets. Do not put a daily lock cap on top — volume is whatever the size rules produce.
 
-| Recipe | N | WR | PnL | vs today | Locks/day (Aug / steam) |
-|--------|--:|---:|----:|---------:|-------------------------|
+| Recipe | N | WR | PnL | vs today | Mean locks/day (Aug / steam) |
+|--------|--:|---:|----:|---------:|------------------------------|
 | Today | 372 | 53% | +46.8u | — | ~12 / ~16 |
 | A. Cut all ≤1u | 204 | 60% | +67.1u | +20u | 6.8 / 8.0 |
 | B. Cut ≤1u except arriving | 217 | 60% | +72.4u | +26u | 7.2 / 9.1 |
-| **C. B + mute 5.4u+ unless A/B steam** | **189** | **61%** | **+86.0u** | **+39u** | **6.3 / 6.8** |
-| D. Cut all ≤1u + mute unconfirmed fat | 176 | 60% | +80.7u | +34u | 5.9 / 5.7 |
-| F. B + mute BOOST unless A/B steam | 188 | 61% | +86.9u | +40u | 6.3 / 6.7 |
+| C. B + mute 5.4u+ unless A/B steam | 189 | 61% | +86.0u | +39u | 6.3 / 6.8 |
+| H. B + mute **all 4u+** unless A/B steam | 176 | 61% | +84.4u | +38u | 5.9 / 5.7 |
+| **K. B + mute 4u and 5.4u+ unless A/B steam; keep 5u** | **177** | **61%** | **+89.3u** | **+43u** | **5.9 / 5.7** |
+| **T. K + floor arriving ≤1u → 2u** | **177** | **61%** | **+93.6u** | **+47u** | **5.9 / 5.7** |
+| T+ev (T + live Ev-drift, already in prod) | 175 | 61% | +97.8u | +51u | 5.8 / 5.5 |
 | G. Cut 1u **and** all 5.4u+ | 165 | 58% | +44.4u | **−2u** | 5.5 / 6.4 |
 
-**C is the one that matches the goal.** Same sizer. Three rules:
+**T is the mix.** Same sizer. Steam only on the tails. No 1u on the board. No daily cap. Keep the live Ev-drift mute.
 
-1. **≤1u → 0u**, except A/B arriving (those 13 went 9-4; killing them costs +5u).
-2. **Once a tape log exists (08-19+): 5.4u+ ships only if Source A/B is on our side and steam is on at lock.** Otherwise 0u. Fail-open before steam existed.
-3. **2–5u keep shipping.** That is the 5–6/day spine. Do not require steam on mid size — that is how you fall back to 2 locks/day.
+Steam on the 2u–5.39u spine (August 147 · 82-65 · 56% · +27u): arriving mid is hot (6 · 5-1 · +12u) and A/B steam-at-lock mid is 13 · 9-4 · +10u. **Mid with no steam is not a dog** — 43 · 25-18 · 58% · +4.7u. Requiring A/B steam on mid under recipe C takes August from +86u / 6.8 a day to +79u / 3.0 a day. WR barely moves (60.8% → 61.1%). Leave 2–3u alone.
 
-You do **not** get arriving’s 75% WR at this volume. 61% is what 6 locks/day buys on this book. Steam-window only, under C, is **80 · 52-28 · 65% · +39u**. Pre-steam still has some 50% days after the 1u cut.
+H (mute **all** 4u+) is **−2u vs C** because it also kills the one 5u win with no A/B steam (**+4.9u**). K mutes **4.00–4.99u** only. That 4u leak is **12 · 7-5 · −3.3u**. Keep 5u.
 
-Killing arriving 1u (D) lands closer to 5.7/day and gives back +5u. Killing all fat (G) throws away the +40u 5.4u+ pile and loses to today. Don’t.
+---
 
-08-30 under C is still 13 locks (mid-size heavy). Optional later dial: if a day is over 6, rank arriving → steam-confirmed fat → 5u → 4u → 2–3u and keep six. Not in these numbers.
+## Trusted mix (T) — the policy
 
-Steam on the 2u–5.39u spine (August 147 · 82-65 · 56% · +27u): arriving mid is hot (6 · 5-1 · +12u) and A/B steam-at-lock mid is 13 · 9-4 · +10u. **Mid with no steam is not a dog** — 43 · 25-18 · 58% · +4.7u. Requiring A/B steam on mid under recipe C takes August from +86u / 6.8 a day to +79u / 3.0 a day. WR barely moves (60.8% → 61.1%). Leave mid alone.
+Three goals: max profit, reasonable volume for users, every shipped unit size trusted as a winner. No hard daily cap.
 
-Pulling the steam check down through **all 4u+** (leave 2–3u): **176 · 107-69 · 61% · +84u · 5.9/day**. Same WR as C, **−2u vs C**. The extra mute is 13 tickets at 4.00–5.39u with no A/B steam (**8-5 · +1.6u**) — you cut a small winner pile because one 5u win outweighs twelve 4u that went 7-5 · −3u. If the intent is “RANK 4u needs steam,” mute **4.00–4.99u** only, not 5u.
+### Rules
+
+| Size | After 08-19 (tape log exists) | Before 08-19 |
+|------|-------------------------------|--------------|
+| ≤1u junk | **0u** | **0u** |
+| ≤1u A/B arriving | ship at **2u** (floor) | n/a (no arriving stamp) |
+| 2–3u | ship as-sized | ship as-sized |
+| 4u | ship only if A/B steam on at lock; else 0u | fail-open (keep) |
+| 5u | **always ship** (do not require steam) | fail-open (keep) |
+| 5.4u+ | ship only if A/B steam on at lock; else 0u | fail-open (keep) |
+| any size | keep live Ev-drift mute (`EDGE≥15 AND dEv≤−1.5 AND EV<−1`) | same |
+
+Do **not**: only-ship arriving (~2/day), mute all fat, require steam on 2–3u, mute 5u with the 4u pile, or cap the day at 6.
+
+### What it scored (live pull 2026-08-31)
+
+| Book | N | W-L | WR | PnL | vs today |
+|------|--:|:---:|---:|----:|---------:|
+| August today | 372 | 198-174 | 53% | +46.8u | — |
+| **T, full August** | **177** | **108-69** | **61%** | **+93.6u** | **+47u** |
+| T + live Ev-drift | 175 | 107-68 | 61% | +97.8u | +51u |
+| **T, steam-window (going forward)** | **68** | **45-23** | **66%** | **+46.4u** | window was +9.2u |
+
+You do **not** get arriving’s 75% WR at this volume. **61% full month / 66% going forward** is what this mix buys.
+
+### Every remaining size is a winner (going forward)
+
+Displayed units after the 2u floor. Steam-window is the policy from here — 1u is gone.
+
+| Band | N | W-L | WR | PnL |
+|------|--:|:---:|---:|----:|
+| ≤1u | 0 | — | — | — |
+| 2u floored arriving (was ≤1u) | 13 | 9-4 | 69% | +9.6u |
+| 2–3u native | 40 | 24-16 | 60% | +8.2u |
+| 4u (A/B steam only) | 3 | 2-1 | 67% | +1.8u |
+| 5u | 3 | 3-0 | 100% | +9.7u |
+| 5.4u (A/B steam only) | 5 | 4-1 | 80% | +11.9u |
+| 6u (A/B steam only) | 4 | 3-1 | 75% | +5.2u |
+| **book** | **68** | **45-23** | **66%** | **+46.4u** |
+
+2–3u is the weakest remaining band and still a winner. Full-August 2–3u looks 50% / −6.6u only because **pre-steam 2–3u was 53 · 22-31 · 42% · −18.6u**. That pile cannot repeat — steam is live. Cutting 2–3u to chase the backtest drops steam-window volume to ~3/day.
+
+### Daily range (not a cap)
+
+Volume is the natural output of those rules. Comfort band is ~5–6; 1–2 is too light; heavier slates keep every trusted ticket.
+
+Steam-window under T (12 days, 08-19–08-30): **2, 4, 4, 5, 5, 6, 6, 6, 7, 7, 8, 9**.
+
+| | Steam-window T | Full August T |
+|--|----------------:|--------------:|
+| Mean | **5.7** | 5.9 |
+| Median | **6** | 6 |
+| Min / max | **2 / 9** | 0 / 14 |
+| Days 1–2 | 1 (08-20, no arriving) | 4 |
+| Days 3–4 | 2 | 5 |
+| Days 5–6 | 5 | 10 |
+| Days 7+ | 4 (7, 7, 8, 9) | 10 |
+
+**Typical day: 4–8 locks, centered on 6.** One dead steam day at 2. NFL/WNBA slates run 7–9. 08-30 is 9, not 13 (C still had unconfirmed 4u). No cap — a 9-lock day is four extra trusted tickets, not junk.
+
+T+ev (live mute on) is the same range, one notch lighter (mean 5.5, still min 2 / max 9) because the mute already zeros faded fat tickets. Keep it; it is not a new rule. On this mix it cuts the arriving 5.4u Under 167.5 loser and also the 5u Real Madrid win that already matched `EDGE≥15`. Net **+4u vs T**. Do not widen that mute.
 
 ---
 
@@ -204,7 +264,7 @@ The Locked card already paints **Steam With Entry** when steam is ON at lock. Al
 
 Gold Steam is 6 of those 24 (4-2). Not the filter.
 
-Practical paint: a distinct chip when Source A/B is on our side **and** steam turned on after first flag — “Pin moved with us” / “Steam arrived.” That is a strength label on tickets we already staked, especially the 1u ones. It does not change units. It does not replace Sharp Consensus or Steam With Entry; it is the lifecycle bit those two do not capture.
+Practical paint: a distinct chip when Source A/B is on our side **and** steam turned on after first flag — “Pin moved with us” / “Steam arrived.” Recipe T floors those native 1u tickets to 2u so users never see junk 1u next to a 5.4u. The chip is still the lifecycle bit Steam With Entry does not capture (already-on steam also lights that tag).
 
 ---
 

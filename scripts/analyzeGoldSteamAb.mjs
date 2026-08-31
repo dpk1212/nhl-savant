@@ -997,6 +997,15 @@ const recipes = [
       return true;
     },
   },
+  {
+    name: 'K. B + MUTE 5.4u+ AND 4u unless A/B steam; keep 5u (fail-open pre-steam)',
+    pred: (r) => {
+      if (isLean(r) && !isArr(r)) return false;
+      if (isFat(r) && hasSteam(r) && !isSteamAB(r)) return false;
+      if (unitBand(r.units) === '4u' && hasSteam(r) && !isSteamAB(r)) return false;
+      return true;
+    },
+  },
 ];
 
 function dayStats(shipped) {
@@ -1047,7 +1056,7 @@ push('-- Recipe C day-by-day (cut junk 1u, keep arriving 1u, mute fat unless A/B
 
 push('');
 push('-- Recipe C vs D vs A on steam-window only (where steam can actually fire) --');
-for (const rec of recipes.filter((x) => /^(A|B|C|D|F|H|I|J)\./.test(x.name))) {
+for (const rec of recipes.filter((x) => /^(A|B|C|D|F|H|I|J|K)\./.test(x.name))) {
   const shipped = gateKeep(augLog, rec.pred);
   push(`${rec.name.padEnd(72)} ${fmt(agg(shipped))}`);
 }
@@ -1155,6 +1164,172 @@ push('-- Recipe H day-by-day --');
     const dayShip = d.by.get(date) || [];
     const mark = date >= STEAM_LIVE ? 'steam' : 'pre  ';
     push(`${date} ${mark}  actual ${String(dayAll.length).padStart(2)} / ${agg(dayAll).stake.toFixed(1)}u   gated ${String(dayShip.length).padStart(2)} / ${agg(dayShip).stake.toFixed(1)}u  ${dayShip.length ? fmt(agg(dayShip)) : '—'}`);
+  }
+}
+
+push('');
+push('=== 15. Trusted mix — max profit, every remaining size a winner, no hard cap ===');
+push('Goals: max PnL · reasonable volume for users · every shipped unit size trusted as a winner.');
+push('No daily cap. Volume is the natural range the size rules produce. 1–2/day is too light; ~5–6 is the comfort band, heavier days are allowed.');
+push('');
+
+function predK(r) {
+  if (isLean(r) && !isArr(r)) return false;
+  if (isFat(r) && hasSteam(r) && !isSteamAB(r)) return false;
+  if (unitBand(r.units) === '4u' && hasSteam(r) && !isSteamAB(r)) return false;
+  return true;
+}
+
+function floorArriving(r) {
+  if (r.sharpAB && r.steamArriving && r.units > 0 && r.units < 2) {
+    return { ...sized(r, 2), flooredFrom: r.units };
+  }
+  return r;
+}
+
+function applyMix(pool, { pred, floor = false, evDrift = false } = {}) {
+  return pool.map((r) => {
+    if (!pred(r)) return zero(r);
+    if (evDrift && liveMutePred(r)) return zero(r);
+    return floor ? floorArriving(r) : r;
+  });
+}
+
+function shippedLive(rows) {
+  return rows.filter((r) => r.won != null && r.units > 0);
+}
+
+function rangeStats(shipped, dates) {
+  const liveRows = shippedLive(shipped);
+  const by = new Map();
+  for (const r of liveRows) {
+    if (!by.has(r.date)) by.set(r.date, []);
+    by.get(r.date).push(r);
+  }
+  const counts = dates.map((d) => (by.get(d) || []).length);
+  const nonzero = counts.filter((n) => n > 0);
+  const mean = counts.length ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
+  const meanLive = nonzero.length ? nonzero.reduce((a, b) => a + b, 0) / nonzero.length : 0;
+  const sorted = [...counts].sort((a, b) => a - b);
+  const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+  const bucket = (lo, hi) => counts.filter((n) => n >= lo && n <= hi).length;
+  return {
+    by,
+    dates,
+    counts,
+    mean,
+    meanLive,
+    median,
+    min: counts.length ? Math.min(...counts) : 0,
+    max: counts.length ? Math.max(...counts) : 0,
+    n0: bucket(0, 0),
+    n12: bucket(1, 2),
+    n34: bucket(3, 4),
+    n56: bucket(5, 6),
+    n7plus: bucket(7, 99),
+    nLiveDays: nonzero.length,
+  };
+}
+
+function printRange(label, shipped, dates) {
+  const a = agg(shipped);
+  const r = rangeStats(shipped, dates);
+  const dPnl = a.pnl - agg(augAll).pnl;
+  push(label);
+  push(`  SHIP ${fmt(a)}  ΔPnL ${dPnl >= 0 ? '+' : ''}${dPnl.toFixed(1)}u vs August today`);
+  push(`  daily  mean ${r.mean.toFixed(1)}  mean-on-live-days ${r.meanLive.toFixed(1)}  median ${r.median}  min ${r.min}  max ${r.max}`);
+  push(`  days   0-lock ${r.n0}  1–2 ${r.n12}  3–4 ${r.n34}  5–6 ${r.n56}  7+ ${r.n7plus}  · ${r.nLiveDays}/${dates.length} days with a lock`);
+  return r;
+}
+
+const recC = recipes.find((x) => x.name.startsWith('C.'));
+const recH = recipes.find((x) => x.name.startsWith('H.'));
+const recK = recipes.find((x) => x.name.startsWith('K.'));
+const augDates = [...new Set(augAll.map((r) => r.date))].sort();
+const steamDates = augDates.filter((d) => d >= STEAM_LIVE);
+
+const mixes = [
+  { name: 'C. keep arriving 1u · mute 5.4u+ unless A/B steam · 2–5u open', pred: recC.pred, floor: false, evDrift: false },
+  { name: 'H. mute all 4u+ unless A/B steam (includes muting 5u)', pred: recH.pred, floor: false, evDrift: false },
+  { name: 'K. mute 4u AND 5.4u+ unless A/B steam · keep 5u · arriving 1u stays 1u', pred: predK, floor: false, evDrift: false },
+  { name: 'T. K + floor arriving ≤1u → 2u (never show 1u)', pred: predK, floor: true, evDrift: false },
+  { name: 'T+ev. T + live Ev-drift mute (already in production)', pred: predK, floor: true, evDrift: true },
+];
+
+push('-- Full August (fail-open pre-steam on 4u / 5.4u+) --');
+for (const m of mixes) {
+  printRange(m.name, applyMix(augAll, m), augDates);
+}
+
+push('');
+push('-- Going-forward (steam-window only — this is what the policy does after 08-19) --');
+for (const m of mixes) {
+  const shipped = applyMix(augLog, m);
+  const a = agg(shipped);
+  const r = rangeStats(shipped, steamDates);
+  push(m.name);
+  push(`  SHIP ${fmt(a)}`);
+  push(`  daily  mean ${r.mean.toFixed(1)}  mean-on-live-days ${r.meanLive.toFixed(1)}  median ${r.median}  min ${r.min}  max ${r.max}`);
+  push(`  days   0-lock ${r.n0}  1–2 ${r.n12}  3–4 ${r.n34}  5–6 ${r.n56}  7+ ${r.n7plus}  · ${r.nLiveDays}/${steamDates.length} days with a lock`);
+}
+
+push('');
+push('-- Remaining unit mix under T (displayed size after 1u→2u floor). Trust check: WR≥55% and +PnL --');
+function trustLine(label, rows) {
+  const a = agg(rows);
+  if (!a.n) {
+    push(`  ${label.padEnd(42)} —`);
+    return;
+  }
+  const ok = a.wr != null && a.wr >= 0.55 && a.pnl > 0;
+  const flag = ok ? 'TRUSTED' : 'WEAK';
+  push(`  ${label.padEnd(42)} ${fmt(a)}  ${flag}`);
+}
+
+function printTrust(title, shipped) {
+  const liveRows = shippedLive(shipped);
+  push(title);
+  trustLine('all shipped', liveRows);
+  trustLine('≤1u (should be empty)', liveRows.filter((r) => unitBand(r.units) === '≤1u'));
+  trustLine('2u floored arriving (was ≤1u)', liveRows.filter((r) => r.flooredFrom != null));
+  trustLine('2–3u native', liveRows.filter((r) => unitBand(r.units) === '2–3u' && r.flooredFrom == null));
+  trustLine('4u', liveRows.filter((r) => unitBand(r.units) === '4u'));
+  trustLine('5u', liveRows.filter((r) => unitBand(r.units) === '5u'));
+  trustLine('5.4u', liveRows.filter((r) => unitBand(r.units) === '5.4u'));
+  trustLine('6u', liveRows.filter((r) => unitBand(r.units) === '6u'));
+}
+
+{
+  const tAll = applyMix(augAll, { pred: predK, floor: true, evDrift: false });
+  const tSteam = applyMix(augLog, { pred: predK, floor: true, evDrift: false });
+  const tEv = applyMix(augAll, { pred: predK, floor: true, evDrift: true });
+  printTrust('Full August T', tAll);
+  push('');
+  printTrust('Steam-window T (going forward)', tSteam);
+  push('');
+  printTrust('Full August T+ev', tEv);
+}
+
+push('');
+push('-- Why 2–3u looks 50% on full August and 60% going forward --');
+push(line('August 2–3u (all)', augAll.filter(is23)));
+push(line('Aug 1–18 2–3u (no steam, fail-open)', augPre.filter(is23)));
+push(line('Aug 19–31 2–3u', steam23));
+push('Pre-steam 2–3u is the WEAK band on the backtest. Going forward steam exists; that pile does not come back. Do not cut 2–3u to chase the backtest — that is how volume falls to ~3/day.');
+
+push('');
+push('-- T day-by-day (no cap — this is the natural range) --');
+{
+  const shipped = applyMix(augAll, { pred: predK, floor: true, evDrift: false });
+  const r = rangeStats(shipped, augDates);
+  push(`T SHIP ${fmt(agg(shipped))}  Aug mean ${r.mean.toFixed(1)}  steam mean ${rangeStats(applyMix(augLog, { pred: predK, floor: true }), steamDates).mean.toFixed(1)}`);
+  for (const date of r.dates) {
+    const dayAll = augAll.filter((x) => x.date === date);
+    const dayShip = r.by.get(date) || [];
+    const mark = date >= STEAM_LIVE ? 'steam' : 'pre  ';
+    const n = dayShip.length;
+    const band = n === 0 ? 'empty' : n <= 2 ? 'light' : n <= 4 ? 'ok   ' : n <= 6 ? 'band ' : 'heavy';
+    push(`${date} ${mark}  ${band}  actual ${String(dayAll.length).padStart(2)}   T ${String(n).padStart(2)} / ${agg(dayShip).stake.toFixed(1)}u  ${n ? fmt(agg(dayShip)) : '—'}`);
   }
 }
 
