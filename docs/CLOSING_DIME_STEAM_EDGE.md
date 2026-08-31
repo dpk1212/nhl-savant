@@ -99,16 +99,18 @@ Two gold losers were the high-EV (6%+) tickets — same warning as the 4%+ EV bu
 
 ---
 
-## Brainstorm — what to do with it
+## What to explore (this tape is underused)
 
-Keep this tracking. Do not ship a sizer from n=8 gold or n=2 gold+limits.
+Steam + Pin limits is the wrong headline. The unused fields that actually move the book:
 
-1. **Explore steam-arriving on A/B sides.** Best powered cell. Candidate overlay: don’t-cut / hold size when Path A/B/C already staked and steam flips on. Still wait for n≈50 before a mute/boost rule.
-2. **Do not treat gold+limits as a standalone strategy yet.** n=2. Let § 5d fill.
-3. **Steam without an A/B CONFIRMED is not our game.** n=5 and it lost. We are not Closing Dime; we need the wallet.
-4. **Do not chase 4%+ / 6%+ card EV.** Two gold losers sat there. Prefer 0–4% vs Pin fair.
-5. **Do not become a Novig shopper.**
-6. **NFL / CFB is where $1k→$4k gold+limits should cluster** as Pin limits open. Sport-unlock caps stay 1u / 2u.
+1. **Steam arriving on a Source A/B side (hold / don’t-cut).** 24 tickets, 18-6, 75% (55–88), **+48% ROI**. Same wallets with no steam are +0.5%. This is confirmation of our wallet tape, not a replacement for it.
+2. **EV fade from first sample to lock (cut / mute).** `dEv ≤ −1.5`: 40 tickets, 17-23, **−31% ROI (−37u)**. Broader than the live Ev-drift × EDGE mute (`EDGE≥15` and `currentEv&lt;−1`). Biggest unused leak on the tape.
+3. **A/B + 0–4% EV vs Pin fair (shop filter).** 48 tickets, 31-17, 65% (50–77), **+22% ROI**. Their 1.7% lag analog. 4%+ EV lost money (−11% on 14).
+4. **Steam dying (on→off).** 10 tickets, 4-6, −21%. Mute candidate. Wait for more N; it already rhymes with EV fade.
+
+Leave on the shelf until N grows: gold+limits (n=2), any-gold 4.5% (n=8, Wilson includes 50%), limits-up without steam (n=5, +3%).
+
+Do not size a rule from n=24. Do start painting arriving-steam and EV-fade on the card and keep the § 5d tables. Candidate overlay after ~50 arriving A/B tickets: don’t-cut when steam flips on; after a clean EV-fade replay vs the live mute, maybe widen that mute.
 
 ---
 

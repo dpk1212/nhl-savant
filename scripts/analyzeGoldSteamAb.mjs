@@ -200,7 +200,10 @@ for (const { mkt, docs } of packs) {
       const steamOn = !!tape.ticketTape?.steamOnLock;
       const gold = goldLabel === 'gold+limits' || goldLabel === 'gold-flat';
       const goldConfirmed = goldLabel === 'gold+limits';
-      const steamArriving = !tape.ticketTape?.steamOnFirst && !!tape.ticketTape?.steamOnLock;
+      const steamOnFirst = !!tape.ticketTape?.steamOnFirst;
+      const steamArriving = !steamOnFirst && steamOn;
+      const steamDying = steamOnFirst && !steamOn;
+      const dEv = tape.ticketTape?.dEvFirstToLock;
       rows.push({
         id: data.id,
         date: data.date,
@@ -218,7 +221,10 @@ for (const { mkt, docs } of packs) {
         gold,
         goldConfirmed,
         steamOn,
+        steamOnFirst,
         steamArriving,
+        steamDying,
+        dEv,
         evBucket,
         ev,
         hasLog: (tape.ticketTape?.n || 0) > 0,
@@ -298,6 +304,19 @@ for (const p of ['A', 'B', 'C', 'D', 'E', '?']) {
 }
 
 const goldAB = withLog.filter((r) => r.gold && r.sharpAB);
+push('');
+push('=== 6. Underused tape — ranked exploration cells ===');
+push(line('steam on→on', withLog.filter((r) => r.steamOnFirst && r.steamOn)));
+push(line('steam on→off (dying)', withLog.filter((r) => r.steamDying)));
+push(line('A/B + steam dying', withLog.filter((r) => r.sharpAB && r.steamDying)));
+push(line('limits-only (no steam)', withLog.filter((r) => r.goldLabel === 'limits-only')));
+push(line('EV 0–4%', withLog.filter((r) => r.evBucket === '0-2' || r.evBucket === '2-4')));
+push(line('EV 4+%', withLog.filter((r) => r.evBucket === '4+')));
+push(line('A/B + EV <0', withLog.filter((r) => r.sharpAB && r.evBucket === '<0')));
+push(line('A/B + EV 0–4%', withLog.filter((r) => r.sharpAB && (r.evBucket === '0-2' || r.evBucket === '2-4'))));
+push(line('A/B + arriving + EV 0–4%', withLog.filter((r) => r.sharpAB && r.steamArriving && (r.evBucket === '0-2' || r.evBucket === '2-4'))));
+push(line('EV faded dEv≤−1.5', withLog.filter((r) => Number.isFinite(r.dEv) && r.dEv <= -1.5)));
+push(line('A/B + EV faded dEv≤−1.5', withLog.filter((r) => r.sharpAB && Number.isFinite(r.dEv) && r.dEv <= -1.5)));
 push('');
 push('=== Sample ALL gold tickets ===');
 for (const r of withLog.filter((r) => r.gold)) {
