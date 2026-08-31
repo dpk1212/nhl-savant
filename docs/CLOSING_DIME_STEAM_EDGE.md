@@ -1,8 +1,8 @@
 # Closing Dime gold card — do we have this edge?
 
-_Status: verified on live book 2026-08-31 · tracking only, do not size yet_  
+_Status: **shipped 2026-08-31** — recipe T live in cron (`syncPickStateAuthoritative.js`) · skill v18 · `src/lib/steamTailPolicy.js`_  
 _Tweet: [Closing Dime · CIN @ CHC Over 8.5](https://x.com/closingdime/status/2094044189302411580)_  
-_Code: `src/lib/steamMove.js` · `src/lib/ticketTapeCapture.js` · `scripts/analyzeGoldSteamAb.mjs` · daily § 5d_
+_Code: `src/lib/steamMove.js` · `src/lib/ticketTapeCapture.js` · `src/lib/steamTailPolicy.js` · `scripts/analyzeGoldSteamAb.mjs` · daily § 5d_
 
 ## Verdict
 
@@ -155,19 +155,21 @@ H (mute **all** 4u+) is **−2u vs C** because it also kills the one 5u win with
 
 ## Trusted mix (T) — the policy
 
-Three goals: max profit, reasonable volume for users, every shipped unit size trusted as a winner. No hard daily cap.
+**Live 2026-08-31.** Cron overlay after climate + sport unlock. Same sizer. Steam only confirms/kills the tails. No daily cap. Manual stake exempt. Ev-drift stays upstream. Pre-cutover tickets are not rewritten.
 
 ### Rules
 
-| Size | After 08-19 (tape log exists) | Before 08-19 |
-|------|-------------------------------|--------------|
-| ≤1u junk | **0u** | **0u** |
+| Size | From 2026-08-31, steam observable | Steam unobserved / pre-cutover |
+|------|-----------------------------------|--------------------------------|
+| ≤1u junk | **0u** | **0u** (1u cut does not need steam) / pre-cutover keep |
 | ≤1u A/B arriving | ship at **2u** (floor) | n/a (no arriving stamp) |
 | 2–3u | ship as-sized | ship as-sized |
 | 4u | ship only if A/B steam on at lock; else 0u | fail-open (keep) |
-| 5u | **always ship** (do not require steam) | fail-open (keep) |
+| 5u | **always ship** (do not require steam) | keep |
 | 5.4u+ | ship only if A/B steam on at lock; else 0u | fail-open (keep) |
 | any size | keep live Ev-drift mute (`EDGE≥15 AND dEv≤−1.5 AND EV<−1`) | same |
+
+Source A/B = wallet-profile `whitelistTier === CONFIRMED` and `whitelistSource` contains A and/or B — not climate Sharp A/B letters. Arriving = steam off on the first tape-log row, on at lock. First cycle with steam already ON is already-on, not arriving. Climate-halved unconfirmed 5.4u still mutes (band uses pre-climate units).
 
 Do **not**: only-ship arriving (~2/day), mute all fat, require steam on 2–3u, mute 5u with the 4u pile, or cap the day at 6.
 
