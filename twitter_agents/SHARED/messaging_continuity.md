@@ -7,17 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-31 · August MTD sized-up printed |
+| Last updated | 2026-08-31 · August MTD — educate size-for-football |
 | CSV window | Aug 23–29, 2026 (no new CSV this run) |
-| Ask temperature | **warm-hot** — month give just staged; next beat may ask (SR only) |
-| Account arc | Live Cubs printers → August ladder (size is the product) → September / NFL+CFB locking |
+| Ask temperature | **warm-hot** — free educate just staged; next beat may ask (SR only) |
+| Account arc | Cubs printers → August size receipt for the football avatar → first NFL/CFB lock |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/31 | Hero August MTD | +46.8u · almost 3× July · 5u+ 56-22 +65.6u · ladder · September loading | **S + C** | none | **Staged** |
+| 8/31 | Hero August MTD | WHO=football WR-scorers walking in · PURPOSE=educate size-not-53% · +46.8u / 3× July · 5u+ 56-22 | **S + C** | none | **Staged** |
 | 8/30 late | Hero Cubs | $120K at 2× · +$545K · proven 97% vs losers 83% · −1.5 +138 steam · too hard to pass up | **S + C** | none | Staged |
 | 8/30 night | QT Under 7.5 grade | −30u worst day → two 10+ · +112.91u · picked up / 7–0 cashed | **P + C** | none | Staged |
 | 8/30 | Hero Under 7.5 mix | 3-1 +4u → $6K sized-up Under by line 3 · loser $2.1K · Pin 1875→7500 | **S + C** | none | Staged |
@@ -26,12 +26,12 @@
 ---
 
 ## Angle lock
-**S + C:** August so far (8/01–8/30) printed because we sized up. Open on the **month printer** (`+46.8u` / almost 3× July) — not the 1u leak. 5u+ **56-22 / +65.6u**. Ladder holds the 1u scar. NFL on the board (preseason −0.42u — don’t flex) · CFB locks soon · “Big September is loading.” No ask.
+**S + C · Educate (not recap):** WHO = football bettors walking into September scoring on WR. PURPOSE = August proves **size** is how this prints — watch those tickets when NFL/CFB lock. Open `+46.8u` / almost 3× July. 5u+ **56-22 / +65.6u**. Close: don’t watch the 53%. No ask.
 
 ---
 
 ## Themes spent / open
-**Spent this beat:** August MTD · **+46.8u / almost 3× July open** (killed 1u-loss hook) · 5u+ 56-22 +65.6u · unit ladder · NFL/CFB September plant  
+**Spent this beat:** August MTD educate · +46.8u / 3× July open · 5u+ 56-22 · unit split · “don’t watch the 53% / watch the ones we size” · September loading  
 **Still open:** Cubs grade (if not posted) · onboarding FAQ · folder dream · bounce recap (don’t rerun) · soft ask (now warm-hot)
 
 ---
@@ -45,19 +45,16 @@
 ---
 
 ## FORWARD LOOK — after this posts
-1. **Soft ask** — earned after this free month give; SR only; pudding already landed
-2. **First NFL / CFB lock** — live board S or P when a real lock exists (not preseason −0.42u flex)
+1. **Soft ask** — earned after this free educate; SR only
+2. **First NFL / CFB lock** — live S or P; this post is the frame (“watch the ones we size”)
 3. Grade Cubs only if it still hasn’t shipped
-**NOT:** promo/SUMMER · second month scoreboard · −76u valley · third +$545K dump · sport-menu recap · AGS chrome · philosophy essay
+**NOT:** promo · second month recap · −76u · sport-menu · AGS · 1u-loss open · philosophy essay
 
 ---
 
 ## Agent close-out
-- [x] Full Hormozi pathway (WHO · PURPOSE · ONE · 1–2 SPCL) — **not** Coach/Researcher
-- [x] Timeline + continuity read this run
-- [x] Hook QA — killed 1u-loss open (Dale: miserable) · month printer in 2 lines
-- [x] Unit ladder whole truth · NFL PnL not flexed
-- [x] Live Firestore receipts 2026-08-31T15:32Z
-- [x] No ask
-- [x] FORWARD LOOK refreshed
-- [x] Staged → `twitter_drafts/COPY_PASTE.md`
+- [x] WHO locked (football WR-scorers walking into September) — not dual avatar
+- [x] PURPOSE locked (educate size-not-53%) — not recap + plant
+- [x] Hook kept (Dale: good) · close now does the job for them
+- [x] No ask · NFL PnL not flexed
+- [x] FORWARD LOOK refreshed · staged `twitter_drafts/COPY_PASTE.md`
