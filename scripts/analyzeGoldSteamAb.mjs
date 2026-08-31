@@ -896,6 +896,138 @@ push(line('tape BOOST, no A/B steam', window.filter((r) => r.tapeAction === 'BOO
 push(line('≤1u A/B arriving (the bump candidates)', window.filter((r) => r.sharpAB && r.steamArriving && r.units < 1.25)));
 push(line('≤1u rest of book', window.filter((r) => !(r.sharpAB && r.steamArriving) && r.units < 1.25)));
 
+push('');
+push('=== 12. Practical recipes on the ACTUAL August staked book ===');
+push('Goal: max PnL + elite WR, 5–6 locks/day, cut 1u junk, steam confirms/mutes fat tickets.');
+push('Steam stamps only exist 08-19+. Pre-steam days fail-open on steam rules (keep 2u+).');
+push('');
+
+function zero(r) {
+  return { ...r, units: 0, profit: 0, won: null };
+}
+function gateKeep(pool, pred) {
+  return pool.map((r) => (pred(r) ? r : zero(r)));
+}
+function isLean(r) { return r.units < 1.25; }
+function isFat(r) { return r.units >= 5.4; }
+function isArr(r) { return !!(r.sharpAB && r.steamArriving); }
+function isSteamAB(r) { return !!(r.sharpAB && r.steamOn); }
+function hasSteam(r) { return !!r.hasLog; }
+
+push(line('August staked (today)', augAll));
+push('August by unit band:');
+for (const band of UNIT_BANDS) {
+  push(line(band, augAll.filter((r) => unitBand(r.units) === band)));
+}
+push('');
+push(line('August ≤1u', augAll.filter(isLean)));
+push(line('August ≤1u except arriving', augAll.filter((r) => isLean(r) && !isArr(r))));
+push(line('August 2–4.99u (spine)', augAll.filter((r) => r.units >= 1.25 && r.units < 5.4)));
+push(line('August 5.4u+', augAll.filter(isFat)));
+push(line('Aug 1–18 ≤1u (no steam)', augPre.filter(isLean)));
+push(line('Aug 19–31 ≤1u', augSteam.filter(isLean)));
+push(line('Aug 19–31 5.4u+ no A/B steam', augSteam.filter((r) => isFat(r) && !isSteamAB(r))));
+
+const recipes = [
+  {
+    name: 'A. Cut all ≤1u',
+    pred: (r) => !isLean(r),
+  },
+  {
+    name: 'B. Cut ≤1u except A/B arriving',
+    pred: (r) => !isLean(r) || isArr(r),
+  },
+  {
+    name: 'C. B + MUTE 5.4u+ unless A/B steam (fail-open pre-steam)',
+    pred: (r) => {
+      if (isLean(r) && !isArr(r)) return false;
+      if (isFat(r) && hasSteam(r) && !isSteamAB(r)) return false;
+      return true;
+    },
+  },
+  {
+    name: 'D. Cut ALL ≤1u (even arriving) + MUTE 5.4u+ unless A/B steam',
+    pred: (r) => {
+      if (isLean(r)) return false;
+      if (isFat(r) && hasSteam(r) && !isSteamAB(r)) return false;
+      return true;
+    },
+  },
+  {
+    name: 'E. B + MUTE 5.4u+ unless A/B arriving (stricter fat)',
+    pred: (r) => {
+      if (isLean(r) && !isArr(r)) return false;
+      if (isFat(r) && hasSteam(r) && !isArr(r)) return false;
+      return true;
+    },
+  },
+  {
+    name: 'F. B + MUTE tape BOOST unless A/B steam (fail-open pre-steam)',
+    pred: (r) => {
+      if (isLean(r) && !isArr(r)) return false;
+      if (r.tapeAction === 'BOOST' && hasSteam(r) && !isSteamAB(r)) return false;
+      return true;
+    },
+  },
+  {
+    name: 'G. Spine only: arriving OR 2–4.99u (cut 1u and all 5.4u+)',
+    pred: (r) => isArr(r) || (r.units >= 1.25 && r.units < 5.4),
+  },
+];
+
+function dayStats(shipped) {
+  const live = shipped.filter((r) => r.won != null && r.units > 0);
+  const by = new Map();
+  for (const r of live) {
+    if (!by.has(r.date)) by.set(r.date, []);
+    by.get(r.date).push(r);
+  }
+  const dates = [...new Set(augAll.map((r) => r.date))].sort();
+  const counts = dates.map((d) => (by.get(d) || []).length);
+  const nonzero = counts.filter((n) => n > 0);
+  const avgAll = counts.length ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
+  const avgLive = nonzero.length ? nonzero.reduce((a, b) => a + b, 0) / nonzero.length : 0;
+  const inBand = nonzero.filter((n) => n >= 5 && n <= 6).length;
+  const steamDates = dates.filter((d) => d >= STEAM_LIVE);
+  const steamCounts = steamDates.map((d) => (by.get(d) || []).length);
+  const steamAvg = steamDates.length ? steamCounts.reduce((a, b) => a + b, 0) / steamDates.length : 0;
+  return { dates, counts, avgAll, avgLive, inBand, nLiveDays: nonzero.length, steamAvg, by };
+}
+
+push('');
+push('KEEP-ALL August                                 ' + fmt(agg(augAll)));
+for (const rec of recipes) {
+  const shipped = gateKeep(augAll, rec.pred);
+  const a = agg(shipped);
+  const d = dayStats(shipped);
+  const wrLift = (a.wrPct != null && agg(augAll).wrPct != null) ? (a.wrPct - agg(augAll).wrPct) : 0;
+  const dPnl = a.pnl - agg(augAll).pnl;
+  push(`${rec.name}`);
+  push(`  SHIP ${fmt(a)}  ΔPnL ${dPnl >= 0 ? '+' : ''}${dPnl.toFixed(1)}u  WR ${wrLift >= 0 ? '+' : ''}${wrLift.toFixed(1)}pp`);
+  push(`  daily  Aug avg ${d.avgAll.toFixed(1)}  (days-with-lock ${d.avgLive.toFixed(1)})  steam-window avg ${d.steamAvg.toFixed(1)}  · ${d.nLiveDays} days with a lock  · ${d.inBand} days in 5–6 band`);
+}
+
+push('');
+push('-- Recipe C day-by-day (cut junk 1u, keep arriving 1u, mute fat unless A/B steam) --');
+{
+  const rec = recipes.find((x) => x.name.startsWith('C.'));
+  const shipped = gateKeep(augAll, rec.pred);
+  const d = dayStats(shipped);
+  for (const date of d.dates) {
+    const dayAll = augAll.filter((r) => r.date === date);
+    const dayShip = (d.by.get(date) || []);
+    const mark = date >= STEAM_LIVE ? 'steam' : 'pre  ';
+    push(`${date} ${mark}  actual ${String(dayAll.length).padStart(2)} / ${agg(dayAll).stake.toFixed(1)}u   gated ${String(dayShip.length).padStart(2)} / ${agg(dayShip).stake.toFixed(1)}u  ${dayShip.length ? fmt(agg(dayShip)) : '—'}`);
+  }
+}
+
+push('');
+push('-- Recipe C vs D vs A on steam-window only (where steam can actually fire) --');
+for (const rec of recipes.filter((x) => x.name.startsWith('A.') || x.name.startsWith('B.') || x.name.startsWith('C.') || x.name.startsWith('D.') || x.name.startsWith('F.'))) {
+  const shipped = gateKeep(augLog, rec.pred);
+  push(`${rec.name.padEnd(72)} ${fmt(agg(shipped))}`);
+}
+
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 const payload = {
   generatedAt: new Date().toISOString(),
