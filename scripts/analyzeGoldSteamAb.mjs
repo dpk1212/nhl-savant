@@ -1028,6 +1028,66 @@ for (const rec of recipes.filter((x) => x.name.startsWith('A.') || x.name.starts
   push(`${rec.name.padEnd(72)} ${fmt(agg(shipped))}`);
 }
 
+push('');
+push('=== 13. Steam on the 2u–5.39u spine (the band we would leave alone) ===');
+push('Mid = 1.25u ≤ units < 5.4u. Steam can only fire 08-19+. Aug 1–18 mid has no steam tag.');
+push('');
+
+function isMid(r) { return r.units >= 1.25 && r.units < 5.4; }
+const augMid = augAll.filter(isMid);
+const preMid = augPre.filter(isMid);
+const steamMid = augLog.filter(isMid);
+
+push(line('August mid 2u–5.39u', augMid));
+push(line('Aug 1–18 mid (no steam)', preMid));
+push(line('Aug 19–31 mid (tape-log)', steamMid));
+push('');
+push('Steam-window mid × steam:');
+push(line('mid A/B arriving', steamMid.filter(isArr)));
+push(line('mid A/B steam at lock', steamMid.filter(isSteamAB)));
+push(line('mid steam on, no A/B', steamMid.filter((r) => r.steamOn && !r.sharpAB)));
+push(line('mid A/B, no steam', steamMid.filter((r) => r.sharpAB && !r.steamOn)));
+push(line('mid no steam at lock', steamMid.filter((r) => !r.steamOn)));
+push('');
+push('Same split by sub-band (steam-window only):');
+for (const band of ['2–3u', '4u', '5u']) {
+  const inBand = steamMid.filter((r) => unitBand(r.units) === band);
+  push(line(`${band} all`, inBand));
+  push(line(`${band} A/B arriving`, inBand.filter(isArr)));
+  push(line(`${band} A/B steam at lock`, inBand.filter(isSteamAB)));
+  push(line(`${band} no steam at lock`, inBand.filter((r) => !r.steamOn)));
+}
+
+push('');
+push('-- If we DID require steam on mid (would we want that?) --');
+const midKeepArr = steamMid.filter(isArr);
+const midKeepSteamAB = steamMid.filter(isSteamAB);
+const midRestNoSteamAB = steamMid.filter((r) => !isSteamAB(r));
+push(line('KEEP mid only if A/B arriving', midKeepArr));
+push(line('CUT  (mid without arriving)', steamMid.filter((r) => !isArr(r))));
+push(line('KEEP mid only if A/B steam at lock', midKeepSteamAB));
+push(line('CUT  (mid without A/B steam)', midRestNoSteamAB));
+
+push('');
+push('Recipe C as shipped, then ALSO mute mid without A/B steam (steam-window only):');
+{
+  const recC = recipes.find((x) => x.name.startsWith('C.'));
+  const cOnly = gateKeep(augAll, recC.pred);
+  const cPlus = gateKeep(augAll, (r) => {
+    if (!recC.pred(r)) return false;
+    if (isMid(r) && hasSteam(r) && !isSteamAB(r)) return false;
+    return true;
+  });
+  const cPlusArr = gateKeep(augAll, (r) => {
+    if (!recC.pred(r)) return false;
+    if (isMid(r) && hasSteam(r) && !isArr(r)) return false;
+    return true;
+  });
+  push(`C (mid untouched)     ${fmt(agg(cOnly))}  daily steam ${dayStats(cOnly).steamAvg.toFixed(1)}`);
+  push(`C + mute mid w/o A/B steam  ${fmt(agg(cPlus))}  daily steam ${dayStats(cPlus).steamAvg.toFixed(1)}`);
+  push(`C + mute mid w/o arriving   ${fmt(agg(cPlusArr))}  daily steam ${dayStats(cPlusArr).steamAvg.toFixed(1)}`);
+}
+
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 const payload = {
   generatedAt: new Date().toISOString(),
