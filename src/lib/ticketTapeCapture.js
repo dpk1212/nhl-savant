@@ -124,7 +124,7 @@ export function compactTapeLogRow(snap, {
   hoursUntilGame = null,
 } = {}) {
   const hut = Number.isFinite(Number(hoursUntilGame)) ? Number(hoursUntilGame) : null;
-  return {
+  const row = {
     at: at || new Date().toISOString(),
     gate,
     hoursOut: hut != null ? Math.round(hut * 100) / 100 : null,
@@ -135,6 +135,10 @@ export function compactTapeLogRow(snap, {
     sinceOpenPct: snap?.steam?.sinceOpenPct ?? null,
     tier: snap?.steam?.tier ?? null,
   };
+  // Closing Dime gold-card combo. Only store true to keep the log compact.
+  if (snap?.steam?.goldConfirmed) row.goldConfirmed = true;
+  if (snap?.steam?.limitRising) row.limitRising = true;
+  return row;
 }
 
 function hasGate(log, gate) {
@@ -288,7 +292,68 @@ export function analyzeTicketTapeLog(log) {
     steamOnLock: steamOnRow(lock),
     goldFirst: first?.tier === 'gold',
     goldLock: lock?.tier === 'gold',
+    goldConfirmedFirst: first?.goldConfirmed === true,
+    goldConfirmedLock: lock?.goldConfirmed === true,
+    limitRisingFirst: first?.limitRising === true,
+    limitRisingLock: lock?.limitRising === true,
   };
+}
+
+function sideSteam(sd) {
+  if (sd?.v8_steam && typeof sd.v8_steam === 'object') return sd.v8_steam;
+  if (sd?.steam && typeof sd.steam === 'object') return sd.steam;
+  return null;
+}
+
+function sideTapeLog(sd) {
+  if (Array.isArray(sd?.v8_ticketTapeLog)) return sd.v8_ticketTapeLog;
+  if (Array.isArray(sd?.ticketTapeLog)) return sd.ticketTapeLog;
+  return [];
+}
+
+/**
+ * Merge lifecycle log with the T-15 freeze scalar.
+ * Older log rows omitted goldConfirmed / limitRising; `v8_steam` still has them.
+ */
+export function enrichTicketTapeFromSide(sd) {
+  const log = sideTapeLog(sd);
+  const steam = sideSteam(sd);
+  const tape = analyzeTicketTapeLog(log);
+  const ticketEvPct = Number.isFinite(sd?.v8_ticketEvPct)
+    ? sd.v8_ticketEvPct
+    : (Number.isFinite(sd?.ticketEvPct) ? sd.ticketEvPct : null);
+  return {
+    ticketEvPct,
+    ticketTapeLog: log,
+    steam,
+    ticketTape: {
+      ...tape,
+      goldLock: !!(tape.goldLock || steam?.tier === 'gold'),
+      goldConfirmedLock: !!(tape.goldConfirmedLock || steam?.goldConfirmed),
+      limitRisingLock: !!(tape.limitRisingLock || steam?.limitRising),
+      steamOnLock: !!(tape.steamOnLock || steam?.tier === 'steam' || steam?.tier === 'gold'),
+    },
+  };
+}
+
+/**
+ * Closing Dime combo at lock:
+ *   gold+limits  = GOLD steam (4.5%+) AND Pinnacle limits rising
+ *   gold-flat    = GOLD steam, limits not rising
+ *   steam        = steam event, not gold
+ *   limits-only  = limits rising without a steam/gold tier
+ *   none         = neither
+ */
+export function steamGoldLockLabel(tape, steam = null) {
+  const goldConfirmed = !!(tape?.goldConfirmedLock || steam?.goldConfirmed);
+  const gold = !!(tape?.goldLock || steam?.tier === 'gold');
+  const steamOn = !!(tape?.steamOnLock || steam?.tier === 'steam' || steam?.tier === 'gold');
+  const limits = !!(tape?.limitRisingLock || steam?.limitRising);
+  if (goldConfirmed) return 'gold+limits';
+  if (gold) return 'gold-flat';
+  if (steamOn) return 'steam';
+  if (limits) return 'limits-only';
+  return 'none';
 }
 
 /** Write analysis stamps onto a pick side (mutates target). */

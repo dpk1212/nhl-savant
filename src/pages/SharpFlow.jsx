@@ -13331,6 +13331,10 @@ export default function SharpFlow() {
                           // Mute audit — why this side is TRACKED / 0u
                           mutedBy: sd.mutedBy || null,
                           unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
+                          unitsPreSteamTail: Number.isFinite(sd.v8_unitsPreSteamTail) ? sd.v8_unitsPreSteamTail : null,
+                          steamTailReason: sd.v8_steamTailReason || null,
+                          v8_steamTailReason: sd.v8_steamTailReason || null,
+                          v8_unitsPreSteamTail: Number.isFinite(sd.v8_unitsPreSteamTail) ? sd.v8_unitsPreSteamTail : null,
                         });
                       }
                     }

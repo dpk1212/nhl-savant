@@ -120,4 +120,25 @@ const pregame = summarizeSteam({
 assert.equal(pregame.frozen, false);
 assert.ok(pregame.sinceOpen.dropPct >= 4.5, `pregame still live ${pregame.sinceOpen.dropPct}`);
 
+// Closing Dime CIN @ CHC Over 8.5 · 2026-08-30: Pin ~−118 → ~−150 while limits $1k → $4k.
+{
+  const cinChc = {
+    totalOpener: { t: now - 6 * 3600, line: 8.5, overOdds: -118, underOdds: -102, max: 1000 },
+    totalCurrent: { line: 8.5, overOdds: -150, underOdds: 130, max: 4000, isMain: true },
+    maxTotal: 4000,
+    totalHistory: [
+      { t: now - 6 * 3600, line: 8.5, overOdds: -118, underOdds: -102, max: 1000, isMain: true },
+      { t: now - 3600, line: 8.5, overOdds: -122, underOdds: 102, max: 1000, isMain: true },
+      { t: now - 60, line: 8.5, overOdds: -150, underOdds: 130, max: 4000, isMain: true },
+    ],
+  };
+  const over = summarizeSteam(cinChc, { marketType: 'total', sideNorm: 'over', line: 8.5, nowSec: now });
+  assert.equal(over.tier, 'gold', `CIN@CHC Over last-hour ${over.lastHour?.dropPct}`);
+  assert.equal(over.limitRising, true, 'limits $1k → $4k');
+  assert.equal(over.goldConfirmed, true, 'gold + limits = Closing Dime gold card');
+  assert.ok(over.lastHour.dropPct >= 4.5, `last-hour drop ${over.lastHour.dropPct}%`);
+  const under = summarizeSteam(cinChc, { marketType: 'total', sideNorm: 'under', line: 8.5, nowSec: now });
+  assert.equal(under.goldConfirmed, false, 'Under is the steamed-against side');
+}
+
 console.log('testSteamMove: ok');

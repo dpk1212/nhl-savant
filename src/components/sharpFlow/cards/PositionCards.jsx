@@ -26,14 +26,16 @@ function formatLockCountdown(ms) {
 }
 
 /** Audit tooltip for a 0u / NO PLAY card — technical mute reason. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, stakePath } = {}) {
-  const preU = Number.isFinite(unitsPreNoConfirmed) && unitsPreNoConfirmed > 0
-    ? unitsPreNoConfirmed
-    : (Number.isFinite(unitsPreMaxSrSub4) && unitsPreMaxSrSub4 > 0
-      ? unitsPreMaxSrSub4
-      : (Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
-        ? unitsPreFlinchFailOpen
-        : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null)));
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, steamTailReason, stakePath } = {}) {
+  const preU = Number.isFinite(unitsPreSteamTail) && unitsPreSteamTail > 0
+    ? unitsPreSteamTail
+    : (Number.isFinite(unitsPreNoConfirmed) && unitsPreNoConfirmed > 0
+      ? unitsPreNoConfirmed
+      : (Number.isFinite(unitsPreMaxSrSub4) && unitsPreMaxSrSub4 > 0
+        ? unitsPreMaxSrSub4
+        : (Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
+          ? unitsPreFlinchFailOpen
+          : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null))));
   const pre = preU != null
     ? `${preU % 1 === 0 ? preU.toFixed(0) : preU.toFixed(1)}u → 0u`
     : null;
@@ -52,6 +54,11 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   if (mutedBy === 'no-confirmed') {
     return pre ? `No CONFIRMED on FOR · ${pre}` : 'No CONFIRMED on FOR — muted';
   }
+  if (mutedBy === 'steam-tail') {
+    const lean = steamTailReason === 'lean_no_arriving';
+    const label = lean ? 'Unconfirmed size — no arriving steam' : 'Unconfirmed size — no steam';
+    return pre ? `${label} · ${pre}` : label;
+  }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
   if (stakePath === 'MONITORING') return 'Monitoring — never sized';
@@ -65,6 +72,7 @@ function noPlayReason({ mutedBy, tapeAction, stakePath } = {}) {
     return 'Muted on tape';
   }
   if (mutedBy === 'no-confirmed') return 'No confirmed money on our side';
+  if (mutedBy === 'steam-tail') return 'Unconfirmed size — no steam';
   if (stakePath === 'FADE') return "Didn't meet the size bar";
   return "Didn't meet the size bar";
 }
@@ -2411,6 +2419,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     unitsPreFlinchFailOpen: f.unitsPreFlinchFailOpen,
     unitsPreMaxSrSub4: f.unitsPreMaxSrSub4,
     unitsPreNoConfirmed: f.unitsPreNoConfirmed,
+    unitsPreSteamTail: f.unitsPreSteamTail,
+    steamTailReason: f.steamTailReason || f.v8_steamTailReason || null,
     stakePath: f.stakePath,
   };
   const muteTip = trackedMuteLabel(muteArgs);

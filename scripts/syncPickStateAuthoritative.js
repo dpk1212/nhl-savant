@@ -213,6 +213,12 @@ import {
   sideRowsFromPickDocs,
   ticketAbFeatures,
 } from '../src/lib/climateTurnoutCap.js';
+import {
+  STEAM_TAIL_POLICY_FROM,
+  STEAM_TAIL_MUTED_BY,
+  applySteamTailPolicyFromTicket,
+  isSteamTailPolicyLive,
+} from '../src/lib/steamTailPolicy.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -1125,7 +1131,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 17; // v17: climate turnout RED half-exposure + ticket A/B stamps
+const SKILL_FEATURE_VERSION = 18; // v18: steam-tail policy T (cut junk 1u, floor arriving 2u, steam-confirm 4u/5.4u+)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1216,6 +1222,13 @@ function applySkillFeatureStamps(target, bundle, now, {
   climatePctABRoster = null,
   climateAction = null,
   unitsPreClimate = null,
+  steamTailAction = null,
+  unitsPreSteamTail = null,
+  steamTailReason = null,
+  steamTailArriving = null,
+  steamTailOnLock = null,
+  steamTailSharpAB = null,
+  steamTailBand = null,
   ticketHasA = null,
   ticketHasAB = null,
   ticketNA = null,
@@ -1353,6 +1366,15 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreClimate != null && Number.isFinite(unitsPreClimate)) {
     target.v8_unitsPreClimate = unitsPreClimate;
   }
+  if (steamTailAction != null) target.v8_steamTailAction = steamTailAction;
+  if (unitsPreSteamTail != null && Number.isFinite(unitsPreSteamTail)) {
+    target.v8_unitsPreSteamTail = unitsPreSteamTail;
+  }
+  if (steamTailReason != null) target.v8_steamTailReason = steamTailReason;
+  if (steamTailArriving != null) target.v8_steamTailArriving = !!steamTailArriving;
+  if (steamTailOnLock != null) target.v8_steamTailOnLock = !!steamTailOnLock;
+  if (steamTailSharpAB != null) target.v8_steamTailSharpAB = !!steamTailSharpAB;
+  if (steamTailBand != null) target.v8_steamTailBand = steamTailBand;
   if (ticketHasA != null) target.v8_ticketHasA = !!ticketHasA;
   if (ticketHasAB != null) target.v8_ticketHasAB = !!ticketHasAB;
   if (ticketNA != null && Number.isFinite(Number(ticketNA))) target.v8_ticketNA = Number(ticketNA);
@@ -1429,6 +1451,7 @@ function skillStampsDrifted(sd, bundle, {
   evDriftAction = null,
   sportUnlockAction = null,
   climateAction = null,
+  steamTailAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1474,6 +1497,7 @@ function skillStampsDrifted(sd, bundle, {
   if (evDriftAction != null && (sd.v8_evDriftAction || null) !== evDriftAction) return true;
   if (sportUnlockAction != null && (sd.v8_sportUnlockAction || null) !== sportUnlockAction) return true;
   if (climateAction != null && (sd.v8_climateAction || null) !== climateAction) return true;
+  if (steamTailAction != null && (sd.v8_steamTailAction || null) !== steamTailAction) return true;
   return false;
 }
 
@@ -3203,16 +3227,19 @@ async function createMissingLockedPicks({
         peakUnitsApplied = topCrowdedPolicyCreate.units;
       }
 
-      // Ev-drift × EDGE mute — ABSOLUTE LAST. EDGE≥15 ∧ dEv≤−1.5 → 0u.
-      // On create there is no prior first Ev → HOLD (fail-open). Fires on
-      // later reconcile cycles once the tape log has a first sample.
+      // Ev-drift × EDGE mute — after crowded, before climate. EDGE≥15 ∧
+      // dEv≤−1.5 → 0u. Steam-tail (T) is the last size overlay. On create
+      // there is no prior first Ev → HOLD (fail-open). Fires on later
+      // reconcile cycles once the tape log has a first sample.
       let evDriftPolicyCreate = null;
       let evDriftCreate = { firstEv: null, currentEv: null, dEv: null };
+      let liveTapeCreate = null;
+      let tapeCreateCtxEarly = null;
       if (createV121Eligible && peakUnitsApplied > 0) {
-        const tapeCreateCtxEarly = pinnTapeFromMeta(
+        tapeCreateCtxEarly = pinnTapeFromMeta(
           gameMeta, { sport, gameKey }, marketType, side, { peak: { line } }, { meta },
         );
-        const liveTapeCreate = captureTicketTape({
+        liveTapeCreate = captureTicketTape({
           pinnGame: tapeCreateCtxEarly.pinnGame,
           marketType: tapeCreateCtxEarly.marketType,
           sideNorm: tapeCreateCtxEarly.sideNorm,
@@ -3252,7 +3279,7 @@ async function createMissingLockedPicks({
         peakUnitsApplied = climatePolicyCreate.units;
       }
 
-      // Sport Confirmed unlock CAP — absolute last after mutes. NFL/CFB only.
+      // Sport Confirmed unlock CAP — last CAP before steam-tail. NFL/CFB only.
       // Caps published units by sport-wide CONFIRMED count. Never mutes to 0.
       let sportUnlockPolicyCreate = null;
       const nSportConfirmedCreate = SPORT_CONFIRMED_N_BY_SPORT.get(String(sport).toUpperCase())
@@ -3266,6 +3293,47 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE,
         });
         peakUnitsApplied = sportUnlockPolicyCreate.units;
+      }
+
+      // Steam-tail policy T — last size overlay. Cut junk 1u, floor A/B
+      // arriving to 2u, steam-confirm 4u and 5.4u+. 2–3u and 5u untouched.
+      // Fail-open 4u/fat when steam cannot be observed. Ev-drift stays upstream.
+      let steamTailPolicyCreate = null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        if (!tapeCreateCtxEarly) {
+          tapeCreateCtxEarly = pinnTapeFromMeta(
+            gameMeta, { sport, gameKey }, marketType, side, { peak: { line } }, { meta },
+          );
+        }
+        if (!liveTapeCreate) {
+          liveTapeCreate = captureTicketTape({
+            pinnGame: tapeCreateCtxEarly.pinnGame,
+            marketType: tapeCreateCtxEarly.marketType,
+            sideNorm: tapeCreateCtxEarly.sideNorm,
+            line: tapeCreateCtxEarly.ticketLine,
+            offerOdds: odds ?? null,
+            commenceMs: tapeCreateCtxEarly.commenceMs,
+            nowMs: now,
+          });
+        }
+        steamTailPolicyCreate = applySteamTailPolicyFromTicket({
+          units: peakUnitsApplied,
+          pickDate: TARGET_DATE,
+          walletDetails,
+          side,
+          sport,
+          walletProfiles,
+          existingLog: null,
+          liveSnap: liveTapeCreate,
+          hasPinnGame: !!tapeCreateCtxEarly.pinnGame,
+          unitsPreClimate: (climatePolicyCreate && Number.isFinite(climatePolicyCreate.unitsPrePolicy))
+            ? climatePolicyCreate.unitsPrePolicy
+            : null,
+          unitsPreSportUnlock: (sportUnlockPolicyCreate && Number.isFinite(sportUnlockPolicyCreate.unitsPrePolicy))
+            ? sportUnlockPolicyCreate.unitsPrePolicy
+            : null,
+        });
+        peakUnitsApplied = steamTailPolicyCreate.units;
       }
 
       // Determine team label for the side.
@@ -3498,6 +3566,15 @@ async function createMissingLockedPicks({
           unitsPreClimate: (climatePolicyCreate && Number.isFinite(climatePolicyCreate.unitsPrePolicy))
             ? climatePolicyCreate.unitsPrePolicy
             : null,
+          steamTailAction: steamTailPolicyCreate?.action ?? null,
+          unitsPreSteamTail: (steamTailPolicyCreate && Number.isFinite(steamTailPolicyCreate.unitsPrePolicy))
+            ? steamTailPolicyCreate.unitsPrePolicy
+            : null,
+          steamTailReason: steamTailPolicyCreate?.reason ?? null,
+          steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
+          steamTailOnLock: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamOnLock : null,
+          steamTailSharpAB: steamTailPolicyCreate ? !!steamTailPolicyCreate.sharpAB : null,
+          steamTailBand: steamTailPolicyCreate?.band ?? null,
           ticketHasA: ticketAbCreate.hasA,
           ticketHasAB: ticketAbCreate.hasAB,
           ticketNA: ticketAbCreate.nA,
@@ -3551,7 +3628,9 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (evDriftPolicyCreate?.mutedBy) {
+      if (steamTailPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = steamTailPolicyCreate.mutedBy;
+      } else if (evDriftPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = evDriftPolicyCreate.mutedBy;
       } else if (topCrowdedPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = topCrowdedPolicyCreate.mutedBy;
@@ -3587,7 +3666,10 @@ async function createMissingLockedPicks({
       const evDriftMutedCreate = evDriftPolicyCreate?.action === 'MUTE'
         && Number.isFinite(evDriftPolicyCreate.unitsPrePolicy)
         && evDriftPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const steamTailMutedCreate = steamTailPolicyCreate?.action === 'MUTE'
+        && Number.isFinite(steamTailPolicyCreate.unitsPrePolicy)
+        && steamTailPolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -3599,6 +3681,7 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(steamTailPolicyCreate?.reason ? [steamTailPolicyCreate.reason] : []),
           ...(evDriftPolicyCreate?.reason ? [evDriftPolicyCreate.reason] : []),
           ...(topCrowdedPolicyCreate?.reason ? [topCrowdedPolicyCreate.reason] : []),
           ...(noConfirmedPolicyCreate?.reason ? [noConfirmedPolicyCreate.reason] : []),
@@ -4697,15 +4780,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = topCrowdedPolicy.units;
   }
 
-  // ─── Ev-drift × EDGE mute (ABSOLUTE LAST) ────────────────────────────
+  // ─── Ev-drift × EDGE mute (after crowded, before climate) ────────────
   // EDGE≥15 ∧ first→current dEv ≤ −1.5 → 0u. Any path. Missing Ev fail-open.
   // Live tape capture this cycle so mid-window drift mutes same cycle.
-  // Manual stake exempt. Date-gated inside the overlay.
+  // Steam-tail (T) is the last size overlay. Manual stake exempt. Date-gated.
   let evDriftPolicy = null;
   let evDriftLive = { firstEv: null, currentEv: null, dEv: null };
+  let liveTapeSnap = null;
+  let tapeCtxLive = null;
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
-    const tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
-    const liveTapeSnap = captureTicketTape({
+    tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    liveTapeSnap = captureTicketTape({
       pinnGame: tapeCtxLive.pinnGame,
       marketType: tapeCtxLive.marketType,
       sideNorm: tapeCtxLive.sideNorm,
@@ -4746,7 +4831,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = climatePolicy.units;
   }
 
-  // ─── Sport Confirmed unlock CAP (absolute last after mutes) ──────────
+  // ─── Sport Confirmed unlock CAP (last CAP before steam-tail) ──────────
   // NFL/CFB only · caps by sport-wide CONFIRMED n · never mutes to 0 ·
   // does not repath · manual stake exempt · date-gated inside overlay.
   let sportUnlockPolicy = null;
@@ -4761,6 +4846,44 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pickDate,
     });
     finalUnitsApplied = sportUnlockPolicy.units;
+  }
+
+  // ─── Steam-tail policy T (last size overlay) ──────────────────────────
+  // Cut junk 1u · floor A/B arriving → 2u · steam-confirm 4u and 5.4u+.
+  // 2–3u and 5u untouched. Fail-open 4u/fat when steam cannot be observed.
+  // Manual stake exempt. Date-gated inside overlay. Ev-drift stays upstream.
+  let steamTailPolicy = null;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    if (!tapeCtxLive) tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    if (!liveTapeSnap) {
+      liveTapeSnap = captureTicketTape({
+        pinnGame: tapeCtxLive.pinnGame,
+        marketType: tapeCtxLive.marketType,
+        sideNorm: tapeCtxLive.sideNorm,
+        line: tapeCtxLive.ticketLine,
+        offerOdds: sideOdds,
+        commenceMs: tapeCtxLive.commenceMs,
+        nowMs: now,
+      });
+    }
+    steamTailPolicy = applySteamTailPolicyFromTicket({
+      units: finalUnitsApplied,
+      pickDate,
+      walletDetails: wd,
+      side,
+      sport: pick.sport,
+      walletProfiles,
+      existingLog: sd.v8_ticketTapeLog,
+      liveSnap: liveTapeSnap,
+      hasPinnGame: !!tapeCtxLive.pinnGame,
+      unitsPreClimate: (climatePolicy && Number.isFinite(climatePolicy.unitsPrePolicy))
+        ? climatePolicy.unitsPrePolicy
+        : null,
+      unitsPreSportUnlock: (sportUnlockPolicy && Number.isFinite(sportUnlockPolicy.unitsPrePolicy))
+        ? sportUnlockPolicy.unitsPrePolicy
+        : null,
+    });
+    finalUnitsApplied = steamTailPolicy.units;
   }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
@@ -4826,6 +4949,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (evDriftPolicy?.reason && !reasons.includes(evDriftPolicy.reason)) reasons.push(evDriftPolicy.reason);
   if (climatePolicy?.reason && !reasons.includes(climatePolicy.reason)) reasons.push(climatePolicy.reason);
   if (sportUnlockPolicy?.reason && !reasons.includes(sportUnlockPolicy.reason)) reasons.push(sportUnlockPolicy.reason);
+  if (steamTailPolicy?.reason && !reasons.includes(steamTailPolicy.reason)) reasons.push(steamTailPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -4857,9 +4981,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const evDriftMuted = evDriftPolicy?.action === 'MUTE'
     && Number.isFinite(evDriftPolicy.unitsPrePolicy)
     && evDriftPolicy.unitsPrePolicy > 0;
+  const steamTailMuted = steamTailPolicy?.action === 'MUTE'
+    && Number.isFinite(steamTailPolicy.unitsPrePolicy)
+    && steamTailPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
-  // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift + steam-tail run AFTER those floors, so they still win if they cancelled.
+  const sizeMuted = steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -4900,7 +5027,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const NO_CONF_MUTE_VALUES = new Set([NO_CONFIRMED_MUTED_BY]);
   const TOP_CROWDED_MUTE_VALUES = new Set([TOP_CROWDED_MUTED_BY]);
   const EV_DRIFT_MUTE_VALUES = new Set([EV_DRIFT_EDGE_MUTED_BY]);
-  if (evDriftPolicy?.mutedBy) {
+  const STEAM_TAIL_MUTE_VALUES = new Set([STEAM_TAIL_MUTED_BY]);
+  if (steamTailPolicy?.mutedBy) {
+    patch.mutedBy = steamTailPolicy.mutedBy;
+  } else if (evDriftPolicy?.mutedBy) {
     patch.mutedBy = evDriftPolicy.mutedBy;
   } else if (topCrowdedPolicy?.mutedBy) {
     patch.mutedBy = topCrowdedPolicy.mutedBy;
@@ -4936,7 +5066,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || MAX_SR_MUTE_VALUES.has(sd.mutedBy)
       || NO_CONF_MUTE_VALUES.has(sd.mutedBy)
       || TOP_CROWDED_MUTE_VALUES.has(sd.mutedBy)
-      || EV_DRIFT_MUTE_VALUES.has(sd.mutedBy)) {
+      || EV_DRIFT_MUTE_VALUES.has(sd.mutedBy)
+      || STEAM_TAIL_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -5202,6 +5333,22 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${sportUnlockPolicy.unitsPrePolicy}u → ${sportUnlockPolicy.units}u (${hcStakeTier})`
     );
   }
+  if (steamTailPolicy?.action === 'MUTE') {
+    changes.push(
+      `STEAM-TAIL-MUTE: ${steamTailPolicy.reason || 'steam-tail'} `
+      + `band=${steamTailPolicy.band || '—'} `
+      + `ab=${steamTailPolicy.sharpAB ? 'Y' : 'N'} `
+      + `steam=${steamTailPolicy.steamOnLock ? 'ON' : 'off'} `
+      + `arriving=${steamTailPolicy.steamArriving ? 'Y' : 'N'} `
+      + `${steamTailPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+    );
+  }
+  if (steamTailPolicy?.action === 'FLOOR') {
+    changes.push(
+      `STEAM-TAIL-FLOOR: arriving A/B `
+      + `${steamTailPolicy.unitsPrePolicy}u → ${steamTailPolicy.units}u (${hcStakeTier})`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -5319,6 +5466,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreClimate: (climatePolicy && Number.isFinite(climatePolicy.unitsPrePolicy))
         ? climatePolicy.unitsPrePolicy
         : null,
+      steamTailAction: steamTailPolicy?.action ?? null,
+      unitsPreSteamTail: (steamTailPolicy && Number.isFinite(steamTailPolicy.unitsPrePolicy))
+        ? steamTailPolicy.unitsPrePolicy
+        : null,
+      steamTailReason: steamTailPolicy?.reason ?? null,
+      steamTailArriving: steamTailPolicy ? !!steamTailPolicy.steamArriving : null,
+      steamTailOnLock: steamTailPolicy ? !!steamTailPolicy.steamOnLock : null,
+      steamTailSharpAB: steamTailPolicy ? !!steamTailPolicy.sharpAB : null,
+      steamTailBand: steamTailPolicy?.band ?? null,
       ticketHasA: ticketAbLive.hasA,
       ticketHasAB: ticketAbLive.hasAB,
       ticketNA: ticketAbLive.nA,
@@ -5348,6 +5504,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       evDriftAction: evDriftPolicy?.action ?? null,
       sportUnlockAction: sportUnlockPolicy?.action ?? null,
       climateAction: climatePolicy?.action ?? null,
+      steamTailAction: steamTailPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5363,7 +5520,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (topCrowdedPolicy && (sd.v8_topCrowdedAction || null) !== topCrowdedPolicy.action)
         || (evDriftPolicy && (sd.v8_evDriftAction || null) !== evDriftPolicy.action)
         || (sportUnlockPolicy && (sd.v8_sportUnlockAction || null) !== sportUnlockPolicy.action)
-        || (climatePolicy && (sd.v8_climateAction || null) !== climatePolicy.action)) {
+        || (climatePolicy && (sd.v8_climateAction || null) !== climatePolicy.action)
+        || (steamTailPolicy && (sd.v8_steamTailAction || null) !== steamTailPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -5381,7 +5539,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (maxSrSub4Policy?.action ? ` maxSrAct=${maxSrSub4Policy.action}` : '')
         + (noConfirmedPolicy?.action ? ` noConfAct=${noConfirmedPolicy.action}` : '')
         + (topCrowdedPolicy?.action ? ` topCrowdAct=${topCrowdedPolicy.action}` : '')
-        + (evDriftPolicy?.action ? ` evDriftAct=${evDriftPolicy.action}` : ''),
+        + (evDriftPolicy?.action ? ` evDriftAct=${evDriftPolicy.action}` : '')
+        + (steamTailPolicy?.action ? ` steamTailAct=${steamTailPolicy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -6243,10 +6402,18 @@ async function main() {
   if (isEvDriftEdgeMuteLive(TARGET_DATE)) {
     console.log(
       `Ev-drift × EDGE mute LIVE: EDGE≥${EV_DRIFT_EDGE_MIN} AND dEv≤${EV_DRIFT_DEV_MAX} AND currentEv<${EV_DRIFT_CURRENT_MAX} → 0u`
-      + ` · from ${EV_DRIFT_EDGE_MUTE_FROM} · absolute last · missing Ev fail-open · mutedBy=${EV_DRIFT_EDGE_MUTED_BY}`,
+      + ` · from ${EV_DRIFT_EDGE_MUTE_FROM} · before climate · missing Ev fail-open · mutedBy=${EV_DRIFT_EDGE_MUTED_BY}`,
     );
   } else {
     console.log(`Ev-drift × EDGE mute: not live before ${EV_DRIFT_EDGE_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isSteamTailPolicyLive(TARGET_DATE)) {
+    console.log(
+      `Steam-tail policy T LIVE: cut junk ≤1u · floor A/B arriving → 2u · 4u and 5.4u+ need A/B steam on at lock · 2–3u and 5u untouched`
+      + ` · from ${STEAM_TAIL_POLICY_FROM} · last size overlay · steam unobserved fail-open fat/4u · mutedBy=${STEAM_TAIL_MUTED_BY}`,
+    );
+  } else {
+    console.log(`Steam-tail policy T: not live before ${STEAM_TAIL_POLICY_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(
