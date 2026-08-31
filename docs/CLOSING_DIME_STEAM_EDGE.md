@@ -99,18 +99,26 @@ Two gold losers were the high-EV (6%+) tickets — same warning as the 4%+ EV bu
 
 ---
 
-## What to explore (this tape is underused)
+## The directional filter (winners vs losers)
 
-Steam + Pin limits is the wrong headline. The unused fields that actually move the book:
+The staked tape-log book is **187 · 101-86 · 54% · +1.9% ROI**. One question splits it:
 
-1. **Steam arriving on a Source A/B side (hold / don’t-cut).** 24 tickets, 18-6, 75% (55–88), **+48% ROI**. Same wallets with no steam are +0.5%. This is confirmation of our wallet tape, not a replacement for it.
-2. **EV fade from first sample to lock (cut / mute).** `dEv ≤ −1.5`: 40 tickets, 17-23, **−31% ROI (−37u)**. Broader than the live Ev-drift × EDGE mute (`EDGE≥15` and `currentEv&lt;−1`). Biggest unused leak on the tape.
-3. **A/B + 0–4% EV vs Pin fair (shop filter).** 48 tickets, 31-17, 65% (50–77), **+22% ROI**. Their 1.7% lag analog. 4%+ EV lost money (−11% on 14).
-4. **Steam dying (on→off).** 10 tickets, 4-6, −21%. Mute candidate. Wait for more N; it already rhymes with EV fade.
+**After a Source A/B CONFIRMED is on our side, did Pinnacle move toward us or away from us?**
 
-Leave on the shelf until N grows: gold+limits (n=2), any-gold 4.5% (n=8, Wilson includes 50%), limits-up without steam (n=5, +3%).
+| Pole | Rule | N | W-L | WR | ROI | User effect |
+|------|------|--:|:---:|---:|----:|-------------|
+| **With us** | A/B + steam arriving (off→on) | 24 | 18-6 | **75% (55–88)** | **+48%** | more wins — paint / don’t-cut |
+| Rest of book | not that | 163 | 83-80 | 51% | −4.8% | baseline |
+| **Against us** | EV vs Pin faded (`dEv≤−1.5`) and still `EV&lt;−1` | 33 | 12-21 | 36% | **−46%** | less losses — mute |
+| Live mute already | plus `EDGE≥15` (since 08-26) | 12 | 3-9 | 25% | **−70%** | already the rule; 11/12 are pre-08-26 |
 
-Do not size a rule from n=24. Do start painting arriving-steam and EV-fade on the card and keep the § 5d tables. Candidate overlay after ~50 arriving A/B tickets: don’t-cut when steam flips on; after a clean EV-fade replay vs the live mute, maybe widen that mute.
+If we had muted every fade+`EV&lt;−1` ticket, the remaining book is **154 · 89-65 · 58% · +15% ROI** (+46u vs leaving them on). Cost: **12 real wins** cut. The live `EDGE≥15` mute already captures almost all of that PnL (**+44u**) on the fat 5.4u tickets and only cuts **3 wins**. Widening to EDGE&lt;15 adds **9 more wins cut** for **12 more losses out** (~+2u). That is not how you show users more wins.
+
+Do **not** mute “no steam.” That cuts **70 wins** (137 tickets, 51% WR). Coin-flip volume, not a loser pile.
+
+**Product filter (one sentence for the card):** Pin is moving *with* our sharps, or Pin is moving *against* us. With → keep / badge. Against + high EDGE → already mute. Gold+limits is not this filter.
+
+Live mute slip to check: 2026-08-26 Real Madrid ML 5u matched `EDGE≥15` + fade + `EV&lt;−1` and still shipped (it won).
 
 ---
 

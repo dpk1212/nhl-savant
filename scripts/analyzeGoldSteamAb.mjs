@@ -235,6 +235,7 @@ for (const { mkt, docs } of packs) {
         forAny,
         sharpAB: forA + forB > 0,
         pathAB: PATH_AB.has(path),
+        edge: Number.isFinite(sd.v8_winnerAlignEdge) ? sd.v8_winnerAlignEdge : null,
       });
     }
   }
@@ -317,6 +318,53 @@ push(line('A/B + EV 0–4%', withLog.filter((r) => r.sharpAB && (r.evBucket === 
 push(line('A/B + arriving + EV 0–4%', withLog.filter((r) => r.sharpAB && r.steamArriving && (r.evBucket === '0-2' || r.evBucket === '2-4'))));
 push(line('EV faded dEv≤−1.5', withLog.filter((r) => Number.isFinite(r.dEv) && r.dEv <= -1.5)));
 push(line('A/B + EV faded dEv≤−1.5', withLog.filter((r) => r.sharpAB && Number.isFinite(r.dEv) && r.dEv <= -1.5)));
+push('');
+push('=== 7. Directional filter — mute losers vs keep winners (tape-log staked book) ===');
+push('CUT = would have been 0u. KEEP = remaining staked book. ΔPnL = −(cut PnL) = units saved if muted.');
+const allA = agg(withLog);
+push(`baseline KEEP-all                         ${fmt(allA)}`);
+
+function cf(name, pred) {
+  const cut = withLog.filter(pred);
+  const keep = withLog.filter((r) => !pred(r));
+  const c = agg(cut);
+  const k = agg(keep);
+  const loserPct = c.n ? ((100 * c.l / c.n).toFixed(0) + '%') : '—';
+  const saved = c.n ? (-c.pnl) : 0;
+  const wrLift = (k.wrPct != null && allA.wrPct != null) ? (k.wrPct - allA.wrPct) : null;
+  push(`${name}`);
+  push(`  CUT  ${fmt(c)}  | ${loserPct} of cuts lost | saved ${saved >= 0 ? '+' : ''}${saved.toFixed(1)}u`);
+  push(`  KEEP ${fmt(k)}  | WR ${wrLift == null ? '—' : (wrLift >= 0 ? '+' : '') + wrLift.toFixed(1) + 'pp vs book'}`);
+}
+
+cf('MUTE dEv≤−1.5 (EV faded vs Pin)', (r) => Number.isFinite(r.dEv) && r.dEv <= -1.5);
+cf('MUTE dEv≤−1.5 AND EV<0', (r) => Number.isFinite(r.dEv) && r.dEv <= -1.5 && r.evBucket === '<0');
+cf('MUTE dEv≤−1.5 AND EV<−1', (r) => Number.isFinite(r.dEv) && r.dEv <= -1.5 && Number(r.ev) < -1);
+cf('MUTE live Ev-drift (EDGE≥15 & dEv≤−1.5 & EV<−1)', (r) => Number(r.edge) >= 15 && Number.isFinite(r.dEv) && r.dEv <= -1.5 && Number(r.ev) < -1);
+cf('MUTE steam dying on→off', (r) => r.steamDying);
+cf('MUTE EV 4+%', (r) => r.evBucket === '4+');
+cf('MUTE EV fade OR steam dying', (r) => (Number.isFinite(r.dEv) && r.dEv <= -1.5) || r.steamDying);
+cf('MUTE no steam at lock', (r) => !r.steamOn);
+
+push('');
+push('Winner pole (not a mute — KEEP only these vs rest):');
+const winKeep = withLog.filter((r) => r.sharpAB && r.steamArriving);
+const winRest = withLog.filter((r) => !(r.sharpAB && r.steamArriving));
+push(`A/B + steam arriving                    ${fmt(agg(winKeep))}`);
+push(`everything else                         ${fmt(agg(winRest))}`);
+
+const liveMutePred = (r) => Number(r.edge) >= 15 && Number.isFinite(r.dEv) && r.dEv <= -1.5 && Number(r.ev) < -1;
+const widerPred = (r) => Number.isFinite(r.dEv) && r.dEv <= -1.5 && Number(r.ev) < -1;
+push('');
+push('Live Ev-drift mute tickets still on the staked book (should be 0u if mute fired):');
+for (const r of withLog.filter(liveMutePred)) {
+  push(`  ${r.date} ${r.sport} ${r.mkt} ${r.team}  ${r.won ? 'W' : 'L'}  ${r.units}u  dEv=${r.dEv} ev=${r.ev} EDGE=${r.edge}`);
+}
+push('Wider fade (EV<−1) minus live mute — EDGE was <15:');
+for (const r of withLog.filter((r) => widerPred(r) && !liveMutePred(r))) {
+  push(`  ${r.date} ${r.sport} ${r.mkt} ${r.team}  ${r.won ? 'W' : 'L'}  ${r.units}u  dEv=${r.dEv} ev=${r.ev} EDGE=${r.edge}`);
+}
+
 push('');
 push('=== Sample ALL gold tickets ===');
 for (const r of withLog.filter((r) => r.gold)) {
