@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-01 6:20 ET · BetMGM QT RESTART · one play · correct S+C |
+| Last updated | 2026-09-01 6:22 ET · BetMGM QT · hook refine `HE WENT 3.8×` |
 | CSV window | Aug 26–Sep 1, 2026 |
 | Ask temperature | **cold-warm** — give; do not ask next unless Dale overrides |
 | Account arc | Tickets-vs-proven on BetMGM #1 total → Nats +$69K still unused as its own hero |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/01 6:20ET | QT BetMGM **RESTART** | `3.8× USUAL ON THE OVER` / their #1 total is the Under | **S + C** (90/0 family — 3.8× is Status, not $1.8K) | none | **Staged** |
+| 9/01 6:22ET | QT BetMGM **hook** | `HE WENT 3.8× ON THE OVER` / `#1 TICKET IS THE UNDER` | **S** only | none | **Staged** |
 | 9/01 | QT TheBetDesk | `+67.73u` / eight 6-unit tickets | proof of ONE | none | Parked in git |
 | 9/01 | CSV ingest | `$120K at 2×` #1 · convert-as-open dead | — | — | Ingested |
 | 9/01 posted | QT Dom | Thankful / adjust to tiers | L | none | **35 eng — miss** |
@@ -27,7 +27,7 @@
 
 ## Angle lock
 **ONE:** Their #1 most-bet total is the Under. Wallet we track went 3.8× on the Over.  
-**SPCL:** S = 3.8× scarce press (not $1.8K Cubs cosplay) · C = parent #1 + wallet card. Not Power.  
+**SPCL:** **S** only (3.8×). Hook is the work. C lives in the image.  
 **Killed:** second play (Nats +$69K) from this QT — toss salad. He’s 0.2×; next hero.  
 **PURPOSE:** Give. No ask.
 
