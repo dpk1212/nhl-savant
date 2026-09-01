@@ -186,7 +186,8 @@ Line 1–3 must pass:
 If hook fails, **rewrite hook before touching body**.  
 **(Dale 8/27):** Deep body + Hook QA kill on soft calendar open → blowout/scarce-$ rewrite = validated pathway. Keep that order.  
 **(Dale 8/27 eve):** Ask/cash posts still need **give-post stuff density**. Do not starve receipts to “tighten” a CTA. Ask is the close — pudding is the meal. 1-tweet asks keep Dale’s convert words; they do not delete the board.  
-**(CSV 9/01):** Convert words as the **open** = 1 eng. Thankful OG QT = 35 eng. Same convert block **after** a `$XK` / disaster / valley open is still the close we use when PURPOSE=ask — never line 1, never a standalone pitch hero.
+**(CSV 9/01):** Convert words as the **open** = 1 eng. Thankful OG QT = 35 eng. Same convert block **after** a `$XK` / disaster / valley open is still the close we use when PURPOSE=ask — never line 1, never a standalone pitch hero.  
+**(Dale 9/01):** Starving an **educate QT** to a 250-char W-L table to “fit 280” is majoring in minors. Hormozi techniques (SPCL / diagnostic / value equation / Qual stuff) must live **in the words**, not the header. August `+46.8u IN AUGUST` won WITH depth. Give-post stuff density is law for educate too. If Dale says “Hormozi would be disgusted,” restart at PURPOSE — do not tighten.
 
 ### 7 · Draft (human)
 - Dale dinner-table — not tipster, not brochure, not CAPS spam unless $ contrast earns it  
