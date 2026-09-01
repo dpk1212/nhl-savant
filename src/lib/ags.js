@@ -1067,10 +1067,11 @@ export const AGS_V12_STAKE_PATH = {
   FADE:          'muted',
 };
 
-// Condensed 5-tier display grouping — the SINGLE source of truth shared by the
-// AGS-U daily report and the live Tier Performance UI. Each display tier rolls
-// up one or more internal staking paths so the user/operator never sees more
-// than five buckets, and the report + UI always agree on the grouping.
+// Condensed 5-tier PATH grouping — source of truth for cards, lock-alert
+// copy, card L30/L7, and the AGS-U daily report. Internal staking paths
+// roll up so those surfaces never show more than five buckets.
+// The live Bankroll Lens "Tier Performance" scoreboard is separate: it
+// buckets by shipped units (`AGS_V12_UNIT_TIERS`), not path.
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
@@ -1085,6 +1086,69 @@ export const AGS_V12_PATH_TO_DISPLAY = AGS_V12_DISPLAY_TIERS.reduce((m, dt) => {
   return m;
 }, {});
 
+// Five unit-size tiles for the Bankroll Lens scoreboard. Edges match the
+// 2026-09-01 v12-era size histogram: leftover 1.13–1.35u fold into MID,
+// 3.75u into TOP. Cards / daily report / alerts stay on DISPLAY_TIERS.
+export const AGS_V12_UNIT_TIERS = [
+  { key: 'MAX',    label: 'MAX PLAY', color: '#E8B85C', unitsLabel: '6u',       sub: 'shipped 6u' },
+  { key: 'TOP',    label: 'TOP PLAY', color: '#E8B85C', unitsLabel: '4-5.4u',   sub: 'shipped 4–5.4u' },
+  { key: 'MID',    label: 'MID PLAY', color: '#A855F7', unitsLabel: '1.5-2.5u', sub: 'shipped 1.5–2.5u' },
+  { key: 'STRONG', label: 'STRONG',   color: '#14B8A6', unitsLabel: '3u',       sub: 'shipped 3u' },
+  { key: 'LEAN',   label: 'LEAN',     color: '#6B7280', unitsLabel: '≤1u',      sub: 'shipped ≤1u' },
+];
+
+/** Bucket a shipped stake into one of AGS_V12_UNIT_TIERS. 0u / invalid → null. */
+export function agsV12UnitTierFromUnits(units) {
+  const u = Number(units);
+  if (!Number.isFinite(u) || u <= 0) return null;
+  if (u <= 1.01) return 'LEAN';
+  if (u <= 2.51) return 'MID';
+  if (u <= 3.01) return 'STRONG';
+  if (u <= 5.41) return 'TOP';
+  return 'MAX';
+}
+
+/**
+ * Scoreboard aggregation for unit tiers. Same W/L/profit math as the old
+ * path tiles (WIN uses stored profit, LOSS is −units) except PUSH stake
+ * is counted so tile ROI matches the hero book. 0u sides are skipped.
+ */
+export function aggregateAgsuUnitTiers(picks) {
+  const agg = {};
+  for (const dt of AGS_V12_UNIT_TIERS) {
+    agg[dt.key] = {
+      wins: 0, losses: 0, pushes: 0, units: 0, profit: 0,
+      pending: 0, tracked: 0, sparkPnL: [],
+    };
+  }
+  const sorted = [...(Array.isArray(picks) ? picks : [])]
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  for (const p of sorted) {
+    const u = Number(p?.units) || 0;
+    const key = agsV12UnitTierFromUnits(u);
+    if (!key || !agg[key]) continue;
+    const b = agg[key];
+    if (p.tracked) { b.tracked++; continue; }
+    if (!p.outcome) { b.pending++; continue; }
+    if (p.outcome === 'WIN') {
+      b.wins++;
+      b.profit += (p.profit || 0);
+      b.units += u;
+    } else if (p.outcome === 'LOSS') {
+      b.losses++;
+      b.profit -= u;
+      b.units += u;
+    } else if (p.outcome === 'PUSH') {
+      b.pushes++;
+      b.units += u;
+    }
+    const last = b.sparkPnL.length > 0 ? b.sparkPnL[b.sparkPnL.length - 1] : 0;
+    const inc = p.outcome === 'WIN' ? (p.profit || 0) : p.outcome === 'LOSS' ? -u : 0;
+    b.sparkPnL.push(last + inc);
+  }
+  return agg;
+}
+
 export const AGS_V12_STAKE_TIER_META = {
   SUPER:         { label: 'MAX PLAY',  short: 'MAX',    color: '#E8B85C', bg: 'rgba(232,184,92,0.15)',  units: V12_1_SUPER_UNITS,     ribbon: null, stars: 5 },
   'TOP+':        { label: 'TOP PICK',  short: 'TOP',    color: '#E8B85C', bg: 'rgba(232,184,92,0.13)',  units: 5,                     ribbon: null, stars: 5 },
@@ -1094,9 +1158,9 @@ export const AGS_V12_STAKE_TIER_META = {
   SHARP:         { label: 'SHARP PLAY', short: 'SHARP', color: '#A855F7', bg: 'rgba(168,85,247,0.12)',  units: 3,                     ribbon: null, stars: 3 },
   'SHARP-LEAN':  { label: 'SHARP PLAY', short: 'LEAN',  color: '#A855F7', bg: 'rgba(168,85,247,0.10)',  units: 1.5,                   ribbon: null, stars: 2 },
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
-  // CONFIRMED / MINI- / DISSENT all roll up to the LEAN display band
-  // (AGS_V12_DISPLAY_TIERS) — keep the user-facing label identical so cards
-  // and the Tier Performance scoreboard never disagree on vocabulary.
+  // CONFIRMED / MINI- / DISSENT all roll up to the LEAN path-display band
+  // (AGS_V12_DISPLAY_TIERS) so cards / L30 / daily report share vocabulary.
+  // Bankroll Lens tiles use AGS_V12_UNIT_TIERS (shipped size), not these paths.
   CONFIRMED:     { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: V12_1_CONFIRMED_UNITS, ribbon: null, stars: 2 },
   'MINI-':       { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
   DISSENT:       { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
