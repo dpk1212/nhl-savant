@@ -1086,14 +1086,15 @@ export const AGS_V12_PATH_TO_DISPLAY = AGS_V12_DISPLAY_TIERS.reduce((m, dt) => {
   return m;
 }, {});
 
-// Five unit-size tiles for the Bankroll Lens scoreboard. Edges match the
-// 2026-09-01 v12-era size histogram: leftover 1.13–1.35u fold into MID,
-// 3.75u into TOP. Cards / daily report / alerts stay on DISPLAY_TIERS.
+// Five unit-size tiles for the Bankroll Lens scoreboard, left→right by
+// shipped size (6u → ≤1u). Edges match the 2026-09-01 v12-era histogram:
+// leftover 1.13–1.35u fold into MID, 3.75u into TOP. Cards / daily report /
+// alerts stay on DISPLAY_TIERS.
 export const AGS_V12_UNIT_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY', color: '#E8B85C', unitsLabel: '6u',       sub: 'shipped 6u' },
   { key: 'TOP',    label: 'TOP PLAY', color: '#E8B85C', unitsLabel: '4-5.4u',   sub: 'shipped 4–5.4u' },
-  { key: 'MID',    label: 'MID PLAY', color: '#A855F7', unitsLabel: '1.5-2.5u', sub: 'shipped 1.5–2.5u' },
   { key: 'STRONG', label: 'STRONG',   color: '#14B8A6', unitsLabel: '3u',       sub: 'shipped 3u' },
+  { key: 'MID',    label: 'MID PLAY', color: '#A855F7', unitsLabel: '1.5-2.5u', sub: 'shipped 1.5–2.5u' },
   { key: 'LEAN',   label: 'LEAN',     color: '#6B7280', unitsLabel: '≤1u',      sub: 'shipped ≤1u' },
 ];
 

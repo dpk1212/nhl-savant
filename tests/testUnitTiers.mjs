@@ -13,7 +13,7 @@ import {
 assert.equal(AGS_V12_UNIT_TIERS.length, 5, 'exactly 5 unit tiles');
 assert.deepEqual(
   AGS_V12_UNIT_TIERS.map((t) => t.key),
-  ['MAX', 'TOP', 'MID', 'STRONG', 'LEAN'],
+  ['MAX', 'TOP', 'STRONG', 'MID', 'LEAN'],
 );
 assert.equal(AGS_V12_DISPLAY_TIERS.length, 5, 'path tiles unchanged');
 assert.ok(AGS_V12_DISPLAY_TIERS.some((t) => t.key === 'SHARP'), 'path SHARP still exists for cards');
