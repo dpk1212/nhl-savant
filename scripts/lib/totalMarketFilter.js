@@ -1,12 +1,109 @@
 /**
- * Full-game vs derivative total market classification for Polymarket.
+ * Full-game vs derivative market classification for Polymarket.
  *
  * Sharp-flow TOTAL picks must track game O/U only. Polymarket events list
  * many Over/Under contracts per game (F5, team totals, 1H, NRFI, alts).
  * Outcome is still "Over"/"Under", so scanners that key only on outcome
  * mix F5 money into the game-total board (DET@SEA 2026-08-06: lead Over
  * wallet was "1st 5 Innings O/U 3.5", not game total).
+ *
+ * ML / spread have the same hole on CFB (and NBA/NFL) quarter & half
+ * contracts. Anything that isn't spread/total is classified `ml`, so
+ * "Toledo vs. Michigan State: 4Q Moneyline" title-matches the game and
+ * locks as full-game ML. `\bq[1-4]\b` does not match titles like `4Q`.
  */
+
+/**
+ * True when title/slug is a period, half, or quarter contract — not the
+ * full-game ML / spread / total. Covers Polymarket shapes:
+ *   title  "Toledo vs. Michigan State: 4Q Moneyline"
+ *   slug   cfb-toledo-mst-2026-09-04-4q-moneyline
+ *   title  "1Q Spread: Michigan State (-0.5)"
+ *   slug   …-1h-spread-home-4pt5
+ */
+export function isPeriodOrSegmentMarket(title = '', slug = '') {
+  const t = String(title || '').toLowerCase();
+  const sl = String(slug || '').toLowerCase();
+  const blob = `${t} ${sl}`.trim();
+  if (!blob) return false;
+
+  // 1Q/4Q and Q1/Q4 (word-boundary; hyphens in slugs count as boundaries)
+  if (/\b[1-4]q\b|\bq[1-4]\b/.test(blob)) return true;
+  if (/\b(?:1st|2nd|3rd|4th|first|second|third|fourth)\s+quarter\b/.test(blob)) return true;
+
+  // 1H/2H
+  if (/\b[12]h\b/.test(blob)) return true;
+  if (/\b(?:1st|2nd|first|second)\s+half\b/.test(blob)) return true;
+
+  // NHL periods
+  if (/\b(?:1st|2nd|3rd|first|second|third)\s+period\b/.test(blob)) return true;
+
+  // Slug segments: …-4q-moneyline, …-1h-spread-home-4pt5
+  if (/(?:^|-)(?:[1-4]q|[12]h)(?:-|$)/.test(sl)) return true;
+  if (/(?:first|second)-half|(?:1st|2nd|3rd|4th)-quarter/.test(sl)) return true;
+
+  return false;
+}
+
+function marketTitleBlob(m) {
+  return `${m?.groupItemTitle || ''} ${m?.question || ''}`;
+}
+
+function parseOutcomes(m) {
+  let outs = m?.outcomes;
+  if (typeof outs === 'string') {
+    try { outs = JSON.parse(outs); } catch { outs = []; }
+  }
+  return Array.isArray(outs) ? outs : [];
+}
+
+function isSpreadContract(m) {
+  const git = (m?.groupItemTitle || '').toLowerCase();
+  const q = (m?.question || '').toLowerCase();
+  return git.includes('spread') || q.includes('spread:');
+}
+
+function isOuContract(m) {
+  const git = (m?.groupItemTitle || '').toLowerCase();
+  const q = (m?.question || '').toLowerCase();
+  const outs = parseOutcomes(m);
+  const hasOverUnder = outs.some((o) => /^(over|under)$/i.test(o));
+  return hasOverUnder && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'));
+}
+
+/**
+ * Full-game moneyline among an event's markets.
+ * Prefers slug === event slug (CFB: `cfb-toledo-mst-2026-09-04`) so a
+ * 4Q/1H moneyline listed earlier cannot win first-match.
+ */
+export function pickFullGameMlMarket(markets = [], eventSlug = '') {
+  const ev = String(eventSlug || '').toLowerCase();
+  const cands = [];
+  for (const m of markets || []) {
+    if (isSpreadContract(m) || isOuContract(m)) continue;
+    if (isPeriodOrSegmentMarket(marketTitleBlob(m), m?.slug)) continue;
+    cands.push(m);
+  }
+  if (!cands.length) return null;
+  if (ev) {
+    const exact = cands.find((m) => String(m.slug || '').toLowerCase() === ev);
+    if (exact) return exact;
+  }
+  return cands[0];
+}
+
+/**
+ * First full-game spread (skip 1Q/1H/… spreads). First remaining match
+ * preserves today's "main line listed first" behaviour.
+ */
+export function pickFullGameSpreadMarket(markets = []) {
+  for (const m of markets || []) {
+    if (!isSpreadContract(m)) continue;
+    if (isPeriodOrSegmentMarket(marketTitleBlob(m), m?.slug)) continue;
+    return m;
+  }
+  return null;
+}
 
 /** True when title/slug is clearly NOT a full-game combined total. */
 export function isNonFullGameTotalMarket(title = '', slug = '') {
@@ -19,17 +116,42 @@ export function isNonFullGameTotalMarket(title = '', slug = '') {
   // Team totals / player-ish totals mislabeled as O/U
   if (/team\s*total|\btt\b|batter|pitcher|hits?\s*o\/?u|strikeouts|player\s*total/.test(s)) return true;
 
-  // Halves / periods / quarters
-  if (
-    /1st\s*half|first\s*half|\b1h\b|2nd\s*half|second\s*half|\b2h\b/.test(s)
-    || /1st\s*period|2nd\s*period|3rd\s*period|first\s*period/.test(s)
-    || /1st\s*quarter|2nd\s*quarter|3rd\s*quarter|4th\s*quarter|\bq[1-4]\b/.test(s)
-  ) return true;
+  // Halves / periods / quarters (including `4Q` / `-4q-` slug forms)
+  if (isPeriodOrSegmentMarket(title, slug)) return true;
 
   // First-inning run markets
   if (/\bnrfi\b|\byrfi\b|no\s*run\s*first|run\s*first\s*inning/.test(s)) return true;
 
   return false;
+}
+
+/**
+ * Should this ML/spread position count toward the full-game board?
+ * Period / half / quarter contracts must not lock as game ML or spread.
+ * @returns {{ ok: boolean, reason?: string }}
+ */
+export function acceptFullGameSidePosition({
+  title = '',
+  slug = '',
+  conditionId = null,
+  fgConditionId = null,
+  marketType = 'ml',
+  sport = null,
+} = {}) {
+  if (isPeriodOrSegmentMarket(title, slug)) {
+    return { ok: false, reason: 'period_or_segment_market' };
+  }
+  const mt = String(marketType || 'ml').toLowerCase();
+  const sp = String(sport || '').toUpperCase();
+  // Soccer is one binary market per side — do not require a single FG condition.
+  if (sp !== 'SOC' && (mt === 'ml' || mt === 'moneyline')) {
+    const a = String(conditionId || '').toLowerCase();
+    const b = String(fgConditionId || '').toLowerCase();
+    if (a && b && a !== b) {
+      return { ok: false, reason: 'ml_condition_mismatch' };
+    }
+  }
+  return { ok: true };
 }
 
 /**

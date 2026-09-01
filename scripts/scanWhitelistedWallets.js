@@ -69,6 +69,7 @@ import { parseSpreadTitle } from '../src/lib/spreadLineSign.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
 import { resolveDoubleheaderMatch } from './lib/doubleheaderKey.js';
 import {
+  acceptFullGameSidePosition,
   acceptFullGameTotalPosition,
   parseTotalEntryLine,
 } from './lib/totalMarketFilter.js';
@@ -635,6 +636,7 @@ async function run() {
   let unresolvedSideCount = 0;
   let wrongEventCount = 0;
   let nonFgTotalCount = 0;
+  let nonFgSideCount = 0;
   const recoveredAll = []; // Flat list of all recovered positions (for merge step).
   // Supplemental-scan heartbeat — merged into sharp_positions*.json so
   // writeSharpActions can EXITED-stamp wallets the main scan missed.
@@ -780,6 +782,21 @@ async function run() {
           nonFgTotalCount++;
           continue;
         }
+      } else {
+        // ML/spread: 4Q/1Q/1H must not land on the full-game board.
+        // Real incident 2026-09-01: Toledo@MSU 4Q ML recovered as CFB ML.
+        const sideGate = acceptFullGameSidePosition({
+          title,
+          slug: posSlug,
+          conditionId: pos.conditionId,
+          fgConditionId: polyGame?.polyMl?.conditionId,
+          marketType,
+          sport: match.sport,
+        });
+        if (!sideGate.ok) {
+          nonFgSideCount++;
+          continue;
+        }
       }
 
       let side;
@@ -873,10 +890,10 @@ async function run() {
         marketType,
         side,
         outcome,
-        // Team names from the title-match — used by the merge step when
-        // bootstrapping a game entry that the main scanner didn't create.
-        awayName: match.awayName || '',
-        homeName: match.homeName || '',
+        // Prefer poly/schedule names — title fragments can carry
+        // ": 4Q Moneyline" after extractTeamsFromTitle.
+        awayName: game.away || match.awayName || '',
+        homeName: game.home || match.homeName || '',
         // Position economics
         size: Math.round(size),
         avgPrice: +avgPrice.toFixed(3),
@@ -987,6 +1004,9 @@ async function run() {
   }
   if (nonFgTotalCount > 0) {
     console.log(`  Skipped non-FG / far-alt TOTAL:  ${nonFgTotalCount}  (F5, team total, 1H, …)`);
+  }
+  if (nonFgSideCount > 0) {
+    console.log(`  Skipped period ML/spread:        ${nonFgSideCount}  (1Q/4Q/1H/2H, …)`);
   }
   console.log(`  Phase-2 merge:                   ${MERGE ? 'ENABLED (positions WILL be merged into sharp_positions*.json)' : 'OFF (diagnostic only, no downstream change)'}`);
   console.log(`  Elapsed:                         ${elapsedSec}s`);
@@ -1148,8 +1168,8 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
         // commence time.
         const polyGame = polyData?.[sport]?.[pos.gameKey];
         data[sport][pos.gameKey] = {
-          away: pos.awayName || polyGame?.awayTeam || '',
-          home: pos.homeName || polyGame?.homeTeam || '',
+          away: polyGame?.awayTeam || pos.awayName || '',
+          home: polyGame?.homeTeam || pos.homeName || '',
           commence: polyGame?.commence || null,
           positions: [],
           summary: marketType === 'total'
@@ -1184,6 +1204,8 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
           pnl: pos.pnl,
           recoveredVia: 'whitelist_scan',
           ...(pos.entryLine != null && { entryLine: pos.entryLine }),
+          ...(pos.title && { title: pos.title }),
+          ...(pos.slug && { slug: pos.slug }),
           ...(pos.asset != null && { asset: pos.asset }),
           ...(pos.conditionId != null && { conditionId: pos.conditionId }),
           ...(pos.outcomeIndex != null && { outcomeIndex: pos.outcomeIndex }),
@@ -1220,6 +1242,8 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
         sportVol: pos.sportVol,
         recoveredVia: 'whitelist_scan',
         ...(pos.entryLine != null && { entryLine: pos.entryLine }),
+        ...(pos.title && { title: pos.title }),
+        ...(pos.slug && { slug: pos.slug }),
         ...(pos.asset != null && { asset: pos.asset }),
         ...(pos.conditionId != null && { conditionId: pos.conditionId }),
         ...(pos.outcomeIndex != null && { outcomeIndex: pos.outcomeIndex }),

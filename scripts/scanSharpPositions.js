@@ -22,6 +22,7 @@ import { parseSpreadTitle } from '../src/lib/spreadLineSign.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
 import { resolveDoubleheaderMatch } from './lib/doubleheaderKey.js';
 import {
+  acceptFullGameSidePosition,
   acceptFullGameTotalPosition,
   parseTotalEntryLine,
 } from './lib/totalMarketFilter.js';
@@ -825,6 +826,7 @@ async function run() {
   let unresolvedSideCount = 0;
   let wrongEventCount = 0;
   let nonFgTotalCount = 0;
+  let nonFgSideCount = 0;
 
   // ── Phase A: fetch every wallet's open positions in parallel (bounded) ──
   // The network call is the bottleneck (1 throttled request per wallet). A
@@ -926,6 +928,20 @@ async function run() {
         });
         if (!gate.ok) {
           nonFgTotalCount++;
+          continue;
+        }
+      } else {
+        // ML/spread: drop 1Q/4Q/1H/2H (CFB 4Q ML was locking as game ML).
+        const sideGate = acceptFullGameSidePosition({
+          title,
+          slug: posSlug,
+          conditionId: pos.conditionId,
+          fgConditionId: polyGame?.polyMl?.conditionId,
+          marketType,
+          sport,
+        });
+        if (!sideGate.ok) {
+          nonFgSideCount++;
           continue;
         }
       }
@@ -1281,6 +1297,9 @@ async function run() {
   console.log(`\nDone — ${matchCount} ML, ${spreadMatchCount} spread, ${totalMatchCount} total positions`);
   if (nonFgTotalCount > 0) {
     console.log(`Skipped ${nonFgTotalCount} non-full-game / far-alt TOTAL positions (F5, team total, 1H, …)`);
+  }
+  if (nonFgSideCount > 0) {
+    console.log(`Skipped ${nonFgSideCount} period ML/spread positions (1Q/4Q/1H/2H, …)`);
   }
   if (unresolvedSideCount > 0) {
     console.log(`Skipped ${unresolvedSideCount} position(s) with unresolved side (stale outcome, no usable outcomeIndex)`);

@@ -15,7 +15,11 @@ import { isNFLMarketTitle } from './lib/nflTeams.js';
 import { isCFBMarketTitle } from './lib/cfbTeams.js';
 import { isUFCMarketTitle } from './lib/ufcFighters.js';
 import { isSoccerMarketTitle } from './lib/soccerTeams.js';
-import { isNonFullGameTotalMarket } from './lib/totalMarketFilter.js';
+import {
+  isNonFullGameTotalMarket,
+  pickFullGameMlMarket,
+  pickFullGameSpreadMarket,
+} from './lib/totalMarketFilter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -109,8 +113,8 @@ function lbRow(raw) {
 
 function pickFgMarkets(ev) {
   const markets = ev?.markets || [];
-  let ml = null;
-  let spread = null;
+  const ml = pickFullGameMlMarket(markets, ev?.slug);
+  const spread = pickFullGameSpreadMarket(markets);
   const fgTotals = [];
   for (const m of markets) {
     const git = (m.groupItemTitle || '').toLowerCase();
@@ -118,16 +122,11 @@ function pickFgMarkets(ev) {
     const slug = (m.slug || '').toLowerCase();
     const outs = parseJsonField(m.outcomes);
     const hasOU = outs.some((o) => /^(over|under)$/i.test(o));
-    if (git.includes('spread') || q.includes('spread:')) {
-      if (!spread) spread = m;
-    } else if (hasOU && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'))) {
+    if (hasOU && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'))) {
       if (isNonFullGameTotalMarket(`${m.groupItemTitle || ''} ${m.question || ''}`, slug)) continue;
       fgTotals.push(m);
-    } else if (!ml) {
-      ml = m;
     }
   }
-  if (!ml) ml = markets[0] || null;
   let total = null;
   if (fgTotals.length) {
     const score = (m) => {

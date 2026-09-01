@@ -51,6 +51,10 @@ import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../src/lib/sizeRatioBands.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { positionMatchesPolyEvent, WRONG_GAME_EXIT_REASONS } from './lib/positionEventMatch.js';
+import {
+  acceptFullGameSidePosition,
+  acceptFullGameTotalPosition,
+} from './lib/totalMarketFilter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -73,6 +77,27 @@ const SHADOW_MIN_MULTIPLIER = 0.10;
 const ACTION_OPP_SIDE = {
   away: 'home', home: 'away', over: 'under', under: 'over', draw: null,
 };
+
+function isFullGameBoardPosition(pos, mkt, { sport, gameKey, polyData } = {}) {
+  const title = pos?.title || '';
+  const slug = pos?.slug || pos?.eventSlug || '';
+  if (String(mkt || '').toUpperCase() === 'TOTAL') {
+    return acceptFullGameTotalPosition({
+      title,
+      slug,
+      entryLine: pos?.entryLine ?? pos?.totalLine ?? null,
+    }).ok;
+  }
+  const fgConditionId = polyData?.[sport]?.[gameKey]?.polyMl?.conditionId;
+  return acceptFullGameSidePosition({
+    title,
+    slug,
+    conditionId: pos?.conditionId,
+    fgConditionId,
+    marketType: mkt,
+    sport,
+  }).ok;
+}
 
 function initFirebase() {
   if (!admin.apps.length) {
@@ -670,6 +695,7 @@ async function main() {
     sportsSharpsByLower.set(addr.toLowerCase(), row);
   }
   const pinnacleHistory = loadJSON('pinnacle_history.json') || {};
+  const polyData = loadJSON('polymarket_data.json') || {};
   const commenceByGame = loadCommenceByGame();
   console.log(`Loaded commenceTime for ${commenceByGame.size} games (poly/pinn)`);
   const excludedRaw = loadJSON('sharp_intel_excluded_wallets.json') || {};
@@ -723,6 +749,7 @@ async function main() {
         for (const pos of gd.positions) {
           if (!pos.wallet) continue;
           if (excludedSet.has(pos.wallet.toLowerCase())) continue;
+          if (!isFullGameBoardPosition(pos, mkt, { sport, gameKey, polyData })) continue;
           const gmKey = `${sport}_${gameKey}_${mkt}`;
           if (!allGamePositions[gmKey]) allGamePositions[gmKey] = [];
           allGamePositions[gmKey].push(pos);
@@ -755,6 +782,7 @@ async function main() {
           const wLower = pos.wallet?.toLowerCase();
           if (!wLower) continue;
           if (excludedSet.has(wLower)) continue;
+          if (!isFullGameBoardPosition(pos, mkt, { sport, gameKey, polyData })) continue;
 
           // Sport-local usual (profile bySport → perSport → stamped cross-sport).
           // Same denominator as locked-card Size vs usual / whitelist merge.

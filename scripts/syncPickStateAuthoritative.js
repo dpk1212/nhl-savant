@@ -178,7 +178,7 @@ import {
   fitExpWinLambda,
 } from '../src/lib/expectedWin.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
-import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
+import { acceptFullGameSidePosition, acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import {
   collectScanBoardProvenPositions,
   collectScanSoftKeys,
@@ -2135,6 +2135,35 @@ function scrubNonFullGameTotals(groups, gameMeta) {
   return removed;
 }
 
+/**
+ * Drop 1Q/4Q/1H/2H ML and spread rows so AGS/HC never stakes a period
+ * contract as the game (Toledo@MSU 4Q ML, 2026-09-01).
+ */
+function scrubNonFullGameSides(groups, gameMeta) {
+  let removed = 0;
+  for (const [gk, list] of groups.entries()) {
+    const [sport, gameKey, mktRaw] = gk.split('|');
+    const mkt = String(mktRaw || '').toUpperCase();
+    if (mkt !== 'ML' && mkt !== 'SPREAD') continue;
+    const gm = gameMeta?.get(`${sport}|${gameKey}`);
+    const kept = [];
+    for (const p of list) {
+      const gate = acceptFullGameSidePosition({
+        title: p.title || '',
+        slug: p.slug || p.eventSlug || '',
+        conditionId: p.conditionId,
+        fgConditionId: gm?.polyMlConditionId,
+        marketType: mkt === 'SPREAD' ? 'spread' : 'ml',
+        sport,
+      });
+      if (gate.ok) kept.push(p);
+      else removed++;
+    }
+    groups.set(gk, kept);
+  }
+  return removed;
+}
+
 // ── Game metadata sources (commenceTime + odds) ────────────────────────────
 // For NEWLY CREATED pick docs (no browser sync ever ran), we need
 // commenceTime and current odds. Browser-facing JSON files are the same
@@ -2162,6 +2191,7 @@ function loadGameMetadata() {
         // Main full-game O/U line from fetchPolymarketData (never F5/TT).
         const ptLine = g.polyTotal?.line;
         if (Number.isFinite(ptLine)) cur.polyTotalLine = Number(ptLine);
+        if (g.polyMl?.conditionId) cur.polyMlConditionId = String(g.polyMl.conditionId);
         meta.set(key, cur);
       }
     }
@@ -6601,6 +6631,10 @@ async function main() {
   const scrubbedTotals = scrubNonFullGameTotals(groups, gameMeta);
   if (scrubbedTotals > 0) {
     console.log(`  ↳ scrubbed ${scrubbedTotals} non-full-game / far-alt TOTAL position(s) (F5, team total, 1H, …)`);
+  }
+  const scrubbedSides = scrubNonFullGameSides(groups, gameMeta);
+  if (scrubbedSides > 0) {
+    console.log(`  ↳ scrubbed ${scrubbedSides} period ML/spread position(s) (1Q/4Q/1H/2H, …)`);
   }
 
   // Load today's pick docs.
