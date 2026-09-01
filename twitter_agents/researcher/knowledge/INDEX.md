@@ -56,3 +56,5 @@ Researcher appends; never delete without logging why in research_log.
 - 2026-08-27 **Tweet pathway** locked after Dale override: no jump-to-copy; WHO/PURPOSE first; own 1–2 SPCL; hook QA; stuff > container — see `hormozi_tweet_process.md`
 - 2026-08-27 **Timeline review** added: every run refreshes `SHARED/recent_timeline_latest.md` (analytics + recent posts → SPCL mix, spent themes, ask temperature) before PURPOSE/hook
 - 2026-08-27 **Ingest pipelines** locked: `hormozi_ingest.md` (transcript → max synthesize → canon) · `analytics_csv_ingest.md` (CSV → timeline) · desk trigger rule `hormozi-ingest-triggers.mdc`
+- 2026-09-01 **CSV Aug 26–Sep 1** ingested: `$120K at 2×` #1 · anti-sexy printer PV king (49) · `DOWN 76` 8R · lost-on-site 9R · **convert-as-open = 1 eng** · thankful Dom QT = 35 · pathway living window + ask/hook laws patched — see `hormozi_tweet_process.md`, `recent_timeline_latest.md`, `kill_list.md`
+

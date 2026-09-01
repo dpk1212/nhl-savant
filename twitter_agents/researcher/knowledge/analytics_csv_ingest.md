@@ -42,6 +42,8 @@ Aggregate **SPCL mix** for the window (what’s hot).
 
 ### 5 · Write
 Overwrite `twitter_agents/SHARED/recent_timeline_latest.md` using its template.  
+**Also overwrite** the **LIVING WINDOW** block at the top of `hormozi_tweet_process.md` (winners · deaths · ask temp · hook addendum) so the pathway cannot be run on a stale card.  
+Merge winners / spent / ask temp / FORWARD LOOK into `SHARED/messaging_continuity.md`.  
 One-line commit optional if on a long-running desk branch; otherwise fine as working file each run.
 
 ### 6 · Hand off
@@ -55,5 +57,6 @@ Still refresh timeline from last 5–10 known posts / COPY_PASTE qualitatively. 
 ---
 
 ## Example so-what
-CSV shows `#1 eng = “Most people try to become sharp…”` and `#1 imp = “EVERY TIME WE WENT OVER 5u”`  
-→ next draft’s hook QA must consider those silhouettes **when** they fit the spine — never paste them onto an unrelated QT.
+CSV (Aug 26–Sep 1) shows `#1 eng = “$120K AT 2× USUAL on Cubs ML”` and `#1 PV = “No sexy post here…”`  
+and **worst hero = convert-paragraph open (1 eng)**.  
+→ next draft’s hook QA must consider those silhouettes **when** they fit the spine — never paste them onto an unrelated QT; never open an ask on the convert paragraph.

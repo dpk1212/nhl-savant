@@ -35,3 +35,12 @@ Seed 2026-07-10:
 - Drop CSV → `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` before drafting.
 - Drop Hormozi transcript → `hormozi_ingest.md` full synthesize (extract/conflict/SF-map/canon/leverage card) before drafting.
 - Stuff > container. Own 1–2 SPCL. Ask temperature from timeline.
+
+2026-09-01 (CSV Aug 26–Sep 1 — measured, 29 heroes):
+- **S+C live `$XK at Y× usual`** still #1 (Cubs 237/5R). Ride that silhouette on new tape only.
+- **Anti-sexy printer** (`No sexy post here…`) = **PV champion (49)**. L+C when the card is in the image.
+- **Valley / ownership** = reply factory (`DOWN 76` 8R · `LOST ON THE SITE` 9R). Don’t rerun −76u; FAQ only if PURPOSE=buzz.
+- **Convert paragraph as hero/line 1 = death (1 eng).** Thankful customer QT = 35. SUMMER = 13. Convert words stay the close after pudding.
+- Become-sharp clones get likes, **0 replies** — spent, not an ask vehicle.
+- Recap furniture (`here is how the last 30 days played` 44) loses to the same idea with a printer open (`+46.8u IN AUGUST` 94/3R).
+
