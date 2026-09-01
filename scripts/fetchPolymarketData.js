@@ -33,7 +33,11 @@ import {
   makeCFBGameKey,
   isMainCFBGameSlug,
 } from './lib/cfbTeams.js';
-import { isNonFullGameTotalMarket } from './lib/totalMarketFilter.js';
+import {
+  isNonFullGameTotalMarket,
+  pickFullGameMlMarket,
+  pickFullGameSpreadMarket,
+} from './lib/totalMarketFilter.js';
 import { allocateScheduleKey, pickScheduleKeyByStart } from './lib/doubleheaderKey.js';
 import { applyCommenceOverrides } from './lib/commenceOverrides.js';
 
@@ -1167,15 +1171,15 @@ async function run() {
           if (typeof outs === 'string') try { outs = JSON.parse(outs); } catch { outs = []; }
           const hasOverUnder = Array.isArray(outs) && outs.some(o => /^(over|under)$/i.test(o));
 
-          if (git.includes('spread') || q.includes('spread:')) {
-            if (!spreadMarket) spreadMarket = m;
-          } else if (hasOverUnder && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'))) {
+          if (hasOverUnder && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'))) {
             if (isNonFullGameTotalMarket(`${m.groupItemTitle || ''} ${m.question || ''}`, slug)) continue;
             fgTotalCandidates.push(m);
-          } else {
-            if (!mlMarket) mlMarket = m;
           }
         }
+        // ML/spread: skip 1Q/4Q/1H contracts; prefer event-slug ML
+        // (CFB 4Q moneyline must not become polyMl).
+        mlMarket = pickFullGameMlMarket(markets, ev.slug);
+        spreadMarket = pickFullGameSpreadMarket(markets);
         // Prefer slug `…-total-NptN` (main FG) over alts; else highest liquidity.
         if (fgTotalCandidates.length) {
           const score = (m) => {
@@ -1188,7 +1192,7 @@ async function run() {
           totalMarket = fgTotalCandidates[0];
         }
       }
-      if (!mlMarket) mlMarket = markets[0];
+      if (!mlMarket && (sport === 'SOC' || sport === 'UFC')) mlMarket = markets[0];
 
       let tokenIds = mlMarket?.clobTokenIds;
       if (typeof tokenIds === 'string') tokenIds = JSON.parse(tokenIds || '[]').filter(Boolean);
@@ -1400,6 +1404,11 @@ async function run() {
       }
 
       const vol24 = ev.volume_24hr ?? ev.volume ?? 0;
+      const polyMl = mlMarket ? {
+        slug: mlMarket.slug || null,
+        conditionId: mlMarket.conditionId || null,
+        title: (mlMarket.question || mlMarket.groupItemTitle || '').substring(0, 80),
+      } : null;
       bucket[key] = {
         volume24h: Number(vol24),
         liveVolume: live?.total != null ? Number(live.total) : null,
@@ -1417,6 +1426,7 @@ async function run() {
         drawProb: drawProb != null ? Number((drawProb * 100).toFixed(1)) : null,
         drawMoneyPct: agg.drawMoneyPct ?? null,
         drawTicketPct: agg.drawTicketPct ?? null,
+        polyMl,
         polySpread,
         polyTotal,
         awayTeam: awayRaw,

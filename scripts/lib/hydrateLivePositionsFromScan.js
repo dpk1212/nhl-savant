@@ -18,6 +18,10 @@
 import { resolveSportUsualBet } from './sportUsualBet.js';
 import { stakeSizeRatio } from '../../src/lib/sizeRatioBands.js';
 import { positionToWalletDetail } from '../../src/lib/ags.js';
+import {
+  acceptFullGameSidePosition,
+  acceptFullGameTotalPosition,
+} from './totalMarketFilter.js';
 
 /** Same floor as writeSharpActions SHADOW_MIN_MULTIPLIER. */
 export const SCAN_BOARD_SHADOW_MIN = 0.10;
@@ -95,6 +99,20 @@ export function collectScanBoardProvenPositions({
           const wLower = wallet.toLowerCase();
           if (!wLower || !pos.side) continue;
           if (excludedSet?.has(wLower)) continue;
+          const title = pos.title || '';
+          const slug = pos.slug || pos.eventSlug || '';
+          const fgOk = String(mkt || '').toUpperCase() === 'TOTAL'
+            ? acceptFullGameTotalPosition({
+              title, slug, entryLine: pos.entryLine ?? pos.totalLine ?? null,
+            }).ok
+            : acceptFullGameSidePosition({
+              title,
+              slug,
+              conditionId: pos.conditionId,
+              marketType: mkt,
+              sport,
+            }).ok;
+          if (!fgOk) continue;
 
           const profile = profileFor(walletProfiles, wallet);
           const tier = String(profile?.bySport?.[sport]?.whitelistTier || '').toUpperCase();
