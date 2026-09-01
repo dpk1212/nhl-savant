@@ -14,3 +14,24 @@ Seed 2026-07-10:
 
 2026-07-18 (Dale catalog — measured house gold):
 - **whale_battle_receipt** — Rays `207780…` **2220v/2r**: proven-wallet $ + Nx usual + opposing honesty + unfinished hold + dual-pane Battle/wallet media. Prefer when live Nx wallet exists; do not collapse to Vault shock or naked size flex.
+
+2026-08-23 (Hormozi SPCL canon locked — Dale transcript):
+- Influence goal = **compliance with requests**, not vanity views. Stack **Status · Power · Credibility · Likeness**.
+- Line 1 must stamp **S and/or C** observably (scarce $ / hard-to-fake receipt). Soft diary without scarce control underperforms (Aug 17–23 analytics).
+- **Power** = say–do trail (pointed → they followed → good thing / avoided bad). Honest L next to W builds Power.
+- **Likeness** = Dale voice; zero ROI NPC cosplay. Content **is** targeting (interest media).
+- Free SPCL in hero → soft ask in SR. Volume × right avatar > clever low-volume.
+- Vault: `researcher/knowledge/hormozi_spcl.md`
+
+2026-08-26 (Hormozi Rule of One — Masterson / *Great Leads* via Hormozi transcript):
+- **One big idea** per hero: easy to understand · easy to believe · interesting/unique.
+- Sub-bullets / stories / facts only **reinforce** that idea — never parallel competing pitches (**toss salad** banned).
+- USP = one selling proposition, not nineteen. Hard part = choosing the tip; writing gets simple after.
+- Stack order: **ONE → SPCL → QUAL** (pick spear tip before dressing or scoring copy).
+- Vault: `researcher/knowledge/hormozi_rule_of_one.md` (Agora/91-of-100 figures = Hormozi recount, not independently verified)
+
+2026-08-27 (Hormozi tweet manufacturing locked):
+- Never jump to copy. Pathway: Timeline → WHO → PURPOSE → ONE → 1–2 SPCL → STUFF → HOOK QA → draft → Ask decision.
+- Drop CSV → `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` before drafting.
+- Drop Hormozi transcript → `hormozi_ingest.md` full synthesize (extract/conflict/SF-map/canon/leverage card) before drafting.
+- Stuff > container. Own 1–2 SPCL. Ask temperature from timeline.

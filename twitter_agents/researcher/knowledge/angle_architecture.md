@@ -1,3 +1,9 @@
+# RETIRED — angle factory
+
+Superseded by Hormozi OS (`TWITTER.md` + `hormozi_spcl.md` + `hormozi_qual_algorithm.md`). Do not require angle_candidates as a gate.
+
+---
+
 # Angle Architecture — From “what do we post?” to a coherent viral tweet
 
 > Expert craft fused with our `ALGO_PSYCH_PLAYBOOK.md` + live vault.
