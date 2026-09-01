@@ -1,8 +1,8 @@
 # Win Matrix — (Δ_winner × Δ_quality) cross-tab
 
-_Auto-generated 2026-09-01T10:20:22.878Z by `scripts/winMatrix.js`. Do not edit by hand._
+_Auto-generated 2026-09-01T15:03:31.423Z by `scripts/winMatrix.js`. Do not edit by hand._
 
-**Sample:** 3046 graded, non-superseded sides with walletDetails available (of 4393 scanned).
+**Sample:** 3046 graded, non-superseded sides with walletDetails available (of 4413 scanned).
 
 **Date range:** 2026-04-18 … 2026-08-31
 
