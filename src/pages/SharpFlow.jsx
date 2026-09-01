@@ -43,6 +43,8 @@ import {
   AGS_V12_STAKE_PATH,
   AGS_V12_DISPLAY_TIERS,
   AGS_V12_PATH_TO_DISPLAY,
+  AGS_V12_UNIT_TIERS,
+  aggregateAgsuUnitTiers,
   HC_RATIO,
   aggregateSideProven,
   agsSizeMultiplier,
@@ -921,8 +923,8 @@ function etDateDaysAgo(days) {
 }
 
 /**
- * Display-tier (MAX/TOP/SHARP/STRONG/LEAN) W-L / WR / ROI over a date window.
- * Same path→display grouping as the Tier Performance scoreboard.
+ * Path-display-tier (MAX/TOP/SHARP/STRONG/LEAN) W-L / WR / ROI over a date window.
+ * Used by locked-card L30/L7 copy. Bankroll Lens tiles use unit tiers instead.
  */
 function aggregateDisplayTierSince(picks, sinceDate) {
   const agg = {};
@@ -10115,40 +10117,16 @@ export default function SharpFlow() {
               // adequately and CLV doesn't need to be in front of every user.
 
               // ─── Per-tier breakdown from filtered picks ────────────────
-              // v12ab STAKE tiers — the actual sizing system (HC-margin ladder
-              // + RANK-RESCUE), NOT the score quintile. The score-quintile tiers
-              // (ELITE/PREMIUM/…) only SELECT the side; they don't size it, so
-              // bucketing performance by them was misleading. We bucket by the
-              // cron-stamped v8_hcStakeTier instead.
-              // Condensed to the 5 shared display tiers (AGS_V12_DISPLAY_TIERS)
-              // — identical grouping to the AGS-U daily report, so the numbers
-              // here MATCH the report. Each tier rolls up its internal staking
-              // paths (e.g. SHARP PLAY = RANK 2-for-0 + SHARP/SHARP-PRIME).
-              const TIER_DEFS = AGS_V12_DISPLAY_TIERS.map(dt => ({ key: dt.key, size: dt.unitsLabel }));
-              const STAKE_TIER_META = AGS_V12_DISPLAY_TIERS.reduce((m, dt) => {
+              // Unit-size tiles (AGS_V12_UNIT_TIERS) — what actually shipped,
+              // not the staking path. Hero KPIs / equity curve / ledger still
+              // use the full staked book. Cards, L30/L7, daily report, and
+              // alerts stay on AGS_V12_DISPLAY_TIERS (path grouping).
+              const TIER_DEFS = AGS_V12_UNIT_TIERS.map(dt => ({ key: dt.key, size: dt.unitsLabel }));
+              const STAKE_TIER_META = AGS_V12_UNIT_TIERS.reduce((m, dt) => {
                 m[dt.key] = { label: dt.label, color: dt.color, sub: dt.sub };
                 return m;
               }, {});
-              const tierAgg = {};
-              for (const t of TIER_DEFS) tierAgg[t.key] = { wins:0, losses:0, pushes:0, units:0, profit:0, pending:0, tracked:0, sparkPnL:[] };
-              const sortedByDate = [...agsuPicks].sort((a,b) => (a.date||'').localeCompare(b.date||''));
-              for (const p of sortedByDate) {
-                // Bucket by the DISPLAY tier (path → display group). Picks without
-                // a stake tier are pre-v12a score-ladder picks; MONITORING/FADE
-                // are 0u (not staked) — none map to a display tier, so they fall
-                // through (excluded from the staked scoreboard).
-                const display = p._stakeTier ? AGS_V12_PATH_TO_DISPLAY[p._stakeTier] : null;
-                if (!display || !tierAgg[display]) continue;
-                const b = tierAgg[display];
-                if (p.tracked) { b.tracked++; continue; }
-                if (!p.outcome) { if (p.units > 0) b.pending++; continue; }
-                if (p.outcome === 'WIN')  { b.wins++;   b.profit += (p.profit || 0); b.units += p.units; }
-                else if (p.outcome === 'LOSS'){ b.losses++; b.profit -= p.units;        b.units += p.units; }
-                else if (p.outcome === 'PUSH'){ b.pushes++; }
-                const last = b.sparkPnL.length > 0 ? b.sparkPnL[b.sparkPnL.length-1] : 0;
-                const inc = p.outcome === 'WIN' ? (p.profit || 0) : p.outcome === 'LOSS' ? -p.units : 0;
-                b.sparkPnL.push(last + inc);
-              }
+              const tierAgg = aggregateAgsuUnitTiers(agsuPicks);
 
               // Sparkline data + inline component removed 2026-06-11 with the
               // hero-card facelift. At 64×18 they were unreadable; the

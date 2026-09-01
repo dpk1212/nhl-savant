@@ -89,7 +89,7 @@ const NO_PLAY_PILL = {
   border: '1px solid rgba(180,150,100,0.38)',
 };
 
-/** Same 5-band labels as the Tier Performance scoreboard (MAX / TOP / SHARP / STRONG / LEAN). */
+/** Same 5-band PATH labels as cards / L30 / daily report (MAX / TOP / SHARP / STRONG / LEAN). */
 function displayTierFromPath(stakePath) {
   const key = AGS_V12_PATH_TO_DISPLAY[stakePath];
   if (!key) return null;
