@@ -35,6 +35,11 @@ Seed 2026-07-10:
 - Educate hook silhouette that already won: `+46.8u IN AUGUST.` / `ALMOST 3× JULY.`
 - This QT’s spear: +67.73u last 30 **and** the 6-unit plays were 8 tickets (honest: those 8 made +13.00u, not the 67).
 
+2026-09-01 lock (BetMGM QT — Dale: follow process / correct SPCL):
+- Do **not** clone `$XK AT Y×` onto a **$1.8K** ticket. Status = scarce control. On this feed $1.8K is not scarce; **3.8× vs their #1 ticket** is.
+- Correct letters for a tickets-vs-proven QT: **S + C** in the `90% money / 0% proven` family (`hormozi_spcl.md`) — not “S+C because Cubs is hot.”
+- Two on-fire wallets in one QT = toss salad. Nats +$69K (0.2× light) is the next hero, not this parent.
+
 2026-08-27 (Hormozi tweet manufacturing locked):
 - Never jump to copy. Pathway: Timeline → WHO → PURPOSE → ONE → 1–2 SPCL → STUFF → HOOK QA → draft → Ask decision.
 - Drop CSV → `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` before drafting.
