@@ -7,57 +7,57 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-01 · QT TheBetDesk · Rule of One angle + hook twist |
+| Last updated | 2026-09-01 6:15 ET · QT BetMGM most-bet · PIT Over 3.8× + Nats +$69K |
 | CSV window | Aug 26–Sep 1, 2026 |
-| Ask temperature | **cold-warm** — this beat is give/educate; do not ask next unless Dale overrides |
-| Account arc | Sized-book paradox under their grind GIF → first NFL/CFB lock still open |
+| Ask temperature | **cold-warm** — this beat is give; do not ask next unless Dale overrides |
+| Account arc | Live tickets-vs-wallet on BetMGM parent → NFL/CFB lock still open · TheBetDesk QT parked in git |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/01 | QT TheBetDesk **angle+hook** | `+67.73u LAST 30 DAYS` / `THE 6-UNIT ONES WERE 8 TICKETS` | proof of ONE, not the angle | none | **Staged** |
-| 9/01 | CSV ingest | Living window: `$120K at 2×` #1 · convert-as-open dead · thankful Dom dead | — | — | Ingested |
+| 9/01 6:15ET | QT BetMGM | `$1.8K AT 3.8× USUAL ON THE OVER` / their #1 total is the Under | **S + C** proof of ONE | none | **Staged — post in lock window** |
+| 9/01 | QT TheBetDesk | `+67.73u` / eight 6-unit tickets | proof of ONE | none | Parked in git (not this paste) |
+| 9/01 | CSV ingest | `$120K at 2×` #1 · convert-as-open dead | — | — | Ingested |
 | 9/01 posted | QT Dom | Thankful / adjust to tiers | L | none | **35 eng — miss** |
 | 8/31 posted | Hero August MTD | `+46.8u IN AUGUST` / `ALMOST 3× JULY` | **S + C** | none | 94 / 3R |
-| 8/30 posted | Hero Cubs | `$120K AT 2× USUAL` | **S + C** | none | 237 / 5R #1 |
 
 ---
 
 ## Angle lock
-**ONE:** The sized book printed +67.73u last 30 — and the 6-unit plays were only eight tickets.  
-**Hook silhouette:** August printer + line-2 paradox (not jargon). Honest: those 8 made +13.00u; body pays MAX immediately.  
-**PURPOSE:** Educate the dream. Parent owns the GIF caption. No ask.  
-**Law this pass:** SPCL is not the angle. ONE → hook twist → then proof.
+**ONE:** Their #1 most-bet total is the Under. Proven wallet pressed $1.8K at 3.8× on the Over.  
+Nats +$69K unopposed = same idea on game 3 (light 0.2× — named).  
+**Hook:** Cubs `$XK AT Y×` + August line-2 paradox. Do **not** clone `BETMGM IS SHOWING TOP TICKETS`.  
+**PURPOSE:** Give / reach. No ask.
 
 ---
 
 ## Themes spent / open
-**Spent this beat:** EV/ARB grind vs sent plays · MAX/TOP/STRONG L30 · `+67.73u` · 8-ticket 6u paradox · buy-three-subs diagnostic · “another way”  
-**Still open:** first NFL/CFB lock · unit-tier as Status on a *new* window later (don’t restage this table) · onboarding FAQ if PURPOSE=buzz  
-**Don’t:** restage Dom · convert-paragraph · SUMMER · become-sharp clone open · August 168-vs-78 table · dunk TheBetDesk · 280-starve · jargon line-2 (`on the plays we size`) · imply 8 tickets made +67.73u
+**Spent this beat (once posted):** PIT Over 3.8× vs public Under · Nats +1.5 +$69K unopposed · this BetMGM most-bet slate  
+**Still open:** first NFL/CFB lock · TheBetDesk QT if Dale still wants it · unit-tier table on a *new* window  
+**Don’t:** restage Dom · convert-paragraph · SUMMER · become-sharp · August 168-vs-78 · ticket-list clone open · Nats 7-1 run-it-back · fake unopposed Over
 
 ---
 
 ## Unfinished
-- NFL/CFB lock still the live S slot after this educates the filter
-- STRONG **+1 pending** — image must show it; copy names it
-- Don’t fire an ask on the back of this unless Dale says so
+- Lock window was ~6:15 ET at stage — first pitch 6:41. If this sits, drop the clock line or update it.
+- TheBetDesk grind QT still exists on this branch if he wants it after
+- Don’t fire an ask on the back of this
 
 ---
 
 ## FORWARD LOOK — after this posts
 1. **First NFL / CFB lock** — live `$XK at Y×` if it exists
-2. Quiet board → anti-sexy printer only with a real card
-3. Ask only after more S/C pudding than this one educate
-**NOT:** promo · convert-as-open · thankful OG · become-sharp essay · restage this tier table · −76u · another jargon line-2
+2. Grade these two (Power trail) only if they print or the L is costly enough
+3. Ask only after more free S/C than one lock QT
+**NOT:** promo · convert-as-open · thankful OG · become-sharp · restage this pair · ticket-list clone
 
 ---
 
 ## Agent close-out
-- [x] Dale spine shaped · numbers as given
-- [x] ONE picked (Masterson unique) before SPCL
-- [x] Hook = August silhouette (printer + paradox). Graveyard in COPY_PASTE
+- [x] ONE picked before SPCL (parent knife = #1 total vs 3.8× Over)
+- [x] Hook = Cubs + paradox · Nats is reinforcing receipt
+- [x] Whole truth: contested Under $ · Nats light
 - [x] No ask
 - [x] Staged `twitter_drafts/COPY_PASTE.md`
