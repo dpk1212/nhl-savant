@@ -151,6 +151,9 @@ Write **one sentence** big idea.
 Run Masterson tests: easy to understand · easy to believe · interesting/unique.  
 Everything else must **only reinforce** that idea. Kill toss salad.
 
+**SPCL is not the angle.** Letters prove the ONE. They are not the spear. Stack **ONE → hook twist → then SPCL as proof** (`what_works.md` 8/26).  
+**(Dale 9/01 eve):** “PSCL is not good enough. Pick the correct angle. Obsess over the hook.” Line 2 must be the **interesting/unique** (August `ALMOST 3× JULY`). Jargon restatement (`ON THE PLAYS WE SIZE`) fails Masterson #3 even if line 1 is a printer.
+
 ### 4 · Pick levers that earn a seat (delete the rest)
 **SPCL — own 1–2 max** (Dale law):
 

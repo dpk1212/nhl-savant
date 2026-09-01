@@ -27,8 +27,13 @@ Seed 2026-07-10:
 - **One big idea** per hero: easy to understand · easy to believe · interesting/unique.
 - Sub-bullets / stories / facts only **reinforce** that idea — never parallel competing pitches (**toss salad** banned).
 - USP = one selling proposition, not nineteen. Hard part = choosing the tip; writing gets simple after.
-- Stack order: **ONE → SPCL → QUAL** (pick spear tip before dressing or scoring copy).
+- Stack order: **ONE → hook twist → SPCL as proof → QUAL** (pick spear tip before dressing or scoring copy). SPCL is not the angle.
 - Vault: `researcher/knowledge/hormozi_rule_of_one.md` (Agora/91-of-100 figures = Hormozi recount, not independently verified)
+
+2026-09-01 eve (Dale on TheBetDesk QT):
+- Printer open without a **line-2 paradox** is not enough (`ON THE PLAYS WE SIZE` = jargon, fails unique).
+- Educate hook silhouette that already won: `+46.8u IN AUGUST.` / `ALMOST 3× JULY.`
+- This QT’s spear: +67.73u last 30 **and** the 6-unit plays were 8 tickets (honest: those 8 made +13.00u, not the 67).
 
 2026-08-27 (Hormozi tweet manufacturing locked):
 - Never jump to copy. Pathway: Timeline → WHO → PURPOSE → ONE → 1–2 SPCL → STUFF → HOOK QA → draft → Ask decision.

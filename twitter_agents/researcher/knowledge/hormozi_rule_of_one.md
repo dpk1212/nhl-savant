@@ -59,6 +59,8 @@ They exist **only** to reinforce the singular argument.
 
 **USP law:** one core selling proposition everyone can immediately understand, that is counterintuitive, and believable — not 19 propositions.
 
+**SPCL is not that proposition.** Status/Power/Credibility/Likeness prove the one idea. They are not a substitute for picking it.
+
 ---
 
 ## Why picking only one is hard (and good)
