@@ -1,82 +1,83 @@
-# Twitter — 2026-09-01 · QT Dominic 30-day · disaster + higher-confidence
+# Twitter — 2026-09-01 · QT Dominic 30-day · ASK (convert)
 **Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Researcher/Strategist/Editor loop
 
 ### 0 · Spine (Dale — law)
 - Quote https://x.com/dominic_grauso/status/2094786638463295556
-- Somebody took a **30-day challenge**
-- Mid-month they got him into **higher-confidence plays**
-- Despite **1 disaster day**, he still finished **+7 units**
-- Voice: **Hormozi** · format: **quote that tweet**
+- 30-day challenge · mid-month **higher-confidence plays** · 1 disaster day · **+7u**
+- **This is our chance to make an ask.** Use the messaging that converts. Be better.
 
 ### 0b–0c · Continuity / forward look
-- Last beat: August MTD educate (S+C) · ask temp **warm-hot**
-- Forward look #1 was soft ask — **Dale spine overrides** with this QT (customer/OG C deposit). Ask waits one more give; this *is* the third-party pudding that makes the next ask honest
-- **QT law:** parent already owns “Final Results” / 95-78-1 / **+7.53u** — do **not** open by restating the scoreboard
-- Hot window: **C** third-party · **P** say–do through a customer
-- **NOT:** promo · trial in hero · HC/AGS/V12 label leak · Juice +2.08u vs his +7.53u (undermines him) · the −$449 tracker (half-truth dunk) · August MTD restage · hard ask
+- Last staged give was starved (4-line QT, no request). Dale override: **PURPOSE = Ask now**
+- Ask temp was already **hot** after August MTD educate + this third-party 30
+- Convert canon (Dale, Nats cash 8/27 — the words that convert): *don’t know what people are paying for data · won’t break your bank · everything you need to look sharp · put you on plays like this · first week free / watch and grade it yourself · DM me I’ll onboard you*
+- Kill: SUMMER/promo-code hero (13 eng) · “I don’t know what you’re using…” as **line 1** (4 eng) · empty “Most people try to become sharp” clone (181 eng, 0 replies)
+- **QT law:** parent owns 95-78-1 / “Final Results” — we don’t open with his scoreboard
+- **NOT:** Upgrade % we didn’t confirm live · Juice +2.08u vs his +7.53u · $1,015 peak without the red close
 
 ### 1 · WHO
-Bettors who think a public 30-day on someone else’s wallets is either a lock or a scam — they need a stranger who ate a hole and still finished green.
+Bettors paying for data / trying to become sharp — who just watched a stranger eat a disaster on a public 30 and still finish green.
 
 ### 2 · PURPOSE
-**Give / connect** — QT customer/OG Credibility deposit. Educate the dream in one line: higher-confidence (not spray) is why a disaster didn’t kill the 30.
+**Ask** — compliance = start the free week / DM for onboard.  
+Pudding first (his 30). Convert words next. Request is the close.
 
-**Ask:** none. Desire plant only (the filter). Soft trial stays in profile.
+**1-tweet ask** in the QT (Dale: single tweets often win).  
+**SR** = DM onboard + link (the click path). No second competing offer.
 
 ### 3 · ONE
-He ran a public 30 on the wallets, ate one disaster day, and still finished +7.53u because mid-month we moved him onto the higher-confidence plays — not because 95-78 is pretty.
+A stranger ran a public 30 on the wallets, ate one disaster day, still +7.53u after we moved him onto higher-confidence plays — so stop guessing what data is worth and watch this for a week.
 
 | Test | |
 |------|---|
-| Understand | disaster didn’t kill the month — the filter did the work |
-| Believe | his start tweet names the tool · Juice chart hole then +$263 · his close **+7.53u** |
-| Unique | third-party 30-day, not our ATH book card |
+| Understand | disaster didn’t kill it · filter did · you can test that |
+| Believe | his start names the tool · Juice hole · **+7.53u** his number |
+| Unique | third-party 30, not our ATH card · then the convert block |
 
 ### 4 · SPCL ★
-**C + P** (S seasons on his screens — don’t brochure)
-- **C** — his public 30 · Juice hole · **+7.53u** his number
-- **P** — mid-month we pointed him at higher-confidence → month still printed
-- **L** = voice only
-- Kill: Status flex (“our board”) · all-four SPCL
+**C + P**
+- **C** — public 30 · disaster hole · +7.53u
+- **P** — we pointed him at higher-confidence → month printed
+- Convert block = value equation (time/effort/$) under the ONE idea — not a third letter
+- **L** = Dale’s convert voice, not the pillar
 
 ### 5 · STUFF (receipts this run — 2026-09-01)
-Parent `2094786638463295556` @dominic_grauso (api.fxtwitter · 13:57Z):
-- “Final Results for our 30-Day Experiment: W 95 - L 78 - 1 T (7-1 on @bet_105 that couldn’t sync) + 7.53 Units Overall This Month”
-- Quotes his Aug 3 start: “Tracking the wallets on Kalshi & Polymarket using @Real_NHL_Savant's tool”
+Parent `2094786638463295556`:
+- 95-78-1 · 7-1 on bet_105 · **+7.53u**
+- Quotes Aug 3 start naming `@Real_NHL_Savant`
 
-Juice Report image (SharpFlow · Aug 4–31 · OCR this run):
-- Curve dumps to **−$600** (the hole) then recovers
-- Close: **+$263.31** · **+2.08u** · +2.7% ROI · 68 bets · **36-31** · 53.73% · max loss −$250
-- **Do not put +2.08u in the hero** — his scoreboard is **+7.53u** overall
+Juice SharpFlow Aug 4–31 (OCR): hole ~−$600 → **+$263.31 / +2.08u / 36-31** — image only, not hero math.
 
-Second tracker (SharpFlow tag · 8/4–8/31 · OCR this run):
-- Peak **+$1,015.72** · labeled low **−$510.68** · close **−$449.83** · 52-46-1 · −2.72% ROI
-- **Do not use $1,015 in hero** without the red close (half-truth)
-
-Dale mechanism (spine, no invented ticket list): mid-month → higher-confidence plays. Translate **HC** — never leak the label.
+Dale convert (keep, compressed to fit 280):
+- I don’t know what people are paying for their data
+- Mine won’t break your bank
+- You’ll get everything you need to look sharp
+- We’ll put you on plays like this (SR)
+- First week’s free · watch and grade it yourself
+- Signing up today? DM me · I’ll onboard you (SR)
+- Link: `nhlsavant.com/?ref=dom30` (SR only — URL-in-hero doesn’t convert)
 
 ### 6 · HOOK QA
 ```
 One disaster day.
-
-Mid-month we moved him onto the higher-confidence plays.
-Still +7.53u.
 ```
-- Screenshot: C in line 1 (disaster) · +7.53u by line 4 ✓
-- What / how / so what: hole → filter → month printed ✓
-- Not soft diary ✓
-- **QT law:** does **not** open with 95-78-1 / “final results” ✓
-- Kill: promo · ask · Juice vs overall math lecture · $1,015 without the L
+- C in line 1 ✓ · +7.53u by line 4 ✓
+- What/how/so what: hole → HC filter → public 30 printed → so you can test it ✓
+- Convert block **after** pudding (never as the open — that open died)
+- QT law: not “Final Results / 95-78-1” ✓
+- Stuff density kept · ask is the close · board not deleted ✓
 
 ### 7–8 · Algorithm
-Delete until you’d add back · short QT · parent carries W-L and both charts · we carry the why. No ask.
+Question: does “become sharp” philosophy earn a seat? No — spent, clone failed. Delete.  
+Simplify: compressed convert (exact Nats paragraph is 178c — won’t fit with pudding + ask).  
+Ask in the QT. DM + URL in SR.
 
 ---
 
-## QT — quote Dominic’s 30-day close
+## QT — quote Dominic’s 30-day close (1-tweet ASK)
 
 **Quote:** https://x.com/dominic_grauso/status/2094786638463295556  
-**Attach:** none extra — parent already has Juice + the tagged curve.
+**Attach:** none extra — parent has the charts.  
+**280 / 280**
 
 ### Copy this ↓
 
@@ -84,40 +85,46 @@ Delete until you’d add back · short QT · parent carries W-L and both charts 
 One disaster day.
 
 Mid-month we moved him onto the higher-confidence plays.
+Still +7.53u on a public 30.
 
-He still finished the 30 +7.53u.
+I don't know what people are paying for their data.
+Mine won't break your bank.
+You'll get everything you need to look sharp.
+
+First week's free. Watch and grade it yourself.
 ```
 
 ### Compose
-https://x.com/intent/tweet?text=One%20disaster%20day.%0A%0AMid-month%20we%20moved%20him%20onto%20the%20higher-confidence%20plays.%0A%0AHe%20still%20finished%20the%2030%20%2B7.53u.&url=https://x.com/i/status/2094786638463295556
-
-### Attach note
-QT only. Don’t restack his screens. Don’t attach our ATH card.
-
-### SR
-**None.** PURPOSE = give. Soft trial stays in profile.
+https://x.com/intent/tweet?text=One+disaster+day.%0A%0AMid-month+we+moved+him+onto+the+higher-confidence+plays.%0AStill+%2B7.53u+on+a+public+30.%0A%0AI+don%27t+know+what+people+are+paying+for+their+data.%0AMine+won%27t+break+your+bank.%0AYou%27ll+get+everything+you+need+to+look+sharp.%0A%0AFirst+week%27s+free.+Watch+and+grade+it+yourself.&url=https://x.com/i/status/2094786638463295556
 
 ### RT line
-`Mid-month we moved him onto the higher-confidence plays.`
+`First week's free. Watch and grade it yourself.`
 
 ---
 
-## Hook alts (same ONE)
+## SELF-REPLY — DM + link (post immediately under the QT)
 
-**A2 — Dale chronological (HC first; weaker screenshot)**
+**When:** Reply 1 under the QT — the click / onboard path  
+**replyToId:** the QT you just posted
+
+### Copy this ↓
+
 ```
-Mid-month we moved him onto the higher-confidence plays.
+We'll put you on plays like this.
 
-One disaster day.
-Still +7.53u on the 30.
+Signing up today? DM me.
+I'll onboard you and answer anything.
+
+nhlsavant.com/?ref=dom30
 ```
 
-**A3 — wallets beat without restating W-L**
-```
-One disaster day.
+### Compose
+https://x.com/intent/tweet?text=We%27ll+put+you+on+plays+like+this.%0A%0ASigning+up+today%3F+DM+me.%0AI%27ll+onboard+you+and+answer+anything.%0A%0Anhlsavant.com%2F%3Fref%3Ddom30
 
-Mid-month we moved him onto the higher-confidence plays.
+---
 
-Public 30 on the wallets.
-Still +7.53u.
-```
+## Order
+1. QT (quote Dominic) — pudding + convert + free-week ask
+2. SR — put you on plays like this · DM onboard · link
+
+**Never auto-publish.**
