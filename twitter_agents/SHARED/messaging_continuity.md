@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-01 6:22 ET · BetMGM QT · hook refine `HE WENT 3.8×` |
+| Last updated | 2026-09-01 6:26 ET · BetMGM QT · hook kept · Qual depth added back |
 | CSV window | Aug 26–Sep 1, 2026 |
 | Ask temperature | **cold-warm** — give; do not ask next unless Dale overrides |
 | Account arc | Tickets-vs-proven on BetMGM #1 total → Nats +$69K still unused as its own hero |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/01 6:22ET | QT BetMGM **hook** | `HE WENT 3.8× ON THE OVER` / `#1 TICKET IS THE UNDER` | **S** only | none | **Staged** |
+| 9/01 6:26ET | QT BetMGM **depth** | `HE WENT 3.8×` hook + educate/trust/diagnostic body | **S** (hook) · stuff in body | none | **Staged** |
 | 9/01 | QT TheBetDesk | `+67.73u` / eight 6-unit tickets | proof of ONE | none | Parked in git |
 | 9/01 | CSV ingest | `$120K at 2×` #1 · convert-as-open dead | — | — | Ingested |
 | 9/01 posted | QT Dom | Thankful / adjust to tiers | L | none | **35 eng — miss** |

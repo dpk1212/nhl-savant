@@ -191,7 +191,8 @@ If hook fails, **rewrite hook before touching body**.
 **(Dale 8/27 eve):** Ask/cash posts still need **give-post stuff density**. Do not starve receipts to “tighten” a CTA. Ask is the close — pudding is the meal. 1-tweet asks keep Dale’s convert words; they do not delete the board.  
 **(CSV 9/01):** Convert words as the **open** = 1 eng. Thankful OG QT = 35 eng. Same convert block **after** a `$XK` / disaster / valley open is still the close we use when PURPOSE=ask — never line 1, never a standalone pitch hero.  
 **(Dale 9/01):** Starving an **educate QT** to a 250-char W-L table to “fit 280” is majoring in minors. Hormozi techniques (SPCL / diagnostic / value equation / Qual stuff) must live **in the words**, not the header. August `+46.8u IN AUGUST` won WITH depth. Give-post stuff density is law for educate too. If Dale says “Hormozi would be disgusted,” restart at PURPOSE — do not tighten.  
-**(Dale 9/01 night):** We do **not** need every SPCL letter every post. We **do** need an amazing hook. Kill insider jargon in line 1–2 (`USUAL`, `THEIR #1 TOTAL`). Person + number + paradox. Rewrite hook before touching body.
+**(Dale 9/01 night):** We do **not** need every SPCL letter every post. We **do** need an amazing hook. Kill insider jargon in line 1–2 (`USUAL`, `THEIR #1 TOTAL`). Person + number + paradox. Rewrite hook before touching body.  
+**(Dale 9/01 night 2):** An amazing hook with a starved body is a **caption**. Qual = stuff inside. Trust = whole truth. Educate = easy to follow + worth the gamble. Time-with-prospect = long-form. August `+46.8u` is the depth template. After the hook is right, **add the stuff back**. Do not “refine” by deleting the pudding.
 
 ### 7 · Draft (human)
 - Dale dinner-table — not tipster, not brochure, not CAPS spam unless $ contrast earns it  
