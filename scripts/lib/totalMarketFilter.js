@@ -155,6 +155,40 @@ export function acceptFullGameSidePosition({
 }
 
 /**
+ * Reason to drop this position from the full-game board, or null to keep.
+ * Used by Action, scan hydrate, and EXITED stamping.
+ */
+export function rejectNonFullGameBoardPosition(pos = {}, {
+  marketType = 'ml',
+  sport = null,
+  fgConditionId = null,
+  mainLine = null,
+} = {}) {
+  const title = pos.title || '';
+  const slug = pos.slug || pos.eventSlug || '';
+  const mt = String(marketType || pos.marketType || 'ml').toUpperCase();
+  if (mt === 'TOTAL') {
+    const gate = acceptFullGameTotalPosition({
+      title,
+      slug,
+      entryLine: pos.entryLine ?? pos.totalLine ?? null,
+      mainLine,
+      sport,
+    });
+    return gate.ok ? null : (gate.reason || 'non_full_game_total');
+  }
+  const gate = acceptFullGameSidePosition({
+    title,
+    slug,
+    conditionId: pos.conditionId,
+    fgConditionId,
+    marketType: mt,
+    sport,
+  });
+  return gate.ok ? null : (gate.reason || 'period_or_segment_market');
+}
+
+/**
  * Parse the O/U number from a Polymarket total title/question.
  * Prefer the number after O/U|Over|Under|Total so "1st 5 Innings O/U 3.5"
  * yields 3.5 (caller still rejects via isNonFullGameTotalMarket).

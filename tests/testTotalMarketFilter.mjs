@@ -13,6 +13,7 @@ import {
   acceptFullGameSidePosition,
   pickFullGameMlMarket,
   pickFullGameSpreadMarket,
+  rejectNonFullGameBoardPosition,
 } from '../scripts/lib/totalMarketFilter.js';
 
 let passed = 0;
@@ -204,5 +205,27 @@ const mlPick = pickFullGameMlMarket(tolMarkets, 'cfb-toledo-mst-2026-09-04');
 ok(mlPick?.slug === 'cfb-toledo-mst-2026-09-04', 'ML picker prefers event-slug market over 4Q listed first');
 const spPick = pickFullGameSpreadMarket(tolMarkets);
 ok(spPick?.slug === 'cfb-toledo-mst-2026-09-04-spread-home-10pt5', 'spread picker skips 1Q spread');
+
+ok(
+  rejectNonFullGameBoardPosition(
+    { title: 'Colorado vs. Georgia Tech: 1Q Moneyline', slug: 'cfb-col-gtech-2026-09-03-1q-moneyline' },
+    { marketType: 'ML', sport: 'CFB' },
+  ) === 'period_or_segment_market',
+  'reject 1Q ML',
+);
+ok(
+  rejectNonFullGameBoardPosition(
+    { title: '', slug: '', conditionId: '0xe075437767b3f7dabf5b70c2a246c7d515e4dfc7f1ca91d440406334e99de746' },
+    { marketType: 'ML', sport: 'CFB', fgConditionId: '0x3c0c0fa752368746b6d751bcd692084d3bab92e721647f0090705856fd5f3b0b' },
+  ) === 'ml_condition_mismatch',
+  'reject titleless 4Q by conditionId',
+);
+ok(
+  !rejectNonFullGameBoardPosition(
+    { title: 'Colorado vs. Georgia Tech', slug: 'cfb-col-gtech-2026-09-03', conditionId: '0xb841e986cd07605588527c5410edfffa9b6fec3f420798607054ac1a075e3e4d' },
+    { marketType: 'ML', sport: 'CFB', fgConditionId: '0xb841e986cd07605588527c5410edfffa9b6fec3f420798607054ac1a075e3e4d' },
+  ),
+  'keep full-game ML',
+);
 
 console.log(`OK — ${passed} assertions`);

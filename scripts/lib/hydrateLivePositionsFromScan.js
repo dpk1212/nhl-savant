@@ -87,6 +87,7 @@ export function collectScanBoardProvenPositions({
   excludedSet = null,
   date = null,
   shadowMin = SCAN_BOARD_SHADOW_MIN,
+  polyData = null,
 } = {}) {
   const out = [];
   for (const { data: posData, mkt } of posFiles || []) {
@@ -109,6 +110,7 @@ export function collectScanBoardProvenPositions({
               title,
               slug,
               conditionId: pos.conditionId,
+              fgConditionId: polyData?.[sport]?.[gameKey]?.polyMl?.conditionId,
               marketType: mkt,
               sport,
             }).ok;

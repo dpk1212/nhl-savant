@@ -1296,6 +1296,7 @@ export default function ConfirmedActionDesk({
   totalPositions,
   walletProfiles,
   pinnacleHistory,
+  polyData = null,
   sportFilter = 'All',
   isMobile = false,
 }) {
@@ -1328,8 +1329,9 @@ export default function ConfirmedActionDesk({
       walletProfiles,
       pinnacleHistory,
       cellStatsTable,
+      polyData,
     }),
-    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable],
+    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData],
   );
 
   const visible = useMemo(() => {

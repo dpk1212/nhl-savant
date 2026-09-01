@@ -6610,6 +6610,11 @@ async function main() {
     walletProfiles,
     excludedSet,
     date: TARGET_DATE,
+    polyData: (() => {
+      try {
+        return JSON.parse(readFileSync(join(PUBLIC, 'polymarket_data.json'), 'utf8'));
+      } catch { return null; }
+    })(),
   });
   const { positions, added: hydratedAdded } = mergeScanBoardIntoLive(
     positionsFresh,
