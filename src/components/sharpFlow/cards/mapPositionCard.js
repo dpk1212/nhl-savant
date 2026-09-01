@@ -1111,13 +1111,17 @@ export function mapLockedPickToCardFixture(pick, {
   let ticketLine = Number.isFinite(pick.line) ? pick.line : null;
   let ticketOdds = Number.isFinite(pick.odds) && pick.odds !== 0 ? pick.odds : null;
   let polyEntryOdds = null;
+  // After T-15, SharpFlow nulls pick.vaultPositions. Do not rehydrate
+  // from live scan JSON — that chase is what flipped SDP/CIN Under
+  // 9.5 ↔ 8.5 on a sealed card.
+  const liveVaultOk = !ticketFrozen;
   const vaultPositions = Array.isArray(pick.vaultPositions) && pick.vaultPositions.length
     ? pick.vaultPositions
-    : (isTotal && totalPositions && pick.sport && pick.gameKey
+    : (liveVaultOk && isTotal && totalPositions && pick.sport && pick.gameKey
       ? (totalPositions[pick.sport]?.[pick.gameKey]?.positions || null)
-      : (isSpread && spreadPositions && pick.sport && pick.gameKey
+      : (liveVaultOk && isSpread && spreadPositions && pick.sport && pick.gameKey
         ? (spreadPositions[pick.sport]?.[pick.gameKey]?.positions || null)
-        : (!isTotal && !isSpread && mlPositions && pick.sport && pick.gameKey
+        : (liveVaultOk && !isTotal && !isSpread && mlPositions && pick.sport && pick.gameKey
           ? (mlPositions[pick.sport]?.[pick.gameKey]?.positions || null)
           : null)));
 
@@ -1168,11 +1172,15 @@ export function mapLockedPickToCardFixture(pick, {
     polyEntryOdds = inst.ticket.american;
   }
   // Hero / lock juice = coherent instrument (vault Poly unless spread Poly/book signs clash).
-  if (Number.isFinite(bound.odds)) {
+  // Frozen ticket keeps the sealed peak/lock line — bound.line is live vault.
+  if (Number.isFinite(bound.odds) && !ticketFrozen) {
+    ticketOdds = bound.odds;
+  } else if (Number.isFinite(bound.odds) && (!Number.isFinite(ticketOdds) || ticketOdds === 0)) {
     ticketOdds = bound.odds;
   }
   if (Number.isFinite(bound.line) && (isSpread || isTotal)) {
-    ticketLine = bound.line;
+    const stampOk = Number.isFinite(ticketLine) && ticketLine >= 1.5;
+    if (!ticketFrozen || !stampOk) ticketLine = bound.line;
   } else if (!Number.isFinite(ticketLine) && (isSpread || isTotal) && Number.isFinite(bound.line)) {
     ticketLine = bound.line;
   }

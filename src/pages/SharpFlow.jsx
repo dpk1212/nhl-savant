@@ -13072,6 +13072,7 @@ export default function SharpFlow() {
                             ? (peak.team || lock.team || sd.team || sideKey)
                             : (sd.team || lock.team || peak.team || sideKey),
                           away: doc.away || '', home: doc.home || '',
+                          commenceMs: commenceForOdds,
                           sport: docSport,
                           stars: displayStars,
                           peakStars,

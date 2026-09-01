@@ -321,4 +321,45 @@ assert.equal(chiBound.odds, -108, 'spread hero pairs +2.5 with book −108, not 
 assert.equal(chiBound.offMain, true);
 assert.equal(stampJuice(chiBound, 110), -108);
 
+// T-15: live vault 8.5 must not overwrite a sealed Under 9.5 stamp
+// (SDP/CIN 2026-08-31 — LOCKED hero flipped after freeze).
+const sdpFrozen = resolveInstrument({
+  family: 'TOTAL',
+  side: 'under',
+  freezeAtMs: 1_700_000_000_000,
+  stampedLine: 9.5,
+  positions: [
+    { side: 'under', entryLine: 8.5, avgPrice: 0.51, invested: 900 },
+    { side: 'under', entryLine: 9.5, avgPrice: 0.49, invested: 100 },
+  ],
+  pinnGame: {
+    fairTotalBook: 'pinnacle',
+    totalCurrent: { line: 8.5, overOdds: -110, underOdds: -110, isMain: true },
+    totalHistory: [
+      { t: 1, line: 9.5, overOdds: 100, underOdds: -120, isMain: true },
+      { t: 2, line: 8.5, overOdds: -110, underOdds: -110, isMain: true },
+    ],
+    totalLines: [
+      { line: 8.5, overOdds: -110, underOdds: -110, isMain: true },
+      { line: 9.5, overOdds: 100, underOdds: -120 },
+    ],
+  },
+});
+assert.equal(sdpFrozen.line, 9.5, 'frozen stamp 9.5 beats live vault 8.5');
+assert.equal(sdpFrozen.mainLine, 8.5);
+assert.equal(sdpFrozen.variant, 'ALT');
+const sdpLive = resolveInstrument({
+  family: 'TOTAL',
+  side: 'under',
+  stampedLine: 9.5,
+  positions: [
+    { side: 'under', entryLine: 8.5, avgPrice: 0.51, invested: 900 },
+  ],
+  pinnGame: {
+    totalCurrent: { line: 8.5, overOdds: -110, underOdds: -110, isMain: true },
+    totalLines: [{ line: 8.5, overOdds: -110, underOdds: -110, isMain: true }],
+  },
+});
+assert.equal(sdpLive.line, 8.5, 'pre-freeze vault still wins so Engine can move');
+
 console.log('testTicketInstrument: ok');

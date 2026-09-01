@@ -410,10 +410,17 @@ export function resolveInstrument({
   };
   const vaultLine = vaultConsensusLine(pos, side, fam, signCtx);
   const mainLine = mainLineForSide(fam, pinnGame || meta, side);
+  // Pre-T-15: live vault wins (wallets can still move 9.5 → 8.5).
+  // At/after T-15: sealed stamp is the ticket. Live JSON can keep
+  // shifting after freeze — chasing it flips a LOCKED hero (SDP/CIN
+  // Under 9.5 ↔ 8.5, 2026-08-31).
+  const frozen = Number.isFinite(freezeAtMs);
   const line = fam === 'ML'
     ? null
-    : (Number.isFinite(vaultLine) ? vaultLine
-      : (Number.isFinite(stampedLine) ? stampedLine : mainLine));
+    : (frozen && Number.isFinite(stampedLine)
+      ? stampedLine
+      : (Number.isFinite(vaultLine) ? vaultLine
+        : (Number.isFinite(stampedLine) ? stampedLine : mainLine)));
   const variant = classifyVariant(fam, line, mainLine);
   const ticket = vaultTicket(pos, { side, line, family: fam, sport, ...signCtx });
   const tape = pinnGame
