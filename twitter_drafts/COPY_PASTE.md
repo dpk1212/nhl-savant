@@ -1,130 +1,98 @@
-# Twitter — 2026-09-01 · QT Dominic 30-day · ASK (convert)
-**Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Researcher/Strategist/Editor loop
+# Twitter — 2026-09-01 · QT TheBetDesk · upper-tier vs EV grind
+**Pathway — FULL (Hormozi OS)**
 
 ### 0 · Spine (Dale — law)
-- Quote https://x.com/dominic_grauso/status/2094786638463295556
-- 30-day challenge · mid-month **higher-confidence plays** · 1 disaster day · **+7u**
-- **This is our chance to make an ask.** Use the messaging that converts. Be better.
+- Quote @TheBetDesk: “Another day of +EV betting where I just push buttons and hope for the best.”
+- Angle: crush EV top-down — grinding hours, timing, pinching every ounce of timing and value
+- How it normally works: buy multiple subs · grind value · some success · EV/ARB needs timing + effort + volume
+- Better way: track qualified sharps · plays sent directly · no hassle/worry · **not crazy volume**
+- Look at **upper-tier last 30** — there is another way
 
 ### 0b–0c · Continuity / forward look
-- Last staged give was starved (4-line QT, no request). Dale override: **PURPOSE = Ask now**
-- Ask temp was already **hot** after August MTD educate + this third-party 30
-- Convert canon (Dale, Nats cash 8/27 — the words that convert): *don’t know what people are paying for data · won’t break your bank · everything you need to look sharp · put you on plays like this · first week free / watch and grade it yourself · DM me I’ll onboard you*
-- Kill: SUMMER/promo-code hero (13 eng) · “I don’t know what you’re using…” as **line 1** (4 eng) · empty “Most people try to become sharp” clone (181 eng, 0 replies)
-- **QT law:** parent owns 95-78-1 / “Final Results” — we don’t open with his scoreboard
-- **NOT:** Upgrade % we didn’t confirm live · Juice +2.08u vs his +7.53u · $1,015 peak without the red close
+- CSV 9/01: next slot was live `$XK at Y×` give. **Dale spine overrides** with this QT (educate the grind vs sized book)
+- Hot: S+C printer open (`$XK at Y×` / August `+46.8u`). This open = **MAX 6u / 6-2 / +13.00u** (same family)
+- **QT law:** parent owns “push buttons and hope” — do **not** restate the GIF caption
+- Kill: become-sharp clone as line 1 (0R, spent) · convert-paragraph open (1 eng) · thankful OG · SUMMER · inventing “400 tickets” · dunking TheBetDesk
+- Ask temp **cold-warm** — this is **give/educate**. Desire plant only. No trial/DM/link
 
 ### 1 · WHO
-Bettors paying for data / trying to become sharp — who just watched a stranger eat a disaster on a public 30 and still finish green.
+Bettors buying three subs and grinding +EV/ARB all day — they just watched someone name that job out loud.
 
 ### 2 · PURPOSE
-**Ask** — compliance = start the free week / DM for onboard.  
-Pudding first (his 30). Convert words next. Request is the close.
+**Educate** — the sized sharp book is the other way. Not an ask.
 
-**1-tweet ask** in the QT (Dale: single tweets often win).  
-**SR** = DM onboard + link (the click path). No second competing offer.
+**Ask:** none. Desire plant: plays get sent · not crazy volume.
 
 ### 3 · ONE
-A stranger ran a public 30 on the wallets, ate one disaster day, still +7.53u after we moved him onto higher-confidence plays — so stop guessing what data is worth and watch this for a week.
+You don’t have to grind EV/ARB timing and volume — last 30 days the upper-tier book (MAX/TOP/STRONG) printed, and the plays get sent.
 
 | Test | |
 |------|---|
-| Understand | disaster didn’t kill it · filter did · you can test that |
-| Believe | his start names the tool · Juice hole · **+7.53u** his number |
-| Unique | third-party 30, not our ATH card · then the convert block |
+| Understand | sized plays, not button-mashing volume |
+| Believe | MAX 6-2 +13.00u · TOP 58-31-1 +39.31u · STRONG 34-21 +15.42u (Dale L30) |
+| Unique | QT is their grind GIF · our scarce contrast is the filter, not a pep talk |
 
 ### 4 · SPCL ★
-**C + P**
-- **C** — public 30 · disaster hole · +7.53u
-- **P** — we pointed him at higher-confidence → month printed
-- Convert block = value equation (time/effort/$) under the ONE idea — not a third letter
-- **L** = Dale’s convert voice, not the pillar
+**C + S**
+- **C** — L30 upper-tier W-L / ROI / units
+- **S** — the sized book (6u / 4–5.4u / 3u) vs the grind
+- **L** = voice only · no convert letter
 
-### 5 · STUFF (receipts this run — 2026-09-01)
-Parent `2094786638463295556`:
-- 95-78-1 · 7-1 on bet_105 · **+7.53u**
-- Quotes Aug 3 start naming `@Real_NHL_Savant`
-
-Juice SharpFlow Aug 4–31 (OCR): hole ~−$600 → **+$263.31 / +2.08u / 36-31** — image only, not hero math.
-
-Dale convert (keep, compressed to fit 280):
-- I don’t know what people are paying for their data
-- Mine won’t break your bank
-- You’ll get everything you need to look sharp
-- We’ll put you on plays like this (SR)
-- First week’s free · watch and grade it yourself
-- Signing up today? DM me · I’ll onboard you (SR)
-- Link: `nhlsavant.com/?ref=dom30` (SR only — URL-in-hero doesn’t convert)
+### 5 · STUFF (Dale this run — 2026-09-01)
+Last 30 · upper tiers (as given):
+- **MAX PLAY** shipped **6u** · **6-2** · **+27.1%** · **+13.00u**
+- **TOP PLAY** shipped **4–5.4u** · **58-31-1** · **+8.9%** · **+39.31u**
+- **STRONG** shipped **3u** · **34-21** · **+9.3%** · **+15.42u** · **+1 PEND**
+- Parent: TheBetDesk grind GIF (push buttons / hope)
+- Mechanism: buy subs → grind EV/ARB timing+volume → vs qualified sharps sent to you, not crazy volume
+- Kill in hero: +1 PEND (fits attach) · % if the units already carry · HC/AGS/V12 · promo · ask
 
 ### 6 · HOOK QA
 ```
-One disaster day.
+MAX 6u last 30: 6-2. +13.00u.
 ```
-- C in line 1 ✓ · +7.53u by line 4 ✓
-- What/how/so what: hole → HC filter → public 30 printed → so you can test it ✓
-- Convert block **after** pudding (never as the open — that open died)
-- QT law: not “Final Results / 95-78-1” ✓
-- Stuff density kept · ask is the close · board not deleted ✓
+- Screenshot S/C ✓
+- What/how/so what: sized book printed → not the grind → plays sent ✓
+- Not soft diary ✓
+- **QT law:** does not restate “push buttons” ✓
+- Not become-sharp clone open ✓
+- Convert words not line 1 ✓
 
 ### 7–8 · Algorithm
-Question: does “become sharp” philosophy earn a seat? No — spent, clone failed. Delete.  
-Simplify: compressed convert (exact Nats paragraph is 178c — won’t fit with pudding + ask).  
-Ask in the QT. DM + URL in SR.
+Delete invented ticket counts. Delete dunk. Delete ask. Keep Dale’s subs / timing / pinch / sent / not crazy volume / another way.
 
 ---
 
-## QT — quote Dominic’s 30-day close (1-tweet ASK)
+## QT — quote TheBetDesk grind GIF
 
-**Quote:** https://x.com/dominic_grauso/status/2094786638463295556  
-**Attach:** none extra — parent has the charts.  
-**280 / 280**
+**Action:** Open @TheBetDesk → that tweet (“Another day of +EV betting where I just push buttons…”) → **Quote** → paste below.  
+**Attach:** unit-tier L30 (MAX / TOP / STRONG). Text holds without it.  
+**250 / 280** · no ask
 
 ### Copy this ↓
 
 ```
-One disaster day.
+MAX 6u last 30: 6-2. +13.00u.
+TOP 4–5.4u: 58-31-1. +39.31u.
+STRONG 3u: 34-21. +15.42u.
 
-Mid-month we moved him onto the higher-confidence plays.
-Still +7.53u on a public 30.
+That's the upper-tier book.
 
-I don't know what people are paying for their data.
-Mine won't break your bank.
-You'll get everything you need to look sharp.
+Buy three subs. Grind the timing. Pinch every tick.
+Or get qualified-sharp plays sent to you.
 
-First week's free. Watch and grade it yourself.
+Not crazy volume.
+There's another way.
 ```
 
-### Compose
-https://x.com/intent/tweet?text=One+disaster+day.%0A%0AMid-month+we+moved+him+onto+the+higher-confidence+plays.%0AStill+%2B7.53u+on+a+public+30.%0A%0AI+don%27t+know+what+people+are+paying+for+their+data.%0AMine+won%27t+break+your+bank.%0AYou%27ll+get+everything+you+need+to+look+sharp.%0A%0AFirst+week%27s+free.+Watch+and+grade+it+yourself.&url=https://x.com/i/status/2094786638463295556
+### Compose (paste after you hit Quote)
+https://x.com/intent/tweet?text=MAX+6u+last+30%3A+6-2.+%2B13.00u.%0ATOP+4%E2%80%935.4u%3A+58-31-1.+%2B39.31u.%0ASTRONG+3u%3A+34-21.+%2B15.42u.%0A%0AThat%27s+the+upper-tier+book.%0A%0ABuy+three+subs.+Grind+the+timing.+Pinch+every+tick.%0AOr+get+qualified-sharp+plays+sent+to+you.%0A%0ANot+crazy+volume.%0AThere%27s+another+way.
+
+### Attach note
+MAX / TOP / STRONG last-30 cards. STRONG has **1 pending** — don’t hide it on the image. Don’t attach an EV scanner screenshot.
+
+### SR
+**None.** PURPOSE = educate. Desire plant is the close.
 
 ### RT line
-`First week's free. Watch and grade it yourself.`
-
----
-
-## SELF-REPLY — DM + link (post immediately under the QT)
-
-**When:** Reply 1 under the QT — the click / onboard path  
-**replyToId:** the QT you just posted
-
-### Copy this ↓
-
-```
-We'll put you on plays like this.
-
-Signing up today? DM me.
-I'll onboard you and answer anything.
-
-nhlsavant.com/?ref=dom30
-```
-
-### Compose
-https://x.com/intent/tweet?text=We%27ll+put+you+on+plays+like+this.%0A%0ASigning+up+today%3F+DM+me.%0AI%27ll+onboard+you+and+answer+anything.%0A%0Anhlsavant.com%2F%3Fref%3Ddom30
-
----
-
-## Order
-1. QT (quote Dominic) — pudding + convert + free-week ask
-2. SR — put you on plays like this · DM onboard · link
-
-**Never auto-publish.**
+`There's another way.`
