@@ -1,154 +1,123 @@
-# Twitter — 2026-08-31 · August MTD · sized-up printed
+# Twitter — 2026-09-01 · QT Dominic 30-day · disaster + higher-confidence
 **Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Researcher/Strategist/Editor loop
 
 ### 0 · Spine (Dale — law)
-- perfect post for the performance of the month so far
-- added a new sport · great month
-- highlight **actual performance by unit tiers**
-- tease **NFL / CFB locking plays soon**
-- updates to performance with another month of data
-- **Big September is loading**
+- Quote https://x.com/dominic_grauso/status/2094786638463295556
+- Somebody took a **30-day challenge**
+- Mid-month they got him into **higher-confidence plays**
+- Despite **1 disaster day**, he still finished **+7 units**
+- Voice: **Hormozi** · format: **quote that tweet**
 
 ### 0b–0c · Continuity / forward look
-- Football arriving · they still score on WR · last draft was WHO/PURPOSE-right, **Qual-thin** (hook + table + slogan)
-- Depth that serves the ONE idea only (not toss salad): July WR was *higher* · twice as many 1u tickets as 5u+ · sized ones covered the leak
-- ATH “win rate didn’t even go up” already shipped — **don’t clone**. This is July vs August, new tape
-- **NOT:** promo · Cubs restage · sport menu · AGS · 1u-loss open · hard ask · −76u valley
+- Last beat: August MTD educate (S+C) · ask temp **warm-hot**
+- Forward look #1 was soft ask — **Dale spine overrides** with this QT (customer/OG C deposit). Ask waits one more give; this *is* the third-party pudding that makes the next ask honest
+- **QT law:** parent already owns “Final Results” / 95-78-1 / **+7.53u** — do **not** open by restating the scoreboard
+- Hot window: **C** third-party · **P** say–do through a customer
+- **NOT:** promo · trial in hero · HC/AGS/V12 label leak · Juice +2.08u vs his +7.53u (undermines him) · the −$449 tracker (half-truth dunk) · August MTD restage · hard ask
 
 ### 1 · WHO
-Football bettors walking into September — about to score us (and their own slate) on **win rate**, then spray 1u across NFL/CFB.
+Bettors who think a public 30-day on someone else’s wallets is either a lock or a scam — they need a stranger who ate a hole and still finished green.
 
 ### 2 · PURPOSE
-**Educate** — August is the receipt that **size** is how this book prints, so when NFL/CFB lock they already know which tickets to watch.
+**Give / connect** — QT customer/OG Credibility deposit. Educate the dream in one line: higher-confidence (not spray) is why a disaster didn’t kill the 30.
 
-**Ask:** none. Desire plant: watch the ones we size.
+**Ask:** none. Desire plant only (the filter). Soft trial stays in profile.
 
 ### 3 · ONE
-August almost tripled July on a **worse** win rate because 78 sized tickets went 56-22 (+65.6u) and covered 168 small ones that leaked. That’s the filter for football — not 53%.
+He ran a public 30 on the wallets, ate one disaster day, and still finished +7.53u because mid-month we moved him onto the higher-confidence plays — not because 95-78 is pretty.
 
 | Test | |
 |------|---|
-| Understand | hit fewer, made more, because of size |
-| Believe | July 55.2% / +17u vs Aug 53.2% / +46.8u · 168 vs 78 tickets |
-| Unique | more junk tickets than sized ones and the month still printed |
+| Understand | disaster didn’t kill the month — the filter did the work |
+| Believe | his start tweet names the tool · Juice chart hole then +$263 · his close **+7.53u** |
+| Unique | third-party 30-day, not our ATH book card |
 
 ### 4 · SPCL ★
-**S + C** (P seasons — July→August say–do, not owned)
-- **S** — sized book they need on Sundays
-- **C** — July vs August WR/PnL + 168 vs 78 whole truth
+**C + P** (S seasons on his screens — don’t brochure)
+- **C** — his public 30 · Juice hole · **+7.53u** his number
+- **P** — mid-month we pointed him at higher-confidence → month still printed
+- **L** = voice only
+- Kill: Status flex (“our board”) · all-four SPCL
 
-### 5 · STUFF (Firestore 2026-08-31T15:32Z · through 8/30)
-- August: 372 · 198-174 · **53.2%** · **+46.8u** · +4.9% ROI · stake 955.2u
-- July: 230 · 127-103 · **55.2%** · **+17.04u** · +2.3% ROI · stake 753.55u
-- WR down, profit ×2.75, stake only ×1.27 (not “we just bet more”)
-- 1u: **168** · 76-92 · −20.27u · −12.2% — **2.15×** the 5u+ ticket count
-- 2–3u: 94 · 47-47 · −6.62u — the “kinda like it” middle
-- 4u: 32 · 19-13 · +8.07u — where it turns
-- 5u+: **78** · **56-22** · 71.8% · **+65.62u** · +15.7% ROI
-- NFL preseason −0.42u — don’t flex · CFB none yet
-- Kill in hero: all-time · sport menu · 27% stake lecture (one human line max) · AGS · V12 · −76u
+### 5 · STUFF (receipts this run — 2026-09-01)
+Parent `2094786638463295556` @dominic_grauso (api.fxtwitter · 13:57Z):
+- “Final Results for our 30-Day Experiment: W 95 - L 78 - 1 T (7-1 on @bet_105 that couldn’t sync) + 7.53 Units Overall This Month”
+- Quotes his Aug 3 start: “Tracking the wallets on Kalshi & Polymarket using @Real_NHL_Savant's tool”
+
+Juice Report image (SharpFlow · Aug 4–31 · OCR this run):
+- Curve dumps to **−$600** (the hole) then recovers
+- Close: **+$263.31** · **+2.08u** · +2.7% ROI · 68 bets · **36-31** · 53.73% · max loss −$250
+- **Do not put +2.08u in the hero** — his scoreboard is **+7.53u** overall
+
+Second tracker (SharpFlow tag · 8/4–8/31 · OCR this run):
+- Peak **+$1,015.72** · labeled low **−$510.68** · close **−$449.83** · 52-46-1 · −2.72% ROI
+- **Do not use $1,015 in hero** without the red close (half-truth)
+
+Dale mechanism (spine, no invented ticket list): mid-month → higher-confidence plays. Translate **HC** — never leak the label.
 
 ### 6 · HOOK QA
-Printer open stays (Dale: good). Depth is the **body** — July paradox + 168 vs 78 — not a longer table.
+```
+One disaster day.
 
+Mid-month we moved him onto the higher-confidence plays.
+Still +7.53u.
 ```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
-```
-- Screenshot S/C ✓
-- What/how/so what now has a *why* (worse WR, more small tickets, sized ones ate) ✓
-- Kill: skeleton table · “don’t watch the 53%” as the whole lesson · ATH clone · promo · ask
+- Screenshot: C in line 1 (disaster) · +7.53u by line 4 ✓
+- What / how / so what: hole → filter → month printed ✓
+- Not soft diary ✓
+- **QT law:** does **not** open with 95-78-1 / “final results” ✓
+- Kill: promo · ask · Juice vs overall math lecture · $1,015 without the L
 
 ### 7–8 · Algorithm
-Add July WR paradox + ticket counts (proof of ONE). Delete stake-percentage class. Delete slogan-only close. Football close = Sunday-slate trap = the 168 without the 56-22. No ask.
+Delete until you’d add back · short QT · parent carries W-L and both charts · we carry the why. No ask.
 
 ---
 
-## HERO — single tweet
+## QT — quote Dominic’s 30-day close
 
-**Attach:** unit split (1u vs 5u+) if you’ve got it. Text holds without it.
+**Quote:** https://x.com/dominic_grauso/status/2094786638463295556  
+**Attach:** none extra — parent already has Juice + the tagged curve.
 
 ### Copy this ↓
 
 ```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
+One disaster day.
 
-July we hit more often.
-55% vs 53%.
-July made +17u.
+Mid-month we moved him onto the higher-confidence plays.
 
-We didn’t get hotter.
-We sized.
-
-5u+ went 56-22.
-+65.6u on 78 tickets.
-
-The 1u book was 168 tickets.
-76-92. −20.3u.
-
-Twice as many small ones
-as sized ones.
-The small ones leaked.
-The sized ones covered it
-and still printed the month.
-
-2–3u sat in the middle.
-47-47. −6.6u.
-
-4u is where it turns.
-19-13. +8.1u.
-
-Football’s a full Sunday slate.
-The trap is 1u on every game
-and calling the win rate the season.
-
-That’s the 168 tickets
-with none of the 56-22.
-
-Watch the ones we size.
-
-Big September is loading.
+He still finished the 30 +7.53u.
 ```
 
+### Compose
+https://x.com/intent/tweet?text=One%20disaster%20day.%0A%0AMid-month%20we%20moved%20him%20onto%20the%20higher-confidence%20plays.%0A%0AHe%20still%20finished%20the%2030%20%2B7.53u.&url=https://x.com/i/status/2094786638463295556
+
 ### Attach note
-Unit split (1u red · 5u+ green). Not a sport menu. Not MAX/TOP.
+QT only. Don’t restack his screens. Don’t attach our ATH card.
 
 ### SR
-**None.** PURPOSE = educate. Desire plant is the close.
+**None.** PURPOSE = give. Soft trial stays in profile.
+
+### RT line
+`Mid-month we moved him onto the higher-confidence plays.`
 
 ---
 
-## Open alt (tighter — if this feels long)
+## Hook alts (same ONE)
 
-Same WHO / PURPOSE / ONE. Cuts the 2–3u / 4u rungs; keeps July paradox + 168 vs 78.
-
+**A2 — Dale chronological (HC first; weaker screenshot)**
 ```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
+Mid-month we moved him onto the higher-confidence plays.
 
-July we hit more often.
-55% vs 53%.
-July made +17u.
+One disaster day.
+Still +7.53u on the 30.
+```
 
-We didn’t get hotter.
-We sized.
+**A3 — wallets beat without restating W-L**
+```
+One disaster day.
 
-5u+: 56-22. +65.6u.
-78 tickets.
+Mid-month we moved him onto the higher-confidence plays.
 
-1u: 76-92. −20.3u.
-168 tickets.
-
-Twice as many small ones.
-They leaked.
-The sized ones covered it
-and still printed the month.
-
-Football’s a full Sunday slate.
-The trap is 1u on every game.
-
-Watch the ones we size.
-
-Big September is loading.
+Public 30 on the wallets.
+Still +7.53u.
 ```
