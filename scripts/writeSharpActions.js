@@ -54,6 +54,7 @@ import { positionMatchesPolyEvent, WRONG_GAME_EXIT_REASONS } from './lib/positio
 import {
   acceptFullGameSidePosition,
   acceptFullGameTotalPosition,
+  rejectNonFullGameBoardPosition,
 } from './lib/totalMarketFilter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -1421,6 +1422,21 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
       if (!gate.ok && WRONG_GAME_EXIT_REASONS.has(gate.reason)) {
         shouldExit = true;
         exitReason = gate.reason;
+      }
+
+      // Period / F5 leftovers: wallet still holds the token so asset-absent
+      // never fires, but these must not stay PENDING on the game board.
+      if (!shouldExit) {
+        const periodReason = rejectNonFullGameBoardPosition(data, {
+          marketType: data.marketType,
+          sport: data.sport,
+          fgConditionId: polyGame?.polyMl?.conditionId,
+          mainLine: polyGame?.polyTotal?.line,
+        });
+        if (periodReason) {
+          shouldExit = true;
+          exitReason = periodReason;
+        }
       }
 
       // Still on today's live write set — keep PENDING.

@@ -17,6 +17,7 @@ import {
 import { steamForGame } from './steamMove.js';
 import { signedSpreadEntryLine } from './spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
+import { rejectNonFullGameBoardPosition } from '../../scripts/lib/totalMarketFilter.js';
 
 const SPORTS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -551,6 +552,7 @@ export function buildConfirmedActionRows({
   walletProfiles,
   pinnacleHistory,
   cellStatsTable = null,
+  polyData = null,
 } = {}) {
   const qBySport = buildFlatDollarQBySport(walletProfiles);
   const raw = [
@@ -561,6 +563,13 @@ export function buildConfirmedActionRows({
 
   const rows = [];
   for (const { sport, gameKey, gd, marketType, pos } of raw) {
+    const polyGame = polyData?.[sport]?.[gameKey];
+    if (rejectNonFullGameBoardPosition(pos, {
+      marketType,
+      sport,
+      fgConditionId: polyGame?.polyMl?.conditionId,
+      mainLine: polyGame?.polyTotal?.line,
+    })) continue;
     const short = shortWalletId(pos.walletShort || pos.wallet);
     if (!short) continue;
     const prof = profileFor(walletProfiles, short);

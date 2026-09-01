@@ -10009,6 +10009,7 @@ export default function SharpFlow() {
           totalPositions={totalPositions}
           walletProfiles={walletProfiles}
           pinnacleHistory={pinnacleHistory}
+          polyData={polyData}
           sportFilter={sportFilter}
           isMobile={isMobile}
         />
