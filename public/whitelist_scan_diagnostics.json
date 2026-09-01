@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-09-01T00:34:44.614Z",
-  "elapsedSec": 31.4,
+  "scannedAt": "2026-09-01T00:39:05.644Z",
+  "elapsedSec": 35.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 133,
   "summary": {
     "total": 296,
-    "coveredByMain": 36,
-    "recovered": 16,
-    "recoveredPositions": 60,
-    "noPositions": 244,
+    "coveredByMain": 32,
+    "recovered": 19,
+    "recoveredPositions": 67,
+    "noPositions": 245,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 8,
+      "ml": 12,
       "spread": 2,
       "total": 1,
-      "dropped_shadow_gate": 32,
+      "dropped_shadow_gate": 35,
       "dropped_excluded": 17,
       "dropped_duplicate": 0
     }
@@ -177,7 +177,24 @@
       "tier": "CONFIRMED",
       "name": "NM-P",
       "sports": "MLB,SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xcf7379b4b891c06d88807f6f70efa75378120215",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1360,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "rea_bet",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1519,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "12192c",
@@ -1296,7 +1313,51 @@
       "tier": "CONFIRMED",
       "name": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882-1783406009396",
       "sports": "MLB,UFC,SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
+      "positionsCount": 4,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 2409,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 3,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "rea_bet",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 222,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "faresziam_axelsola",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 95,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "liv_ips",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 124,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "cov_mac",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 8,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "6ac120",
@@ -1958,7 +2019,8 @@
       "tier": "CONFIRMED",
       "name": "suntori",
       "sports": "NBA,UFC,NHL,SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6"
     },
     {
       "walletShort": "a0d6d2",
@@ -2637,7 +2699,33 @@
       "tier": "CONFIRMED",
       "name": "GC-P",
       "sports": "MLB,SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x2d6ac4f70307102ac46e9e6ded67f3838ddf8add",
+      "positionsCount": 2,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1213,
+      "willPassShadowGate": 2,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "rea_bet",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1542,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "bal_col",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1311,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "dfa240",
