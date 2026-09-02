@@ -7,58 +7,57 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-01 6:26 ET · BetMGM QT · hook kept · Qual depth added back |
+| Last updated | 2026-09-02 6:43 ET · morning ask · 4-0 + max + V12 ATH |
 | CSV window | Aug 26–Sep 1, 2026 |
-| Ask temperature | **cold-warm** — give; do not ask next unless Dale overrides |
-| Account arc | Tickets-vs-proven on BetMGM #1 total → Nats +$69K still unused as its own hero |
+| Ask temperature | **Hot this beat** (Dale + pudding). After this, cool unless he says so. |
+| Account arc | Power: Over vs #1 Under cashed as 6u max → V12 ATH → UPGRADE ask |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/01 6:26ET | QT BetMGM **depth** | `HE WENT 3.8×` hook + educate/trust/diagnostic body | **S** (hook) · stuff in body | none | **Staged** |
+| 9/02 AM | Hero **ASK** | `4-0 LAST NIGHT` / `+16.82u` · max Over cashed · V12 ATH | **P + S** | UPGRADE 25% as **close** · link in SR | **Staged** |
+| 9/01 | QT BetMGM | `HE WENT 3.8×` / #1 ticket Under | S | none | Staged; Over **cashed** as 6u max (3.1× on this morning’s card) |
 | 9/01 | QT TheBetDesk | `+67.73u` / eight 6-unit tickets | proof of ONE | none | Parked in git |
-| 9/01 | CSV ingest | `$120K at 2×` #1 · convert-as-open dead | — | — | Ingested |
 | 9/01 posted | QT Dom | Thankful / adjust to tiers | L | none | **35 eng — miss** |
-| 8/31 posted | Hero August MTD | `+46.8u IN AUGUST` / `ALMOST 3× JULY` | **S + C** | none | 94 / 3R |
+| 8/31 posted | Hero August MTD | `+46.8u IN AUGUST` | **S + C** | none | 94 / 3R |
 
 ---
 
 ## Angle lock
-**ONE:** Their #1 most-bet total is the Under. Wallet we track went 3.8× on the Over.  
-**SPCL:** **S** only (3.8×). Hook is the work. C lives in the image.  
-**Killed:** second play (Nats +$69K) from this QT — toss salad. He’s 0.2×; next hero.  
-**PURPOSE:** Give. No ask.
+**ONE:** 4-0 last night, max play cashed, V12 at ATH — proof that earns the ask.  
+**Hook:** `4-0 LAST NIGHT.` / `+16.82u.` Convert/UPGRADE never line 1.  
+**Ask:** code UPGRADE 25% off + Dale convert close in hero. Link + DM in SR.  
+**SPCL:** P (Over cashed) + S (ATH / 6u).  
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** PIT Over 3.8× vs BetMGM #1 Under  
-**Still open:** Nats +$69K / 8-2 / 80% / unopposed / 0.2× light as its **own** hero · NFL/CFB lock · TheBetDesk QT  
-**Don’t:** clone `$XK AT Y×` onto small $ · two-wallet menu · ticket-list open · fake 100% proven Over · convert · SUMMER
+**Spent this beat (once posted):** yesterday 4-0 · PIT Over max +6.18u · V12 +131.35u ATH · UPGRADE 25%  
+**Still open:** Nats +$69K hero · NFL/CFB lock · TheBetDesk QT  
+**Don’t:** convert-as-open · SUMMER-as-open · −76u · recap furniture · restage this 4-0 · AGS leak
 
 ---
 
 ## Unfinished
-- First pitch 6:41 ET at stage (6:20 ET). Drop/update clock if it sits.
-- Nats +$69K still unused — do not cram into this QT
-- TheBetDesk grind QT still in git
+- After this ask, do not fire another convert hero unless Dale says so
+- Nats +$69K still unused as its own give
+- Site link goes in SR only
 
 ---
 
 ## FORWARD LOOK — after this posts
-1. **Nats +$69K hero** if you still want that sharp (light 0.2× — printer open, not Cubs size)
-2. First NFL / CFB lock — live `$XK at Y×` only if the $ is actually scarce
-3. Ask only after more free S/C
-**NOT:** promo · convert-as-open · thankful · become-sharp · restage this Over · ticket-list clone
+1. Grade/quiet — no second ask
+2. Nats +$69K give if still unused (0.2× light — printer, not Cubs size)
+3. First NFL / CFB lock — `$XK at Y×` only if $ is scarce
+**NOT:** another UPGRADE hero · convert-as-open · −76u · SUMMER · restage 4-0
 
 ---
 
 ## Agent close-out
-- [x] Process in order · ONE before SPCL
-- [x] Correct letters: S+C in the 90/0 family
-- [x] Hook = 3.8× / their #1 Under · $1.8K demoted to body
-- [x] Nats cut from this tweet (Rule of One)
-- [x] No ask
+- [x] PURPOSE=ask · Dale override
+- [x] Hook = 4-0 / +16.82u · not convert · not promo
+- [x] Qual depth · whole truth 509-416 · Power Over vs #1 Under
+- [x] UPGRADE in the close · link in SR
 - [x] Staged `twitter_drafts/COPY_PASTE.md`

@@ -1,98 +1,121 @@
-# Twitter — 2026-09-01 · QT BetMGM · DEPTH (Qual / Trust / Educate)
-**The last paste was a caption. Hormozi quality = stuff inside the container. August `+46.8u` won because of depth. Hook stays. Body pays.**
+# Twitter — 2026-09-02 morning · 4-0 + max play + V12 ATH · ASK
+**PURPOSE = ask. Dale overrides cold-warm.** Pudding first. Convert + UPGRADE = **close only**. Never line 1.
+
+CSV law: `I don't know what you're paying… Upgrade 25%` as **hero** = **1 eng**. Same words after a printer open = the close we use. SUMMER-as-open = 13 eng. Code goes at the end.
 
 ---
 
-### Literature used IN THE WORDS (not the header)
-| Canon | In the copy |
-|-------|-------------|
-| **Rule of One** | One idea: #1 ticket is Under · the press is 3.8× Over. Everything only proves that. |
-| **Qual** | Stuff: 17-12 · +$3.3K · +25% · plays-like-this 58.7% / +28.7% · $1.8K · 3.8× · $1.5K Under · yesterday’s two Overs · 2× press |
-| **Trust** | Whole truth: contested · $1.8K is not $120K · 17-12 not 17-0 |
-| **Educate** | Ticket list = public pile. It does not show who sized up. Easy to follow + worth the gamble. |
-| **Diagnostic** | Current = #1 total (Under) → desired = the press → obstacle = list ≠ size → vehicle = this wallet |
-| **Value equation** | Likelihood = 17-12 / plays-like-this · time = 6:41 · effort = one side |
-| **S only in hook** | `HE WENT 3.8×` · image does C · no Power we don’t have |
-| **Time-with-prospect** | Long-form. Shorts earn the click; this *is* the long. |
+### 0 · Spine (Dale)
+- V12 all-time high again
+- 4-0 last night · hitting a max play
+- Promo code **UPGRADE** · 25% off
+- Cards (this morning):
+  - Locked picks yesterday: **4-0** · **+16.82u** · pending 0
+  - Max: SF @ PIT **Over 7.5** · **6.0u** · **WIN +6.18u** · −143 · **3.1× usual** · **$1.8K** · contested $2.8K vs $1.5K
+  - Lead wallet …9214c2: L30 **+$9.1K** · **21-13** · **62% WR**
+  - V12 LIVE: **+131.35u** · **+5.2% ROI** · ≈ +$13,135 at $100/u · **509-416-8** · **55.0%** · **933** graded · **94 days** · ATH on the chart
+- Yesterday’s QT collision still true: #1 ticket was the Under. Max play was the Over. It cashed. (**Power**)
 
-Nats +$69K still **not** in this tweet. That’s a second play. Depth ≠ toss salad. Depth = stuff on the ONE idea.
+### 0b–0c · Continuity
+- Ask temp was cold-warm. **Dale + this pudding overrides** → ask
+- Kill: convert-as-open · SUMMER-as-open · −76u restage · recap furniture (`here is how last night played`) · ✅✅ checklist · AGS-U leak · URL in hero · 3.8× (this card is **3.1×**)
+- Hot opens that fit: printer (`4-0` / `+16.82u`) · not `$1.8K AT 3.1×` (small $)
+
+### 1 · WHO
+Someone who watched last night or is about to pay someone for “data” this morning.
+
+### 2 · PURPOSE
+**Ask.** Soft trial / UPGRADE 25% as the **close**. Link + DM in **SR**.
+
+### 3 · ONE
+Last night went 4-0, the max play cashed, V12 is at an all-time high — that’s the proof. The ask is earned.
+
+| Test | |
+|------|---|
+| Understand | clean night · max hit · curve at ATH |
+| Believe | 4-0 +16.82u · Over +6.18u · +131.35u / 933 / 94d / 509-416 |
+| Unique | #1 ticket was Under · max was Over · it cashed |
+
+### 4 · SPCL — own **P + S** (not all four)
+- **P Power** — pointed at the Over / it cashed as the max. 4-0 is a say–do cycle. 509-416 is the honest trail.
+- **S Status** — V12 ATH +131.35u · 6u max
+- C = the two screens. L = convert voice in the close, not the pillar.
+
+### 5 · STUFF
+4-0 · +16.82u · Over 7.5 · 6u · +6.18u · 3.1× · $1.8K · $2.8K vs $1.5K · wallet +$9.1K 21-13 62% · V12 +131.35u ATH · 933 · 94 days · 55% · 509-416-8 · +5.2% ROI
+
+### 6 · HOOK
+```
+4-0 LAST NIGHT.
++16.82u.
+```
+August family (printer). Twist is the max play in the next breath — not a recap diary.
+
+**Graveyard:** UPGRADE as line 1 · paying-paragraph as line 1 · −76u · “here is how last night played” · 4-0 ✅✅ · `$1.8K AT 3.1×` as Cubs costume
+
+### 7–8
+Deleted: promo-as-open · convert-as-open · AGS · URL in hero · −76u · Nats +$69K (wrong tweet).
+Added back: Over vs #1 Under as Power · 509-416 whole truth · Dale convert close + code UPGRADE.
+Dale posts.
 
 ---
 
-### 0–3 · WHO / PURPOSE / ONE
-WHO: about to bet BetMGM’s #1 total.  
-PURPOSE: **Educate** (not a caption). Give. No ask.  
-ONE: The #1 ticket is the Under. He just went 3.8× on the Over.
+## Hero — paste this
 
-### 6 · HOOK (kept — this was the pass that found it)
-```
-HE WENT 3.8× ON THE OVER.
-#1 TICKET IS THE UNDER.
-```
-Do not touch the hook. The failure was starving what comes after.
-
----
-
-## QT — quote BetMGM News
-
-**Action:** @BetMGMNews → Tuesday most-bet tweet → **Quote** → paste.  
-**Attach:** 3.8× Over printer + lock card (Under $ visible).  
-**540 chars.** August-class educate. Compose: https://x.com/intent/tweet?text=HE%20WENT%203.8%C3%97%20ON%20THE%20OVER.%0A%231%20TICKET%20IS%20THE%20UNDER.%0A%0ASame%20total.%20Opposite%20sides.%0A%0AA%20ticket%20list%20tells%20you%20where%20the%20public%20piled.%0AIt%20does%20not%20tell%20you%20who%20just%20sized%20up.%0A%0AThis%20wallet%2C%20last%2030%20days%3A%0A17-12.%0A%2B%243.3K.%0A%2B25%25%20ROI.%0A%0AWhen%20he%20takes%20plays%20that%20look%20like%20this%3A%0A58.7%25%20wins.%0A%2B28.7%25%20ROI.%0A%0A%241.8K%20tonight.%0AThat%27s%203.8%C3%97%20his%20usual.%0A%0AThere%27s%20%241.5K%20on%20the%20Under.%0AIt%27s%20contested.%0AHe%20pressed%20anyway.%0A%0AYesterday%20he%20cashed%20two%20Overs.%0AOne%20of%20them%20was%20a%202%C3%97.%0A%0ASF%20%40%20PIT.%20Over%207.5.%203u.%0A%0AIf%20you%20bet%20the%20%231%20total%2C%20you%27re%20on%20the%20Under.%0AHe%27s%20on%20the%20Over.%0A%0A6%3A41.  
-**No ask.**
-
-### Copy this ↓ PRIMARY
+**Attach:** (1) yesterday 4-0 / max Over card (2) V12 ATH +131.35u chart  
+**594 chars.** Compose (hero): https://x.com/intent/tweet?text=4-0%20LAST%20NIGHT.%0A%2B16.82u.%0A%0AThe%20max%20play%20cashed.%0ASF%20%40%20PIT%20Over%207.5.%0A6%20units.%0A%2B6.18u.%0A%0A%231%20ticket%20on%20that%20total%20was%20the%20Under.%0AHe%20went%203.1%C3%97%20on%20the%20Over.%0A%241.8K.%0A%0AThere%27s%20%241.5K%20on%20the%20Under.%0AIt%20was%20contested.%0AThe%206u%20was%20Over.%0A%0AThat%20wallet%20last%2030%3A%0A21-13.%0A%2B%249.1K.%0A62%25.%0A%0AV12%20is%20at%20an%20all-time%20high.%0A%2B131.35u.%0A933%20plays.%2094%20days.%0A55%25.%0A509-416.%0A%0AI%20don%27t%20know%20what%20people%20are%20using%20for%20their%20data%20or%20what%20they%27re%20paying.%0AThis%20isn%27t%20going%20to%20break%20your%20bank.%0AYou%27re%20going%20to%20get%20the%20data%20you%20need%20to%20look%20sharp.%0A%0ACode%20UPGRADE.%0A25%25%20off.%0A%0ALet%20us%20put%20you%20on%20plays%20like%20last%20night.%0AWatch%20it.%20Grade%20it%20yourself.  
+**No URL in the hero.** Code is the close. Link in the self-reply.
 
 ```
-HE WENT 3.8× ON THE OVER.
-#1 TICKET IS THE UNDER.
+4-0 LAST NIGHT.
++16.82u.
 
-Same total. Opposite sides.
+The max play cashed.
+SF @ PIT Over 7.5.
+6 units.
++6.18u.
 
-A ticket list tells you where the public piled.
-It does not tell you who just sized up.
-
-This wallet, last 30 days:
-17-12.
-+$3.3K.
-+25% ROI.
-
-When he takes plays that look like this:
-58.7% wins.
-+28.7% ROI.
-
-$1.8K tonight.
-That's 3.8× his usual.
+#1 ticket on that total was the Under.
+He went 3.1× on the Over.
+$1.8K.
 
 There's $1.5K on the Under.
-It's contested.
-He pressed anyway.
+It was contested.
+The 6u was Over.
 
-Yesterday he cashed two Overs.
-One of them was a 2×.
+That wallet last 30:
+21-13.
++$9.1K.
+62%.
 
-SF @ PIT. Over 7.5. 3u.
+V12 is at an all-time high.
++131.35u.
+933 plays. 94 days.
+55%.
+509-416.
 
-If you bet the #1 total, you're on the Under.
-He's on the Over.
+I don't know what people are using for their data or what they're paying.
+This isn't going to break your bank.
+You're going to get the data you need to look sharp.
 
-6:41.
+Code UPGRADE.
+25% off.
+
+Let us put you on plays like last night.
+Watch it. Grade it yourself.
 ```
 
-### SR
-**None.**
+### Self-reply (the rest of the ask — link lives here)
+
+```
+Grade last night yourself.
+
+Code UPGRADE — 25% off.
+
+DM me. I'll onboard you.
+```
+
+Paste your site link as the next line in the SR. Do not put the URL in the hero (SUMMER’s 7 clicks were not trials).
 
 ### RT line
-`HE WENT 3.8× ON THE OVER.`
-
----
-
-## NEXT (not this QT) — Nats +$69K
-Wrong spear for this parent. Own hero later.
-```
-+$69K LAST 30 DAYS.
-8-2. 80%.
-UNOPPOSED ON NATS +1.5.
-
-2.7u.
-0.2× his usual. He's light.
-```
+`4-0 LAST NIGHT.`
