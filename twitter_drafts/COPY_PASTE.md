@@ -1,122 +1,101 @@
-# Twitter — 2026-09-03 · GIVE / morning write-up (the room)
-**Dale spine:** in the room with the wallets · size + stats + for/against · math sizes the play · don’t scan/study · results so far · full slate today · stay tuned.
+# Twitter — 2026-09-03 PM · GIVE · CWS @ HOU Under 8.5
+**Dale:** afternoon baseball · not top tier · 3 proven Under / 1 against · take the **PsCl** angle (beat-close × ROI map) and crush it.
 
-His idea is the ONE. It is **not** the hook. “Imagine you’re in the room” as line 1 fails screenshot S/C (CSV). Printer first, then his room.
+PsCl here = **price skill** (beat the close), not a fourth SPCL letter. The map is the unique: fade beats the number and makes **1%**. Our three print.
 
 ---
 
-### 0 · Spine
-- Imagine you’re in the room when they bet
-- Size, résumé, who’s for / against
-- After the bets: the math says the play and the units
-- That’s what we do
-- Don’t scan sites / trends / advanced metrics
-- Results of the project so far
-- Full slate today · stay tuned
-- **No ask.** He did not say UPGRADE.
-
 ### 1 · WHO
-Bettor who still hunts websites, trends, and metrics — and never sees who sized up.
+Bettor who thinks “beats the close” = follow. Afternoon CWS @ HOU.
 
 ### 2 · PURPOSE
-**Give / educate.** Mechanism + receipt + slate. Desire plant only. No convert. Ask temp cools after the Sep 2 ask.
+**Give / live setup.** No ask. No UPGRADE. Clock: first pitch 2:10 ET.
 
 ### 3 · ONE
-**We put you in the room. Size, résumé, for and against. Then the math sizes the play. You don’t hunt.**
-
-Results, mute honesty, and “full slate today” only exist to make that sentence undeniable.
+**Three proven on the Under. The one fading it beats the close and still only makes 1%.** That’s the setup — not a max.
 
 | Test | |
 |------|---|
-| Understand | sit with the wallets → see size/sides → get play + units |
-| Believe | +134.17u · 94 days · 512-418 · 930 · sits ≈ −80u if forced |
-| Unique | the room, not a tip · mute is part of the units |
+| Understand | 3 vs 1 Under · fade has price, no profit |
+| Believe | $2.6K vs $584 · 13-8 / +24% · fade 52% / 62% BC / 1% ROI · public $107K Over |
+| Unique | beat-close without ROI · not a $XK press |
 
-**Rejected as spear:** imagine-as-open (soft). ATH-as-open (kill list). `here is how the project played` (44-eng furniture). Become-sharp (0R). Sep 2 #1-Under restage. UPGRADE. −76u.
+**Rejected:** afternoon-as-open · “not a top play” as line 1 · `$1K AT 0.9×` (weak Status) · `$593 AT 0.1×` · BETMGM ticket-open clone · restage +134u / room · become-sharp · UPGRADE · leak Tier B / HC / Vault
 
 ### 4 · SPCL — **S + C**
-- **S** — we control the room (size, résumé, dissent) then the units
-- **C** — +134.17u / 94d / 512-418 / mute ≈ −80u
-- P = 94-day trail under the printer. L = his room in his voice. Not extra spears.
+- **S** — we see 3 vs 1 and who actually prints
+- **C** — beat-close × ROI on the map (fade 62% / 1%)
+- L = not a max, 0.1× $103K wallet barely in. P = say-do after it grades.
 
-### Value / diagnostic (in the words)
-| Lever | |
-|-------|---|
-| Dream ↑ | You’re in the room. Play + units when they’re done. |
-| Likelihood ↑ | 94 days. +134.17u. 512-418 named. Sits that graded ≈ −80u. |
-| Time ↓ | Already running. Full slate today. |
-| Effort ↓ | Don’t scan. Don’t study trends. Watch where they went. |
-
-Current = hunt sites/trends · Desired = see who sized · Obstacle = you never see the room · Vehicle = we track them, then the math sizes.
-
-### 5 · STUFF (live — V12 report 2026-09-02 12:47 ET)
-- **+134.17u** · **94 days** since June 1 · **+5.3% ROI**
-- **512-418** · **55.1%** · **930** shipped
-- Graded sits would’ve been about **−80u** if forced (report −80.15u on graded mutes)
-- Do **not** mix 2,011 muted with the −80u (different cut)
-- Do **not** leak AGS / RANK / HC / SUPER
-- **V12** is public
-- Today’s board (Poly 07:39Z): **CFB 87** · MLB 9 · NHL 5 · SOC 20 · UFC 9 · NFL 0 (week 1 is Sept 10)
-- August +46.8u stays on the shelf (same-family printer, not a second spear)
-- Sep 2 #1-Under / 4-0 PIT stays on the shelf
+### 5 · STUFF (from Dale’s three cards — live reads)
+- CWS @ HOU · Under 8.5 · **3.0u** · −106 · to win +2.83u · 2:10 PM
+- **3 proven / 1 against** · $2.6K vs $584 · 81% / 19%
+- Public full split: **$43K Under (28%) vs $107K Over (72%)**
+- Confirmed winners: **$2.2K (79%) Under vs $584 (21%) Over**
+- Losing wallets: $1K Under / $0 Over (whole truth — don’t hide)
+- Map lead `…579e12`: **$1.0K** · 13-8 · **+24% ROI** · 62% WR · **50% beat close** · **0.9×** (usual $1.1K)
+- Fade Over **$584**: 52% WR · **62% beat close** · **1% ROI** · 1 proven, 0 secondary
+- Card lead `…3bdd7e`: L30 **+$103K** · 87-79 · 52% · **$593 · 0.1×** (barely in)
+- EV **−0.2%** · not +EV theater
+- Do **not** leak HC 47% · Sharp Tier B · Vault · L10 3-7 on the $40K profile unless we feature that wallet
+- $40K / 1.5× / 71% beat-close card is a **third** wallet — leave it in the image, don’t toss-salad the hero
+- Don’t invent 72% on a supporting dot (OCR didn’t lock the label)
 
 ### 6 · HOOK
 
-**Chosen** — August educate silhouette (printer + unique line 2). Line 2 is whole truth, not a slogan.
+**Chosen** — Dale’s 3v1 + map paradox as line 2 (August unique)
 ```
-+134.17u IN 94 DAYS.
-512-418.
+3 PROVEN ON THE UNDER.
+THE FADE BEATS THE CLOSE. 1% ROI.
 ```
 
 | Check | |
 |-------|---|
-| Screenshot | printer + W-L a stranger can steal |
-| What / how / so what | 94 days printed → not a heater → that’s the room |
-| Unique | whole-truth line 2, then Dale’s room |
-| Not | imagine-open · ATH-open · convert · become-sharp · recap furniture |
+| Screenshot | 3 vs 1 + price-without-profit |
+| What / how / so what | cluster Under → fade has CLV, no ROI → that’s why it’s a setup |
+| Unique | PsCl gap, not a size flex |
+| Not | calendar · self-doubt open · $1K clone · jargon `PsCl` in the tweet |
 
 **Graveyard**
 | Hook | Why it dies |
 |------|-------------|
-| `Imagine you get to be in the room` | Soft. No S/C. Caption. |
-| `V12 ALL-TIME HIGH` | Flex-open death. |
-| `Here are the results of this project` | 44-eng furniture. |
-| `You don't have to become a sharp` | Spent 0R. |
-| `+46.8u IN AUGUST` | Posted. Don’t restage. |
-| Sep 2 `#1 TOTAL LAST NIGHT` | Different ONE. Spent family. |
+| `AFTERNOON BASEBALL` | Calendar. No S/C. |
+| `NOT A TOP TIER PLAY` | Doubt-open. Honesty belongs after the printer. |
+| `$1K AT 0.9×` / `$593 AT 0.1×` | Weak Status. Law from the $1.8K night. |
+| `72% OF THE MONEY IS ON THE OVER` | Good public-vs-proven job — second spear. Body only. |
+| `HE BEATS THE CLOSE 62%` alone | Drops Dale’s 3v1. |
 
 ---
 
 ## Hero — paste this
 
-**Attach:** V12 equity / results chart (not the PIT max card).  
-**614 chars.** Compose: https://x.com/intent/tweet?text=%2B134.17u%20IN%2094%20DAYS.%0A512-418.%0A%0AImagine%20you%20get%20to%20be%20in%20the%20room%20with%20the%20guys%20we%20track%20when%20they%20bet.%20You%20see%20the%20size.%20You%20see%20how%20they%27ve%20been%20running.%20You%20see%20who%27s%20for%20it%20and%20who%27s%20fading%20it.%20After%20the%20money%20is%20in%2C%20the%20math%20tells%20you%20the%20play%20and%20the%20units.%0A%0AThat%27s%20this.%0A%0AYou%20don%27t%20scan%20websites.%20You%20don%27t%20study%20trends.%20You%20don%27t%20live%20in%20advanced%20metrics.%20You%20just%20see%20where%20they%20went.%0A%0A930%20plays%20since%20June%201.%20We%20sat%20out%20the%20rest.%20The%20sits%20we%20can%20already%20grade%20would%27ve%20been%20about%20-80u%20if%20we%20forced%20them.%0A%0AFull%20slate%20today.%20CFB%20is%20loaded.%20MLB%2C%20NHL%2C%20soccer%2C%20UFC.%0A%0AStay%20tuned.%20We%27ll%20lock%20when%20it%20makes%20sense.  
-**No URL in the hero. No UPGRADE.**
+**Attach:** beat-close × ROI map first (the argument) · 3u Under card second.  
+**586 chars.** Compose: https://x.com/intent/tweet?text=3%20PROVEN%20ON%20THE%20UNDER.%0ATHE%20FADE%20BEATS%20THE%20CLOSE.%201%25%20ROI.%0A%0ACWS%20%40%20HOU.%20Under%208.5.%203%20units%20this%20afternoon.%20Not%20a%206.%0A%0AThe%20public%20is%20on%20the%20Over.%20%24107K%20to%20%2443K.%0A%0AThe%20wallets%20that%20print%20are%20on%20the%20Under.%20%242.6K%20vs%20%24584.%20Three%20of%20them.%20One%20fade.%0A%0ALead%20on%20our%20side%20put%20%241K.%2013-8.%20%2B24%25%20ROI.%2062%25%20wins.%20Beats%20the%20close%2050%25.%20A%20tick%20light%20vs%20what%20he%20usually%20does.%0A%0AThe%20other%20two%20sit%20higher%20on%20price.%20They%20make%20money.%0A%0AThe%20fade%20wins%2052%25%20and%20beats%20the%20close%2062%25..%20and%20he%27s%20made%201%25.%0A%0AThe%20%2B%24103K%20wallet%20is%20on%20it%20too.%20%24593.%20He%27s%20barely%20in.%0A%0AThat%27s%20why%20this%20looks%20like%20a%20setup.%20Not%20a%20max.%20First%20pitch%202%3A10.  
+**No URL. No UPGRADE.**
 
 ```
-+134.17u IN 94 DAYS.
-512-418.
+3 PROVEN ON THE UNDER.
+THE FADE BEATS THE CLOSE. 1% ROI.
 
-Imagine you get to be in the room with the guys we track when they bet. You see the size. You see how they've been running. You see who's for it and who's fading it. After the money is in, the math tells you the play and the units.
+CWS @ HOU. Under 8.5. 3 units this afternoon. Not a 6.
 
-That's this.
+The public is on the Over. $107K to $43K.
 
-You don't scan websites. You don't study trends. You don't live in advanced metrics. You just see where they went.
+The wallets that print are on the Under. $2.6K vs $584. Three of them. One fade.
 
-930 plays since June 1. We sat out the rest. The sits we can already grade would've been about -80u if we forced them.
+Lead on our side put $1K. 13-8. +24% ROI. 62% wins. Beats the close 50%. A tick light vs what he usually does.
 
-Full slate today. CFB is loaded. MLB, NHL, soccer, UFC.
+The other two sit higher on price. They make money.
 
-Stay tuned. We'll lock when it makes sense.
+The fade wins 52% and beats the close 62%.. and he's made 1%.
+
+The +$103K wallet is on it too. $593. He's barely in.
+
+That's why this looks like a setup. Not a max. First pitch 2:10.
 ```
 
-### Self-reply (optional — give, not ask)
-
-```
-Full slate is up. Grade it yourself.
-```
-
-Then the site URL if you want it. No promo code.
+### Self-reply
+None unless you want the map as a second frame. No promo.
 
 ### RT line
-`+134.17u IN 94 DAYS.`
+`3 PROVEN ON THE UNDER.`
