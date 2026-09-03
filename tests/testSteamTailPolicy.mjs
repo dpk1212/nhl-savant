@@ -205,4 +205,22 @@ function T(args) {
   ok(r.action === 'FAIL_OPEN' && r.units === 5.4, 'from-ticket no pinn and no log fail-open fat');
 }
 
+// Cron writer: HOLD with reason=null must clear leftover MUTE reasons,
+// and skillStampsDrifted must see a reason-only change (else NYY 1.5u
+// stays HOLD + lean_no_arriving until something else moves).
+{
+  const { readFileSync } = await import('fs');
+  const src = readFileSync(new URL('../scripts/syncPickStateAuthoritative.js', import.meta.url), 'utf8');
+  ok(
+    src.includes('else if (steamTailAction != null)')
+    && src.includes('target.v8_steamTailReason = admin.firestore.FieldValue.delete()'),
+    'HOLD/PASS deletes stale v8_steamTailReason',
+  );
+  ok(
+    /steamTailAction != null && \(sd\.v8_steamTailReason \|\| null\) !== \(steamTailReason \|\| null\)/.test(src),
+    'skillStampsDrifted restamps when only the steam-tail reason changed',
+  );
+  ok(/SKILL_FEATURE_VERSION = 19/.test(src), 'skill schema v19 forces a restamp');
+}
+
 console.log(`ok — ${n} assertions (steam-tail policy T)`);
