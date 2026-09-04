@@ -7,36 +7,36 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-04 AM r3 · QT give · Over 8 lost · five named wins incl. Rangers ML |
+| Last updated | 2026-09-04 AM r4 · QT give · tickets vs wallets · dinner voice |
 | CSV window | Aug 26–Sep 1, 2026 |
-| Ask temperature | **Cool.** Reach give. No ask. |
-| Account arc | Their featured Over lost. We were Under. Two MLs named. |
+| Ask temperature | **Cool.** Give. No ask. |
+| Account arc | Most-bet totals were Overs. Wallets we track weren’t on those. 5-1. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/04 AM r3 | QT **GIVE** | `THEY HAMMERED THE DODGERS GAME OVER 8` / `IT LOST. WE WERE UNDER 7.5.` | **S + C** | none | **Staged** — Rangers ML named |
-| 9/04 AM r2 | QT GIVE | hammered Over 8 / Under 7.5 same game | S + C | none | Killed: buried Rangers, no result in hook |
-| 9/03 PM | Hero GIVE | `3 PROVEN ON THE UNDER` / fade beats close 1% | S + C | none | Staged |
+| 9/04 AM r4 | QT **GIVE** | Every total on that list was an Over / wallets weren’t on those | **S + C** | none | **Staged** — human pass |
+| 9/04 AM r3 | QT GIVE | THEY HAMMERED / IT LOST | S + C | none | Killed: AI swagger, buried brand |
+| 9/03 PM | Hero GIVE | `3 PROVEN ON THE UNDER` | S + C | none | Staged |
 | 9/03 | Hero GIVE | `+134.17u IN 94 DAYS` | S + C | none | Staged AM |
 | 9/02 AM r3 | Hero ASK | `#1 TOTAL LAST NIGHT WAS THE UNDER` | P + S | UPGRADE | Do not clone |
 
 ---
 
 ## Angle lock
-**ONE:** They hammered Dodgers-game Over 8. It lost. We were Under 7.5.  
-**Five wins (must be countable):** Under 7.5 · **Dodgers ML** · **Rangers ML** · CWS Under 8.5 · ATH/SEA Over 7.5. L = Sociedad.  
-**Hook:** result-in-open (`IT LOST`) for reach. Dale close stays the close.  
-**Ask:** none. **Media:** QT BetMGM only.
+**ONE:** Ticket list was all Overs. Wallets we track weren’t on those.  
+**Voice:** dinner · complete sentences · `..` · no CAPS staccato · no slogan close  
+**Five:** Under 7.5 · Dodgers ML · Rangers ML · CWS Under · ATH/SEA Over. L = Sociedad.  
+**Ask:** none. QT BetMGM only.
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** Over 8 lost · five named wins · Rangers ML · shared Dodgers ML  
+**Spent this beat (once posted):** tickets vs wallets recap · 5-1 · Sociedad L  
 **Still open:** Nats +$69K · TheBetDesk QT · CFB `$XK` · NFL week 1 Sept 10  
-**Don’t:** bury a win inside “plus money” · `#1 TOTAL` · product UI · ✅✅ recap · ticket-vs-wallet clone · 5-1 as line 1 · UPGRADE
+**Don’t:** fragment-stack · “IT LOST” · “That’s five.” · “you’re looking at that list like” · product UI · UPGRADE · clone `we ride the wallet` word-for-word
 
 ---
 
@@ -50,14 +50,13 @@
 ## FORWARD LOOK — after this posts
 1. Live give / quiet, or a real CFB `$XK` if one exists
 2. NFL week 1 (Sept 10)
-3. Nats +$69K give if still unused
-**NOT:** another recap · BetMGM clone · UPGRADE · convert-as-open · restage 3v1 / +134u · −76u
+3. Nats +$69K if still unused
+**NOT:** another recap · convert-as-open · restage 3v1 / +134u · −76u
 
 ---
 
 ## Agent close-out
-- [x] PURPOSE=educate QT + reach · Dale: quality + missing ML + impressions
-- [x] Hook = Over 8 / IT LOST / Under 7.5 (Nats-result lever, not Nats clone)
-- [x] Five wins countable · Rangers ML explicit · soccer L
-- [x] No UPGRADE · no URL · no dashboard
+- [x] Dale r4: brand + human. Killed AI punch lines.
+- [x] Mechanism in the words: tickets vs wallets we track
+- [x] Rangers ML named · soccer L · no product · no ask
 - [x] Staged `twitter_drafts/COPY_PASTE.md`
