@@ -32,7 +32,7 @@ Fact + parent. Line 2 is the brand: wallets weren’t on those.
 
 **Quote-tweet the BetMGM graphic.** No dashboard.
 
-**511 chars.** Compose (then QT): https://x.com/intent/tweet?text=Every%20total%20on%20that%20list%20last%20night%20was%20an%20Over.%0A%0AThat%27s%20just%20where%20the%20tickets%20went.%20The%20wallets%20we%20track%20weren%27t%20on%20those.%0A%0AWe%20had%20the%20Under%20on%20the%20Dodgers%20game.%20Same%20one%20they%20had%20Over%208.%203%20units.%20Cashed%20it.%0A%0AHad%20Dodgers%20ML%20with%20them%20too..%20not%20going%20to%20pretend%20we%20faded%20the%20whole%20thing.%20Rangers%20ML%20plus%20money.%20White%20Sox%20Under%208.5%20in%20the%20afternoon.%20Athletics-Mariners%20Over%207.5.%0A%0ALost%20the%20soccer.%20Real%20Sociedad.%203%20units.%0A%0A5-1.%0A%0AI%20can%27t%20promise%20we%20win%20them%20all..%20we%20just%20don%27t%20copy%20the%20most%20bet%20tickets.  
+**502 chars.** Compose (then QT): https://x.com/intent/tweet?text=Every%20total%20on%20that%20list%20last%20night%20was%20an%20Over.%0A%0AThat%27s%20just%20where%20the%20tickets%20went.%20The%20wallets%20we%20track%20weren%27t%20on%20those.%0A%0AWe%20had%20the%20Under%20on%20the%20Dodgers%20game.%20Same%20one%20they%20had%20Over%208.%203%20units.%20Cashed%20it.%0A%0AHad%20Dodgers%20ML%20with%20them%20too..%20not%20going%20to%20pretend%20we%20faded%20the%20whole%20thing.%20Rangers%20ML%20plus%20money.%20White%20Sox%20Under%208.5%20in%20the%20afternoon.%20Athletics-Mariners%20Over%207.5.%0A%0ALost%20the%20soccer.%20Real%20Sociedad.%203%20units.%0A%0A5-1.%0A%0AI%20can%27t%20promise%20we%20win%20them%20all..%20we%20just%20don%27t%20copy%20the%20most%20bet%20tickets.  
 **No URL. No UPGRADE.**
 
 ```
