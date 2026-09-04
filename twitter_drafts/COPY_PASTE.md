@@ -1,103 +1,98 @@
-# Twitter — 2026-09-04 AM · QT GIVE · BetMGM Thursday ticket board vs our 5-1
-**Dale:** recap · **5-1** · don’t show the product · don’t boast · pull locked W/L · compare to BetMGM News · *this is where everyone else was / this is where we were*
+# Twitter — 2026-09-04 AM r2 · QT GIVE · BetMGM ticket window vs our Under
+**Dale r2:** 80% · max Hormozi leverage · perfect voice · hook + open have to be perfect. Still: 5-1 recap · no product · no boast · locked W/L vs BetMGM · *where everyone else was / where we were*
 
 ---
 
 ### 1 · WHO
-Bettor staring at a sportsbook “most bet” graphic thinking that’s the sharp side.
+Bettor using a sportsbook “most bet” graphic like it’s the sharp side.
 
 ### 2 · PURPOSE
-**Give / QT educate.** Public ticket board vs our locks. No ask. No UPGRADE. No product screenshot.
+**Educate QT.** Ticket window ≠ the side we were on. Give. No ask. No UPGRADE. No product screenshot.
 
 ### 3 · ONE
-**#1 total on that list was Cards/Dodgers Over 8. We had Under 7.5. Same game.** That’s the room. 5-1 is the grade, not the spear.
+**They hammered the Dodgers game Over 8. We had Under 7.5. Same game.** Everything else only proves that. 5-1 is the grade, not the idea.
 
 | Test | |
 |------|---|
-| Understand | Their #1 total was the Over. We were Under. |
-| Believe | Parent is BetMGM. Our locks are the graded book. |
-| Unique | Same game, opposite total — not a 5-1 trophy |
+| Understand | Same game. They Over. We Under. |
+| Believe | Parent is BetMGM. Our book is graded. We also shared Dodgers ML (whole truth). |
+| Unique | Opposite total on the game they featured — not a 5-1 trophy, not “we ride wallets” |
 
-**Rejected:** 5-1 / +9.23u / +145u as line 1 (boast + recap furniture) · product dashboard attach · `BETMGM IS SHOWING TOP TICKETS` clone · `#1 TOTAL LAST NIGHT WAS THE UNDER` clone (9/02) · restage CWS 3v1 · UPGRADE · leak AGS / V12 / tracked 0u dunks
+**r1 died because:** `#1 TOTAL:` is banned jargon in line 1–2 (Dale 9/01 night). Body was a caption + list. Techniques lived in the header. 371 chars starved an educate QT.
 
-### 4 · SPCL — **C + P**
-- **C** — third-party ticket list in the parent
-- **P** — we were Under on that game; it graded. Honest L (soccer).
-- S = we see both boards. Not a `$XK` night. L = no victory lap.
+### 4 · SPCL — **S + C** (90% / 0% family — tickets vs us)
+- **S** — we see the side the ticket window doesn’t
+- **C** — BetMGM parent is third-party; Over 8 vs Under 7.5 is hard-to-fake
+- **P** in the body — 3u Under cashed · honest L · shared the ML
+- L = Dale talks after 2 CAPS lines. Not the pillar.
 
-### 5 · STUFF (Firestore locked book 2026-09-03 · matches Dale 5-1 / +9.23u / 5 MLB + 1 SOC)
-**Public (BetMGM Thursday evening):**
-- Most bet games: MIL@CHC · STL@LAD · BOS@BAL
-- ML tickets: Brewers -120 · Dodgers -285 · Red Sox -125
-- ML handle: Dodgers -285 · Royals -118 · Brewers -120
-- Totals tickets: STL@LAD **Over 8** · MIL@CHC Over 8.5 · BOS@BAL Over 8.5
+**In the words (not the header):**
+- Diagnostic: current = cheat-sheet list → obstacle = most-bet total was the Over → vehicle = other side of that same game
+- Value: dream = other side of the featured total · effort = not a different slate · likelihood = it cashed
+- Trust: shared Dodgers ML · soccer L · skipped MIL/BOS
+- Qual: all 6 locks with units · August depth, not a 280 table
 
-**Our locks (units > 0, not tracked):**
-| Result | Pick | u | Odds | PnL |
-|--------|------|--:|------|------|
-| WIN | STL@LAD **Under 7.5** | 3 | -106 | +2.83 |
-| WIN | Dodgers ML | 3 | -290 | +1.03 |
-| WIN | CWS@HOU **Under 8.5** | 3 | -102 | +2.94 |
-| WIN | ATH@SEA Over 7.5 | 3 | +109 | +3.27 |
-| WIN | Rangers ML | 2 | +108 | +2.16 |
-| LOSS | Real Sociedad ML | 3 | -120 | -3.00 |
-
-CWS `team` label said Under 7.5; **lockLine = 8.5** (game 6-2 = 8 · Under 8.5 cashes). Write 8.5.
-Whole truth: we **shared** Dodgers ML with their handle leader. We were **0u** on Brewers and Red Sox — don’t claim those fades. Don’t dunk tracked mutes.
+### 5 · STUFF
+**Public:** STL@LAD Over 8 (#1 total) · MIL@CHC Over 8.5 · BOS@BAL Over 8.5 · Brewers / Dodgers -285 / Red Sox · Royals handle
+**Us (5-1 +9.23u):** Under 7.5 3u +2.83 · Dodgers ML 3u +1.03 · CWS Under 8.5 3u +2.94 · ATH/SEA Over 7.5 3u +3.27 · Rangers +108 2u +2.16 · Sociedad -120 3u −3.00
+CWS lockLine = 8.5. Don’t dunk 0u mutes. Don’t leak V12/AGS. Don’t attach dashboard.
 
 ### 6 · HOOK
 
-**Chosen**
+**Chosen** — person + number + paradox (Dale 9/01). Line 2 = unique (August `ALMOST 3× JULY`).
 ```
-#1 TOTAL: CARDS/DODGERS OVER 8.
-WE HAD UNDER 7.5.
+THEY HAMMERED THE DODGERS GAME OVER 8.
+WE HAD UNDER 7.5. SAME GAME.
 ```
 
 | Check | |
 |-------|---|
-| Screenshot | Same game, opposite total. Parent is the list. |
-| What / how / so what | Their #1 total → we were Under → different room |
-| Unique | Not a 5-1 open. Not the spent ticket-vs-wallet slogan. |
-| Not | Calendar · product · boast · 9/02 Under-clone |
+| Screenshot | Over 8 vs Under 7.5. Same game. Parent proves it. |
+| What / how / so what | They bet the Over → we were Under → ticket window isn’t the printers |
+| Unique | SAME GAME. Not a recap open. |
+| Not | `#1 TOTAL` jargon · 5-1 furniture · ticket-vs-wallet slogan · 9/02 Under-clone |
 
 **Graveyard**
 | Hook | Why it dies |
 |------|-------------|
-| `5-1 YESTERDAY` / `+9.23u` | Recap furniture + boast. CSV “here is how last night played” = 44 eng. |
-| `BETMGM IS SHOWING TOP TICKETS` | Spent (173). Empty-clone. |
-| `#1 TOTAL LAST NIGHT WAS THE UNDER` | 9/02 ask silhouette. Wrong night, inverted. |
-| `THAT'S WHERE EVERYONE ELSE WAS` as line 1 | Caption. Needs the Over/Under in the same breath. |
+| `#1 TOTAL: CARDS/DODGERS OVER 8` | **r1.** Banned jargon (`THEIR #1 TOTAL`). Caption. |
+| `5-1 YESTERDAY` / `+9.23u` | Recap furniture (44 eng). Boast. |
+| `BETMGM IS SHOWING TOP TICKETS` | Spent 173. Empty-clone. |
+| `THAT'S WHERE EVERYONE ELSE WAS` as line 1 | Dale’s close, not the hook. Needs the Over/Under first. |
+| `YOU'RE LOOKING AT THAT LIST` as line 1 | Lecture without a number. S/C fails screenshot. |
 
 ---
 
 ## Hero — paste this
 
-**Post as a Quote-tweet of that BetMGM News graphic.** Do not attach the Locked Picks dashboard. The parent *is* the product-free receipt.
+**Quote-tweet the BetMGM graphic.** No Locked Picks screenshot. Parent is the receipt.
 
-**371 chars.** Compose (then attach the QT): https://x.com/intent/tweet?text=%231%20TOTAL%3A%20CARDS/DODGERS%20OVER%208.%0AWE%20HAD%20UNDER%207.5.%0A%0AIt%20cashed.%0A%0AThat%27s%20where%20everyone%20else%20was.%20Here%27s%20where%20we%20were.%0A%0AEvery%20total%20on%20that%20list%20was%20an%20Over.%20We%20skipped%20Milwaukee.%20We%20skipped%20Boston.%0A%0AThe%20one%20moneyline%20we%20shared%20was%20Dodgers.%20That%20hit.%0A%0AWhite%20Sox%20Under%208.5.%20Athletics-Mariners%20Over%207.5.%20Rangers%20plus%20money.%0A%0AThe%20loss%20was%20Real%20Sociedad.%203%20units.%20Soccer.%0A%0A5-1.  
+**725 chars.** Compose (then QT): https://x.com/intent/tweet?text=THEY%20HAMMERED%20THE%20DODGERS%20GAME%20OVER%208.%0AWE%20HAD%20UNDER%207.5.%20SAME%20GAME.%0A%0AYou%27re%20looking%20at%20that%20list%20like%20that%27s%20the%20sharp%20side.%0A%0AEvery%20total%20on%20it%20was%20an%20Over.%20We%20weren%27t%20on%20Milwaukee.%20We%20weren%27t%20on%20Boston.%20We%20weren%27t%20on%20those%20other%20two%20Overs%20either.%0A%0AThe%20one%20moneyline%20we%20shared%20with%20them%20was%20Dodgers.%20That%20hit.%20I%27m%20not%20going%20to%20pretend%20we%20faded%20the%20whole%20graphic.%0A%0AWe%20didn%27t%20need%20a%20different%20game.%20We%20needed%20the%20other%20side%20of%20the%20total%20they%20bet%20the%20most.%203%20units.%20It%20cashed.%0A%0AAfternoon%20we%20had%20White%20Sox%20Under%208.5.%203%20units.%20That%27s%20not%20even%20on%20this%20list.%20Athletics-Mariners%20Over%207.5.%203%20units.%20Rangers%20plus%20money.%202%20units.%0A%0AThe%20loss%20was%20Real%20Sociedad.%203%20units.%20Soccer.%0A%0A5-1.%0A%0AThat%27s%20where%20everyone%20else%20was.%20That%27s%20where%20we%20were.  
 **No URL. No UPGRADE. No product screenshot.**
 
 ```
-#1 TOTAL: CARDS/DODGERS OVER 8.
-WE HAD UNDER 7.5.
+THEY HAMMERED THE DODGERS GAME OVER 8.
+WE HAD UNDER 7.5. SAME GAME.
 
-It cashed.
+You're looking at that list like that's the sharp side.
 
-That's where everyone else was. Here's where we were.
+Every total on it was an Over. We weren't on Milwaukee. We weren't on Boston. We weren't on those other two Overs either.
 
-Every total on that list was an Over. We skipped Milwaukee. We skipped Boston.
+The one moneyline we shared with them was Dodgers. That hit. I'm not going to pretend we faded the whole graphic.
 
-The one moneyline we shared was Dodgers. That hit.
+We didn't need a different game. We needed the other side of the total they bet the most. 3 units. It cashed.
 
-White Sox Under 8.5. Athletics-Mariners Over 7.5. Rangers plus money.
+Afternoon we had White Sox Under 8.5. 3 units. That's not even on this list. Athletics-Mariners Over 7.5. 3 units. Rangers plus money. 2 units.
 
 The loss was Real Sociedad. 3 units. Soccer.
 
 5-1.
+
+That's where everyone else was. That's where we were.
 ```
 
 ### Self-reply
 None. No promo.
 
 ### RT line
-`#1 TOTAL: CARDS/DODGERS OVER 8.`
+`THEY HAMMERED THE DODGERS GAME OVER 8.`
