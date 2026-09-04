@@ -7,18 +7,18 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-04 AM r4 · QT give · tickets vs wallets · dinner voice |
+| Last updated | 2026-09-04 AM r5 · QT give · cohesive tickets vs wallets |
 | CSV window | Aug 26–Sep 1, 2026 |
 | Ask temperature | **Cool.** Give. No ask. |
-| Account arc | Most-bet totals were Overs. Wallets we track weren’t on those. 5-1. |
+| Account arc | List was all Overs. Wallets weren’t. Dodgers Under cashed. 5-1. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/04 AM r4 | QT **GIVE** | Every total on that list was an Over / wallets weren’t on those | **S + C** | none | **Staged** — human pass |
-| 9/04 AM r3 | QT GIVE | THEY HAMMERED / IT LOST | S + C | none | Killed: AI swagger, buried brand |
+| 9/04 AM r5 | QT **GIVE** | Every total on that list was an Over | **S + C** | none | **Staged** — one path, no second closer |
+| 9/04 AM r4 | QT GIVE | tickets vs wallets dinner | S + C | none | Killed: not cohesive |
 | 9/03 PM | Hero GIVE | `3 PROVEN ON THE UNDER` | S + C | none | Staged |
 | 9/03 | Hero GIVE | `+134.17u IN 94 DAYS` | S + C | none | Staged AM |
 | 9/02 AM r3 | Hero ASK | `#1 TOTAL LAST NIGHT WAS THE UNDER` | P + S | UPGRADE | Do not clone |
@@ -26,17 +26,16 @@
 ---
 
 ## Angle lock
-**ONE:** Ticket list was all Overs. Wallets we track weren’t on those.  
-**Voice:** dinner · complete sentences · `..` · no CAPS staccato · no slogan close  
-**Five:** Under 7.5 · Dodgers ML · Rangers ML · CWS Under · ATH/SEA Over. L = Sociedad.  
+**ONE:** Every total on that list was an Over. Wallets we track weren’t on those.  
+**Read:** list → Dodgers game → rest + L → 5-1. No extra closer.  
 **Ask:** none. QT BetMGM only.
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** tickets vs wallets recap · 5-1 · Sociedad L  
+**Spent this beat (once posted):** tickets vs wallets recap · 5-1  
 **Still open:** Nats +$69K · TheBetDesk QT · CFB `$XK` · NFL week 1 Sept 10  
-**Don’t:** fragment-stack · “IT LOST” · “That’s five.” · “you’re looking at that list like” · product UI · UPGRADE · clone `we ride the wallet` word-for-word
+**Don’t:** second thesis at the end · CAPS staccato · product UI · UPGRADE
 
 ---
 
@@ -56,7 +55,7 @@
 ---
 
 ## Agent close-out
-- [x] Dale r4: brand + human. Killed AI punch lines.
-- [x] Mechanism in the words: tickets vs wallets we track
-- [x] Rangers ML named · soccer L · no product · no ask
+- [x] Dale r5: cohesive / easy to read
+- [x] Four beats · Rangers ML named · no slogan close
+- [x] No product · no ask
 - [x] Staged `twitter_drafts/COPY_PASTE.md`

@@ -1,30 +1,22 @@
-# Twitter — 2026-09-04 AM r4 · QT GIVE · tickets vs wallets we track
-**Dale r4:** no brand · AI garbage · no human. Unique angle + dinner voice. Still: 5-1 · both MLs · no product · QT BetMGM.
+# Twitter — 2026-09-04 AM r5 · QT GIVE · cohesive tickets vs wallets
+**Dale r5:** not cohesive · doesn’t read easy. Still: 5-1 · both MLs · dinner · QT BetMGM · no product.
 
 ---
 
 ### 1 · WHO
-Someone who thinks the most-bet list is the sharp side.
+Someone reading the most-bet graphic.
 
 ### 2 · PURPOSE
-**Give.** Tickets ≠ the wallets we track. Last night graded. No ask. No product shot.
+**Give.** One path: list → wallets → Dodgers game → rest of the night → 5-1.
 
 ### 3 · ONE
-**Every total on that list was an Over. The wallets we track weren’t on those.** 5-1 is the grade. Both MLs named.
+**Every total on that list was an Over. The wallets we track weren’t on those.**
 
-Brand (kit): we track bettors who win and post where their money goes. Not a capper. Not “fade the public.”
-
-### 4 · Voice
-Dinner. Complete sentences. `..` No CAPS staccato. No “IT LOST.” No “That’s five.” No “you’re looking at that list like…” No slogan close.
+### 4 · Read
+Four beats. No second closer. No slogan. Rangers ML named.
 
 ### 5 · STUFF
-Under 7.5 3u · Dodgers ML 3u · Rangers ML 2u · CWS Under 8.5 3u · ATH/SEA Over 7.5 3u · Sociedad L 3u. Public: three Overs · Brewers · Dodgers · Red Sox.
-
-### 6 · HOOK
-```
-Every total on that list last night was an Over.
-```
-Fact + parent. Line 2 is the brand: wallets weren’t on those.
+Under 7.5 3u · Dodgers ML 3u · Rangers ML 2u · CWS Under 8.5 3u · ATH/SEA Over 7.5 3u · Sociedad L 3u.
 
 ---
 
@@ -32,23 +24,17 @@ Fact + parent. Line 2 is the brand: wallets weren’t on those.
 
 **Quote-tweet the BetMGM graphic.** No dashboard.
 
-**502 chars.** Compose (then QT): https://x.com/intent/tweet?text=Every%20total%20on%20that%20list%20last%20night%20was%20an%20Over.%0A%0AThat%27s%20just%20where%20the%20tickets%20went.%20The%20wallets%20we%20track%20weren%27t%20on%20those.%0A%0AWe%20had%20the%20Under%20on%20the%20Dodgers%20game.%20Same%20one%20they%20had%20Over%208.%203%20units.%20Cashed%20it.%0A%0AHad%20Dodgers%20ML%20with%20them%20too..%20not%20going%20to%20pretend%20we%20faded%20the%20whole%20thing.%20Rangers%20ML%20plus%20money.%20White%20Sox%20Under%208.5%20in%20the%20afternoon.%20Athletics-Mariners%20Over%207.5.%0A%0ALost%20the%20soccer.%20Real%20Sociedad.%203%20units.%0A%0A5-1.%0A%0AI%20can%27t%20promise%20we%20win%20them%20all..%20we%20just%20don%27t%20copy%20the%20most%20bet%20tickets.  
+**383 chars.** Compose (then QT): https://x.com/intent/tweet?text=Every%20total%20on%20that%20list%20last%20night%20was%20an%20Over.%20That%27s%20just%20where%20the%20tickets%20went.%20The%20wallets%20we%20track%20weren%27t%20on%20any%20of%20them.%0A%0AThey%20had%20the%20Dodgers%20game%20Over%208.%20We%20had%20Under%207.5%20for%203%20units%20and%20it%20cashed.%20Had%20Dodgers%20ML%20with%20them%20too.%0A%0AThen%20Rangers%20ML%20plus%20money%2C%20White%20Sox%20Under%208.5%20in%20the%20afternoon%2C%20and%20Athletics-Mariners%20Over%207.5.%20Lost%20Real%20Sociedad%20on%20soccer.%203%20units.%0A%0A5-1.  
 **No URL. No UPGRADE.**
 
 ```
-Every total on that list last night was an Over.
+Every total on that list last night was an Over. That's just where the tickets went. The wallets we track weren't on any of them.
 
-That's just where the tickets went. The wallets we track weren't on those.
+They had the Dodgers game Over 8. We had Under 7.5 for 3 units and it cashed. Had Dodgers ML with them too.
 
-We had the Under on the Dodgers game. Same one they had Over 8. 3 units. Cashed it.
-
-Had Dodgers ML with them too.. not going to pretend we faded the whole thing. Rangers ML plus money. White Sox Under 8.5 in the afternoon. Athletics-Mariners Over 7.5.
-
-Lost the soccer. Real Sociedad. 3 units.
+Then Rangers ML plus money, White Sox Under 8.5 in the afternoon, and Athletics-Mariners Over 7.5. Lost Real Sociedad on soccer. 3 units.
 
 5-1.
-
-I can't promise we win them all.. we just don't copy the most bet tickets.
 ```
 
 ### Self-reply
