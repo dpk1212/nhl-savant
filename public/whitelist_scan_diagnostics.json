@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-09-04T00:11:24.521Z",
-  "elapsedSec": 33.6,
+  "scannedAt": "2026-09-04T00:16:06.815Z",
+  "elapsedSec": 37.3,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 141,
+  "todayGamesCount": 142,
   "summary": {
     "total": 307,
     "coveredByMain": 52,
     "recovered": 23,
-    "recoveredPositions": 219,
+    "recoveredPositions": 216,
     "noPositions": 232,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 32,
-      "spread": 22,
-      "total": 7,
-      "dropped_shadow_gate": 144,
+      "spread": 21,
+      "total": 8,
+      "dropped_shadow_gate": 141,
       "dropped_excluded": 12,
       "dropped_duplicate": 2
     }
@@ -551,8 +551,8 @@
       "positionsCount": 72,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 91702,
-      "willPassShadowGate": 25,
-      "willDropAtShadowGate": 47,
+      "willPassShadowGate": 24,
+      "willDropAtShadowGate": 48,
       "positions": [
         {
           "sport": "SOC",
@@ -690,15 +690,6 @@
           "passesShadow": false
         },
         {
-          "sport": "CFB",
-          "gameKey": "uwg_kenn",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 710,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
           "sport": "UFC",
           "gameKey": "kurtiscampbell_trevorpeek",
           "marketType": "ml",
@@ -712,7 +703,7 @@
           "gameKey": "idho_utah",
           "marketType": "spread",
           "side": "away",
-          "invested": 274,
+          "invested": 279,
           "entryLine": 37.5,
           "passesShadow": true
         },
@@ -733,6 +724,15 @@
           "invested": 6,
           "entryLine": null,
           "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "ysu_uk",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 342,
+          "entryLine": null,
+          "passesShadow": true
         },
         {
           "sport": "CFB",
@@ -943,15 +943,6 @@
         },
         {
           "sport": "CFB",
-          "gameKey": "uwg_kenn",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 44,
-          "entryLine": -23.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "CFB",
           "gameKey": "prst_sdsu",
           "marketType": "ml",
           "side": "away",
@@ -975,6 +966,15 @@
           "side": "home",
           "invested": 8,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "colo_gt",
+          "marketType": "total",
+          "side": "over",
+          "invested": 29,
+          "entryLine": 54.5,
           "passesShadow": false
         },
         {
@@ -2923,8 +2923,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "NHL,SOC,WNBA,CFB,UFC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 11913,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "CFB",
+          "gameKey": "colo_gt",
+          "marketType": "total",
+          "side": "under",
+          "invested": 7025,
+          "entryLine": 54.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "bc44b0",
@@ -2994,24 +3010,8 @@
       "tier": "FLAT",
       "name": "pedroBala",
       "sports": "NBA,MLB",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x1df231bd33dae91463e1682927e8096b82c289a0",
-      "positionsCount": 1,
-      "statsSource": "sports_sharps.perSport",
-      "avgSportBet": 47,
-      "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
-      "positions": [
-        {
-          "sport": "CFB",
-          "gameKey": "uwg_kenn",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 1,
-          "entryLine": null,
-          "passesShadow": false
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x1df231bd33dae91463e1682927e8096b82c289a0"
     },
     {
       "walletShort": "c29d59",
@@ -3188,11 +3188,11 @@
       "sports": "SOC,MLB,NBA,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 87,
+      "positionsCount": 84,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 35261,
       "willPassShadowGate": 7,
-      "willDropAtShadowGate": 80,
+      "willDropAtShadowGate": 77,
       "positions": [
         {
           "sport": "SOC",
@@ -3291,15 +3291,6 @@
           "side": "over",
           "invested": 641,
           "entryLine": 50.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "uwg_kenn",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 60,
-          "entryLine": null,
           "passesShadow": false
         },
         {
@@ -3592,15 +3583,6 @@
         },
         {
           "sport": "CFB",
-          "gameKey": "uwg_kenn",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 56,
-          "entryLine": -23.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "CFB",
           "gameKey": "idho_utah",
           "marketType": "spread",
           "side": "away",
@@ -3876,15 +3858,6 @@
           "side": "away",
           "invested": 9,
           "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "uwg_kenn",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 19,
-          "entryLine": 22.5,
           "passesShadow": false
         },
         {
@@ -4319,7 +4292,7 @@
           "gameKey": "colo_gt",
           "marketType": "spread",
           "side": "home",
-          "invested": 23376,
+          "invested": 24700,
           "entryLine": -6.5,
           "passesShadow": true
         },
@@ -4337,7 +4310,7 @@
           "gameKey": "idho_utah",
           "marketType": "spread",
           "side": "home",
-          "invested": 1305,
+          "invested": 1310,
           "entryLine": -37.5,
           "passesShadow": false
         },
@@ -4346,7 +4319,7 @@
           "gameKey": "idho_utah",
           "marketType": "spread",
           "side": "home",
-          "invested": 939,
+          "invested": 941,
           "entryLine": -36.5,
           "passesShadow": false
         },
