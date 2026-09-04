@@ -1,22 +1,45 @@
-# Twitter — 2026-09-04 AM r5 · QT GIVE · cohesive tickets vs wallets
-**Dale r5:** not cohesive · doesn’t read easy. Still: 5-1 · both MLs · dinner · QT BetMGM · no product.
+# Twitter — 2026-09-04 PM r6 · QT · Dale spine: public money vs our sharps
+**Dale r6:** rewrote it · better hook · loves *reviewing public money then seeing where our sharps were* · Dodgers Over most bet / we had Under · 4 other cashes · 5-1 · hot · stop gatekeeping · DMs · list the plays
 
 ---
 
 ### 1 · WHO
-Someone reading the most-bet graphic.
+Someone looking at a most-bet graphic. People sitting on this in DMs.
 
 ### 2 · PURPOSE
-**Give.** One path: list → wallets → Dodgers game → rest of the night → 5-1.
+**Give + soft DM close.** Public vs our sharps. Pudding first. DMs last. No URL. No UPGRADE. No product shot.
 
 ### 3 · ONE
-**Every total on that list was an Over. The wallets we track weren’t on those.**
+**Where the public money is vs where our sharps were.** Last night that was Dodgers Over vs our Under.
 
-### 4 · Read
-Four beats. No second closer. No slogan. Rangers ML named.
+| Test | |
+|------|---|
+| Understand | Public Over. Sharps Under. Same game. |
+| Believe | Parent is BetMGM. Under cashed. Four more. |
+| Unique | The love/process is the brand. Not a 5-1 trophy open. |
+
+**Shaped, not replaced:** “best kept secret” is banned tipster. His real ask is **stop gatekeeping + DMs**. Kept that. Fixed “always been” → “always be.”
+
+### 4 · SPCL — **L + C**
+- **L** — “one thing I love” / stop gatekeeping / I’ll answer DMs
+- **C** — most bet total was the Over, we had the Under, parent graphic
+- S = 5-1 we’re hot, after the pudding
 
 ### 5 · STUFF
-Under 7.5 3u · Dodgers ML 3u · Rangers ML 2u · CWS Under 8.5 3u · ATH/SEA Over 7.5 3u · Sociedad L 3u.
+Spear: STL@LAD Over 8 most bet · we Under 7.5 3u WIN
+Four more: Rangers ML 2u · Dodgers ML 3u · CWS Under 8.5 3u · ATH/SEA Over 7.5 3u
+L: Sociedad 3u
+
+### 6 · HOOK
+
+**Chosen** — his love, tightened. “Reviewing / and then seeing” → vs.
+```
+One thing I absolutely love.
+
+Where the public money is.. vs where our sharps were.
+```
+
+Then the number in the next breath so it isn’t a caption.
 
 ---
 
@@ -24,21 +47,30 @@ Under 7.5 3u · Dodgers ML 3u · Rangers ML 2u · CWS Under 8.5 3u · ATH/SEA Ov
 
 **Quote-tweet the BetMGM graphic.** No dashboard.
 
-**383 chars.** Compose (then QT): https://x.com/intent/tweet?text=Every%20total%20on%20that%20list%20last%20night%20was%20an%20Over.%20That%27s%20just%20where%20the%20tickets%20went.%20The%20wallets%20we%20track%20weren%27t%20on%20any%20of%20them.%0A%0AThey%20had%20the%20Dodgers%20game%20Over%208.%20We%20had%20Under%207.5%20for%203%20units%20and%20it%20cashed.%20Had%20Dodgers%20ML%20with%20them%20too.%0A%0AThen%20Rangers%20ML%20plus%20money%2C%20White%20Sox%20Under%208.5%20in%20the%20afternoon%2C%20and%20Athletics-Mariners%20Over%207.5.%20Lost%20Real%20Sociedad%20on%20soccer.%203%20units.%0A%0A5-1.  
+**372 chars.** Compose (then QT): https://x.com/intent/tweet?text=One%20thing%20I%20absolutely%20love.%0A%0AWhere%20the%20public%20money%20is..%20vs%20where%20our%20sharps%20were.%0A%0ALast%20night%20the%20most%20bet%20total%20was%20the%20Dodgers%20Over.%20We%20had%20the%20Under.%203%20units.%20Cashed%20it.%0A%0AThen%20four%20more.%0A%0ARangers%20ML%0ADodgers%20ML%0AWhite%20Sox%20Under%208.5%0AAthletics-Mariners%20Over%207.5%0A%0ALost%20the%20soccer.%0A%0A5-1.%20We%27re%20hot%20right%20now.%20Please%20stop%20gatekeeping%20this.%20I%27ll%20always%20be%20here%20to%20answer%20DMs.  
 **No URL. No UPGRADE.**
 
 ```
-Every total on that list last night was an Over. That's just where the tickets went. The wallets we track weren't on any of them.
+One thing I absolutely love.
 
-They had the Dodgers game Over 8. We had Under 7.5 for 3 units and it cashed. Had Dodgers ML with them too.
+Where the public money is.. vs where our sharps were.
 
-Then Rangers ML plus money, White Sox Under 8.5 in the afternoon, and Athletics-Mariners Over 7.5. Lost Real Sociedad on soccer. 3 units.
+Last night the most bet total was the Dodgers Over. We had the Under. 3 units. Cashed it.
 
-5-1.
+Then four more.
+
+Rangers ML
+Dodgers ML
+White Sox Under 8.5
+Athletics-Mariners Over 7.5
+
+Lost the soccer.
+
+5-1. We're hot right now. Please stop gatekeeping this. I'll always be here to answer DMs.
 ```
 
 ### Self-reply
-None.
+None unless DMs need a nudge. No link.
 
 ### RT line
-`Every total on that list last night was an Over.`
+`Where the public money is.. vs where our sharps were.`
