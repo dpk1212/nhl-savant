@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-09-04T17:38:13.910Z",
-  "elapsedSec": 37.5,
+  "scannedAt": "2026-09-04T17:42:53.864Z",
+  "elapsedSec": 36.1,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 153,
+  "todayGamesCount": 154,
   "summary": {
     "total": 307,
     "coveredByMain": 38,
-    "recovered": 22,
-    "recoveredPositions": 245,
-    "noPositions": 247,
+    "recovered": 23,
+    "recoveredPositions": 247,
+    "noPositions": 246,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 10,
       "spread": 1,
       "total": 1,
-      "dropped_shadow_gate": 123,
+      "dropped_shadow_gate": 125,
       "dropped_excluded": 110,
       "dropped_duplicate": 0
     }
@@ -310,7 +310,7 @@
           "gameKey": "rea_bet",
           "marketType": "ml",
           "side": "home",
-          "invested": 943,
+          "invested": 1870,
           "entryLine": null,
           "passesShadow": false
         },
@@ -758,7 +758,7 @@
           "gameKey": "rea_bet",
           "marketType": "ml",
           "side": "away",
-          "invested": 45938,
+          "invested": 47290,
           "entryLine": null,
           "passesShadow": true
         },
@@ -767,7 +767,7 @@
           "gameKey": "sfg_nym",
           "marketType": "total",
           "side": "under",
-          "invested": 26798,
+          "invested": 27319,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -1078,6 +1078,15 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "atl_phi",
+          "marketType": "total",
+          "side": "under",
+          "invested": 247,
+          "entryLine": 6.5,
+          "passesShadow": false
+        },
+        {
           "sport": "SOC",
           "gameKey": "rea_bet",
           "marketType": "ml",
@@ -1102,15 +1111,6 @@
           "side": "away",
           "invested": 194,
           "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "atl_phi",
-          "marketType": "total",
-          "side": "under",
-          "invested": 198,
-          "entryLine": 6.5,
           "passesShadow": false
         },
         {
@@ -1848,11 +1848,11 @@
       "sports": "NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa38a455bbdd4b68486548b7e19da99903f4f821d",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "fallback",
       "avgSportBet": 40943,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "MLB",
@@ -1860,6 +1860,15 @@
           "marketType": "ml",
           "side": "home",
           "invested": 39,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sfg_nym__2",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 16,
           "entryLine": null,
           "passesShadow": false
         },
@@ -3047,8 +3056,24 @@
       "tier": "CONFIRMED",
       "name": "oudine2",
       "sports": "UFC,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x64e93f87d8a0c1b2cde6f20d71f211372a95eb4c"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x64e93f87d8a0c1b2cde6f20d71f211372a95eb4c",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 7025,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "rea_bet",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 95,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "972768",
@@ -3610,7 +3635,7 @@
           "gameKey": "rea_bet",
           "marketType": "ml",
           "side": "away",
-          "invested": 7134,
+          "invested": 7886,
           "entryLine": null,
           "passesShadow": true
         }
