@@ -103,6 +103,7 @@ import {
   applyNoConfirmedMuteOverlay,
   applyTopCrowdedConvictionMuteOverlay,
   applyEvDriftEdgeMuteOverlay,
+  applyFavJuiceMuteOverlay,
   maxForSizeRatio,
   leadForSizeRatio,
   meanForRoiNorm,
@@ -111,6 +112,7 @@ import {
   isNoConfirmedMuteLive,
   isTopCrowdedMuteLive,
   isEvDriftEdgeMuteLive,
+  isFavJuiceMuteLive,
   MAX_SR_SUB4_MUTE_FROM,
   MAX_SR_SUB4_MUTED_BY,
   NO_CONFIRMED_MUTE_FROM,
@@ -119,6 +121,9 @@ import {
   TOP_CROWDED_MUTED_BY,
   EV_DRIFT_EDGE_MUTE_FROM,
   EV_DRIFT_EDGE_MUTED_BY,
+  FAV_JUICE_MUTE_FROM,
+  FAV_JUICE_MUTE_THR,
+  FAV_JUICE_MUTED_BY,
   EV_DRIFT_EDGE_MIN,
   EV_DRIFT_DEV_MAX,
   EV_DRIFT_CURRENT_MAX,
@@ -1224,6 +1229,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreClimate = null,
   steamTailAction = null,
   unitsPreSteamTail = null,
+  favJuiceAction = null,
+  unitsPreFavJuice = null,
   steamTailReason = null,
   steamTailArriving = null,
   steamTailOnLock = null,
@@ -1370,6 +1377,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreSteamTail != null && Number.isFinite(unitsPreSteamTail)) {
     target.v8_unitsPreSteamTail = unitsPreSteamTail;
   }
+  if (favJuiceAction != null) target.v8_favJuiceAction = favJuiceAction;
+  if (unitsPreFavJuice != null && Number.isFinite(unitsPreFavJuice)) {
+    target.v8_unitsPreFavJuice = unitsPreFavJuice;
+  }
   if (steamTailReason != null) target.v8_steamTailReason = steamTailReason;
   if (steamTailArriving != null) target.v8_steamTailArriving = !!steamTailArriving;
   if (steamTailOnLock != null) target.v8_steamTailOnLock = !!steamTailOnLock;
@@ -1452,6 +1463,7 @@ function skillStampsDrifted(sd, bundle, {
   sportUnlockAction = null,
   climateAction = null,
   steamTailAction = null,
+  favJuiceAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1498,6 +1510,7 @@ function skillStampsDrifted(sd, bundle, {
   if (sportUnlockAction != null && (sd.v8_sportUnlockAction || null) !== sportUnlockAction) return true;
   if (climateAction != null && (sd.v8_climateAction || null) !== climateAction) return true;
   if (steamTailAction != null && (sd.v8_steamTailAction || null) !== steamTailAction) return true;
+  if (favJuiceAction != null && (sd.v8_favJuiceAction || null) !== favJuiceAction) return true;
   return false;
 }
 
@@ -3366,6 +3379,18 @@ async function createMissingLockedPicks({
         peakUnitsApplied = steamTailPolicyCreate.units;
       }
 
+      // Heavy-favorite mute — after ALL sizing (incl. steam-tail). Does not
+      // change oddsCap or path math. American odds juicier than -375 → 0u.
+      let favJuicePolicyCreate = null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        favJuicePolicyCreate = applyFavJuiceMuteOverlay({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = favJuicePolicyCreate.units;
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -3600,6 +3625,10 @@ async function createMissingLockedPicks({
           unitsPreSteamTail: (steamTailPolicyCreate && Number.isFinite(steamTailPolicyCreate.unitsPrePolicy))
             ? steamTailPolicyCreate.unitsPrePolicy
             : null,
+          favJuiceAction: favJuicePolicyCreate?.action ?? null,
+          unitsPreFavJuice: (favJuicePolicyCreate && Number.isFinite(favJuicePolicyCreate.unitsPrePolicy))
+            ? favJuicePolicyCreate.unitsPrePolicy
+            : null,
           steamTailReason: steamTailPolicyCreate?.reason ?? null,
           steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
           steamTailOnLock: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamOnLock : null,
@@ -3658,7 +3687,9 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (steamTailPolicyCreate?.mutedBy) {
+      if (favJuicePolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = favJuicePolicyCreate.mutedBy;
+      } else if (steamTailPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = steamTailPolicyCreate.mutedBy;
       } else if (evDriftPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = evDriftPolicyCreate.mutedBy;
@@ -3699,7 +3730,10 @@ async function createMissingLockedPicks({
       const steamTailMutedCreate = steamTailPolicyCreate?.action === 'MUTE'
         && Number.isFinite(steamTailPolicyCreate.unitsPrePolicy)
         && steamTailPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const favJuiceMutedCreate = favJuicePolicyCreate?.action === 'MUTE'
+        && Number.isFinite(favJuicePolicyCreate.unitsPrePolicy)
+        && favJuicePolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -3711,6 +3745,7 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(favJuicePolicyCreate?.reason ? [favJuicePolicyCreate.reason] : []),
           ...(steamTailPolicyCreate?.reason ? [steamTailPolicyCreate.reason] : []),
           ...(evDriftPolicyCreate?.reason ? [evDriftPolicyCreate.reason] : []),
           ...(topCrowdedPolicyCreate?.reason ? [topCrowdedPolicyCreate.reason] : []),
@@ -4916,6 +4951,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = steamTailPolicy.units;
   }
 
+  // ─── Heavy-favorite mute (after ALL sizing, incl. steam-tail) ─────────
+  // American odds juicier than -375 → 0u. Does not change oddsCap or
+  // path math. Manual stake exempt. Date-gated inside the overlay.
+  let favJuicePolicy = null;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    favJuicePolicy = applyFavJuiceMuteOverlay({
+      units: finalUnitsApplied,
+      odds: sideOdds,
+      pickDate,
+    });
+    finalUnitsApplied = favJuicePolicy.units;
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP rescue that forced through an AGS mute.
@@ -4980,6 +5028,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (climatePolicy?.reason && !reasons.includes(climatePolicy.reason)) reasons.push(climatePolicy.reason);
   if (sportUnlockPolicy?.reason && !reasons.includes(sportUnlockPolicy.reason)) reasons.push(sportUnlockPolicy.reason);
   if (steamTailPolicy?.reason && !reasons.includes(steamTailPolicy.reason)) reasons.push(steamTailPolicy.reason);
+  if (favJuicePolicy?.reason && !reasons.includes(favJuicePolicy.reason)) reasons.push(favJuicePolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -5014,9 +5063,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const steamTailMuted = steamTailPolicy?.action === 'MUTE'
     && Number.isFinite(steamTailPolicy.unitsPrePolicy)
     && steamTailPolicy.unitsPrePolicy > 0;
+  const favJuiceMuted = favJuicePolicy?.action === 'MUTE'
+    && Number.isFinite(favJuicePolicy.unitsPrePolicy)
+    && favJuicePolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
-  // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift + steam-tail run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift + steam-tail + fav-juice run AFTER those floors, so they still win if they cancelled.
+  const sizeMuted = favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -5058,7 +5110,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const TOP_CROWDED_MUTE_VALUES = new Set([TOP_CROWDED_MUTED_BY]);
   const EV_DRIFT_MUTE_VALUES = new Set([EV_DRIFT_EDGE_MUTED_BY]);
   const STEAM_TAIL_MUTE_VALUES = new Set([STEAM_TAIL_MUTED_BY]);
-  if (steamTailPolicy?.mutedBy) {
+  const FAV_JUICE_MUTE_VALUES = new Set([FAV_JUICE_MUTED_BY]);
+  if (favJuicePolicy?.mutedBy) {
+    patch.mutedBy = favJuicePolicy.mutedBy;
+  } else if (steamTailPolicy?.mutedBy) {
     patch.mutedBy = steamTailPolicy.mutedBy;
   } else if (evDriftPolicy?.mutedBy) {
     patch.mutedBy = evDriftPolicy.mutedBy;
@@ -5097,7 +5152,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || NO_CONF_MUTE_VALUES.has(sd.mutedBy)
       || TOP_CROWDED_MUTE_VALUES.has(sd.mutedBy)
       || EV_DRIFT_MUTE_VALUES.has(sd.mutedBy)
-      || STEAM_TAIL_MUTE_VALUES.has(sd.mutedBy)) {
+      || STEAM_TAIL_MUTE_VALUES.has(sd.mutedBy)
+      || FAV_JUICE_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -5379,6 +5435,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${steamTailPolicy.unitsPrePolicy}u → ${steamTailPolicy.units}u (${hcStakeTier})`
     );
   }
+  if (favJuicePolicy?.action === 'MUTE') {
+    changes.push(
+      `FAV-JUICE-MUTE: odds=${sideOdds == null ? '—' : sideOdds} < ${FAV_JUICE_MUTE_THR} `
+      + `${favJuicePolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -5500,6 +5562,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreSteamTail: (steamTailPolicy && Number.isFinite(steamTailPolicy.unitsPrePolicy))
         ? steamTailPolicy.unitsPrePolicy
         : null,
+      favJuiceAction: favJuicePolicy?.action ?? null,
+      unitsPreFavJuice: (favJuicePolicy && Number.isFinite(favJuicePolicy.unitsPrePolicy))
+        ? favJuicePolicy.unitsPrePolicy
+        : null,
       steamTailReason: steamTailPolicy?.reason ?? null,
       steamTailArriving: steamTailPolicy ? !!steamTailPolicy.steamArriving : null,
       steamTailOnLock: steamTailPolicy ? !!steamTailPolicy.steamOnLock : null,
@@ -5535,6 +5601,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       sportUnlockAction: sportUnlockPolicy?.action ?? null,
       climateAction: climatePolicy?.action ?? null,
       steamTailAction: steamTailPolicy?.action ?? null,
+      favJuiceAction: favJuicePolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5551,7 +5618,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (evDriftPolicy && (sd.v8_evDriftAction || null) !== evDriftPolicy.action)
         || (sportUnlockPolicy && (sd.v8_sportUnlockAction || null) !== sportUnlockPolicy.action)
         || (climatePolicy && (sd.v8_climateAction || null) !== climatePolicy.action)
-        || (steamTailPolicy && (sd.v8_steamTailAction || null) !== steamTailPolicy.action)) {
+        || (steamTailPolicy && (sd.v8_steamTailAction || null) !== steamTailPolicy.action)
+        || (favJuicePolicy && (sd.v8_favJuiceAction || null) !== favJuicePolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -5570,7 +5638,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (noConfirmedPolicy?.action ? ` noConfAct=${noConfirmedPolicy.action}` : '')
         + (topCrowdedPolicy?.action ? ` topCrowdAct=${topCrowdedPolicy.action}` : '')
         + (evDriftPolicy?.action ? ` evDriftAct=${evDriftPolicy.action}` : '')
-        + (steamTailPolicy?.action ? ` steamTailAct=${steamTailPolicy.action}` : ''),
+        + (steamTailPolicy?.action ? ` steamTailAct=${steamTailPolicy.action}` : '')
+        + (favJuicePolicy?.action ? ` favJuiceAct=${favJuicePolicy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -6444,6 +6513,14 @@ async function main() {
     );
   } else {
     console.log(`Steam-tail policy T: not live before ${STEAM_TAIL_POLICY_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isFavJuiceMuteLive(TARGET_DATE)) {
+    console.log(
+      `Heavy-favorite mute LIVE: american odds < ${FAV_JUICE_MUTE_THR} → 0u`
+      + ` · from ${FAV_JUICE_MUTE_FROM} · after steam-tail · no resize · mutedBy=${FAV_JUICE_MUTED_BY}`,
+    );
+  } else {
+    console.log(`Heavy-favorite mute: not live before ${FAV_JUICE_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(

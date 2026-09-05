@@ -1553,6 +1553,63 @@ export function applyEvDriftEdgeMuteOverlay({
   };
 }
 
+// ── Heavy-favorite mute (after ALL sizing — does not change math) ──────────
+// 2026-09-05+: after steam-tail (last size overlay). Full-cancel any
+// remaining ticket whose American odds are juicier than -375.
+// Dogs already have a stepped oddsCap. Favorites were uncapped by odds.
+// This overlay does NOT touch oddsCap / path units / steam-tail math.
+// Hard fences:
+//   • odds missing / non-finite → HOLD (do not invent a cut)
+//   • odds >= -375 (incl. plus-money) → HOLD at exact incoming units
+//   • already 0u → PASS
+//   • pre-cutover → EXEMPT
+export const FAV_JUICE_MUTE_FROM = '2026-09-05';
+export const FAV_JUICE_MUTE_THR = -375;
+export const FAV_JUICE_MUTED_BY = 'fav-juice';
+
+export function isFavJuiceMuteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= FAV_JUICE_MUTE_FROM;
+}
+
+/**
+ * Last publish mute for heavy favorites. Never resizes or repaths.
+ * Identity unless published size is still > 0 AND american odds < -375.
+ */
+export function applyFavJuiceMuteOverlay({
+  units,
+  odds = null,
+  pickDate = null,
+  thr = FAV_JUICE_MUTE_THR,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  const o = (odds == null || odds === '') ? null : Number(odds);
+  const oddsIn = Number.isFinite(o) ? o : null;
+  const out = (action, reason = null) => ({
+    units: pre,
+    action,
+    reason,
+    mutedBy: null,
+    unitsPrePolicy: pre,
+    odds: oddsIn,
+  });
+  if (!(pre > 0)) {
+    return {
+      units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre, odds: oddsIn,
+    };
+  }
+  if (!isFavJuiceMuteLive(pickDate)) return out('EXEMPT', 'pre_cutover');
+  if (oddsIn == null) return out('HOLD', 'odds_missing');
+  if (oddsIn >= thr) return out('HOLD', null);
+  return {
+    units: 0,
+    action: 'MUTE',
+    reason: `fav_juice_lt_${thr}`,
+    mutedBy: FAV_JUICE_MUTED_BY,
+    unitsPrePolicy: pre,
+    odds: oddsIn,
+  };
+}
+
 // ── Path × EDGE blended expected win rate (display / calibration) ───────────
 // logit(p*) = wp·logit(pathWR) + we·logit(meanFor)
 // Path WR = expanding empirical WR of prior graded staked same tier (all sports).
