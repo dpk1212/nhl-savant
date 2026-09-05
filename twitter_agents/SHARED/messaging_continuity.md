@@ -7,36 +7,36 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-04 PM r6 · QT · public money vs our sharps · Dale spine |
+| Last updated | 2026-09-05 AM · Hero GIVE · year already paid |
 | CSV window | Aug 26–Sep 1, 2026 |
-| Ask temperature | **Warm.** DM close after pudding. No UPGRADE. |
-| Account arc | Public Over on Dodgers total. Our sharps Under. 5-1. Stop gatekeeping. |
+| Ask temperature | **Warm.** Sorry-waiting is the close. No UPGRADE. No DM pile-on. |
+| Account arc | +60.24u in 7 days. People who joined this week already paid for the year. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/04 PM r6 | QT **GIVE + DM** | One thing I love / public money vs our sharps | **L + C** | DMs | **Staged** — Dale rewrite |
+| 9/05 AM | Hero **GIVE** | `+60.24u IN 7 DAYS.` / year already paid | **S + C** | sorry-waiting | **Staged** |
+| 9/04 PM r6 | QT GIVE + DM | One thing I love / public money vs our sharps | L + C | DMs | Staged — Dale rewrite |
 | 9/04 AM r5 | QT GIVE | Every total on that list was an Over | S + C | none | Killed: not his voice |
 | 9/03 PM | Hero GIVE | `3 PROVEN ON THE UNDER` | S + C | none | Staged |
 | 9/03 | Hero GIVE | `+134.17u IN 94 DAYS` | S + C | none | Staged AM |
-| 9/02 AM r3 | Hero ASK | `#1 TOTAL LAST NIGHT WAS THE UNDER` | P + S | UPGRADE | Do not clone |
 
 ---
 
 ## Angle lock
-**ONE:** Public money vs our sharps. Last night: Dodgers Over vs our Under.  
-**Hook:** his love line, tightened to vs.  
-**Close:** 5-1 · we’re hot · stop gatekeeping · DMs. Not “best kept secret.”  
-**Ask:** DMs. No URL. QT BetMGM.
+**ONE:** If you joined this week the year is already paid. +60.24u in 7 days.  
+**Hook:** August printer silhouette + week-not-month paradox.  
+**Close:** congrats (year + vacation) · sorry to those waiting.  
+**Ask:** none beyond the `..`  Attach 7D chart then yesterday card.
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** public vs sharps recap · stop gatekeeping · 5-1  
+**Spent this beat (once posted):** 7-day +60u printer · year-paid-in-a-week · Fri 5-2 / Real Madrid L / Cardinals-Rockies Over 11.5  
 **Still open:** Nats +$69K · TheBetDesk QT · CFB `$XK` · NFL week 1 Sept 10  
-**Don’t:** best kept secret · UPGRADE · product dashboard · CAPS staccato reopen
+**Don’t:** 5-2 recap reopen · convert-as-open · UPGRADE · best kept secret · V12 · $6,024 as line 1 · restage BetMGM 5-1 / CWS 3v1 / +134u / −76u
 
 ---
 
@@ -48,15 +48,15 @@
 ---
 
 ## FORWARD LOOK — after this posts
-1. Live give / `$XK` if it exists
+1. Live give / `$XK` if it exists (Status is fed — don’t reprint +60u)
 2. NFL week 1 (Sept 10)
 3. Nats +$69K if still unused
-**NOT:** another recap · convert-as-open · restage 3v1 / +134u · −76u
+**NOT:** another recap · convert-as-open · restage 3v1 / +134u / −76u / 5-2 trophy
 
 ---
 
 ## Agent close-out
-- [x] Dale spine: public vs sharps · Under · four cashes · 5-1 · DMs
-- [x] Hook improved, not replaced
-- [x] No best kept secret · no product · no UPGRADE
+- [x] Dale spine: 5-2 · lost one 5u / hit the other · year paid + vacation · sorry waiting
+- [x] Hook = printer + unique, not 5-2 / congrats / sorry
+- [x] No V12 · no best kept secret · no UPGRADE · no $ lead
 - [x] Staged `twitter_drafts/COPY_PASTE.md`
