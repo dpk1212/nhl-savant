@@ -1,70 +1,79 @@
-# Twitter — 2026-09-05 PM · QT Dom · no data feed / no capper
-**Dale spine:** quote this · perfect angle · don’t spend hundreds on data or data services · or cappers that may or may not have edge · we’ve got you covered · we put you on the sharp tickets · results like this
+# Twitter — 2026-09-05 eve · Hero GIVE · DET@CLE Over 7.5
+**Dale:** write-up, same expertise. Three cards: locked 3u Over · money map · lead-wallet tape.
 
 ---
 
 ### 1 · WHO
-Someone paying for a data feed or a capper, looking at a member printer.
+Someone staring at a total with more money on the Under.
 
 ### 2 · PURPOSE
-**Ask.** Parent is the pudding. Convert words are the **close**, never the open. No URL. No UPGRADE. Do not thank Dom (35 eng death).
+**Give.** Live lock. No ask. No URL. No UPGRADE. Ask just fired (Dom QT) — this is the give.
 
 ### 3 · ONE
-**You don’t need a data feed or a capper. We put you on the sharp tickets.** This is what that looks like.
+**Every losing dollar on this total is on the Under.** We locked the Over.
 
 | Test | |
 |------|---|
-| Understand | Member result. No data bill. No tout. |
-| Believe | Parent card: +$1,742 · 13-3 · SharpFlow tag · Sep 1–5 |
-| Unique | He didn’t buy the feed. He rode the tickets. Not a become-sharp clone. Not “thankful to have Dom.” |
+| Understand | Losers piled Under. We took Over. |
+| Believe | Locked card split + map. 3u. +125. |
+| Unique | $3.3K losing / $0 on us — not a `$XK at 2×` clone ($1K at 1.4× is not scarce enough to open). |
 
-**Shaped, not replaced:** his convert block stays. Hook is the $ + he didn’t buy. “Results like this” is the QT, not a caption.
-
-### 4 · SPCL — **C + L**
-- **C** — +$1,742 / 13-3 in the parent
-- **L** — dinner close: hundreds / maybe-edge / we’ve got you covered
-- S = we put him on the tickets (after the hook)
+### 4 · SPCL — **C + S**
+- **C** — losing $ all Under · other side $5.2K at 0% ROI
+- **S** — we locked 3u Over +125
+- P = lead cashed two overs yesterday (after the hook)
+- Do not own L as the pillar
 
 ### 5 · STUFF
-Parent (@dominic_grauso, 10:57 AM 9/5/26): **+$1,742.18** · **+59.06% ROI** · **13-3-0** · SharpFlow tag · custom 9/1–9/5
-Do **not** reprint our +60.24u / 40-19 (staged this morning). Do **not** attach our dashboard.
+DET @ CLE · **Over 7.5** · **LOCKED 3.0u** · card **+125** (Firestore lock +114 poly / pin +125) · to win +3.75u · SET
+Lead **9214c2**: **$1,035** · **1.38×** usual · UI 33-21 · +27% · 61% WR · 67% beat close · usual ~$749
+Second proven **4b912c**: **$624** · 0.86× · L30 +$43K / 270-229 / 54% (do not open on him)
+Against: **$5.2K** · 1 proven + 2 secondary · UI 47.5% WR · 56% CLV · **0% ROI**
+Losing-wallet row on card: **$0** Over · **$3.3K** Under
+Confirmed row: **$2.2K** Over vs **$1.8K** Under
+Lead tape (9/4): Over 8.5 +111 2.1× **W** · Over 7.5 +117 1.0× **W** · Under 7 0.3× **W**
+Do **not** put 2.1× / $1.6K / Tier A / Vault / SHARP on this ticket. That’s yesterday’s press and system labels.
+CFB Missouri State +40.5 is a different card — kill.
 
 ### 6 · HOOK
 
-**Chosen** — parent $ in line 1, then the paradox.
+**Chosen** — losing pile, not the 1.4×.
 ```
-+$1,742.
+$3.3K IN LOSING WALLETS.
 
-He didn't buy a data feed. He didn't buy a capper.
+All of it on the Under.
 ```
 
-Kill list: thankful Dom · convert-as-open (`I don’t know what you’re using for data`) · become-sharp clone · UPGRADE · best kept secret · restage +60u / 5-2 / BetMGM 5-1
+Kill list: `$1K AT 1.4×` as line 1 (not scarce) · convert-as-open · thank Dom · +60u · 5-2 · Vault / Tier A / SHARP · 2.1× on today’s ticket
 
 ---
 
 ## Hero — paste this
 
-**Quote-tweet @dominic_grauso’s +$1,742 / 13-3 SharpFlow card.** No extra images. No dashboard.
+**Attach in this order:**
+1. Locked Over 7.5 card (losing-wallet split is in the shot)
+2. Money map (lead $1.0K / other side $5.2K)
+3. Lead wallet tape (two overs yesterday)
 
-**236 chars.** Compose (then QT that tweet): https://x.com/intent/tweet?text=%2B%241%2C742.%0A%0AHe%20didn%27t%20buy%20a%20data%20feed.%20He%20didn%27t%20buy%20a%20capper.%0A%0AWe%20put%20him%20on%20the%20sharp%20tickets.%0A%0A13-3%20this%20week.%0A%0AYou%20don%27t%20have%20to%20spend%20hundreds%20of%20dollars%20on%20data.%20Or%20on%20someone%20who%20may%20or%20may%20not%20have%20an%20edge.%0A%0AWe%27ve%20got%20you%20covered.
-**No URL. No UPGRADE.**
+**271 chars.** Compose: https://x.com/intent/tweet?text=%243.3K%20IN%20LOSING%20WALLETS.%0A%0AAll%20of%20it%20on%20the%20Under.%20Zero%20on%20our%20side.%0A%0AWe%20locked%20the%20Over.%20Tigers-Guardians%207.5.%20%2B125.%203%20units.%0A%0ALead%20wallet%20is%20%241%2C000.%201.4%C3%97%20his%20usual.%2033-21.%20Beats%20the%20close%2067%25.%0A%0AHe%20cashed%20two%20overs%20yesterday.%0A%0AThe%20Under%20has%20%245.2K%20sitting%20on%20it%20at%200%25%20ROI.
+**No URL. No UPGRADE.** Crop Vault / Tier A if they show.
 
 ```
-+$1,742.
+$3.3K IN LOSING WALLETS.
 
-He didn't buy a data feed. He didn't buy a capper.
+All of it on the Under. Zero on our side.
 
-We put him on the sharp tickets.
+We locked the Over. Tigers-Guardians 7.5. +125. 3 units.
 
-13-3 this week.
+Lead wallet is $1,000. 1.4× his usual. 33-21. Beats the close 67%.
 
-You don't have to spend hundreds of dollars on data. Or on someone who may or may not have an edge.
+He cashed two overs yesterday.
 
-We've got you covered.
+The Under has $5.2K sitting on it at 0% ROI.
 ```
 
 ### Self-reply
-None. His close is the ask.
+None.
 
 ### RT line
-`He didn't buy a data feed. He didn't buy a capper.`
+`All of it on the Under. Zero on our side.`

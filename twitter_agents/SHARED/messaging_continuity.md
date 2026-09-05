@@ -7,36 +7,36 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-05 PM · QT Dom · no data feed / no capper |
+| Last updated | 2026-09-05 eve · Hero GIVE · DET@CLE Over 7.5 |
 | CSV window | Aug 26–Sep 1, 2026 |
-| Ask temperature | **Warm-hot.** Convert is the close. No UPGRADE. No URL. |
-| Account arc | Member printer. No data feed. No capper. Sharp tickets. |
+| Ask temperature | **Cold-warm.** Give just fired. No ask. |
+| Account arc | Losing $ all on the Under. We locked the Over. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/05 PM | QT **ASK** | `+$1,742.` / he didn’t buy a data feed or a capper | **C + L** | we’ve got you covered | **Staged** |
+| 9/05 eve | Hero **GIVE** | `$3.3K IN LOSING WALLETS` / all Under | **C + S** | none | **Staged** |
+| 9/05 PM | QT ASK | `+$1,742.` / no data feed no capper | C + L | we’ve got you covered | Staged |
 | 9/05 AM | Hero GIVE | `+60.24u IN 7 DAYS.` / year already paid | S + C | sorry-waiting | Staged |
 | 9/04 PM r6 | QT GIVE + DM | One thing I love / public money vs our sharps | L + C | DMs | Staged — Dale rewrite |
 | 9/04 AM r5 | QT GIVE | Every total on that list was an Over | S + C | none | Killed: not his voice |
-| 9/03 PM | Hero GIVE | `3 PROVEN ON THE UNDER` | S + C | none | Staged |
 
 ---
 
 ## Angle lock
-**ONE:** You don’t need a data feed or a capper. We put you on the sharp tickets.  
-**Hook:** +$1,742 · he didn’t buy the feed or a capper.  
-**Close:** hundreds / maybe-edge / we’ve got you covered.  
-**Ask:** that close. No URL. QT Dom’s card only.
+**ONE:** Losing wallets on this total are 100% Under. We locked Over 7.5.  
+**Hook:** `$3.3K IN LOSING WALLETS.` / all Under, zero on us.  
+**Close:** $5.2K Under at 0% ROI.  
+**Ask:** none. Attach lock card → map → lead tape.
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** Dom +$1,742 / 13-3 · no-data-feed / no-capper ask  
+**Spent this beat (once posted):** DET@CLE Over 7.5 · losing-$ Under pile · 9214c2 1.4×  
 **Still open:** Nats +$69K · TheBetDesk QT · CFB `$XK` · NFL week 1 Sept 10  
-**Don’t:** thank Dom · convert-as-open · become-sharp · UPGRADE · +60u reprint · 5-2 trophy · BetMGM 5-1 / −76u
+**Don’t:** `$1K at 1.4×` as a Status open · convert · +60u / 5-2 · Dom thank-you · Vault / Tier A · 2.1× on this ticket
 
 ---
 
@@ -48,15 +48,15 @@
 ---
 
 ## FORWARD LOOK — after this posts
-1. Live give / `$XK` if it exists (ask just fired — give next)
-2. NFL week 1 (Sept 10)
-3. Nats +$69K if still unused
-**NOT:** another convert hero · thankful OG · become-sharp · +60u / 5-2 restage
+1. NFL week 1 (Sept 10) or a real `$XK at Y×` if it appears
+2. Nats +$69K if still unused
+3. Quiet board → anti-sexy printer only with a new receipt
+**NOT:** another convert · this Over restage · +60u / 5-2 / −76u
 
 ---
 
 ## Agent close-out
-- [x] Dale spine: data/cappers · sharp tickets · results like this
-- [x] Hook = $ + he didn’t buy, not thank-you / not convert-as-open
-- [x] No UPGRADE · no URL · no our dashboard on the QT
+- [x] Live give after Dom ask
+- [x] Hook = losing pile, not 1.4× / not 3-0 recap
+- [x] No Vault · no Tier A · no 2.1× on today’s ticket
 - [x] Staged `twitter_drafts/COPY_PASTE.md`
