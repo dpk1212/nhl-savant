@@ -7,53 +7,56 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-31 · August MTD — educate size-for-football |
-| CSV window | Aug 23–29, 2026 (no new CSV this run) |
-| Ask temperature | **warm-hot** — free educate just staged; next beat may ask (SR only) |
-| Account arc | Cubs printers → August size receipt for the football avatar → first NFL/CFB lock |
+| Last updated | 2026-09-05 eve · Hero GIVE · DET@CLE Over 7.5 |
+| CSV window | Aug 26–Sep 1, 2026 |
+| Ask temperature | **Cold-warm.** Give just fired. No ask. |
+| Account arc | Losing $ all on the Under. We locked the Over. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/31 | Hero August MTD | Educate: worse WR, 3× July, 168 1u leaked / 78 sized ate · Sunday-slate trap | **S + C** | none | **Staged** |
-| 8/30 late | Hero Cubs | $120K at 2× · +$545K · proven 97% vs losers 83% · −1.5 +138 steam · too hard to pass up | **S + C** | none | Staged |
-| 8/30 night | QT Under 7.5 grade | −30u worst day → two 10+ · +112.91u · picked up / 7–0 cashed | **P + C** | none | Staged |
-| 8/30 | Hero Under 7.5 mix | 3-1 +4u → $6K sized-up Under by line 3 · loser $2.1K · Pin 1875→7500 | **S + C** | none | Staged |
-| 8/29 night | Hero Brewers ML | Stomped → 2u toe behind +$545K A-tier · contested 3 | **L + S** | none | Staged |
+| 9/05 eve | Hero **GIVE** | `$3.3K IN LOSING WALLETS` / all Under | **C + S** | none | **Staged** |
+| 9/05 PM | QT ASK | `+$1,742.` / no data feed no capper | C + L | we’ve got you covered | Staged |
+| 9/05 AM | Hero GIVE | `+60.24u IN 7 DAYS.` / year already paid | S + C | sorry-waiting | Staged |
+| 9/04 PM r6 | QT GIVE + DM | One thing I love / public money vs our sharps | L + C | DMs | Staged — Dale rewrite |
+| 9/04 AM r5 | QT GIVE | Every total on that list was an Over | S + C | none | Killed: not his voice |
 
 ---
 
 ## Angle lock
-**S + C · Educate:** WHO = football WR-scorers walking into September. PURPOSE = size is how this prints. Depth: July **55% / +17u** vs August **53% / +46.8u** · **168** 1u leaked vs **78** 5u+ (56-22 / +65.6u) · close = Sunday slate without the 56-22. Open `+46.8u` / 3× July. No ask.
+**ONE:** Losing wallets on this total are 100% Under. We locked Over 7.5.  
+**Hook:** `$3.3K IN LOSING WALLETS.` / all Under, zero on us.  
+**Close:** $5.2K Under at 0% ROI.  
+**Ask:** none. Attach lock card → map → lead tape.
 
 ---
 
 ## Themes spent / open
-**Spent this beat:** August MTD depth · July WR paradox · 168 vs 78 · Sunday-slate trap · “watch the ones we size” · September loading  
-**Still open:** Cubs grade (if not posted) · onboarding FAQ · folder dream · bounce recap (don’t rerun) · soft ask (now warm-hot)
+**Spent this beat (once posted):** DET@CLE Over 7.5 · losing-$ Under pile · 9214c2 1.4×  
+**Still open:** Nats +$69K · TheBetDesk QT · CFB `$XK` · NFL week 1 Sept 10  
+**Don’t:** `$1K at 1.4×` as a Status open · convert · +60u / 5-2 · Dom thank-you · Vault / Tier A · 2.1× on this ticket
 
 ---
 
 ## Unfinished
-- Cubs ML 3.0u + Cubs −1.5 — **grade if still unposted** (Power)
-- Soft ask eligible **next** if PURPOSE=ask (SR only)
-- Don’t restage this August ladder, Cubs pair, or the Under
-- Don’t rerun −76u ATH valley
+- Next Status slot = live `$XK at Y×` only if $ is scarce
+- Nats +$69K still unused
+- First NFL lock week 1 (Sept 10)
 
 ---
 
 ## FORWARD LOOK — after this posts
-1. **Soft ask** — earned after this free educate; SR only
-2. **First NFL / CFB lock** — live S or P; this post is the frame (“watch the ones we size”)
-3. Grade Cubs only if it still hasn’t shipped
-**NOT:** promo · second month recap · −76u · sport-menu · AGS · 1u-loss open · philosophy essay
+1. NFL week 1 (Sept 10) or a real `$XK at Y×` if it appears
+2. Nats +$69K if still unused
+3. Quiet board → anti-sexy printer only with a new receipt
+**NOT:** another convert · this Over restage · +60u / 5-2 / −76u
 
 ---
 
 ## Agent close-out
-- [x] WHO + PURPOSE still locked (football · educate)
-- [x] Depth pass — July paradox + 168 vs 78 + Sunday trap (not a longer table)
-- [x] Hook kept · no ATH clone · no ask
+- [x] Live give after Dom ask
+- [x] Hook = losing pile, not 1.4× / not 3-0 recap
+- [x] No Vault · no Tier A · no 2.1× on today’s ticket
 - [x] Staged `twitter_drafts/COPY_PASTE.md`

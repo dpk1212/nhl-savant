@@ -1,154 +1,79 @@
-# Twitter — 2026-08-31 · August MTD · sized-up printed
-**Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Researcher/Strategist/Editor loop
+# Twitter — 2026-09-05 eve · Hero GIVE · DET@CLE Over 7.5
+**Dale:** write-up, same expertise. Three cards: locked 3u Over · money map · lead-wallet tape.
 
-### 0 · Spine (Dale — law)
-- perfect post for the performance of the month so far
-- added a new sport · great month
-- highlight **actual performance by unit tiers**
-- tease **NFL / CFB locking plays soon**
-- updates to performance with another month of data
-- **Big September is loading**
-
-### 0b–0c · Continuity / forward look
-- Football arriving · they still score on WR · last draft was WHO/PURPOSE-right, **Qual-thin** (hook + table + slogan)
-- Depth that serves the ONE idea only (not toss salad): July WR was *higher* · twice as many 1u tickets as 5u+ · sized ones covered the leak
-- ATH “win rate didn’t even go up” already shipped — **don’t clone**. This is July vs August, new tape
-- **NOT:** promo · Cubs restage · sport menu · AGS · 1u-loss open · hard ask · −76u valley
+---
 
 ### 1 · WHO
-Football bettors walking into September — about to score us (and their own slate) on **win rate**, then spray 1u across NFL/CFB.
+Someone staring at a total with more money on the Under.
 
 ### 2 · PURPOSE
-**Educate** — August is the receipt that **size** is how this book prints, so when NFL/CFB lock they already know which tickets to watch.
-
-**Ask:** none. Desire plant: watch the ones we size.
+**Give.** Live lock. No ask. No URL. No UPGRADE. Ask just fired (Dom QT) — this is the give.
 
 ### 3 · ONE
-August almost tripled July on a **worse** win rate because 78 sized tickets went 56-22 (+65.6u) and covered 168 small ones that leaked. That’s the filter for football — not 53%.
+**Every losing dollar on this total is on the Under.** We locked the Over.
 
 | Test | |
 |------|---|
-| Understand | hit fewer, made more, because of size |
-| Believe | July 55.2% / +17u vs Aug 53.2% / +46.8u · 168 vs 78 tickets |
-| Unique | more junk tickets than sized ones and the month still printed |
+| Understand | Losers piled Under. We took Over. |
+| Believe | Locked card split + map. 3u. +125. |
+| Unique | $3.3K losing / $0 on us — not a `$XK at 2×` clone ($1K at 1.4× is not scarce enough to open). |
 
-### 4 · SPCL ★
-**S + C** (P seasons — July→August say–do, not owned)
-- **S** — sized book they need on Sundays
-- **C** — July vs August WR/PnL + 168 vs 78 whole truth
+### 4 · SPCL — **C + S**
+- **C** — losing $ all Under · other side $5.2K at 0% ROI
+- **S** — we locked 3u Over +125
+- P = lead cashed two overs yesterday (after the hook)
+- Do not own L as the pillar
 
-### 5 · STUFF (Firestore 2026-08-31T15:32Z · through 8/30)
-- August: 372 · 198-174 · **53.2%** · **+46.8u** · +4.9% ROI · stake 955.2u
-- July: 230 · 127-103 · **55.2%** · **+17.04u** · +2.3% ROI · stake 753.55u
-- WR down, profit ×2.75, stake only ×1.27 (not “we just bet more”)
-- 1u: **168** · 76-92 · −20.27u · −12.2% — **2.15×** the 5u+ ticket count
-- 2–3u: 94 · 47-47 · −6.62u — the “kinda like it” middle
-- 4u: 32 · 19-13 · +8.07u — where it turns
-- 5u+: **78** · **56-22** · 71.8% · **+65.62u** · +15.7% ROI
-- NFL preseason −0.42u — don’t flex · CFB none yet
-- Kill in hero: all-time · sport menu · 27% stake lecture (one human line max) · AGS · V12 · −76u
+### 5 · STUFF
+DET @ CLE · **Over 7.5** · **LOCKED 3.0u** · card **+125** (Firestore lock +114 poly / pin +125) · to win +3.75u · SET
+Lead **9214c2**: **$1,035** · **1.38×** usual · UI 33-21 · +27% · 61% WR · 67% beat close · usual ~$749
+Second proven **4b912c**: **$624** · 0.86× · L30 +$43K / 270-229 / 54% (do not open on him)
+Against: **$5.2K** · 1 proven + 2 secondary · UI 47.5% WR · 56% CLV · **0% ROI**
+Losing-wallet row on card: **$0** Over · **$3.3K** Under
+Confirmed row: **$2.2K** Over vs **$1.8K** Under
+Lead tape (9/4): Over 8.5 +111 2.1× **W** · Over 7.5 +117 1.0× **W** · Under 7 0.3× **W**
+Do **not** put 2.1× / $1.6K / Tier A / Vault / SHARP on this ticket. That’s yesterday’s press and system labels.
+CFB Missouri State +40.5 is a different card — kill.
 
-### 6 · HOOK QA
-Printer open stays (Dale: good). Depth is the **body** — July paradox + 168 vs 78 — not a longer table.
+### 6 · HOOK
 
+**Chosen** — losing pile, not the 1.4×.
 ```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
-```
-- Screenshot S/C ✓
-- What/how/so what now has a *why* (worse WR, more small tickets, sized ones ate) ✓
-- Kill: skeleton table · “don’t watch the 53%” as the whole lesson · ATH clone · promo · ask
+$3.3K IN LOSING WALLETS.
 
-### 7–8 · Algorithm
-Add July WR paradox + ticket counts (proof of ONE). Delete stake-percentage class. Delete slogan-only close. Football close = Sunday-slate trap = the 168 without the 56-22. No ask.
+All of it on the Under.
+```
+
+Kill list: `$1K AT 1.4×` as line 1 (not scarce) · convert-as-open · thank Dom · +60u · 5-2 · Vault / Tier A / SHARP · 2.1× on today’s ticket
 
 ---
 
-## HERO — single tweet
+## Hero — paste this
 
-**Attach:** unit split (1u vs 5u+) if you’ve got it. Text holds without it.
+**Attach in this order:**
+1. Locked Over 7.5 card (losing-wallet split is in the shot)
+2. Money map (lead $1.0K / other side $5.2K)
+3. Lead wallet tape (two overs yesterday)
 
-### Copy this ↓
-
-```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
-
-July we hit more often.
-55% vs 53%.
-July made +17u.
-
-We didn’t get hotter.
-We sized.
-
-5u+ went 56-22.
-+65.6u on 78 tickets.
-
-The 1u book was 168 tickets.
-76-92. −20.3u.
-
-Twice as many small ones
-as sized ones.
-The small ones leaked.
-The sized ones covered it
-and still printed the month.
-
-2–3u sat in the middle.
-47-47. −6.6u.
-
-4u is where it turns.
-19-13. +8.1u.
-
-Football’s a full Sunday slate.
-The trap is 1u on every game
-and calling the win rate the season.
-
-That’s the 168 tickets
-with none of the 56-22.
-
-Watch the ones we size.
-
-Big September is loading.
-```
-
-### Attach note
-Unit split (1u red · 5u+ green). Not a sport menu. Not MAX/TOP.
-
-### SR
-**None.** PURPOSE = educate. Desire plant is the close.
-
----
-
-## Open alt (tighter — if this feels long)
-
-Same WHO / PURPOSE / ONE. Cuts the 2–3u / 4u rungs; keeps July paradox + 168 vs 78.
+**271 chars.** Compose: https://x.com/intent/tweet?text=%243.3K%20IN%20LOSING%20WALLETS.%0A%0AAll%20of%20it%20on%20the%20Under.%20Zero%20on%20our%20side.%0A%0AWe%20locked%20the%20Over.%20Tigers-Guardians%207.5.%20%2B125.%203%20units.%0A%0ALead%20wallet%20is%20%241%2C000.%201.4%C3%97%20his%20usual.%2033-21.%20Beats%20the%20close%2067%25.%0A%0AHe%20cashed%20two%20overs%20yesterday.%0A%0AThe%20Under%20has%20%245.2K%20sitting%20on%20it%20at%200%25%20ROI.
+**No URL. No UPGRADE.** Crop Vault / Tier A if they show.
 
 ```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
+$3.3K IN LOSING WALLETS.
 
-July we hit more often.
-55% vs 53%.
-July made +17u.
+All of it on the Under. Zero on our side.
 
-We didn’t get hotter.
-We sized.
+We locked the Over. Tigers-Guardians 7.5. +125. 3 units.
 
-5u+: 56-22. +65.6u.
-78 tickets.
+Lead wallet is $1,000. 1.4× his usual. 33-21. Beats the close 67%.
 
-1u: 76-92. −20.3u.
-168 tickets.
+He cashed two overs yesterday.
 
-Twice as many small ones.
-They leaked.
-The sized ones covered it
-and still printed the month.
-
-Football’s a full Sunday slate.
-The trap is 1u on every game.
-
-Watch the ones we size.
-
-Big September is loading.
+The Under has $5.2K sitting on it at 0% ROI.
 ```
+
+### Self-reply
+None.
+
+### RT line
+`All of it on the Under. Zero on our side.`
