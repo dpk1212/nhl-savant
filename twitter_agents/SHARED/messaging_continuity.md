@@ -7,36 +7,36 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-05 AM · Hero GIVE · year already paid |
+| Last updated | 2026-09-05 PM · QT Dom · no data feed / no capper |
 | CSV window | Aug 26–Sep 1, 2026 |
-| Ask temperature | **Warm.** Sorry-waiting is the close. No UPGRADE. No DM pile-on. |
-| Account arc | +60.24u in 7 days. People who joined this week already paid for the year. |
+| Ask temperature | **Warm-hot.** Convert is the close. No UPGRADE. No URL. |
+| Account arc | Member printer. No data feed. No capper. Sharp tickets. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/05 AM | Hero **GIVE** | `+60.24u IN 7 DAYS.` / year already paid | **S + C** | sorry-waiting | **Staged** |
+| 9/05 PM | QT **ASK** | `+$1,742.` / he didn’t buy a data feed or a capper | **C + L** | we’ve got you covered | **Staged** |
+| 9/05 AM | Hero GIVE | `+60.24u IN 7 DAYS.` / year already paid | S + C | sorry-waiting | Staged |
 | 9/04 PM r6 | QT GIVE + DM | One thing I love / public money vs our sharps | L + C | DMs | Staged — Dale rewrite |
 | 9/04 AM r5 | QT GIVE | Every total on that list was an Over | S + C | none | Killed: not his voice |
 | 9/03 PM | Hero GIVE | `3 PROVEN ON THE UNDER` | S + C | none | Staged |
-| 9/03 | Hero GIVE | `+134.17u IN 94 DAYS` | S + C | none | Staged AM |
 
 ---
 
 ## Angle lock
-**ONE:** If you joined this week the year is already paid. +60.24u in 7 days.  
-**Hook:** August printer silhouette + week-not-month paradox.  
-**Close:** congrats (year + vacation) · sorry to those waiting.  
-**Ask:** none beyond the `..`  Attach 7D chart then yesterday card.
+**ONE:** You don’t need a data feed or a capper. We put you on the sharp tickets.  
+**Hook:** +$1,742 · he didn’t buy the feed or a capper.  
+**Close:** hundreds / maybe-edge / we’ve got you covered.  
+**Ask:** that close. No URL. QT Dom’s card only.
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** 7-day +60u printer · year-paid-in-a-week · Fri 5-2 / Real Madrid L / Cardinals-Rockies Over 11.5  
+**Spent this beat (once posted):** Dom +$1,742 / 13-3 · no-data-feed / no-capper ask  
 **Still open:** Nats +$69K · TheBetDesk QT · CFB `$XK` · NFL week 1 Sept 10  
-**Don’t:** 5-2 recap reopen · convert-as-open · UPGRADE · best kept secret · V12 · $6,024 as line 1 · restage BetMGM 5-1 / CWS 3v1 / +134u / −76u
+**Don’t:** thank Dom · convert-as-open · become-sharp · UPGRADE · +60u reprint · 5-2 trophy · BetMGM 5-1 / −76u
 
 ---
 
@@ -48,15 +48,15 @@
 ---
 
 ## FORWARD LOOK — after this posts
-1. Live give / `$XK` if it exists (Status is fed — don’t reprint +60u)
+1. Live give / `$XK` if it exists (ask just fired — give next)
 2. NFL week 1 (Sept 10)
 3. Nats +$69K if still unused
-**NOT:** another recap · convert-as-open · restage 3v1 / +134u / −76u / 5-2 trophy
+**NOT:** another convert hero · thankful OG · become-sharp · +60u / 5-2 restage
 
 ---
 
 ## Agent close-out
-- [x] Dale spine: 5-2 · lost one 5u / hit the other · year paid + vacation · sorry waiting
-- [x] Hook = printer + unique, not 5-2 / congrats / sorry
-- [x] No V12 · no best kept secret · no UPGRADE · no $ lead
+- [x] Dale spine: data/cappers · sharp tickets · results like this
+- [x] Hook = $ + he didn’t buy, not thank-you / not convert-as-open
+- [x] No UPGRADE · no URL · no our dashboard on the QT
 - [x] Staged `twitter_drafts/COPY_PASTE.md`
