@@ -71,8 +71,8 @@ NHLTue 09/29
 | TUE 09/295:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>40-42<br>-<br>+110Bovada | +106 | +106 | - | +110 | +109 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>69-32<br>-<br>-120BetOnline | -120 | -120 | - | -130 | -121 | - | - |
 
-| TUE 09/297:00 PM<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>57-44<br>-<br>-102Heritage | -104 | -109 | - | -105 | -102 | - | - |
-| ![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>32-50<br>-<br>-105BetOnline | -110 | -105 | - | -115 | -108 | - | - |
+| TUE 09/297:00 PM<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>57-44<br>-<br>-101Heritage | -104 | -109 | - | -105 | -101 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>32-50<br>-<br>-105BetOnline | -110 | -105 | - | -115 | -109 | - | - |
 
 | TUE 09/298:00 PM<br>![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>34-48<br>-<br>+115Bovada | +104 | +104 | - | +115 | +107 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>47-41<br>-<br>-118BetOnline | -118 | -118 | - | -135 | -119 | - | - |
