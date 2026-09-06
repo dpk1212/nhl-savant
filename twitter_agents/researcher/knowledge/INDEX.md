@@ -20,6 +20,8 @@ Researcher appends; never delete without logging why in research_log.
 | [hormozi_rule_of_one.md](hormozi_rule_of_one.md) | **Rule of One** (Masterson / *Great Leads*) — one big idea; kill toss salad copy |
 | [hormozi_spcl.md](hormozi_spcl.md) | **Hormozi SPCL canon** — Status·Power·Credibility·Likeness + influence laws |
 | [hormozi_qual_algorithm.md](hormozi_qual_algorithm.md) | **Qual · Algorithm · Trust economy** — quality volume, manufacturing order, show-me times |
+| [hormozi_brand_pairing.md](hormozi_brand_pairing.md) | **2026 pairing** (Ep 958) — brand = deliberate pairing through an outcome; yum ≠ advertising |
+| [hormozi_proof_machine.md](hormozi_proof_machine.md) | **2026 proof machine** (Ep 976 + 990) — demonstrate/document · start free · proof over promise · pain first |
 
 ## RETIRED gates (fossils — do not require)
 
@@ -56,3 +58,6 @@ Researcher appends; never delete without logging why in research_log.
 - 2026-08-27 **Tweet pathway** locked after Dale override: no jump-to-copy; WHO/PURPOSE first; own 1–2 SPCL; hook QA; stuff > container — see `hormozi_tweet_process.md`
 - 2026-08-27 **Timeline review** added: every run refreshes `SHARED/recent_timeline_latest.md` (analytics + recent posts → SPCL mix, spent themes, ask temperature) before PURPOSE/hook
 - 2026-08-27 **Ingest pipelines** locked: `hormozi_ingest.md` (transcript → max synthesize → canon) · `analytics_csv_ingest.md` (CSV → timeline) · desk trigger rule `hormozi-ingest-triggers.mdc`
+- 2026-09-01 **CSV Aug 26–Sep 1** ingested: `$120K at 2×` #1 · anti-sexy printer PV king (49) · `DOWN 76` 8R · lost-on-site 9R · **convert-as-open = 1 eng** · thankful Dom QT = 35 · pathway living window + ask/hook laws patched — see `hormozi_tweet_process.md`, `recent_timeline_latest.md`, `kill_list.md`
+- 2026-09-06 **Hormozi 2026 brand stack** (desk fetch, not Dale paste): Ep 958 pairing · Ep 976 demonstrate/document · Ep 990 start-free + proof-over-promise + pain-first — see `hormozi_brand_pairing.md`, `hormozi_proof_machine.md`, `sources/hormozi_brand_2026-09-06_notes.md`
+

@@ -1,154 +1,93 @@
-# Twitter — 2026-08-31 · August MTD · sized-up printed
-**Pathway — FULL (Hormozi OS)** — not the retired Pulse/Learn/Coach/Researcher/Strategist/Editor loop
+# Twitter — 2026-09-06 late PM · QT BUZZ/GIVE · Fawkes most-bet list · ND -20.5
+**Dale:** ND -20.5 is one of the most bet plays this weekend. Indicators flashing: massive steam while Pinnacle max is rising. Sharp up $XXXX L30. Massive hook. Impressions / algorithm. QT the Fawkes 13K parent.
 
-### 0 · Spine (Dale — law)
-- perfect post for the performance of the month so far
-- added a new sport · great month
-- highlight **actual performance by unit tiers**
-- tease **NFL / CFB locking plays soon**
-- updates to performance with another month of data
-- **Big September is loading**
+---
 
-### 0b–0c · Continuity / forward look
-- Football arriving · they still score on WR · last draft was WHO/PURPOSE-right, **Qual-thin** (hook + table + slogan)
-- Depth that serves the ONE idea only (not toss salad): July WR was *higher* · twice as many 1u tickets as 5u+ · sized ones covered the leak
-- ATH “win rate didn’t even go up” already shipped — **don’t clone**. This is July vs August, new tape
-- **NOT:** promo · Cubs restage · sport menu · AGS · 1u-loss open · hard ask · −76u valley
+### 0 · Spine
+- Parent (@BFawkes22, 13K): five most-bet Week 1 Top 25 sides at BetMGM. LSU -10 ✅ · Bama -28 ✅ · Indiana -40.5 ❌ · Oregon -24.5 ❌ · **ND -20.5 ?**
+- Dale: most-bet play · steam + **Pinnacle max rising** · sharp up L30
+- Receipts: lead **...3bdd7e** L30 **+$36K** · **$2.4K** on ND -20.5 · 3.0u locked · PIN chart spike · PIN **−105** / ticket **−130**
+
+### 0b · Timeline
+Ask fired this morning (MLB +100u). Last QT = Ole Miss -7 vs ML. This slot = **buzz + give** for impressions. Do not ask. Do not ignore this parent.
 
 ### 1 · WHO
-Football bettors walking into September — about to score us (and their own slate) on **win rate**, then spray 1u across NFL/CFB.
+Someone staring at that 2–2 list, waiting on the last side.
 
 ### 2 · PURPOSE
-**Educate** — August is the receipt that **size** is how this book prints, so when NFL/CFB lock they already know which tickets to watch.
-
-**Ask:** none. Desire plant: watch the ones we size.
+**Buzz / give.** Unfinished stake. Drive impressions. No URL. No first-week. No UPGRADE.
 
 ### 3 · ONE
-August almost tripled July on a **worse** win rate because 78 sized tickets went 56-22 (+65.6u) and covered 168 small ones that leaked. That’s the filter for football — not 53%.
+**The last most-bet side of the weekend is Notre Dame -20.5 — and the market is steaming while Pinnacle max rises.**
 
 | Test | |
 |------|---|
-| Understand | hit fewer, made more, because of size |
-| Believe | July 55.2% / +17u vs Aug 53.2% / +46.8u · 168 vs 78 tickets |
-| Unique | more junk tickets than sized ones and the month still printed |
+| Understand | 2 hit, 2 missed, one left. That’s ND -20.5. |
+| Believe | Parent 2–2 + PIN spike + PIN −105 vs ticket −130 + $36K L30 + 3u lock |
+| Unique | Unfinished list + PIN max rising. Not a tickets-vs-wallets clone. Not `$0 ON LOUISVILLE`. |
 
-### 4 · SPCL ★
-**S + C** (P seasons — July→August say–do, not owned)
-- **S** — sized book they need on Sundays
-- **C** — July vs August WR/PnL + 168 vs 78 whole truth
+**Yum:** you see the last ticket *and* the steam behind it.
 
-### 5 · STUFF (Firestore 2026-08-31T15:32Z · through 8/30)
-- August: 372 · 198-174 · **53.2%** · **+46.8u** · +4.9% ROI · stake 955.2u
-- July: 230 · 127-103 · **55.2%** · **+17.04u** · +2.3% ROI · stake 753.55u
-- WR down, profit ×2.75, stake only ×1.27 (not “we just bet more”)
-- 1u: **168** · 76-92 · −20.27u · −12.2% — **2.15×** the 5u+ ticket count
-- 2–3u: 94 · 47-47 · −6.62u — the “kinda like it” middle
-- 4u: 32 · 19-13 · +8.07u — where it turns
-- 5u+: **78** · **56-22** · 71.8% · **+65.62u** · +15.7% ROI
-- NFL preseason −0.42u — don’t flex · CFB none yet
-- Kill in hero: all-time · sport menu · 27% stake lecture (one human line max) · AGS · V12 · −76u
+### 4 · SPCL — **S + C**
+- **S** — last side left · we locked 3u · PIN max we can see
+- **C** — parent 2–2 · $36K L30 · $2.4K · 63% beat close · PIN −105 vs −130
+- Do not own L as the pillar
+
+### 5 · STUFF
+Parent: 2 ✅ · 2 ❌ · ND -20.5 pending
+Lock: Wisconsin @ ND · **Dame -20.5** · **3.0u** · ticket **−130** · to win +2.31u · ~7h 53m at shot
+Lead **...3bdd7e**: **$2.4K** at **−113** · **1.2×** usual $2.0K · 27-29 · **+54% ROI** · 48% WR · **63% beat close** · L30 **+$36K** / chart **+$35.7K** · L10 6-4
+Plays like this: 58.5% WR · +9.2% ROI
+PIN **−105** · best −112 · fair −119 · now −130 · EV +1.3% · dashed max line **rising** (Dale: Pinnacle max + steam)
+Full split $637K / $103K — mixed book, not the spear
+Confirmed $2.4K vs $1.4K · losing $299 all on ND — **do not open on losing $**
+CFB spread tape 10-15 −$3.2K — **do not claim he’s a spread printer**. +$36K is L30 (CFB overall on the card). **Crop the spread row** if that card is attached.
+**Do not say:** GOLD · SHARP TIER A · Vault · USUAL in line 1–2 · 1.2× as the open · V12 · convert
 
 ### 6 · HOOK QA
-Printer open stays (Dale: good). Depth is the **body** — July paradox + 168 vs 78 — not a longer table.
+What: 2 hit, 2 missed, one left.  
+How: PIN max rising, steam, $36K wallet on ND -20.5.  
+So what: we locked 3u.  
+Uses the parent’s unfinished list. Does **not** restate “Five most-bet Week 1 sides.”
+Not our ✅/❌ ledger — Zeigarnik on *their* leftover ticket.
 
+**Chosen**
 ```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
-```
-- Screenshot S/C ✓
-- What/how/so what now has a *why* (worse WR, more small tickets, sized ones ate) ✓
-- Kill: skeleton table · “don’t watch the 53%” as the whole lesson · ATH clone · promo · ask
+2 HIT. 2 MISSED. ONE LEFT.
 
-### 7–8 · Algorithm
-Add July WR paradox + ticket counts (proof of ONE). Delete stake-percentage class. Delete slogan-only close. Football close = Sunday-slate trap = the 168 without the 56-22. No ask.
+Pinnacle max is rising. Massive steam.
+```
+
+Kill list: `$0 ON LOUISVILLE` · BetMGM top-tickets clone · restating the five-game open · convert · GOLD · 1.2× as line 1 · spread 10-15 as a flex
 
 ---
 
-## HERO — single tweet
+## QT — paste this on the Fawkes tweet
 
-**Attach:** unit split (1u vs 5u+) if you’ve got it. Text holds without it.
+**Attach under the QT:**
+1. Steam / PIN card (max rising — Dale’s indicator). Crop any GOLD / contested-as-identity chrome if it reads as a label.
+2. Lead wallet tape (`+$36K` graph + $2.4K + 63%). **Crop:** GOLD · SHARP TIER A · Vault · the CFB spread 10-15 −$3.2K row.
+3. Money map (70% proven). **Crop:** GOLD · Vault.
 
-### Copy this ↓
-
-```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
-
-July we hit more often.
-55% vs 53%.
-July made +17u.
-
-We didn’t get hotter.
-We sized.
-
-5u+ went 56-22.
-+65.6u on 78 tickets.
-
-The 1u book was 168 tickets.
-76-92. −20.3u.
-
-Twice as many small ones
-as sized ones.
-The small ones leaked.
-The sized ones covered it
-and still printed the month.
-
-2–3u sat in the middle.
-47-47. −6.6u.
-
-4u is where it turns.
-19-13. +8.1u.
-
-Football’s a full Sunday slate.
-The trap is 1u on every game
-and calling the win rate the season.
-
-That’s the 168 tickets
-with none of the 56-22.
-
-Watch the ones we size.
-
-Big September is loading.
-```
-
-### Attach note
-Unit split (1u red · 5u+ green). Not a sport menu. Not MAX/TOP.
-
-### SR
-**None.** PURPOSE = educate. Desire plant is the close.
-
----
-
-## Open alt (tighter — if this feels long)
-
-Same WHO / PURPOSE / ONE. Cuts the 2–3u / 4u rungs; keeps July paradox + 168 vs 78.
+**270 chars.** Compose: https://x.com/intent/tweet?text=2%20HIT.%202%20MISSED.%20ONE%20LEFT.%0A%0APinnacle%20max%20is%20rising.%20Massive%20steam.%0A%0ANotre%20Dame%20-20.5.%20Last%20most-bet%20side%20of%20the%20weekend.%0A%0AThe%20sharp%20we%20track%20is%20up%20%2436%2C000%20the%20last%2030%20days.%20%242%2C400%20on%20this%20one.%20Beats%20the%20close%2063%25.%0A%0APinnacle%20still%20-105.%20Ticket%27s%20-130.%0A%0AWe%20locked%203%20units.
+**No URL. No ask.**
 
 ```
-+46.8u IN AUGUST.
-ALMOST 3× JULY.
+2 HIT. 2 MISSED. ONE LEFT.
 
-July we hit more often.
-55% vs 53%.
-July made +17u.
+Pinnacle max is rising. Massive steam.
 
-We didn’t get hotter.
-We sized.
+Notre Dame -20.5. Last most-bet side of the weekend.
 
-5u+: 56-22. +65.6u.
-78 tickets.
+The sharp we track is up $36,000 the last 30 days. $2,400 on this one. Beats the close 63%.
 
-1u: 76-92. −20.3u.
-168 tickets.
+Pinnacle still -105. Ticket's -130.
 
-Twice as many small ones.
-They leaked.
-The sized ones covered it
-and still printed the month.
-
-Football’s a full Sunday slate.
-The trap is 1u on every game.
-
-Watch the ones we size.
-
-Big September is loading.
+We locked 3 units.
 ```
+
+### Self-reply
+None.
+
+### RT line
+`2 HIT. 2 MISSED. ONE LEFT.`

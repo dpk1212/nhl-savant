@@ -8,7 +8,9 @@ Those systems are **retired**. Do not resurrect them.
 2. `twitter_agents/researcher/knowledge/hormozi_rule_of_one.md` — Rule of One (one big idea; no toss salad)
 3. `twitter_agents/researcher/knowledge/hormozi_spcl.md` — Status · Power · Credibility · Likeness
 4. `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md` — Qual · Algorithm · Trust economy
-5. `twitter_agents/SHARED/brand_seed.md` — product voice / bans (still binding)
+5. `twitter_agents/researcher/knowledge/hormozi_brand_pairing.md` — 2026 pairing through outcome
+6. `twitter_agents/researcher/knowledge/hormozi_proof_machine.md` — 2026 start-free · proof over promise · pain first
+7. `twitter_agents/SHARED/brand_seed.md` — product voice / bans (still binding)
 
 **When present:** `hormozi_value_equation.md` · `hormozi_diagnostic_sale.md`
 

@@ -112,3 +112,13 @@ Patterns that underperform, get muted, or trip classifiers.
 - **2026-07-12 expert final HARD FAIL:** redundant restates; single-play heroes over ~200 without comparison job; insider “too heavy or exactly right”; dead matchup tags; decorative hype emoji; invented injury/weather “why”
 - **2026-07-12 Dale HARD FAIL:** skipping live wallet WR / ROI / size-vs-average when available; inventing “zero against”; orphan closers; inventing last-10 before export exists
 - **2026-07-14 civil-war HARD FAIL risk:** France-as-"secret" / tipster theater on a WC lock · three-outcome wallet checklist posing as civil war · soft process closer ("trusting the process") after sizing paradox · SUPER/HC/TOP chrome without same-line plain translation · certainty-clone of Trent MEGA MAX words · dual/triple play menu when one tension axis is path vs size
+- **2026-09-01 CSV HARD FAIL:** convert-paragraph as hero / line 1 — `I don't know what people are using for their data… Upgrade 25%` (**1 eng / 272 impr / 0 PV**). Convert words = close only.
+- **2026-09-01 CSV HARD FAIL:** lecture-ask open — `I don't know what you're using for your data or model` (**4 eng**)
+- **2026-09-01 CSV HARD FAIL:** promo-code hero SUMMER (**13 eng**). URL clicks on a dead post ≠ trials.
+- **2026-09-01 CSV HARD FAIL:** customer/OG QT opened on gratitude — `Thankful to have someone like Dom…` (**35 eng**). QT law: their result/disaster in line 1, not Dale feelings.
+- **2026-09-01 CSV:** `Here is how the last 30 days played` (**44 eng**) vs `+46.8u IN AUGUST` (**94 / 3R**) — printer open vs recap furniture on the same idea
+- **2026-09-01 CSV:** become-sharp clones (**0 replies**) · `Seems legit` · Sale ✅✅ recap (0R) · empty `run it back` (3762 impr / 1R / 14 PV = impression trap) · Sports-folder dream restage (0R)
+- **2026-09-06 Hormozi 2026:** captioning three cards instead of walking the audit · opening on our result/promise when the prospect is still in the loud-side pain · pairing Sharp Flow with Over-as-brand or Under-as-brand (we lock both) · stacked-offer / convert open (proof over promise)
+- **2026-09-06 Dale HARD FAIL:** “we don’t pick games” — we do. Process is wallets → qualify → every position → **pick the game and lock the size** → phone. Never write the opposite.
+- **2026-09-06 Dale HARD FAIL:** BetMGM QT that ignores the parent. `$0 ON LOUISVILLE` when the graphic’s live slip is **Ole Miss -7 (#2 most bet slip)** and we locked **Ole Miss ML**. QT must use the parent’s actual ticket, not a side list we preferred.
+

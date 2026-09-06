@@ -27,11 +27,36 @@ Seed 2026-07-10:
 - **One big idea** per hero: easy to understand · easy to believe · interesting/unique.
 - Sub-bullets / stories / facts only **reinforce** that idea — never parallel competing pitches (**toss salad** banned).
 - USP = one selling proposition, not nineteen. Hard part = choosing the tip; writing gets simple after.
-- Stack order: **ONE → SPCL → QUAL** (pick spear tip before dressing or scoring copy).
+- Stack order: **ONE → hook twist → SPCL as proof → QUAL** (pick spear tip before dressing or scoring copy). SPCL is not the angle.
 - Vault: `researcher/knowledge/hormozi_rule_of_one.md` (Agora/91-of-100 figures = Hormozi recount, not independently verified)
+
+2026-09-01 eve (Dale on TheBetDesk QT):
+- Printer open without a **line-2 paradox** is not enough (`ON THE PLAYS WE SIZE` = jargon, fails unique).
+- Educate hook silhouette that already won: `+46.8u IN AUGUST.` / `ALMOST 3× JULY.`
+- This QT’s spear: +67.73u last 30 **and** the 6-unit plays were 8 tickets (honest: those 8 made +13.00u, not the 67).
+
+2026-09-01 lock (BetMGM QT — Dale: follow process / correct SPCL):
+- Do **not** clone `$XK AT Y×` onto a **$1.8K** ticket. Status = scarce control. On this feed $1.8K is not scarce; **3.8× vs their #1 ticket** is.
+- Correct letters for a tickets-vs-proven QT: **S + C** in the `90% money / 0% proven` family (`hormozi_spcl.md`) — not “S+C because Cubs is hot.”
+- Two on-fire wallets in one QT = toss salad. Nats +$69K (0.2× light) is the next hero, not this parent.
 
 2026-08-27 (Hormozi tweet manufacturing locked):
 - Never jump to copy. Pathway: Timeline → WHO → PURPOSE → ONE → 1–2 SPCL → STUFF → HOOK QA → draft → Ask decision.
 - Drop CSV → `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` before drafting.
 - Drop Hormozi transcript → `hormozi_ingest.md` full synthesize (extract/conflict/SF-map/canon/leverage card) before drafting.
 - Stuff > container. Own 1–2 SPCL. Ask temperature from timeline.
+
+2026-09-01 (CSV Aug 26–Sep 1 — measured, 29 heroes):
+- **S+C live `$XK at Y× usual`** still #1 (Cubs 237/5R). Ride that silhouette on new tape only.
+- **Anti-sexy printer** (`No sexy post here…`) = **PV champion (49)**. L+C when the card is in the image.
+- **Valley / ownership** = reply factory (`DOWN 76` 8R · `LOST ON THE SITE` 9R). Don’t rerun −76u; FAQ only if PURPOSE=buzz.
+- **Convert paragraph as hero/line 1 = death (1 eng).** Thankful customer QT = 35. SUMMER = 13. Convert words stay the close after pudding.
+- Become-sharp clones get likes, **0 replies** — spent, not an ask vehicle.
+- Recap furniture (`here is how the last 30 days played` 44) loses to the same idea with a printer open (`+46.8u IN AUGUST` 94/3R).
+
+2026-09-06 (Hormozi 2026 brand stack — Ep 958 / 976 / 990):
+- Brand = **pairing through an outcome**, not a lock caption. Pair Sharp Flow with “you don’t sit with the dead pile” — never with Over-as-identity or Under-as-identity.
+- Live give = **demonstrate and document** the audit. Attach order = the walk (pain they see → lock → say–do). Captioning three cards is not the post.
+- **Proof over promise.** Start free. Four proof elements: recent · visual · volume-on-one-spear · **pain first** (loud side they’re already staring at, classified in ≤2 lines).
+- Vault: `hormozi_brand_pairing.md` · `hormozi_proof_machine.md`
+
