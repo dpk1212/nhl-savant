@@ -7,36 +7,38 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-05 eve · Hero GIVE · DET@CLE Over 7.5 |
+| Last updated | 2026-09-06 · Hero GIVE rewrite · DET@CLE Over 7.5 |
 | CSV window | Aug 26–Sep 1, 2026 |
-| Ask temperature | **Cold-warm.** Give just fired. No ask. |
-| Account arc | Losing $ all on the Under. We locked the Over. |
+| Ask temperature | **Cold-warm.** Give just restaged. No ask. |
+| Account arc | Loud Under is dead money. We locked the Over. |
+| Hormozi 2026 | Pairing + proof machine now canon. Next posts must name the yum and start in their pain. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/05 eve | Hero **GIVE** | `$3.3K IN LOSING WALLETS` / all Under | **C + S** | none | **Staged** |
+| 9/06 | Hero **GIVE** rewrite | `$5.2K ON THE UNDER` / 0% + $3.3K losing / zero on us | **C + S** | none | **Staged** — replaces 9/05 eve `$3.3K IN LOSING WALLETS` |
+| 9/05 eve | Hero GIVE | `$3.3K IN LOSING WALLETS` / all Under | C + S | none | **Superseded** — same lock, weaker pairing (our frame first, leftover $5.2K) |
 | 9/05 PM | QT ASK | `+$1,742.` / no data feed no capper | C + L | we’ve got you covered | Staged |
 | 9/05 AM | Hero GIVE | `+60.24u IN 7 DAYS.` / year already paid | S + C | sorry-waiting | Staged |
 | 9/04 PM r6 | QT GIVE + DM | One thing I love / public money vs our sharps | L + C | DMs | Staged — Dale rewrite |
-| 9/04 AM r5 | QT GIVE | Every total on that list was an Over | S + C | none | Killed: not his voice |
 
 ---
 
 ## Angle lock
-**ONE:** Losing wallets on this total are 100% Under. We locked Over 7.5.  
-**Hook:** `$3.3K IN LOSING WALLETS.` / all Under, zero on us.  
-**Close:** $5.2K Under at 0% ROI.  
-**Ask:** none. Attach lock card → map → lead tape.
+**ONE:** The side that looks like the play on this total is the losing side. We locked Over 7.5.  
+**Yum:** you don’t sit with the dead pile. Not Over-as-brand.  
+**Hook:** `$5.2K ON THE UNDER.` / `0% ROI. $3.3K of it is losing money. Zero on us.`  
+**Close:** He cashed two overs yesterday.  
+**Ask:** none. Attach **map → lock card → lead tape**.
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** DET@CLE Over 7.5 · losing-$ Under pile · 9214c2 1.4×  
+**Spent this beat (once posted):** DET@CLE Over 7.5 · loud-Under 0% · losing-$ Under pile · 9214c2 1.4×  
 **Still open:** Nats +$69K · TheBetDesk QT · CFB `$XK` · NFL week 1 Sept 10  
-**Don’t:** `$1K at 1.4×` as a Status open · convert · +60u / 5-2 · Dom thank-you · Vault / Tier A · 2.1× on this ticket
+**Don’t:** `$1K at 1.4×` as a Status open · convert · +60u / 5-2 · Dom thank-you · Vault / Tier A · 2.1× on this ticket · restage this Over · pair Over/Under as brand identity
 
 ---
 
@@ -51,12 +53,13 @@
 1. NFL week 1 (Sept 10) or a real `$XK at Y×` if it appears
 2. Nats +$69K if still unused
 3. Quiet board → anti-sexy printer only with a new receipt
-**NOT:** another convert · this Over restage · +60u / 5-2 / −76u
+**NOT:** another convert · this Over restage · +60u / 5-2 / −76u · Under-as-identity follow-up
 
 ---
 
 ## Agent close-out
-- [x] Live give after Dom ask
-- [x] Hook = losing pile, not 1.4× / not 3-0 recap
-- [x] No Vault · no Tier A · no 2.1× on today’s ticket
+- [x] Hormozi 2026 ingested (pairing + proof machine)
+- [x] Pain-first hook (pile they see) classified in line 2
+- [x] Attach order = the walk (map → lock → tape)
+- [x] No Vault · no Tier A · no 2.1× on today’s ticket · no ask
 - [x] Staged `twitter_drafts/COPY_PASTE.md`
