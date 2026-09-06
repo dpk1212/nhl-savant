@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-06 AM r3 · Hero **ASK** · body fix: we pick the game |
+| Last updated | 2026-09-06 AM r4 · Hero **ASK** · process credit in the body |
 | CSV window | Aug 26–Sep 1, 2026 |
 | Ask temperature | **Hot after this posts.** Give next unless Dale overrides. |
 | Account arc | Crossed 100u MLB. 12 plays did almost half. Platform ask. |
@@ -17,7 +17,8 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/06 AM r3 | Hero **ASK** | hook locked · body = wallets then **we pick the game** | **S + C** | first week free + SR | **Staged** |
+| 9/06 AM r4 | Hero **ASK** | hook locked · body = target / metrics / full book / synthesize one pick+size | **S + C** | first week + SR | **Staged** |
+| 9/06 AM r3 | Hero ASK | hook locked · we pick the game | S + C | first week | **Superseded** — Dale: undersold the process |
 | 9/06 AM r2 | Hero ASK | same hook · body said “we don’t pick games” | S + C | first week | **Killed** — Dale: we do pick games |
 | 9/06 | Hero GIVE | `$5.2K ON THE UNDER` | C + S | none | Staged later |
 | 9/05 PM | QT ASK | `+$1,742.` / no data no capper | C + L | we’ve got you covered | Staged |
@@ -26,7 +27,7 @@
 ---
 
 ## Angle lock
-**ONE:** Crossed 100u because we pick the games after we track/qualify wallets and lock size.  
+**ONE:** Crossed 100u because we target, qualify on metrics, track the full book, then synthesize one pick and one size.  
 **Yum:** the pick hits your phone. No feed. No capper.  
 **Hook:** `+104.95u IN MLB.` / `Almost half of it came from 12 plays. 11-1.`  
 **Close:** First week is free. Watch it and grade it yourself.  
