@@ -1,81 +1,87 @@
-# Twitter — 2026-09-06 PM r2 · QT GIVE · BetMGM · Ole Miss -7 vs our ML
-**Dale:** last QT was horse shit. Hormozi would not allow it. Did not read the parent. **Ole Miss -7 is the #2 most bet slip. We are on Ole Miss ML.** List growing. Ole Miss flagged. Low impressions. Full pathway this time.
+# Twitter — 2026-09-06 late PM · QT BUZZ/GIVE · Fawkes most-bet list · ND -20.5
+**Dale:** ND -20.5 is one of the most bet plays this weekend. Indicators flashing: massive steam while Pinnacle max is rising. Sharp up $XXXX L30. Massive hook. Impressions / algorithm. QT the Fawkes 13K parent.
 
 ---
 
 ### 0 · Spine
-- Parent: BetMGM CFB Week 1 graphic. Live slip Dale named: **Ole Miss -7 = #2 most bet slip**
-- Ours: Ole Miss **ML** flagged · 3.0u · −251 card / −224 tape · lead $3.1K 1.6×
-- Dale: qualified list is growing
-- Job: QT. Give. No ask (MLB ask already fired)
+- Parent (@BFawkes22, 13K): five most-bet Week 1 Top 25 sides at BetMGM. LSU -10 ✅ · Bama -28 ✅ · Indiana -40.5 ❌ · Oregon -24.5 ❌ · **ND -20.5 ?**
+- Dale: most-bet play · steam + **Pinnacle max rising** · sharp up L30
+- Receipts: lead **...3bdd7e** L30 **+$36K** · **$2.4K** on ND -20.5 · 3.0u locked · PIN chart spike · PIN **−105** / ticket **−130**
 
 ### 0b · Timeline
-Ask temp **hot this morning** → this slot = **give**. Feed needs impressions. Last draft (`$0 ON LOUISVILLE`) **killed** — used a side list, ignored the parent’s #2 slip.
+Ask fired this morning (MLB +100u). Last QT = Ole Miss -7 vs ML. This slot = **buzz + give** for impressions. Do not ask. Do not ignore this parent.
 
 ### 1 · WHO
-Someone looking at BetMGM’s most-bet slips and seeing Ole Miss -7 as #2.
+Someone staring at that 2–2 list, waiting on the last side.
 
 ### 2 · PURPOSE
-**Give.** QT contrast. No URL. No first-week. No UPGRADE.
+**Buzz / give.** Unfinished stake. Drive impressions. No URL. No first-week. No UPGRADE.
 
 ### 3 · ONE
-**The #2 slip is Ole Miss -7. Our qualified list flagged the moneyline.**
+**The last most-bet side of the weekend is Notre Dame -20.5 — and the market is steaming while Pinnacle max rises.**
 
 | Test | |
 |------|---|
-| Understand | Public on -7. We locked ML. Same game. |
-| Believe | Parent has the slip. Our lock card is Miss ML 3u. $3.1K on the ML. |
-| Unique | Same side of the game, different ticket — not “$0 on Louisville.” |
+| Understand | 2 hit, 2 missed, one left. That’s ND -20.5. |
+| Believe | Parent 2–2 + PIN spike + PIN −105 vs ticket −130 + $36K L30 + 3u lock |
+| Unique | Unfinished list + PIN max rising. Not a tickets-vs-wallets clone. Not `$0 ON LOUISVILLE`. |
 
-**Yum:** you get the market the qualified list is on, not the popular slip.
+**Yum:** you see the last ticket *and* the steam behind it.
 
-### 4 · SPCL — **C + S**
-- **C** — parent #2 slip is -7 · our card is ML
-- **S** — we flagged / locked the ML · $3.1K
-- List-growing = process, after the hook
+### 4 · SPCL — **S + C**
+- **S** — last side left · we locked 3u · PIN max we can see
+- **C** — parent 2–2 · $36K L30 · $2.4K · 63% beat close · PIN −105 vs −130
 - Do not own L as the pillar
 
 ### 5 · STUFF
-Parent (Dale): **Ole Miss -7 = #2 most bet slip**
-Lock: CFB Louisville @ Ole Miss · **Miss ML −251** · **3.0u** · +1.20u · 7:30
-Lead **...3bdd7e**: **$3.1K on the ML** · **1.6×** usual $2.0K · 27-29 · +54% ROI · 48% WR · **63% beat close** · L30 **+$36K**
-Confirmed $3.1K / $0 Louisville — **not the hook** (wrong parent read last draft)
-Duke 39.5× — kill
-**Do not say:** SHARP · Tier A · Vault · HC · V12 · `$0 ON LOUISVILLE` · BetMGM clone open · USUAL in line 1–2
+Parent: 2 ✅ · 2 ❌ · ND -20.5 pending
+Lock: Wisconsin @ ND · **Dame -20.5** · **3.0u** · ticket **−130** · to win +2.31u · ~7h 53m at shot
+Lead **...3bdd7e**: **$2.4K** at **−113** · **1.2×** usual $2.0K · 27-29 · **+54% ROI** · 48% WR · **63% beat close** · L30 **+$36K** / chart **+$35.7K** · L10 6-4
+Plays like this: 58.5% WR · +9.2% ROI
+PIN **−105** · best −112 · fair −119 · now −130 · EV +1.3% · dashed max line **rising** (Dale: Pinnacle max + steam)
+Full split $637K / $103K — mixed book, not the spear
+Confirmed $2.4K vs $1.4K · losing $299 all on ND — **do not open on losing $**
+CFB spread tape 10-15 −$3.2K — **do not claim he’s a spread printer**. +$36K is L30 (CFB overall on the card). **Crop the spread row** if that card is attached.
+**Do not say:** GOLD · SHARP TIER A · Vault · USUAL in line 1–2 · 1.2× as the open · V12 · convert
 
 ### 6 · HOOK QA
-What: #2 slip is Ole Miss -7.  
-How: we flagged/locked the ML.  
-So what: qualified list, not the ticket.  
-Screenshot: `-7` + `#2 SLIP` in line 1. Line 2 = the paradox (`moneyline`).  
-Uses the parent. Does not restate Week 1 / the five-game list.
+What: 2 hit, 2 missed, one left.  
+How: PIN max rising, steam, $36K wallet on ND -20.5.  
+So what: we locked 3u.  
+Uses the parent’s unfinished list. Does **not** restate “Five most-bet Week 1 sides.”
+Not our ✅/❌ ledger — Zeigarnik on *their* leftover ticket.
 
 **Chosen**
 ```
-OLE MISS -7 IS THE #2 SLIP.
+2 HIT. 2 MISSED. ONE LEFT.
 
-We flagged the moneyline.
+Pinnacle max is rising. Massive steam.
 ```
 
-Kill list: `$0 ON LOUISVILLE` · `BETMGM IS SHOWING TOP TICKETS` · convert · 39.5× · list-growing as line 1
+Kill list: `$0 ON LOUISVILLE` · BetMGM top-tickets clone · restating the five-game open · convert · GOLD · 1.2× as line 1 · spread 10-15 as a flex
 
 ---
 
-## QT — paste this on the BetMGM tweet
+## QT — paste this on the Fawkes tweet
 
-**Attach:** lock card (ML visible) → money map → lead tape. Crop SHARP / Tier A / Vault / HC / 8 IN.
+**Attach under the QT:**
+1. Steam / PIN card (max rising — Dale’s indicator). Crop any GOLD / contested-as-identity chrome if it reads as a label.
+2. Lead wallet tape (`+$36K` graph + $2.4K + 63%). **Crop:** GOLD · SHARP TIER A · Vault · the CFB spread 10-15 −$3.2K row.
+3. Money map (70% proven). **Crop:** GOLD · Vault.
 
-**300 chars.** Compose: https://x.com/intent/tweet?text=OLE%20MISS%20-7%20IS%20THE%20%232%20SLIP.%0A%0AWe%20flagged%20the%20moneyline.%0A%0AThe%20qualified%20list%20is%20growing.%20We%20target%20the%20wallets.%20We%20qualify%20them.%20We%20track%20every%20position.%20This%20one%20came%20out%20Ole%20Miss%20to%20win.%0A%0ALead%20is%20%243%2C100%20on%20the%20ML.%201.6%C3%97%20his%20usual.%2027-29.%20Plus%20%2436K%20the%20last%2030.%20Beats%20the%20close%2063%25.%0A%0AWe%20locked%203%20units.
+**270 chars.** Compose: https://x.com/intent/tweet?text=2%20HIT.%202%20MISSED.%20ONE%20LEFT.%0A%0APinnacle%20max%20is%20rising.%20Massive%20steam.%0A%0ANotre%20Dame%20-20.5.%20Last%20most-bet%20side%20of%20the%20weekend.%0A%0AThe%20sharp%20we%20track%20is%20up%20%2436%2C000%20the%20last%2030%20days.%20%242%2C400%20on%20this%20one.%20Beats%20the%20close%2063%25.%0A%0APinnacle%20still%20-105.%20Ticket%27s%20-130.%0A%0AWe%20locked%203%20units.
 **No URL. No ask.**
 
 ```
-OLE MISS -7 IS THE #2 SLIP.
+2 HIT. 2 MISSED. ONE LEFT.
 
-We flagged the moneyline.
+Pinnacle max is rising. Massive steam.
 
-The qualified list is growing. We target the wallets. We qualify them. We track every position. This one came out Ole Miss to win.
+Notre Dame -20.5. Last most-bet side of the weekend.
 
-Lead is $3,100 on the ML. 1.6× his usual. 27-29. Plus $36K the last 30. Beats the close 63%.
+The sharp we track is up $36,000 the last 30 days. $2,400 on this one. Beats the close 63%.
+
+Pinnacle still -105. Ticket's -130.
 
 We locked 3 units.
 ```
@@ -84,4 +90,4 @@ We locked 3 units.
 None.
 
 ### RT line
-`We flagged the moneyline.`
+`2 HIT. 2 MISSED. ONE LEFT.`
