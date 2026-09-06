@@ -1,72 +1,78 @@
-# Twitter — 2026-09-06 AM r4 · Hero ASK · MLB crossed +100u
-**Dale:** hook locked. Body was underselling the process. Give credit: target ≠ all wallets · qualify on metrics · every position · synthesize into one pick + one size · phone.
+# Twitter — 2026-09-06 PM · QT GIVE · BetMGM Week 1 · Ole Miss flagged
+**Dale:** low impressions. Perfect QT. Qualified list is growing. Ole Miss flagged. Parent = BetMGM CFB Week 1 ticket lists (Louisville @ Ole Miss #4 game, Louisville +220 #3 dog ticket).
 
 ---
 
 ### 1 · WHO
-Someone who wants +100u without buying a feed or a capper — and will test a week if the proof is real.
+Someone reading BetMGM’s list and thinking Louisville is the play.
 
 ### 2 · PURPOSE
-**Ask.** Convert is the close. Link in SR only.
+**Give.** QT for reach. Ask already fired (MLB +100u). No URL. No first-week. No UPGRADE.
 
 ### 3 · ONE
-**We just crossed 100u in MLB because we target, qualify, track the full book, then synthesize one pick and one size — and the ones we size print.**
+**Louisville is a top dog ticket. Our qualified list has $0 on them. We flagged Ole Miss.**
 
-Hook locked. We pick the game. We do not say V12.
+| Test | |
+|------|---|
+| Understand | Public on the dog. Our list on Ole Miss. |
+| Believe | $0 qualified / $99 other side · $3.1K lead · lock 3u |
+| Unique | $0 on the ticket they’re staring at — not a “BetMGM is showing top tickets” clone. |
+
+**Yum:** you see the qualified side, not the ticket side.
 
 ### 4 · SPCL — **S + C**
+- **S** — we control the qualified list · Ole Miss flagged
+- **C** — $0 Louisville · $3.1K · +$36K L30 · 63% beat close
+- “List is growing” = Dale close, not the hook
+- Do not own L as the pillar
 
 ### 5 · STUFF
-Same receipts. Process credit now in the words: not all wallets · metrics qualify · every position · synthesize whole book → one pick + one size · 777 plays.
-**Do not say:** V12 · AGS · prediction engine · BEST TIER · MAX/LEAN · conviction · UPGRADE · prices · **we don’t pick games**
+CFB Louisville @ Ole Miss · 7:30 · **Miss ML** · lock card **3.0u** · **−251** (wallet tape **−224**) · to win +1.20u · LOCKS ~9h (at shot)
+Lead **...3bdd7e**: **$3.1K** · **1.6×** usual ~$2.0K · 27-29 · **+54% ROI** · 48% WR · **63% beat close** · L30 **+$36K** · CFB ML 14-11 +$39K +38% · L10 6-4
+Confirmed: **$3.1K / 100%** Ole Miss · **$0** Louisville
+Other side: Louisville **$99** · 0 proven · 1 secondary · **−5% ROI** · 56% beat close
+Map: 96% proven · 3% against · 97% of board at shot
+Full split $490K / $127K is mixed book — **do not use as qualified $**
+Duke 39.5× $78.3K W — **kill** (yesterday, competing spear)
+**Do not say:** SHARP · Tier A · Vault · HC · 8 IN · V12 · USUAL in line 1–2 · BetMGM clone open
 
 ### 6 · HOOK
-**Locked.**
-```
-+104.95u IN MLB.
 
-Almost half of it came from 12 plays. 11-1.
+**Chosen** — their ticket, our $0. Uses the parent. Does not restate Week 1 / the five-game list.
 ```
+$0 ON LOUISVILLE.
+
+They're a top dog ticket. Our qualified list has none of it.
+```
+
+Kill list: `BETMGM IS SHOWING TOP TICKETS` clone · restating the parent list · convert · `$3.1K at 1.6×` as line 1 (not scarce enough) · 39.5× Duke · list-is-growing as line 1
 
 ---
 
-## Hero — paste this
+## QT — paste this on the BetMGM tweet
 
-**Attach:** chart first, size-tier card second. Crop AGS-U V12 / BEST TIER / conviction.
+**Attach our cards under the QT (parent already has the list):**
+1. Lock card (Ole Miss flagged · 3u)
+2. Money map ($0 / $99 Louisville · 96% proven)
+3. Lead wallet tape ($3.1K · +$36K)
 
-**531 chars.** Compose: https://x.com/intent/tweet?text=%2B104.95u%20IN%20MLB.%0A%0AAlmost%20half%20of%20it%20came%20from%2012%20plays.%2011-1.%0A%0AWe%20just%20crossed%20100.%0A%0AWe%20target%20the%20wallets%20we%20want%20to%20track.%20Not%20all%20of%20them.%20We%20qualify%20every%20one%20against%20our%20metrics%20before%20they%20get%20in.%0A%0AThen%20we%20track%20every%20position%20on%20every%20game.%20All%20of%20it.%20We%20synthesize%20that%20whole%20book%20into%20one%20pick%20and%20one%20size.%0A%0AIt%20hits%20your%20phone%20when%20it%20locks.%0A%0A413-358.%2098%20days.%20777%20plays.%20The%201%20unit%20stuff%20is%20red.%20That%27s%20the%20truth.%0A%0AYou%20don%27t%20need%20a%20data%20feed.%20You%20don%27t%20need%20a%20capper.%0A%0AFirst%20week%20is%20free.%20Watch%20it%20and%20grade%20it%20yourself.
+**Crop:** SHARP TIER A · Vault · HC · 8 IN.
+
+**211 chars.** Compose: https://x.com/intent/tweet?text=%240%20ON%20LOUISVILLE.%0A%0AThey%27re%20a%20top%20dog%20ticket.%20Our%20qualified%20list%20has%20none%20of%20it.%0A%0AWe%20have%20Ole%20Miss%20flagged.%20Lead%20is%20%243%2C100.%201.6%C3%97%20his%20usual.%2027-29.%20Plus%20%2436K%20the%20last%2030.%20Beats%20the%20close%2063%25.%0A%0AThe%20list%20is%20growing.
+**No URL. No ask.**
 
 ```
-+104.95u IN MLB.
+$0 ON LOUISVILLE.
 
-Almost half of it came from 12 plays. 11-1.
+They're a top dog ticket. Our qualified list has none of it.
 
-We just crossed 100.
+We have Ole Miss flagged. Lead is $3,100. 1.6× his usual. 27-29. Plus $36K the last 30. Beats the close 63%.
 
-We target the wallets we want to track. Not all of them. We qualify every one against our metrics before they get in.
-
-Then we track every position on every game. All of it. We synthesize that whole book into one pick and one size.
-
-It hits your phone when it locks.
-
-413-358. 98 days. 777 plays. The 1 unit stuff is red. That's the truth.
-
-You don't need a data feed. You don't need a capper.
-
-First week is free. Watch it and grade it yourself.
+The list is growing.
 ```
 
 ### Self-reply
-
-Compose: https://x.com/intent/tweet?text=First%20week%20is%20free.%0A%0AWatch%20it%20and%20grade%20it%20yourself.%0A%0Anhlsavant.com%2F%3Fref%3Dmlb100
-
-```
-First week is free.
-
-Watch it and grade it yourself.
-
-nhlsavant.com/?ref=mlb100
-```
+None.
 
 ### RT line
-`Almost half of it came from 12 plays. 11-1.`
+`They're a top dog ticket. Our qualified list has none of it.`
