@@ -1,81 +1,78 @@
-# Twitter — 2026-09-06 · Hero GIVE · DET@CLE Over 7.5 (Hormozi 2026 rewrite)
-**Dale:** make this the best yet. Research latest Hormozi for our brand/product, then rewrite the write-up.
-
-**2026 stack used:** pairing through outcome (Ep 958) · demonstrate/document the audit (Ep 976) · start free + proof over promise + pain first (Ep 990).
+# Twitter — 2026-09-06 AM · Hero EDUCATE / GIVE · MLB crossed +100u
+**Dale:** just crossed 100 units in MLB. Here’s how: target wallets → qualify → track every position → lock/size → phone ping. Two cards (printer + size tiers).
 
 ---
 
 ### 1 · WHO
-Someone staring at a total that looks like the Under because that’s where the money is.
+Someone who thinks +100u means a capper or a model, and wants the actual how.
 
 ### 2 · PURPOSE
-**Give.** Live lock. Free public audit. No ask. No URL. No UPGRADE. Dom ask already fired.
+**Educate + give.** Milestone with the mechanism in the words. No ask. No URL. Phone ping is the close of the how, not a CTA.
 
 ### 3 · ONE
-**The side that looks like the play on this total is the losing side.** We locked the Over.
+**We just crossed 100u in MLB because we track wallets and lock the size — we don’t pick games.**
 
 | Test | |
 |------|---|
-| Understand | Loud Under. Dead money. We took Over. |
-| Believe | Map $5.2K at 0% · $3.3K losing / $0 on us · lock card 3u +125 |
-| Unique | Pain first (the pile they already see) + paradox (heavy + 0% + losing $ all there). Not a `$XK at 2×` clone. Not Over-as-brand. |
+| Understand | 100u MLB. Wallet process. Ping when it locks. |
+| Believe | Chart +104.95u · 413-358-6 · 98 days · 6u plays 11-1 |
+| Unique | Line 2 = don’t pick games / track wallets. Not a recap open. Not V12-as-identity. |
 
-**Yum this pairs:** you don’t sit with the dead pile. Not “we fade Unders.” Not “we have a lock.”
+**Yum this pairs:** you get the lock on your phone without becoming sharp. Not “our engine.” Not a tipster 100u flex.
 
-### 4 · SPCL — **C + S**
-- **C** — $5.2K Under at 0% ROI · $3.3K losing / $0 on us
-- **S** — we already locked 3u Over +125 (scarce board)
-- P = lead cashed two overs yesterday (after the hook)
+### 4 · SPCL — **S + C**
+- **S** — +104.95u printer we control
+- **C** — 413-358 · 98 days · 11-1 on the 6u plays
+- P = 98 days of say–do (after the hook)
 - Do not own L as the pillar
 
 ### 5 · STUFF
-DET @ CLE · **Over 7.5** · **LOCKED 3.0u** · card **+125** · to win +3.75u · SET
-Lead **9214c2**: **$1,035** · **1.38×** usual · UI 33-21 · +27% · 61% WR · 67% beat close · usual ~$749
-Second proven **4b912c**: **$624** · 0.86× · L30 +$43K / 270-229 / 54% (do not open on him)
-Against: **$5.2K** · 1 proven + 2 secondary · UI 47.5% WR · 56% CLV · **0% ROI**
-Losing-wallet row: **$0** Over · **$3.3K** Under
-Confirmed row: **$2.2K** Over vs **$1.8K** Under — do not use (competes with the loud-Under spear)
-Lead tape (9/4): Over 8.5 +111 2.1× **W** · Over 7.5 +117 1.0× **W** · Under 7 0.3× **W**
-Do **not** put 2.1× / $1.6K / Tier A / Vault / SHARP on this ticket.
-CFB Missouri State +40.5 is a different card — kill.
+MLB only · V12 era **2026-06-01 → now** · **98 days** · **777 graded** · **413-358-6** · **53.6%** (BE 52.4%) · **+104.95u** · **+5.1% ROI** · **2053.1u** risked · card also shows ≈ +$10,495 @ $100/u — **do not lead with $**
+Size split (same +104.95u): 6u **11-1 +49.42u +68.6%** · 4–5.4u 124-97-1 +29.56u · 3u 91-69-1 +22.02u · 1.5–2.5u 66-63-2 +21.36u · ≤1u **121-128-2 −17.41u −7.9%**
+Yesterday 6-3 on the second card — **kill** (recap, not this spear)
+Dale how (law): target wallets → qualify on internal metrics → track all positions → synthesize / lock / size → phone when they lock
+**Do not say in copy:** V12 · AGS-U · prediction engine · BEST TIER · MAX/TOP/STRONG/LEAN · conviction threshold · internal metrics
 
 ### 6 · HOOK
 
-**Chosen** — pain first (the pile they see), classified in line 2 (dead + losing + zero on us).
+**Chosen** — printer, then the how paradox (August `+46.8u` / `ALMOST 3× JULY` shape).
 ```
-$5.2K ON THE UNDER.
++104.95u IN MLB.
 
-0% ROI. $3.3K of it is losing money. Zero on us.
+We just crossed 100. We don't pick games. We track wallets.
 ```
 
-Kill list: `$1K AT 1.4×` as line 1 · `$3.3K IN LOSING WALLETS` restated as line 2 · convert-as-open · thank Dom · +60u · 5-2 · Vault / Tier A / SHARP · 2.1× on today’s ticket · Over-as-identity · caption-only attach order (lock first)
+Kill list: `Here’s how we did it` as line 1 (recap furniture) · V12 / AGS as the how · convert / UPGRADE · +60u 7-day restage · $10,495 as the open · 5-step brochure with no printer · DET-CLE leftover
 
 ---
 
 ## Hero — paste this
 
-**Attach in this order (the walk, not prettiest-first):**
-1. Money map (they see $5.2K Under / lead $1.0K / other side 0% ROI)
-2. Locked Over 7.5 card (losing-wallet split is in the shot)
-3. Lead wallet tape (two overs yesterday)
+**Attach in this order:**
+1. MLB profit chart (`+104.95u` · 98 days · 413-358)
+2. Size-tier card (11-1 on the 6u plays is the how of lock/size)
 
-**227 chars.** Compose: https://x.com/intent/tweet?text=%245.2K%20ON%20THE%20UNDER.%0A%0A0%25%20ROI.%20%243.3K%20of%20it%20is%20losing%20money.%20Zero%20on%20us.%0A%0AWe%20locked%20the%20Over.%20Tigers-Guardians%207.5.%20%2B125.%203%20units.%0A%0ALead%20wallet%20is%20%241%2C000.%201.4%C3%97%20his%20usual.%2033-21.%20Beats%20the%20close%2067%25.%0A%0AHe%20cashed%20two%20overs%20yesterday.
-**No URL. No UPGRADE.** Crop Vault / Tier A if they show.
+**Crop if you can:** AGS-U V12 chip · “v12” in the chart title · BEST TIER / conviction-threshold chrome. Don’t say those words either way.
+
+**299 chars.** Compose: https://x.com/intent/tweet?text=%2B104.95u%20IN%20MLB.%0A%0AWe%20just%20crossed%20100.%20We%20don%27t%20pick%20games.%20We%20track%20wallets.%0A%0AWe%20target%20the%20wallets%20we%20want.%0AWe%20qualify%20every%20one%20of%20them.%0AWe%20take%20every%20position%20on%20every%20game.%0AWe%20lock%20the%20play%20and%20the%20size%20from%20that.%0AIt%20hits%20your%20phone%20when%20it%20locks.%0A%0A413-358.%2098%20days.%20The%206%20unit%20plays%20went%2011-1.
+**No URL. No UPGRADE.**
 
 ```
-$5.2K ON THE UNDER.
++104.95u IN MLB.
 
-0% ROI. $3.3K of it is losing money. Zero on us.
+We just crossed 100. We don't pick games. We track wallets.
 
-We locked the Over. Tigers-Guardians 7.5. +125. 3 units.
+We target the wallets we want.
+We qualify every one of them.
+We take every position on every game.
+We lock the play and the size from that.
+It hits your phone when it locks.
 
-Lead wallet is $1,000. 1.4× his usual. 33-21. Beats the close 67%.
-
-He cashed two overs yesterday.
+413-358. 98 days. The 6 unit plays went 11-1.
 ```
 
 ### Self-reply
 None.
 
 ### RT line
-`0% ROI. $3.3K of it is losing money. Zero on us.`
+`We don't pick games. We track wallets.`
