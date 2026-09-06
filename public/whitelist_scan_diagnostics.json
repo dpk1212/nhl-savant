@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-09-06T20:50:44.658Z",
-  "elapsedSec": 32.7,
+  "scannedAt": "2026-09-06T20:54:29.153Z",
+  "elapsedSec": 33.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 110,
   "summary": {
     "total": 318,
-    "coveredByMain": 27,
-    "recovered": 8,
+    "coveredByMain": 28,
+    "recovered": 7,
     "recoveredPositions": 71,
     "noPositions": 283,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 5,
+      "ml": 4,
       "spread": 1,
       "total": 1,
-      "dropped_shadow_gate": 32,
+      "dropped_shadow_gate": 33,
       "dropped_excluded": 32,
       "dropped_duplicate": 0
     }
@@ -1996,24 +1996,7 @@
       "tier": "CONFIRMED",
       "name": "CoffeeDespiser",
       "sports": "MLB,NFL",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x629c2844d5c0e36774a67fe10dcd43ca31a76c01",
-      "positionsCount": 1,
-      "statsSource": "profile.bySport.positions",
-      "avgSportBet": 8033,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "MLB",
-          "gameKey": "wsh_lad",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 1564,
-          "entryLine": null,
-          "passesShadow": true
-        }
-      ]
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "a7a9cc",
@@ -2399,7 +2382,7 @@
           "gameKey": "wsh_lad",
           "marketType": "ml",
           "side": "away",
-          "invested": 3600,
+          "invested": 5040,
           "entryLine": null,
           "passesShadow": true
         }
@@ -2460,18 +2443,18 @@
       "sports": "SOC,MLB,NBA,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 29,
+      "positionsCount": 30,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 779,
       "willPassShadowGate": 18,
-      "willDropAtShadowGate": 11,
+      "willDropAtShadowGate": 12,
       "positions": [
         {
           "sport": "CFB",
           "gameKey": "lou_miss",
           "marketType": "spread",
           "side": "away",
-          "invested": 5773,
+          "invested": 5924,
           "entryLine": 7.5,
           "passesShadow": true
         },
@@ -2480,7 +2463,7 @@
           "gameKey": "lou_miss",
           "marketType": "spread",
           "side": "away",
-          "invested": 4102,
+          "invested": 4316,
           "entryLine": 6.5,
           "passesShadow": true
         },
@@ -2707,6 +2690,15 @@
           "side": "away",
           "invested": 26,
           "entryLine": 10.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "wisc_nd",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 56,
+          "entryLine": -16.5,
           "passesShadow": false
         },
         {
