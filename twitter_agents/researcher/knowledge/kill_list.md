@@ -120,4 +120,5 @@ Patterns that underperform, get muted, or trip classifiers.
 - **2026-09-01 CSV:** become-sharp clones (**0 replies**) · `Seems legit` · Sale ✅✅ recap (0R) · empty `run it back` (3762 impr / 1R / 14 PV = impression trap) · Sports-folder dream restage (0R)
 - **2026-09-06 Hormozi 2026:** captioning three cards instead of walking the audit · opening on our result/promise when the prospect is still in the loud-side pain · pairing Sharp Flow with Over-as-brand or Under-as-brand (we lock both) · stacked-offer / convert open (proof over promise)
 - **2026-09-06 Dale HARD FAIL:** “we don’t pick games” — we do. Process is wallets → qualify → every position → **pick the game and lock the size** → phone. Never write the opposite.
+- **2026-09-06 Dale HARD FAIL:** BetMGM QT that ignores the parent. `$0 ON LOUISVILLE` when the graphic’s live slip is **Ole Miss -7 (#2 most bet slip)** and we locked **Ole Miss ML**. QT must use the parent’s actual ticket, not a side list we preferred.
 

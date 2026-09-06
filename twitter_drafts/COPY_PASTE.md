@@ -1,78 +1,87 @@
-# Twitter — 2026-09-06 PM · QT GIVE · BetMGM Week 1 · Ole Miss flagged
-**Dale:** low impressions. Perfect QT. Qualified list is growing. Ole Miss flagged. Parent = BetMGM CFB Week 1 ticket lists (Louisville @ Ole Miss #4 game, Louisville +220 #3 dog ticket).
+# Twitter — 2026-09-06 PM r2 · QT GIVE · BetMGM · Ole Miss -7 vs our ML
+**Dale:** last QT was horse shit. Hormozi would not allow it. Did not read the parent. **Ole Miss -7 is the #2 most bet slip. We are on Ole Miss ML.** List growing. Ole Miss flagged. Low impressions. Full pathway this time.
 
 ---
 
+### 0 · Spine
+- Parent: BetMGM CFB Week 1 graphic. Live slip Dale named: **Ole Miss -7 = #2 most bet slip**
+- Ours: Ole Miss **ML** flagged · 3.0u · −251 card / −224 tape · lead $3.1K 1.6×
+- Dale: qualified list is growing
+- Job: QT. Give. No ask (MLB ask already fired)
+
+### 0b · Timeline
+Ask temp **hot this morning** → this slot = **give**. Feed needs impressions. Last draft (`$0 ON LOUISVILLE`) **killed** — used a side list, ignored the parent’s #2 slip.
+
 ### 1 · WHO
-Someone reading BetMGM’s list and thinking Louisville is the play.
+Someone looking at BetMGM’s most-bet slips and seeing Ole Miss -7 as #2.
 
 ### 2 · PURPOSE
-**Give.** QT for reach. Ask already fired (MLB +100u). No URL. No first-week. No UPGRADE.
+**Give.** QT contrast. No URL. No first-week. No UPGRADE.
 
 ### 3 · ONE
-**Louisville is a top dog ticket. Our qualified list has $0 on them. We flagged Ole Miss.**
+**The #2 slip is Ole Miss -7. Our qualified list flagged the moneyline.**
 
 | Test | |
 |------|---|
-| Understand | Public on the dog. Our list on Ole Miss. |
-| Believe | $0 qualified / $99 other side · $3.1K lead · lock 3u |
-| Unique | $0 on the ticket they’re staring at — not a “BetMGM is showing top tickets” clone. |
+| Understand | Public on -7. We locked ML. Same game. |
+| Believe | Parent has the slip. Our lock card is Miss ML 3u. $3.1K on the ML. |
+| Unique | Same side of the game, different ticket — not “$0 on Louisville.” |
 
-**Yum:** you see the qualified side, not the ticket side.
+**Yum:** you get the market the qualified list is on, not the popular slip.
 
-### 4 · SPCL — **S + C**
-- **S** — we control the qualified list · Ole Miss flagged
-- **C** — $0 Louisville · $3.1K · +$36K L30 · 63% beat close
-- “List is growing” = Dale close, not the hook
+### 4 · SPCL — **C + S**
+- **C** — parent #2 slip is -7 · our card is ML
+- **S** — we flagged / locked the ML · $3.1K
+- List-growing = process, after the hook
 - Do not own L as the pillar
 
 ### 5 · STUFF
-CFB Louisville @ Ole Miss · 7:30 · **Miss ML** · lock card **3.0u** · **−251** (wallet tape **−224**) · to win +1.20u · LOCKS ~9h (at shot)
-Lead **...3bdd7e**: **$3.1K** · **1.6×** usual ~$2.0K · 27-29 · **+54% ROI** · 48% WR · **63% beat close** · L30 **+$36K** · CFB ML 14-11 +$39K +38% · L10 6-4
-Confirmed: **$3.1K / 100%** Ole Miss · **$0** Louisville
-Other side: Louisville **$99** · 0 proven · 1 secondary · **−5% ROI** · 56% beat close
-Map: 96% proven · 3% against · 97% of board at shot
-Full split $490K / $127K is mixed book — **do not use as qualified $**
-Duke 39.5× $78.3K W — **kill** (yesterday, competing spear)
-**Do not say:** SHARP · Tier A · Vault · HC · 8 IN · V12 · USUAL in line 1–2 · BetMGM clone open
+Parent (Dale): **Ole Miss -7 = #2 most bet slip**
+Lock: CFB Louisville @ Ole Miss · **Miss ML −251** · **3.0u** · +1.20u · 7:30
+Lead **...3bdd7e**: **$3.1K on the ML** · **1.6×** usual $2.0K · 27-29 · +54% ROI · 48% WR · **63% beat close** · L30 **+$36K**
+Confirmed $3.1K / $0 Louisville — **not the hook** (wrong parent read last draft)
+Duke 39.5× — kill
+**Do not say:** SHARP · Tier A · Vault · HC · V12 · `$0 ON LOUISVILLE` · BetMGM clone open · USUAL in line 1–2
 
-### 6 · HOOK
+### 6 · HOOK QA
+What: #2 slip is Ole Miss -7.  
+How: we flagged/locked the ML.  
+So what: qualified list, not the ticket.  
+Screenshot: `-7` + `#2 SLIP` in line 1. Line 2 = the paradox (`moneyline`).  
+Uses the parent. Does not restate Week 1 / the five-game list.
 
-**Chosen** — their ticket, our $0. Uses the parent. Does not restate Week 1 / the five-game list.
+**Chosen**
 ```
-$0 ON LOUISVILLE.
+OLE MISS -7 IS THE #2 SLIP.
 
-They're a top dog ticket. Our qualified list has none of it.
+We flagged the moneyline.
 ```
 
-Kill list: `BETMGM IS SHOWING TOP TICKETS` clone · restating the parent list · convert · `$3.1K at 1.6×` as line 1 (not scarce enough) · 39.5× Duke · list-is-growing as line 1
+Kill list: `$0 ON LOUISVILLE` · `BETMGM IS SHOWING TOP TICKETS` · convert · 39.5× · list-growing as line 1
 
 ---
 
 ## QT — paste this on the BetMGM tweet
 
-**Attach our cards under the QT (parent already has the list):**
-1. Lock card (Ole Miss flagged · 3u)
-2. Money map ($0 / $99 Louisville · 96% proven)
-3. Lead wallet tape ($3.1K · +$36K)
+**Attach:** lock card (ML visible) → money map → lead tape. Crop SHARP / Tier A / Vault / HC / 8 IN.
 
-**Crop:** SHARP TIER A · Vault · HC · 8 IN.
-
-**211 chars.** Compose: https://x.com/intent/tweet?text=%240%20ON%20LOUISVILLE.%0A%0AThey%27re%20a%20top%20dog%20ticket.%20Our%20qualified%20list%20has%20none%20of%20it.%0A%0AWe%20have%20Ole%20Miss%20flagged.%20Lead%20is%20%243%2C100.%201.6%C3%97%20his%20usual.%2027-29.%20Plus%20%2436K%20the%20last%2030.%20Beats%20the%20close%2063%25.%0A%0AThe%20list%20is%20growing.
+**300 chars.** Compose: https://x.com/intent/tweet?text=OLE%20MISS%20-7%20IS%20THE%20%232%20SLIP.%0A%0AWe%20flagged%20the%20moneyline.%0A%0AThe%20qualified%20list%20is%20growing.%20We%20target%20the%20wallets.%20We%20qualify%20them.%20We%20track%20every%20position.%20This%20one%20came%20out%20Ole%20Miss%20to%20win.%0A%0ALead%20is%20%243%2C100%20on%20the%20ML.%201.6%C3%97%20his%20usual.%2027-29.%20Plus%20%2436K%20the%20last%2030.%20Beats%20the%20close%2063%25.%0A%0AWe%20locked%203%20units.
 **No URL. No ask.**
 
 ```
-$0 ON LOUISVILLE.
+OLE MISS -7 IS THE #2 SLIP.
 
-They're a top dog ticket. Our qualified list has none of it.
+We flagged the moneyline.
 
-We have Ole Miss flagged. Lead is $3,100. 1.6× his usual. 27-29. Plus $36K the last 30. Beats the close 63%.
+The qualified list is growing. We target the wallets. We qualify them. We track every position. This one came out Ole Miss to win.
 
-The list is growing.
+Lead is $3,100 on the ML. 1.6× his usual. 27-29. Plus $36K the last 30. Beats the close 63%.
+
+We locked 3 units.
 ```
 
 ### Self-reply
 None.
 
 ### RT line
-`They're a top dog ticket. Our qualified list has none of it.`
+`We flagged the moneyline.`
