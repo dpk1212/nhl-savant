@@ -54,3 +54,9 @@ Seed 2026-07-10:
 - Become-sharp clones get likes, **0 replies** — spent, not an ask vehicle.
 - Recap furniture (`here is how the last 30 days played` 44) loses to the same idea with a printer open (`+46.8u IN AUGUST` 94/3R).
 
+2026-09-06 (Hormozi 2026 brand stack — Ep 958 / 976 / 990):
+- Brand = **pairing through an outcome**, not a lock caption. Pair Sharp Flow with “you don’t sit with the dead pile” — never with Over-as-identity or Under-as-identity.
+- Live give = **demonstrate and document** the audit. Attach order = the walk (pain they see → lock → say–do). Captioning three cards is not the post.
+- **Proof over promise.** Start free. Four proof elements: recent · visual · volume-on-one-spear · **pain first** (loud side they’re already staring at, classified in ≤2 lines).
+- Vault: `hormozi_brand_pairing.md` · `hormozi_proof_machine.md`
+

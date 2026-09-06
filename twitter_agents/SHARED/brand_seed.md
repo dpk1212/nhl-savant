@@ -106,7 +106,7 @@ Every tier has a free trial. Intent: **free trial — watch and grade it yoursel
 **Hormozi SPCL (influence stack):** Status · Power · Credibility · Likeness.  
 **Qual / Algorithm / Trust:** quality volume · delete→simplify→accelerate→automate last · show-me whole truth.  
 Influence = compliance with a request. Free SPCL in hero → ask in SR.  
-OS: `TWITTER.md` · `hormozi_rule_of_one.md` · `hormozi_spcl.md` · `hormozi_qual_algorithm.md`
+OS: `TWITTER.md` · `hormozi_rule_of_one.md` · `hormozi_spcl.md` · `hormozi_qual_algorithm.md` · `hormozi_brand_pairing.md` · `hormozi_proof_machine.md`
 
 ---
 
@@ -130,5 +130,7 @@ Confident, casual. “I” for felt/confession · “we” for system/sharps. Li
 - Rule of One: `twitter_agents/researcher/knowledge/hormozi_rule_of_one.md`
 - SPCL: `twitter_agents/researcher/knowledge/hormozi_spcl.md`
 - Qual/Algorithm/Trust: `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md`
+- Brand pairing (2026): `twitter_agents/researcher/knowledge/hormozi_brand_pairing.md`
+- Proof machine (2026): `twitter_agents/researcher/knowledge/hormozi_proof_machine.md`
 - Full kit: `BRAND_MESSAGING.md`
 - Voice data: `MY_VOICE_PROFILE.md` (fossil — Dale likeness > NPC)

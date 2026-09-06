@@ -9,12 +9,13 @@
 2. `hormozi_rule_of_one.md`
 3. `hormozi_spcl.md`
 4. `hormozi_qual_algorithm.md`
-5. `hormozi_value_equation.md` + `hormozi_diagnostic_sale.md` (when on disk)
-6. `SHARED/brand_seed.md` (voice + bans + dream)
-7. `TWITTER.md`
-8. `SHARED/recent_timeline_latest.md` (must be fresh this run)
-9. If Dale dropped a **new Hormozi transcript** this session → finish `hormozi_ingest.md` **before** drafting
-10. If Dale dropped an **analytics CSV** → finish `analytics_csv_ingest.md` **before** drafting
+5. `hormozi_brand_pairing.md` + `hormozi_proof_machine.md` (2026 — pairing through outcome · proof over promise · pain first)
+6. `hormozi_value_equation.md` + `hormozi_diagnostic_sale.md` (when on disk)
+7. `SHARED/brand_seed.md` (voice + bans + dream)
+8. `TWITTER.md`
+9. `SHARED/recent_timeline_latest.md` (must be fresh this run)
+10. If Dale dropped a **new Hormozi transcript** this session → finish `hormozi_ingest.md` **before** drafting
+11. If Dale dropped an **analytics CSV** → finish `analytics_csv_ingest.md` **before** drafting
 
 **Never auto-publish.** Stage in `twitter_drafts/COPY_PASTE.md`.
 
@@ -165,6 +166,8 @@ Everything else must **only reinforce** that idea. Kill toss salad.
 | **L Likeness** | Always voice — rarely the *content* pillar alone |
 
 **Also seat if they raise the ONE idea:**
+- Brand pairing (yum this post attaches to Sharp Flow — `hormozi_brand_pairing.md`)
+- Proof machine (recent · visual · volume-on-one-spear · **pain first** — `hormozi_proof_machine.md`)
 - Value equation (dream · likelihood · time · effort)
 - Diagnostic (current → desired → obstacle → vehicle)
 - Trust (whole truth · proof *is* pudding · show-me)
@@ -193,6 +196,7 @@ If hook fails, **rewrite hook before touching body**.
 **(Dale 9/01):** Starving an **educate QT** to a 250-char W-L table to “fit 280” is majoring in minors. Hormozi techniques (SPCL / diagnostic / value equation / Qual stuff) must live **in the words**, not the header. August `+46.8u IN AUGUST` won WITH depth. Give-post stuff density is law for educate too. If Dale says “Hormozi would be disgusted,” restart at PURPOSE — do not tighten.  
 **(Dale 9/01 night):** We do **not** need every SPCL letter every post. We **do** need an amazing hook. Kill insider jargon in line 1–2 (`USUAL`, `THEIR #1 TOTAL`). Person + number + paradox. Rewrite hook before touching body.  
 **(Dale 9/01 night 2):** An amazing hook with a starved body is a **caption**. Qual = stuff inside. Trust = whole truth. Educate = easy to follow + worth the gamble. Time-with-prospect = long-form. August `+46.8u` is the depth template. After the hook is right, **add the stuff back**. Do not “refine” by deleting the pudding.
+**(Desk 9/06 — Hormozi 2026):** Brand = **pairing through an outcome** (Ep 958). Live give = **demonstrate and document** the work in public (Ep 976). Proof beats a stacked promise; **start in the pain they’re already looking at** (Ep 990). Captioning three cards is not the audit. Attach order = the walk. Do not pair Sharp Flow with Over-as-identity or Under-as-identity — pair with *this total’s* dead pile vs our side.
 
 ### 7 · Draft (human)
 - Dale dinner-table — not tipster, not brochure, not CAPS spam unless $ contrast earns it  
