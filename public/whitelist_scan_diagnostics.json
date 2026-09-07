@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-07T19:36:23.777Z",
-  "elapsedSec": 39.2,
+  "scannedAt": "2026-09-07T19:42:32.309Z",
+  "elapsedSec": 37.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 136,
   "summary": {
     "total": 320,
     "coveredByMain": 44,
     "recovered": 10,
-    "recoveredPositions": 90,
+    "recoveredPositions": 93,
     "noPositions": 266,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 10,
       "spread": 4,
       "total": 2,
-      "dropped_shadow_gate": 66,
+      "dropped_shadow_gate": 69,
       "dropped_excluded": 6,
       "dropped_duplicate": 2
     }
@@ -2751,11 +2751,11 @@
       "sports": "SOC,MLB,NBA,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 18,
+      "positionsCount": 21,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1025,
       "willPassShadowGate": 4,
-      "willDropAtShadowGate": 14,
+      "willDropAtShadowGate": 17,
       "positions": [
         {
           "sport": "CFB",
@@ -2831,6 +2831,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "tor_oak",
+          "marketType": "total",
+          "side": "over",
+          "invested": 115,
+          "entryLine": 7.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
           "gameKey": "wsh_sdp",
           "marketType": "ml",
           "side": "home",
@@ -2848,12 +2857,30 @@
           "passesShadow": false
         },
         {
+          "sport": "CFB",
+          "gameKey": "smu_fsu",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 61,
+          "entryLine": 6.5,
+          "passesShadow": false
+        },
+        {
           "sport": "NFL",
           "gameKey": "ne_sea",
           "marketType": "total",
           "side": "under",
           "invested": 48,
           "entryLine": 44.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "smu_fsu",
+          "marketType": "total",
+          "side": "over",
+          "invested": 32,
+          "entryLine": 55.5,
           "passesShadow": false
         },
         {
