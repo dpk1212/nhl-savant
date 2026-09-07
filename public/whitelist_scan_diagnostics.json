@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-07T01:09:20.300Z",
-  "elapsedSec": 36.4,
+  "scannedAt": "2026-09-07T01:13:08.803Z",
+  "elapsedSec": 36.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 106,
   "summary": {
     "total": 318,
     "coveredByMain": 30,
     "recovered": 9,
-    "recoveredPositions": 66,
+    "recoveredPositions": 67,
     "noPositions": 279,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 4,
       "spread": 2,
       "total": 2,
-      "dropped_shadow_gate": 50,
+      "dropped_shadow_gate": 51,
       "dropped_excluded": 7,
       "dropped_duplicate": 1
     }
@@ -613,6 +613,15 @@
         },
         {
           "sport": "SOC",
+          "gameKey": "rso_elc",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 86,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
           "gameKey": "val_sev",
           "marketType": "ml",
           "side": "away",
@@ -680,15 +689,6 @@
           "marketType": "ml",
           "side": "away",
           "invested": 29,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "rso_elc",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 24,
           "entryLine": null,
           "passesShadow": false
         },
@@ -2494,11 +2494,11 @@
       "sports": "SOC,MLB,NBA,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 19,
+      "positionsCount": 20,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 6562,
       "willPassShadowGate": 2,
-      "willDropAtShadowGate": 17,
+      "willDropAtShadowGate": 18,
       "positions": [
         {
           "sport": "MLB",
@@ -2534,6 +2534,15 @@
           "side": "home",
           "invested": 578,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "ne_sea",
+          "marketType": "total",
+          "side": "under",
+          "invested": 271,
+          "entryLine": 46.5,
           "passesShadow": false
         },
         {
