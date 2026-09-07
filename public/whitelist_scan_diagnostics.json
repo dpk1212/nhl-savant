@@ -1,24 +1,24 @@
 {
-  "scannedAt": "2026-09-07T23:04:50.849Z",
+  "scannedAt": "2026-09-07T23:18:16.146Z",
   "elapsedSec": 40.3,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 134,
   "summary": {
     "total": 320,
-    "coveredByMain": 34,
-    "recovered": 23,
-    "recoveredPositions": 132,
-    "noPositions": 263,
+    "coveredByMain": 35,
+    "recovered": 24,
+    "recoveredPositions": 135,
+    "noPositions": 261,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 21,
-      "spread": 5,
-      "total": 8,
-      "dropped_shadow_gate": 84,
+      "ml": 23,
+      "spread": 6,
+      "total": 9,
+      "dropped_shadow_gate": 82,
       "dropped_excluded": 12,
-      "dropped_duplicate": 2
+      "dropped_duplicate": 3
     }
   },
   "perWallet": [
@@ -174,7 +174,7 @@
           "gameKey": "smu_fsu",
           "marketType": "ml",
           "side": "home",
-          "invested": 3481,
+          "invested": 3976,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1238,8 +1238,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "UFC,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x4bff30af91642dc7d2b19a8664378fe55c45fc26"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x4bff30af91642dc7d2b19a8664378fe55c45fc26",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 180719,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "CFB",
+          "gameKey": "smu_fsu",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 24327,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "461220",
@@ -1264,11 +1280,11 @@
       "sports": "MLB,WNBA,UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x7e5972bfc25819775ee5a9d4f191919375487b8b",
-      "positionsCount": 12,
+      "positionsCount": 10,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1557,
       "willPassShadowGate": 3,
-      "willDropAtShadowGate": 9,
+      "willDropAtShadowGate": 7,
       "positions": [
         {
           "sport": "CFB",
@@ -1354,24 +1370,6 @@
         {
           "sport": "SOC",
           "gameKey": "hul_che",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 4,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "jvst_ohio",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 2,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "wsu_ksu",
           "marketType": "ml",
           "side": "home",
           "invested": 4,
@@ -1807,8 +1805,7 @@
       "tier": "CONFIRMED",
       "name": "rollobravado",
       "sports": "CFB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x3b62c64ebaee15478e8b21765b9f940458655cc8"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "669791",
@@ -2169,10 +2166,10 @@
       "sports": "NBA,SOC,CFB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x86e99faea12fccd8925de5d9f052471baf7a4cdf",
-      "positionsCount": 1,
+      "positionsCount": 3,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 5652,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -2180,8 +2177,26 @@
           "gameKey": "smu_fsu",
           "marketType": "ml",
           "side": "away",
-          "invested": 3189,
+          "invested": 14989,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "smu_fsu",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 4840,
+          "entryLine": -3.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "smu_fsu",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 5300,
+          "entryLine": -2.5,
           "passesShadow": true
         }
       ]
@@ -2802,10 +2817,10 @@
       "sports": "MLB,NFL,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xb8ef617fd5d960e61e56c50d2971697300b32864",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 3920,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -2815,6 +2830,15 @@
           "side": "under",
           "invested": 6271,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "cin_lad",
+          "marketType": "total",
+          "side": "over",
+          "invested": 2894,
+          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -2907,10 +2931,10 @@
       "sports": "NHL,SOC,WNBA,CFB,UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 8733,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -2920,6 +2944,15 @@
           "side": "home",
           "invested": 9612,
           "entryLine": 2.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "smu_fsu",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 4558,
+          "entryLine": null,
           "passesShadow": true
         }
       ]
@@ -3683,7 +3716,7 @@
           "gameKey": "stl_sfg",
           "marketType": "ml",
           "side": "away",
-          "invested": 1061,
+          "invested": 1068,
           "entryLine": null,
           "passesShadow": false
         },
