@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-07T01:05:10.839Z",
-  "elapsedSec": 37,
+  "scannedAt": "2026-09-07T01:09:20.300Z",
+  "elapsedSec": 36.4,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 105,
+  "todayGamesCount": 106,
   "summary": {
     "total": 318,
     "coveredByMain": 30,
     "recovered": 9,
-    "recoveredPositions": 65,
+    "recoveredPositions": 66,
     "noPositions": 279,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 4,
       "spread": 2,
       "total": 2,
-      "dropped_shadow_gate": 49,
+      "dropped_shadow_gate": 50,
       "dropped_excluded": 7,
       "dropped_duplicate": 1
     }
@@ -1115,12 +1115,21 @@
       "sports": "NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa38a455bbdd4b68486548b7e19da99903f4f821d",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "fallback",
       "avgSportBet": 40943,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "wsh_sdp",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 36,
+          "entryLine": null,
+          "passesShadow": false
+        },
         {
           "sport": "MLB",
           "gameKey": "cin_lad",
@@ -2530,15 +2539,6 @@
         {
           "sport": "NFL",
           "gameKey": "ne_sea",
-          "marketType": "total",
-          "side": "under",
-          "invested": 271,
-          "entryLine": 46.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "NFL",
-          "gameKey": "ne_sea",
           "marketType": "ml",
           "side": "away",
           "invested": 144,
@@ -2587,6 +2587,15 @@
           "marketType": "ml",
           "side": "away",
           "invested": 85,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "wsh_sdp",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 107,
           "entryLine": null,
           "passesShadow": false
         },
