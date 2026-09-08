@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-08T10:49:39.228Z",
+  "scannedAt": "2026-09-08T10:55:06.157Z",
   "elapsedSec": 42.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 134,
   "summary": {
     "total": 321,
-    "coveredByMain": 19,
-    "recovered": 12,
-    "recoveredPositions": 122,
+    "coveredByMain": 18,
+    "recovered": 13,
+    "recoveredPositions": 126,
     "noPositions": 290,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 6,
       "spread": 4,
       "total": 2,
-      "dropped_shadow_gate": 86,
+      "dropped_shadow_gate": 90,
       "dropped_excluded": 24,
       "dropped_duplicate": 0
     }
@@ -536,11 +536,11 @@
       "sports": "MLB,WNBA,SOC,UFC,CFB,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 69,
+      "positionsCount": 70,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 4026,
       "willPassShadowGate": 13,
-      "willDropAtShadowGate": 56,
+      "willDropAtShadowGate": 57,
       "positions": [
         {
           "sport": "MLB",
@@ -1040,6 +1040,15 @@
         {
           "sport": "CFB",
           "gameKey": "sdsu_ucla",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 9,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "laa_bos",
           "marketType": "ml",
           "side": "away",
           "invested": 9,
@@ -1804,7 +1813,42 @@
       "tier": "CONFIRMED",
       "name": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882-1783406009396",
       "sports": "MLB,UFC,SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
+      "positionsCount": 3,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 2599,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 3,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "ful_liv",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 181,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "hul_che",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 107,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "ars_sun",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 51,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "6ac120",
