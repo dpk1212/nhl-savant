@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-09-08T20:18:07.370Z",
-  "elapsedSec": 34.5,
+  "scannedAt": "2026-09-08T20:22:44.063Z",
+  "elapsedSec": 37.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 150,
   "summary": {
     "total": 321,
     "coveredByMain": 36,
-    "recovered": 16,
-    "recoveredPositions": 161,
-    "noPositions": 269,
+    "recovered": 17,
+    "recoveredPositions": 163,
+    "noPositions": 268,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 16,
+      "ml": 17,
       "spread": 7,
       "total": 15,
-      "dropped_shadow_gate": 91,
+      "dropped_shadow_gate": 92,
       "dropped_excluded": 29,
       "dropped_duplicate": 3
     }
@@ -481,7 +481,7 @@
           "gameKey": "col_nyy",
           "marketType": "total",
           "side": "under",
-          "invested": 6426,
+          "invested": 6762,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -2767,8 +2767,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "NBA,MLB,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x37e4728b3c4607fb2b3b205386bb1d1fb1a8c991"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x37e4728b3c4607fb2b3b205386bb1d1fb1a8c991",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 35862,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "nym_mia",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 26576,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "a9bc8a",
@@ -3312,11 +3328,11 @@
       "sports": "SOC,MLB,NBA,NFL,CFB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 29,
+      "positionsCount": 30,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 6543,
       "willPassShadowGate": 4,
-      "willDropAtShadowGate": 25,
+      "willDropAtShadowGate": 26,
       "positions": [
         {
           "sport": "MLB",
@@ -3523,6 +3539,15 @@
           "side": "home",
           "invested": 24,
           "entryLine": -4.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "tor_oak",
+          "marketType": "total",
+          "side": "under",
+          "invested": 24,
+          "entryLine": 9.5,
           "passesShadow": false
         },
         {
