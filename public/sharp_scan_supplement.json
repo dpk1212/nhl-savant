@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-09-08T02:25:55.410Z",
+  "updatedAt": "2026-09-08T02:31:57.064Z",
   "minPositionUsd": 2000,
-  "walletCount": 309,
+  "walletCount": 310,
   "wallets": {
     "0xe6bff499390d0988f81967d095925b44aad38380": {
       "addr": "0xe6bff499390d0988f81967d095925b44aad38380",
@@ -7526,13 +7526,39 @@
       "directionalWhy": "DIRECTIONAL_SHARP: hold 96%, both-sides 4.2%",
       "addedAt": "2026-09-08T01:16:45.701Z",
       "source": "scan_supplement"
+    },
+    "0x75f204b39709544f763ca68c2e3f4a60a309ff6d": {
+      "addr": "0x75f204b39709544f763ca68c2e3f4a60a309ff6d",
+      "name": "Runemup",
+      "sportPnlTotal": 27498,
+      "sportVol": 748113,
+      "sportROI": 3.7,
+      "leaderboardRank": 2299,
+      "monthPnl": 27498,
+      "monthVol": 748113,
+      "monthROI": 3.7,
+      "monthRank": 110,
+      "avgSportBet": 9489,
+      "foundOn": [
+        {
+          "sport": "MLB",
+          "gameKey": "cin_lad",
+          "usd": 9489,
+          "conditionId": "0x192b2f6b7f5cf246a6b7a9f00b1d8cf5e1828a39abfc5c1889555a9c00155d5e"
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "tor_oak",
+          "usd": 6803,
+          "conditionId": "0x95fa2624fec5d9cc4f1498483302234f13e73f35413f7a3abbe10a632f52994c"
+        }
+      ],
+      "directionalWhy": "DIRECTIONAL_SHARP: hold 100%, both-sides 0%",
+      "addedAt": "2026-09-08T02:31:56.323Z",
+      "source": "scan_supplement"
     }
   },
   "rejects": {
-    "0x75f204b39709544f763ca68c2e3f4a60a309ff6d": {
-      "reason": "THIN:only 5 sports markets",
-      "until": 1788834478900
-    },
     "0xd871d5ecfe28003385c62ef1d89bca62db566bba": {
       "reason": "lifetime_red",
       "until": 1788834766892
@@ -8040,6 +8066,10 @@
     "0xecb14ac6e9ca447ce2f2912e6217b43d7b655da3": {
       "reason": "churn_198x_0.5pct",
       "until": 1788920605015
+    },
+    "0xc2e5359b204c4296b7e1a07603fe0b657486b3a5": {
+      "reason": "month_red",
+      "until": 1788920966228
     }
   }
 }
