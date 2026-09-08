@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-09-08T09:56:06.353Z",
+  "generatedAt": "2026-09-08T14:41:55.997Z",
   "today": "2026-09-08",
   "source": "Firestore sharpFlowPicks/Spreads/Totals (same as site loadLockedPicks)",
   "summary": {
-    "liveSidesToday": 4,
-    "shippedToday": 3,
-    "trackedOnlyToday": 1,
-    "totalUnitsToday": 10,
+    "liveSidesToday": 7,
+    "shippedToday": 4,
+    "trackedOnlyToday": 3,
+    "totalUnitsToday": 13,
     "byTier": {
       "SHARP-LEAN": 1,
-      "MINI": 1,
-      "CONFIRMED-Q1": 1
+      "SUPER": 1,
+      "MINI": 2
     },
     "bySport": {
-      "MLB": 3
+      "MLB": 4
     }
   },
   "picks": [
@@ -40,21 +40,50 @@
       "walletQualityMargin": 0,
       "provenWinnersFor": 2,
       "provenWinnersAgainst": 2,
-      "ags": 0.12067619277552549,
+      "ags": 0.11546033153911492,
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-08T23:06:00.000Z",
-      "minsToGame": 790
+      "minsToGame": 504
     },
     {
       "date": "2026-09-08",
       "isToday": true,
       "sport": "MLB",
       "market": "TOTAL",
-      "gameKey": "col_nyy",
-      "matchup": "Colorado Rockies @ New York Yankees",
-      "away": "Colorado Rockies",
-      "home": "New York Yankees",
+      "gameKey": "chc_mil",
+      "matchup": "Chicago Cubs @ Milwaukee Brewers",
+      "away": "Chicago Cubs",
+      "home": "Milwaukee Brewers",
+      "side": "over",
+      "team": "Over 7.5",
+      "selection": "Over 7.5 (+106)",
+      "line": 7.5,
+      "odds": 106,
+      "units": 3,
+      "shipped": true,
+      "stakeTier": "SUPER",
+      "agsConvictionTier": "LEAN",
+      "hcMargin": 2,
+      "walletConsensusDelta": 3,
+      "walletQualityMargin": 2,
+      "provenWinnersFor": 4,
+      "provenWinnersAgainst": 1,
+      "ags": 0.3357076388991962,
+      "agsTier": "LEAN",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-09-08T23:41:00.000Z",
+      "minsToGame": 539
+    },
+    {
+      "date": "2026-09-08",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "TOTAL",
+      "gameKey": "min_det",
+      "matchup": "Minnesota Twins @ Detroit Tigers",
+      "away": "Minnesota Twins",
+      "home": "Detroit Tigers",
       "side": "over",
       "team": "Over 7.5",
       "selection": "Over 7.5 (-122)",
@@ -69,40 +98,98 @@
       "walletQualityMargin": 1,
       "provenWinnersFor": 1,
       "provenWinnersAgainst": 0,
-      "ags": 0.2760968913346741,
+      "ags": 0.054133018718535875,
       "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
-      "commenceTime": "2026-09-08T23:06:00.000Z",
-      "minsToGame": 790
+      "commenceTime": "2026-09-08T22:41:00.000Z",
+      "minsToGame": 479
     },
     {
       "date": "2026-09-08",
       "isToday": true,
       "sport": "MLB",
       "market": "TOTAL",
-      "gameKey": "chc_mil",
-      "matchup": "Chicago Cubs @ Milwaukee Brewers",
-      "away": "Chicago Cubs",
-      "home": "Milwaukee Brewers",
-      "side": "over",
-      "team": "Over 7.5",
-      "selection": "Over 7.5 (+104)",
-      "line": 7.5,
-      "odds": 104,
+      "gameKey": "nym_mia",
+      "matchup": "New York Mets @ Miami Marlins",
+      "away": "New York Mets",
+      "home": "Miami Marlins",
+      "side": "under",
+      "team": "Under 8.5",
+      "selection": "Under 8.5 (-113)",
+      "line": 8.5,
+      "odds": -113,
       "units": 3,
       "shipped": true,
-      "stakeTier": "CONFIRMED-Q1",
-      "agsConvictionTier": "LOCK",
-      "hcMargin": 2,
+      "stakeTier": "MINI",
+      "agsConvictionTier": "ELITE",
+      "hcMargin": 0,
       "walletConsensusDelta": 2,
       "walletQualityMargin": 2,
-      "provenWinnersFor": 3,
-      "provenWinnersAgainst": 1,
-      "ags": 0.3831259884226802,
-      "agsTier": "LOCK",
+      "provenWinnersFor": 2,
+      "provenWinnersAgainst": 0,
+      "ags": 0.2133207281706476,
+      "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
-      "commenceTime": "2026-09-08T23:41:00.000Z",
-      "minsToGame": 825
+      "commenceTime": "2026-09-08T22:41:00.000Z",
+      "minsToGame": 479
+    },
+    {
+      "date": "2026-09-08",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "ML",
+      "gameKey": "cle_bal",
+      "matchup": "Cleveland Guardians @ Baltimore Orioles",
+      "away": "Cleveland Guardians",
+      "home": "Baltimore Orioles",
+      "side": "away",
+      "team": "Cleveland Guardians",
+      "selection": "Cleveland Guardians ML +112",
+      "line": null,
+      "odds": 112,
+      "units": 0,
+      "shipped": false,
+      "stakeTier": "MONITORING",
+      "agsConvictionTier": "PREMIUM",
+      "hcMargin": 0,
+      "walletConsensusDelta": 2,
+      "walletQualityMargin": 1,
+      "provenWinnersFor": 2,
+      "provenWinnersAgainst": 0,
+      "ags": 0.19245728322500533,
+      "agsTier": "PREMIUM",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-09-08T22:36:00.000Z",
+      "minsToGame": 474
+    },
+    {
+      "date": "2026-09-08",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "ML",
+      "gameKey": "ari_kcr",
+      "matchup": "Arizona Diamondbacks @ Kansas City Royals",
+      "away": "Arizona Diamondbacks",
+      "home": "Kansas City Royals",
+      "side": "away",
+      "team": "Arizona Diamondbacks",
+      "selection": "Arizona Diamondbacks ML -120",
+      "line": null,
+      "odds": -120,
+      "units": 0,
+      "shipped": false,
+      "stakeTier": "MONITORING",
+      "agsConvictionTier": "LEAN",
+      "hcMargin": 0,
+      "walletConsensusDelta": 1,
+      "walletQualityMargin": 0,
+      "provenWinnersFor": 1,
+      "provenWinnersAgainst": 0,
+      "ags": 0.0005255560109829471,
+      "agsTier": "LEAN",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-09-08T23:40:00.000Z",
+      "minsToGame": 538
     },
     {
       "date": "2026-09-08",
@@ -131,7 +218,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T02:11:00.000Z",
-      "minsToGame": 975
+      "minsToGame": 689
     },
     {
       "date": "2026-09-07",
@@ -160,7 +247,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T17:06:00.000Z",
-      "minsToGame": -1010
+      "minsToGame": -1296
     },
     {
       "date": "2026-09-07",
@@ -189,7 +276,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T17:36:00.000Z",
-      "minsToGame": -980
+      "minsToGame": -1266
     },
     {
       "date": "2026-09-07",
@@ -218,7 +305,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T17:36:00.000Z",
-      "minsToGame": -980
+      "minsToGame": -1266
     },
     {
       "date": "2026-09-07",
@@ -247,7 +334,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T18:11:00.000Z",
-      "minsToGame": -945
+      "minsToGame": -1231
     },
     {
       "date": "2026-09-07",
@@ -276,7 +363,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T18:11:00.000Z",
-      "minsToGame": -945
+      "minsToGame": -1231
     },
     {
       "date": "2026-09-07",
@@ -305,7 +392,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T19:11:00.000Z",
-      "minsToGame": -885
+      "minsToGame": -1171
     },
     {
       "date": "2026-09-07",
@@ -334,7 +421,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-08T02:06:00.000Z",
-      "minsToGame": -470
+      "minsToGame": -756
     },
     {
       "date": "2026-09-07",
@@ -363,7 +450,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T17:00:00.000Z",
-      "minsToGame": -1016
+      "minsToGame": -1302
     },
     {
       "date": "2026-09-07",
@@ -392,7 +479,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T17:36:00.000Z",
-      "minsToGame": -980
+      "minsToGame": -1266
     },
     {
       "date": "2026-09-07",
@@ -421,7 +508,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T19:11:00.000Z",
-      "minsToGame": -885
+      "minsToGame": -1171
     },
     {
       "date": "2026-09-07",
@@ -450,7 +537,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-08T00:11:00.000Z",
-      "minsToGame": -585
+      "minsToGame": -871
     },
     {
       "date": "2026-09-07",
@@ -479,7 +566,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-08T02:06:00.000Z",
-      "minsToGame": -470
+      "minsToGame": -756
     },
     {
       "date": "2026-09-07",
@@ -508,7 +595,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-07T21:11:00.000Z",
-      "minsToGame": -765
+      "minsToGame": -1051
     },
     {
       "date": "2026-09-07",
@@ -537,7 +624,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-08T01:11:00.000Z",
-      "minsToGame": -525
+      "minsToGame": -811
     }
   ]
 }
