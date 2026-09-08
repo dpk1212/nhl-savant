@@ -1,21 +1,21 @@
 {
-  "scannedAt": "2026-09-08T15:25:29.526Z",
-  "elapsedSec": 37.7,
+  "scannedAt": "2026-09-08T15:29:49.255Z",
+  "elapsedSec": 39.9,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 137,
   "summary": {
     "total": 321,
     "coveredByMain": 26,
-    "recovered": 13,
-    "recoveredPositions": 143,
-    "noPositions": 282,
+    "recovered": 14,
+    "recoveredPositions": 144,
+    "noPositions": 281,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 11,
       "spread": 6,
-      "total": 13,
+      "total": 14,
       "dropped_shadow_gate": 92,
       "dropped_excluded": 19,
       "dropped_duplicate": 2
@@ -462,8 +462,24 @@
       "tier": "CONFIRMED",
       "name": "purplegatto",
       "sports": "SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 5506,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "col_nyy",
+          "marketType": "total",
+          "side": "under",
+          "invested": 5088,
+          "entryLine": 8.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "3033ee",
