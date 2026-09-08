@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-09-08T13:03:57.690Z",
-  "elapsedSec": 42.9,
+  "scannedAt": "2026-09-08T13:09:42.702Z",
+  "elapsedSec": 42.6,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 135,
+  "todayGamesCount": 136,
   "summary": {
     "total": 321,
-    "coveredByMain": 20,
+    "coveredByMain": 21,
     "recovered": 12,
-    "recoveredPositions": 126,
-    "noPositions": 289,
+    "recoveredPositions": 127,
+    "noPositions": 288,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 3,
       "spread": 3,
       "total": 2,
-      "dropped_shadow_gate": 88,
+      "dropped_shadow_gate": 89,
       "dropped_excluded": 30,
       "dropped_duplicate": 0
     }
@@ -592,7 +592,7 @@
           "gameKey": "col_nyy",
           "marketType": "spread",
           "side": "away",
-          "invested": 1926,
+          "invested": 1962,
           "entryLine": 2.5,
           "passesShadow": true
         },
@@ -3087,11 +3087,11 @@
       "sports": "SOC,MLB,NBA,NFL,CFB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 18,
+      "positionsCount": 19,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 6543,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 17,
+      "willDropAtShadowGate": 18,
       "positions": [
         {
           "sport": "MLB",
@@ -3118,6 +3118,15 @@
           "side": "away",
           "invested": 584,
           "entryLine": 3.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "col_nyy",
+          "marketType": "total",
+          "side": "under",
+          "invested": 411,
+          "entryLine": 8.5,
           "passesShadow": false
         },
         {
@@ -3390,8 +3399,7 @@
       "tier": "CONFIRMED",
       "name": "RJW1",
       "sports": "NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x85f031d069de300055900c4055c1baeb6bde3f67"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "de4c4f",
@@ -3583,7 +3591,7 @@
           "gameKey": "col_nyy",
           "marketType": "spread",
           "side": "home",
-          "invested": 8460,
+          "invested": 8492,
           "entryLine": -2.5,
           "passesShadow": true
         }
