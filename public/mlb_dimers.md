@@ -1,66 +1,140 @@
 # MLB Predictions
 
-MLB predictions for Tuesday, September 8, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 9/8, the Dodgers have the highest win probability at 73.4%.
+MLB predictions for Wednesday, September 9, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 9/9, the Dodgers have the highest win probability at 71.4%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Get 6 months of Dimers Pro for just $99.99 ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Sep 8 2026
+Sep 9 2026
 
-[Sep 8, 6:35 PM ET\\
+[Sep 9, 3:05 PM ET\\
 \\
-![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
+![Blue Jays](https://cdn.ciphersports.io/images/MLB/official/TOR.svg)\\
 \\
-Guardians  T. Bibee \\
+Blue Jays  B. Fisher \\
 \\
-46.9% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-47¢\\
-\\
-![Orioles](https://cdn.ciphersports.io/images/MLB/official/BAL.svg)\\
-\\
-Orioles  B. Young \\
-\\
-53.1% \\
+57.7% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-53¢\\
+60¢\\
+\\
+![Athletics](https://cdn.ciphersports.io/images/MLB/official/ATH.svg)\\
+\\
+Athletics  B. Basso \\
+\\
+42.3% \\
+\\
+![bet365](https://cdn.ciphersports.io/images/bookmaker-logos/bet365-icon.svg)\\
+\\
++145\\
+\\
+STARTS\\
+\\
+40 mins \\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_ath_tor) [Sep 9, 3:45 PM ET\\
+\\
+![Cardinals](https://cdn.ciphersports.io/images/MLB/official/STL.svg)\\
+\\
+Cardinals  A. Pallante \\
+\\
+50.2% \\
+\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
+\\
+52¢\\
+\\
+![Giants](https://cdn.ciphersports.io/images/MLB/official/SF.svg)\\
+\\
+Giants  B. Tidwell \\
+\\
+49.8% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+48¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_bal_cle) [Sep 8, 6:40 PM ET\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_sf_stl) [Sep 9, 4:10 PM ET\\
 \\
-![Astros](https://cdn.ciphersports.io/images/MLB/official/HOU.svg)\\
+![Nationals](https://cdn.ciphersports.io/images/MLB/official/WSH.svg)\\
 \\
-Astros  H. Wesneski \\
+Nationals  J. Kent \\
 \\
-48.0% \\
+38.8% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+38¢\\
+\\
+![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
+\\
+Padres  W. Buehler \\
+\\
+61.2% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+63¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_sd_wsh) [Sep 9, 4:10 PM ET\\
+\\
+![Rangers](https://cdn.ciphersports.io/images/MLB/official/TEX.svg)\\
+\\
+Rangers  C. Bradford \\
+\\
+40.3% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
 43¢\\
 \\
-![Phillies](https://cdn.ciphersports.io/images/MLB/official/PHI.svg)\\
+![Mariners](https://cdn.ciphersports.io/images/MLB/official/SEA.svg)\\
 \\
-Phillies  A. Painter \\
+Mariners  K. Anderson \\
 \\
-52.0% \\
+59.7% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
-57¢\\
+58¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_phi_hou) [Sep 8, 6:40 PM ET\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_sea_tex) [Sep 9, 6:35 PM ET\\
+\\
+![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
+\\
+Guardians  F. Griffin \\
+\\
+50.8% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+52¢\\
+\\
+![Orioles](https://cdn.ciphersports.io/images/MLB/official/BAL.svg)\\
+\\
+Orioles  S. Baz \\
+\\
+49.2% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+49¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_bal_cle) [Sep 9, 6:40 PM ET\\
 \\
 ![Mets](https://cdn.ciphersports.io/images/MLB/official/NYM.svg)\\
 \\
-Mets  S. Manaea \\
+Mets  R. Stock \\
 \\
-49.9% \\
+51.5% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -68,119 +142,167 @@ Mets  S. Manaea \\
 \\
 ![Marlins](https://cdn.ciphersports.io/images/MLB/official/MIA.svg)\\
 \\
-Marlins  S. Alcantara \\
+Marlins  J. Junk \\
 \\
-50.1% \\
+48.5% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-54¢\\
+53¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_mia_nym) [Sep 8, 6:40 PM ET\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_mia_nym) [Sep 9, 6:40 PM ET\\
 \\
-![Twins](https://cdn.ciphersports.io/images/MLB/official/MIN.svg)\\
+![Astros](https://cdn.ciphersports.io/images/MLB/official/HOU.svg)\\
 \\
-Twins  D. Kremer \\
+Astros  H. Brown \\
 \\
-45.6% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-44¢\\
-\\
-![Tigers](https://cdn.ciphersports.io/images/MLB/official/DET.svg)\\
-\\
-Tigers  D. Anderson \\
-\\
-54.4% \\
+42.8% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-56¢\\
+41¢\\
+\\
+![Phillies](https://cdn.ciphersports.io/images/MLB/official/PHI.svg)\\
+\\
+Phillies  C. Sánchez \\
+\\
+57.2% \\
+\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
+\\
+59¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_det_min) [Sep 8, 6:45 PM ET\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_phi_hou) [Sep 9, 6:45 PM ET\\
 \\
 ![Angels](https://cdn.ciphersports.io/images/MLB/official/LAA.svg)\\
 \\
-Angels  R. Detmers \\
+Angels  R. Johnson \\
 \\
-42.7% \\
+35.5% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-43¢\\
+33¢\\
 \\
 ![Red Sox](https://cdn.ciphersports.io/images/MLB/official/BOS.svg)\\
 \\
-Red Sox  P. Sandoval \\
+Red Sox  J. Bennett \\
 \\
-57.3% \\
+64.5% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-57¢\\
+67¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_bos_laa) [Sep 8, 7:05 PM ET\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_bos_laa) [Sep 9, 7:05 PM ET\\
 \\
 ![Rockies](https://cdn.ciphersports.io/images/MLB/official/COL.svg)\\
 \\
-Rockies  G. Hughes \\
+Rockies  T. Sugano \\
 \\
-28.2% \\
+29.1% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-25¢\\
+30¢\\
 \\
 ![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
 \\
-Yankees  C. Schlittler \\
+Yankees  W. Warren \\
 \\
-71.8% \\
+70.9% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
-76¢\\
+69¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_nyy_col) [Sep 8, 7:15 PM ET\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_nyy_col) [Sep 9, 7:15 PM ET\\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
-Rays  F. Peralta \\
+Rays  G. Jax \\
 \\
-46.8% \\
+44.0% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-49¢\\
+47¢\\
 \\
 ![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
 \\
-Braves  A. Smith-Shawver \\
+Braves  R. López \\
 \\
-53.2% \\
+56.0% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-51¢\\
+53¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_atl_tb) [Sep 8, 7:40 PM ET\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_atl_tb) [Sep 9, 7:40 PM ET\\
+\\
+![Cubs](https://cdn.ciphersports.io/images/MLB/official/CHC.svg)\\
+\\
+Cubs  K. Gausman \\
+\\
+46.4% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+46¢\\
+\\
+![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
+\\
+Brewers  L. Henderson \\
+\\
+53.6% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+55¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_mil_chc) [Sep 9, 7:40 PM ET\\
+\\
+![D-Backs](https://cdn.ciphersports.io/images/MLB/official/ARI.svg)\\
+\\
+D-Backs  Z. Gallen \\
+\\
+50.9% \\
+\\
+![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
+\\
+-112\\
+\\
+![Royals](https://cdn.ciphersports.io/images/MLB/official/KC.svg)\\
+\\
+Royals  D. Lynch \\
+\\
+49.1% \\
+\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
+\\
+48¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_kc_ari) [Sep 9, 7:40 PM ET\\
 \\
 ![Pirates](https://cdn.ciphersports.io/images/MLB/official/PIT.svg)\\
 \\
-Pirates  B. Chandler \\
+Pirates  L. Bachar \\
 \\
-45.7% \\
+48.3% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -188,161 +310,65 @@ Pirates  B. Chandler \\
 \\
 ![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
 \\
-White Sox  S. Burke \\
+White Sox  D. Martin \\
 \\
-54.3% \\
+51.7% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-57¢\\
+56¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_cws_pit) [Sep 8, 7:40 PM ET\\
-\\
-![Cubs](https://cdn.ciphersports.io/images/MLB/official/CHC.svg)\\
-\\
-Cubs  D. Peterson \\
-\\
-39.6% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-34¢\\
-\\
-![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
-\\
-Brewers  J. Misiorowski \\
-\\
-60.4% \\
-\\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
-\\
-66¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_mil_chc) [Sep 8, 7:40 PM ET\\
-\\
-![D-Backs](https://cdn.ciphersports.io/images/MLB/official/ARI.svg)\\
-\\
-D-Backs  C. Burnes \\
-\\
-51.5% \\
-\\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
-\\
-53¢\\
-\\
-![Royals](https://cdn.ciphersports.io/images/MLB/official/KC.svg)\\
-\\
-Royals  M. Wacha \\
-\\
-48.5% \\
-\\
-![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
-\\
-+108\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_kc_ari) [Sep 8, 9:40 PM ET\\
-\\
-![Blue Jays](https://cdn.ciphersports.io/images/MLB/official/TOR.svg)\\
-\\
-Blue Jays  J. Soriano \\
-\\
-58.7% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-63¢\\
-\\
-![Athletics](https://cdn.ciphersports.io/images/MLB/official/ATH.svg)\\
-\\
-Athletics  J. Perkins \\
-\\
-41.3% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-38¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_ath_tor) [Sep 8, 9:40 PM ET\\
-\\
-![Nationals](https://cdn.ciphersports.io/images/MLB/official/WSH.svg)\\
-\\
-Nationals  R. Cornelio \\
-\\
-36.3% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-37¢\\
-\\
-![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
-\\
-Padres  C. Mize \\
-\\
-63.7% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-64¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_sd_wsh) [Sep 8, 9:45 PM ET\\
-\\
-![Cardinals](https://cdn.ciphersports.io/images/MLB/official/STL.svg)\\
-\\
-Cardinals  Q. Mathews \\
-\\
-49.4% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-50¢\\
-\\
-![Giants](https://cdn.ciphersports.io/images/MLB/official/SF.svg)\\
-\\
-Giants  L. Roupp \\
-\\
-50.6% \\
-\\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
-\\
-50¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_sf_stl) [Sep 8, 10:10 PM ET\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_cws_pit) [Sep 9, 10:10 PM ET\\
 \\
 ![Reds](https://cdn.ciphersports.io/images/MLB/official/CIN.svg)\\
 \\
-Reds  N. Lodolo \\
+Reds  R. Lowder \\
 \\
-26.6% \\
+28.3% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-26¢\\
+28¢\\
 \\
 ![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
 \\
-Dodgers  T. Skubal \\
+Dodgers  Y. Yamamoto \\
 \\
-73.4% \\
+71.7% \\
 \\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-74¢\\
+73¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_168_lad_cin)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_lad_cin) [Sep 9, 1:10 PM ET\\
+\\
+![Twins](https://cdn.ciphersports.io/images/MLB/official/MIN.svg)\\
+\\
+Twins  Z. Matthews \\
+\\
+47.6% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+47¢\\
+\\
+![Tigers](https://cdn.ciphersports.io/images/MLB/official/DET.svg)\\
+\\
+Tigers  K. Montero \\
+\\
+52.4% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+53¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_169_det_min)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -410,7 +436,7 @@ All  Sportsbooks  Prediction Markets  DFS
 
 ![Swipe icon](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20)Swipe across to view more offers
 
-![logo](https://imgix.cosmicjs.com/c5917820-16b6-11f1-a07f-ffa45b2cae93-Draftkings-TCIY-White.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/c5917820-16b6-11f1-a07f-ffa45b2cae93-Draftkings-TCIY-White.svg?auto=format,compress&h=200)
 
 FEATURED
 
@@ -422,7 +448,7 @@ Claim now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/bcdfb080-441e-11f1-9f85-e7af420a77a5-logo-blue.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/bcdfb080-441e-11f1-9f85-e7af420a77a5-logo-blue.svg?auto=format,compress&h=200)
 
 RECOMMENDED
 
@@ -432,7 +458,7 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
 
 TRENDING
 
@@ -444,7 +470,7 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/92be3e40-5ea9-11ef-ba22-5b7a9f51630c-HardRockBet-bigg.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/92be3e40-5ea9-11ef-ba22-5b7a9f51630c-HardRockBet-bigg.svg?auto=format,compress&h=200)
 
 NEW PLAYERS
 
@@ -456,7 +482,7 @@ Claim now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/d4897680-a873-11f1-b019-0b1f647f397d-Kalshi-Logo_White.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/d4897680-a873-11f1-b019-0b1f647f397d-Kalshi-Logo_White.svg?auto=format,compress&h=200)
 
 HOTTEST
 
@@ -480,7 +506,7 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/e9272ff0-877c-11f1-ac64-27ec44a0100e-tsb-color-DSIqtzlf.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/e9272ff0-877c-11f1-ac64-27ec44a0100e-tsb-color-DSIqtzlf.svg?auto=format,compress&h=200)
 
 HOTTEST
 
@@ -516,7 +542,7 @@ Claim now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/e878d130-26c9-11f1-9754-d7196a81e564-Novig_idUhBcMR4r_1.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/e878d130-26c9-11f1-9754-d7196a81e564-Novig_idUhBcMR4r_1.svg?auto=format,compress&h=200)
 
 FEATURED
 
@@ -538,17 +564,17 @@ Claim Now
 
 How to claim
 
-## MLB predictions for Tuesday
+## MLB predictions for Wednesday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Tuesday, the Dodgers lead all win probabilities with a 73.4% chance of beating the Reds at UNIQLO Field at Dodger Stadium. The Yankees and Padres also rank among the leading moneyline favorites.
+On Wednesday, the Dodgers lead all win probabilities with a 71.4% chance of beating the Reds at UNIQLO Field at Dodger Stadium. The Yankees and Red Sox also rank among the leading moneyline favorites.
 
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
-| Dodgers | 73.4% | vs. Reds | 7:10pm |
-| Yankees | 72.1% | vs. Rockies | 4:05pm |
-| Padres | 63.1% | vs. Nationals | 6:40pm |
+| Dodgers | 71.4% | vs. Reds | 7:10pm |
+| Yankees | 69.5% | vs. Rockies | 4:05pm |
+| Red Sox | 64.3% | vs. Angels | 3:45pm |
 
 ## MLB predictions today: Data-driven outcomes for every game
 
