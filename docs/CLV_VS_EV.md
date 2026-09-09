@@ -1,9 +1,65 @@
-# 500 of 3–5% EV vs 500 sharp-backed at a worse price
+# I'd rather win than chase EV
 
 _Status: analysis, not a sizer change. Pulled 2026-09-09 from public Firestore._  
 _Re-run: `node scripts/analyzeClvVsEv.mjs` → `/opt/cursor/artifacts/clv_vs_ev.txt`_
 
-Dale’s tweet: **Would you rather have 500 tickets at 3–5% EV, or 500 tickets the sharps we track actually sat on — even if the price is worse or the ticket is −EV?**
+People ask about **entry price**. The honest answer is not “we always get a good number.” It is: **I’d rather be on the side that wins than hunt 3–5% of juice vs a model.**
+
+That is not anti-math. It is an argument about **which half of EV you trust**.
+
+---
+
+## Theory first (the thing to say before any table)
+
+Expected value has two inputs:
+
+1. **How often you are actually right** (true win rate)
+2. **What they paid you** (the number / implied probability)
+
+EV Twitter mostly watches (2), because you can screenshot it before the game. A model says fair is −110, you got +105, that’s “+4% EV.” Entry price, CLV, juice — same family. Observable. Identity.
+
+(1) is the whole game. You cannot screenshot true probability at 11am. You only see it on Monday, or you proxy it by **who is on the side**.
+
+So “chase EV” in practice means: **optimize the number vs a model’s fair, fire volume, hope the model’s true_p is right.**
+
+“I’d rather win” means: **optimize the side from people we have tracked for months, accept a slightly worse number, hope those extra wins are bigger than the juice we gave up.**
+
+Those two strategies only collide when they put you on **different tickets**. If the 3–5% EV number is the same side the sharps are on, you take it and you got paid. The interesting case is the one people actually ask about: *the number looks average or worse, why are you on it?*
+
+### The inequality (no book required)
+
+At ordinary juice (−110 / −120), a useful rule of thumb:
+
+- **~2 extra wins per 100 tickets ≈ 3–4% of extra juice**
+- So 3–5% EV at the *same* true win rate is a real, respectable edge
+- And **2 extra wins per 100 at a slightly worse number is the same size edge** — it just never shows up as “entry EV”
+
+Chasing EV outperforms following people only if the **soft number** is worth more than the **extra wins** you give up by leaving the side. Following people outperforms chasing EV only if the **extra wins** are worth more than the **juice you didn’t wait for**.
+
+“I’d rather win” is the claim that, for us, the second thing is bigger. It is **false** if you donate more juice than those extra wins (buying any worse number is not a personality). It is **true** if passing a sharp-backed side to hunt 3% vs a model puts you onto coin flips with a prettier spreadsheet.
+
+Cheap on the wrong side is −EV with a green cell.  
+A bit expensive on the right side is +EV that looks −EV at flag.
+
+### Why they ask about entry
+
+- It’s the input they can argue about *before* the game
+- Beating close became the IQ test on this timeline
+- Their workflow has to be volume-on-price: if you don’t have a who, you only have a number
+
+The inverted question: they’re asking **did you buy it cheap?** You’re answering **did we buy the right thing?**
+
+Abstract forced take (numbers come after, if at all):
+
+> Would you rather have 500 tickets that were 4% EV on a spreadsheet, or 500 tickets the people you actually trust were on — even if the number was worse? If two extra wins per hundred beat 4% of juice, you already know the answer. Entry is half of EV. The other half is being right.
+
+Then, if someone wants the receipt, the 500 vs 500 below is the book version of that sentence.
+
+---
+
+## Book version (only after the theory)
+
+Dale’s numeric tweet: **Would you rather have 500 tickets at 3–5% EV, or 500 tickets the sharps we track actually sat on — even if the price is worse or the ticket is −EV?**
 
 **Yes, we can show we outperform EV betting — on that second pile.** Equalize ticket count. Give the EV shop their number as *true* expected ROI (charitable). Compare to our actual graded tickets.
 
@@ -212,10 +268,11 @@ MLB (the volume): −CLV tickets in the −3 to −1% band are 153 · 54.9% · �
 
 **Can say**
 
+- People ask about entry. I’d rather win than chase EV. Entry is half the formula. The other half is how often you’re right.
+- ~2 extra wins per 100 tickets ≈ 3–4% of juice. That’s why a slightly worse number on the right side beats a pretty number on a coin flip.
 - Would you rather 500 tickets at 4% EV, or 500 the sharps we track were on even when the number was worse? Worse-price 500: **57% · −1.1% CLV · +7.7% ROI · +106u** vs **+55u** for 4% EV.
 - Tickets that were **−EV vs Pin** (the ones a juice screen skips): **+12% ROI**.
 - 500 tickets with a tracked sharp on our side, **flat 1u still +6.6%**. Side, not just size.
-- We beat Pin close **41%** of the time. Tickets that **lost** the close still won **57%**.
 
 **Must not say**
 
@@ -226,9 +283,9 @@ MLB (the volume): −CLV tickets in the −3 to −1% band are 153 · 54.9% · �
 
 **Hook shape**
 
-Felt moment: EV Twitter thinks the receipt is **3–5% of juice**. Ours is **who is on it**, including tickets that look −EV.
+Felt moment: people ask about entry. The answer is I’d rather win than chase EV — not because price is fake, because **being right is the other half of EV** and they only watch the screenshotable half.
 
-Forced take: 500 of 4% EV, or 500 the sharps we track sat on at a worse number?
+Forced take: 500 of 4% EV on a spreadsheet, or 500 the people you trust sat on at a worse number?
 
 ---
 
