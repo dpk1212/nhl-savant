@@ -1,5 +1,7 @@
 # Steam leverage — doubled window, mute book included
 
+**Read this first:** [`STEAM_DECISIONS_2026-09-09.md`](./STEAM_DECISIONS_2026-09-09.md) — board implications, not method.
+
 _Pulled 2026-09-09. Steam era Aug 19–Sep 8. Discovery = the August paper (Aug 19–30). Hold-up = T live (Aug 31+). Re-run: `node scripts/analyzeSteamLeverage.mjs`._
 
 _Pairs with [`CLOSING_DIME_STEAM_EDGE.md`](./CLOSING_DIME_STEAM_EDGE.md) · [`STEAM_HOLDUP_2026-09-09.md`](./STEAM_HOLDUP_2026-09-09.md) · [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md)._
