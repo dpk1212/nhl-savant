@@ -9,7 +9,11 @@
  * Reads public Firestore (sharpFlowPicks / Spreads / Totals).
  * Writes /opt/cursor/artifacts/clv_vs_ev.json + stdout report.
  */
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const PROJECT = 'nhl-savant';
 const COLS = [
@@ -137,6 +141,61 @@ function median(arr) {
   return xs.length % 2 ? xs[m] : (xs[m - 1] + xs[m]) / 2;
 }
 
+function sourceFlags(rec) {
+  if (!rec) return { a: false, b: false, confirmed: false };
+  const tier = String(rec.whitelistTier || '').toUpperCase();
+  const src = String(rec.whitelistSource || '').toUpperCase();
+  const picksN = Number(rec.picks?.n) || 0;
+  const posN = Number(rec.positions?.n) || 0;
+  const a = src.includes('A') || (picksN >= 2 && (src === '' && tier === 'CONFIRMED'));
+  const b = src.includes('B') || (posN >= 4 && src === '' && tier === 'CONFIRMED');
+  return {
+    a: tier === 'CONFIRMED' && a,
+    b: tier === 'CONFIRMED' && b,
+    confirmed: tier === 'CONFIRMED',
+  };
+}
+
+let profiles = {};
+try {
+  const profilesJson = JSON.parse(readFileSync(join(ROOT, 'data/wallet-profiles.json'), 'utf8'));
+  profiles = profilesJson.profiles || profilesJson;
+} catch {
+  profiles = {};
+}
+function profileOf(short, sport) {
+  const p = profiles[short] || profiles[String(short || '').toLowerCase()];
+  if (!p) return null;
+  return p.bySport?.[sport] || null;
+}
+
+function countAB(sd, sideKey, sport) {
+  const lock = sd.lock || {};
+  const peak = sd.peak || lock;
+  const wd = (peak.v8Scoring?.walletDetails || lock.v8Scoring?.walletDetails || [])
+    .filter((w) => w && w.wallet && w.side);
+  const seen = new Set();
+  let forA = 0, forB = 0, forConf = 0, forAny = 0;
+  for (const w of wd) {
+    if (w.side !== sideKey) continue;
+    const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    forAny++;
+    const flags = sourceFlags(profileOf(short, sport));
+    if (flags.confirmed) forConf++;
+    if (flags.a) forA++;
+    if (flags.b) forB++;
+  }
+  return { forA, forB, forConf, forAny, sharpAB: forA + forB > 0 };
+}
+
+function flatProfit(won, odds) {
+  if (won === 1) return odds < 0 ? 100 / Math.abs(odds) : odds / 100;
+  if (won === 0) return -1;
+  return 0;
+}
+
 function juiceBand(odds) {
   const o = Number(odds);
   if (!Number.isFinite(o) || o === 0) return 'missing';
@@ -148,16 +207,18 @@ function juiceBand(odds) {
 }
 
 function agg(rows) {
-  let n = 0, w = 0, l = 0, stake = 0, pnl = 0;
+  let n = 0, w = 0, l = 0, stake = 0, pnl = 0, flat = 0;
   const clvs = [];
   const evs = [];
   const lockEvs = [];
   const implieds = [];
+  let nNegClv = 0, nNegEv = 0, nAb = 0, nEvStamp = 0;
   for (const r of rows) {
     if (r.won == null) continue;
     n++;
     stake += r.units || 0;
     pnl += Number.isFinite(r.profit) ? r.profit : 0;
+    flat += Number.isFinite(r.flatPnl) ? r.flatPnl : 0;
     if (r.won === 1) w++;
     else if (r.won === 0) l++;
     if (Number.isFinite(r.clvPct)) clvs.push(r.clvPct);
@@ -165,6 +226,13 @@ function agg(rows) {
     if (Number.isFinite(r.evLock)) lockEvs.push(r.evLock);
     const ip = impliedProb(r.odds);
     if (ip != null) implieds.push(ip * 100);
+    if (Number.isFinite(r.clvPct) && r.clvPct < 0) nNegClv++;
+    const e = r.evFirst ?? r.evStamped;
+    if (Number.isFinite(e)) {
+      nEvStamp++;
+      if (e < 0) nNegEv++;
+    }
+    if (r.sharpAB) nAb++;
   }
   const wr = n ? w / n : null;
   const ci = wilson(w, n);
@@ -186,6 +254,12 @@ function agg(rows) {
     nEv: evs.length,
     meanImplied: meanImp != null ? +meanImp.toFixed(1) : null,
     excessWr: excess != null ? +excess.toFixed(1) : null,
+    flatRoi: n > 0 ? +((flat / n) * 100).toFixed(1) : null,
+    flatPnl: +flat.toFixed(2),
+    nNegClv,
+    nNegEv,
+    nAb,
+    nEvStamp,
   };
 }
 
@@ -259,16 +333,19 @@ for (const { mkt, docs } of packs) {
       const lockOdds = Number.isFinite(Number(odds)) ? Number(odds) : null;
       const ev = tapeEv(sd);
       const clvPct = clvPctFrom(res, lockOdds, closingOdds);
+      const sport = data.sport || 'NHL';
+      const ab = countAB(sd, sideKey, sport);
       rows.push({
         id: data.id,
         date: data.date,
-        sport: data.sport || 'NHL',
+        sport,
         mkt,
         sideKey,
         team: sd.team || sideKey,
         units,
         won,
         profit,
+        flatPnl: flatProfit(won, lockOdds),
         odds: lockOdds,
         closingOdds,
         clvPct: clvPct != null ? +clvPct.toFixed(3) : null,
@@ -279,6 +356,7 @@ for (const { mkt, docs } of packs) {
         evBucket: evBucket(ev.evFirst ?? ev.evStamped),
         hasTape: ev.n > 0,
         window: windowOf(data.date),
+        ...ab,
       });
     }
   }
@@ -461,6 +539,161 @@ for (const r of daleSorted.slice(0, 25)) {
   push(`  ${r.date} ${r.sport} ${r.mkt} ${String(r.team).slice(0, 28).padEnd(28)} ${r.won ? 'W' : 'L'} ${r.units}u  odds ${r.odds}  CLV ${r.clvPct >= 0 ? '+' : ''}${r.clvPct.toFixed(2)}%  EV ${evs == null ? '—' : (evs >= 0 ? '+' : '') + Number(evs).toFixed(1)}`);
 }
 
+push('=== 11. 500 vs 500 — sharp-backed actual vs 3–5% EV expected ===');
+push('EV shop side is theoretical: if 3–5% EV is REAL, 500 tickets return 3–5% of the SAME stake.');
+push('Our side is actual graded tickets. Worse-price pool = lost Pin close OR entry EV < 0 vs Pin fair.');
+push('');
+
+function byDate(a, b) {
+  const d = String(a.date).localeCompare(String(b.date));
+  if (d) return d;
+  return String(a.id).localeCompare(String(b.id));
+}
+function vsEv(a, label) {
+  if (!a || !a.n) {
+    push(`${label.padEnd(42)} —`);
+    return a;
+  }
+  const e3 = a.stake * 0.03;
+  const e4 = a.stake * 0.04;
+  const e5 = a.stake * 0.05;
+  const d3 = a.pnl - e3;
+  const d5 = a.pnl - e5;
+  const mix = `−CLV ${a.nNegClv}/${a.n}  −EV ${a.nNegEv}/${a.nEvStamp || 0}  A/B ${a.nAb}/${a.n}  flat1u ${a.flatRoi >= 0 ? '+' : ''}${a.flatRoi}%`;
+  push(`${label}`);
+  push(`  ACTUAL ${fmt(a)}`);
+  push(`  vs 3% EV  exp ${e3 >= 0 ? '+' : ''}${e3.toFixed(1)}u  Δ ${d3 >= 0 ? '+' : ''}${d3.toFixed(1)}u`);
+  push(`  vs 4% EV  exp ${e4 >= 0 ? '+' : ''}${e4.toFixed(1)}u  Δ ${(a.pnl - e4) >= 0 ? '+' : ''}${(a.pnl - e4).toFixed(1)}u`);
+  push(`  vs 5% EV  exp ${e5 >= 0 ? '+' : ''}${e5.toFixed(1)}u  Δ ${d5 >= 0 ? '+' : ''}${d5.toFixed(1)}u  · ${mix}`);
+  return a;
+}
+
+const sorted = [...live].sort(byDate);
+const worse = live.filter((r) => {
+  const e = r.evFirst ?? r.evStamped;
+  return (Number.isFinite(r.clvPct) && r.clvPct < 0) || (Number.isFinite(e) && e < 0);
+}).sort(byDate);
+const abRows = live.filter((r) => r.sharpAB).sort(byDate);
+const negEv = live.filter((r) => {
+  const e = r.evFirst ?? r.evStamped;
+  return Number.isFinite(e) && e < 0;
+}).sort(byDate);
+
+function show500(rows, label) {
+  if (!rows.length) {
+    push(`${label.padEnd(42)} —`);
+    return null;
+  }
+  const from = rows[0].date;
+  const to = rows[rows.length - 1].date;
+  return vsEv(agg(rows), `${label}  (${from} → ${to})`);
+}
+function take500(arr, which) {
+  if (arr.length < 500) return { rows: arr, which: `all ${arr.length}` };
+  if (which === 'first') return { rows: arr.slice(0, 500), which: 'first 500' };
+  if (which === 'last') return { rows: arr.slice(-500), which: 'last 500' };
+  return { rows: arr.slice(0, 500), which: 'first 500' };
+}
+
+push('-- A. 500 sharp-backed tickets (the live book — who is on it, any price) --');
+show500(take500(sorted, 'first').rows, 'first 500 of V12 book');
+show500(take500(sorted, 'last').rows, 'last 500 of V12 book');
+vsEv(agg(sorted), `full book n=${sorted.length}`);
+push('');
+push('-- B. 500 that an EV screen could reject (worse price or −EV vs Pin) --');
+push(`pool n=${worse.length}  (−CLV or entry EV<0)`);
+show500(take500(worse, 'first').rows, `${take500(worse, 'first').which} worse-price/−EV`);
+show500(take500(worse, 'last').rows, `${take500(worse, 'last').which} worse-price/−EV`);
+vsEv(agg(worse), `all worse-price/−EV n=${worse.length}`);
+push('');
+push('-- C. Tickets the EV shop would skip (entry EV < 0 vs Pin fair) --');
+vsEv(agg(negEv), `all −EV n=${negEv.length} (not 500 — rate only)`);
+if (negEv.length) {
+  const a = agg(negEv);
+  const scaleStake = (500 / a.n) * a.stake;
+  const scalePnl = (500 / a.n) * a.pnl;
+  push(`  scaled to 500 at same ROI: stake ${scaleStake.toFixed(1)}u  PnL ${scalePnl >= 0 ? '+' : ''}${scalePnl.toFixed(1)}u  vs 5% EV ${(scaleStake * 0.05).toFixed(1)}u`);
+}
+push('');
+push('-- D. Source A/B CONFIRMED on our side (sharps we track, public: sharp-backed) --');
+push(`pool n=${abRows.length}`);
+show500(take500(abRows, 'first').rows, `${take500(abRows, 'first').which} A/B`);
+show500(take500(abRows, 'last').rows, `${take500(abRows, 'last').which} A/B`);
+vsEv(agg(abRows), `all A/B n=${abRows.length}`);
+push('');
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function sampleN(arr, n, rng) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, n);
+}
+function bootstrap500(arr, label, draws = 4000, seed = 20260909) {
+  if (arr.length < 500) {
+    push(`${label}: n=${arr.length} < 500 — skip bootstrap`);
+    return null;
+  }
+  const rng = mulberry32(seed);
+  const rois = [];
+  const pnls = [];
+  let beat3 = 0, beat5 = 0;
+  for (let i = 0; i < draws; i++) {
+    const a = agg(sampleN(arr, 500, rng));
+    rois.push(a.roi);
+    pnls.push(a.pnl);
+    if (a.roi > 3) beat3++;
+    if (a.roi > 5) beat5++;
+  }
+  rois.sort((x, y) => x - y);
+  pnls.sort((x, y) => x - y);
+  const q = (xs, p) => xs[Math.min(xs.length - 1, Math.floor(p * (xs.length - 1)))];
+  push(`${label}  bootstrap ${draws} draws of 500`);
+  push(`  ROI  mean ${mean(rois).toFixed(1)}%  p10 ${q(rois, 0.1).toFixed(1)}%  p50 ${q(rois, 0.5).toFixed(1)}%  p90 ${q(rois, 0.9).toFixed(1)}%`);
+  push(`  PnL  mean ${mean(pnls).toFixed(1)}u  p10 ${q(pnls, 0.1).toFixed(1)}u  p50 ${q(pnls, 0.5).toFixed(1)}u  p90 ${q(pnls, 0.9).toFixed(1)}u`);
+  push(`  share of 500-ticket books beating 3% EV: ${((100 * beat3) / draws).toFixed(0)}%   beating 5% EV: ${((100 * beat5) / draws).toFixed(0)}%`);
+  return { meanRoi: mean(rois), p10: q(rois, 0.1), p50: q(rois, 0.5), beat3: beat3 / draws, beat5: beat5 / draws };
+}
+
+push('-- E. Rolling 500 (chronological, step 20) — how often the book clears 3% / 5% --');
+function rolling500(arr, label) {
+  if (arr.length < 500) {
+    push(`${label}: n=${arr.length} < 500`);
+    return;
+  }
+  const rois = [];
+  let beat3 = 0, beat5 = 0;
+  for (let i = 0; i + 500 <= arr.length; i += 20) {
+    const a = agg(arr.slice(i, i + 500));
+    rois.push(a.roi);
+    if (a.roi > 3) beat3++;
+    if (a.roi > 5) beat5++;
+  }
+  const nW = rois.length;
+  push(`${label}  ${nW} windows`);
+  push(`  ROI  mean ${mean(rois).toFixed(1)}%  median ${median(rois).toFixed(1)}%  min ${Math.min(...rois).toFixed(1)}%  max ${Math.max(...rois).toFixed(1)}%`);
+  push(`  windows >3% EV: ${beat3}/${nW} (${((100 * beat3) / nW).toFixed(0)}%)   >5% EV: ${beat5}/${nW} (${((100 * beat5) / nW).toFixed(0)}%)`);
+}
+rolling500(sorted, 'live book');
+rolling500(worse, 'worse-price/−EV pool');
+rolling500(abRows, 'A/B pool');
+push('');
+push('-- F. Random 500-ticket books (with replacement shuffle) --');
+const bootBook = bootstrap500(sorted, 'live book');
+const bootWorse = bootstrap500(worse, 'worse-price/−EV');
+const bootAb = bootstrap500(abRows, 'A/B sharp-backed');
+push('');
+
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 const payload = {
   pulledAt: new Date().toISOString(),
@@ -471,6 +704,20 @@ const payload = {
   beatClose: agg(beatClose),
   loseClose: agg(loseClose),
   ev35: agg(ev35),
+  vs500: {
+    first500: agg(take500(sorted, 'first').rows),
+    last500: agg(take500(sorted, 'last').rows),
+    worseN: worse.length,
+    worseFirst500: agg(take500(worse, 'first').rows),
+    worseLast500: agg(take500(worse, 'last').rows),
+    negEv: agg(negEv),
+    abN: abRows.length,
+    abFirst500: agg(take500(abRows, 'first').rows),
+    abLast500: agg(take500(abRows, 'last').rows),
+    bootBook,
+    bootWorse,
+    bootAb,
+  },
   byClvBucket: Object.fromEntries(CLV_ORDER.map((b) => [b, agg(live.filter((r) => r.clvBucket === b))])),
   byEvBucket: Object.fromEntries(EV_ORDER.map((b) => [b, agg(live.filter((r) => r.evBucket === b))])),
   report: out.join('\n'),
