@@ -1,6 +1,7 @@
 # What the extra steam data actually says — board implications
 
 _Steam era Aug 19–Sep 8. Live book + 619 graded mutes. This is the decision view, not the method view._
+_How to ship Findings 1 and 2 (current pipe, code hook, $): [`STEAM_IMPLEMENT_2026-09-09.md`](./STEAM_IMPLEMENT_2026-09-09.md). **No live policy until you pick.**_
 
 Three things moved. Everything else is “keep the current rule.”
 
@@ -58,7 +59,7 @@ Four of eight are 1u stubs leftover called junk; T would have shown them as **2u
 
 **If we are wrong:** the next arriving leftovers go 4-4 and we ate stubs. Sample is 8, both halves still 5-0 / 3-0 (believed-cut arriving 3-0 / 3-0). Same *shape* as the 1u floor we shipped (arriving 9-4 vs rest of 1u −21%).
 
-Code: `applyFlinchFailOpenMuteOverlay` — if `sharpAB && steamArriving`, HOLD. T then floors 1u→2u as usual.
+**Do not** add `if (abArriving) HOLD` inside leftover without wiring steam in. Leftover has no steam input today, and arriving is off on the first cycle. Working hook: capture tape **before** leftover, HOLD leftover when A/B arriving, then let T and the later mutes run. Options: [`STEAM_IMPLEMENT_2026-09-09.md`](./STEAM_IMPLEMENT_2026-09-09.md).
 
 ---
 
@@ -167,3 +168,5 @@ Unconfirmed fat 5-0 (+23u muted) is still n=5 against August’s −9% cell. Not
 Keep T, −375, ev-drift, unconfirmed 4u, believed-cut on **no-steam**, maxSR.
 
 If we do one thing: **#1 + #2**. Extra tickets we already sized, plus a chip that finally names the 76% cell. **#3 is the size bump:** arriving is 76% ROI +51% at the **same** 2.6u as the 55% book. Cap it at native 2–3u → 4u. Leave fat arriving and the 1u floor alone.
+
+Ship order and exact code hooks: [`STEAM_IMPLEMENT_2026-09-09.md`](./STEAM_IMPLEMENT_2026-09-09.md).
