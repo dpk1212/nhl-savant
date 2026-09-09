@@ -1,8 +1,8 @@
 # Stake paths & unit sizing (production)
 
-_Status: **LIVE** · stack `v12abcde` + **tape** (2026-07-15) + **EDGE/net Path C** (2026-07-19) + **EDGE band size on A/C** (2026-07-20; **mute&lt;7 / ×0.75** from 2026-07-22)_  
-_Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js`_  
-_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
+_Status: **LIVE** · stack `v12abcde` + **tape** (2026-07-15) + **EDGE/net Path C** (2026-07-19) + **EDGE band size on A/C** (2026-07-20; **mute&lt;7 / ×0.75** from 2026-07-22) + **steam-tail T** (2026-08-31) + **fav-juice −375** (2026-09-05)_  
+_Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js` · T: `src/lib/steamTailPolicy.js`_  
+_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`CLOSING_DIME_STEAM_EDGE.md`](./CLOSING_DIME_STEAM_EDGE.md) · [`FILTER_SIZE_IMPACT_2026-09-09.md`](./FILTER_SIZE_IMPACT_2026-09-09.md) · [`STEAM_HOLDUP_2026-09-09.md`](./STEAM_HOLDUP_2026-09-09.md) · [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md) · [`STEAM_LEVERAGE_2026-09-09.md`](./STEAM_LEVERAGE_2026-09-09.md) · [`STEAM_DECISIONS_2026-09-09.md`](./STEAM_DECISIONS_2026-09-09.md) · [`STEAM_IMPLEMENT_2026-09-09.md`](./STEAM_IMPLEMENT_2026-09-09.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
 
 ---
 
@@ -20,7 +20,10 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **qConv Q1 mute** | Near-final mute (2026-08-03+; Path A+RANK+UNOPP/Q1 exempt) | Path C SHARP* · `qConv <` expanding Q1 of prior staked → **0u** · fail-open if missing |
 | **FOOLS-gold mute** | Final mute (2026-08-05+) | Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 | **Flinch / fail-open leftover mute** | Last mute (2026-08-19+) | Still **&lt;4u** AND (odds-capped native-4u path **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · **4u+ never touched** · Q1/UNOPP floors cannot revive |
-| **Sport Confirmed unlock CAP** | Absolute last (2026-08-29+) | **NFL / CFB only** · sport-wide CONFIRMED n → max u (&lt;5→1 · 5–9→2 · 10–14→3 · ≥15→full) · CAP only · deep sports EXEMPT |
+| **Sport Confirmed unlock CAP** | NFL/CFB cap (2026-08-29+) | **NFL / CFB only** · sport-wide CONFIRMED n → max u (&lt;5→1 · 5–9→2 · 10–14→3 · ≥15→full) · CAP only · deep sports EXEMPT |
+| **RED climate ×0.5** | Half-size (2026-08-29+) | Sport-day Sharp A turnout on FORs = 0 → units ×0.5 · never mutes to 0 |
+| **Steam-tail Policy T** | Tail confirm/kill (2026-08-31+) | ≤1u junk → 0u · arriving A/B ≤1u → floor 2u · 2–3u untouched · 4u and 5.4u+ keep iff A/B steam on at lock · 5u always · `mutedBy=steam-tail` |
+| **Fav-juice < −375** | Last mute (2026-09-05+) | American odds juicier than **−375** → 0u · **−375 holds** · `mutedBy=fav-juice` |
 | **T-15** | Freeze | No further rewrite |
 
 **Paths pick who. EDGE band sizes A/C. Tape dials size. qConv cuts the Path C Q1 tail (Path A + RANK + UNOPP/Q1 exempt). FOOLS cancels FLAT-led. Leftover mute cancels believed-then-cut stubs and sub-4 FAIL_OPEN. CONFIRMED-UNOPP fills sized unopposed CONFIRMED left at 0u, including after mutes — leftover mute still wins after that restore.**
