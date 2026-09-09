@@ -3,15 +3,15 @@
   "NHL": {},
   "NBA": {
     "bos_det": {
-      "awayProb": 47.5,
+      "awayProb": 44,
       "homeProb": 52.5,
-      "awayBid": 46,
+      "awayBid": 39,
       "awayAsk": 49,
       "homeBid": 52,
       "homeAsk": 53,
       "awayLast": 49,
       "homeLast": 53,
-      "priceMove24h": 0,
+      "priceMove24h": 1,
       "priceHistory": {
         "points": [
           48,
@@ -44,7 +44,7 @@
         "low": 45,
         "change": -48
       },
-      "volume24h": 612,
+      "volume24h": 610,
       "tradeFlow": {
         "awayTicketPct": 53.7,
         "homeTicketPct": 46.3,
@@ -140,23 +140,23 @@
     },
     "phi_nyk": {
       "awayProb": 37,
-      "homeProb": 60.5,
+      "homeProb": 61.5,
       "awayBid": 36,
       "awayAsk": 38,
       "homeBid": 59,
-      "homeAsk": 62,
+      "homeAsk": 64,
       "awayLast": 38,
-      "homeLast": 63,
+      "homeLast": 66,
       "priceMove24h": 2,
       "priceHistory": null,
-      "volume24h": 2000,
+      "volume24h": 1985,
       "tradeFlow": {
-        "awayTicketPct": 58.5,
-        "homeTicketPct": 41.5,
-        "awayMoneyPct": 59.9,
-        "homeMoneyPct": 40.1,
-        "tradeCount": 1266,
-        "sampleCash": 12455
+        "awayTicketPct": 58.2,
+        "homeTicketPct": 41.8,
+        "awayMoneyPct": 59.8,
+        "homeMoneyPct": 40.2,
+        "tradeCount": 1271,
+        "sampleCash": 12475
       },
       "totalTradeFlow": null,
       "whales": {
@@ -244,15 +244,15 @@
       "title": "Philadelphia vs New York"
     },
     "okc_sas": {
-      "awayProb": 47.5,
-      "homeProb": 52.5,
-      "awayBid": 46,
-      "awayAsk": 49,
-      "homeBid": 50,
-      "homeAsk": 55,
+      "awayProb": 47,
+      "homeProb": 53,
+      "awayBid": 44,
+      "awayAsk": 50,
+      "homeBid": 49,
+      "homeAsk": 57,
       "awayLast": 49,
       "homeLast": 56,
-      "priceMove24h": 2,
+      "priceMove24h": 0,
       "priceHistory": {
         "points": [
           49,
@@ -275,7 +275,7 @@
         "low": 46,
         "change": -49
       },
-      "volume24h": 140,
+      "volume24h": 138,
       "tradeFlow": {
         "awayTicketPct": 45.8,
         "homeTicketPct": 54.2,
@@ -316,15 +316,15 @@
   },
   "MLB": {
     "min_det": {
-      "awayProb": 46.5,
-      "homeProb": 53.5,
-      "awayBid": 46,
-      "awayAsk": 47,
-      "homeBid": 53,
-      "homeAsk": 54,
-      "awayLast": 47,
-      "homeLast": 54,
-      "priceMove24h": -1,
+      "awayProb": 42.5,
+      "homeProb": 57.5,
+      "awayBid": 42,
+      "awayAsk": 43,
+      "homeBid": 57,
+      "homeAsk": 58,
+      "awayLast": 43,
+      "homeLast": 57,
+      "priceMove24h": -5,
       "priceHistory": {
         "points": [
           0,
@@ -346,28 +346,36 @@
         "low": 45,
         "change": 47
       },
-      "volume24h": 765448,
+      "volume24h": 816123,
       "tradeFlow": {
-        "awayTicketPct": 49.6,
-        "homeTicketPct": 50.4,
-        "awayMoneyPct": 46.5,
-        "homeMoneyPct": 53.5,
-        "tradeCount": 4826,
-        "sampleCash": 365484
+        "awayTicketPct": 49,
+        "homeTicketPct": 51,
+        "awayMoneyPct": 47.6,
+        "homeMoneyPct": 52.4,
+        "tradeCount": 5861,
+        "sampleCash": 441315
       },
       "totalTradeFlow": {
-        "overTicketPct": 55.5,
-        "underTicketPct": 44.5,
-        "overMoneyPct": 65.2,
-        "underMoneyPct": 34.8,
-        "tradeCount": 1499,
-        "sampleCash": 256122
+        "overTicketPct": 52.7,
+        "underTicketPct": 47.3,
+        "overMoneyPct": 63.5,
+        "underMoneyPct": 36.5,
+        "tradeCount": 1840,
+        "sampleCash": 312809
       },
       "whales": {
-        "count": 950,
-        "totalCash": 510775,
-        "largest": 10824,
+        "count": 1145,
+        "totalCash": 617744,
+        "largest": 15560,
         "topTrades": [
+          {
+            "amount": 15560,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 50,
+            "ts": 1788979930429,
+            "marketType": "total"
+          },
           {
             "amount": 10824,
             "side": "BUY",
@@ -446,6 +454,14 @@
             "ts": 1788967300049
           },
           {
+            "amount": 4683,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 51,
+            "ts": 1788979777864,
+            "marketType": "total"
+          },
+          {
             "amount": 4492,
             "side": "BUY",
             "outcome": "Over",
@@ -454,27 +470,18 @@
             "marketType": "total"
           },
           {
-            "amount": 4329,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 33,
-            "ts": 1788977447331,
-            "marketType": "total"
-          },
-          {
-            "amount": 4327,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 50,
-            "ts": 1788956049523,
-            "marketType": "total"
-          },
-          {
             "amount": 4320,
             "side": "BUY",
             "outcome": "Detroit",
             "price": 54,
             "ts": 1788974467192
+          },
+          {
+            "amount": 4135,
+            "side": "BUY",
+            "outcome": "Detroit",
+            "price": 57,
+            "ts": 1788980301998
           },
           {
             "amount": 4063,
@@ -505,69 +512,62 @@
             "ts": 1788930247476
           },
           {
-            "amount": 3375,
+            "amount": 3483,
             "side": "BUY",
-            "outcome": "Detroit",
-            "price": 54,
-            "ts": 1788963146672
-          },
-          {
-            "amount": 2953,
-            "side": "BUY",
-            "outcome": "Detroit",
-            "price": 55,
-            "ts": 1788959193226
+            "outcome": "Minnesota",
+            "price": 47,
+            "ts": 1788980197588
           }
         ]
       },
       "spreads": [
         {
           "label": "Detroit wins by over 1.5 runs",
-          "prob": 36.5,
-          "volume": 115065
+          "prob": 41.5,
+          "volume": 118385
         },
         {
           "label": "Minnesota wins by over 1.5 runs",
-          "prob": 34.5,
-          "volume": 13193
+          "prob": 39.5,
+          "volume": 14292
         },
         {
           "label": "Detroit wins by over 2.5 runs",
-          "prob": 27,
-          "volume": 2392
+          "prob": 26.5,
+          "volume": 2429
         },
         {
           "label": "Minnesota wins by over 2.5 runs",
-          "prob": 26,
+          "prob": 26.5,
           "volume": 3818
         }
       ],
       "totals": [
         {
           "label": "Over 2.5 runs scored",
-          "prob": 97,
-          "volume": 5451,
+          "prob": 98,
+          "volume": 7091,
           "ticker": "KXMLBTOTAL-26SEP091310MINDET-3",
           "line": 2.5
         },
         {
           "label": "Over 3.5 runs scored",
-          "prob": 91.5,
+          "prob": 94,
           "volume": 6162,
           "ticker": "KXMLBTOTAL-26SEP091310MINDET-4",
           "line": 3.5
         },
         {
           "label": "Over 4.5 runs scored",
-          "prob": 87,
-          "volume": 5837,
+          "prob": 89.5,
+          "volume": 5938,
           "ticker": "KXMLBTOTAL-26SEP091310MINDET-5",
           "line": 4.5
         },
         {
           "label": "Over 5.5 runs scored",
-          "prob": 76.5,
-          "volume": 13196,
+          "prob": 78,
+          "volume": 13974,
           "ticker": "KXMLBTOTAL-26SEP091310MINDET-6",
           "line": 5.5
         }
@@ -585,7 +585,7 @@
       "homeBid": 40,
       "homeAsk": 41,
       "awayLast": 60,
-      "homeLast": 40,
+      "homeLast": 41,
       "priceMove24h": -5,
       "priceHistory": {
         "points": [
@@ -609,26 +609,26 @@
         "low": 60,
         "change": -5
       },
-      "volume24h": 245722,
+      "volume24h": 321624,
       "tradeFlow": {
-        "awayTicketPct": 61.8,
-        "homeTicketPct": 38.2,
-        "awayMoneyPct": 54,
-        "homeMoneyPct": 46,
-        "tradeCount": 1874,
-        "sampleCash": 129436
+        "awayTicketPct": 61.9,
+        "homeTicketPct": 38.1,
+        "awayMoneyPct": 53.6,
+        "homeMoneyPct": 46.4,
+        "tradeCount": 2233,
+        "sampleCash": 174573
       },
       "totalTradeFlow": {
-        "overTicketPct": 66.2,
-        "underTicketPct": 33.8,
-        "overMoneyPct": 81.1,
-        "underMoneyPct": 18.9,
-        "tradeCount": 343,
-        "sampleCash": 25303
+        "overTicketPct": 69.1,
+        "underTicketPct": 30.9,
+        "overMoneyPct": 78.3,
+        "underMoneyPct": 21.7,
+        "tradeCount": 495,
+        "sampleCash": 48874
       },
       "whales": {
-        "count": 269,
-        "totalCash": 118395,
+        "count": 365,
+        "totalCash": 176651,
         "largest": 6000,
         "topTrades": [
           {
@@ -639,11 +639,47 @@
             "ts": 1788972637129
           },
           {
+            "amount": 5144,
+            "side": "BUY",
+            "outcome": "A's",
+            "price": 41,
+            "ts": 1788980041486
+          },
+          {
+            "amount": 4769,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 48,
+            "ts": 1788980020020,
+            "marketType": "total"
+          },
+          {
+            "amount": 4184,
+            "side": "BUY",
+            "outcome": "Toronto",
+            "price": 60,
+            "ts": 1788978468202
+          },
+          {
             "amount": 2938,
             "side": "BUY",
             "outcome": "Toronto",
             "price": 75,
             "ts": 1788976535883
+          },
+          {
+            "amount": 2909,
+            "side": "BUY",
+            "outcome": "Toronto",
+            "price": 60,
+            "ts": 1788979441682
+          },
+          {
+            "amount": 2600,
+            "side": "BUY",
+            "outcome": "A's",
+            "price": 52,
+            "ts": 1788978911038
           },
           {
             "amount": 2450,
@@ -660,6 +696,14 @@
             "ts": 1788974505126
           },
           {
+            "amount": 2115,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 76,
+            "ts": 1788979542571,
+            "marketType": "total"
+          },
+          {
             "amount": 1925,
             "side": "BUY",
             "outcome": "Toronto",
@@ -674,32 +718,28 @@
             "ts": 1788971828773
           },
           {
-            "amount": 1880,
+            "amount": 1636,
             "side": "BUY",
-            "outcome": "A's",
-            "price": 38,
-            "ts": 1788971746252
+            "outcome": "Under",
+            "price": 53,
+            "ts": 1788979277266,
+            "marketType": "total"
           },
           {
-            "amount": 1880,
+            "amount": 1420,
             "side": "BUY",
-            "outcome": "A's",
-            "price": 38,
-            "ts": 1788970274320
+            "outcome": "Over",
+            "price": 48,
+            "ts": 1788979324183,
+            "marketType": "total"
           },
           {
-            "amount": 1880,
+            "amount": 967,
             "side": "BUY",
-            "outcome": "A's",
-            "price": 38,
-            "ts": 1788970189159
-          },
-          {
-            "amount": 1598,
-            "side": "BUY",
-            "outcome": "A's",
-            "price": 40,
-            "ts": 1788973712273
+            "outcome": "Under",
+            "price": 60,
+            "ts": 1788979493145,
+            "marketType": "total"
           },
           {
             "amount": 780,
@@ -740,46 +780,6 @@
             "price": 59,
             "ts": 1788976528316,
             "marketType": "total"
-          },
-          {
-            "amount": 651,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 65,
-            "ts": 1788973510953,
-            "marketType": "total"
-          },
-          {
-            "amount": 594,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 58,
-            "ts": 1788974995494,
-            "marketType": "total"
-          },
-          {
-            "amount": 590,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 53,
-            "ts": 1788978260007,
-            "marketType": "total"
-          },
-          {
-            "amount": 573,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 32,
-            "ts": 1788973511719,
-            "marketType": "total"
-          },
-          {
-            "amount": 540,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 91,
-            "ts": 1788977052720,
-            "marketType": "total"
           }
         ]
       },
@@ -787,29 +787,29 @@
         {
           "label": "Toronto wins by over 1.5 runs",
           "prob": 48.5,
-          "volume": 20698
+          "volume": 38034
         },
         {
           "label": "Toronto wins by over 2.5 runs",
           "prob": 37.5,
-          "volume": 7702
+          "volume": 7785
         },
         {
           "label": "Toronto wins by over 3.5 runs",
-          "prob": 28.5,
+          "prob": 29.5,
           "volume": 2005
         },
         {
           "label": "A's wins by over 1.5 runs",
           "prob": 25.5,
-          "volume": 14254
+          "volume": 14996
         }
       ],
       "totals": [
         {
           "label": "Over 3.5 runs scored",
-          "prob": 93.5,
-          "volume": 1665,
+          "prob": 94.5,
+          "volume": 2755,
           "ticker": "KXMLBTOTAL-26SEP091505TORATH-4",
           "line": 3.5
         },
@@ -823,14 +823,14 @@
         {
           "label": "Over 5.5 runs scored",
           "prob": 81.5,
-          "volume": 864,
+          "volume": 1822,
           "ticker": "KXMLBTOTAL-26SEP091505TORATH-6",
           "line": 5.5
         },
         {
           "label": "Over 6.5 runs scored",
           "prob": 75.5,
-          "volume": 791,
+          "volume": 4989,
           "ticker": "KXMLBTOTAL-26SEP091505TORATH-7",
           "line": 6.5
         }
@@ -871,26 +871,26 @@
         "low": 50,
         "change": -3
       },
-      "volume24h": 379713,
+      "volume24h": 411461,
       "tradeFlow": {
-        "awayTicketPct": 62.2,
-        "homeTicketPct": 37.8,
-        "awayMoneyPct": 59,
-        "homeMoneyPct": 41,
-        "tradeCount": 2102,
-        "sampleCash": 191138
+        "awayTicketPct": 63.2,
+        "homeTicketPct": 36.8,
+        "awayMoneyPct": 61.8,
+        "homeMoneyPct": 38.2,
+        "tradeCount": 2326,
+        "sampleCash": 208911
       },
       "totalTradeFlow": {
-        "overTicketPct": 54.3,
-        "underTicketPct": 45.7,
-        "overMoneyPct": 30.1,
-        "underMoneyPct": 69.9,
-        "tradeCount": 348,
-        "sampleCash": 75620
+        "overTicketPct": 54.6,
+        "underTicketPct": 45.4,
+        "overMoneyPct": 32.5,
+        "underMoneyPct": 67.5,
+        "tradeCount": 392,
+        "sampleCash": 80170
       },
       "whales": {
-        "count": 355,
-        "totalCash": 225864,
+        "count": 405,
+        "totalCash": 243717,
         "largest": 11956,
         "topTrades": [
           {
@@ -1049,12 +1049,12 @@
         {
           "label": "St. Louis wins by over 1.5 runs",
           "prob": 39.5,
-          "volume": 33038
+          "volume": 34920
         },
         {
           "label": "San Francisco wins by over 1.5 runs",
           "prob": 30.5,
-          "volume": 11105
+          "volume": 11492
         },
         {
           "label": "St. Louis wins by over 2.5 runs",
@@ -1064,14 +1064,14 @@
         {
           "label": "San Francisco wins by over 2.5 runs",
           "prob": 21.5,
-          "volume": 10550
+          "volume": 10616
         }
       ],
       "totals": [
         {
           "label": "Over 2.5 runs scored",
           "prob": 96.5,
-          "volume": 10570,
+          "volume": 10622,
           "ticker": "KXMLBTOTAL-26SEP091545STLSF-3",
           "line": 2.5
         },
@@ -1085,14 +1085,14 @@
         {
           "label": "Over 4.5 runs scored",
           "prob": 84.5,
-          "volume": 354,
+          "volume": 379,
           "ticker": "KXMLBTOTAL-26SEP091545STLSF-5",
           "line": 4.5
         },
         {
           "label": "Over 5.5 runs scored",
           "prob": 75.5,
-          "volume": 124,
+          "volume": 149,
           "ticker": "KXMLBTOTAL-26SEP091545STLSF-6",
           "line": 5.5
         }
@@ -1147,7 +1147,7 @@
       "spreads": [
         {
           "label": "Seattle wins by over 1.5 runs",
-          "prob": 35.5,
+          "prob": 35,
           "volume": 0
         },
         {
@@ -1157,7 +1157,7 @@
         },
         {
           "label": "Seattle wins by over 2.5 runs",
-          "prob": 25.5,
+          "prob": 26,
           "volume": 0
         },
         {
@@ -1169,14 +1169,14 @@
       "totals": [
         {
           "label": "Over 1.5 runs scored",
-          "prob": 96.5,
+          "prob": 96,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101610TEXSEA-2",
           "line": 1.5
         },
         {
           "label": "Over 2.5 runs scored",
-          "prob": 93.5,
+          "prob": 93,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101610TEXSEA-3",
           "line": 2.5
@@ -1190,7 +1190,7 @@
         },
         {
           "label": "Over 4.5 runs scored",
-          "prob": 77,
+          "prob": 76.5,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101610TEXSEA-5",
           "line": 4.5
@@ -1233,26 +1233,26 @@
         "low": 36,
         "change": 38
       },
-      "volume24h": 144913,
+      "volume24h": 158872,
       "tradeFlow": {
-        "awayTicketPct": 33.9,
-        "homeTicketPct": 66.1,
-        "awayMoneyPct": 33.4,
-        "homeMoneyPct": 66.6,
-        "tradeCount": 1416,
-        "sampleCash": 75663
+        "awayTicketPct": 33.3,
+        "homeTicketPct": 66.7,
+        "awayMoneyPct": 31.7,
+        "homeMoneyPct": 68.3,
+        "tradeCount": 1539,
+        "sampleCash": 84835
       },
       "totalTradeFlow": {
-        "overTicketPct": 66.8,
-        "underTicketPct": 33.2,
-        "overMoneyPct": 83.7,
-        "underMoneyPct": 16.3,
-        "tradeCount": 256,
-        "sampleCash": 20423
+        "overTicketPct": 67.9,
+        "underTicketPct": 32.1,
+        "overMoneyPct": 85.8,
+        "underMoneyPct": 14.2,
+        "tradeCount": 280,
+        "sampleCash": 24206
       },
       "whales": {
-        "count": 170,
-        "totalCash": 69587,
+        "count": 193,
+        "totalCash": 80450,
         "largest": 3897,
         "topTrades": [
           {
@@ -1277,6 +1277,13 @@
             "ts": 1788968189337
           },
           {
+            "amount": 1935,
+            "side": "BUY",
+            "outcome": "San Diego",
+            "price": 63,
+            "ts": 1788980197627
+          },
+          {
             "amount": 1926,
             "side": "BUY",
             "outcome": "San Diego",
@@ -1291,6 +1298,13 @@
             "ts": 1788918467232
           },
           {
+            "amount": 1891,
+            "side": "BUY",
+            "outcome": "San Diego",
+            "price": 63,
+            "ts": 1788978774052
+          },
+          {
             "amount": 1850,
             "side": "BUY",
             "outcome": "Washington",
@@ -1303,6 +1317,14 @@
             "outcome": "San Diego",
             "price": 64,
             "ts": 1788926961905
+          },
+          {
+            "amount": 1440,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 96,
+            "ts": 1788978970085,
+            "marketType": "total"
           },
           {
             "amount": 1440,
@@ -1328,26 +1350,12 @@
             "ts": 1788918467232
           },
           {
-            "amount": 1173,
-            "side": "BUY",
-            "outcome": "San Diego",
-            "price": 64,
-            "ts": 1788918467232
-          },
-          {
             "amount": 1130,
             "side": "BUY",
             "outcome": "Over",
             "price": 56,
             "ts": 1788973378445,
             "marketType": "total"
-          },
-          {
-            "amount": 1110,
-            "side": "BUY",
-            "outcome": "Washington",
-            "price": 37,
-            "ts": 1788972043664
           },
           {
             "amount": 842,
@@ -1382,27 +1390,19 @@
             "marketType": "total"
           },
           {
+            "amount": 641,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 97,
+            "ts": 1788978970085,
+            "marketType": "total"
+          },
+          {
             "amount": 566,
             "side": "BUY",
             "outcome": "Over",
             "price": 37,
             "ts": 1788973306751,
-            "marketType": "total"
-          },
-          {
-            "amount": 487,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 77,
-            "ts": 1788977712035,
-            "marketType": "total"
-          },
-          {
-            "amount": 480,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 48,
-            "ts": 1788973029357,
             "marketType": "total"
           }
         ]
@@ -1411,17 +1411,17 @@
         {
           "label": "San Diego wins by over 1.5 runs",
           "prob": 43.5,
-          "volume": 23854
+          "volume": 24566
         },
         {
           "label": "San Diego wins by over 2.5 runs",
           "prob": 32.5,
-          "volume": 2192
+          "volume": 2219
         },
         {
           "label": "Washington wins by over 1.5 runs",
           "prob": 27.5,
-          "volume": 2278
+          "volume": 2744
         },
         {
           "label": "San Diego wins by over 3.5 runs",
@@ -1432,21 +1432,21 @@
       "totals": [
         {
           "label": "Over 2.5 runs scored",
-          "prob": 95.5,
-          "volume": 2632,
+          "prob": 96.5,
+          "volume": 5235,
           "ticker": "KXMLBTOTAL-26SEP091610WSHSD-3",
           "line": 2.5
         },
         {
           "label": "Over 3.5 runs scored",
           "prob": 90.5,
-          "volume": 153,
+          "volume": 155,
           "ticker": "KXMLBTOTAL-26SEP091610WSHSD-4",
           "line": 3.5
         },
         {
           "label": "Over 4.5 runs scored",
-          "prob": 86.5,
+          "prob": 85.5,
           "volume": 4,
           "ticker": "KXMLBTOTAL-26SEP091610WSHSD-5",
           "line": 4.5
@@ -1454,7 +1454,7 @@
         {
           "label": "Over 5.5 runs scored",
           "prob": 76.5,
-          "volume": 914,
+          "volume": 934,
           "ticker": "KXMLBTOTAL-26SEP091610WSHSD-6",
           "line": 5.5
         }
@@ -1495,26 +1495,26 @@
         "low": 50,
         "change": 52
       },
-      "volume24h": 91153,
+      "volume24h": 93289,
       "tradeFlow": {
-        "awayTicketPct": 69.2,
-        "homeTicketPct": 30.8,
-        "awayMoneyPct": 73,
-        "homeMoneyPct": 27,
-        "tradeCount": 782,
-        "sampleCash": 47381
+        "awayTicketPct": 68.6,
+        "homeTicketPct": 31.4,
+        "awayMoneyPct": 74,
+        "homeMoneyPct": 26,
+        "tradeCount": 829,
+        "sampleCash": 49755
       },
       "totalTradeFlow": {
-        "overTicketPct": 40.7,
-        "underTicketPct": 59.3,
-        "overMoneyPct": 62.8,
-        "underMoneyPct": 37.2,
-        "tradeCount": 221,
-        "sampleCash": 33743
+        "overTicketPct": 40.9,
+        "underTicketPct": 59.1,
+        "overMoneyPct": 64.1,
+        "underMoneyPct": 35.9,
+        "tradeCount": 235,
+        "sampleCash": 35195
       },
       "whales": {
-        "count": 100,
-        "totalCash": 65880,
+        "count": 107,
+        "totalCash": 69118,
         "largest": 6275,
         "topTrades": [
           {
@@ -1638,19 +1638,19 @@
             "ts": 1788932566104
           },
           {
+            "amount": 963,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 52,
+            "ts": 1788978610120,
+            "marketType": "total"
+          },
+          {
             "amount": 959,
             "side": "BUY",
             "outcome": "Under",
             "price": 47,
             "ts": 1788957272944,
-            "marketType": "total"
-          },
-          {
-            "amount": 912,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 49,
-            "ts": 1788971407074,
             "marketType": "total"
           },
           {
@@ -1678,7 +1678,7 @@
         {
           "label": "Baltimore wins by over 1.5 runs",
           "prob": 31.5,
-          "volume": 2204
+          "volume": 2234
         },
         {
           "label": "Cleveland wins by over 2.5 runs",
@@ -1688,20 +1688,20 @@
         {
           "label": "Baltimore wins by over 2.5 runs",
           "prob": 24.5,
-          "volume": 0
+          "volume": 39
         }
       ],
       "totals": [
         {
           "label": "Over 3.5 runs scored",
-          "prob": 91,
+          "prob": 91.5,
           "volume": 124,
           "ticker": "KXMLBTOTAL-26SEP091835CLEBAL-4",
           "line": 3.5
         },
         {
           "label": "Over 4.5 runs scored",
-          "prob": 87,
+          "prob": 86.5,
           "volume": 292,
           "ticker": "KXMLBTOTAL-26SEP091835CLEBAL-5",
           "line": 4.5
@@ -1733,9 +1733,9 @@
       "awayAsk": 38,
       "homeBid": 63,
       "homeAsk": 64,
-      "awayLast": 37,
+      "awayLast": 38,
       "homeLast": 64,
-      "priceMove24h": -1,
+      "priceMove24h": 0,
       "priceHistory": {
         "points": [
           0,
@@ -1768,26 +1768,26 @@
         "low": 36,
         "change": 37
       },
-      "volume24h": 48737,
+      "volume24h": 49711,
       "tradeFlow": {
-        "awayTicketPct": 48.7,
-        "homeTicketPct": 51.3,
+        "awayTicketPct": 48,
+        "homeTicketPct": 52,
         "awayMoneyPct": 29.6,
         "homeMoneyPct": 70.4,
-        "tradeCount": 232,
-        "sampleCash": 22487
+        "tradeCount": 244,
+        "sampleCash": 22854
       },
       "totalTradeFlow": {
-        "overTicketPct": 31.8,
-        "underTicketPct": 68.2,
-        "overMoneyPct": 18.9,
-        "underMoneyPct": 81.1,
-        "tradeCount": 211,
-        "sampleCash": 13770
+        "overTicketPct": 30.7,
+        "underTicketPct": 69.3,
+        "overMoneyPct": 18.3,
+        "underMoneyPct": 81.7,
+        "tradeCount": 225,
+        "sampleCash": 14774
       },
       "whales": {
-        "count": 60,
-        "totalCash": 28837,
+        "count": 62,
+        "totalCash": 29570,
         "largest": 5018,
         "topTrades": [
           {
@@ -1892,6 +1892,14 @@
             "side": "BUY",
             "outcome": "Under",
             "price": 53,
+            "ts": 1788980234361,
+            "marketType": "total"
+          },
+          {
+            "amount": 492,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 53,
             "ts": 1788962089010,
             "marketType": "total"
           },
@@ -1919,14 +1927,6 @@
             "marketType": "total"
           },
           {
-            "amount": 475,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 95,
-            "ts": 1788965700418,
-            "marketType": "total"
-          },
-          {
             "amount": 459,
             "side": "BUY",
             "outcome": "Philadelphia",
@@ -1946,17 +1946,17 @@
         {
           "label": "Philadelphia wins by over 1.5 runs",
           "prob": 40.5,
-          "volume": 37517
+          "volume": 37943
         },
         {
           "label": "Houston wins by over 1.5 runs",
           "prob": 30.5,
-          "volume": 7504
+          "volume": 7512
         },
         {
           "label": "Philadelphia wins by over 2.5 runs",
           "prob": 29.5,
-          "volume": 352
+          "volume": 664
         },
         {
           "label": "Philadelphia wins by over 3.5 runs",
@@ -2030,26 +2030,26 @@
         "low": 46,
         "change": 48
       },
-      "volume24h": 42085,
+      "volume24h": 42958,
       "tradeFlow": {
-        "awayTicketPct": 44.2,
-        "homeTicketPct": 55.8,
-        "awayMoneyPct": 37.7,
-        "homeMoneyPct": 62.3,
-        "tradeCount": 642,
-        "sampleCash": 21900
+        "awayTicketPct": 45.3,
+        "homeTicketPct": 54.7,
+        "awayMoneyPct": 38.2,
+        "homeMoneyPct": 61.8,
+        "tradeCount": 684,
+        "sampleCash": 22588
       },
       "totalTradeFlow": {
-        "overTicketPct": 75.1,
-        "underTicketPct": 24.9,
-        "overMoneyPct": 79.8,
-        "underMoneyPct": 20.2,
-        "tradeCount": 201,
-        "sampleCash": 14679
+        "overTicketPct": 75.5,
+        "underTicketPct": 24.5,
+        "overMoneyPct": 80.2,
+        "underMoneyPct": 19.8,
+        "tradeCount": 212,
+        "sampleCash": 14980
       },
       "whales": {
-        "count": 72,
-        "totalCash": 22964,
+        "count": 75,
+        "totalCash": 23538,
         "largest": 1197,
         "topTrades": [
           {
@@ -2208,7 +2208,7 @@
         {
           "label": "Miami wins by over 1.5 runs",
           "prob": 35.5,
-          "volume": 5102
+          "volume": 5116
         },
         {
           "label": "New York M wins by over 1.5 runs",
@@ -2243,7 +2243,7 @@
         },
         {
           "label": "Over 4.5 runs scored",
-          "prob": 87,
+          "prob": 86.5,
           "volume": 2,
           "ticker": "KXMLBTOTAL-26SEP091840NYMMIA-5",
           "line": 4.5
@@ -2292,26 +2292,26 @@
         "low": 33,
         "change": -2
       },
-      "volume24h": 79690,
+      "volume24h": 82793,
       "tradeFlow": {
-        "awayTicketPct": 21.4,
-        "homeTicketPct": 78.6,
+        "awayTicketPct": 20.8,
+        "homeTicketPct": 79.2,
         "awayMoneyPct": 10.7,
         "homeMoneyPct": 89.3,
-        "tradeCount": 1155,
-        "sampleCash": 77024
+        "tradeCount": 1248,
+        "sampleCash": 79139
       },
       "totalTradeFlow": {
-        "overTicketPct": 36.1,
-        "underTicketPct": 63.9,
-        "overMoneyPct": 62.2,
-        "underMoneyPct": 37.8,
-        "tradeCount": 202,
-        "sampleCash": 13397
+        "overTicketPct": 37.4,
+        "underTicketPct": 62.6,
+        "overMoneyPct": 64.8,
+        "underMoneyPct": 35.2,
+        "tradeCount": 206,
+        "sampleCash": 14368
       },
       "whales": {
-        "count": 130,
-        "totalCash": 68934,
+        "count": 133,
+        "totalCash": 70210,
         "largest": 4602,
         "topTrades": [
           {
@@ -2409,6 +2409,14 @@
             "marketType": "total"
           },
           {
+            "amount": 959,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 47,
+            "ts": 1788978581377,
+            "marketType": "total"
+          },
+          {
             "amount": 696,
             "side": "BUY",
             "outcome": "Over",
@@ -2455,14 +2463,6 @@
             "price": 58,
             "ts": 1788957305407,
             "marketType": "total"
-          },
-          {
-            "amount": 169,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 54,
-            "ts": 1788972962917,
-            "marketType": "total"
           }
         ]
       },
@@ -2470,7 +2470,7 @@
         {
           "label": "Boston wins by over 1.5 runs",
           "prob": 49.5,
-          "volume": 16031
+          "volume": 17207
         },
         {
           "label": "Boston wins by over 2.5 runs",
@@ -2505,14 +2505,14 @@
         },
         {
           "label": "Over 5.5 runs scored",
-          "prob": 81.5,
+          "prob": 80.5,
           "volume": 79,
           "ticker": "KXMLBTOTAL-26SEP091845LAABOS-6",
           "line": 5.5
         },
         {
           "label": "Over 6.5 runs scored",
-          "prob": 75,
+          "prob": 74.5,
           "volume": 506,
           "ticker": "KXMLBTOTAL-26SEP091845LAABOS-7",
           "line": 6.5
@@ -2524,9 +2524,9 @@
       "title": "Los Angeles A vs Boston"
     },
     "col_nyy": {
-      "awayProb": 25.5,
+      "awayProb": 25,
       "homeProb": 74.5,
-      "awayBid": 25,
+      "awayBid": 24,
       "awayAsk": 26,
       "homeBid": 74,
       "homeAsk": 75,
@@ -2565,21 +2565,28 @@
         "low": 27,
         "change": 27
       },
-      "volume24h": 3528,
+      "volume24h": 3554,
       "tradeFlow": {
-        "awayTicketPct": 47.1,
-        "homeTicketPct": 52.9,
-        "awayMoneyPct": 11.2,
-        "homeMoneyPct": 88.8,
-        "tradeCount": 119,
-        "sampleCash": 2589
+        "awayTicketPct": 45.9,
+        "homeTicketPct": 54.1,
+        "awayMoneyPct": 9.2,
+        "homeMoneyPct": 90.8,
+        "tradeCount": 122,
+        "sampleCash": 3152
       },
       "totalTradeFlow": null,
       "whales": {
-        "count": 7,
-        "totalCash": 1454,
-        "largest": 424,
+        "count": 8,
+        "totalCash": 2016,
+        "largest": 562,
         "topTrades": [
+          {
+            "amount": 562,
+            "side": "BUY",
+            "outcome": "New York Y",
+            "price": 75,
+            "ts": 1788980204418
+          },
           {
             "amount": 424,
             "side": "BUY",
@@ -2639,45 +2646,45 @@
         },
         {
           "label": "New York Y wins by over 2.5 runs",
-          "prob": 45,
+          "prob": 45.5,
           "volume": 0
         },
         {
           "label": "New York Y wins by over 3.5 runs",
-          "prob": 34,
+          "prob": 38,
           "volume": 0
         },
         {
           "label": "Colorado wins by over 1.5 runs",
-          "prob": 14.5,
+          "prob": 15,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 2.5 runs scored",
-          "prob": 97,
+          "prob": 96.5,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101905COLNYY-3",
           "line": 2.5
         },
         {
           "label": "Over 3.5 runs scored",
-          "prob": 92,
+          "prob": 91.5,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101905COLNYY-4",
           "line": 3.5
         },
         {
           "label": "Over 4.5 runs scored",
-          "prob": 88,
+          "prob": 87.5,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101905COLNYY-5",
           "line": 4.5
         },
         {
           "label": "Over 5.5 runs scored",
-          "prob": 77.5,
+          "prob": 77,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101905COLNYY-6",
           "line": 5.5
@@ -2743,8 +2750,8 @@
         "underTicketPct": 100,
         "overMoneyPct": 0,
         "underMoneyPct": 100,
-        "tradeCount": 1,
-        "sampleCash": 10
+        "tradeCount": 5,
+        "sampleCash": 179
       },
       "whales": null,
       "spreads": [
@@ -2755,7 +2762,7 @@
         },
         {
           "label": "Atlanta wins by over 1.5 runs",
-          "prob": 34,
+          "prob": 35.5,
           "volume": 0
         },
         {
@@ -2765,7 +2772,7 @@
         },
         {
           "label": "Atlanta wins by over 2.5 runs",
-          "prob": 25,
+          "prob": 26.5,
           "volume": 0
         }
       ],
@@ -2779,7 +2786,7 @@
         },
         {
           "label": "Over 3.5 runs scored",
-          "prob": 91,
+          "prob": 90.5,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101215TBATL-4",
           "line": 3.5
@@ -2793,7 +2800,7 @@
         },
         {
           "label": "Over 5.5 runs scored",
-          "prob": 76,
+          "prob": 75.5,
           "volume": 0,
           "ticker": "KXMLBTOTAL-26SEP101215TBATL-6",
           "line": 5.5
@@ -2811,9 +2818,9 @@
       "awayAsk": 53,
       "homeBid": 47,
       "homeAsk": 48,
-      "awayLast": 52,
+      "awayLast": 53,
       "homeLast": 48,
-      "priceMove24h": -3,
+      "priceMove24h": -2,
       "priceHistory": {
         "points": [
           55,
@@ -2835,26 +2842,26 @@
         "low": 52,
         "change": -2
       },
-      "volume24h": 48622,
+      "volume24h": 50750,
       "tradeFlow": {
-        "awayTicketPct": 46.5,
-        "homeTicketPct": 53.5,
-        "awayMoneyPct": 51.1,
-        "homeMoneyPct": 48.9,
-        "tradeCount": 523,
-        "sampleCash": 25608
+        "awayTicketPct": 46.9,
+        "homeTicketPct": 53.1,
+        "awayMoneyPct": 50.8,
+        "homeMoneyPct": 49.2,
+        "tradeCount": 550,
+        "sampleCash": 25997
       },
       "totalTradeFlow": {
-        "overTicketPct": 60.2,
-        "underTicketPct": 39.8,
-        "overMoneyPct": 63.1,
-        "underMoneyPct": 36.9,
-        "tradeCount": 113,
-        "sampleCash": 10976
+        "overTicketPct": 62.9,
+        "underTicketPct": 37.1,
+        "overMoneyPct": 67.2,
+        "underMoneyPct": 32.8,
+        "tradeCount": 124,
+        "sampleCash": 12371
       },
       "whales": {
-        "count": 57,
-        "totalCash": 26330,
+        "count": 59,
+        "totalCash": 27527,
         "largest": 2946,
         "topTrades": [
           {
@@ -2907,6 +2914,14 @@
             "outcome": "Over",
             "price": 52,
             "ts": 1788968751940,
+            "marketType": "total"
+          },
+          {
+            "amount": 964,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 53,
+            "ts": 1788978801290,
             "marketType": "total"
           },
           {
@@ -2998,14 +3013,6 @@
             "price": 52,
             "ts": 1788955364649,
             "marketType": "total"
-          },
-          {
-            "amount": 288,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 49,
-            "ts": 1788935580202,
-            "marketType": "total"
           }
         ]
       },
@@ -3013,7 +3020,7 @@
         {
           "label": "Arizona wins by over 1.5 runs",
           "prob": 40.5,
-          "volume": 3751
+          "volume": 3776
         },
         {
           "label": "Kansas City wins by over 1.5 runs",
@@ -3022,7 +3029,7 @@
         },
         {
           "label": "Arizona wins by over 2.5 runs",
-          "prob": 30.5,
+          "prob": 30,
           "volume": 1180
         },
         {
@@ -3041,14 +3048,14 @@
         },
         {
           "label": "Over 3.5 runs scored",
-          "prob": 91,
+          "prob": 90.5,
           "volume": 110,
           "ticker": "KXMLBTOTAL-26SEP091940AZKC-4",
           "line": 3.5
         },
         {
           "label": "Over 4.5 runs scored",
-          "prob": 87,
+          "prob": 86.5,
           "volume": 2,
           "ticker": "KXMLBTOTAL-26SEP091940AZKC-5",
           "line": 4.5
@@ -3067,36 +3074,36 @@
       "title": "Arizona vs Kansas City"
     },
     "pit_cws": {
-      "awayProb": 49.5,
+      "awayProb": 49,
       "homeProb": 51.5,
       "awayBid": 48,
-      "awayAsk": 51,
+      "awayAsk": 50,
       "homeBid": 51,
       "homeAsk": 52,
       "awayLast": 50,
       "homeLast": 52,
       "priceMove24h": -3,
       "priceHistory": null,
-      "volume24h": 12091,
+      "volume24h": 12296,
       "tradeFlow": {
-        "awayTicketPct": 45.3,
-        "homeTicketPct": 54.7,
-        "awayMoneyPct": 21.9,
-        "homeMoneyPct": 78.1,
-        "tradeCount": 95,
-        "sampleCash": 5893
+        "awayTicketPct": 45.5,
+        "homeTicketPct": 54.5,
+        "awayMoneyPct": 22.1,
+        "homeMoneyPct": 77.9,
+        "tradeCount": 99,
+        "sampleCash": 6039
       },
       "totalTradeFlow": {
-        "overTicketPct": 74.3,
-        "underTicketPct": 25.7,
-        "overMoneyPct": 86.5,
-        "underMoneyPct": 13.5,
-        "tradeCount": 171,
-        "sampleCash": 42419
+        "overTicketPct": 75.1,
+        "underTicketPct": 24.9,
+        "overMoneyPct": 86.8,
+        "underMoneyPct": 13.2,
+        "tradeCount": 177,
+        "sampleCash": 43452
       },
       "whales": {
-        "count": 63,
-        "totalCash": 44742,
+        "count": 64,
+        "totalCash": 45726,
         "largest": 7960,
         "topTrades": [
           {
@@ -3179,19 +3186,19 @@
             "marketType": "total"
           },
           {
+            "amount": 984,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 54,
+            "ts": 1788979569299,
+            "marketType": "total"
+          },
+          {
             "amount": 971,
             "side": "BUY",
             "outcome": "Chicago WS",
             "price": 68,
             "ts": 1788975063653
-          },
-          {
-            "amount": 965,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 57,
-            "ts": 1788963163447,
-            "marketType": "total"
           },
           {
             "amount": 360,
@@ -3248,7 +3255,7 @@
         {
           "label": "Chicago WS wins by over 1.5 runs",
           "prob": 37.5,
-          "volume": 2365
+          "volume": 2570
         },
         {
           "label": "Pittsburgh wins by over 1.5 runs",
@@ -3310,7 +3317,7 @@
       "homeAsk": 73,
       "awayLast": 28,
       "homeLast": 73,
-      "priceMove24h": -3,
+      "priceMove24h": -2,
       "priceHistory": {
         "points": [
           30,
@@ -3332,26 +3339,26 @@
         "low": 28,
         "change": -2
       },
-      "volume24h": 92096,
+      "volume24h": 93976,
       "tradeFlow": {
-        "awayTicketPct": 26,
-        "homeTicketPct": 74,
-        "awayMoneyPct": 14.1,
-        "homeMoneyPct": 85.9,
-        "tradeCount": 1528,
-        "sampleCash": 61280
+        "awayTicketPct": 25.8,
+        "homeTicketPct": 74.2,
+        "awayMoneyPct": 14,
+        "homeMoneyPct": 86,
+        "tradeCount": 1607,
+        "sampleCash": 63418
       },
       "totalTradeFlow": {
-        "overTicketPct": 40.9,
-        "underTicketPct": 59.1,
-        "overMoneyPct": 45.3,
-        "underMoneyPct": 54.7,
-        "tradeCount": 127,
-        "sampleCash": 6089
+        "overTicketPct": 40.4,
+        "underTicketPct": 59.6,
+        "overMoneyPct": 50.7,
+        "underMoneyPct": 49.3,
+        "tradeCount": 136,
+        "sampleCash": 7359
       },
       "whales": {
-        "count": 106,
-        "totalCash": 42653,
+        "count": 112,
+        "totalCash": 44827,
         "largest": 4808,
         "topTrades": [
           {
@@ -3433,6 +3440,14 @@
             "ts": 1788975267506
           },
           {
+            "amount": 962,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 51,
+            "ts": 1788978753158,
+            "marketType": "total"
+          },
+          {
             "amount": 770,
             "side": "BUY",
             "outcome": "Over",
@@ -3495,14 +3510,6 @@
             "price": 61,
             "ts": 1788959811713,
             "marketType": "total"
-          },
-          {
-            "amount": 108,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 42,
-            "ts": 1788959811929,
-            "marketType": "total"
           }
         ]
       },
@@ -3510,7 +3517,7 @@
         {
           "label": "Los Angeles D wins by over 1.5 runs",
           "prob": 53.5,
-          "volume": 15362
+          "volume": 16181
         },
         {
           "label": "Los Angeles D wins by over 2.5 runs",
@@ -3519,7 +3526,7 @@
         },
         {
           "label": "Los Angeles D wins by over 3.5 runs",
-          "prob": 32,
+          "prob": 31.5,
           "volume": 3081
         },
         {
@@ -3553,7 +3560,7 @@
         {
           "label": "Over 5.5 runs scored",
           "prob": 76.5,
-          "volume": 571,
+          "volume": 578,
           "ticker": "KXMLBTOTAL-26SEP092210CINLAD-6",
           "line": 5.5
         }
@@ -3578,9 +3585,9 @@
       "priceHistory": {
         "points": [
           38,
-          38,
-          38,
-          38,
+          39,
+          39,
+          39,
           39,
           39,
           39,
@@ -3596,26 +3603,26 @@
         "low": 38,
         "change": 1
       },
-      "volume24h": 3414717,
+      "volume24h": 3597697,
       "tradeFlow": {
-        "awayTicketPct": 44.4,
-        "homeTicketPct": 55.6,
-        "awayMoneyPct": 42.2,
-        "homeMoneyPct": 57.8,
-        "tradeCount": 74065,
-        "sampleCash": 2780465
+        "awayTicketPct": 44.5,
+        "homeTicketPct": 55.5,
+        "awayMoneyPct": 41.9,
+        "homeMoneyPct": 58.1,
+        "tradeCount": 76701,
+        "sampleCash": 2897136
       },
       "totalTradeFlow": {
-        "overTicketPct": 43.4,
-        "underTicketPct": 56.6,
-        "overMoneyPct": 34.7,
-        "underMoneyPct": 65.3,
-        "tradeCount": 5785,
-        "sampleCash": 282450
+        "overTicketPct": 43,
+        "underTicketPct": 57,
+        "overMoneyPct": 34.5,
+        "underMoneyPct": 65.5,
+        "tradeCount": 6043,
+        "sampleCash": 292350
       },
       "whales": {
-        "count": 3559,
-        "totalCash": 1948171,
+        "count": 3714,
+        "totalCash": 2024623,
         "largest": 68566,
         "topTrades": [
           {
@@ -3774,29 +3781,29 @@
         {
           "label": "Seattle wins by over 1.5 points",
           "prob": 58.5,
-          "volume": 10975
+          "volume": 11013
         },
         {
           "label": "Seattle wins by over 2.5 points",
           "prob": 56.5,
-          "volume": 182390
+          "volume": 193269
         },
         {
           "label": "Seattle wins by over 3.5 points",
           "prob": 46.5,
-          "volume": 627500
+          "volume": 667097
         },
         {
           "label": "Seattle wins by over 4.5 points",
           "prob": 43.5,
-          "volume": 47586
+          "volume": 49175
         }
       ],
       "totals": [
         {
           "label": "Over 23.5 points scored",
-          "prob": 95.5,
-          "volume": 7131,
+          "prob": 94.5,
+          "volume": 7415,
           "ticker": "KXNFLTOTAL-26SEP09NESEA-24",
           "line": 23.5
         },
@@ -3809,15 +3816,15 @@
         },
         {
           "label": "Over 29.5 points scored",
-          "prob": 89.5,
-          "volume": 282,
+          "prob": 89,
+          "volume": 320,
           "ticker": "KXNFLTOTAL-26SEP09NESEA-30",
           "line": 29.5
         },
         {
           "label": "Over 32.5 points scored",
           "prob": 83.5,
-          "volume": 1329,
+          "volume": 2341,
           "ticker": "KXNFLTOTAL-26SEP09NESEA-33",
           "line": 32.5
         }
@@ -3861,22 +3868,22 @@
         "low": 1,
         "change": 0
       },
-      "volume24h": 117456,
+      "volume24h": 116804,
       "tradeFlow": {
         "awayTicketPct": 93.4,
         "homeTicketPct": 6.6,
         "awayMoneyPct": 23.2,
         "homeMoneyPct": 76.8,
-        "tradeCount": 1475,
-        "sampleCash": 23904
+        "tradeCount": 1484,
+        "sampleCash": 23930
       },
       "totalTradeFlow": {
-        "overTicketPct": 86.8,
-        "underTicketPct": 13.2,
+        "overTicketPct": 87,
+        "underTicketPct": 13,
         "overMoneyPct": 94,
         "underMoneyPct": 6,
-        "tradeCount": 76,
-        "sampleCash": 3138
+        "tradeCount": 77,
+        "sampleCash": 3141
       },
       "whales": {
         "count": 32,
@@ -4016,40 +4023,40 @@
         },
         {
           "label": "Virginia wins by over 27.5 points",
-          "prob": 91,
+          "prob": 90,
           "volume": 0
         },
         {
           "label": "Virginia wins by over 30.5 points",
-          "prob": 87,
+          "prob": 85.5,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 33.5 points scored",
-          "prob": 92.5,
+          "prob": 91,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP11NORFUVA-34",
           "line": 33.5
         },
         {
           "label": "Over 36.5 points scored",
-          "prob": 90.5,
+          "prob": 90,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP11NORFUVA-37",
           "line": 36.5
         },
         {
           "label": "Over 39.5 points scored",
-          "prob": 86,
+          "prob": 84,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP11NORFUVA-40",
           "line": 39.5
         },
         {
           "label": "Over 42.5 points scored",
-          "prob": 80.5,
+          "prob": 77.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP11NORFUVA-43",
           "line": 42.5
@@ -4068,21 +4075,21 @@
       "homeBid": 60,
       "homeAsk": 61,
       "awayLast": 41,
-      "homeLast": 61,
+      "homeLast": 60,
       "priceMove24h": 1,
       "priceHistory": {
         "points": [
           40,
           40,
-          40,
-          41,
-          41,
-          40,
           41,
           41,
           41,
           41,
-          40,
+          41,
+          0,
+          41,
+          41,
+          41,
           41
         ],
         "open": 40,
@@ -4091,14 +4098,14 @@
         "low": 40,
         "change": 1
       },
-      "volume24h": 10541,
+      "volume24h": 10241,
       "tradeFlow": {
-        "awayTicketPct": 52.3,
-        "homeTicketPct": 47.7,
+        "awayTicketPct": 52.5,
+        "homeTicketPct": 47.5,
         "awayMoneyPct": 45.6,
         "homeMoneyPct": 54.4,
-        "tradeCount": 1243,
-        "sampleCash": 22680
+        "tradeCount": 1253,
+        "sampleCash": 22755
       },
       "totalTradeFlow": {
         "overTicketPct": 44.4,
@@ -4238,8 +4245,8 @@
         },
         {
           "label": "Boston College wins by over 3.5 points",
-          "prob": 46,
-          "volume": 2270
+          "prob": 47,
+          "volume": 2212
         },
         {
           "label": "Boston College wins by over 4.5 points",
@@ -4257,21 +4264,21 @@
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 84.5,
+          "prob": 84,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP11RUTGBC-39",
           "line": 38.5
         },
         {
           "label": "Over 41.5 points scored",
-          "prob": 79.5,
+          "prob": 78.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP11RUTGBC-42",
           "line": 41.5
         },
         {
           "label": "Over 44.5 points scored",
-          "prob": 74,
+          "prob": 73,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP11RUTGBC-45",
           "line": 44.5
@@ -4283,15 +4290,15 @@
       "title": "Rutgers vs Boston College"
     },
     "mizz_ku": {
-      "awayProb": 66.5,
+      "awayProb": 67.5,
       "homeProb": 32.5,
-      "awayBid": 66,
-      "awayAsk": 67,
+      "awayBid": 67,
+      "awayAsk": 68,
       "homeBid": 32,
       "homeAsk": 33,
-      "awayLast": 67,
+      "awayLast": 68,
       "homeLast": 33,
-      "priceMove24h": -1,
+      "priceMove24h": 0,
       "priceHistory": {
         "points": [
           68,
@@ -4304,31 +4311,32 @@
           68,
           68,
           68,
-          68,
-          67
+          67,
+          67,
+          68
         ],
         "open": 68,
-        "current": 67,
+        "current": 68,
         "high": 68,
         "low": 67,
-        "change": -1
+        "change": 0
       },
-      "volume24h": 10135,
+      "volume24h": 10278,
       "tradeFlow": {
-        "awayTicketPct": 67.8,
-        "homeTicketPct": 32.2,
+        "awayTicketPct": 67.9,
+        "homeTicketPct": 32.1,
         "awayMoneyPct": 81.3,
         "homeMoneyPct": 18.7,
-        "tradeCount": 2005,
-        "sampleCash": 54738
+        "tradeCount": 2022,
+        "sampleCash": 54852
       },
       "totalTradeFlow": {
-        "overTicketPct": 48,
-        "underTicketPct": 52,
+        "overTicketPct": 48.2,
+        "underTicketPct": 51.8,
         "overMoneyPct": 60.5,
         "underMoneyPct": 39.5,
-        "tradeCount": 221,
-        "sampleCash": 7304
+        "tradeCount": 222,
+        "sampleCash": 7307
       },
       "whales": {
         "count": 123,
@@ -4495,7 +4503,7 @@
         },
         {
           "label": "Missouri wins by over 2.5 points",
-          "prob": 62,
+          "prob": 61.5,
           "volume": 105
         },
         {
@@ -4505,14 +4513,14 @@
         },
         {
           "label": "Missouri wins by over 4.5 points",
-          "prob": 53,
+          "prob": 52.5,
           "volume": 19
         }
       ],
       "totals": [
         {
           "label": "Over 32.5 points scored",
-          "prob": 88.5,
+          "prob": 89,
           "volume": 15,
           "ticker": "KXNCAAFTOTAL-26SEP11MIZZKU-33",
           "line": 32.5
@@ -4526,7 +4534,7 @@
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 78,
+          "prob": 76,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP11MIZZKU-39",
           "line": 38.5
@@ -4545,24 +4553,45 @@
       "title": "Missouri vs Kansas"
     },
     "odu_vt": {
-      "awayProb": 10,
+      "awayProb": 9.5,
       "homeProb": 90.5,
       "awayBid": 9,
-      "awayAsk": 11,
+      "awayAsk": 10,
       "homeBid": 90,
       "homeAsk": 91,
       "awayLast": 11,
       "homeLast": 91,
       "priceMove24h": 0,
-      "priceHistory": null,
-      "volume24h": 1992,
+      "priceHistory": {
+        "points": [
+          11,
+          0,
+          11,
+          11,
+          0,
+          0,
+          10,
+          10,
+          0,
+          10,
+          10,
+          0,
+          11
+        ],
+        "open": 11,
+        "current": 11,
+        "high": 11,
+        "low": 10,
+        "change": 0
+      },
+      "volume24h": 2044,
       "tradeFlow": {
-        "awayTicketPct": 30.4,
-        "homeTicketPct": 69.6,
+        "awayTicketPct": 30.2,
+        "homeTicketPct": 69.8,
         "awayMoneyPct": 11.3,
         "homeMoneyPct": 88.7,
-        "tradeCount": 625,
-        "sampleCash": 15227
+        "tradeCount": 630,
+        "sampleCash": 15273
       },
       "totalTradeFlow": {
         "overTicketPct": 57.9,
@@ -4692,22 +4721,22 @@
       "spreads": [
         {
           "label": "Virginia Tech wins by over 1.5 points",
-          "prob": 91,
+          "prob": 89,
           "volume": 0
         },
         {
           "label": "Virginia Tech wins by over 2.5 points",
-          "prob": 89.5,
+          "prob": 87.5,
           "volume": 0
         },
         {
           "label": "Virginia Tech wins by over 3.5 points",
-          "prob": 86,
+          "prob": 84.5,
           "volume": 0
         },
         {
           "label": "Virginia Tech wins by over 4.5 points",
-          "prob": 84,
+          "prob": 83,
           "volume": 0
         }
       ],
@@ -4721,21 +4750,21 @@
         },
         {
           "label": "Over 34.5 points scored",
-          "prob": 87,
+          "prob": 85.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ODUVT-35",
           "line": 34.5
         },
         {
           "label": "Over 37.5 points scored",
-          "prob": 80,
+          "prob": 80.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ODUVT-38",
           "line": 37.5
         },
         {
           "label": "Over 40.5 points scored",
-          "prob": 75.5,
+          "prob": 75,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ODUVT-41",
           "line": 40.5
@@ -4755,7 +4784,7 @@
       "homeAsk": 33,
       "awayLast": 68,
       "homeLast": 33,
-      "priceMove24h": 1,
+      "priceMove24h": 0,
       "priceHistory": {
         "points": [
           68,
@@ -4777,26 +4806,26 @@
         "low": 68,
         "change": 0
       },
-      "volume24h": 69935,
+      "volume24h": 67450,
       "tradeFlow": {
         "awayTicketPct": 75.6,
         "homeTicketPct": 24.4,
-        "awayMoneyPct": 82.2,
-        "homeMoneyPct": 17.8,
-        "tradeCount": 12052,
-        "sampleCash": 487786
+        "awayMoneyPct": 82.4,
+        "homeMoneyPct": 17.6,
+        "tradeCount": 12116,
+        "sampleCash": 492703
       },
       "totalTradeFlow": {
-        "overTicketPct": 48.5,
-        "underTicketPct": 51.5,
+        "overTicketPct": 48.3,
+        "underTicketPct": 51.7,
         "overMoneyPct": 51.3,
         "underMoneyPct": 48.7,
-        "tradeCount": 291,
-        "sampleCash": 7821
+        "tradeCount": 292,
+        "sampleCash": 7826
       },
       "whales": {
-        "count": 790,
-        "totalCash": 290221,
+        "count": 795,
+        "totalCash": 293851,
         "largest": 7169,
         "topTrades": [
           {
@@ -4842,6 +4871,13 @@
             "ts": 1788659183353
           },
           {
+            "amount": 2417,
+            "side": "BUY",
+            "outcome": "Oklahoma",
+            "price": 51,
+            "ts": 1788980023983
+          },
+          {
             "amount": 2331,
             "side": "BUY",
             "outcome": "Oklahoma",
@@ -4861,13 +4897,6 @@
             "outcome": "Michigan",
             "price": 49,
             "ts": 1788875531052
-          },
-          {
-            "amount": 2108,
-            "side": "BUY",
-            "outcome": "Michigan",
-            "price": 50,
-            "ts": 1788913464396
           },
           {
             "amount": 789,
@@ -4955,17 +4984,17 @@
         {
           "label": "Oklahoma wins by over 1.5 points",
           "prob": 65.5,
-          "volume": 193
+          "volume": 189
         },
         {
           "label": "Oklahoma wins by over 2.5 points",
           "prob": 64.5,
-          "volume": 2999
+          "volume": 3006
         },
         {
           "label": "Oklahoma wins by over 3.5 points",
           "prob": 56.5,
-          "volume": 1494
+          "volume": 1484
         },
         {
           "label": "Oklahoma wins by over 4.5 points",
@@ -5020,33 +5049,33 @@
       "priceMove24h": 0,
       "priceHistory": {
         "points": [
-          39,
-          0,
-          0,
+          40,
           39,
           39,
           39,
           0,
           39,
+          39,
           0,
           39,
           39,
+          0,
           39
         ],
-        "open": 39,
+        "open": 40,
         "current": 39,
         "high": 40,
         "low": 39,
-        "change": 0
+        "change": -1
       },
-      "volume24h": 13067,
+      "volume24h": 13655,
       "tradeFlow": {
-        "awayTicketPct": 40.9,
-        "homeTicketPct": 59.1,
-        "awayMoneyPct": 27.7,
-        "homeMoneyPct": 72.3,
-        "tradeCount": 374,
-        "sampleCash": 12275
+        "awayTicketPct": 41.2,
+        "homeTicketPct": 58.8,
+        "awayMoneyPct": 27.1,
+        "homeMoneyPct": 72.9,
+        "tradeCount": 381,
+        "sampleCash": 12565
       },
       "totalTradeFlow": {
         "overTicketPct": 30.4,
@@ -5057,8 +5086,8 @@
         "sampleCash": 8724
       },
       "whales": {
-        "count": 49,
-        "totalCash": 14469,
+        "count": 50,
+        "totalCash": 14744,
         "largest": 1670,
         "topTrades": [
           {
@@ -5144,6 +5173,13 @@
             "ts": 1788887730670
           },
           {
+            "amount": 275,
+            "side": "BUY",
+            "outcome": "Army",
+            "price": 45,
+            "ts": 1788979404114
+          },
+          {
             "amount": 260,
             "side": "BUY",
             "outcome": "South Florida",
@@ -5203,20 +5239,13 @@
             "outcome": "Army",
             "price": 45,
             "ts": 1788895765375
-          },
-          {
-            "amount": 202,
-            "side": "BUY",
-            "outcome": "Army",
-            "price": 64,
-            "ts": 1788721144312
           }
         ]
       },
       "spreads": [
         {
           "label": "Army wins by over 2.5 points",
-          "prob": 59,
+          "prob": 58.5,
           "volume": 5029
         },
         {
@@ -5226,13 +5255,13 @@
         },
         {
           "label": "Army wins by over 3.5 points",
-          "prob": 50,
-          "volume": 931
+          "prob": 50.5,
+          "volume": 902
         },
         {
           "label": "Army wins by over 4.5 points",
-          "prob": 44.5,
-          "volume": 4330
+          "prob": 45.5,
+          "volume": 4961
         }
       ],
       "totals": [
@@ -5245,21 +5274,21 @@
         },
         {
           "label": "Over 35.5 points scored",
-          "prob": 79,
+          "prob": 78.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12USFARMY-36",
           "line": 35.5
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 71.5,
+          "prob": 72,
           "volume": 7,
           "ticker": "KXNCAAFTOTAL-26SEP12USFARMY-39",
           "line": 38.5
         },
         {
           "label": "Over 41.5 points scored",
-          "prob": 64,
+          "prob": 63.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12USFARMY-42",
           "line": 41.5
@@ -5271,9 +5300,9 @@
       "title": "South Florida vs Army"
     },
     "wake_pur": {
-      "awayProb": 57,
+      "awayProb": 57.5,
       "homeProb": 42.5,
-      "awayBid": 56,
+      "awayBid": 57,
       "awayAsk": 58,
       "homeBid": 42,
       "homeAsk": 43,
@@ -5286,22 +5315,23 @@
           60,
           60,
           60,
+          0,
+          0,
           60,
-          0,
-          60,
-          59,
-          0,
-          0,
           58,
-          58
+          58,
+          58,
+          58,
+          58,
+          0
         ],
         "open": 60,
-        "current": 58,
+        "current": 0,
         "high": 60,
         "low": 58,
-        "change": -2
+        "change": -60
       },
-      "volume24h": 6685,
+      "volume24h": 6535,
       "tradeFlow": {
         "awayTicketPct": 40.3,
         "homeTicketPct": 59.7,
@@ -5478,23 +5508,23 @@
       "spreads": [
         {
           "label": "Wake Forest wins by over 1.5 points",
-          "prob": 56,
+          "prob": 55.5,
           "volume": 4
         },
         {
           "label": "Wake Forest wins by over 2.5 points",
           "prob": 53,
-          "volume": 3502
+          "volume": 3487
         },
         {
           "label": "Wake Forest wins by over 3.5 points",
           "prob": 44.5,
-          "volume": 112
+          "volume": 59
         },
         {
           "label": "Wake Forest wins by over 4.5 points",
           "prob": 42.5,
-          "volume": 72
+          "volume": 47
         }
       ],
       "totals": [
@@ -5507,21 +5537,21 @@
         },
         {
           "label": "Over 33.5 points scored",
-          "prob": 87.5,
+          "prob": 85.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12WAKEPUR-34",
           "line": 33.5
         },
         {
           "label": "Over 36.5 points scored",
-          "prob": 83,
+          "prob": 81,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12WAKEPUR-37",
           "line": 36.5
         },
         {
           "label": "Over 39.5 points scored",
-          "prob": 76,
+          "prob": 76.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12WAKEPUR-40",
           "line": 39.5
@@ -5551,7 +5581,7 @@
           1,
           1,
           1,
-          1,
+          0,
           1,
           1,
           1,
@@ -5563,26 +5593,26 @@
         "low": 1,
         "change": 0
       },
-      "volume24h": 17859,
+      "volume24h": 18607,
       "tradeFlow": {
-        "awayTicketPct": 58.9,
-        "homeTicketPct": 41.1,
-        "awayMoneyPct": 4.1,
-        "homeMoneyPct": 95.9,
-        "tradeCount": 699,
-        "sampleCash": 33052
+        "awayTicketPct": 59.3,
+        "homeTicketPct": 40.7,
+        "awayMoneyPct": 4.3,
+        "homeMoneyPct": 95.7,
+        "tradeCount": 705,
+        "sampleCash": 33105
       },
       "totalTradeFlow": {
-        "overTicketPct": 76.9,
-        "underTicketPct": 23.1,
-        "overMoneyPct": 80.9,
-        "underMoneyPct": 19.1,
-        "tradeCount": 156,
-        "sampleCash": 11535
+        "overTicketPct": 77.2,
+        "underTicketPct": 22.8,
+        "overMoneyPct": 81.4,
+        "underMoneyPct": 18.6,
+        "tradeCount": 158,
+        "sampleCash": 11803
       },
       "whales": {
-        "count": 71,
-        "totalCash": 36013,
+        "count": 72,
+        "totalCash": 36267,
         "largest": 3405,
         "topTrades": [
           {
@@ -5728,11 +5758,11 @@
             "marketType": "total"
           },
           {
-            "amount": 251,
+            "amount": 254,
             "side": "BUY",
             "outcome": "Over",
-            "price": 49,
-            "ts": 1788884823645,
+            "price": 92,
+            "ts": 1788979982773,
             "marketType": "total"
           }
         ]
@@ -5740,22 +5770,22 @@
       "spreads": [
         {
           "label": "Georgia wins by over 20.5 points",
-          "prob": 92,
+          "prob": 90,
           "volume": 22
         },
         {
           "label": "Georgia wins by over 21.5 points",
-          "prob": 91,
+          "prob": 89,
           "volume": 0
         },
         {
           "label": "Georgia wins by over 23.5 points",
-          "prob": 89.5,
+          "prob": 87.5,
           "volume": 0
         },
         {
           "label": "Georgia wins by over 24.5 points",
-          "prob": 87.5,
+          "prob": 85.5,
           "volume": 0
         }
       ],
@@ -5776,14 +5806,14 @@
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 89.5,
+          "prob": 87.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12WKUUGA-39",
           "line": 38.5
         },
         {
           "label": "Over 41.5 points scored",
-          "prob": 85.5,
+          "prob": 84.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12WKUUGA-42",
           "line": 41.5
@@ -5803,7 +5833,7 @@
       "homeAsk": 23,
       "awayLast": 79,
       "homeLast": 23,
-      "priceMove24h": 0,
+      "priceMove24h": 1,
       "priceHistory": {
         "points": [
           79,
@@ -5814,7 +5844,7 @@
           79,
           79,
           79,
-          78,
+          79,
           79,
           79,
           79
@@ -5825,26 +5855,26 @@
         "low": 78,
         "change": 0
       },
-      "volume24h": 19250,
+      "volume24h": 19183,
       "tradeFlow": {
-        "awayTicketPct": 64.3,
-        "homeTicketPct": 35.7,
-        "awayMoneyPct": 74.5,
-        "homeMoneyPct": 25.5,
-        "tradeCount": 2377,
-        "sampleCash": 50337
+        "awayTicketPct": 64,
+        "homeTicketPct": 36,
+        "awayMoneyPct": 74.4,
+        "homeMoneyPct": 25.6,
+        "tradeCount": 2398,
+        "sampleCash": 50547
       },
       "totalTradeFlow": {
-        "overTicketPct": 41,
-        "underTicketPct": 59,
-        "overMoneyPct": 59.4,
-        "underMoneyPct": 40.6,
-        "tradeCount": 210,
-        "sampleCash": 4620
+        "overTicketPct": 41.8,
+        "underTicketPct": 58.2,
+        "overMoneyPct": 61.3,
+        "underMoneyPct": 38.7,
+        "tradeCount": 213,
+        "sampleCash": 4853
       },
       "whales": {
-        "count": 90,
-        "totalCash": 23465,
+        "count": 91,
+        "totalCash": 23678,
         "largest": 991,
         "topTrades": [
           {
@@ -5934,6 +5964,14 @@
             "marketType": "total"
           },
           {
+            "amount": 213,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 54,
+            "ts": 1788978639024,
+            "marketType": "total"
+          },
+          {
             "amount": 209,
             "side": "BUY",
             "outcome": "Over",
@@ -5986,17 +6024,17 @@
       "spreads": [
         {
           "label": "Alabama wins by over 1.5 points",
-          "prob": 76.5,
+          "prob": 76,
           "volume": 1
         },
         {
           "label": "Alabama wins by over 2.5 points",
-          "prob": 73.5,
+          "prob": 74,
           "volume": 7
         },
         {
           "label": "Alabama wins by over 3.5 points",
-          "prob": 69.5,
+          "prob": 69,
           "volume": 0
         },
         {
@@ -6015,14 +6053,14 @@
         },
         {
           "label": "Over 31.5 points scored",
-          "prob": 84,
+          "prob": 87,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ALAUK-32",
           "line": 31.5
         },
         {
           "label": "Over 34.5 points scored",
-          "prob": 82.5,
+          "prob": 83,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ALAUK-35",
           "line": 34.5
@@ -6041,10 +6079,10 @@
       "title": "Alabama vs Kentucky"
     },
     "ariz_byu": {
-      "awayProb": 27,
+      "awayProb": 26.5,
       "homeProb": 73.5,
       "awayBid": 26,
-      "awayAsk": 28,
+      "awayAsk": 27,
       "homeBid": 73,
       "homeAsk": 74,
       "awayLast": 27,
@@ -6053,16 +6091,16 @@
       "priceHistory": {
         "points": [
           28,
+          27,
+          27,
+          27,
+          27,
+          27,
+          0,
           0,
           27,
           0,
-          27,
-          26,
           0,
-          27,
-          0,
-          0,
-          27,
           27
         ],
         "open": 28,
@@ -6071,7 +6109,7 @@
         "low": 26,
         "change": -1
       },
-      "volume24h": 5062,
+      "volume24h": 4800,
       "tradeFlow": {
         "awayTicketPct": 35.4,
         "homeTicketPct": 64.6,
@@ -6247,51 +6285,51 @@
       },
       "spreads": [
         {
-          "label": "BYU wins by over 1.5 points",
-          "prob": 71,
-          "volume": 0
-        },
-        {
           "label": "BYU wins by over 2.5 points",
-          "prob": 69.5,
+          "prob": 69,
           "volume": 263
         },
         {
+          "label": "BYU wins by over 1.5 points",
+          "prob": 68.5,
+          "volume": 0
+        },
+        {
           "label": "BYU wins by over 3.5 points",
-          "prob": 63.5,
+          "prob": 61,
           "volume": 1
         },
         {
           "label": "BYU wins by over 4.5 points",
-          "prob": 61,
+          "prob": 60,
           "volume": 2
         }
       ],
       "totals": [
         {
           "label": "Over 31.5 points scored",
-          "prob": 87.5,
+          "prob": 85.5,
           "volume": 82,
           "ticker": "KXNCAAFTOTAL-26SEP12ARIZBYU-32",
           "line": 31.5
         },
         {
           "label": "Over 34.5 points scored",
-          "prob": 83,
+          "prob": 81,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ARIZBYU-35",
           "line": 34.5
         },
         {
           "label": "Over 37.5 points scored",
-          "prob": 76.5,
+          "prob": 76,
           "volume": 5,
           "ticker": "KXNCAAFTOTAL-26SEP12ARIZBYU-38",
           "line": 37.5
         },
         {
           "label": "Over 40.5 points scored",
-          "prob": 69.5,
+          "prob": 70.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ARIZBYU-41",
           "line": 40.5
@@ -6315,13 +6353,13 @@
       "priceHistory": {
         "points": [
           40,
+          40,
+          40,
+          40,
+          40,
+          40,
+          40,
           0,
-          40,
-          40,
-          40,
-          40,
-          40,
-          40,
           40,
           40,
           40,
@@ -6333,14 +6371,14 @@
         "low": 40,
         "change": 0
       },
-      "volume24h": 8106,
+      "volume24h": 8110,
       "tradeFlow": {
-        "awayTicketPct": 44.2,
-        "homeTicketPct": 55.8,
-        "awayMoneyPct": 17.5,
-        "homeMoneyPct": 82.5,
-        "tradeCount": 669,
-        "sampleCash": 29627
+        "awayTicketPct": 44.5,
+        "homeTicketPct": 55.5,
+        "awayMoneyPct": 17.8,
+        "homeMoneyPct": 82.2,
+        "tradeCount": 676,
+        "sampleCash": 29734
       },
       "totalTradeFlow": {
         "overTicketPct": 94.8,
@@ -6520,7 +6558,7 @@
         },
         {
           "label": "Syracuse wins by over 3.5 points",
-          "prob": 48.5,
+          "prob": 48,
           "volume": 5126
         },
         {
@@ -6539,21 +6577,21 @@
         },
         {
           "label": "Over 37.5 points scored",
-          "prob": 87.5,
+          "prob": 82,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12CALSYR-38",
           "line": 37.5
         },
         {
           "label": "Over 40.5 points scored",
-          "prob": 85.5,
+          "prob": 80,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12CALSYR-41",
           "line": 40.5
         },
         {
           "label": "Over 43.5 points scored",
-          "prob": 80.5,
+          "prob": 78,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12CALSYR-44",
           "line": 43.5
@@ -6572,37 +6610,37 @@
       "homeBid": 66,
       "homeAsk": 68,
       "awayLast": 34,
-      "homeLast": 67,
+      "homeLast": 68,
       "priceMove24h": 0,
       "priceHistory": {
         "points": [
+          34,
+          34,
+          34,
+          33,
           33,
           34,
-          34,
-          34,
-          34,
-          34,
+          33,
           0,
           0,
           0,
-          34,
-          34,
+          0,
           0
         ],
-        "open": 33,
+        "open": 34,
         "current": 0,
         "high": 34,
         "low": 33,
-        "change": -33
+        "change": -34
       },
-      "volume24h": 1480,
+      "volume24h": 1455,
       "tradeFlow": {
         "awayTicketPct": 43.1,
         "homeTicketPct": 56.9,
-        "awayMoneyPct": 55.1,
-        "homeMoneyPct": 44.9,
-        "tradeCount": 202,
-        "sampleCash": 5021
+        "awayMoneyPct": 55,
+        "homeMoneyPct": 45,
+        "tradeCount": 204,
+        "sampleCash": 5051
       },
       "totalTradeFlow": {
         "overTicketPct": 14.6,
@@ -6772,7 +6810,7 @@
       "spreads": [
         {
           "label": "Illinois wins by over 1.5 points",
-          "prob": 64.5,
+          "prob": 64,
           "volume": 0
         },
         {
@@ -6782,7 +6820,7 @@
         },
         {
           "label": "Illinois wins by over 3.5 points",
-          "prob": 57,
+          "prob": 56.5,
           "volume": 0
         },
         {
@@ -6794,28 +6832,28 @@
       "totals": [
         {
           "label": "Over 33.5 points scored",
-          "prob": 88.5,
+          "prob": 86.5,
           "volume": 15,
           "ticker": "KXNCAAFTOTAL-26SEP12DUKEILL-34",
           "line": 33.5
         },
         {
           "label": "Over 36.5 points scored",
-          "prob": 86,
+          "prob": 83.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12DUKEILL-37",
           "line": 36.5
         },
         {
           "label": "Over 39.5 points scored",
-          "prob": 79.5,
+          "prob": 77,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12DUKEILL-40",
           "line": 39.5
         },
         {
           "label": "Over 42.5 points scored",
-          "prob": 73.5,
+          "prob": 73,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12DUKEILL-43",
           "line": 42.5
@@ -6837,14 +6875,14 @@
       "homeLast": 19,
       "priceMove24h": 1,
       "priceHistory": null,
-      "volume24h": 1293,
+      "volume24h": 1268,
       "tradeFlow": {
-        "awayTicketPct": 45.5,
-        "homeTicketPct": 54.5,
+        "awayTicketPct": 45.3,
+        "homeTicketPct": 54.7,
         "awayMoneyPct": 81,
         "homeMoneyPct": 19,
-        "tradeCount": 189,
-        "sampleCash": 9518
+        "tradeCount": 190,
+        "sampleCash": 9522
       },
       "totalTradeFlow": {
         "overTicketPct": 14.3,
@@ -6998,50 +7036,50 @@
       "spreads": [
         {
           "label": "Maryland wins by over 1.5 points",
-          "prob": 78,
+          "prob": 77,
           "volume": 0
         },
         {
           "label": "Maryland wins by over 2.5 points",
-          "prob": 76.5,
-          "volume": 0
-        },
-        {
-          "label": "Maryland wins by over 3.5 points",
-          "prob": 71.5,
+          "prob": 76,
           "volume": 0
         },
         {
           "label": "Maryland wins by over 4.5 points",
-          "prob": 70.5,
+          "prob": 70,
+          "volume": 0
+        },
+        {
+          "label": "Maryland wins by over 3.5 points",
+          "prob": 70,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 33.5 points scored",
-          "prob": 90,
+          "prob": 88,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12MDCONN-34",
           "line": 33.5
         },
         {
           "label": "Over 36.5 points scored",
-          "prob": 88.5,
+          "prob": 85,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12MDCONN-37",
           "line": 36.5
         },
         {
           "label": "Over 39.5 points scored",
-          "prob": 81.5,
+          "prob": 79.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12MDCONN-40",
           "line": 39.5
         },
         {
           "label": "Over 42.5 points scored",
-          "prob": 76.5,
+          "prob": 73.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12MDCONN-43",
           "line": 42.5
@@ -7077,10 +7115,10 @@
           1,
           1,
           1,
-          1,
           0,
           1,
           0,
+          1,
           1,
           1,
           1,
@@ -7094,22 +7132,22 @@
         "low": 1,
         "change": 0
       },
-      "volume24h": 20245,
+      "volume24h": 21179,
       "tradeFlow": {
         "awayTicketPct": 66.5,
         "homeTicketPct": 33.5,
-        "awayMoneyPct": 6.4,
-        "homeMoneyPct": 93.6,
-        "tradeCount": 660,
-        "sampleCash": 42527
+        "awayMoneyPct": 6.6,
+        "homeMoneyPct": 93.4,
+        "tradeCount": 663,
+        "sampleCash": 42594
       },
       "totalTradeFlow": {
-        "overTicketPct": 72.1,
-        "underTicketPct": 27.9,
-        "overMoneyPct": 74.8,
-        "underMoneyPct": 25.2,
-        "tradeCount": 154,
-        "sampleCash": 12412
+        "overTicketPct": 70.6,
+        "underTicketPct": 29.4,
+        "overMoneyPct": 73.6,
+        "underMoneyPct": 26.4,
+        "tradeCount": 160,
+        "sampleCash": 12706
       },
       "whales": {
         "count": 73,
@@ -7271,50 +7309,50 @@
       "spreads": [
         {
           "label": "Notre Dame wins by over 23.5 points",
-          "prob": 93.5,
+          "prob": 92,
           "volume": 5
         },
         {
           "label": "Notre Dame wins by over 24.5 points",
-          "prob": 92,
+          "prob": 91,
           "volume": 0
         },
         {
           "label": "Notre Dame wins by over 27.5 points",
-          "prob": 90,
+          "prob": 87.5,
           "volume": 34
         },
         {
           "label": "Notre Dame wins by over 30.5 points",
-          "prob": 86.5,
+          "prob": 85,
           "volume": 28
         }
       ],
       "totals": [
         {
           "label": "Over 32.5 points scored",
-          "prob": 94.5,
+          "prob": 93,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12RICEND-33",
           "line": 32.5
         },
         {
           "label": "Over 35.5 points scored",
-          "prob": 93.5,
+          "prob": 92,
           "volume": 456,
           "ticker": "KXNCAAFTOTAL-26SEP12RICEND-36",
           "line": 35.5
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 87.5,
+          "prob": 86,
           "volume": 66,
           "ticker": "KXNCAAFTOTAL-26SEP12RICEND-39",
           "line": 38.5
         },
         {
           "label": "Over 41.5 points scored",
-          "prob": 86.5,
+          "prob": 83.5,
           "volume": 98,
           "ticker": "KXNCAAFTOTAL-26SEP12RICEND-42",
           "line": 41.5
@@ -7335,15 +7373,46 @@
       "awayLast": 31,
       "homeLast": 71,
       "priceMove24h": 2,
-      "priceHistory": null,
-      "volume24h": 1858,
+      "priceHistory": {
+        "points": [
+          29,
+          29,
+          29,
+          29,
+          28,
+          29,
+          30,
+          30,
+          30,
+          30,
+          30,
+          0,
+          30,
+          0,
+          0,
+          30,
+          31,
+          0,
+          31,
+          31,
+          31,
+          0,
+          31
+        ],
+        "open": 29,
+        "current": 31,
+        "high": 31,
+        "low": 28,
+        "change": 2
+      },
+      "volume24h": 1996,
       "tradeFlow": {
-        "awayTicketPct": 68.5,
-        "homeTicketPct": 31.5,
-        "awayMoneyPct": 72,
-        "homeMoneyPct": 28,
-        "tradeCount": 445,
-        "sampleCash": 8010
+        "awayTicketPct": 68.4,
+        "homeTicketPct": 31.6,
+        "awayMoneyPct": 71.9,
+        "homeMoneyPct": 28.1,
+        "tradeCount": 449,
+        "sampleCash": 8040
       },
       "totalTradeFlow": {
         "overTicketPct": 75,
@@ -7513,12 +7582,12 @@
       "spreads": [
         {
           "label": "Pittsburgh wins by over 1.5 points",
-          "prob": 68.5,
+          "prob": 67.5,
           "volume": 0
         },
         {
           "label": "Pittsburgh wins by over 2.5 points",
-          "prob": 65,
+          "prob": 64.5,
           "volume": 0
         },
         {
@@ -7528,35 +7597,35 @@
         },
         {
           "label": "Pittsburgh wins by over 4.5 points",
-          "prob": 58.5,
+          "prob": 58,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 36.5 points scored",
-          "prob": 90.5,
+          "prob": 90,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12UCFPITT-37",
           "line": 36.5
         },
         {
           "label": "Over 39.5 points scored",
-          "prob": 86.5,
+          "prob": 85,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12UCFPITT-40",
           "line": 39.5
         },
         {
           "label": "Over 42.5 points scored",
-          "prob": 83,
+          "prob": 81.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12UCFPITT-43",
           "line": 42.5
         },
         {
           "label": "Over 45.5 points scored",
-          "prob": 76.5,
+          "prob": 75.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12UCFPITT-46",
           "line": 45.5
@@ -7579,33 +7648,33 @@
       "priceMove24h": -2,
       "priceHistory": {
         "points": [
-          63,
-          63,
           0,
+          63,
+          62,
           62,
           0,
           0,
-          61,
           0,
           0,
           61,
+          0,
           61,
           61
         ],
-        "open": 63,
+        "open": 0,
         "current": 61,
         "high": 63,
         "low": 61,
-        "change": -2
+        "change": 61
       },
-      "volume24h": 5075,
+      "volume24h": 5458,
       "tradeFlow": {
-        "awayTicketPct": 38.8,
-        "homeTicketPct": 61.2,
+        "awayTicketPct": 38.7,
+        "homeTicketPct": 61.3,
         "awayMoneyPct": 32,
         "homeMoneyPct": 68,
-        "tradeCount": 374,
-        "sampleCash": 23862
+        "tradeCount": 375,
+        "sampleCash": 23881
       },
       "totalTradeFlow": {
         "overTicketPct": 32.1,
@@ -7746,7 +7815,7 @@
         {
           "label": "UNLV wins by over 3.5 points",
           "prob": 50.5,
-          "volume": 3179
+          "volume": 3559
         },
         {
           "label": "UNLV wins by over 4.5 points",
@@ -7764,21 +7833,21 @@
         },
         {
           "label": "Over 40.5 points scored",
-          "prob": 86,
+          "prob": 83.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12UNLVUNT-41",
           "line": 40.5
         },
         {
           "label": "Over 43.5 points scored",
-          "prob": 83,
+          "prob": 79,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12UNLVUNT-44",
           "line": 43.5
         },
         {
           "label": "Over 46.5 points scored",
-          "prob": 75.5,
+          "prob": 73,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12UNLVUNT-47",
           "line": 46.5
@@ -7803,7 +7872,6 @@
         "points": [
           1,
           1,
-          1,
           0,
           1,
           0,
@@ -7823,6 +7891,7 @@
           0,
           2,
           0,
+          1,
           1
         ],
         "open": 1,
@@ -7831,7 +7900,7 @@
         "low": 1,
         "change": 0
       },
-      "volume24h": 8521,
+      "volume24h": 7903,
       "tradeFlow": {
         "awayTicketPct": 68.2,
         "homeTicketPct": 31.8,
@@ -7994,33 +8063,33 @@
       "priceMove24h": 0,
       "priceHistory": {
         "points": [
-          9,
-          0,
           0,
           9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
           9,
-          0,
-          0,
-          0,
-          0,
           0,
           0,
           9
         ],
-        "open": 9,
+        "open": 0,
         "current": 9,
         "high": 9,
         "low": 9,
-        "change": 0
+        "change": 9
       },
-      "volume24h": 1512,
+      "volume24h": 1551,
       "tradeFlow": {
-        "awayTicketPct": 43.8,
-        "homeTicketPct": 56.2,
-        "awayMoneyPct": 26.9,
-        "homeMoneyPct": 73.1,
-        "tradeCount": 146,
-        "sampleCash": 4037
+        "awayTicketPct": 43.9,
+        "homeTicketPct": 56.1,
+        "awayMoneyPct": 26.8,
+        "homeMoneyPct": 73.2,
+        "tradeCount": 148,
+        "sampleCash": 4061
       },
       "totalTradeFlow": {
         "overTicketPct": 83.7,
@@ -8182,50 +8251,50 @@
       "spreads": [
         {
           "label": "Vanderbilt wins by over 1.5 points",
-          "prob": 90,
+          "prob": 88.5,
           "volume": 0
         },
         {
           "label": "Vanderbilt wins by over 2.5 points",
-          "prob": 89,
+          "prob": 88,
           "volume": 0
         },
         {
           "label": "Vanderbilt wins by over 3.5 points",
-          "prob": 86,
+          "prob": 85.5,
           "volume": 0
         },
         {
           "label": "Vanderbilt wins by over 4.5 points",
-          "prob": 84,
+          "prob": 83.5,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 35.5 points scored",
-          "prob": 89.5,
+          "prob": 88,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12DELVAN-36",
           "line": 35.5
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 86,
+          "prob": 84,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12DELVAN-39",
           "line": 38.5
         },
         {
           "label": "Over 41.5 points scored",
-          "prob": 80.5,
+          "prob": 78.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12DELVAN-42",
           "line": 41.5
         },
         {
           "label": "Over 44.5 points scored",
-          "prob": 76,
+          "prob": 75.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12DELVAN-45",
           "line": 44.5
@@ -8244,13 +8313,13 @@
       "homeBid": 78,
       "homeAsk": 79,
       "awayLast": 22,
-      "homeLast": 79,
+      "homeLast": 78,
       "priceMove24h": 0,
       "priceHistory": {
         "points": [
-          0,
           22,
-          0,
+          23,
+          22,
           0,
           0,
           22,
@@ -8261,13 +8330,13 @@
           22,
           22
         ],
-        "open": 0,
+        "open": 22,
         "current": 22,
         "high": 23,
         "low": 22,
-        "change": 22
+        "change": 0
       },
-      "volume24h": 1613,
+      "volume24h": 1618,
       "tradeFlow": {
         "awayTicketPct": 42.6,
         "homeTicketPct": 57.4,
@@ -8433,45 +8502,45 @@
         },
         {
           "label": "Florida International wins by over 2.5 points",
-          "prob": 75,
+          "prob": 74.5,
           "volume": 0
         },
         {
           "label": "Florida International wins by over 3.5 points",
-          "prob": 69.5,
+          "prob": 69,
           "volume": 0
         },
         {
           "label": "Florida International wins by over 4.5 points",
-          "prob": 67.5,
+          "prob": 67,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 29.5 points scored",
-          "prob": 91,
+          "prob": 85,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12BUFFFIU-30",
           "line": 29.5
         },
         {
           "label": "Over 32.5 points scored",
-          "prob": 86.5,
+          "prob": 84.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12BUFFFIU-33",
           "line": 32.5
         },
         {
           "label": "Over 35.5 points scored",
-          "prob": 80.5,
+          "prob": 78.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12BUFFFIU-36",
           "line": 35.5
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 71.5,
+          "prob": 72,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12BUFFFIU-39",
           "line": 38.5
@@ -8491,37 +8560,16 @@
       "homeAsk": 97,
       "awayLast": 4,
       "homeLast": 97,
-      "priceMove24h": 0,
-      "priceHistory": {
-        "points": [
-          3,
-          0,
-          4,
-          0,
-          0,
-          4,
-          0,
-          0,
-          0,
-          4,
-          0,
-          4,
-          0
-        ],
-        "open": 3,
-        "current": 0,
-        "high": 4,
-        "low": 3,
-        "change": -3
-      },
-      "volume24h": 2213,
+      "priceMove24h": 1,
+      "priceHistory": null,
+      "volume24h": 2144,
       "tradeFlow": {
-        "awayTicketPct": 38.2,
-        "homeTicketPct": 61.8,
+        "awayTicketPct": 37.9,
+        "homeTicketPct": 62.1,
         "awayMoneyPct": 2.7,
         "homeMoneyPct": 97.3,
-        "tradeCount": 490,
-        "sampleCash": 25173
+        "tradeCount": 493,
+        "sampleCash": 25243
       },
       "totalTradeFlow": {
         "overTicketPct": 49.3,
@@ -8637,12 +8685,12 @@
         },
         {
           "label": "Nebraska wins by over 10.5 points",
-          "prob": 88.5,
+          "prob": 87.5,
           "volume": 0
         },
         {
           "label": "Nebraska wins by over 11.5 points",
-          "prob": 87.5,
+          "prob": 86,
           "volume": 0
         }
       ],
@@ -8656,21 +8704,21 @@
         },
         {
           "label": "Over 35.5 points scored",
-          "prob": 85.5,
+          "prob": 87,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12BGSUNEB-36",
           "line": 35.5
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 82,
+          "prob": 84,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12BGSUNEB-39",
           "line": 38.5
         },
         {
           "label": "Over 41.5 points scored",
-          "prob": 76.5,
+          "prob": 77,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12BGSUNEB-42",
           "line": 41.5
@@ -8694,26 +8742,26 @@
       "priceHistory": {
         "points": [
           17,
+          0,
           17,
-          17,
-          17,
-          17,
+          0,
+          0,
+          18,
+          0,
           0,
           0,
           0,
           0,
           18,
-          0,
-          17,
-          18
+          0
         ],
         "open": 17,
-        "current": 18,
+        "current": 0,
         "high": 18,
         "low": 17,
-        "change": 1
+        "change": -17
       },
-      "volume24h": 2633,
+      "volume24h": 2600,
       "tradeFlow": {
         "awayTicketPct": 57.5,
         "homeTicketPct": 42.5,
@@ -8900,19 +8948,19 @@
         },
         {
           "label": "Marshall wins by over 3.5 points",
-          "prob": 75,
+          "prob": 74.5,
           "volume": 0
         },
         {
           "label": "Marshall wins by over 4.5 points",
-          "prob": 72,
+          "prob": 72.5,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 37.5 points scored",
-          "prob": 87.5,
+          "prob": 88,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12MTUMRSH-38",
           "line": 37.5
@@ -8926,7 +8974,7 @@
         },
         {
           "label": "Over 43.5 points scored",
-          "prob": 79.5,
+          "prob": 80.5,
           "volume": 37,
           "ticker": "KXNCAAFTOTAL-26SEP12MTUMRSH-44",
           "line": 43.5
@@ -8951,38 +8999,39 @@
       "awayAsk": 82,
       "homeBid": 18,
       "homeAsk": 19,
-      "awayLast": 82,
+      "awayLast": 81,
       "homeLast": 19,
-      "priceMove24h": 0,
+      "priceMove24h": -1,
       "priceHistory": {
         "points": [
           82,
           82,
           82,
           82,
+          81,
           82,
-          82,
-          82,
+          0,
           0,
           82,
           82,
           82,
-          82
+          82,
+          81
         ],
         "open": 82,
-        "current": 82,
+        "current": 81,
         "high": 82,
         "low": 81,
-        "change": 0
+        "change": -1
       },
-      "volume24h": 4880,
+      "volume24h": 4701,
       "tradeFlow": {
         "awayTicketPct": 59.9,
         "homeTicketPct": 40.1,
-        "awayMoneyPct": 77.1,
-        "homeMoneyPct": 22.9,
-        "tradeCount": 1238,
-        "sampleCash": 25870
+        "awayMoneyPct": 77,
+        "homeMoneyPct": 23,
+        "tradeCount": 1247,
+        "sampleCash": 25984
       },
       "totalTradeFlow": {
         "overTicketPct": 44.3,
@@ -9122,7 +9171,7 @@
         },
         {
           "label": "Tennessee wins by over 3.5 points",
-          "prob": 72.5,
+          "prob": 72,
           "volume": 2
         },
         {
@@ -9134,28 +9183,28 @@
       "totals": [
         {
           "label": "Over 34.5 points scored",
-          "prob": 91.5,
-          "volume": 382,
+          "prob": 91,
+          "volume": 232,
           "ticker": "KXNCAAFTOTAL-26SEP12TENNGT-35",
           "line": 34.5
         },
         {
           "label": "Over 37.5 points scored",
-          "prob": 87.5,
+          "prob": 88,
           "volume": 516,
           "ticker": "KXNCAAFTOTAL-26SEP12TENNGT-38",
           "line": 37.5
         },
         {
           "label": "Over 40.5 points scored",
-          "prob": 84.5,
+          "prob": 83.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12TENNGT-41",
           "line": 40.5
         },
         {
           "label": "Over 43.5 points scored",
-          "prob": 80.5,
+          "prob": 79.5,
           "volume": 1,
           "ticker": "KXNCAAFTOTAL-26SEP12TENNGT-44",
           "line": 43.5
@@ -9302,29 +9351,29 @@
       "spreads": [
         {
           "label": "South Carolina wins by over 21.5 points",
-          "prob": 87.5,
+          "prob": 88,
           "volume": 54
         },
         {
           "label": "South Carolina wins by over 23.5 points",
-          "prob": 84,
+          "prob": 84.5,
           "volume": 0
         },
         {
           "label": "South Carolina wins by over 24.5 points",
-          "prob": 83.5,
+          "prob": 84,
           "volume": 0
         },
         {
           "label": "South Carolina wins by over 27.5 points",
-          "prob": 83,
+          "prob": 83.5,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 35.5 points scored",
-          "prob": 86,
+          "prob": 84.5,
           "volume": 64,
           "ticker": "KXNCAAFTOTAL-26SEP12TOWSSCAR-36",
           "line": 35.5
@@ -9366,15 +9415,44 @@
       "awayLast": 25,
       "homeLast": 76,
       "priceMove24h": 1,
-      "priceHistory": null,
+      "priceHistory": {
+        "points": [
+          0,
+          0,
+          25,
+          0,
+          0,
+          0,
+          0,
+          0,
+          25,
+          0,
+          0,
+          0,
+          25,
+          0,
+          0,
+          25,
+          0,
+          0,
+          0,
+          0,
+          25
+        ],
+        "open": 0,
+        "current": 25,
+        "high": 25,
+        "low": 25,
+        "change": 25
+      },
       "volume24h": 546,
       "tradeFlow": {
-        "awayTicketPct": 61.1,
-        "homeTicketPct": 38.9,
-        "awayMoneyPct": 40.3,
-        "homeMoneyPct": 59.7,
-        "tradeCount": 95,
-        "sampleCash": 2976
+        "awayTicketPct": 61.5,
+        "homeTicketPct": 38.5,
+        "awayMoneyPct": 40.5,
+        "homeMoneyPct": 59.5,
+        "tradeCount": 96,
+        "sampleCash": 2986
       },
       "totalTradeFlow": {
         "overTicketPct": 9.1,
@@ -9488,12 +9566,12 @@
       "spreads": [
         {
           "label": "Tulane wins by over 1.5 points",
-          "prob": 73.5,
+          "prob": 73,
           "volume": 0
         },
         {
           "label": "Tulane wins by over 2.5 points",
-          "prob": 70.5,
+          "prob": 70,
           "volume": 0
         },
         {
@@ -9503,35 +9581,35 @@
         },
         {
           "label": "Tulane wins by over 4.5 points",
-          "prob": 63.5,
+          "prob": 62.5,
           "volume": 0
         }
       ],
       "totals": [
         {
           "label": "Over 32.5 points scored",
-          "prob": 88.5,
+          "prob": 83,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12USATULN-33",
           "line": 32.5
         },
         {
           "label": "Over 35.5 points scored",
-          "prob": 85.5,
+          "prob": 79,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12USATULN-36",
           "line": 35.5
         },
         {
           "label": "Over 38.5 points scored",
-          "prob": 78.5,
+          "prob": 74,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12USATULN-39",
           "line": 38.5
         },
         {
           "label": "Over 41.5 points scored",
-          "prob": 71,
+          "prob": 69.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12USATULN-42",
           "line": 41.5
@@ -9553,7 +9631,7 @@
       "homeLast": 96,
       "priceMove24h": 0,
       "priceHistory": null,
-      "volume24h": 471,
+      "volume24h": 466,
       "tradeFlow": {
         "awayTicketPct": 46.2,
         "homeTicketPct": 53.8,
@@ -9679,17 +9757,17 @@
         },
         {
           "label": "Over 39.5 points scored",
-          "prob": 61,
+          "prob": 60.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12FORCCAR-40",
           "line": 39.5
         },
         {
-          "label": "Over 51.5 points scored",
+          "label": "Over 33.5 points scored",
           "prob": 55,
           "volume": 0,
-          "ticker": "KXNCAAFTOTAL-26SEP12FORCCAR-52",
-          "line": 51.5
+          "ticker": "KXNCAAFTOTAL-26SEP12FORCCAR-34",
+          "line": 33.5
         }
       ],
       "awayTeam": "Fordham",
@@ -9711,12 +9789,12 @@
         "points": [
           10,
           10,
-          11,
           10,
           10,
           10,
           10,
           10,
+          8,
           10,
           10,
           10,
@@ -9728,14 +9806,14 @@
         "low": 8,
         "change": 1
       },
-      "volume24h": 27417,
+      "volume24h": 26753,
       "tradeFlow": {
-        "awayTicketPct": 69.9,
-        "homeTicketPct": 30.1,
-        "awayMoneyPct": 35.4,
-        "homeMoneyPct": 64.6,
-        "tradeCount": 1189,
-        "sampleCash": 26301
+        "awayTicketPct": 70.1,
+        "homeTicketPct": 29.9,
+        "awayMoneyPct": 35.6,
+        "homeMoneyPct": 64.4,
+        "tradeCount": 1201,
+        "sampleCash": 26444
       },
       "totalTradeFlow": {
         "overTicketPct": 47.5,
@@ -9905,50 +9983,50 @@
       "spreads": [
         {
           "label": "Clemson wins by over 2.5 points",
-          "prob": 89,
+          "prob": 87.5,
           "volume": 5
         },
         {
           "label": "Clemson wins by over 3.5 points",
-          "prob": 86,
-          "volume": 0
-        },
-        {
-          "label": "Clemson wins by over 4.5 points",
           "prob": 85,
           "volume": 0
         },
         {
-          "label": "Clemson wins by over 5.5 points",
+          "label": "Clemson wins by over 4.5 points",
           "prob": 83,
+          "volume": 0
+        },
+        {
+          "label": "Clemson wins by over 5.5 points",
+          "prob": 82,
           "volume": 0
         }
       ],
       "totals": [
         {
-          "label": "Over 36.5 points scored",
-          "prob": 90.5,
-          "volume": 110,
-          "ticker": "KXNCAAFTOTAL-26SEP12GASOCLEM-37",
-          "line": 36.5
-        },
-        {
           "label": "Over 39.5 points scored",
-          "prob": 89,
+          "prob": 87.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12GASOCLEM-40",
           "line": 39.5
         },
         {
+          "label": "Over 36.5 points scored",
+          "prob": 85.5,
+          "volume": 110,
+          "ticker": "KXNCAAFTOTAL-26SEP12GASOCLEM-37",
+          "line": 36.5
+        },
+        {
           "label": "Over 42.5 points scored",
-          "prob": 83.5,
+          "prob": 79,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12GASOCLEM-43",
           "line": 42.5
         },
         {
           "label": "Over 45.5 points scored",
-          "prob": 76,
+          "prob": 74.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12GASOCLEM-46",
           "line": 45.5
@@ -9976,29 +10054,29 @@
           1,
           2,
           2,
+          2,
+          0,
+          0,
           1,
           0,
           0,
-          0,
-          0,
-          2,
-          2,
-          1
+          1,
+          2
         ],
         "open": 1,
-        "current": 1,
+        "current": 2,
         "high": 2,
         "low": 1,
-        "change": 0
+        "change": 1
       },
-      "volume24h": 7486,
+      "volume24h": 7478,
       "tradeFlow": {
-        "awayTicketPct": 41.1,
-        "homeTicketPct": 58.9,
-        "awayMoneyPct": 3.9,
-        "homeMoneyPct": 96.1,
-        "tradeCount": 774,
-        "sampleCash": 43793
+        "awayTicketPct": 41.8,
+        "homeTicketPct": 58.2,
+        "awayMoneyPct": 4,
+        "homeMoneyPct": 96,
+        "tradeCount": 783,
+        "sampleCash": 43842
       },
       "totalTradeFlow": {
         "overTicketPct": 77.8,
@@ -10104,22 +10182,22 @@
       "spreads": [
         {
           "label": "LSU wins by over 11.5 points",
-          "prob": 92.5,
+          "prob": 88.5,
           "volume": 0
         },
         {
           "label": "LSU wins by over 10.5 points",
-          "prob": 92.5,
+          "prob": 88.5,
           "volume": 11
         },
         {
           "label": "LSU wins by over 13.5 points",
-          "prob": 92,
+          "prob": 88,
           "volume": 20
         },
         {
           "label": "LSU wins by over 14.5 points",
-          "prob": 91,
+          "prob": 87,
           "volume": 0
         }
       ],
@@ -10132,13 +10210,6 @@
           "line": 35.5
         },
         {
-          "label": "Over 38.5 points scored",
-          "prob": 89,
-          "volume": 0,
-          "ticker": "KXNCAAFTOTAL-26SEP12LTLSU-39",
-          "line": 38.5
-        },
-        {
           "label": "Over 41.5 points scored",
           "prob": 85.5,
           "volume": 18,
@@ -10146,8 +10217,15 @@
           "line": 41.5
         },
         {
+          "label": "Over 38.5 points scored",
+          "prob": 84,
+          "volume": 0,
+          "ticker": "KXNCAAFTOTAL-26SEP12LTLSU-39",
+          "line": 38.5
+        },
+        {
           "label": "Over 44.5 points scored",
-          "prob": 80.5,
+          "prob": 76,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12LTLSU-45",
           "line": 44.5
@@ -10168,45 +10246,15 @@
       "awayLast": 66,
       "homeLast": 35,
       "priceMove24h": 0,
-      "priceHistory": {
-        "points": [
-          66,
-          0,
-          66,
-          66,
-          0,
-          66,
-          66,
-          0,
-          0,
-          66,
-          0,
-          0,
-          66,
-          0,
-          66,
-          66,
-          0,
-          66,
-          0,
-          0,
-          66,
-          66
-        ],
-        "open": 66,
-        "current": 66,
-        "high": 66,
-        "low": 66,
-        "change": 0
-      },
-      "volume24h": 1001,
+      "priceHistory": null,
+      "volume24h": 1607,
       "tradeFlow": {
-        "awayTicketPct": 69.4,
-        "homeTicketPct": 30.6,
-        "awayMoneyPct": 53.8,
-        "homeMoneyPct": 46.2,
-        "tradeCount": 121,
-        "sampleCash": 2110
+        "awayTicketPct": 68.9,
+        "homeTicketPct": 31.1,
+        "awayMoneyPct": 53.6,
+        "homeMoneyPct": 46.4,
+        "tradeCount": 122,
+        "sampleCash": 2118
       },
       "totalTradeFlow": {
         "overTicketPct": 62.5,
@@ -10280,50 +10328,50 @@
       "spreads": [
         {
           "label": "Navy wins by over 2.5 points",
-          "prob": 62,
+          "prob": 61.5,
           "volume": 0
         },
         {
           "label": "Navy wins by over 1.5 points",
-          "prob": 62,
+          "prob": 61,
           "volume": 1
         },
         {
           "label": "Navy wins by over 3.5 points",
-          "prob": 53.5,
+          "prob": 54,
           "volume": 44
         },
         {
           "label": "Navy wins by over 4.5 points",
           "prob": 51,
-          "volume": 365
+          "volume": 948
         }
       ],
       "totals": [
         {
           "label": "Over 37.5 points scored",
-          "prob": 90,
+          "prob": 85,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12NAVYFAU-38",
           "line": 37.5
         },
         {
           "label": "Over 40.5 points scored",
-          "prob": 88,
+          "prob": 82.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12NAVYFAU-41",
           "line": 40.5
         },
         {
           "label": "Over 43.5 points scored",
-          "prob": 84.5,
+          "prob": 78.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12NAVYFAU-44",
           "line": 43.5
         },
         {
           "label": "Over 46.5 points scored",
-          "prob": 79,
+          "prob": 75,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12NAVYFAU-47",
           "line": 46.5
@@ -10353,7 +10401,6 @@
           1,
           1,
           1,
-          1,
           0,
           0,
           1,
@@ -10366,15 +10413,16 @@
           1,
           1,
           1,
-          1
+          1,
+          0
         ],
         "open": 1,
-        "current": 1,
+        "current": 0,
         "high": 1,
         "low": 1,
-        "change": 0
+        "change": -1
       },
-      "volume24h": 11031,
+      "volume24h": 11110,
       "tradeFlow": {
         "awayTicketPct": 69.6,
         "homeTicketPct": 30.4,
@@ -10384,16 +10432,16 @@
         "sampleCash": 22740
       },
       "totalTradeFlow": {
-        "overTicketPct": 69.8,
-        "underTicketPct": 30.2,
-        "overMoneyPct": 86.7,
-        "underMoneyPct": 13.3,
-        "tradeCount": 43,
-        "sampleCash": 1739
+        "overTicketPct": 65.3,
+        "underTicketPct": 34.7,
+        "overMoneyPct": 79.1,
+        "underMoneyPct": 20.9,
+        "tradeCount": 49,
+        "sampleCash": 2534
       },
       "whales": {
-        "count": 27,
-        "totalCash": 21688,
+        "count": 28,
+        "totalCash": 22143,
         "largest": 3372,
         "topTrades": [
           {
@@ -10475,6 +10523,14 @@
             "ts": 1787756538409
           },
           {
+            "amount": 455,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 91,
+            "ts": 1788978971340,
+            "marketType": "total"
+          },
+          {
             "amount": 306,
             "side": "BUY",
             "outcome": "Over",
@@ -10503,50 +10559,50 @@
       "spreads": [
         {
           "label": "Ole Miss wins by over 27.5 points",
-          "prob": 91,
+          "prob": 87,
           "volume": 8
         },
         {
           "label": "Ole Miss wins by over 30.5 points",
-          "prob": 89,
+          "prob": 85,
           "volume": 0
         },
         {
           "label": "Ole Miss wins by over 33.5 points",
-          "prob": 83,
+          "prob": 81,
           "volume": 0
         },
         {
           "label": "Ole Miss wins by over 35.5 points",
-          "prob": 78,
+          "prob": 78.5,
           "volume": 10
         }
       ],
       "totals": [
         {
           "label": "Over 41.5 points scored",
-          "prob": 90.5,
-          "volume": 310,
+          "prob": 90,
+          "volume": 856,
           "ticker": "KXNCAAFTOTAL-26SEP12CHARMISS-42",
           "line": 41.5
         },
         {
-          "label": "Over 44.5 points scored",
-          "prob": 88.5,
-          "volume": 20,
-          "ticker": "KXNCAAFTOTAL-26SEP12CHARMISS-45",
-          "line": 44.5
-        },
-        {
           "label": "Over 47.5 points scored",
-          "prob": 85,
+          "prob": 83.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12CHARMISS-48",
           "line": 47.5
         },
         {
+          "label": "Over 44.5 points scored",
+          "prob": 82.5,
+          "volume": 20,
+          "ticker": "KXNCAAFTOTAL-26SEP12CHARMISS-45",
+          "line": 44.5
+        },
+        {
           "label": "Over 50.5 points scored",
-          "prob": 78.5,
+          "prob": 77.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12CHARMISS-51",
           "line": 50.5
@@ -10558,44 +10614,45 @@
       "title": "Charlotte vs Ole Miss"
     },
     "ark_utah": {
-      "awayProb": 19,
+      "awayProb": 18.5,
       "homeProb": 81,
       "awayBid": 18,
-      "awayAsk": 20,
+      "awayAsk": 19,
       "homeBid": 80,
       "homeAsk": 82,
-      "awayLast": 19,
+      "awayLast": 20,
       "homeLast": 82,
-      "priceMove24h": -1,
+      "priceMove24h": 0,
       "priceHistory": {
         "points": [
-          0,
           20,
           20,
-          18,
+          20,
+          19,
+          20,
           20,
           0,
           0,
-          0,
+          20,
+          19,
           0,
           19,
-          19,
-          19
+          20
         ],
-        "open": 0,
-        "current": 19,
+        "open": 20,
+        "current": 20,
         "high": 20,
         "low": 18,
-        "change": 19
+        "change": 0
       },
-      "volume24h": 3677,
+      "volume24h": 3602,
       "tradeFlow": {
         "awayTicketPct": 38.5,
         "homeTicketPct": 61.5,
-        "awayMoneyPct": 27.1,
-        "homeMoneyPct": 72.9,
-        "tradeCount": 967,
-        "sampleCash": 25630
+        "awayMoneyPct": 27.2,
+        "homeMoneyPct": 72.8,
+        "tradeCount": 971,
+        "sampleCash": 25681
       },
       "totalTradeFlow": {
         "overTicketPct": 28.6,
@@ -10749,43 +10806,43 @@
       "spreads": [
         {
           "label": "Utah wins by over 1.5 points",
-          "prob": 80,
+          "prob": 79.5,
           "volume": 0
         },
         {
           "label": "Utah wins by over 2.5 points",
-          "prob": 78.5,
+          "prob": 77,
           "volume": 0
         },
         {
           "label": "Utah wins by over 3.5 points",
-          "prob": 73,
+          "prob": 72.5,
           "volume": 0
         },
         {
           "label": "Utah wins by over 4.5 points",
-          "prob": 70.5,
+          "prob": 70,
           "volume": 1
         }
       ],
       "totals": [
         {
-          "label": "Over 36.5 points scored",
-          "prob": 89,
-          "volume": 0,
-          "ticker": "KXNCAAFTOTAL-26SEP12ARKUTAH-37",
-          "line": 36.5
-        },
-        {
           "label": "Over 39.5 points scored",
-          "prob": 85.5,
+          "prob": 87,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ARKUTAH-40",
           "line": 39.5
         },
         {
+          "label": "Over 36.5 points scored",
+          "prob": 86.5,
+          "volume": 0,
+          "ticker": "KXNCAAFTOTAL-26SEP12ARKUTAH-37",
+          "line": 36.5
+        },
+        {
           "label": "Over 42.5 points scored",
-          "prob": 81,
+          "prob": 77,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ARKUTAH-43",
           "line": 42.5
@@ -10813,46 +10870,15 @@
       "awayLast": 3,
       "homeLast": 98,
       "priceMove24h": 0,
-      "priceHistory": {
-        "points": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          3,
-          0,
-          3,
-          3,
-          0,
-          0,
-          0,
-          3,
-          0,
-          0,
-          3,
-          3,
-          0,
-          3,
-          0,
-          3,
-          3
-        ],
-        "open": 0,
-        "current": 3,
-        "high": 3,
-        "low": 3,
-        "change": 3
-      },
-      "volume24h": 1575,
+      "priceHistory": null,
+      "volume24h": 1564,
       "tradeFlow": {
-        "awayTicketPct": 31.4,
-        "homeTicketPct": 68.6,
+        "awayTicketPct": 31.7,
+        "homeTicketPct": 68.3,
         "awayMoneyPct": 11.5,
         "homeMoneyPct": 88.5,
-        "tradeCount": 239,
-        "sampleCash": 23654
+        "tradeCount": 240,
+        "sampleCash": 23673
       },
       "totalTradeFlow": {
         "overTicketPct": 48.7,
@@ -10965,51 +10991,51 @@
       },
       "spreads": [
         {
+          "label": "USC wins by over 7.5 points",
+          "prob": 87,
+          "volume": 4
+        },
+        {
           "label": "USC wins by over 9.5 points",
-          "prob": 90.5,
+          "prob": 86.5,
           "volume": 0
         },
         {
           "label": "USC wins by over 10.5 points",
-          "prob": 89.5,
+          "prob": 85.5,
           "volume": 0
         },
         {
           "label": "USC wins by over 11.5 points",
-          "prob": 89,
+          "prob": 85,
           "volume": 0
-        },
-        {
-          "label": "USC wins by over 13.5 points",
-          "prob": 87.5,
-          "volume": 15
         }
       ],
       "totals": [
         {
           "label": "Over 41.5 points scored",
-          "prob": 89,
+          "prob": 88.5,
           "volume": 600,
           "ticker": "KXNCAAFTOTAL-26SEP12ULLUSC-42",
           "line": 41.5
         },
         {
-          "label": "Over 44.5 points scored",
-          "prob": 87.5,
-          "volume": 0,
-          "ticker": "KXNCAAFTOTAL-26SEP12ULLUSC-45",
-          "line": 44.5
-        },
-        {
           "label": "Over 38.5 points scored",
-          "prob": 86,
+          "prob": 85.5,
           "volume": 0,
           "ticker": "KXNCAAFTOTAL-26SEP12ULLUSC-39",
           "line": 38.5
         },
         {
+          "label": "Over 44.5 points scored",
+          "prob": 81.5,
+          "volume": 0,
+          "ticker": "KXNCAAFTOTAL-26SEP12ULLUSC-45",
+          "line": 44.5
+        },
+        {
           "label": "Over 47.5 points scored",
-          "prob": 82,
+          "prob": 81,
           "volume": 1,
           "ticker": "KXNCAAFTOTAL-26SEP12ULLUSC-48",
           "line": 47.5
@@ -11021,5 +11047,5 @@
       "title": "Louisiana vs USC"
     }
   },
-  "updatedAt": "2026-09-09T18:26:25.615Z"
+  "updatedAt": "2026-09-09T18:58:40.223Z"
 }
