@@ -2,7 +2,7 @@
 
 _Status: **LIVE** · stack `v12abcde` + **tape** (2026-07-15) + **EDGE/net Path C** (2026-07-19) + **EDGE band size on A/C** (2026-07-20; **mute&lt;7 / ×0.75** from 2026-07-22) + **steam-tail T** (2026-08-31) + **fav-juice −375** (2026-09-05)_  
 _Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js` · T: `src/lib/steamTailPolicy.js`_  
-_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`CLOSING_DIME_STEAM_EDGE.md`](./CLOSING_DIME_STEAM_EDGE.md) · [`FILTER_SIZE_IMPACT_2026-09-09.md`](./FILTER_SIZE_IMPACT_2026-09-09.md) · [`STEAM_HOLDUP_2026-09-09.md`](./STEAM_HOLDUP_2026-09-09.md) · [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
+_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`CLOSING_DIME_STEAM_EDGE.md`](./CLOSING_DIME_STEAM_EDGE.md) · [`FILTER_SIZE_IMPACT_2026-09-09.md`](./FILTER_SIZE_IMPACT_2026-09-09.md) · [`STEAM_HOLDUP_2026-09-09.md`](./STEAM_HOLDUP_2026-09-09.md) · [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md) · [`STEAM_LEVERAGE_2026-09-09.md`](./STEAM_LEVERAGE_2026-09-09.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
 
 ---
 

@@ -174,5 +174,6 @@ Keep-fat wins combined by **+15u**, and that +15u is **exactly** discovery fat �
 5. Watch unconfirmed fat to Sep 30. If the next 20 fat-no-steam tickets look like 5-0 again, *then* the gate is wrong. If they look like 17-12 −5%, T is right.
 6. Floor arriving stays. 3-for-3 sample is tiny but matches the paper (+4.3u on the August bump).
 7. Do **not** bump 2–3u to 4–5u on steam alignment. Arriving 2–3u is 10 tickets, Wilson lo 49%, MLB-only. Re-open at n≥24. [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md).
+8. The unused steam dollar is **don’t-cut leftover when A/B arriving** (6-0 both halves, rest of believed-cut −27%). Flinch runs before T so arriving never votes. n=6 — probe, don’t ladder. [`STEAM_LEVERAGE_2026-09-09.md`](./STEAM_LEVERAGE_2026-09-09.md).
 
 We are not leaving 2–3u edge on the table by ignoring steam there — we are *collecting* it. We *are* leaving unconfirmed-fat edge on the table **this week**. That is the price of the rule that stopped August’s −30u day and the −9% fat leak. Until n on that cell is tens, not five, T is still the maximum *process*, not the maximum *this sample*.
