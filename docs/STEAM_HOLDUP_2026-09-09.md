@@ -4,7 +4,7 @@ _Pulled 2026-09-09. Same cells as [`CLOSING_DIME_STEAM_EDGE.md`](./CLOSING_DIME_
 
 _Re-run: `node scripts/analyzeSteamHoldup.mjs`_
 
-Pairs with [`FILTER_SIZE_IMPACT_2026-09-09.md`](./FILTER_SIZE_IMPACT_2026-09-09.md).
+Pairs with [`FILTER_SIZE_IMPACT_2026-09-09.md`](./FILTER_SIZE_IMPACT_2026-09-09.md). Follow-up: [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md) (not enough data to bump steam-aligned 2–3u to 4–5u).
 
 ---
 
@@ -13,6 +13,7 @@ Pairs with [`FILTER_SIZE_IMPACT_2026-09-09.md`](./FILTER_SIZE_IMPACT_2026-09-09.
 | Question | Answer |
 |----------|--------|
 | Did steam-tail T change 2–3u? | **No.** Native 2–3u all stamped `HOLD`. The only T size change into this band is **3 arriving floors** (1u→2u, 2-1 **+2.92u**). |
+| Can we bump steam-aligned 2–3u to 4–5u? | **Not yet.** Arriving 2–3u is **10 · 8-2 · 80% (49–94) · +62%**. Wilson lo 49%, MLB-only. The August paper refused to size arriving at n=24 / Wilson lo 55%. [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md). |
 | Did muting top tiers cost profit? | **Fat, yes, in this sample. 4u, no.** Unconfirmed 5.4u/6u went **5-0 +23.2u** on the cutting-room floor. Unconfirmed 4u went 6-5 **−2.7u** (mute saved money). Fat *with* A/B steam, which T **kept**, went 4-1 **+12.9u**. |
 | Are the last 10 days luck? | **The 70% WR is hot. The book change is not luck.** 41-18 on 59 tickets vs the old 54% book is p≈**0.012**. vs the T *paper’s* 61% it is p≈**0.11** (consistent). 2–3u 61%→68% is p≈**0.19** (lucky-ish). Fat mute 5-0 is n=5 noise. |
 | Do original steam patterns still hold? | **The ones we sized on, yes.** A/B arriving 75%→80%. A/B steam-at-lock 64%→72%. Combined A/B arriving **34 · 26-8 · 76.5% (60–88) · +50% ROI**. Already-on steam is still not the edge. Gold+limits is still n=3. |
@@ -172,5 +173,6 @@ Keep-fat wins combined by **+15u**, and that +15u is **exactly** discovery fat �
 4. Do **not** mute confirmed fat. Real Madrid −5.40 is the cost of keeping the 4-1 +12.9u pile.
 5. Watch unconfirmed fat to Sep 30. If the next 20 fat-no-steam tickets look like 5-0 again, *then* the gate is wrong. If they look like 17-12 −5%, T is right.
 6. Floor arriving stays. 3-for-3 sample is tiny but matches the paper (+4.3u on the August bump).
+7. Do **not** bump 2–3u to 4–5u on steam alignment. Arriving 2–3u is 10 tickets, Wilson lo 49%, MLB-only. Re-open at n≥24. [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md).
 
 We are not leaving 2–3u edge on the table by ignoring steam there — we are *collecting* it. We *are* leaving unconfirmed-fat edge on the table **this week**. That is the price of the rule that stopped August’s −30u day and the −9% fat leak. Until n on that cell is tens, not five, T is still the maximum *process*, not the maximum *this sample*.

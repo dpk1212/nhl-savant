@@ -29,7 +29,7 @@ What actually changed:
 
 Honest caveat on T itself: if the 83 steam-tail *mutes* had shipped at pre-policy size, that pile would have been **+24.2u** in this 9-day sample. **Almost all of that is five unconfirmed 5.4u/6u tickets that went 5-0.** The 4u unconfirmed mute *saved* 2.7u. The 1u cut was roughly scratch (+3.7u on 65u). Do **not** unwind the fat gate on n=5. August’s paper on that cell was 16-12 **−8.9%**.
 
-**Follow-up (same day):** 2–3u was not resized. Native 2–3u all `HOLD`. The 70% WR is hot vs the paper (p≈0.11) but 41-18 vs the old 54% book is not luck (p≈0.012). Steam cells we sized on still hold — A/B arriving combined **34 · 26-8 · 76.5% (60–88)**. Full Q&A: [`STEAM_HOLDUP_2026-09-09.md`](./STEAM_HOLDUP_2026-09-09.md).
+**Follow-up (same day):** 2–3u was not resized. Native 2–3u all `HOLD`. The 70% WR is hot vs the paper (p≈0.11) but 41-18 vs the old 54% book is not luck (p≈0.012). Steam cells we sized on still hold — A/B arriving combined **34 · 26-8 · 76.5% (60–88)**. Full Q&A: [`STEAM_HOLDUP_2026-09-09.md`](./STEAM_HOLDUP_2026-09-09.md). **Bumping steam-aligned 2–3u to 4–5u: not enough data** (arriving 2–3u is 10 · 8-2, Wilson lo 49%, MLB-only). [`MID_STEAM_BUMP_2026-09-09.md`](./MID_STEAM_BUMP_2026-09-09.md).
 
 ---
 
