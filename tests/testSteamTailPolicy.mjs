@@ -13,6 +13,7 @@ import {
   STEAM_TAIL_POLICY_FROM,
   STEAM_TAIL_MUTED_BY,
   STEAM_TAIL_ARRIVING_FLOOR,
+  STEAM_TAIL_ARRIVING_MID_UNITS,
 } from '../src/lib/steamTailPolicy.js';
 
 let n = 0;
@@ -24,6 +25,7 @@ function ok(cond, msg) {
 ok(STEAM_TAIL_POLICY_FROM === '2026-08-31', 'cutover date');
 ok(STEAM_TAIL_MUTED_BY === 'steam-tail', 'mutedBy stamp');
 ok(STEAM_TAIL_ARRIVING_FLOOR === 2, 'arriving floor');
+ok(STEAM_TAIL_ARRIVING_MID_UNITS === 4, 'arriving mid boost');
 ok(isSteamTailPolicyLive('2026-08-31'), 'live on cutover');
 ok(!isSteamTailPolicyLive('2026-08-30'), 'not live before cutover');
 ok(steamTailBand(1) === 'lean' && steamTailBand(3) === 'mid', 'lean/mid bands');
@@ -57,6 +59,47 @@ function T(args) {
     steamObservable: true, steamArriving: true, steamOnLock: true, sharpAB: true,
   });
   ok(r.action === 'FLOOR' && r.units === 2, 'halved arriving lean still floors to 2u');
+}
+
+// ── 2–3u A/B arriving → 4u ───────────────────────────────────────────────
+{
+  const r = T({ units: 3, steamArriving: true, steamOnLock: true, sharpAB: true });
+  ok(r.action === 'BOOST' && r.units === 4 && r.reason === 'arriving_mid_4u', '3u A/B arriving → 4u');
+  ok(r.mutedBy == null && r.unitsPrePolicy === 3, 'mid boost is not a mute');
+}
+{
+  const r = T({ units: 2, steamArriving: true, steamOnLock: true, sharpAB: true });
+  ok(r.action === 'BOOST' && r.units === 4, '2u A/B arriving → 4u');
+}
+{
+  const r = T({ units: 2.5, steamArriving: true, steamOnLock: true, sharpAB: true });
+  ok(r.action === 'BOOST' && r.units === 4, '2.5u A/B arriving → 4u');
+}
+{
+  const r = T({ units: 3, steamArriving: false, steamOnLock: true, sharpAB: true });
+  ok(r.action === 'HOLD' && r.units === 3, 'already-on 3u stays 3u');
+}
+{
+  const r = T({ units: 3, steamArriving: true, steamOnLock: true, sharpAB: false });
+  ok(r.action === 'HOLD' && r.units === 3, 'arriving without A/B stays 3u');
+}
+{
+  const r = T({ units: 1, steamArriving: true, steamOnLock: true, sharpAB: true });
+  ok(r.action === 'FLOOR' && r.units === 2, '1u arriving still floors to 2u not 4u');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 2, bandUnits: 3, pickDate: '2026-08-31',
+    steamObservable: true, steamArriving: true, steamOnLock: true, sharpAB: true,
+  });
+  ok(r.action === 'HOLD' && r.units === 2, 'unlock/climate-shrunk mid arriving not restacked to 4u');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 2.7, bandUnits: 5.4, pickDate: '2026-08-31',
+    steamObservable: true, steamArriving: true, steamOnLock: true, sharpAB: true,
+  });
+  ok(r.action === 'HOLD' && r.units === 2.7, 'halved confirmed fat arriving keeps current size');
 }
 
 // ── 2–3u / 5u untouched ──────────────────────────────────────────────────
@@ -191,6 +234,24 @@ function T(args) {
     hasPinnGame: true,
   });
   ok(r.action === 'FLOOR' && r.units === 2 && r.sharpAB, 'from-ticket arriving floor');
+}
+
+{
+  const profiles = new Map([
+    ['aaaaaa', { bySport: { MLB: { whitelistTier: 'CONFIRMED', whitelistSource: 'A+B' } } }],
+  ]);
+  const r = applySteamTailPolicyFromTicket({
+    units: 3,
+    pickDate: '2026-08-31',
+    walletDetails: [{ side: 'home', walletShort: 'aaaaaa' }],
+    side: 'home',
+    sport: 'MLB',
+    walletProfiles: profiles,
+    existingLog: [{ gate: 'first', tier: null, fair: -110, evPct: 0 }],
+    liveSnap: { steam: { tier: 'steam' } },
+    hasPinnGame: true,
+  });
+  ok(r.action === 'BOOST' && r.units === 4 && r.reason === 'arriving_mid_4u', 'from-ticket arriving mid → 4u');
 }
 
 {

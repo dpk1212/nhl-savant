@@ -19,7 +19,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **Tape** | Near-final dial | `&lt;0` mute (except **RANK** / **CONFIRMED-UNOPP**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
 | **qConv Q1 mute** | Near-final mute (2026-08-03+; Path A+RANK+UNOPP/Q1 exempt) | Path C SHARP* · `qConv <` expanding Q1 of prior staked → **0u** · fail-open if missing |
 | **FOOLS-gold mute** | Final mute (2026-08-05+) | Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
-| **Flinch / fail-open leftover mute** | Last mute (2026-08-19+) | Still **&lt;4u** AND (odds-capped native-4u path **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · **4u+ never touched** · Q1/UNOPP floors cannot revive |
+| **Flinch / fail-open leftover mute** | Last mute (2026-08-19+) | Still **&lt;4u** AND (odds-capped native-4u path **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · **4u+ never touched** · **A/B arriving HOLDs** (2026-09-09+) · Q1/UNOPP floors cannot revive |
 | **Sport Confirmed unlock CAP** | Absolute last (2026-08-29+) | **NFL / CFB only** · sport-wide CONFIRMED n → max u (&lt;5→1 · 5–9→2 · 10–14→3 · ≥15→full) · CAP only · deep sports EXEMPT |
 | **T-15** | Freeze | No further rewrite |
 
@@ -76,6 +76,7 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 11c. Flinch / fail-open leftover mute (2026-08-19+)
      └─ still <4u AND (native-4u plus-money OR tape BOOST OR E≥10 OR FAIL_OPEN) → 0u
      └─ 4u+ EXEMPT · unflagged tickets HOLD at exact incoming units
+     └─ A/B arriving (off→on) HOLD · no-steam / already-on still MUTE
      └─ mutedBy=believed-cut | fail-open-sub4
 12. Odds cap + global 6u cap (already applied on path/tape; mute is 0u)
 12b. Sport Confirmed unlock CAP (2026-08-29+) — **NFL / CFB only**
@@ -104,6 +105,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-08-16** | **CONFIRMED-UNOPP hard floor after mutes** — tape/qConv/FOOLS cannot leave qualifying unopposed CONFIRMED at 0u · qConv no longer mutes UNOPP |
 | **2026-08-16** | **Stake size = sport-local volume** — Path A HC / mini-HC, Q1, and UNOPP use invested / this wallet's usual in that sport (same as locked-card "Size vs usual"). Model `v8_sizeRatio` is fallback only. AGS features stay on model size. |
 | **2026-08-19** | **Flinch / fail-open leftover mute** — still &lt;4u AND (odds-capped native RANK/TOP/SUPER **or** tape BOOST leftover **or** E≥10 leftover **or** tape FAIL_OPEN) → **0u**. 4u+ never touched. Native 3u RANK/TOP favorites without those flags stay. After Q1/UNOPP restore so those floors cannot revive a stub. |
+| **2026-09-09** | **Leftover A/B arriving HOLD** — leftover mute skips when Source A/B CONFIRMED and steam arrived (off→on). No-steam / already-on leftover still 0u. Later mutes (maxSR, ev-drift, T) still run. **Policy T native 2–3u A/B arriving → 4u.** 1u arriving stays floor 2u. Climate/unlock shrink not restacked. |
 | **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |

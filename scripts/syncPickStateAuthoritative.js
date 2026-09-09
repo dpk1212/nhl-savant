@@ -222,7 +222,9 @@ import {
   STEAM_TAIL_POLICY_FROM,
   STEAM_TAIL_MUTED_BY,
   applySteamTailPolicyFromTicket,
+  countSourceAbOnSide,
   isSteamTailPolicyLive,
+  resolveSteamLifecycle,
 } from '../src/lib/steamTailPolicy.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -3214,8 +3216,10 @@ async function createMissingLockedPicks({
 
       // Flinch / fail-open leftover mute — after Q1/UNOPP restore
       // so those floors cannot revive a stub. 4u+ and unflagged tickets HOLD.
+      // Create has no tape log: arriving is always false (first sample = lock).
       let flinchFailOpenPolicyCreate = null;
       if (createV121Eligible && peakUnitsApplied > 0) {
+        const abCreate = countSourceAbOnSide(walletDetails, side, sport, walletProfiles);
         flinchFailOpenPolicyCreate = applyFlinchFailOpenMuteOverlay({
           units: peakUnitsApplied,
           odds: odds ?? null,
@@ -3223,6 +3227,8 @@ async function createMissingLockedPicks({
           tapeAction: clvPolicyCreate?.action ?? null,
           tier: hcStakeTierCreate,
           pickDate: TARGET_DATE,
+          steamArriving: false,
+          sharpAB: abCreate.sharpAB,
         });
         peakUnitsApplied = flinchFailOpenPolicyCreate.units;
       }
@@ -3339,8 +3345,9 @@ async function createMissingLockedPicks({
       }
 
       // Steam-tail policy T — last size overlay. Cut junk 1u, floor A/B
-      // arriving to 2u, steam-confirm 4u and 5.4u+. 2–3u and 5u untouched.
-      // Fail-open 4u/fat when steam cannot be observed. Ev-drift stays upstream.
+      // arriving to 2u, boost native 2–3u A/B arriving to 4u, steam-confirm
+      // 4u and 5.4u+. 5u untouched. Fail-open 4u/fat when steam unobserved.
+      // Ev-drift stays upstream.
       let steamTailPolicyCreate = null;
       if (createV121Eligible && peakUnitsApplied > 0) {
         if (!tapeCreateCtxEarly) {
@@ -4784,10 +4791,27 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── Flinch / fail-open leftover mute (after Q1/UNOPP restore) ────────
   // Believed-then-cut leftovers + sub-4 FAIL_OPEN → 0u. 4u+ never touched.
+  // A/B arriving HOLDs so T can floor/hold; later mutes still run.
   // Manual stake exempt. Runs before maxSR mute.
+  // Tape snap is captured here so leftover sees off→on this cycle; ev-drift
+  // and steam-tail reuse the same snap.
   let flinchFailOpenPolicy = null;
+  let liveTapeSnap = null;
+  let tapeCtxLive = null;
   const skipManualFlinch = Number.isFinite(sd.manualStake) && sd.manualStake > 0;
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    liveTapeSnap = captureTicketTape({
+      pinnGame: tapeCtxLive.pinnGame,
+      marketType: tapeCtxLive.marketType,
+      sideNorm: tapeCtxLive.sideNorm,
+      line: tapeCtxLive.ticketLine,
+      offerOdds: sideOdds,
+      commenceMs: tapeCtxLive.commenceMs,
+      nowMs: now,
+    });
+    const abLive = countSourceAbOnSide(wd, side, pick.sport, walletProfiles);
+    const lifeLive = resolveSteamLifecycle(sd.v8_ticketTapeLog, liveTapeSnap);
     flinchFailOpenPolicy = applyFlinchFailOpenMuteOverlay({
       units: finalUnitsApplied,
       odds: sideOdds,
@@ -4795,6 +4819,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       tapeAction: tapePolicy?.action ?? clvPolicy?.action ?? null,
       tier: hcStakeTier,
       pickDate,
+      steamArriving: lifeLive.steamArriving,
+      sharpAB: abLive.sharpAB,
     });
     finalUnitsApplied = flinchFailOpenPolicy.units;
   }
@@ -4851,19 +4877,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Steam-tail (T) is the last size overlay. Manual stake exempt. Date-gated.
   let evDriftPolicy = null;
   let evDriftLive = { firstEv: null, currentEv: null, dEv: null };
-  let liveTapeSnap = null;
-  let tapeCtxLive = null;
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
-    tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
-    liveTapeSnap = captureTicketTape({
-      pinnGame: tapeCtxLive.pinnGame,
-      marketType: tapeCtxLive.marketType,
-      sideNorm: tapeCtxLive.sideNorm,
-      line: tapeCtxLive.ticketLine,
-      offerOdds: sideOdds,
-      commenceMs: tapeCtxLive.commenceMs,
-      nowMs: now,
-    });
+    if (!tapeCtxLive) tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    if (!liveTapeSnap) {
+      liveTapeSnap = captureTicketTape({
+        pinnGame: tapeCtxLive.pinnGame,
+        marketType: tapeCtxLive.marketType,
+        sideNorm: tapeCtxLive.sideNorm,
+        line: tapeCtxLive.ticketLine,
+        offerOdds: sideOdds,
+        commenceMs: tapeCtxLive.commenceMs,
+        nowMs: now,
+      });
+    }
     evDriftLive = resolveTicketEvDrift(sd.v8_ticketTapeLog, liveTapeSnap);
     evDriftPolicy = applyEvDriftEdgeMuteOverlay({
       units: finalUnitsApplied,
@@ -4914,9 +4940,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── Steam-tail policy T (last size overlay) ──────────────────────────
-  // Cut junk 1u · floor A/B arriving → 2u · steam-confirm 4u and 5.4u+.
-  // 2–3u and 5u untouched. Fail-open 4u/fat when steam cannot be observed.
-  // Manual stake exempt. Date-gated inside overlay. Ev-drift stays upstream.
+  // Cut junk 1u · floor A/B arriving → 2u · native 2–3u A/B arriving → 4u
+  // · steam-confirm 4u and 5.4u+. 5u untouched. Fail-open 4u/fat when
+  // steam cannot be observed. Manual stake exempt. Date-gated. Ev-drift upstream.
   let steamTailPolicy = null;
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
     if (!tapeCtxLive) tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
@@ -6508,7 +6534,7 @@ async function main() {
   }
   if (isSteamTailPolicyLive(TARGET_DATE)) {
     console.log(
-      `Steam-tail policy T LIVE: cut junk ≤1u · floor A/B arriving → 2u · 4u and 5.4u+ need A/B steam on at lock · 2–3u and 5u untouched`
+      `Steam-tail policy T LIVE: cut junk ≤1u · floor A/B arriving → 2u · native 2–3u A/B arriving → 4u · 4u and 5.4u+ need A/B steam on at lock · 5u untouched`
       + ` · from ${STEAM_TAIL_POLICY_FROM} · last size overlay · steam unobserved fail-open fat/4u · mutedBy=${STEAM_TAIL_MUTED_BY}`,
     );
   } else {
