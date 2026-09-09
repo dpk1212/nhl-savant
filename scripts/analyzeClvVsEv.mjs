@@ -314,13 +314,17 @@ for (const b of CLV_ORDER) {
 push('');
 push('=== 1b. Dale showcase cell vs rest (has-CLV book) ===');
 const dale = withClv.filter((r) => r.clvPct >= -3 && r.clvPct < -1);
-const beatClose = withClv.filter((r) => r.clvPct >= 0);
+const beatClose = withClv.filter((r) => r.clvPct > 0);
+const beatOrFlat = withClv.filter((r) => r.clvPct >= 0);
 const loseClose = withClv.filter((r) => r.clvPct < 0);
 const loseClose13 = withClv.filter((r) => r.clvPct >= -3 && r.clvPct < 0);
+const flatClose = withClv.filter((r) => r.clvPct === 0);
 push(`CLV −3 to −1%                     ${fmt(agg(dale))}`);
 push(`any negative CLV                  ${fmt(agg(loseClose))}`);
 push(`CLV −3 to 0%                      ${fmt(agg(loseClose13))}`);
-push(`any +CLV (beat close)             ${fmt(agg(beatClose))}`);
+push(`beat close (CLV > 0)              ${fmt(agg(beatClose))}`);
+push(`CLV ≥ 0 (includes exact 0)        ${fmt(agg(beatOrFlat))}`);
+push(`CLV exactly 0                     ${fmt(agg(flatClose))}`);
 push(`CLV < −3%                         ${fmt(agg(withClv.filter((r) => r.clvPct < -3)))}`);
 push(`CLV > +3%                         ${fmt(agg(withClv.filter((r) => r.clvPct > 3)))}`);
 push('');
@@ -402,7 +406,8 @@ function onlyShip(pred, label) {
 }
 onlyShip((r) => r.clvPct >= -3 && r.clvPct < -1, 'only CLV −3 to −1%');
 onlyShip((r) => Number.isFinite(r.clvPct) && r.clvPct < 0, 'only any −CLV');
-onlyShip((r) => Number.isFinite(r.clvPct) && r.clvPct >= 0, 'only +CLV');
+onlyShip((r) => Number.isFinite(r.clvPct) && r.clvPct > 0, 'only beat close (CLV > 0)');
+onlyShip((r) => Number.isFinite(r.clvPct) && r.clvPct >= 0, 'only CLV ≥ 0');
 onlyShip((r) => {
   const e = r.evFirst ?? r.evStamped;
   return Number.isFinite(e) && e >= 3 && e < 5;
@@ -418,7 +423,7 @@ push('=== 8b. Juice mix inside CLV buckets (has-CLV) ===');
 const JUICE = ['plus', '−100 to −120', '−121 to −150', '−151 to −200', '< −200'];
 for (const b of ['−3 to −1%', '−1 to 0%', '0 to +1%', '+1 to +3%', 'any −CLV', 'any +CLV']) {
   const sub = b === 'any −CLV' ? loseClose
-    : b === 'any +CLV' ? beatClose
+    : b === 'any +CLV' ? beatOrFlat
     : withClv.filter((r) => r.clvBucket === b);
   push(`-- ${b} --`);
   for (const j of JUICE) {

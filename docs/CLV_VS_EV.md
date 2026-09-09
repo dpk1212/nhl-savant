@@ -14,7 +14,7 @@ Dale’s Twitter idea: EV shops want **volume on price** (say **+3–5% EV** vs 
 1. **We are not an EV shop.** On 229 tickets with a stamped entry EV vs Pin fair, mean EV is **~0%**. The 3–5% EV bucket the industry hammers is **3 tickets** on our entire V12 book.
 2. **We barely beat close.** 976 tickets with CLV: we beat Pin close **41%** of the time. Mean CLV is **+0.14%**. Median is **0**. Winners and losers have the **same** mean CLV (+0.12 vs +0.15). CLV did not tell us who won.
 3. **We still print.** Live book Jun 1 → Sep 8 2026: **980 · 545-435 · 55.6% · +175u · +6.5% ROI**. That is **+1.5 percentage points** more wins than the prices we paid required (implied 54.1%).
-4. **Losing the close still won more than beating it.** Any −CLV: **57.1% WR · +6.9% ROI · +2.3pp vs price**. Any +CLV: **54.3% WR · +6.7% ROI · +0.8pp vs price**. Same dollars, more wins on the “bad CLV” side.
+4. **Losing the close still won more than beating it.** Any −CLV: **57.1% WR · +6.9% ROI · +2.3pp vs price**. Beat close (CLV > 0): **54.0% WR · +7.6% ROI · +0.2pp vs price**. More wins on the “bad CLV” side; dollars are roughly a wash (the +CLV ROI bump is the thin >+3% bucket).
 5. **Do not tweet “−1 to −3% CLV and we crush.”** That bucket is **183 · 100-83 · 54.6% · −18u · −3.7% ROI · +0.3pp vs price**. Coin-flip excess. The money is one bucket nicer: **−1 to 0% CLV = 249 · 147-102 · 59% · +112u · +15.8% ROI · +4.3pp vs price**.
 
 The tweetable contrast vs EV bettors:
@@ -62,7 +62,9 @@ CLV = beat / lose Pin close. Excess = win rate minus the implied of **our** lock
 | Group | N | WR | vs price | ROI | PnL | mean CLV |
 |-------|--:|---:|---------:|----:|----:|---------:|
 | **Any −CLV (lost close)** | **466** | **57.1%** | **+2.3pp** | **+6.9%** | **+90u** | −1.49% |
-| **Any +CLV (beat close)** | **510** | **54.3%** | **+0.8pp** | **+6.7%** | **+93u** | +1.62% |
+| **Beat close (CLV > 0)** | **404** | **54.0%** | **+0.2pp** | **+7.6%** | **+81u** | +2.05% |
+| CLV ≥ 0 (includes 106 flats) | 510 | 54.3% | +0.8pp | +6.7% | +93u | +1.62% |
+| CLV exactly 0 | 106 | 55.7% | +2.8pp | +3.8% | +12u | 0 |
 | CLV −3 to 0% | 432 | 57.2% | +2.6pp | +7.8% | +93u | −1.02% |
 
 Read it as a U, not a slope:
@@ -139,7 +141,7 @@ MLB (the volume): −CLV tickets in the −3 to −1% band are 153 · 54.9% · �
 **Can say**
 
 - EV guys need 3–5% vs a model to pull the trigger. We don’t have that juice. Mean ticket vs Pin is ~0%. We still run **55.6% / +6.5%** because we **win more than the number**.
-- We beat Pin close **41%** of the time. Mean CLV is a rounding error. Tickets that **lost** the close still won **57%**. Tickets that **beat** it won **54%**. Same ROI. Side > price.
+- We beat Pin close **41%** of the time. Mean CLV is a rounding error. Tickets that **lost** the close still won **57%**. Tickets that **beat** it won **54%**. Slightly more ROI on the +CLV side (the >+3% dogs). The win-rate gap is the point: side > price.
 - The fattest CLV cell on the book is not “steam with us.” It is **lost close by a hair** (−1 to 0%): **59% · +16% ROI · +4pp vs the price**.
 - Negative EV vs Pin at flag (142 tickets) still **+12% ROI**. Price screens would have cut our actual edge.
 
@@ -154,7 +156,7 @@ MLB (the volume): −CLV tickets in the −3 to −1% band are 153 · 54.9% · �
 
 Felt moment: everyone in this corner of Twitter treats **beating close** and **3–5% model EV** as the receipt that you are sharp. Our receipt is the opposite: we **don’t** beat close, we **don’t** show 3–5% EV, and we still **win more than the juice we paid**.
 
-Forced take: would you rather have a book that is +1.6% CLV at 54% or −1.5% CLV at 57% — same ROI, more wins on the “wrong” CLV side?
+Forced take: would you rather be +2% CLV at 54% or −1.5% CLV at 57% — a bit more juice on the “right” CLV side, more wins on the “wrong” one?
 
 ---
 
