@@ -12,6 +12,7 @@ import {
   FLINCH_FAIL_OPEN_MUTE_FROM,
   FLINCH_MUTED_BY,
   FAIL_OPEN_SUB4_MUTED_BY,
+  FLINCH_ARRIVING_EXEMPT_REASON,
   CONFIRMED_UNOPP_UNITS,
 } from '../src/lib/walletClvSkill.js';
 
@@ -157,6 +158,58 @@ holdExact(
 {
   const r = mute({ units: 0, odds: 146, tapeAction: 'HOLD', tier: 'RANK' });
   ok(r.action === 'PASS' && r.units === 0, 'already 0u stays PASS');
+}
+
+// ── HOLD: A/B arriving exempts leftover; already-on / no A/B still mute ──
+{
+  const r = mute({
+    units: 2.5, odds: 146, edge: 3, tapeAction: 'HOLD', tier: 'RANK',
+    steamArriving: true, sharpAB: true,
+  });
+  ok(r.action === 'HOLD' && r.units === 2.5, 'A/B arriving leftover HOLDs');
+  ok(r.reason === FLINCH_ARRIVING_EXEMPT_REASON && r.mutedBy == null, 'arriving_exempt stamp');
+  ok(r.flags.includes('odds_capped_native4'), 'keeps leftover flags');
+}
+{
+  const r = mute({
+    units: 1, odds: 122, edge: null, tapeAction: 'FAIL_OPEN', tier: 'DISSENT',
+    steamArriving: true, sharpAB: true,
+  });
+  ok(r.action === 'HOLD' && r.units === 1, 'A/B arriving FAIL_OPEN leftover HOLDs');
+}
+{
+  const r = mute({
+    units: 3, odds: -111, edge: 10.4, tapeAction: 'BOOST', tier: 'SHARP',
+    steamArriving: true, sharpAB: true,
+  });
+  ok(r.action === 'HOLD' && r.units === 3, 'A/B arriving BOOST leftover HOLDs');
+}
+{
+  const r = mute({
+    units: 2.5, odds: 146, edge: 3, tapeAction: 'HOLD', tier: 'RANK',
+    steamArriving: true, sharpAB: false,
+  });
+  ok(r.action === 'MUTE' && r.units === 0, 'arriving without A/B still muted');
+}
+{
+  const r = mute({
+    units: 2.5, odds: 146, edge: 3, tapeAction: 'HOLD', tier: 'RANK',
+    steamArriving: false, sharpAB: true,
+  });
+  ok(r.action === 'MUTE' && r.units === 0, 'already-on A/B leftover still muted');
+}
+{
+  const r = mute({
+    units: 2.5, odds: 146, edge: 3, tapeAction: 'HOLD', tier: 'RANK',
+    steamArriving: false, sharpAB: false,
+  });
+  ok(r.action === 'MUTE' && r.units === 0, 'no-steam leftover still muted');
+}
+{
+  const r = mute({
+    units: 2.5, odds: 146, edge: 3, tapeAction: 'HOLD', tier: 'RANK',
+  });
+  ok(r.action === 'MUTE' && r.units === 0, 'omitted steam args fail-closed mute');
 }
 
 // Identity: HOLD must not round or rescale

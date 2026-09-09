@@ -5,7 +5,8 @@
  *
  *   ≤1u junk            → 0u
  *   ≤1u A/B arriving    → floor 2u
- *   2–3u                → as-sized
+ *   2–3u A/B arriving   → 4u (native mid only; climate/unlock shrink HOLDs)
+ *   2–3u otherwise      → as-sized
  *   4u                  → keep iff Source A/B CONFIRMED on our side AND steam on at lock
  *   5u                  → always
  *   5.4u+               → keep iff A/B steam on at lock
@@ -20,6 +21,7 @@ import { analyzeTicketTapeLog } from './ticketTapeCapture.js';
 export const STEAM_TAIL_POLICY_FROM = '2026-08-31';
 export const STEAM_TAIL_MUTED_BY = 'steam-tail';
 export const STEAM_TAIL_ARRIVING_FLOOR = 2;
+export const STEAM_TAIL_ARRIVING_MID_UNITS = 4;
 
 /** Match analyzeGoldSteamAb.mjs unitBand. */
 export function steamTailBand(u) {
@@ -221,7 +223,25 @@ export function applySteamTailPolicy({
     });
   }
 
-  // 2–3u and 5u: leave alone.
+  // Native 2–3u A/B arriving → 4u. Lean already returned (1u floors stay 2u).
+  // muteBand is pre-climate/unlock; skip if those already shrunk the ticket
+  // so we do not undo a RED half or an NFL/CFB cap.
+  const shrunk = Number.isFinite(muteSrc) && muteSrc > pre;
+  if (muteBand === 'mid' && abArriving && !shrunk) {
+    return pack({
+      units: STEAM_TAIL_ARRIVING_MID_UNITS,
+      action: 'BOOST',
+      reason: 'arriving_mid_4u',
+      mutedBy: null,
+      unitsPrePolicy: pre,
+      steamOnLock,
+      steamArriving,
+      sharpAB,
+      band,
+    });
+  }
+
+  // 2–3u (no arriving) and 5u: leave alone.
   return hold('HOLD', null);
 }
 

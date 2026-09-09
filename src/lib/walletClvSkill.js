@@ -1087,12 +1087,15 @@ export function applyFoolsGoldMuteOverlay({
 // Hard fences (zero impact on the rest of the book):
 //   • units ≥ 4 → EXEMPT (4u+ BOOST/E≥10/FAIL_OPEN TOP never touched)
 //   • no matching flag → HOLD at the exact incoming units
+//   • Source A/B CONFIRMED + steam arriving (off→on) → HOLD at incoming units
+//     (no-steam and already-on leftover still MUTE; later mutes still run)
 //   • pre-cutover → EXEMPT
 // Q1/UNOPP floors run BEFORE this overlay so they cannot revive a stub.
 export const FLINCH_FAIL_OPEN_MUTE_FROM = '2026-08-19';
 export const FLINCH_FAIL_OPEN_NATIVE4_TIERS = new Set(['SUPER', 'TOP', 'TOP+', 'RANK']);
 export const FLINCH_MUTED_BY = 'believed-cut';
 export const FAIL_OPEN_SUB4_MUTED_BY = 'fail-open-sub4';
+export const FLINCH_ARRIVING_EXEMPT_REASON = 'arriving_exempt';
 
 export function isFlinchFailOpenMuteLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= FLINCH_FAIL_OPEN_MUTE_FROM;
@@ -1114,6 +1117,8 @@ export function applyFlinchFailOpenMuteOverlay({
   tapeAction = null,
   tier = null,
   pickDate = null,
+  steamArriving = false,
+  sharpAB = false,
 } = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   const out = (action, reason = null) => ({
@@ -1143,6 +1148,19 @@ export function applyFlinchFailOpenMuteOverlay({
     flags.push('edge_ge10_sub4');
   }
   if (!flags.length) return out('HOLD', null);
+
+  // Same arriving test as Policy T's 1u floor: A/B on our side AND steam
+  // off on first tape row, on at lock. Already-on and no-steam still MUTE.
+  if (sharpAB && steamArriving) {
+    return {
+      units: pre,
+      action: 'HOLD',
+      reason: FLINCH_ARRIVING_EXEMPT_REASON,
+      mutedBy: null,
+      unitsPrePolicy: pre,
+      flags,
+    };
+  }
 
   const failOpen = flags.includes('fail_open_sub4');
   return {
