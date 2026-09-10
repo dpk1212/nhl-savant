@@ -1,7 +1,9 @@
 /**
- * Dual-axis Pinnacle tape — odds (left) + max limit line (right).
- * Industry pattern: shared plot, stepped odds, limit as a full series with nodes.
+ * Dual-axis Pinnacle tape — ticket juice (left) + max limit (right).
+ * Spreads/totals: main-line hops are beads/caption, not a second odds series.
  */
+import { fmtHandicap, fmtMainLineMove, mainLineHops } from '../../../lib/pinnacleMain.js';
+
 const C = {
   text: '#F4F7FB',
   textSec: '#9aa6bd',
@@ -21,6 +23,26 @@ export function fmtOdds(o) {
   const n = Number(o);
   if (o == null || Number.isNaN(n) || n === 0) return '—';
   return n > 0 ? `+${n}` : `${n}`;
+}
+
+function xForTime(t, points, xAt) {
+  if (!Number.isFinite(t) || !Array.isArray(points) || !points.length) return null;
+  const stamped = points
+    .map((p, i) => ({ i, t: p.t }))
+    .filter((p) => Number.isFinite(p.t));
+  if (!stamped.length) return null;
+  if (t <= stamped[0].t) return xAt(stamped[0].i);
+  const last = stamped[stamped.length - 1];
+  if (t >= last.t) return xAt(last.i);
+  for (let i = 1; i < stamped.length; i++) {
+    if (t <= stamped[i].t) {
+      const a = stamped[i - 1];
+      const b = stamped[i];
+      const span = b.t - a.t || 1;
+      return xAt(a.i) + ((t - a.t) / span) * (xAt(b.i) - xAt(a.i));
+    }
+  }
+  return xAt(last.i);
 }
 
 function fmtMax(n) {
@@ -221,6 +243,9 @@ function MetricStrip({
   curated = false,
   premium = false,
   bestNow = null,
+  openLine = null,
+  nowLine = null,
+  isSpread = false,
 }) {
   // Collapsed Locked card price desk — what sharps need:
   // TICKET · BEST · EV · FAIR · PIN · NOW (drop empties; cap at 5–6).
@@ -235,6 +260,17 @@ function MetricStrip({
         label: 'TICKET',
         value: fmtOdds(flagged),
         color: C.text,
+      });
+    }
+    const lineLabel = fmtMainLineMove(openLine, nowLine, { spread: isSpread });
+    if (lineLabel) {
+      const moved = Number.isFinite(openLine) && Number.isFinite(nowLine)
+        && Math.abs(openLine - nowLine) >= 0.45;
+      cells.push({
+        key: 'line',
+        label: 'LINE',
+        value: lineLabel,
+        color: moved ? GOLD_HI : C.text,
       });
     }
     if (Number.isFinite(best)
@@ -525,6 +561,8 @@ function DualAxisChart({
   premium = false,
   narrow = false,
   gid = 'ols',
+  mainHops = null,
+  isSpread = false,
 }) {
   if (!points || points.length < 2) return null;
 
@@ -870,6 +908,41 @@ function DualAxisChart({
         </text>
       ))}
 
+      {/* Main-line hops — beads on the juice tape, not a second Y-axis */}
+      {Array.isArray(mainHops) && mainHops.map((hop, i) => {
+        const x = xForTime(hop.t, points, xAt);
+        if (x == null) return null;
+        const label = hop.fromLine != null
+          ? `${fmtHandicap(hop.fromLine, { spread: isSpread })}→${fmtHandicap(hop.line, { spread: isSpread })}`
+          : fmtHandicap(hop.line, { spread: isSpread });
+        return (
+          <g key={`hop-${i}-${hop.line}`}>
+            <line
+              x1={x}
+              y1={padTop}
+              x2={x}
+              y2={padTop + plotH}
+              stroke={GOLD}
+              strokeWidth={1}
+              strokeDasharray="2 3"
+              opacity={premium ? 0.35 : 0.45}
+            />
+            <text
+              x={x}
+              y={padTop + 8}
+              textAnchor="middle"
+              fill={GOLD_HI}
+              fontSize={premium ? 6.5 : (compact ? 6.5 : 7)}
+              fontFamily={MONO}
+              fontWeight={700}
+              opacity={0.9}
+            >
+              {label}
+            </text>
+          </g>
+        );
+      })}
+
       {/* Time axis */}
       <text x={padL} y={h - 3} textAnchor="start" fill={C.textFaint} fontSize={premium ? 7 : (compact ? 7.5 : 8)} fontFamily={MONO} fontWeight={600} opacity={premium ? 0.75 : 1}>
         {t0 || 'Open'}
@@ -937,6 +1010,10 @@ export default function OddsLimitSpark({
   ticketOffMain = false,
   /** Brokerage order: tape directly under the hero, price cells below it. */
   chartFirst = false,
+  linePath = null,
+  openMainLine = null,
+  nowMainLine = null,
+  isSpread = false,
 }) {
   const liveNow = Number.isFinite(now) ? now : fair;
   // Chart is book tape on this line. Ticket juice stays in the FLAGGED cell —
@@ -973,9 +1050,18 @@ export default function OddsLimitSpark({
       : story.tone === 'thin' ? GOLD
         : C.textSec;
   const hasMax = points.some((p) => Number.isFinite(p.max));
+  const hops = mainLineHops(linePath);
+  const mainMoveLabel = fmtMainLineMove(
+    Number.isFinite(openMainLine) ? openMainLine : linePath?.[0]?.line,
+    Number.isFinite(nowMainLine) ? nowMainLine : linePath?.[linePath.length - 1]?.line,
+    { spread: isSpread },
+  );
+  const mainMoved = Number.isFinite(openMainLine) && Number.isFinite(nowMainLine)
+    && Math.abs(openMainLine - nowMainLine) >= 0.45;
 
   // Compact caption — one proof line under the chart (not the full desk story).
   const compactCaption = (() => {
+    if (mainMoved && mainMoveLabel) return `Main ${mainMoveLabel}`;
     if (!compact || !showStory) return null;
     if (Number.isFinite(movePp) && Math.abs(movePp) >= 0.25) {
       return movePp > 0
@@ -1009,6 +1095,9 @@ export default function OddsLimitSpark({
       premium={premiumCompact}
       bestNow={bestNow}
       ticketOffMain={ticketOffMain}
+      openLine={openMainLine}
+      nowLine={nowMainLine}
+      isSpread={isSpread}
     />
   );
 
@@ -1030,6 +1119,8 @@ export default function OddsLimitSpark({
         compact={compact}
         premium={premiumCompact}
         gid={gid}
+        mainHops={hops}
+        isSpread={isSpread}
       />
     </div>
   );
@@ -1043,6 +1134,17 @@ export default function OddsLimitSpark({
         {chartNode}
         <div style={{ padding: bleed ? '13px 22px 0' : '13px 0 0' }}>
           {metricsNode}
+          {mainMoved && mainMoveLabel && (
+            <div style={{
+              marginTop: 8,
+              fontSize: 11,
+              fontWeight: 550,
+              color: C.textMuted,
+              letterSpacing: '0.01em',
+            }}>
+              Main {mainMoveLabel}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1102,7 +1204,7 @@ export default function OddsLimitSpark({
             {story.headline}
           </div>
           <div style={{ fontSize: 12, fontWeight: 500, color: C.textSec, lineHeight: 1.45 }}>
-            {story.body}
+            {mainMoved && mainMoveLabel ? `Main ${mainMoveLabel}. ${story.body}` : story.body}
           </div>
         </div>
       )}

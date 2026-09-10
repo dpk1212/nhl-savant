@@ -19,6 +19,7 @@ import {
   planTrackedLosersForMap,
 } from '../../../lib/boardMoneySplits.js';
 import {
+  buildMainLinePath,
   lastBoardMain,
   pickMainSpreadFromBoard,
   pickMainTotalFromBoard,
@@ -357,6 +358,24 @@ function linesClose(a, b, eps = 0.051) {
   return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= eps;
 }
 
+function prependOpenerToLinePath(path, opener, { line, odds, max } = {}) {
+  const out = Array.isArray(path) ? [...path] : [];
+  if (!Number.isFinite(line)) return out;
+  const opT = Number.isFinite(opener?.t) ? opener.t : null;
+  const point = {
+    t: opT,
+    line,
+    odds: Number.isFinite(odds) ? odds : null,
+    max: Number.isFinite(max) && max > 0 ? max : null,
+  };
+  const first = out[0];
+  if (!first) return [point];
+  if (opT != null && (first.t == null || opT < first.t) && !linesClose(first.line, line)) {
+    return [point, ...out];
+  }
+  return out;
+}
+
 /** Commence / freeze timestamps from Firestore, ISO, or epoch ms. */
 export function parseCommenceMs(raw) {
   if (raw == null) return null;
@@ -545,6 +564,9 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
   const empty = {
     pinSeries: null,
     pinPath: null,
+    linePath: null,
+    openMainLine: null,
+    nowMainLine: null,
     books: [],
     bestOdds: null,
     bestBook: null,
@@ -597,6 +619,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
   const books = [];
   let pinSeries = null;
   let pinPath = null;
+  let linePath = null;
   let bestOdds = null;
   let bestBook = null;
   let fairNow = null;
@@ -702,6 +725,20 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     const pts = pinPath.map((p) => p.odds);
     pinSeries = pts.length >= 2 ? pts : null;
     if (pinPath.length < 2) pinPath = null;
+
+    {
+      const opener = pinnGame.totalOpener;
+      const built = prependOpenerToLinePath(
+        buildMainLinePath(hist, { marketType: 'total', sideNorm: sideKey }),
+        opener,
+        {
+          line: Number(opener?.line),
+          odds: sideKey === 'under' ? opener?.underOdds : opener?.overOdds,
+          max: opener?.max,
+        },
+      );
+      linePath = built.length ? built : null;
+    }
 
     const mainSnap = lastMainSnap(hist);
     const liveTotal = !sealed
@@ -875,6 +912,20 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     pinSeries = pts.length >= 2 ? pts : null;
     if (pinPath.length < 2) pinPath = null;
 
+    {
+      const opener = pinnGame.spreadOpener;
+      const built = prependOpenerToLinePath(
+        buildMainLinePath(hist, { marketType: 'spread', sideNorm: sideKey }),
+        opener,
+        {
+          line: Number(sideKey === 'away' ? opener?.awayLine : opener?.homeLine),
+          odds: sideKey === 'away' ? opener?.awayOdds : opener?.homeOdds,
+          max: opener?.max,
+        },
+      );
+      linePath = built.length ? built : null;
+    }
+
     const mainSnap = lastMainSpreadSnap(hist);
     const liveSpread = !sealed
       ? (pickMainSpreadFromBoard(pinnGame.spreadLines) || pinnGame.spreadCurrent)
@@ -1044,6 +1095,11 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
   return {
     pinSeries,
     pinPath: Array.isArray(pinPath) && pinPath.length >= 2 ? pinPath : null,
+    linePath: Array.isArray(linePath) && linePath.length >= 1 ? linePath : null,
+    openMainLine: Number.isFinite(linePath?.[0]?.line) ? linePath[0].line : null,
+    nowMainLine: Number.isFinite(linePath?.[linePath.length - 1]?.line)
+      ? linePath[linePath.length - 1].line
+      : null,
     books,
     bestOdds: Number.isFinite(bestOdds) ? bestOdds : null,
     bestBook: bestBook || null,
@@ -1715,6 +1771,9 @@ export function mapLockedPickToCardFixture(pick, {
     journey,
     pinSeries,
     pinPath: Array.isArray(market.pinPath) && market.pinPath.length >= 2 ? market.pinPath : null,
+    linePath: Array.isArray(market.linePath) && market.linePath.length >= 1 ? market.linePath : null,
+    openMainLine: Number.isFinite(market.openMainLine) ? market.openMainLine : null,
+    nowMainLine: Number.isFinite(market.nowMainLine) ? market.nowMainLine : null,
     books: market.books,
     bestOdds: market.bestOdds,
     bestBook: market.bestBook,

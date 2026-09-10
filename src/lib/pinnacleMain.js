@@ -143,6 +143,101 @@ export function pickMainSpreadFromPinnapi(spreads) {
   return best;
 }
 
+/**
+ * Time-ordered MAIN handicap path from a mixed hist bag.
+ * Honor isMain. Skip boards with no stamp once we have one — a partial
+ * 47.5/50 dump must not pick'em a new main. Pick'em only on a cold start.
+ */
+export function buildMainLinePath(hist, {
+  marketType = 'total',
+  sideNorm = 'home',
+} = {}) {
+  if (!Array.isArray(hist) || !hist.length) return [];
+  const mt = String(marketType || 'total').toLowerCase();
+  const isTotal = mt === 'total';
+  const isSpread = mt === 'spread';
+  if (!isTotal && !isSpread) return [];
+  const sideIsAway = sideNorm === 'away' || sideNorm === 'under' || sideNorm === 'draw';
+  const pickFn = isTotal ? pickMainTotalFromBoard : pickMainSpreadFromBoard;
+
+  const byT = new Map();
+  for (const h of hist) {
+    if (!h) continue;
+    const t = Number.isFinite(h.t) ? h.t : 'na';
+    if (!byT.has(t)) byT.set(t, []);
+    byT.get(t).push(h);
+  }
+  const keys = [...byT.keys()].sort((a, b) => {
+    if (a === 'na') return 1;
+    if (b === 'na') return -1;
+    return a - b;
+  });
+
+  const out = [];
+  let seenStamp = false;
+  for (const key of keys) {
+    const board = byT.get(key) || [];
+    const stamped = board.find((r) => r && r.isMain);
+    let main = stamped || null;
+    if (main) seenStamp = true;
+    else if (seenStamp) continue;
+    else main = pickFn(board);
+    if (!main) continue;
+
+    const line = isTotal
+      ? Number(main.line)
+      : Number(sideIsAway ? main.awayLine : main.homeLine);
+    if (!Number.isFinite(line)) continue;
+    const odds = isTotal
+      ? (sideIsAway ? main.underOdds : main.overOdds)
+      : (sideIsAway ? main.awayOdds : main.homeOdds);
+    const rawMax = Number(main.max ?? (isTotal ? main.maxTotal : main.maxSpread));
+    const t = Number.isFinite(main.t)
+      ? main.t
+      : (Number.isFinite(key) ? key : (board.find((r) => Number.isFinite(r?.t))?.t ?? null));
+    out.push({
+      t: Number.isFinite(t) ? t : null,
+      line,
+      odds: Number.isFinite(odds) ? odds : null,
+      max: Number.isFinite(rawMax) && rawMax > 0 ? rawMax : null,
+    });
+  }
+  return out;
+}
+
+export function fmtHandicap(n, { spread = false } = {}) {
+  if (!Number.isFinite(Number(n))) return '—';
+  const v = Number(n);
+  if (spread && v > 0) return `+${v}`;
+  return String(v);
+}
+
+export function fmtMainLineMove(openLine, nowLine, { spread = false } = {}) {
+  if (!Number.isFinite(openLine) && !Number.isFinite(nowLine)) return null;
+  if (!Number.isFinite(openLine)) return fmtHandicap(nowLine, { spread });
+  if (!Number.isFinite(nowLine)) return fmtHandicap(openLine, { spread });
+  if (Math.abs(openLine - nowLine) < 0.45) return fmtHandicap(nowLine, { spread });
+  return `${fmtHandicap(openLine, { spread })}→${fmtHandicap(nowLine, { spread })}`;
+}
+
+/** Consecutive main-line changes (≥ half-point). */
+export function mainLineHops(path, eps = 0.45) {
+  if (!Array.isArray(path) || path.length < 2) return [];
+  const hops = [];
+  for (let i = 1; i < path.length; i++) {
+    const from = Number(path[i - 1].line);
+    const to = Number(path[i].line);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) continue;
+    if (Math.abs(to - from) < eps) continue;
+    hops.push({
+      t: Number.isFinite(path[i].t) ? path[i].t : null,
+      line: to,
+      fromLine: from,
+    });
+  }
+  return hops;
+}
+
 /** Last cycle's board in a mixed hist dump → main (isMain stamp, else pick'em). */
 export function lastBoardMain(hist, pickFn) {
   if (!Array.isArray(hist) || !hist.length || typeof pickFn !== 'function') return null;
