@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-10 AM · Hero EDUCATE · two red nights → day/week grain |
+| Last updated | 2026-09-10 AM r2 · Hero EDUCATE DEPTH · 2 red nights / week still +33.4u |
 | CSV window | Account overview Jun 13–Sep 10 · post-level law Aug 26–Sep 1 content CSV |
 | Ask temperature | **Cold-warm.** Give. MLB ask already fired Sep 6. This post = no ask. |
 | Account arc | Last 2 nights red. Report Jun 1–Sep 9: usual night +1.9u · 3/5 green · 9 weeks / 5 red · book +169.7u. |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/10 AM | Hero **EDUCATE/GIVE** | `TWO RED NIGHTS.` / usual night +1.9u · 3/5 · 9w/5r · +169.7u | **C + L** | none | **Staged** |
+| 9/10 AM r2 | Hero **EDUCATE/GIVE** | `2 RED NIGHTS.` / week still +33.4u (2×+ normal) · 99-night walk | **C + L** | none | **Staged — depth rewrite** |
 | 9/10 AM | Ingest | Account-overview CSV | — | none | Done |
 | 9/09 | Hero? | Unidentified (1 Create Post · 196 eng / 17R) | ? | ? | X auth down |
 | 9/07 | Hero? | Unidentified (1 Create Post · **398 eng / 48R** file max) | ? | ? | X auth down |
@@ -26,11 +26,11 @@
 ---
 
 ## Angle lock
-**ONE:** Two red nights is the normal grain. Usual night +1.9u. 2 of 5 red. 5 of 14 weeks red. Book still +169.7u.  
-**Yum:** you see the real night, including the red ones.  
-**Hook:** `TWO RED NIGHTS.` / `A usual night is +1.9u.`  
-**Close:** 544-436-8 · +169.7u · 6.3%.  
-**Ask:** none.  
+**ONE:** Two red nights is the grain, not a crash. Typical night +1.9u. This week still +33.4u (2×+ normal).  
+**Yum:** you see the real night, including the red ones. Tickets without becoming sharp.  
+**Hook:** `2 RED NIGHTS.` / `This week is still +33.4u.`  
+**Close:** sit through two in a row / last 99 nights.  
+**Ask:** none. Long-form (~2,100 chars). Do not restarve to 280.  
 **Attach walk:** histogram → weeks → calendar → scatter.
 
 ---
