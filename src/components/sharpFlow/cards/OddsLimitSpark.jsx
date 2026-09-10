@@ -544,11 +544,11 @@ function DualAxisChart({
     && oddsVals.length > 1
     && (Math.max(...oddsVals) - Math.min(...oddsVals)) < 0.015;
 
-  // Premium plots run nearly edge to edge — the ledger row below carries the
-  // numbers, so the plot needs no left axis gutter at all.
+  // Premium keeps a real axis gutter — two lines with no scale is a shape,
+  // not a chart. Only the flat held-line strip drops the gutters.
   const w = narrow ? 232 : (compact ? 340 : 420);
   const h = premium ? (flatTape ? 34 : 96) : (compact ? 78 : 148);
-  const padL = premium ? 18 : (compact ? 30 : 38);
+  const padL = premium ? (flatTape ? 18 : 32) : (compact ? 30 : 38);
   const padR = premium
     ? (hasMax ? 40 : 18)
     : (compact ? 34 : 44);
@@ -633,17 +633,23 @@ function DualAxisChart({
   // held-line strip with the one label that matters.
   const baselineY = padTop + plotH;
   const areaD = `${oddsD} L${oddsCoords[oddsCoords.length - 1][0].toFixed(1)},${baselineY} L${oddsCoords[0][0].toFixed(1)},${baselineY} Z`;
-  // Premium: no odds axis at all — the ledger row under the tape carries
-  // every number. The plot is pure shape: line, wash, guide, live endpoint.
-  const shownOTicks = premium ? [] : oTicks;
-  // Premium labels the limit where it IS — at the line's live endpoint —
-  // not at an abstract top-of-scale tick.
+  // Axes: without a scale, two lines are indistinguishable shapes. Premium
+  // keeps the left American-odds ticks and the right $ scale; only the flat
+  // held-line strip (one number, in the ledger) goes bare.
+  const shownOTicks = premium ? (flatTape ? [] : oTicks) : oTicks;
+  // Premium right axis: top-of-scale tick + the live limit at its endpoint.
+  // Skip the top tick when the endpoint sits on it (session high = now).
   const shownMTicks = premium
-    ? (hasMax && maxCoords.length
-      ? [{
-        y: maxCoords[maxCoords.length - 1][1],
-        label: fmtMax(points[points.length - 1].max ?? maxesEarly[maxesEarly.length - 1]) || '',
-      }]
+    ? (hasMax && maxCoords.length && !flatTape
+      ? (() => {
+        const endY = maxCoords[maxCoords.length - 1][1];
+        const end = {
+          y: endY,
+          label: fmtMax(points[points.length - 1].max ?? maxesEarly[maxesEarly.length - 1]) || '',
+        };
+        const top = mTicks[0];
+        return top && Math.abs(top.y - endY) > 10 ? [top, end] : [end];
+      })()
       : [])
     : mTicks;
 
@@ -877,13 +883,26 @@ function DualAxisChart({
         {t1 || 'Now'}
       </text>
 
-      {!compact && (
+      {/* Line identity — say which line is which, always (except the bare
+          flat strip, which has only one line and one number). */}
+      {(!compact || (premium && !flatTape)) && (
         <>
-          <text x={padL + 2} y={padTop + 2} textAnchor="start" fill={GOLD} fontSize={8} fontFamily={MONO} fontWeight={700}>
+          {/* Dodge the TICKET marker: when the ticket guide hugs the top of
+              scale, the ODDS identity label drops to the bottom-left. */}
+          <text
+            x={padL + 2}
+            y={premium && flaggedY != null && flaggedY < padTop + 16 ? baselineY - 5 : padTop + 2}
+            textAnchor="start"
+            fill={GOLD}
+            fontSize={premium ? 7 : 8}
+            fontFamily={MONO}
+            fontWeight={700}
+            opacity={premium ? 0.9 : 1}
+          >
             ODDS
           </text>
           {hasMax && (
-            <text x={padL + plotW - 2} y={padTop + 2} textAnchor="end" fill={LIMIT_DIM} fontSize={8} fontFamily={MONO} fontWeight={700}>
+            <text x={padL + plotW - 2} y={padTop + 2} textAnchor="end" fill={LIMIT_DIM} fontSize={premium ? 7 : 8} fontFamily={MONO} fontWeight={700} opacity={premium ? 0.9 : 1}>
               MAX $
             </text>
           )}

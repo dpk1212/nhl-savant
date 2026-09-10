@@ -4,7 +4,7 @@
  * Pure UI: expects a normalized fixture `f`. Adapters map production data.
  */
 import { useState, useEffect } from 'react';
-import { Check, Lock, ChevronDown, Clock, X } from 'lucide-react';
+import { Check, Lock, ChevronDown, Clock, X, Star } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
 import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
@@ -2545,7 +2545,7 @@ function CollapsedCardFrame({ live, children, extraClass }) {
  * is a text chip, not a boxed pill. Two chrome objects became one.
  */
 function CollapsedHeader({ live, inClassName }) {
-  const { f, tracked, graded, muteTip, ticketFrozen, accent } = live;
+  const { f, tracked, graded, muteTip, ticketFrozen, accent, edgeAura } = live;
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -2609,18 +2609,27 @@ function CollapsedHeader({ live, inClassName }) {
                 SET
               </span>
             ) : (
+              // Gold tier says its name. The aura border alone was invisible
+              // to most eyes — EDGE picks trade the IN label for GOLD in the
+              // same metal pill (zero extra header width, matchup never
+              // truncates).
               <span
                 className={inClassName}
+                title={edgeAura
+                  ? `Gold-tier lock — EDGE ${Number.isFinite(f.edge) ? Number(f.edge).toFixed(1) : ''} · position in`
+                  : undefined}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
                   padding: '5px 11px', borderRadius: 999, color: '#0a0904',
                   background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 58%, #B8941F 100%)`,
-                  boxShadow: '0 2px 8px -2px rgba(212,175,55,0.4)',
+                  boxShadow: edgeAura
+                    ? '0 2px 12px -2px rgba(212,175,55,0.65)'
+                    : '0 2px 8px -2px rgba(212,175,55,0.4)',
                 }}
               >
-                <Lock size={8} strokeWidth={3} />
-                IN
+                {edgeAura ? <Star size={8} strokeWidth={3} fill="#0a0904" /> : <Lock size={8} strokeWidth={3} />}
+                {edgeAura ? 'GOLD' : 'IN'}
               </span>
             )}
           </>
@@ -2718,38 +2727,6 @@ function CollapsedHero({ live, pickClass, americanOnly = false }) {
 }
 
 /**
- * The price desk's conclusion, computed. TICKET −105 vs BEST −110 is a fact
- * the reader shouldn't have to derive: either our number still beats the
- * board (bet it now), or the board has drifted better (shop it). Higher
- * American is always the better payout, so one comparison covers both signs.
- */
-function priceTakeaway(f) {
-  const ticket = Number.isFinite(f.gotOdds) ? f.gotOdds : f.lockOdds;
-  const best = Number.isFinite(f.liveBestOdds) ? f.liveBestOdds : f.bestOdds;
-  if (!Number.isFinite(ticket) || !Number.isFinite(best)) return null;
-  if (ticket - best > 1) {
-    return `Our ${fmtAmericanPrice(ticket)} still beats the board's best (${fmtAmericanPrice(best)}).`;
-  }
-  if (best - ticket > 1) {
-    return `The board now has ${fmtAmericanPrice(best)} — better than our ${fmtAmericanPrice(ticket)}.`;
-  }
-  return null;
-}
-
-function CollapsedDeskCaption({ text }) {
-  if (!text) return null;
-  return (
-    <div style={{
-      marginTop: 14, marginBottom: 8,
-      fontSize: 12, fontWeight: 450, color: C.textSec,
-      letterSpacing: '0.005em', lineHeight: 1.45, fontFeatureSettings: "'tnum'",
-    }}>
-      {text}
-    </div>
-  );
-}
-
-/**
  * Dual-audience collapsed ticket. Same facts as Original, plus the layer the
  * old card never had: computed conclusions (verdict sentences, price
  * takeaway, evidence-ordered splits). Nothing deleted, everything ranked.
@@ -2806,19 +2783,15 @@ function TicketPerforation({ edgeAura }) {
  */
 function CollapsedTicketFace({ live, order = 'verdict', gid }) {
   const { f } = live;
-  const takeaway = priceTakeaway(f);
   const hero = <CollapsedHero live={live} pickClass="live-pick" americanOnly />;
   const trust = <LockedCollapsedStrength f={f} face="subscriber" boardAbove />;
   const money = <LockedCollapsedBattleBars f={f} face="subscriber" flush />;
   const tape = (
-    <>
-      {/* The tape bleeds through the card — part of the surface, not an
-          exhibit in a box. */}
-      <div style={{ margin: '2px -22px 0' }}>
-        <CollapsedSpark f={f} gid={gid} bleed />
-      </div>
-      {takeaway && <CollapsedDeskCaption text={takeaway} />}
-    </>
+    // The tape bleeds through the card — part of the surface, not an
+    // exhibit in a box. The ledger row carries the takeaway; no caption.
+    <div style={{ margin: '2px -22px 0' }}>
+      <CollapsedSpark f={f} gid={gid} bleed />
+    </div>
   );
 
   const perf = <TicketPerforation edgeAura={live.edgeAura} />;
@@ -2836,7 +2809,6 @@ function CollapsedTicketFace({ live, order = 'verdict', gid }) {
           <div style={{ margin: '-6px -22px 0' }}>
             <CollapsedSpark f={f} gid={gid} bleed />
           </div>
-          {takeaway && <CollapsedDeskCaption text={takeaway} />}
           <div style={{ marginTop: 18 }}>{hero}</div>
           {board}
           {trust}
