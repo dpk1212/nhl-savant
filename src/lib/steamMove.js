@@ -5,21 +5,34 @@
  * dropPct = (fromDec − toDec) / fromDec × 100 when the price shortens.
  * Positive = steam toward this side (favorite getting more expensive).
  *
+ * Spreads / totals also count a main-line move toward the ticket (OR with
+ * juice). −3 → −3.5 or 47.5 → 48.5 is the event — juice on a pinned number
+ * is not. Do not compare alt lines for juice (7.5 vs 9.5) or invent a
+ * main from |hdp| → 0.
+ *
  * Quant floors (sharp-book, not retail juice):
  *   2.0%  WATCH  — noise / juice; stored, not painted
  *   3.0%  STEAM  — pinnapi default min_drop; a real event
  *   4.5%  GOLD   — ClosingDime gold-card (~4.75% last hour)
+ *   0.5pt LINE   — main handicap / total moved toward this side
  * Gold + rising limits = the Yankees-ML combo (limits explode while price drops).
  */
 
-import { linesClose } from './pinnacleMain.js';
+import {
+  lastBoardMain,
+  linesClose,
+  pickMainSpreadFromBoard,
+  pickMainTotalFromBoard,
+} from './pinnacleMain.js';
 
 export const STEAM_WATCH_PCT = 2;
 export const STEAM_EVENT_PCT = 3;
 export const STEAM_GOLD_PCT = 4.5;
+export const STEAM_LINE_MOVE_PTS = 0.5;
 export const STEAM_HOUR_SEC = 3600;
 export const STEAM_LIMIT_RISE_USD = 2000;
 export const STEAM_LIMIT_RISE_MULT = 1.45;
+const LINE_STEAM_EPS = 0.001;
 
 export function americanToDecimal(american) {
   const a = Number(american);
@@ -162,6 +175,145 @@ function limitRisingOf(maxOpen, maxNow) {
 
 function emptyWindow() {
   return { dropPct: null, count: 0, maxDrop: null, fromOdds: null, toOdds: null, shortSession: false };
+}
+
+function histUntil(hist, untilSec) {
+  if (!Array.isArray(hist) || !hist.length) return [];
+  if (!Number.isFinite(untilSec)) return hist;
+  return hist.filter((h) => !Number.isFinite(h?.t) || h.t <= untilSec);
+}
+
+function firstBoardMain(hist, pickFn) {
+  if (!Array.isArray(hist) || !hist.length || typeof pickFn !== 'function') return null;
+  const stamped = hist.find((h) => h?.isMain);
+  if (stamped) return stamped;
+  const firstT = hist.find((h) => Number.isFinite(h?.t))?.t;
+  const board = Number.isFinite(firstT)
+    ? hist.filter((h) => h?.t === firstT)
+    : hist.slice(0, 1);
+  return pickFn(board) || board[0] || null;
+}
+
+function spreadPairFrom(row) {
+  if (!row) return null;
+  const home = Number(row.homeLine);
+  if (!Number.isFinite(home)) return null;
+  const away = Number.isFinite(Number(row.awayLine)) ? Number(row.awayLine) : -home;
+  return { homeLine: home, awayLine: away };
+}
+
+function totalLineFrom(row) {
+  const n = Number(row?.line);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Home getting more negative (or away getting more plus) = steam toward home. */
+export function towardHomeSpreadPts(openPair, nowPair) {
+  if (!openPair || !nowPair) return null;
+  if (Number.isFinite(openPair.homeLine) && Number.isFinite(nowPair.homeLine)) {
+    return +(openPair.homeLine - nowPair.homeLine).toFixed(3);
+  }
+  if (Number.isFinite(openPair.awayLine) && Number.isFinite(nowPair.awayLine)) {
+    return +(nowPair.awayLine - openPair.awayLine).toFixed(3);
+  }
+  return null;
+}
+
+/** Total going up = steam toward over. */
+export function towardOverTotalPts(openLine, nowLine) {
+  if (!Number.isFinite(openLine) || !Number.isFinite(nowLine)) return null;
+  return +(nowLine - openLine).toFixed(3);
+}
+
+function towardTicketPts(towardHomeOrOver, { isSpread, isTotal, sideIsAway }) {
+  if (!Number.isFinite(towardHomeOrOver)) return null;
+  if (isSpread) return sideIsAway ? -towardHomeOrOver : towardHomeOrOver;
+  if (isTotal) return sideIsAway ? -towardHomeOrOver : towardHomeOrOver;
+  return null;
+}
+
+function lineSteamOn(pts) {
+  return Number.isFinite(pts) && pts >= STEAM_LINE_MOVE_PTS - LINE_STEAM_EPS;
+}
+
+function fmtLine(n, { isSpread } = {}) {
+  if (!Number.isFinite(n)) return '?';
+  if (isSpread && n > 0) return `+${n}`;
+  return String(n);
+}
+
+/**
+ * Main-line path toward this ticket. Spreads / totals only.
+ * Uses opener → current, plus last-hour main when history has it.
+ */
+export function mainLineTowardTicket(pinnGame, {
+  marketType = 'ml',
+  sideNorm = 'home',
+  nowSec = Math.floor(Date.now() / 1000),
+  freezeAtMs = null,
+} = {}) {
+  const empty = {
+    openLine: null,
+    nowLine: null,
+    hourLine: null,
+    sinceOpenPts: null,
+    lastHourPts: null,
+    steam: false,
+  };
+  const mt = String(marketType || 'ml').toLowerCase();
+  const isTotal = mt === 'total';
+  const isSpread = mt === 'spread';
+  if (!pinnGame || (!isTotal && !isSpread)) return empty;
+
+  const commenceSec = commenceSecOf(freezeAtMs)
+    ?? commenceSecOf(pinnGame.commence)
+    ?? commenceSecOf(pinnGame.commenceTime)
+    ?? commenceSecOf(pinnGame.starts);
+  const frozen = Number.isFinite(commenceSec) && nowSec >= commenceSec;
+  const untilSec = frozen ? commenceSec : nowSec;
+  const hourAgo = untilSec - STEAM_HOUR_SEC;
+  const sideIsAway = sideNorm === 'away' || sideNorm === 'under' || sideNorm === 'draw';
+
+  if (isSpread) {
+    const hist = histUntil(pinnGame.spreadHistory, untilSec);
+    const openPair = spreadPairFrom(pinnGame.spreadOpener)
+      || spreadPairFrom(firstBoardMain(hist, pickMainSpreadFromBoard));
+    const nowPair = (!frozen && spreadPairFrom(pinnGame.spreadCurrent))
+      || spreadPairFrom(lastBoardMain(hist, pickMainSpreadFromBoard))
+      || openPair;
+    const hourPair = spreadPairFrom(lastBoardMain(histUntil(hist, hourAgo), pickMainSpreadFromBoard))
+      || openPair;
+    const sinceOpenPts = towardTicketPts(towardHomeSpreadPts(openPair, nowPair), { isSpread, isTotal, sideIsAway });
+    const lastHourPts = towardTicketPts(towardHomeSpreadPts(hourPair, nowPair), { isSpread, isTotal, sideIsAway });
+    const ticketLine = (pair) => (sideIsAway ? pair?.awayLine : pair?.homeLine) ?? null;
+    return {
+      openLine: ticketLine(openPair),
+      nowLine: ticketLine(nowPair),
+      hourLine: ticketLine(hourPair),
+      sinceOpenPts,
+      lastHourPts,
+      steam: lineSteamOn(sinceOpenPts) || lineSteamOn(lastHourPts),
+    };
+  }
+
+  const hist = histUntil(pinnGame.totalHistory, untilSec);
+  const openLine = totalLineFrom(pinnGame.totalOpener)
+    ?? totalLineFrom(firstBoardMain(hist, pickMainTotalFromBoard));
+  const nowLine = (!frozen && totalLineFrom(pinnGame.totalCurrent))
+    ?? totalLineFrom(lastBoardMain(hist, pickMainTotalFromBoard))
+    ?? openLine;
+  const hourLine = totalLineFrom(lastBoardMain(histUntil(hist, hourAgo), pickMainTotalFromBoard))
+    ?? openLine;
+  const sinceOpenPts = towardTicketPts(towardOverTotalPts(openLine, nowLine), { isSpread, isTotal, sideIsAway });
+  const lastHourPts = towardTicketPts(towardOverTotalPts(hourLine, nowLine), { isSpread, isTotal, sideIsAway });
+  return {
+    openLine: openLine ?? null,
+    nowLine: nowLine ?? null,
+    hourLine: hourLine ?? null,
+    sinceOpenPts,
+    lastHourPts,
+    steam: lineSteamOn(sinceOpenPts) || lineSteamOn(lastHourPts),
+  };
 }
 
 /**
@@ -340,6 +492,13 @@ export function summarizeSteam(pinnGame, {
   const hasEvent = hourDrops.count >= 1 || openDrops.count >= 1
     || (Number.isFinite(peakPct) && peakPct >= STEAM_EVENT_PCT);
 
+  const lineMove = (isSpread || isTotal)
+    ? mainLineTowardTicket(pinnGame, { marketType: mt, sideNorm, nowSec, freezeAtMs })
+    : { openLine: null, nowLine: null, hourLine: null, sinceOpenPts: null, lastHourPts: null, steam: false };
+  const lineMovePts = Number.isFinite(lineMove.lastHourPts) && lineSteamOn(lineMove.lastHourPts)
+    ? lineMove.lastHourPts
+    : (Number.isFinite(lineMove.sinceOpenPts) ? lineMove.sinceOpenPts : null);
+
   let tier = null;
   if (Number.isFinite(lastHourPct) && lastHourPct >= STEAM_GOLD_PCT) tier = 'gold';
   else if (hasEvent || (Number.isFinite(lastHourPct) && lastHourPct >= STEAM_EVENT_PCT)
@@ -348,6 +507,9 @@ export function summarizeSteam(pinnGame, {
   } else if (Number.isFinite(displayPct) && displayPct >= STEAM_WATCH_PCT) {
     tier = 'watch';
   }
+  // Juice gold stays gold. A half-point main move is a steam event even when
+  // the pinned-number juice eased (TNF −3 → −3.5 at −109).
+  if (lineMove.steam && (tier == null || tier === 'watch')) tier = 'steam';
 
   const goldConfirmed = tier === 'gold' && limitRising;
   const show = tier === 'gold' || tier === 'steam';
@@ -377,11 +539,18 @@ export function summarizeSteam(pinnGame, {
       tagShort = pctTxt;
     }
   }
+  if (show && !tag && lineMove.steam && Number.isFinite(lineMove.openLine) && Number.isFinite(lineMove.nowLine)) {
+    tag = `${fmtLine(lineMove.openLine, { isSpread })} → ${fmtLine(lineMove.nowLine, { isSpread })}`;
+    tagShort = lineSteamOn(lineMovePts) ? `${lineMovePts >= 0 ? '+' : ''}${Number(lineMovePts).toFixed(1)}` : tag;
+  }
 
   const tipBits = [];
   if (Number.isFinite(lastHourPct)) tipBits.push(`last hour ${lastHourPct >= 0 ? '+' : ''}${lastHourPct.toFixed(1)}%`);
   if (Number.isFinite(sinceOpenPct)) tipBits.push(`since open ${sinceOpenPct >= 0 ? '+' : ''}${sinceOpenPct.toFixed(1)}%`);
   if (hourDrops.count) tipBits.push(`${hourDrops.count} steam print${hourDrops.count === 1 ? '' : 's'} (1h)`);
+  if (lineMove.steam && Number.isFinite(lineMove.openLine) && Number.isFinite(lineMove.nowLine)) {
+    tipBits.push(`main ${fmtLine(lineMove.openLine, { isSpread })} → ${fmtLine(lineMove.nowLine, { isSpread })}`);
+  }
   if (limitRising) tipBits.push('limits rising');
   const tip = tipBits.length
     ? `Pinnacle steam · ${tipBits.join(' · ')}`
@@ -401,6 +570,9 @@ export function summarizeSteam(pinnGame, {
     frozen,
     maxOpen: Number.isFinite(maxOpen) ? maxOpen : null,
     maxNow: Number.isFinite(maxNow) ? maxNow : null,
+    lineMovePts: Number.isFinite(lineMovePts) ? lineMovePts : null,
+    lineOpen: Number.isFinite(lineMove.openLine) ? lineMove.openLine : null,
+    lineNow: Number.isFinite(lineMove.nowLine) ? lineMove.nowLine : null,
   };
 }
 
@@ -418,6 +590,7 @@ export function compactSteam(summary) {
     tag: summary.tag || null,
     at: summary.at || null,
     frozen: !!summary.frozen,
+    lineMovePts: Number.isFinite(summary.lineMovePts) ? summary.lineMovePts : null,
   };
 }
 
