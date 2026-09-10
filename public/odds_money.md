@@ -112,7 +112,7 @@ NHLTue 09/29
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
 
-What are the top NHL predictions for today?Generate
+What are the best available NHL odds?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
@@ -128,7 +128,7 @@ Follow us on
 
 [About Us](https://www.oddstrader.com/about-us/) [Editorial Policy](https://www.oddstrader.com/editorial-policy/) [Affiliate Disclosure](https://www.oddstrader.com/affiliate-disclosure/) [Responsible Gambling](https://www.oddstrader.com/responsible-gambling/)
 
-[Privacy Policy](https://www.oddstrader.com/privacy-policy/) [Terms of Use](https://www.oddstrader.com/terms-of-use/) [Contact Us](https://www.oddstrader.com/contact/) [DMCA](https://www.oddstrader.com/dmca/) [App](https://www.oddstrader.com/sports-betting-app/)
+[Authors](https://www.oddstrader.com/betting/authors/) [Privacy Policy](https://www.oddstrader.com/privacy-policy/) [Terms of Use](https://www.oddstrader.com/terms-of-use/) [Contact Us](https://www.oddstrader.com/contact/) [DMCA](https://www.oddstrader.com/dmca/) [App](https://www.oddstrader.com/sports-betting-app/)
 
 © OddsTrader 2026 All Rights Reserved
 
