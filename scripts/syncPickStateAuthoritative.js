@@ -184,6 +184,7 @@ import {
 } from '../src/lib/expectedWin.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameSidePosition, acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
+import { slugDatesAreBoardLeftovers } from './lib/positionEventMatch.js';
 import {
   collectScanBoardProvenPositions,
   collectScanSoftKeys,
@@ -2722,12 +2723,15 @@ async function createMissingLockedPicks({
     const docId = `${TARGET_DATE}_${sport}_${gameKey}${suffix}`;
     if (existingDocIds.has(`${col}|${docId}`)) continue; // already in Firestore
 
-    // Reject other-day Polymarket leftovers (e.g. wnba-atl-wsh-2026-08-07 on Aug 8 board).
+    // Reject *past* Polymarket leftovers (wnba-atl-wsh-2026-08-07 on Aug 8).
+    // Do not require slug === TARGET_DATE — night games carry the next UTC
+    // date on the slug (TNF 8:35pm ET → nfl-sf-la-2026-09-11). Writer already
+    // keeps those via eventId; this used to drop them before v12 stamped.
     {
       const slugDates = positions
         .map((p) => (String(p.slug || p.eventSlug || '').match(/(20\d{2}-\d{2}-\d{2})/) || [])[1])
         .filter(Boolean);
-      if (slugDates.length > 0 && slugDates.every((d) => d !== TARGET_DATE)) {
+      if (slugDatesAreBoardLeftovers(slugDates, TARGET_DATE)) {
         skipped.push({
           docId, col, reason: 'slug_date_not_target',
           slugDates: [...new Set(slugDates)],

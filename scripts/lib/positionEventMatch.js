@@ -28,6 +28,35 @@ export const WRONG_GAME_EXIT_REASONS = new Set([
   'slug_sport_mismatch',
 ]);
 
+/**
+ * Lock-create leftover guard.
+ *
+ * Writer (`positionMatchesPolyEvent`) already keeps a slug date ≠ board
+ * date when the ticket is on the board event. TNF is the live case:
+ * kickoff `2026-09-11T00:35:00Z` (8:35pm ET Sep 10) → Poly slug
+ * `nfl-sf-la-2026-09-11` on the `2026-09-10` ET board, eventId match.
+ * Action tab shows the CONFIRMED ticket; create-missing used to require
+ * every slug date === TARGET_DATE and dropped the game before v12 stamped.
+ *
+ * Only reject when every slug is *before* the ET board date (true
+ * leftovers, e.g. wnba-atl-wsh-2026-08-07 on the Aug 8 board). Tomorrow's
+ * UTC slug on tonight's ET game is not a leftover. `gameDateET` still
+ * blocks writing Friday's slate under Thursday's doc id.
+ *
+ * @param {string[]} slugDates
+ * @param {string} boardDate ET YYYY-MM-DD
+ * @returns {boolean}
+ */
+export function slugDatesAreBoardLeftovers(slugDates, boardDate) {
+  const target = String(boardDate || '').slice(0, 10);
+  if (!/^20\d{2}-\d{2}-\d{2}$/.test(target)) return false;
+  const dates = (slugDates || [])
+    .map((d) => String(d || '').slice(0, 10))
+    .filter((d) => /^20\d{2}-\d{2}-\d{2}$/.test(d));
+  if (dates.length === 0) return false;
+  return dates.every((d) => d < target);
+}
+
 const FOREIGN_SLUG_LEAGUES = new Set([
   'mex', 'epl', 'lal', 'uefa', 'ucl', 'uel', 'mls', 'liga', 'serie', 'bundes',
   'fifa', 'fifwc', 'caf', 'afc', 'ufc', 'mma', 'atp', 'wta', 'canpl', 'cpl',
