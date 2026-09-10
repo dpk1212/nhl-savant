@@ -1,19 +1,21 @@
 {
-  "generatedAt": "2026-09-10T18:37:13.234Z",
+  "generatedAt": "2026-09-10T21:44:57.658Z",
   "today": "2026-09-10",
   "source": "Firestore sharpFlowPicks/Spreads/Totals (same as site loadLockedPicks)",
   "summary": {
-    "liveSidesToday": 6,
-    "shippedToday": 4,
-    "trackedOnlyToday": 2,
-    "totalUnitsToday": 11.5,
+    "liveSidesToday": 8,
+    "shippedToday": 5,
+    "trackedOnlyToday": 3,
+    "totalUnitsToday": 13.5,
     "byTier": {
       "MINI": 2,
-      "SHARP-LEAN": 1,
+      "SUPER": 1,
+      "SHARP": 1,
       "CONFIRMED-Q1": 1
     },
     "bySport": {
-      "MLB": 4
+      "MLB": 4,
+      "NFL": 1
     }
   },
   "picks": [
@@ -34,17 +36,17 @@
       "units": 4,
       "shipped": true,
       "stakeTier": "MINI",
-      "agsConvictionTier": "PREMIUM",
+      "agsConvictionTier": "LOCK",
       "hcMargin": -1,
-      "walletConsensusDelta": 0,
-      "walletQualityMargin": -1,
+      "walletConsensusDelta": -1,
+      "walletQualityMargin": 0,
       "provenWinnersFor": 1,
-      "provenWinnersAgainst": 1,
-      "ags": 0.18239721740638376,
-      "agsTier": "PREMIUM",
+      "provenWinnersAgainst": 2,
+      "ags": 0.04378318283122476,
+      "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-10T23:05:00.000Z",
-      "minsToGame": 268
+      "minsToGame": 80
     },
     {
       "date": "2026-09-10",
@@ -57,52 +59,81 @@
       "home": "New York Yankees",
       "side": "under",
       "team": "Under 8.5",
-      "selection": "Under 8.5 (+106)",
+      "selection": "Under 8.5 (+105)",
       "line": 8.5,
-      "odds": 106,
+      "odds": 105,
       "units": 4,
       "shipped": true,
       "stakeTier": "MINI",
       "agsConvictionTier": "PREMIUM",
-      "hcMargin": 0,
+      "hcMargin": -1,
       "walletConsensusDelta": 2,
-      "walletQualityMargin": 2,
+      "walletQualityMargin": 1,
       "provenWinnersFor": 3,
       "provenWinnersAgainst": 1,
-      "ags": 0.34719449990518525,
+      "ags": 0.36776817478213797,
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-10T23:05:00.000Z",
-      "minsToGame": 268
+      "minsToGame": 80
+    },
+    {
+      "date": "2026-09-10",
+      "isToday": true,
+      "sport": "NFL",
+      "market": "SPREAD",
+      "gameKey": "sf_lar",
+      "matchup": "49ers @ Rams",
+      "away": "49ers",
+      "home": "Rams",
+      "side": "home",
+      "team": "Rams",
+      "selection": "Rams -3.5 (-104)",
+      "line": -3.5,
+      "odds": -104,
+      "units": 2,
+      "shipped": true,
+      "stakeTier": "SUPER",
+      "agsConvictionTier": "LEAN",
+      "hcMargin": 2,
+      "walletConsensusDelta": 1,
+      "walletQualityMargin": 1,
+      "provenWinnersFor": 3,
+      "provenWinnersAgainst": 2,
+      "ags": 0.08745657661782555,
+      "agsTier": "LEAN",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-09-11T00:35:00.000Z",
+      "minsToGame": 170
     },
     {
       "date": "2026-09-10",
       "isToday": true,
       "sport": "MLB",
       "market": "ML",
-      "gameKey": "tex_sea",
-      "matchup": "Texas Rangers @ Seattle Mariners",
-      "away": "Texas Rangers",
-      "home": "Seattle Mariners",
-      "side": "away",
-      "team": "Texas Rangers",
-      "selection": "Texas Rangers ML +118",
+      "gameKey": "pit_cws",
+      "matchup": "Pittsburgh Pirates @ Chicago White Sox",
+      "away": "Pittsburgh Pirates",
+      "home": "Chicago White Sox",
+      "side": "home",
+      "team": "Chicago White Sox",
+      "selection": "Chicago White Sox ML -108",
       "line": null,
-      "odds": 118,
+      "odds": -108,
       "units": 2,
       "shipped": true,
-      "stakeTier": "SHARP-LEAN",
+      "stakeTier": "SHARP",
       "agsConvictionTier": "WEAK",
-      "hcMargin": 1,
-      "walletConsensusDelta": 4,
-      "walletQualityMargin": 0,
-      "provenWinnersFor": 5,
-      "provenWinnersAgainst": 1,
-      "ags": 0.8420398906412995,
+      "hcMargin": 0,
+      "walletConsensusDelta": 0,
+      "walletQualityMargin": -1,
+      "provenWinnersFor": 2,
+      "provenWinnersAgainst": 2,
+      "ags": -0.14678158062486032,
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
-      "commenceTime": "2026-09-10T20:10:00.000Z",
-      "minsToGame": 93
+      "commenceTime": "2026-09-10T23:41:00.000Z",
+      "minsToGame": 116
     },
     {
       "date": "2026-09-10",
@@ -131,7 +162,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-10T20:10:00.000Z",
-      "minsToGame": 93
+      "minsToGame": -95
     },
     {
       "date": "2026-09-10",
@@ -160,7 +191,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-10T16:15:00.000Z",
-      "minsToGame": -142
+      "minsToGame": -330
     },
     {
       "date": "2026-09-10",
@@ -189,7 +220,36 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-10T16:15:00.000Z",
-      "minsToGame": -142
+      "minsToGame": -330
+    },
+    {
+      "date": "2026-09-10",
+      "isToday": true,
+      "sport": "NFL",
+      "market": "TOTAL",
+      "gameKey": "sf_lar",
+      "matchup": "49ers @ Rams",
+      "away": "49ers",
+      "home": "Rams",
+      "side": "over",
+      "team": "Over 48.5",
+      "selection": "Over 48.5 (+113)",
+      "line": 48.5,
+      "odds": 113,
+      "units": 0,
+      "shipped": false,
+      "stakeTier": "MONITORING",
+      "agsConvictionTier": "WEAK",
+      "hcMargin": 0,
+      "walletConsensusDelta": 0,
+      "walletQualityMargin": 2,
+      "provenWinnersFor": 1,
+      "provenWinnersAgainst": 1,
+      "ags": -0.11490687306901803,
+      "agsTier": "WEAK",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-09-11T00:35:00.000Z",
+      "minsToGame": 170
     },
     {
       "date": "2026-09-09",
@@ -218,7 +278,7 @@
       "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-10T02:11:00.000Z",
-      "minsToGame": -986
+      "minsToGame": -1174
     },
     {
       "date": "2026-09-09",
@@ -247,7 +307,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T19:06:00.000Z",
-      "minsToGame": -1411
+      "minsToGame": -1599
     },
     {
       "date": "2026-09-09",
@@ -276,7 +336,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T23:41:00.000Z",
-      "minsToGame": -1136
+      "minsToGame": -1324
     },
     {
       "date": "2026-09-09",
@@ -305,7 +365,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T19:46:00.000Z",
-      "minsToGame": -1371
+      "minsToGame": -1559
     },
     {
       "date": "2026-09-09",
@@ -334,7 +394,7 @@
       "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-10T00:20:00.000Z",
-      "minsToGame": -1097
+      "minsToGame": -1285
     },
     {
       "date": "2026-09-09",
@@ -363,7 +423,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T19:06:00.000Z",
-      "minsToGame": -1411
+      "minsToGame": -1599
     },
     {
       "date": "2026-09-09",
@@ -392,7 +452,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T20:11:00.000Z",
-      "minsToGame": -1346
+      "minsToGame": -1534
     },
     {
       "date": "2026-09-09",
@@ -421,7 +481,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T20:11:00.000Z",
-      "minsToGame": -1346
+      "minsToGame": -1534
     },
     {
       "date": "2026-09-09",
@@ -450,7 +510,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T22:36:00.000Z",
-      "minsToGame": -1201
+      "minsToGame": -1389
     },
     {
       "date": "2026-09-09",
@@ -479,7 +539,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T23:16:00.000Z",
-      "minsToGame": -1161
+      "minsToGame": -1349
     },
     {
       "date": "2026-09-09",
@@ -508,7 +568,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T23:41:00.000Z",
-      "minsToGame": -1136
+      "minsToGame": -1324
     },
     {
       "date": "2026-09-09",
@@ -537,7 +597,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-10T00:20:00.000Z",
-      "minsToGame": -1097
+      "minsToGame": -1285
     },
     {
       "date": "2026-09-09",
@@ -566,7 +626,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T23:06:00.000Z",
-      "minsToGame": -1171
+      "minsToGame": -1359
     },
     {
       "date": "2026-09-09",
@@ -595,7 +655,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-09-09T23:41:00.000Z",
-      "minsToGame": -1136
+      "minsToGame": -1324
     }
   ]
 }
