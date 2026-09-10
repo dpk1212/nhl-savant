@@ -4,7 +4,7 @@
  * Pure UI: expects a normalized fixture `f`. Adapters map production data.
  */
 import { useState, useEffect } from 'react';
-import { Check, Lock, ChevronDown, Clock, X, Star } from 'lucide-react';
+import { Check, Lock, Flag, ChevronDown, Clock, X, Star } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
 import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
@@ -2646,8 +2646,8 @@ function CollapsedHeader({ live, inClassName }) {
               <span
                 className={inClassName}
                 title={edgeAura
-                  ? `Gold-tier lock — EDGE ${Number.isFinite(f.edge) ? Number(f.edge).toFixed(1) : ''} · position in`
-                  : undefined}
+                  ? `Gold-tier flag — EDGE ${Number.isFinite(f.edge) ? Number(f.edge).toFixed(1) : ''} · locks at T-15`
+                  : 'Flagged — locks at T-15'}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
@@ -2658,7 +2658,7 @@ function CollapsedHeader({ live, inClassName }) {
                     : '0 2px 8px -2px rgba(212,175,55,0.4)',
                 }}
               >
-                {edgeAura ? <Star size={8} strokeWidth={3} fill="#0a0904" /> : <Lock size={8} strokeWidth={3} />}
+                {edgeAura ? <Star size={8} strokeWidth={3} fill="#0a0904" /> : <Flag size={8} strokeWidth={3} />}
                 {edgeAura ? 'GOLD' : 'IN'}
               </span>
             )}
