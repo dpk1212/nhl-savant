@@ -10,7 +10,14 @@ import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
 import LockedCollapsedStrength from './LockedCollapsedStrength';
 import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
+import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
+
+function fmtAmericanPrice(o) {
+  if (o == null || !Number.isFinite(Number(o)) || Number(o) === 0) return '—';
+  const n = Number(o);
+  return n > 0 ? `+${n}` : `${n}`;
+}
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
 const LOCK_LEAD_MS = 15 * 60 * 1000;
@@ -153,6 +160,15 @@ const CARD_CSS = `
   .pos-bar { transform-origin: left center; animation: posBar .75s cubic-bezier(0.16,1,0.3,1) both; }
   .pos-pulse { animation: posPulse 1.6s ease-in-out infinite; }
   .sf-edge-aura { animation: posGoldAura 2.8s ease-in-out infinite; }
+  @keyframes sfTapePulse { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.30; } }
+  .sf-tape-pulse { animation: sfTapePulse 2.4s ease-in-out infinite; }
+  .live-ticket { transition: transform 130ms ease, border-color 160ms ease !important; }
+  .live-ticket:active { transform: scale(0.992); }
+  @media (hover: hover) {
+    .live-ticket:hover { border-color: rgba(148,163,184,0.24) !important; }
+    .sf-board-block { transition: filter 120ms ease; }
+    .sf-board-block:hover { filter: brightness(1.35); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .pos-reveal, .pos-bar, .pos-pulse, .sf-edge-aura { animation: none !important; }
     .sf-edge-aura { box-shadow: ${EDGE_AURA_SHADOW_IDLE} !important; }
@@ -2121,7 +2137,7 @@ function JourneyStop({ label, time, odds, color, active }) {
  * Compact: glass pill with tnum countdown → green Check seal when locked.
  * Expanded: larger digital time + progress bar to freeze (countdown) or seal copy.
  */
-function LockFreezeStatus({ commenceMs, compact, strip }) {
+function LockFreezeStatus({ commenceMs, compact, strip, bare }) {
   const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -2196,6 +2212,33 @@ function LockFreezeStatus({ commenceMs, compact, strip }) {
           </>
         )}
       </div>
+    );
+  }
+
+  // Premium faces: no pill box. A quiet text chip — elite apps state the
+  // deadline, they don't box it. Color only when the window is closing.
+  if (bare) {
+    const tone = frozen ? B.profit : urgent ? '#F87171' : closing ? B.goldHi : C.textMuted;
+    return (
+      <span
+        title={frozen ? `Frozen at T-15 · ${lockEt} ET — set for grading` : `Locks 15 min before start · ${lockEt} ET`}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          fontSize: 11, fontWeight: 600, color: tone,
+          fontFeatureSettings: "'tnum'", letterSpacing: '0.01em',
+        }}
+      >
+        {frozen
+          ? <Check size={11} strokeWidth={2.8} style={{ flexShrink: 0 }} />
+          : <Clock size={11} strokeWidth={2.4} style={{ flexShrink: 0 }} />}
+        {frozen ? 'Ticket set' : (
+          // Icon + countdown only — the word "Locks" was costing the matchup
+          // its last team name; tooltip and the comet meter carry the meaning.
+          <span style={{ fontWeight: 700, color: urgent || closing ? tone : C.textSec }}>
+            {rem || '—'}
+          </span>
+        )}
+      </span>
     );
   }
 
@@ -2396,6 +2439,418 @@ function TierPerfStrip({ tierPerf, compact }) {
   );
 }
 
+function CollapsedSpark({ f, gid, bleed = false }) {
+  return (
+    <OddsLimitSpark
+      bleed={bleed}
+      pinPath={f.pinPath}
+      flagged={f.gotOdds ?? f.lockOdds}
+      entry={f.sharpEntryOdds}
+      now={f.currentFairOdds ?? f.nowOdds}
+      fair={f.fairLine}
+      evPct={f.evFlagged}
+      sma={f.marketAgreement}
+      maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
+      movePp={f.pinnMovePp}
+      polyEntry={f.polyEntryOdds}
+      clvPct={f.clvPct}
+      bestNow={f.liveBestOdds ?? f.bestOdds}
+      compact
+      showStory={false}
+      showMetrics
+      curatedMetrics
+      premiumCompact
+      gid={gid}
+      chartLineLabel={f.chartLineLabel}
+      ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
+    />
+  );
+}
+
+/**
+ * Premium frame. One flat surface, one hairline, one soft shadow with a real
+ * offset. EDGE conviction is a slightly warmer hairline — not an animated
+ * glow stack. Restraint is the brand (DESIGN.md: flat at rest, gold ≤10%).
+ */
+function CollapsedCardFrame({ live, children, extraClass }) {
+  const { f, edgeAura, setExpanded, tracked, graded } = live;
+
+  // The card's signature: its top edge is the clock. A 2px comet of gold
+  // holds the fraction of the final 24h left before lock; once the ticket
+  // freezes it sets solid green. Real data as ornament — nothing invented.
+  const lockAt = Number.isFinite(f.commenceMs) ? f.commenceMs - 15 * 60000 : null;
+  const remainMs = lockAt != null ? lockAt - Date.now() : null;
+  const frozen = remainMs != null && remainMs <= 0;
+  const frac = remainMs != null ? Math.max(0.04, Math.min(1, remainMs / 86400000)) : null;
+  const showMeter = lockAt != null && !tracked && !graded;
+
+  return (
+    <div
+      className={`sf-card${extraClass ? ` ${extraClass}` : ''}`}
+      onClick={() => setExpanded(true)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true); }}
+      title={edgeAura ? `EDGE ${Number(f.edge).toFixed(1)} · high-conviction lock` : undefined}
+      style={{
+        borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
+        // One barely-there vertical light, not a flat slab — depth without glow.
+        background: 'linear-gradient(180deg, #131826 0%, #10141E 100%)',
+        border: `1px solid ${edgeAura ? 'rgba(212,175,55,0.34)' : 'rgba(148,163,184,0.13)'}`,
+        boxShadow: '0 16px 40px -24px rgba(0,0,0,0.8)',
+        position: 'relative', padding: '20px 22px 18px',
+        transition: 'border-color 160ms ease',
+      }}
+    >
+      <CardStyles />
+      {showMeter && (
+        <>
+          <div
+            aria-hidden
+            title={frozen ? 'Ticket set' : 'Time left before this ticket locks'}
+            style={{
+              position: 'absolute', top: 0, left: 0, height: 3,
+              width: frozen ? '100%' : `${(frac * 100).toFixed(1)}%`,
+              background: frozen
+                ? 'linear-gradient(90deg, rgba(52,211,153,0), rgba(52,211,153,0.7))'
+                : 'linear-gradient(90deg, rgba(212,175,55,0), rgba(212,175,55,0.95))',
+              borderRadius: '0 2px 2px 0',
+              pointerEvents: 'none',
+            }}
+          />
+          {!frozen && (
+            // The comet head — a lit tip so the meter reads as a living clock.
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute', top: 0, height: 3, width: 7,
+                left: `calc(${(frac * 100).toFixed(1)}% - 7px)`,
+                background: '#F3E3AC',
+                borderRadius: 2,
+                boxShadow: '0 0 10px 1px rgba(212,175,55,0.85)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+        </>
+      )}
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Premium header. One line of quiet Inter text — sport, matchup, time — and
+ * exactly one piece of metal on the right (the IN seal). The lock countdown
+ * is a text chip, not a boxed pill. Two chrome objects became one.
+ */
+function CollapsedHeader({ live, inClassName }) {
+  const { f, tracked, graded, muteTip, ticketFrozen, accent } = live;
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      marginBottom: 18, gap: 12, position: 'relative', zIndex: 2,
+    }}>
+      <div style={{
+        minWidth: 0, flex: 1, display: 'flex', alignItems: 'baseline', gap: 7,
+        fontSize: 11.5, fontWeight: 500, color: C.textMuted,
+        overflow: 'hidden', whiteSpace: 'nowrap',
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+          color: B.goldHi, textTransform: 'uppercase', flexShrink: 0,
+        }}>
+          {f.sport}
+        </span>
+        <span style={{
+          overflow: 'hidden', textOverflow: 'ellipsis', color: C.textSec, fontWeight: 550,
+          letterSpacing: '0.005em',
+        }}>
+          {/* "Rockies @ Yankees" never truncates; "Colorado Rockies @ New
+              York Y…" always did. Totals cards stamp Over/Under into the
+              short fields, so fall back to the nickname (last word). */}
+          {(() => {
+            const ok = (s) => s && !/^(over|under)$/i.test(s);
+            const nick = (s) => String(s || '').trim().split(/\s+/).pop();
+            const a = ok(f.awayShort) ? f.awayShort : nick(f.away);
+            const h = ok(f.homeShort) ? f.homeShort : nick(f.home);
+            return (a && h) ? `${a} @ ${h}` : `${f.away} @ ${f.home}`;
+          })()}
+        </span>
+        {f.gameTime && (
+          <span style={{
+            fontSize: 11, fontWeight: 500,
+            color: C.textFaint, fontFeatureSettings: "'tnum'", flexShrink: 0,
+          }}>
+            {f.gameTime}
+          </span>
+        )}
+      </div>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+        {tracked ? (
+          <span title={muteTip} style={NO_PLAY_PILL}>NO PLAY</span>
+        ) : graded ? (
+          <GradedResultPill outcome={f.outcome} profit={f.profit} units={f.units} toWin={f.toWin} compact />
+        ) : (
+          <>
+            <LockFreezeStatus commenceMs={f.commenceMs} bare />
+            {ticketFrozen ? (
+              <span
+                title="Ticket sealed at T-15 — set for grading"
+                className={inClassName}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
+                  padding: '5px 11px', borderRadius: 999, color: '#06140c',
+                  background: 'linear-gradient(180deg, #6EE7B7 0%, #34D399 55%, #10B981 100%)',
+                }}
+              >
+                <Check size={9} strokeWidth={3.2} />
+                SET
+              </span>
+            ) : (
+              <span
+                className={inClassName}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
+                  padding: '5px 11px', borderRadius: 999, color: '#0a0904',
+                  background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 58%, #B8941F 100%)`,
+                  boxShadow: '0 2px 8px -2px rgba(212,175,55,0.4)',
+                }}
+              >
+                <Lock size={8} strokeWidth={3} />
+                IN
+              </span>
+            )}
+          </>
+        )}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Premium hero. The pick is the one loud thing on the whole card — a full
+ * type step above everything else — and the stake is the one gold number.
+ * Elite scale contrast: 1.6rem pick / 20px stake against 11–13px body.
+ */
+function CollapsedHero({ live, pickClass, americanOnly = false }) {
+  const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip, contextLine } = live;
+  const priceLabel = Number.isFinite(heroPx)
+    ? (americanOnly ? fmtAmericanPrice(heroPx) : fmtAmericanWithPm(heroPx))
+    : null;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+      gap: 16, position: 'relative', zIndex: 2,
+    }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{
+          display: 'flex', alignItems: 'baseline', gap: 11, flexWrap: 'wrap',
+          fontFeatureSettings: "'tnum'",
+        }}>
+          <div
+            className={pickClass}
+            style={{
+              fontSize: '1.9rem', fontWeight: 750, letterSpacing: '-0.042em',
+              color: C.text, lineHeight: 1.02,
+            }}
+          >
+            {f.pickLabel}
+          </div>
+          {priceLabel && (
+            <div style={{
+              fontSize: '1.12rem', fontWeight: 550, letterSpacing: '-0.02em',
+              color: C.textSec, lineHeight: 1.05,
+            }}>
+              {priceLabel}
+            </div>
+          )}
+        </div>
+        {contextLine && (
+          <div
+            title="Sharp money on a different line than the ticket we grade and pay"
+            style={{
+              marginTop: 8, fontSize: 11.5, fontWeight: 450,
+              letterSpacing: '0.005em', color: C.textFaint, lineHeight: 1.4,
+            }}
+          >
+            {contextLine}
+          </div>
+        )}
+      </div>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+        gap: 2, flexShrink: 0, paddingTop: 1,
+      }}>
+        <span
+          className="live-stake"
+          title={tracked ? muteTip : undefined}
+          style={{
+            fontSize: tracked ? 12 : 20, fontWeight: tracked ? 650 : 700,
+            fontFeatureSettings: "'tnum'", letterSpacing: tracked ? '0.01em' : '-0.03em',
+            color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1.25,
+            textAlign: 'right', maxWidth: tracked ? 148 : undefined,
+          }}
+        >
+          {stakeLabel}
+        </span>
+        {payoutLabel && (
+          <span style={{
+            fontSize: 12, fontWeight: 600, fontFeatureSettings: "'tnum'",
+            color: payoutColor, letterSpacing: '-0.01em',
+          }}>
+            {americanOnly && !graded && (
+              <span style={{ color: C.textFaint, fontWeight: 450, marginRight: 4 }}>to win</span>
+            )}
+            {payoutLabel}
+          </span>
+        )}
+      </div>
+      <ChevronDown
+        size={14}
+        strokeWidth={2}
+        style={{ color: C.textFaint, flexShrink: 0, marginTop: 8, opacity: 0.4 }}
+      />
+    </div>
+  );
+}
+
+/**
+ * The price desk's conclusion, computed. TICKET −105 vs BEST −110 is a fact
+ * the reader shouldn't have to derive: either our number still beats the
+ * board (bet it now), or the board has drifted better (shop it). Higher
+ * American is always the better payout, so one comparison covers both signs.
+ */
+function priceTakeaway(f) {
+  const ticket = Number.isFinite(f.gotOdds) ? f.gotOdds : f.lockOdds;
+  const best = Number.isFinite(f.liveBestOdds) ? f.liveBestOdds : f.bestOdds;
+  if (!Number.isFinite(ticket) || !Number.isFinite(best)) return null;
+  if (ticket - best > 1) {
+    return `Our ${fmtAmericanPrice(ticket)} still beats the board's best (${fmtAmericanPrice(best)}).`;
+  }
+  if (best - ticket > 1) {
+    return `The board now has ${fmtAmericanPrice(best)} — better than our ${fmtAmericanPrice(ticket)}.`;
+  }
+  return null;
+}
+
+function CollapsedDeskCaption({ text }) {
+  if (!text) return null;
+  return (
+    <div style={{
+      marginTop: 14, marginBottom: 8,
+      fontSize: 12, fontWeight: 450, color: C.textSec,
+      letterSpacing: '0.005em', lineHeight: 1.45, fontFeatureSettings: "'tnum'",
+    }}>
+      {text}
+    </div>
+  );
+}
+
+/**
+ * Dual-audience collapsed ticket. Same facts as Original, plus the layer the
+ * old card never had: computed conclusions (verdict sentences, price
+ * takeaway, evidence-ordered splits). Nothing deleted, everything ranked.
+ *
+ * Variants differ on real axes:
+ *   V1 verdict   — synthesis layer, familiar zone order.
+ *   V2 evidence  — money proof (splits) promoted above the price desk.
+ *   V3 brokerage — tape directly under the pick (Lightyear/Robinhood order),
+ *                  price cells under the chart, verdict and splits after.
+ */
+/**
+ * Full-bleed section rule — the hairline runs card-edge to card-edge (the
+ * iOS/Things architecture) instead of boxing content in wells. Sections
+ * become floors of one building, not crates on a shelf.
+ */
+function SectionRule() {
+  return (
+    <div style={{
+      margin: '16px -22px 14px',
+      borderTop: '1px solid rgba(148,163,184,0.08)',
+    }} />
+  );
+}
+
+/**
+ * The perforation. A real ticket tears between the stub you hold and the
+ * audit copy — this card does the same: above the tear line lives the bet
+ * (pick, stake, verdict); below it, the receipts (tape, prices, money).
+ * Edge notches are punched through to the page so the card reads as a
+ * physical ticket without a single skeuomorphic texture.
+ */
+function TicketPerforation({ edgeAura }) {
+  const notch = {
+    position: 'absolute', top: -7, width: 14, height: 14,
+    borderRadius: '50%', background: '#070912',
+    border: `1px solid ${edgeAura ? 'rgba(212,175,55,0.34)' : 'rgba(148,163,184,0.13)'}`,
+    pointerEvents: 'none',
+  };
+  return (
+    <div style={{ position: 'relative', margin: '18px -22px 15px' }}>
+      <div style={{ borderTop: '1px dashed rgba(148,163,184,0.20)' }} />
+      <div aria-hidden style={{ ...notch, left: -7 }} />
+      <div aria-hidden style={{ ...notch, right: -7 }} />
+    </div>
+  );
+}
+
+/**
+ * Three concepts, one skin:
+ *   verdict   — Editorial. The sentences lead; evidence follows.
+ *   evidence  — Terminal. The tape opens the card (Robinhood position order);
+ *               the bet reads on top of the landscape.
+ *   brokerage — Dossier. The money ledger (the moat) opens; tape closes.
+ */
+function CollapsedTicketFace({ live, order = 'verdict', gid }) {
+  const { f } = live;
+  const takeaway = priceTakeaway(f);
+  const hero = <CollapsedHero live={live} pickClass="live-pick" americanOnly />;
+  const trust = <LockedCollapsedStrength f={f} face="subscriber" boardAbove />;
+  const money = <LockedCollapsedBattleBars f={f} face="subscriber" flush />;
+  const tape = (
+    <>
+      {/* The tape bleeds through the card — part of the surface, not an
+          exhibit in a box. */}
+      <div style={{ margin: '2px -22px 0' }}>
+        <CollapsedSpark f={f} gid={gid} bleed />
+      </div>
+      {takeaway && <CollapsedDeskCaption text={takeaway} />}
+    </>
+  );
+
+  const perf = <TicketPerforation edgeAura={live.edgeAura} />;
+  // The cornerstone. Every wallet on the board, drawn to the dollar.
+  const board = <LockedCollapsedBoard f={f} />;
+
+  return (
+    <CollapsedCardFrame live={live} extraClass={`live-ticket live-order-${order}`}>
+      <CollapsedHeader live={live} />
+      {order === 'verdict' && (
+        <>{hero}{board}{trust}{perf}{tape}<SectionRule />{money}</>
+      )}
+      {order === 'evidence' && (
+        <>
+          <div style={{ margin: '-6px -22px 0' }}>
+            <CollapsedSpark f={f} gid={gid} bleed />
+          </div>
+          {takeaway && <CollapsedDeskCaption text={takeaway} />}
+          <div style={{ marginTop: 18 }}>{hero}</div>
+          {board}
+          {trust}
+          {perf}
+          {money}
+        </>
+      )}
+      {order === 'brokerage' && (
+        <>{hero}{board}{trust}{perf}{money}<SectionRule />{tape}</>
+      )}
+    </CollapsedCardFrame>
+  );
+}
+
 export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const tracked = !(f.units > 0);
@@ -2450,231 +2905,19 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     const payoutColor = graded ? resultColor : B.profit;
     const contextLine = f.mainNowLabel || f.entryLadderLabel
       || (f.lineMoved && f.liveMarketLabel ? f.liveMarketLabel : null);
+    const liveFace = {
+      f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor,
+      accent, edgeAura, cardBorder, muteTip, ticketFrozen, setExpanded, contextLine,
+    };
 
+    // Shipped collapsed face — variant 3 (brokerage order): hero, The Board,
+    // verdict + rail, perf, qualified-money splits, then the price tape.
     return (
-      <div
-        className={edgeAura ? 'sf-card sf-edge-aura' : 'sf-card'}
-        onClick={() => setExpanded(true)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true); }}
-        title={edgeAura ? `EDGE ${Number(f.edge).toFixed(1)} · high-conviction lock` : undefined}
-        style={{
-          borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
-          background: edgeAura
-            ? 'linear-gradient(165deg, rgba(232,210,138,0.10) 0%, rgba(212,175,55,0.02) 26%, transparent 48%), linear-gradient(180deg, #161B28 0%, #0C1018 100%)'
-            : 'linear-gradient(180deg, #161B28 0%, #0C1018 100%)',
-          border: `1px solid ${cardBorder}`,
-          boxShadow: edgeAura
-            ? EDGE_AURA_SHADOW_IDLE
-            : '0 12px 32px -20px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.035)',
-          position: 'relative', padding: '18px 20px 16px',
-          transition: 'border-color 160ms ease, box-shadow 160ms ease',
-        }}
-      >
-        <CardStyles />
-        <div style={{
-          position: 'absolute', top: 0, left: '12%', right: '12%', height: 1, pointerEvents: 'none',
-          background: `linear-gradient(90deg, transparent, ${tracked ? 'rgba(139,150,171,0.4)' : `${accent}99`}, transparent)`,
-          opacity: 0.7,
-        }} />
-
-        {/* Quiet header — orientation only */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: 14, gap: 10,
-        }}>
-          <div style={{
-            minWidth: 0, flex: 1, display: 'flex', alignItems: 'baseline', gap: 6,
-            fontSize: 11, fontWeight: 500, color: C.textMuted,
-            overflow: 'hidden', whiteSpace: 'nowrap',
-          }}>
-            <span style={{
-              fontFamily: MONO, fontSize: 9, fontWeight: 700,
-              letterSpacing: '0.14em', color: B.goldHi, textTransform: 'uppercase',
-              flexShrink: 0,
-            }}>
-              {f.sport}
-            </span>
-            <span style={{ color: C.textFaint, flexShrink: 0 }}>·</span>
-            <span style={{
-              overflow: 'hidden', textOverflow: 'ellipsis', color: C.textSec, fontWeight: 600,
-            }}>
-              {f.away} @ {f.home}
-            </span>
-            {f.gameTime && (
-              <>
-                <span style={{ color: C.textFaint, flexShrink: 0 }}>·</span>
-                <span style={{
-                  fontFamily: MONO, fontSize: 10, fontWeight: 600,
-                  color: C.textFaint, fontFeatureSettings: "'tnum'", flexShrink: 0,
-                }}>
-                  {f.gameTime}
-                </span>
-              </>
-            )}
-          </div>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {tracked ? (
-              <span title={muteTip} style={NO_PLAY_PILL}>
-                NO PLAY
-              </span>
-            ) : graded ? (
-              <GradedResultPill
-                outcome={f.outcome}
-                profit={f.profit}
-                units={f.units}
-                toWin={f.toWin}
-                compact
-              />
-            ) : (
-              <>
-                <LockFreezeStatus commenceMs={f.commenceMs} compact />
-                {ticketFrozen ? (
-                  <span
-                    title="Ticket sealed at T-15 — set for grading"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                      fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
-                      padding: '4px 9px', borderRadius: 999, color: '#06140c',
-                      background: 'linear-gradient(180deg, #6EE7B7 0%, #34D399 55%, #10B981 100%)',
-                    }}
-                  >
-                    <Check size={9} strokeWidth={3.2} />
-                    SET
-                  </span>
-                ) : (
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
-                    padding: '4px 9px', borderRadius: 999, color: '#0a0904',
-                    background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 58%, #B8941F 100%)`,
-                  }}>
-                    <Lock size={8} strokeWidth={3} />
-                    IN
-                  </span>
-                )}
-              </>
-            )}
-          </span>
-        </div>
-
-        {/* Hero — pick + conviction stake */}
-        <div style={{
-          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-          gap: 14,
-        }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{
-              display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
-              fontFeatureSettings: "'tnum'",
-            }}>
-              <div style={{
-                fontSize: '1.42rem', fontWeight: 750, letterSpacing: '-0.04em',
-                color: C.text, lineHeight: 1.05,
-              }}>
-                {f.pickLabel}
-              </div>
-              {Number.isFinite(heroPx) && (
-                <div style={{
-                  fontSize: '1.12rem', fontWeight: 650, letterSpacing: '-0.025em',
-                  color: C.textMuted, lineHeight: 1.05,
-                }}>
-                  {fmtAmericanWithPm(heroPx)}
-                </div>
-              )}
-            </div>
-            {contextLine && (
-              <div
-                title="Sharp money on a different line than the ticket we grade and pay"
-                style={{
-                  marginTop: 7, fontSize: 11, fontWeight: 500,
-                  letterSpacing: '0.01em', color: C.textFaint, lineHeight: 1.3,
-                }}
-              >
-                {contextLine}
-              </div>
-            )}
-          </div>
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-            gap: 3, flexShrink: 0, paddingTop: 2,
-          }}>
-            {!tracked && (
-              <span style={{
-                fontFamily: MONO, fontSize: 8, fontWeight: 700,
-                letterSpacing: '0.14em', color: C.textFaint,
-              }}>
-                {graded ? 'RESULT' : 'STAKE'}
-              </span>
-            )}
-            <span
-              title={tracked ? muteTip : undefined}
-              style={{
-                fontSize: tracked ? 12 : 18, fontWeight: tracked ? 650 : 750,
-                fontFeatureSettings: "'tnum'", letterSpacing: tracked ? '0.01em' : '-0.03em',
-                color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1.3,
-                textAlign: 'right', maxWidth: tracked ? 148 : undefined,
-              }}
-            >
-              {stakeLabel}
-            </span>
-            {payoutLabel && (
-              <span
-                title={graded ? 'Graded P&L' : 'To win at ticket odds — not graded yet'}
-                style={{
-                  fontSize: 12, fontWeight: 650, fontFeatureSettings: "'tnum'",
-                  color: payoutColor, letterSpacing: '-0.01em',
-                }}
-              >
-                {graded ? payoutLabel : (
-                  <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 5 }}>
-                    <span style={{
-                      fontFamily: MONO, fontSize: 7, fontWeight: 800,
-                      letterSpacing: '0.12em', color: C.textFaint,
-                    }}>
-                      TO WIN
-                    </span>
-                    {payoutLabel}
-                  </span>
-                )}
-              </span>
-            )}
-          </div>
-          <ChevronDown
-            size={14}
-            strokeWidth={2}
-            style={{ color: C.textFaint, flexShrink: 0, marginTop: 6, opacity: 0.45 }}
-          />
-        </div>
-
-        <LockedCollapsedStrength f={f} />
-
-        <OddsLimitSpark
-          pinPath={f.pinPath}
-          flagged={f.gotOdds ?? f.lockOdds}
-          entry={f.sharpEntryOdds}
-          now={f.currentFairOdds ?? f.nowOdds}
-          fair={f.fairLine}
-          evPct={f.evFlagged}
-          sma={f.marketAgreement}
-          maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
-          movePp={f.pinnMovePp}
-          polyEntry={f.polyEntryOdds}
-          clvPct={f.clvPct}
-          bestNow={f.liveBestOdds ?? f.bestOdds}
-          compact
-          showStory={false}
-          showMetrics
-          curatedMetrics
-          premiumCompact
-          gid={`ols-c-${f.id || 'x'}`}
-          chartLineLabel={f.chartLineLabel}
-          ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
-        />
-
-        <LockedCollapsedBattleBars f={f} />
-      </div>
+      <CollapsedTicketFace
+        live={liveFace}
+        order="brokerage"
+        gid={`ols-c-${f.id || 'x'}`}
+      />
     );
   }
 

@@ -168,7 +168,13 @@ export function resolveSparkPath({ pinPath, entry, flagged, now, maxNow } = {}) 
   const hasMotion = uniqueOdds.size >= 2 || maxMoved;
 
   if (dense.length >= 2 && (hasMotion || dense.some((p) => p.t != null))) {
-    return { points: dense, synthetic: !hasMotion && uniqueOdds.size < 2 };
+    // History carried no limit prints but Pinnacle posts one now — draw it as
+    // a held level so the limit line never vanishes from the tape.
+    const anyMax = dense.some((p) => Number.isFinite(p.max) && p.max > 0);
+    const filled = !anyMax && Number.isFinite(maxNow) && maxNow > 0
+      ? dense.map((p) => ({ ...p, max: maxNow }))
+      : dense;
+    return { points: filled, synthetic: !hasMotion && uniqueOdds.size < 2 };
   }
 
   const m = Number.isFinite(maxNow) ? maxNow : (dense.find((p) => p.max)?.max ?? null);
@@ -258,7 +264,11 @@ function MetricStrip({
         color: C.textSec,
       });
     }
-    if (Number.isFinite(entry)) {
+    // Premium: never print the same price twice (PIN +125 next to NOW +125
+    // was the tell of a machine-made card). NOW wins; PIN shows only when it
+    // actually differs.
+    if (Number.isFinite(entry)
+        && !(premium && Number.isFinite(liveNow) && Math.abs(entry - liveNow) <= 1)) {
       cells.push({
         key: 'pin',
         label: 'PIN',
@@ -270,7 +280,9 @@ function MetricStrip({
       key: 'now',
       label: 'NOW',
       value: fmtOdds(liveNow),
-      color: GREEN,
+      // Green is for good news only — a neutral market quote painted green
+      // was decoration lying about meaning. Premium keeps it white.
+      color: premium ? C.text : GREEN,
     });
     // Prefer MOVE as last cell when we don't already have 6.
     if (cells.length < 6 && Number.isFinite(movePp) && Math.abs(movePp) >= 0.25) {
@@ -283,21 +295,50 @@ function MetricStrip({
     }
 
     const shown = cells.slice(0, 6);
-    const fs = premium ? 13 : 12;
-    const labFs = premium ? 8 : 7.5;
+    if (premium) {
+      // Open stats — label over value, no box, no cell borders. Sentence-case
+      // labels: editorial, not shouting (Linear/Lightyear), with EV kept as
+      // the initialism it is.
+      const caseLabel = (s) => (s === 'EV' ? 'EV' : s.charAt(0) + s.slice(1).toLowerCase());
+      return (
+        <div style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '2px 2px 0',
+          marginBottom: 4,
+        }}>
+          {shown.map((c) => (
+            <div key={c.key} style={{ minWidth: 0 }}>
+              <div style={{
+                fontSize: 10.5, fontWeight: 500,
+                letterSpacing: '0.01em', color: C.textMuted, marginBottom: 5,
+              }}>
+                {caseLabel(c.label)}
+              </div>
+              <div style={{
+                fontSize: 15, fontWeight: 650, letterSpacing: '-0.025em',
+                color: c.color, fontFeatureSettings: "'tnum'",
+              }}>
+                {c.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    const fs = 12;
+    const labFs = 7.5;
     return (
       <div style={{
         display: 'flex',
-        borderRadius: premium ? 8 : 10,
-        border: premium
-          ? '1px solid rgba(148,163,184,0.10)'
-          : '1px solid rgba(212,175,55,0.14)',
-        background: premium
-          ? 'rgba(255,255,255,0.02)'
-          : 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(0,0,0,0.22) 100%)',
+        borderRadius: 10,
+        border: '1px solid rgba(212,175,55,0.14)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(0,0,0,0.22) 100%)',
         overflow: 'hidden',
-        marginBottom: premium ? 10 : 8,
-        boxShadow: premium ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        marginBottom: 8,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
       }}>
         {shown.map((c, i) => (
           <div
@@ -305,24 +346,22 @@ function MetricStrip({
             style={{
               flex: 1,
               minWidth: 0,
-              padding: premium ? '10px 5px 9px' : '8px 5px 7px',
+              padding: '8px 5px 7px',
               textAlign: 'center',
               borderLeft: i === 0
                 ? 'none'
-                : premium
-                  ? '1px solid rgba(148,163,184,0.08)'
-                  : '1px solid rgba(212,175,55,0.10)',
+                : '1px solid rgba(212,175,55,0.10)',
             }}
           >
             <div style={{
               fontFamily: MONO, fontSize: labFs, fontWeight: 700,
-              letterSpacing: premium ? '0.14em' : '0.12em',
-              color: C.textFaint, marginBottom: premium ? 5 : 4,
+              letterSpacing: '0.12em',
+              color: C.textFaint, marginBottom: 4,
             }}>
               {c.label}
             </div>
             <div style={{
-              fontSize: fs, fontWeight: premium ? 700 : 800, letterSpacing: '-0.03em',
+              fontSize: fs, fontWeight: 800, letterSpacing: '-0.03em',
               color: c.color, fontFeatureSettings: "'tnum'",
             }}>
               {c.value}
@@ -484,24 +523,43 @@ function DualAxisChart({
   fair,
   compact = false,
   premium = false,
+  narrow = false,
   gid = 'ols',
 }) {
   if (!points || points.length < 2) return null;
-
-  const w = compact ? 340 : 420;
-  const h = premium ? 96 : (compact ? 78 : 148);
-  const padL = premium ? 32 : (compact ? 30 : 38);
-  const padR = premium ? 36 : (compact ? 34 : 44);
-  const padTop = premium ? 12 : (compact ? 10 : 14);
-  const padBot = premium ? 18 : (compact ? 16 : 22);
-  const plotW = w - padL - padR;
-  const plotH = h - padTop - padBot;
 
   // Plot in decimal odds space so near-even ML (-103 vs fair +101) does not
   // cross zero on a negated-American axis (that produced a bogus "-1.5" tick).
   const toPlot = (am) => americanToDecimal(am);
   const oddsVals = points.map((p) => toPlot(p.odds)).filter((v) => v != null);
-  const refs = [flagged, fair].map(toPlot).filter((v) => v != null);
+
+  const maxesEarly = points.map((p) => p.max).filter((m) => Number.isFinite(m) && m > 0);
+  const hasMax = maxesEarly.length > 0;
+
+  // A tape that never moved is a fact, not a landscape. Premium renders it as
+  // a short held-line strip — UNLESS Pinnacle limits exist: moving limits are
+  // real information, so the full chart stays and draws them.
+  const flatTape = premium
+    && !hasMax
+    && oddsVals.length > 1
+    && (Math.max(...oddsVals) - Math.min(...oddsVals)) < 0.015;
+
+  // Premium plots run nearly edge to edge — the ledger row below carries the
+  // numbers, so the plot needs no left axis gutter at all.
+  const w = narrow ? 232 : (compact ? 340 : 420);
+  const h = premium ? (flatTape ? 34 : 96) : (compact ? 78 : 148);
+  const padL = premium ? 18 : (compact ? 30 : 38);
+  const padR = premium
+    ? (hasMax ? 40 : 18)
+    : (compact ? 34 : 44);
+  const padTop = premium ? 12 : (compact ? 10 : 14);
+  const padBot = premium ? (flatTape ? 15 : 17) : (compact ? 16 : 22);
+  const plotW = w - padL - padR;
+  const plotH = h - padTop - padBot;
+
+  const refs = (premium ? [flatTape ? null : flagged] : [flagged, fair])
+    .map(toPlot)
+    .filter((v) => v != null);
   const allOdds = [...oddsVals, ...refs];
   let oMax = Math.max(...allOdds);
   let oMin = Math.min(...allOdds);
@@ -515,8 +573,7 @@ function DualAxisChart({
   }
   const oSpan = oMax - oMin || 1;
 
-  const maxes = points.map((p) => p.max).filter((m) => Number.isFinite(m) && m > 0);
-  const hasMax = maxes.length > 0;
+  const maxes = maxesEarly;
   const mLo = 0;
   const mHi = hasMax ? Math.max(...maxes) * 1.12 : 1000;
   const mSpan = mHi - mLo || 1;
@@ -570,6 +627,26 @@ function DualAxisChart({
   const flaggedY = flaggedDec != null ? yOdds(flaggedDec) : null;
   const lastOdds = oddsCoords[oddsCoords.length - 1];
 
+  // Premium (collapsed locked): no box, area wash under the line, one dotted
+  // baseline, halo endpoint — the pattern every top dark-fintech chart uses
+  // (Stake, Lightyear, Revolut). Guides whisper; a flat tape collapses to a
+  // held-line strip with the one label that matters.
+  const baselineY = padTop + plotH;
+  const areaD = `${oddsD} L${oddsCoords[oddsCoords.length - 1][0].toFixed(1)},${baselineY} L${oddsCoords[0][0].toFixed(1)},${baselineY} Z`;
+  // Premium: no odds axis at all — the ledger row under the tape carries
+  // every number. The plot is pure shape: line, wash, guide, live endpoint.
+  const shownOTicks = premium ? [] : oTicks;
+  // Premium labels the limit where it IS — at the line's live endpoint —
+  // not at an abstract top-of-scale tick.
+  const shownMTicks = premium
+    ? (hasMax && maxCoords.length
+      ? [{
+        y: maxCoords[maxCoords.length - 1][1],
+        label: fmtMax(points[points.length - 1].max ?? maxesEarly[maxesEarly.length - 1]) || '',
+      }]
+      : [])
+    : mTicks;
+
   return (
     <svg
       width="100%"
@@ -577,36 +654,82 @@ function DualAxisChart({
       preserveAspectRatio="none"
       style={{ display: 'block', width: '100%', height: 'auto' }}
     >
-      {/* Grid from odds axis */}
-      {oTicks.map((tk, i) => (
-        <line
-          key={`g-${i}`}
-          x1={padL}
-          y1={tk.y}
-          x2={padL + plotW}
-          y2={tk.y}
-          stroke={C.grid}
-          strokeWidth={1}
-          strokeDasharray={i === 1 ? '0' : '3 4'}
-        />
-      ))}
-
-      {/* Ticket guide — where we got on (collapsed proof) */}
-      {Number.isFinite(flaggedY) && (
-        <line
-          x1={padL}
-          y1={flaggedY}
-          x2={padL + plotW}
-          y2={flaggedY}
-          stroke={GOLD_HI}
-          strokeWidth={1}
-          strokeDasharray="5 4"
-          opacity={0.55}
-        />
+      {premium && (
+        <defs>
+          <linearGradient id={`${gid}-wash`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={GOLD_HI} stopOpacity="0.22" />
+            <stop offset="55%" stopColor={GOLD_HI} stopOpacity="0.06" />
+            <stop offset="100%" stopColor={GOLD_HI} stopOpacity="0" />
+          </linearGradient>
+        </defs>
       )}
 
-      {/* Fair guide (odds scale) */}
-      {Number.isFinite(fairY) && !(Number.isFinite(flagged) && Number.isFinite(fair) && Math.abs(flagged - fair) <= 1) && (
+      {/* Grid: premium keeps a single dotted baseline (none on a flat strip —
+          a second horizontal line under a flat line reads as a glitch) */}
+      {premium ? (flatTape ? null : (
+        <line
+          x1={padL}
+          y1={baselineY}
+          x2={padL + plotW}
+          y2={baselineY}
+          stroke={C.grid}
+          strokeWidth={1}
+          strokeDasharray="1 4"
+          strokeLinecap="round"
+        />
+      )) : (
+        oTicks.map((tk, i) => (
+          <line
+            key={`g-${i}`}
+            x1={padL}
+            y1={tk.y}
+            x2={padL + plotW}
+            y2={tk.y}
+            stroke={C.grid}
+            strokeWidth={1}
+            strokeDasharray={i === 1 ? '0' : '3 4'}
+          />
+        ))
+      )}
+
+      {/* Ticket guide — where we got on. Premium: one dotted reference (the
+          Robinhood cost-basis pattern) with a lit entry marker and label,
+          never on a flat tape. */}
+      {Number.isFinite(flaggedY) && !(premium && flatTape) && (
+        <>
+          <line
+            x1={padL}
+            y1={flaggedY}
+            x2={padL + plotW}
+            y2={flaggedY}
+            stroke={GOLD_HI}
+            strokeWidth={1}
+            strokeDasharray={premium ? '1 4' : '5 4'}
+            strokeLinecap="round"
+            opacity={premium ? 0.4 : 0.55}
+          />
+          {premium && (
+            <>
+              <circle cx={padL} cy={flaggedY} r={2.4} fill={GOLD_HI} opacity={0.95} />
+              <text
+                x={padL + 6}
+                y={flaggedY - 4}
+                textAnchor="start"
+                fill={GOLD_HI}
+                fontSize={6.5}
+                fontWeight={700}
+                letterSpacing="0.08em"
+                opacity={0.85}
+              >
+                TICKET
+              </text>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Fair guide (odds scale) — ops only; premium keeps FAIR in the cells */}
+      {!premium && Number.isFinite(fairY) && !(Number.isFinite(flagged) && Number.isFinite(fair) && Math.abs(flagged - fair) <= 1) && (
         <line
           x1={padL}
           y1={fairY}
@@ -619,6 +742,11 @@ function DualAxisChart({
         />
       )}
 
+      {/* Area wash under the odds line — premium, only when the tape moved */}
+      {premium && !flatTape && (
+        <path d={areaD} fill={`url(#${gid}-wash)`} stroke="none" />
+      )}
+
       {/* Max limit line — right axis, full height */}
       {maxD && (
         <>
@@ -626,12 +754,12 @@ function DualAxisChart({
             d={maxD}
             fill="none"
             stroke={LIMIT}
-            strokeWidth={compact ? 1.6 : 2}
+            strokeWidth={premium ? 1.3 : (compact ? 1.6 : 2)}
             strokeLinecap="round"
             strokeLinejoin="round"
-            opacity={0.95}
+            opacity={premium ? 0.45 : 0.95}
           />
-          {maxCoords.map(([x, y], i) => {
+          {!premium && maxCoords.map(([x, y], i) => {
             // Node on change or ends
             const prev = i > 0 ? points[i - 1].max : null;
             const cur = points[i].max;
@@ -650,19 +778,49 @@ function DualAxisChart({
               />
             );
           })}
+          {premium && (
+            <circle
+              cx={maxCoords[maxCoords.length - 1][0]}
+              cy={maxCoords[maxCoords.length - 1][1]}
+              r={2}
+              fill={LIMIT}
+              opacity={0.7}
+            />
+          )}
         </>
       )}
 
-      {/* Odds stepped line — left axis */}
+      {/* Odds stepped line — left axis. Premium draws with conviction. */}
       <path
         d={oddsD}
         fill="none"
         stroke={GOLD_HI}
-        strokeWidth={compact ? 1.8 : 2.25}
+        strokeWidth={premium ? 2.4 : (compact ? 1.8 : 2.25)}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={oddsCoords[0][0]} cy={oddsCoords[0][1]} r={compact ? 2.2 : 2.8} fill={GOLD} />
+      {!premium && (
+        <circle cx={oddsCoords[0][0]} cy={oddsCoords[0][1]} r={compact ? 2.2 : 2.8} fill={GOLD} />
+      )}
+      {premium && (
+        <>
+          {/* The one living element on the card: the endpoint breathes. */}
+          <circle
+            className="sf-tape-pulse"
+            cx={lastOdds[0]}
+            cy={lastOdds[1]}
+            r={10}
+            fill={GREEN}
+          />
+          <circle
+            cx={lastOdds[0]}
+            cy={lastOdds[1]}
+            r={6}
+            fill={GREEN}
+            opacity={0.18}
+          />
+        </>
+      )}
       <circle
         cx={lastOdds[0]}
         cy={lastOdds[1]}
@@ -673,47 +831,49 @@ function DualAxisChart({
       />
 
       {/* Left odds labels */}
-      {oTicks.map((tk, i) => (
+      {shownOTicks.map((tk, i) => (
         <text
           key={`ol-${i}`}
           x={padL - 5}
           y={tk.y + 3}
           textAnchor="end"
           fill={C.textFaint}
-          fontSize={compact ? 7.5 : 8}
+          fontSize={premium ? 7 : (compact ? 7.5 : 8)}
           fontFamily={MONO}
           fontWeight={600}
+          opacity={premium ? 0.8 : 1}
         >
           {tk.label}
         </text>
       ))}
 
       {/* Right max labels */}
-      {mTicks.map((tk, i) => (
+      {shownMTicks.map((tk, i) => (
         <text
           key={`ml-${i}`}
           x={padL + plotW + 5}
           y={tk.y + 3}
           textAnchor="start"
           fill={LIMIT_DIM}
-          fontSize={compact ? 7.5 : 8}
+          fontSize={premium ? 7 : (compact ? 7.5 : 8)}
           fontFamily={MONO}
           fontWeight={700}
+          opacity={premium ? 0.8 : 1}
         >
           {tk.label}
         </text>
       ))}
 
       {/* Time axis */}
-      <text x={padL} y={h - 3} textAnchor="start" fill={C.textFaint} fontSize={compact ? 7.5 : 8} fontFamily={MONO} fontWeight={600}>
+      <text x={padL} y={h - 3} textAnchor="start" fill={C.textFaint} fontSize={premium ? 7 : (compact ? 7.5 : 8)} fontFamily={MONO} fontWeight={600} opacity={premium ? 0.75 : 1}>
         {t0 || 'Open'}
       </text>
-      {tMid && (
+      {tMid && !premium && (
         <text x={padL + plotW / 2} y={h - 3} textAnchor="middle" fill={C.textFaint} fontSize={compact ? 7.5 : 8} fontFamily={MONO} fontWeight={600}>
           {tMid}
         </text>
       )}
-      <text x={padL + plotW} y={h - 3} textAnchor="end" fill={C.textFaint} fontSize={compact ? 7.5 : 8} fontFamily={MONO} fontWeight={600}>
+      <text x={padL + plotW} y={h - 3} textAnchor="end" fill={C.textFaint} fontSize={premium ? 7 : (compact ? 7.5 : 8)} fontFamily={MONO} fontWeight={600} opacity={premium ? 0.75 : 1}>
         {t1 || 'Now'}
       </text>
 
@@ -751,10 +911,13 @@ export default function OddsLimitSpark({
   showMetrics = true,
   curatedMetrics = false,
   premiumCompact = false,
+  bleed = false,
   bestNow = null,
   chartLineLabel = null,
   /** When ticket is an alt, label TICKET (not FLAGGED) in the metric strip. */
   ticketOffMain = false,
+  /** Brokerage order: tape directly under the hero, price cells below it. */
+  chartFirst = false,
 }) {
   const liveNow = Number.isFinite(now) ? now : fair;
   // Chart is book tape on this line. Ticket juice stays in the FLAGGED cell —
@@ -811,26 +974,64 @@ export default function OddsLimitSpark({
     return null;
   })();
 
+  const metricsNode = showMetrics && (
+    <MetricStrip
+      evPct={evPct}
+      fair={fair}
+      entry={strip.entry}
+      now={strip.now}
+      flagged={flagged}
+      maxNow={maxNow ?? sma?.maxNow}
+      movePp={movePp}
+      polyEntry={polyEntry}
+      clvPct={clvPct}
+      compact={compact}
+      curated={curatedMetrics}
+      premium={premiumCompact}
+      bestNow={bestNow}
+      ticketOffMain={ticketOffMain}
+    />
+  );
+
+  const chartNode = (
+    <div style={premiumCompact
+      // Premium: the tape floats on the card surface. No box — separation
+      // comes from air and the baseline inside the SVG.
+      ? { padding: 0 }
+      : {
+        borderRadius: compact ? 8 : 10,
+        border: '1px solid rgba(148,163,184,0.12)',
+        background: 'rgba(0,0,0,0.28)',
+        padding: compact ? '4px 4px 0' : '8px 6px 2px',
+      }}>
+      <DualAxisChart
+        points={points}
+        flagged={pathFlagged}
+        fair={fair}
+        compact={compact}
+        premium={premiumCompact}
+        gid={gid}
+      />
+    </div>
+  );
+
+  // Premium: the tape leads (full-bleed), the price ledger reads underneath —
+  // the brokerage order every elite position card uses. `bleed` restores the
+  // card's side padding for the text row only.
+  if (premiumCompact) {
+    return (
+      <div style={{ fontFeatureSettings: "'tnum'" }}>
+        {chartNode}
+        <div style={{ padding: bleed ? '13px 22px 0' : '13px 0 0' }}>
+          {metricsNode}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ fontFeatureSettings: "'tnum'" }} onClick={(e) => e.stopPropagation()}>
-      {showMetrics && (
-        <MetricStrip
-          evPct={evPct}
-          fair={fair}
-          entry={strip.entry}
-          now={strip.now}
-          flagged={flagged}
-          maxNow={maxNow ?? sma?.maxNow}
-          movePp={movePp}
-          polyEntry={polyEntry}
-          clvPct={clvPct}
-          compact={compact}
-          curated={curatedMetrics}
-          premium={premiumCompact}
-          bestNow={bestNow}
-          ticketOffMain={ticketOffMain}
-        />
-      )}
+      {!chartFirst && metricsNode}
 
       {!compact && (
         <div style={{
@@ -852,23 +1053,13 @@ export default function OddsLimitSpark({
         </div>
       )}
 
-      <div style={{
-        borderRadius: premiumCompact ? 8 : (compact ? 8 : 10),
-        border: premiumCompact
-          ? '1px solid rgba(148,163,184,0.09)'
-          : '1px solid rgba(148,163,184,0.12)',
-        background: premiumCompact ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.28)',
-        padding: premiumCompact ? '8px 6px 2px' : (compact ? '4px 4px 0' : '8px 6px 2px'),
-      }}>
-        <DualAxisChart
-          points={points}
-          flagged={pathFlagged}
-          fair={fair}
-          compact={compact}
-          premium={premiumCompact}
-          gid={gid}
-        />
-      </div>
+      {chartNode}
+
+      {chartFirst && (
+        <div style={{ marginTop: 12 }}>
+          {metricsNode}
+        </div>
+      )}
 
       {compact && compactCaption && (
         <div style={{

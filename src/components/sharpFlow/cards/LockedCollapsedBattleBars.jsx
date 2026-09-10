@@ -171,6 +171,7 @@ function SplitBar({
   accentOurs,
   accentTheirs,
   hcOursPct = null,
+  premium = false,
 }) {
   const o = Math.max(0, Math.min(100, Number(oursPct) || 0));
   const t = Math.max(0, Math.min(100, Number(theirsPct) || 0));
@@ -179,16 +180,20 @@ function SplitBar({
   const restW = showHcSplit ? Math.max(0, o - hcW) : o;
   const oursFill = o > 0 && Number.isFinite(hcOursPct) && hcOursPct >= 100
     ? barFill(GOLD, 'aa')
-    : barFill(accentOurs, '88');
+    : barFill(accentOurs, premium ? 'cc' : '88');
   const hcFill = barFill(GOLD, 'aa');
-  const restFill = barFill(accentOurs, '66');
-  const theirsFill = barFill(accentTheirs, '55');
+  const restFill = barFill(accentOurs, premium ? '99' : '66');
+  const theirsFill = barFill(accentTheirs, premium ? '77' : '55');
 
+  // Premium: hairline bar with a seam between the sides (Kraken trading
+  // activity / Stake overview). Ops keeps the solid 6px block.
+  const barH = premium ? 4 : 6;
   return (
     <div style={{
-      display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden',
-      background: 'rgba(255,255,255,0.06)', gap: 0,
-      minHeight: 6,
+      display: 'flex', height: barH, borderRadius: 999, overflow: 'hidden',
+      background: premium ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.06)',
+      gap: premium ? 2 : 0,
+      minHeight: barH,
     }}>
       {showHcSplit ? (
         <>
@@ -223,6 +228,18 @@ function SplitBar({
   );
 }
 
+function ourSideLabel(f) {
+  const pick = String(f?.pickLabel || '').trim();
+  const total = pick.match(/^(Over|Under)\b/i);
+  if (total) {
+    const w = total[1];
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }
+  if (f?.side === 'home' && f.homeShort) return f.homeShort;
+  if (f?.side === 'away' && f.awayShort) return f.awayShort;
+  return 'Us';
+}
+
 function CompactSplitRow({
   label,
   ours,
@@ -234,11 +251,65 @@ function CompactSplitRow({
   tag = null,
   tip = null,
   hcOursPct = null,
+  premium = false,
+  scale = 1,
 }) {
   const total = ours + theirs;
   if (total <= 0) return null;
   const oursPct = Math.round((ours / total) * 100);
   const theirsPct = Math.max(0, 100 - oursPct);
+
+  if (premium) {
+    // One line per split on a SHARED dollar scale: bar length = row total
+    // relative to the biggest pool on the card, so you SEE where the big
+    // money is — row-normalized bars hide magnitude. Label · bar · dollars.
+    const pctW = Math.max(4, Math.round(scale * 100));
+    return (
+      <div
+        title={tip || undefined}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 11,
+        }}
+      >
+        <span style={{
+          width: 84, flexShrink: 0,
+          fontSize: 11, fontWeight: 500, color: C.textMuted,
+          letterSpacing: '0.01em', whiteSpace: 'nowrap',
+        }}>
+          {label}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ width: `${pctW}%` }}>
+            <SplitBar
+              oursPct={Math.max(oursPct, 0)}
+              theirsPct={theirsPct}
+              accentOurs={accentOurs}
+              accentTheirs={accentTheirs}
+              hcOursPct={hcOursPct}
+              premium
+            />
+          </div>
+        </div>
+        <span style={{
+          flexShrink: 0, display: 'inline-flex', alignItems: 'baseline', gap: 6,
+          fontFeatureSettings: "'tnum'", fontSize: 13.5, fontWeight: 700,
+          letterSpacing: '-0.02em', whiteSpace: 'nowrap',
+        }}>
+          <span style={{ color: accentOurs }}>{fmtUsd(ours)}</span>
+          <span style={{ fontSize: 10, fontWeight: 450, color: C.textFaint }}>·</span>
+          <span style={{ color: theirs > 0 ? accentTheirs : C.textFaint, fontWeight: 550 }}>{fmtUsd(theirs)}</span>
+          {tag && (
+            <span style={{
+              fontSize: 9.5, fontWeight: 600, letterSpacing: '0.01em',
+              color: tag.color || GOLD, marginLeft: 2,
+            }}>
+              {tag.text}
+            </span>
+          )}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div title={tip || undefined} style={{ marginBottom: 9 }}>
@@ -291,7 +362,7 @@ function CompactSplitRow({
   );
 }
 
-export default function LockedCollapsedBattleBars({ f }) {
+export default function LockedCollapsedBattleBars({ f, face = 'original', flush = false }) {
   if (!f) return null;
   const { full, losers, confirmed, hcPct, hcOurs } = computeCollapsedBattleSplits(f);
 
@@ -300,11 +371,26 @@ export default function LockedCollapsedBattleBars({ f }) {
   const hasConfirmed = confirmed.total > 0;
   if (!hasFull && !hasLosers && !hasConfirmed) return null;
 
-  const oursLabel = 'Us';
+  const subscriber = face === 'subscriber';
+  const oursLabel = subscriber ? ourSideLabel(f) : 'Us';
   const theirsLabel = f?.against?.abbr || 'Them';
   const hcShareOfOurs = confirmed.ours > 0 && hcOurs > 0
     ? Math.round((hcOurs / confirmed.ours) * 100)
-    : (hcPct === 0 ? 0 : null);
+    : (subscriber ? null : (hcPct === 0 ? 0 : null));
+  const hcTag = subscriber
+    ? (Number(hcPct) > 0 ? { text: `HC ${hcPct}%`, color: GOLD } : null)
+    : (hcPct != null ? { text: `HC ${hcPct}%`, color: GOLD } : null);
+
+  // Premium palette discipline: ONE green moment (confirmed winners with us).
+  // The other side is neutral slate, never alarm-red — and losing money on
+  // the other side is good news, so it must not paint the card red. Red is
+  // reserved for the only real threat: tracked losers on OUR side.
+  const SLATE = '#D7DEE9';
+  const SLATE_DIM = '#5C6678';
+  const losersMostlyOurs = losers.oursPct != null && losers.oursPct >= 60;
+  const loserOursAccent = subscriber
+    ? (losersMostlyOurs ? VS : SLATE_DIM)
+    : GREEN;
 
   const src = f?.boardMoneySources;
   const tipBits = [];
@@ -315,53 +401,98 @@ export default function LockedCollapsedBattleBars({ f }) {
     ? `${tipBits.join(' + ')} · this market only · no double-count`
     : 'This market only (wallets + unmatched whales + flow residual)';
 
+  // Subscriber face: strongest evidence first. The center pct already carries
+  // the number, so tags only add *meaning* — HC share, or the caution that
+  // tracked losers landed on our side too.
+  const losersTag = subscriber
+    ? (losersMostlyOurs
+      ? { text: 'on our side', color: VS }
+      : (losers.ours <= 0 && losers.theirs > 0
+        ? { text: 'all theirs', color: GREEN }
+        : null))
+    : null;
+
+  // Shared dollar scale across the three pools — bar length says magnitude.
+  const maxTotal = Math.max(confirmed.total, full.total, losers.total, 1);
+
+  const confirmedRow = hasConfirmed && (
+    <CompactSplitRow
+      key="confirmed"
+      label={subscriber ? 'Confirmed' : 'Confirmed winners'}
+      ours={confirmed.ours}
+      theirs={confirmed.theirs}
+      oursLabel={oursLabel}
+      theirsLabel={theirsLabel}
+      accentOurs={GREEN}
+      accentTheirs={subscriber ? SLATE_DIM : VS}
+      hcOursPct={hcShareOfOurs}
+      tag={hcTag}
+      tip="CONFIRMED open positions on this market (bleeders excluded). Gold = HC (≥1.5×)"
+      premium={subscriber}
+      scale={confirmed.total / maxTotal}
+    />
+  );
+  const fullRow = hasFull && (
+    <CompactSplitRow
+      key="full"
+      label={subscriber ? 'All money' : 'Full split'}
+      ours={full.ours}
+      theirs={full.theirs}
+      oursLabel={oursLabel}
+      theirsLabel={theirsLabel}
+      accentOurs={subscriber ? SLATE : GREEN}
+      accentTheirs={subscriber ? SLATE_DIM : VS}
+      tip={fullTip}
+      premium={subscriber}
+      scale={full.total / maxTotal}
+    />
+  );
+  const losersRow = hasLosers && (
+    <CompactSplitRow
+      key="losers"
+      label={subscriber ? 'Losing' : 'Losing wallets'}
+      ours={losers.ours}
+      theirs={losers.theirs}
+      oursLabel={oursLabel}
+      theirsLabel={theirsLabel}
+      accentOurs={loserOursAccent}
+      accentTheirs={subscriber ? SLATE_DIM : VS}
+      tag={losersTag}
+      tip="Tracked losers on this market: WR50, unranked, bleeders, positions-negative. No anon exchange prints."
+      premium={subscriber}
+      scale={losers.total / maxTotal}
+    />
+  );
+
   return (
     <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        marginTop: 10,
-        paddingTop: 10,
+      style={flush ? {} : {
+        marginTop: subscriber ? 14 : 10,
+        paddingTop: subscriber ? 14 : 10,
         borderTop: '1px solid rgba(148,163,184,0.10)',
       }}
     >
-      {hasFull && (
-        <CompactSplitRow
-          label="Full split"
-          ours={full.ours}
-          theirs={full.theirs}
-          oursLabel={oursLabel}
-          theirsLabel={theirsLabel}
-          accentOurs={GREEN}
-          accentTheirs={VS}
-          tip={fullTip}
-        />
+      {subscriber && (
+        // Legend once — sides named a single time, not six.
+        <div style={{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          gap: 10, marginBottom: 10,
+        }}>
+          <span style={{
+            fontSize: 10.5, fontWeight: 500, color: C.textFaint, letterSpacing: '0.01em',
+          }}>
+            Qualified money
+          </span>
+          <span style={{ fontSize: 10.5, fontWeight: 500, letterSpacing: '0.01em' }}>
+            <span style={{ color: SLATE }}>{oursLabel}</span>
+            <span style={{ color: C.textFaint }}>{' · '}</span>
+            <span style={{ color: C.textFaint }}>{theirsLabel}</span>
+          </span>
+        </div>
       )}
-      {hasLosers && (
-        <CompactSplitRow
-          label="Losing wallets"
-          ours={losers.ours}
-          theirs={losers.theirs}
-          oursLabel={oursLabel}
-          theirsLabel={theirsLabel}
-          accentOurs={GREEN}
-          accentTheirs={VS}
-          tip="Tracked losers on this market: WR50, unranked, bleeders, positions-negative. No anon exchange prints."
-        />
-      )}
-      {hasConfirmed && (
-        <CompactSplitRow
-          label="Confirmed winners"
-          ours={confirmed.ours}
-          theirs={confirmed.theirs}
-          oursLabel={oursLabel}
-          theirsLabel={theirsLabel}
-          accentOurs={GREEN}
-          accentTheirs={VS}
-          hcOursPct={hcShareOfOurs}
-          tag={hcPct != null ? { text: `HC ${hcPct}%`, color: GOLD } : null}
-          tip="CONFIRMED open positions on this market (bleeders excluded). Gold = HC (≥1.5×)"
-        />
-      )}
+      {subscriber
+        ? [confirmedRow, fullRow, losersRow]
+        : [fullRow, losersRow, confirmedRow]}
     </div>
   );
 }
