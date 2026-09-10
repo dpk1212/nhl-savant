@@ -54,7 +54,8 @@ function isConfirmed(w) {
 
 function isHc(w) {
   const sr = Number(w?.displaySizeRatio ?? w?.sizeRatio);
-  return isConfirmed(w) && Number.isFinite(sr) && sr >= HC_RATIO;
+  const winner = isWinnerPool(w) || !!w?.proven || isConfirmed(w);
+  return winner && Number.isFinite(sr) && sr >= HC_RATIO;
 }
 
 function sumSide(rows, side) {

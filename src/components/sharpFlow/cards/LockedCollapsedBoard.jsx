@@ -73,9 +73,12 @@ function isWinnerPool(w) {
 
 function classify(w) {
   const sr = Number(w?.displaySizeRatio ?? w?.sizeRatio);
-  const confirmed = String(w?.whitelist || '').toUpperCase() === 'CONFIRMED';
-  if (confirmed && Number.isFinite(sr) && sr >= HC_RATIO) return 'hc';
-  if (isWinnerPool(w) || w?.proven) return 'proven';
+  // HC is a press, not a stamp. A proven / winner-pool wallet at ≥1.5× usual
+  // is gold whether the sport book says CONFIRMED or FLAT — the sentence
+  // above already names that press; the bar has to match.
+  const winner = isWinnerPool(w) || !!w?.proven;
+  if (winner && Number.isFinite(sr) && sr >= HC_RATIO) return 'hc';
+  if (winner) return 'proven';
   return 'loser';
 }
 
