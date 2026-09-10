@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-10 PM · QT GIVE · fade-Trent except tonight (Rams −3.5) |
+| Last updated | 2026-09-10 PM r2 · QT GIVE · fade-Trent except tonight (Rams −3.5) · workshop voice killed |
 | CSV window | Account overview Jun 13–Sep 10 · post-level law Aug 26–Sep 1 content CSV |
 | Ask temperature | **Cold-warm.** Give. MLB ask already fired Sep 6. This post = no ask. Next slot still give unless Dale spines an ask. |
 | Account arc | Morning educate (2 red nights / week +33.4u) staged, not restaged. First NFL Thursday is the live walk. |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/10 PM | QT **GIVE/BUZZ** | `$51K AT 4.4×` / Same side I fade this guy on · Rams −3.5 · Trent parent | **S + C** | none | **Staged — Hormozi pathway** |
+| 9/10 PM r2 | QT **GIVE/BUZZ** | `$51K AT 4.4×` / We fade this guy. Tonight he's on the right side · Rams −3.5 · Trent parent | **S + C** | none | **Staged — workshop voice killed** |
 | 9/10 AM r2 | Hero **EDUCATE/GIVE** | `2 RED NIGHTS.` / week still +33.4u (2×+ normal) · 99-night walk | **C + L** | none | Staged — spent; do not restage |
 | 9/10 AM | Ingest | Account-overview CSV | — | none | Done |
 | 9/09 | Hero? | Unidentified (1 Create Post · 196 eng / 17R) | ? | ? | X auth down |
@@ -26,10 +26,11 @@
 ---
 
 ## Angle lock
-**ONE:** I fade this guy — except when a wallet we track just pressed $51K at 4.4× on the same Rams −3.5 he just posted.  
+**ONE:** We fade this guy. Tonight he’s on the right side — $51K at 4.4× on Rams −3.5.  
 **Yum:** you are not sitting with the $148K 49ers ticket. You see the press before 8:20.  
-**Hook:** `$51K AT 4.4×` / `Same side I fade this guy on.`  
+**Hook:** `$51K AT 4.4×` / `We fade this guy.` / `Tonight he's on the right side.`  
 **Close:** You fading him anyway?  
+**Killed:** `Same side I fade this guy on` · `That's the bit` (workshop / nobody talks like that)  
 **Ask:** none. QT of Trent’s 4h TNF 3u Rams post. Attach: flagged card → Action card.  
 **Do not:** @ him in the text · say locked · restage 2 RED NIGHTS · invent a second sharp · say unanimous (sides ~even)
 

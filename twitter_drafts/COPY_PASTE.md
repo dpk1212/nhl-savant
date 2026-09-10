@@ -1,11 +1,12 @@
 # Twitter — 2026-09-10 PM · QT GIVE · fade-Trent except tonight (Rams −3.5)
 **Pathway:** `hormozi_tweet_process.md` (not the July Coach/Researcher/Strategist/Editor loop)
+**r2:** Dale killed the workshop voice. `Same side I fade this guy on` / `That's the bit` = nobody talks like that. Restart at PURPOSE. Hook first. Stuff stays.
 
 | | |
 |--|--|
 | WHO | Someone who fades Trent on sight — and a stranger staring at a 3u kangaroo meme who thinks that’s the information. |
 | PURPOSE | Give / buzz. Walk the board under his post. |
-| ONE | I fade this guy — except when a wallet we track just pressed $51K at 4.4× on the same Rams −3.5. |
+| ONE | We fade this guy. Tonight he’s on the right side — a wallet we track just pressed $51K at 4.4× on Rams −3.5. |
 | SPCL | S + C |
 | Timeline | Ask fired Sep 6. Cold-warm. Give. Do not restage 2 RED NIGHTS. |
 | Ask | **None.** No URL. No trial. No self-reply. |
@@ -30,13 +31,13 @@ Someone who fades Trent on sight — and a stranger staring at a 3u kangaroo mem
 **Give / buzz.** Walk the board under his post. No URL. No trial. No SR.
 
 ### 3 · ONE
-**I fade this guy — except when a wallet we track just pressed $51K at 4.4× on the same Rams −3.5 he just posted.**
+**We fade this guy. Tonight he’s on the right side — because a wallet we track just pressed $51K at 4.4× on Rams −3.5.**
 
 | Test | |
 |------|---|
-| Understand | We fade Trent. Tonight our tape is on his side. |
+| Understand | We fade Trent. Tonight the tape is with him. |
 | Believe | $51,000 / 4.43× vs $11,525 avg (origin/main JSON) · Action 9-1 / +75% / L30 7-1 +$45K · steam −3 → −3.5 · 2u flagged |
-| Unique | Fade-Trent as the habit, broken by *this* press — not “we like the Rams.” |
+| Unique | The fade is the habit. Tonight the $ is why we don’t. Not “we like the Rams.” |
 
 **Yum:** you are not sitting with the $148K 49ers ticket. You see the press before 8:20.
 
@@ -59,10 +60,18 @@ Trent: Rams −3.5 · **3u** · TNF mortal mega max
 
 ### 6 · HOOK QA
 What: $51K at 4.4×.  
-How: same side I fade this guy on.  
-So what: the fade is the bit — tonight the tape is with him.  
+How: we fade this guy. Tonight he’s on the right side.  
+So what: the wallet is why.  
 Screenshot: stranger sees **$51K / 4.4×** without knowing us.  
 QT law: parent owns MEGA MAX / 3u kangaroo. We do not open on that.
+
+**Killed (Dale — nobody talks like this)**
+```
+Same side I fade this guy on.
+
+I fade him. That's the bit.
+```
+Workshop. Meta. “The bit” is an agency talking about its own angle.
 
 **Killed**
 ```
@@ -76,11 +85,12 @@ TNF. RAMS -3.5.
 ```
 Restates the parent.
 
-**Chosen** — Cubs `$XK AT Y×` silhouette, new tape
+**Chosen** — Cubs `$XK AT Y×` silhouette + Dale’s actual sentence
 ```
 $51K AT 4.4×
 
-Same side I fade this guy on.
+We fade this guy.
+Tonight he's on the right side.
 ```
 
 ---
@@ -97,22 +107,21 @@ Same side I fade this guy on.
 ```
 $51K AT 4.4×
 
-Same side I fade this guy on.
+We fade this guy.
+Tonight he's on the right side.
 
-I fade him. That's the bit.
-
-A wallet we track just put $51,000 on Rams -3.5. 4.4× what he bets. 9-1 this season. Last 30 days 7-1, +$45K.
+$51,000 on Rams -3.5. 4.4× what he usually bets. 9-1 this season. Last 30 days 7-1, +$45K.
 
 The number steamed. Opened -3. Sitting -3.5.
 
-There's a $148K ticket on the 49ers. We're not sitting with that.
+There's $148K on the 49ers. We're not on that.
 
-2u on our side. Flagged. Locks 8:20 ET.
+2u. Flagged. Locks 8:20 ET.
 
 You fading him anyway?
 ```
 
-[Open in X →](https://x.com/intent/tweet?text=%2451K%20AT%204.4%C3%97%0A%0ASame%20side%20I%20fade%20this%20guy%20on.%0A%0AI%20fade%20him.%20That%27s%20the%20bit.%0A%0AA%20wallet%20we%20track%20just%20put%20%2451%2C000%20on%20Rams%20-3.5.%204.4%C3%97%20what%20he%20bets.%209-1%20this%20season.%20Last%2030%20days%207-1%2C%20%2B%2445K.%0A%0AThe%20number%20steamed.%20Opened%20-3.%20Sitting%20-3.5.%0A%0AThere%27s%20a%20%24148K%20ticket%20on%20the%2049ers.%20We%27re%20not%20sitting%20with%20that.%0A%0A2u%20on%20our%20side.%20Flagged.%20Locks%208%3A20%20ET.%0A%0AYou%20fading%20him%20anyway%3F)
+[Open in X →](https://x.com/intent/tweet?text=%2451K%20AT%204.4%C3%97%0A%0AWe%20fade%20this%20guy.%0ATonight%20he%27s%20on%20the%20right%20side.%0A%0A%2451%2C000%20on%20Rams%20-3.5.%204.4%C3%97%20what%20he%20usually%20bets.%209-1%20this%20season.%20Last%2030%20days%207-1%2C%20%2B%2445K.%0A%0AThe%20number%20steamed.%20Opened%20-3.%20Sitting%20-3.5.%0A%0AThere%27s%20%24148K%20on%20the%2049ers.%20We%27re%20not%20on%20that.%0A%0A2u.%20Flagged.%20Locks%208%3A20%20ET.%0A%0AYou%20fading%20him%20anyway%3F)
 
 ### Self-reply
 None.
@@ -121,22 +130,21 @@ None.
 
 ## 2 · HERO — only if you will not QT
 
-Same ONE. Name Trent so “this guy” has a noun. Do **not** @ him.
+Same ONE. Name Trent so the fade has a noun. Do **not** @ him.
 
 ```
 $51K AT 4.4×
 
-Same side I fade Trent on.
+We fade Trent.
+Tonight he's on the right side.
 
-I fade him. That's the bit.
-
-A wallet we track just put $51,000 on Rams -3.5. 4.4× what he bets. 9-1 this season. Last 30 days 7-1, +$45K.
+$51,000 on Rams -3.5. 4.4× what he usually bets. 9-1 this season. Last 30 days 7-1, +$45K.
 
 The number steamed. Opened -3. Sitting -3.5.
 
-There's a $148K ticket on the 49ers. We're not sitting with that.
+There's $148K on the 49ers. We're not on that.
 
-2u on our side. Flagged. Locks 8:20 ET.
+2u. Flagged. Locks 8:20 ET.
 
 You fading him anyway?
 ```
@@ -144,4 +152,4 @@ You fading him anyway?
 **Attach:** flagged card then Action card.
 
 ### RT line
-`$51K AT 4.4×. Same side I fade this guy on.`
+`$51K AT 4.4×. We fade this guy. Not tonight.`
