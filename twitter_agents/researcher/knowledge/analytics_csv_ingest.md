@@ -10,8 +10,10 @@
 
 ### 1 · Load
 - Read the CSV (path under uploads/assets/chat attach)
-- Confirm columns (typical): Post text, Impressions, Engagements, Likes, Replies, Reposts, Profile visits, Detail expands, URL Clicks, Date
-- Note date window in the timeline file header
+- **Detect type:**
+  - **Content** (typical): Post text, Impressions, Engagements, Likes, Replies, Reposts, Profile visits, Detail expands, URL Clicks, Date → rank posts (steps 2–3)
+  - **Account overview** (daily totals, no post text): Date, Impressions, Likes, Engagements, Replies, Profile visits, New follows, Create Post, … → rank **days**, not hooks. Keep the last content-CSV top-10 as hook law until a new content export lands. Do not invent post-level SPCL from daily totals.
+- Note date window + CSV type in the timeline file header
 
 ### 2 · Rank
 Sort top **10** by:

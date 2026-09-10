@@ -60,3 +60,10 @@ Seed 2026-07-10:
 - **Proof over promise.** Start free. Four proof elements: recent · visual · volume-on-one-spear · **pain first** (loud side they’re already staring at, classified in ≤2 lines).
 - Vault: `hormozi_brand_pairing.md` · `hormozi_proof_machine.md`
 
+2026-09-10 (account-overview CSV — daily totals, no post text):
+- Sep 2–9 beat the last content week on the scoreboard that matters: **+37% eng/day · +85% replies/day** at ~1 post/day.
+- **Mon Sep 7 = 89-day champion** (398 eng / 48R / 198 PV on **one** post). Concentration + live board > more posts. Open unidentified (X auth down).
+- Residual days with 0 Create Post still printed 20R (Sep 2, Sep 4) — do not spam the slot.
+- Ask already fired Sep 6. Next slot stays **give**. NFL Thursday is the parked unfinished stake.
+- Post-level hook chart unchanged: `$XK at Y×` · anti-sexy printer · valley/ownership. Convert-as-open still death.
+
