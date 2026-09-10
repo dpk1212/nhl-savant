@@ -23,20 +23,23 @@
 
 ## LIVING WINDOW (CSV — overwrite on every ingest)
 
-**Source locked:** Aug 26–Sep 1, 2026 · 29 heroes · median 2056 impr  
+**Source locked:** Account overview Jun 13–Sep 10, 2026 (Sep 10 **partial**) · daily totals, **no post text**  
 **File:** `SHARED/recent_timeline_latest.md`  
-**Ingested:** 2026-09-01  
-**Next tweet:** do not draft until Dale asks. This card still binds PURPOSE / hook / ask.
+**Ingested:** 2026-09-10  
+**Post-level hook law:** still Aug 26–Sep 1 content CSV (29 heroes) until a new content export lands  
+**X pull:** growthPulse failed (NoAuthMethod) — Sep 7 / Sep 9 opens unidentified  
+**Next tweet:** do not draft until Dale dumps morning concepts. This card binds PURPOSE / hook / ask.
 
-### What actually converted attention (this window)
+### What actually converted attention (account window)
 
 | Job | Winner | Why it counts |
 |-----|--------|----------------|
-| Live Status | `$120K AT 2× USUAL` Cubs · **237 eng / 5R** | Scarce $ × usual in line 1 |
-| Profile visits | `No sexy post here…` preseason printer · **49 PV** | L+C · receipt in the image |
-| Replies (proof) | `DOWN 76 UNITS. THEN V12 WENT LIVE.` · **8R** | P+C valley → ATH |
-| Replies (buzz) | `IF YOU'RE LOST ON THE SITE.....THAT'S ON ME.` · **9R** | Ownership confront — buzz only |
-| Educate | `+46.8u IN AUGUST.` · 94 / 3R / 27 PV | Size filter with a printer open |
+| Account day (file max) | **Mon Sep 7** · **398 eng / 48R / 198 PV · 1 post** | Best day in 89 days. Concentrated live give, not volume. Open unknown. |
+| Desk cluster | **Sun Sep 6** · 331 / 31R / 191 PV · **3 posts** | MLB ask + Under give + CFB QTs (Ole Miss / ND leftover staged) |
+| Residual | Sep 2 + Sep 4 · **0 posts** · still 244 eng / 20R each | Good posts keep working. Do not spam. |
+| Hook silhouettes (content CSV) | `$120K AT 2×` **237/5R** · anti-sexy printer **49 PV** · `DOWN 76` **8R** · lost-on-site **9R** | Still the post-level chart. Reuse shape on **new tape** only. |
+
+Sep 2–9 vs Aug 26–Sep 1: **+37% eng/day · +85% replies/day** on ~1 post/day. The live-board weekend compounded.
 
 ### Empirical deaths (do not repeat — this is pathway law now)
 
@@ -49,17 +52,21 @@
 | `Here is how the last 30 days played. We really were on something` | **44** | Soft recap furniture. Same month as `+46.8u IN AUGUST` (94/3R) — printer open wins, diary loses. |
 | `Most people try to become sharp` (clone / OG variant) | 182 / 89 · **0R** | Likes without conversation. Spent. Not an ask vehicle. |
 | `Seems legit` · `Chris Sale ✅✅` · empty `run it back` | weak / 0R | Caption, recap checklist, serialization without a new scar. |
+| `$0 ON LOUISVILLE` (Sep 6, killed pre-post) | — | QT that ignores the parent’s live slip. |
+| Sep 10 morning 1834 impr / 0R | — | **Not a death.** Partial day, 0 posts yet. |
 
 ### Ask temperature (as of this ingest)
 
 **Cold-warm. Next slot = give, not ask** unless Dale overrides.
 
-Convert-as-open died. The Dom 30-day that *posted* was thankful/adjust-to-tiers (35 eng), not the pudding+free-week draft. Free SPCL that still pulls a next step: `$XK at Y×` · anti-sexy printer · valley/ownership. URL-in-hero still does not convert.
+MLB first-week ask already fired Sep 6. Sep 6–7 then printed the best reply days of the quarter. Convert-as-open still 1 eng. Free SPCL that still pulls a next step: `$XK at Y×` · unfinished stake on **new** leftover · anti-sexy printer · pain-first loud pile. URL-in-hero still does not convert.
 
 ### Hook QA addendum (from this CSV)
 
-Line 1 must be **S and/or C a stranger can screenshot** — `$XK at Y×` / disaster-hole / valley units / anti-sexy + printer image.  
+Line 1 must be **S and/or C a stranger can screenshot** — `$XK at Y×` / disaster-hole / loud pile classified / unfinished leftover / anti-sexy + printer image.  
 Feelings, thankfulness, “I don’t know what you’re paying,” promo codes, and “here is how the month played” fail this test **in market**, not just in theory.
+
+**Account-overview addendum (9/10):** Sep 7’s 48-reply day is the conversation bar. We cannot clone its open (unknown). Default next slot = **NFL Thursday live give** — walk the board, don’t caption. Pair with “you don’t sit with the dead pile,” not Over/Under-as-brand.
 
 ---
 

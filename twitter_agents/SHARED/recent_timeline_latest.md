@@ -1,11 +1,43 @@
 # Recent timeline (analytics)
 
-**Window:** 2026-08-26 → 2026-09-01  
-**Source:** `twitter_agents/researcher/knowledge/sources/account_analytics_content_2026-08-26_2026-09-01.csv`  
-**Ingested:** 2026-09-01 (Hormozi desk — engagements > vanity; PV/replies = compliance proxies)  
-**Heroes in window:** 29 · median impr **2056** · hero eng **3452** · hero PV **659** · hero URL **7** (all on SUMMER)
+**Window:** 2026-06-13 → 2026-09-10 (Sep 10 **partial**)  
+**Source:** `twitter_agents/researcher/knowledge/sources/account_overview_analytics_2026-06-13_2026-09-10.csv`  
+**Type:** **Account overview (daily totals — no post text).** Notes: `sources/account_overview_2026-09-10_notes.md`  
+**Ingested:** 2026-09-10 (Hormozi desk — engagements / replies / PV / follows > vanity)  
+**X pull:** growthPulse **failed** (`xurl` NoAuthMethod). Cannot rank Sep 2–10 heroes by open.  
+**Post-level law (still binding):** Aug 26–Sep 1 content CSV — `sources/account_analytics_content_2026-08-26_2026-09-01.csv`
 
-## Top 10 by engagement (then replies / profile / URL)
+Scoreboard this file: **days**, not hooks. Last content-CSV top-10 remains the hook silhouette chart until a new content export lands.
+
+---
+
+## Account scoreboard — new window vs last content window
+
+| Window | Days | Avg impr | Avg eng | Avg R | Avg PV | Avg fol | Posts/d | eng/impr |
+|--------|------|----------|---------|-------|--------|---------|---------|----------|
+| Aug 26–Sep 1 (last content CSV) | 7 | 11800 | 181 | 12.3 | 113 | 7.0 | 1.1 | 1.54% |
+| **Sep 2–9 (since last ingest)** | 8 | **14211** | **248** | **22.8** | **135** | **8.0** | 1.0 | **1.74%** |
+| 89-day baseline | 89 | 9736 | 141 | 8.7 | 90 | 5.8 | 2.0 | 1.44% |
+
+Sep 2–9: **+37% eng/day · +85% replies/day** vs the already-good Aug 26–Sep 1 week, on **fewer** posts. Concentration + live CFB weekend beat volume.
+
+## Daily champions (cannot SPCL-tag — no post text)
+
+| # | Day | Eng | Impr | R | PV | Fol | Posts | Desk read |
+|---|-----|-----|------|---|----|-----|-------|-----------|
+| 1 | **Mon Sep 7** | **398** | 20375 | **48** | **198** | 11 | **1** | 89-day #1 on every compliance proxy. One unidentified post. |
+| 2 | Sun Sep 6 | 331 | 20781 | 31 | 191 | 5 | **3** | Identified cluster: MLB ask · Under give · Ole Miss QT · ND leftover QT staged |
+| 3 | Fri Aug 28 | 297 | 21196 | 29 | 166 | 12 | 2 | Inside last content CSV |
+| — | Wed Sep 9 | 196 | 14875 | 17 | 106 | 9 | 1 | One unidentified post (after weekend peak) |
+| — | Thu Sep 10 | 22 | 1834 | 0 | 20 | 2 | **0** | **Partial morning.** Not a death. Slot is open. |
+
+**Residual law:** Sep 2 and Sep 4 had **0 Create Post** and still **244 eng / 20R**. Good posts keep working. Do not spam to “use the slot.”
+
+**Follows outlier (not this week):** Aug 11 = **62** new follows. Do not chase that day-shape.
+
+## Post-level top 10 (LAST CONTENT CSV — still hook law)
+
+Window Aug 26–Sep 1 · 29 heroes · median 2056 impr. Ranked by engagements then replies / PV.
 
 | # | Eng | Impr | R | PV | URL | Fol | SPCL | Open |
 |---|-----|------|---|----|-----|-----|------|------|
@@ -20,87 +52,72 @@
 | 9 | **170** | 1912 | 2 | 19 | 0 | 0 | **S** | $381K on one soccer ticket. Barcelona ML. 6.0× his usual. |
 |10 | **170** | 1586 | 0 | **37** | 0 | 0 | **SC** | Dipping a toe back in tonight trusting this A-tier sharp. +$545K |
 
-## Compliance proxies (not vanity)
+## Compliance proxies (content CSV — still)
 
-**Replies (conversation):**
-1. **9R** / 90 eng / 35 PV — `IF YOU'RE LOST ON THE SITE.....THAT'S ON ME.` (onboarding FAQ)
-2. **8R** / 171 eng — `DOWN 76 UNITS. THEN V12 WENT LIVE.`
-3. **5R** / 237 eng — Cubs `$120K AT 2× USUAL`
-4. **4R** / 81 eng / **46 PV** — golfing-rinse honesty (`Sharps indeed did not go golfing… rinsed`)
+**Replies:** lost-on-site **9R** · `DOWN 76 UNITS` **8R** · Cubs `$120K` **5R**  
+**PV:** anti-sexy printer **49** · golfing-rinse **46** · Brewers toe-dip **37**  
+**URL:** only SUMMER has 7 — dead hero (13 eng). URL-in-hero ≠ trials.
 
-**Profile visits (next-step):**
-1. **49 PV** — No sexy post / preseason printer
-2. **46 PV** — golfing-rinse honesty (mid eng, high curiosity)
-3. **37 PV** — Brewers toe-dip A-tier (`+$545K` / 0.6× usual)
-4. **35 PV** — bounce 10+ / Nats 7-1 cash / lost-on-site (tie)
+Account-overview addendum: **Sep 7 = 48 replies in one day** (file max). That is the conversation peak to beat. We cannot name the open until a content CSV or X auth.
 
-**URL clicks:** only SUMMER promo has 7 — and that hero is dead (13 eng). Compliance ≠ link-in-hero.
+## SPCL mix (content CSV top 10 — what’s still hot for hooks)
 
-## SPCL mix (top 10 — what’s hot)
+- **S**: 7/10 · **C**: 8/10 · **L**: 3/10 · **P**: 2/10  
+**Hot letters:** **S + C** live `$XK at Y×`. **L+C** anti-sexy printer = PV. **P+C** valley = replies among proof posts.
 
-- **S**: 7/10
-- **C**: 8/10
-- **L**: 3/10 (anti-sexy + golfing + become-sharp)
-- **P**: 2/10 (lab-after-smoke · valley→ATH)
-
-**Hot letters this window:** **S + C** live `$XK at Y×` (Cubs #1). **L+C** anti-sexy printer is the **PV champion**. **P+C** valley (`DOWN 76`) is the **reply champion** among proof posts. Onboarding ownership is the **reply factory** (9R) when PURPOSE=buzz.
+Sep 6–7 account spike is consistent with **S+C live-board / unfinished stake** (ND leftover QT + CFB QTs + MLB printer ask), not with convert-as-open.
 
 ## Soft / spent / don’t echo
 
-| Eng | Impr | R | PV | Open | Verdict |
-|-----|------|---|----|------|---------|
-| **1** | 272 | 0 | 0 | I don't know what people are using for their data or what they're paying… Upgrade 25% | **DEAD as hero.** Convert paragraph as line 1. |
-| **4** | 333 | 0 | 3 | I don't know what you're using for your data or model right now. | Convert lecture as open. Dead. |
-| **13** | 216 | 0 | 0 | Start free PROMO CODE - SUMMER | Promo-code hero. Dead. 7 URL clicks ≠ trials. |
-| **21** | 695 | 1 | 11 | This is a thing? Show me my report card @grok | Gimmick. Not our job. |
-| **35** | 918 | 1 | 10 | Thankful to have someone like Dom willing to dive in. | Customer QT opened on **Dale feelings**. Dead vs parent’s +7.53u. |
-| **44** | 754 | 1 | 4 | Here is how the last 30 days played. We really were on something this month. | Soft recap furniture. August MTD hook (`+46.8u IN AUGUST`) was the same idea done right (94/3R). |
-| **53** | 470 | 1 | 2 | Seems legit | Bare caption. Kill. |
-| **73** | 2167 | 0 | 31 | RIGHT NOW IT'S JUST US. (Sports folder) | Reach without replies. Dream QT spent. |
-| **89** | 1620 | 0 | 9 | Most people try to become sharp. This long-time OG… | Philosophy + OG clone. 0 replies. |
-| **133** | 3762 | 1 | 14 | SAME PRINTER THAT HIT THE NATS 7-1. NOW 2.0× ON THE BRAVES. Should we run it back?? | Impression trap. Serialization without new scar. |
-| **138** | 3107 | 0 | 30 | Chris Sale legacy game. Braves ML ✅✅ | Recap checklist. 0 replies. |
+Content-CSV deaths **still bind** (no new post-level kills from this file):
 
-**Kill:** convert-paragraph as line 1 · SUMMER/promo-code · thankful/OG-gratitude QT · “here is how the last 30 days played” · Seems legit · become-sharp clone · ✅✅ recap · empty “run it back” · Sports-folder dream restage · −76u valley restage · Grok report-card bit
+| Eng | Open | Verdict |
+|-----|------|---------|
+| **1** | Convert paragraph / Upgrade 25% | **DEAD as hero.** Close only. |
+| **4** | Lecture-ask data/model | Dead. |
+| **13** | Start free PROMO CODE - SUMMER | Dead. 7 URL clicks ≠ trials. |
+| **35** | Thankful to have someone like Dom… | Gratitude QT. Dead vs parent’s result. |
+| **44** | Here is how the last 30 days played | Recap furniture. Printer open wins. |
+| 0R | Most people try to become sharp (clones) | Likes, no conversation. Spent. |
 
-## Themes spent this window
-- Cubs `$120K at 2×` + `$545K` A-tier (posted · **#1**)
-- Nats 13-1 → size-up → 7-1 cash → Braves “run it back”
-- Anti-sexy NFL preseason printer (PV king — spent as that exact open)
-- Become-sharp philosophy (likes, **0 replies** — spent)
-- V12 valley→ATH `DOWN 76 UNITS` (**8R** — don’t rerun the −76u open)
-- Onboarding “lost on the site” (**9R** — don’t rerun unless PURPOSE=buzz)
-- Golfing slow-board → rinse honesty
-- August MTD `+46.8u IN AUGUST` size-educate (94/3R — posted)
-- Under 7.5 mix + bounce 10+ (posted)
-- Brewers 2u toe-dip (posted)
-- **Dom 30-day** posted as thankful/adjust-to-tiers (35 eng) — **not** the staged convert-ask; hook failed
+**Kill (unchanged):** convert-as-open · SUMMER · thankful OG · recap furniture · Seems legit · become-sharp clone · ✅✅ recap · empty run-it-back · Sports-folder restage · −76u restage · `$0 ON LOUISVILLE` · Over/Under-as-brand · system-label identity
+
+## Themes spent
+
+**This overview window (Sep 2–9, qualitative):** MLB `+104.95u` ask (Sep 6 AM) · `$5.2K` Under give · Ole Miss -7 QT · ND `2 HIT / ONE LEFT` leftover · unidentified Sep 7 champion · unidentified Sep 9 post.
+
+**Still spent from content CSV:** Cubs `$120K at 2×` · anti-sexy NFL-preseason printer sentence · become-sharp · `DOWN 76` open · lost-on-site FAQ · August `+46.8u` table restage.
 
 ## Unfinished / serialization still open
-- First **NFL / CFB lock** — live S or P; August already framed size
-- Same-printer chase only with a **new** scar/$ — don’t clone Nats→Braves
-- >5u / unit-tier filter as Status spear (update the book, don’t re-explain August)
-- Onboarding FAQ energy — only if PURPOSE=buzz, not every hero
-- Convert ask still **unearned on-timeline** (the version that posted died; the staged pudding+ask never shipped as written)
+
+- **NFL week 1 first lock — Thu Sep 10 TODAY.** Live S or C give. This was the parked slot.
+- ND / Ole Miss only with a **new** scar/$ — weekend already used the leftover-list silhouette
+- Nats +$69K parked hero
+- Convert ask still unearned as a **hero** (Sep 6 ask fired; convert-as-open still death)
 
 ## Ask temperature
-**Cold-warm.** Do **not** fire another convert hero next.
-- Convert-as-open = **1 eng** (worst hero in window)
-- Thankful customer QT = **35 eng**
-- SUMMER = **13 eng** (only URL clicks in the file)
-- Free SPCL that *does* pull next-step: `$XK at Y×` (replies) · anti-sexy printer (PV) · valley/ownership (replies)
-- URL-in-hero still does not convert. Ask close after pudding; convert words never line 1; DM/link in SR when PURPOSE=ask
+
+**Cold-warm. Next slot = give, not ask** unless Dale overrides.
+
+- MLB first-week ask already shipped Sep 6
+- Sep 6–7 then printed the best reply/PV days of the 89-day file — free SPCL after the ask, not another ask
+- Convert-as-open still **1 eng** on the content CSV
+- URL-in-hero still does not convert
 
 ## FORWARD LOOK (what the feed needs next)
-1. **Live board moment with S or C in line 1** — `$XK at Y× usual` silhouette (Cubs #1). First NFL/CFB lock if it exists. Give, not ask.
-2. Quiet board → **anti-sexy printer** (PV champion) — only if a real printer is on the card. Don’t clone the NFL-preseason sentence onto baseball.
-3. Skip convert / thankful OG / become-sharp / SUMMER / −76u / August table restage / run-it-back empty.
+
+1. **NFL Thursday live give** — pain-first if a loud pile exists; `$XK` / unfinished-stake / dead-pile vs our side. Walk the board (proof machine). No ask.
+2. Grade ND / Ole Miss only with a **new** receipt.
+3. Nats +$69K only if Dale spines it — not the default morning.
+
+**NOT:** another convert/MLB ask · `$0 ON LOUISVILLE` · most-bet list clone · SUMMER/UPGRADE open · GOLD/Vault/AGS/V12 identity · Aug 11 follow-spike cosplay · restage `$120K` / `DOWN 76` / lost-on-site
 
 ## Silhouettes safe to reuse (if they fit ONE)
-- `$XK AT Y× USUAL` + L30 WR (Cubs #1)
+
+- `$XK AT Y× USUAL` + L30 (Cubs #1) — **new tape only**
+- Unfinished stake (`2 HIT / ONE LEFT`) — **new leftover only**, not ND again
 - “No sexy post here…” + printer **in the image** (PV)
-- Honest L / rinse after a flex (`golfing` → rinsed) — PV
-- Ownership confront (`IF YOU'RE LOST… THAT'S ON ME`) — replies, buzz only
-- Size-educate printer open (`+46.8u IN AUGUST`) when the job is educate — not as a recap of a recap
+- Size-educate printer open (`+46.8u IN AUGUST` family) when PURPOSE=educate
+- Pain-first loud pile classified in ≤2 lines (2026 proof machine)
 
 *Ready for Dale spine → WHO → PURPOSE → ONE → 1–2 SPCL → craft. No tweet until he asks.*

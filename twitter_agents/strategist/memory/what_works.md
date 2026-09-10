@@ -60,3 +60,15 @@ Seed 2026-07-10:
 - **Proof over promise.** Start free. Four proof elements: recent · visual · volume-on-one-spear · **pain first** (loud side they’re already staring at, classified in ≤2 lines).
 - Vault: `hormozi_brand_pairing.md` · `hormozi_proof_machine.md`
 
+2026-09-10 r2 (Dale: Hormozi disgusted — starved caption):
+- Restart at PURPOSE. Do **not** tighten educate to 280. August `+46.8u / ALMOST 3× JULY` won WITH mechanism. MLB +104u was 531 chars of process.
+- Hook must stop a stranger: `2 RED NIGHTS.` / `This week is still +33.4u.` (paradox). Kill `USUAL` in line 1–2.
+- Body = walk all four cards + whole truth (Aug 28 −30.3u, red weeks −16.2/−13.3/−8.6, July ugly) + expect-if-you-use-this close. No ask.
+
+2026-09-10 (account-overview CSV — daily totals, no post text):
+- Sep 2–9 beat the last content week on the scoreboard that matters: **+37% eng/day · +85% replies/day** at ~1 post/day.
+- **Mon Sep 7 = 89-day champion** (398 eng / 48R / 198 PV on **one** post). Concentration + live board > more posts. Open unidentified (X auth down).
+- Residual days with 0 Create Post still printed 20R (Sep 2, Sep 4) — do not spam the slot.
+- Ask already fired Sep 6. Next slot stays **give**. NFL Thursday is the parked unfinished stake.
+- Post-level hook chart unchanged: `$XK at Y×` · anti-sexy printer · valley/ownership. Convert-as-open still death.
+
