@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   positionMatchesPolyEvent,
+  slugDatesAreBoardLeftovers,
   WRONG_GAME_EXIT_REASONS,
 } from '../scripts/lib/positionEventMatch.js';
 
@@ -97,6 +98,49 @@ assert.equal(
   ).ok,
   false,
   'ID churn with no slug stays unverified',
+);
+
+// TNF night-game: Poly slug uses UTC date (00:35Z Sep 11) on the Sep 10 ET board.
+// Writer keeps it via eventId; lock-create must not treat +1 slug as a leftover.
+const tnfPos = {
+  eventId: '776490',
+  slug: 'nfl-sf-la-2026-09-11-spread-home-3pt5',
+};
+const tnfPoly = {
+  eventId: '776490',
+  polyGameDate: '2026-09-10',
+  slug: 'nfl-sf-la-2026-09-11',
+};
+const tnfBoard = { boardDate: '2026-09-10', sport: 'NFL' };
+assert.equal(
+  positionMatchesPolyEvent(tnfPos, tnfPoly, 'sf_lar', tnfBoard).ok,
+  true,
+  'TNF UTC-dated slug on tonight ET board is a match',
+);
+assert.equal(
+  slugDatesAreBoardLeftovers(['2026-09-11'], '2026-09-10'),
+  false,
+  'TNF +1 UTC slug is not a leftover',
+);
+assert.equal(
+  slugDatesAreBoardLeftovers(['2026-09-10', '2026-09-11'], '2026-09-10'),
+  false,
+  'mixed today/+1 slugs are not leftovers',
+);
+assert.equal(
+  slugDatesAreBoardLeftovers(['2026-08-07'], '2026-08-08'),
+  true,
+  'yesterday WNBA leftover still blocks create',
+);
+assert.equal(
+  slugDatesAreBoardLeftovers(['2026-09-10'], '2026-09-10'),
+  false,
+  'same-day slug is not a leftover',
+);
+assert.equal(
+  slugDatesAreBoardLeftovers([], '2026-09-10'),
+  false,
+  'no slug dates do not block',
 );
 
 console.log('testPositionEventMatch: ok');
