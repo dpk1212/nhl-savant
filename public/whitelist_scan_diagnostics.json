@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-09-10T15:25:21.858Z",
-  "elapsedSec": 39.9,
+  "scannedAt": "2026-09-10T15:30:03.968Z",
+  "elapsedSec": 39.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 134,
   "summary": {
     "total": 323,
-    "coveredByMain": 27,
-    "recovered": 13,
-    "recoveredPositions": 201,
-    "noPositions": 283,
+    "coveredByMain": 29,
+    "recovered": 14,
+    "recoveredPositions": 204,
+    "noPositions": 280,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,8 +16,8 @@
       "ml": 2,
       "spread": 1,
       "total": 3,
-      "dropped_shadow_gate": 127,
-      "dropped_excluded": 67,
+      "dropped_shadow_gate": 128,
+      "dropped_excluded": 69,
       "dropped_duplicate": 1
     }
   },
@@ -193,8 +193,7 @@
       "tier": "CONFIRMED",
       "name": "NM-P",
       "sports": "SOC,MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xcf7379b4b891c06d88807f6f70efa75378120215"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "12192c",
@@ -661,7 +660,7 @@
           "gameKey": "sf_lar",
           "marketType": "total",
           "side": "over",
-          "invested": 7147,
+          "invested": 7230,
           "entryLine": 48.5,
           "passesShadow": true
         },
@@ -2575,8 +2574,24 @@
       "tier": "FLAT",
       "name": "AnonymousUsername",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 8849,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "tbr_atl",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 9939,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "9bc9a1",
@@ -3159,12 +3174,21 @@
       "sports": "SOC,MLB,NBA,NFL,CFB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 77,
+      "positionsCount": 78,
       "statsSource": "profile.bySport.positions",
-      "avgSportBet": 1002,
-      "willPassShadowGate": 25,
+      "avgSportBet": 6523,
+      "willPassShadowGate": 26,
       "willDropAtShadowGate": 52,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "tbr_atl",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 3660,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "CFB",
           "gameKey": "unlv_unt",
@@ -4109,8 +4133,7 @@
       "tier": "FLAT",
       "name": "IcemanSeason",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xb9392e612a5b05063ca012b5dede548e16e5da70"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "e70853",
@@ -4191,11 +4214,11 @@
       "sports": "SOC,NBA,NFL,UFC,CFB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 9,
+      "positionsCount": 10,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 34280,
       "willPassShadowGate": 5,
-      "willDropAtShadowGate": 4,
+      "willDropAtShadowGate": 5,
       "positions": [
         {
           "sport": "MLB",
@@ -4211,7 +4234,7 @@
           "gameKey": "sf_lar",
           "marketType": "total",
           "side": "under",
-          "invested": 12133,
+          "invested": 12227,
           "entryLine": 48.5,
           "passesShadow": true
         },
@@ -4267,6 +4290,15 @@
           "side": "over",
           "invested": 19,
           "entryLine": 66.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "utsa_txst",
+          "marketType": "total",
+          "side": "over",
+          "invested": 15,
+          "entryLine": 64.5,
           "passesShadow": false
         },
         {
