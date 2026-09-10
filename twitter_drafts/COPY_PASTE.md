@@ -1,6 +1,6 @@
 # Twitter — 2026-09-10 PM · QT GIVE · fade Trent / tonight he might be right / Rams sharps
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not the July loop)
-**r3:** Dale: HORMOZI WOULD NOT APPROVE. Restart at PURPOSE. His words are the copy. Do not rewrite them into a hook.
+**r4:** Body held. Hook failed. Dale: hook is the most important part. Rewrite hook only — line 2 = unique (9/01 eve).
 
 | | |
 |--|--|
@@ -69,10 +69,12 @@ Trent: Rams −3.5 · **3u** · TNF mortal mega max
 **Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · ELITE · locked · he’s right (he said *might*) · unanimous
 
 ### 6 · HOOK QA
+Hormozi / Dale 9/01: obsess over the hook. Line 2 = interesting/unique (`ALMOST 3× JULY`). Person + number + paradox. Rewrite hook before touching body.
+
 What: $51K at 4.4×.  
-How: we normally fade Trent. Tonight he might be right.  
-So what: here are the sharps also on the Rams.  
-Screenshot: stranger sees **$51K / 4.4×**.  
+How: on the guy we fade.  
+So what: tonight he might be right — then walk the Rams sharps.  
+Screenshot: stranger sees **$51K / 4.4× / fade** in two lines.  
 QT law: parent owns MEGA MAX. We do not open on that.
 
 **Killed r1**
@@ -87,17 +89,24 @@ Workshop. Nobody talks like that.
 We fade this guy.
 Tonight he's on the right side.
 ```
-Rewrote Dale’s sentence into a punch line. He said *might*. Then he said walk the sharps. We captioned instead.
+Rewrote Dale’s sentence into a punch line.
 
-**Chosen** — his words after the $ screenshot
+**Killed r3 (Dale: hook sucks)**
 ```
 $51K AT 4.4×
 
 We normally fade Trent.
 Tonight he might be right.
 ```
+Empty-clone printer. Line 2 is a diary setup, not the unique. $ and fade never collide. August law: line 2 has to twist.
 
-Then the walk. That *is* the Hormozi post.
+**Chosen** — printer + paradox in two lines (August shape, new tape)
+```
+$51K AT 4.4×
+on the guy we fade.
+```
+
+His three sentences stay in the body. Then the walk.
 
 ---
 
@@ -113,6 +122,7 @@ Then the walk. That *is* the Hormozi post.
 
 ```
 $51K AT 4.4×
+on the guy we fade.
 
 We normally fade Trent.
 Tonight he might be right.
@@ -130,7 +140,7 @@ $150K on the 49ers. We're not on that.
 2u. Flagged. Locks 8:20 ET.
 ```
 
-[Open in X →](https://x.com/intent/tweet?text=%2451K%20AT%204.4%C3%97%0A%0AWe%20normally%20fade%20Trent.%0ATonight%20he%20might%20be%20right.%0A%0ASharps%20we%20track%20are%20on%20the%20Rams%20too.%0A%0A%2451%2C000%20on%20Rams%20-3.5.%204.4%C3%97%20what%20he%20usually%20bets.%209-1%20this%20season.%20Last%2030%20days%207-1%2C%20%2B%2445K.%0A%0AAnother%20one%3A%20%2458K%20on%20the%20same%20number.%207.9%C3%97%20his%20usual.%0A%0AThe%20number%20steamed.%20Opened%20-3.%20Sitting%20-3.5.%0A%0A%24150K%20on%20the%2049ers.%20We%27re%20not%20on%20that.%0A%0A2u.%20Flagged.%20Locks%208%3A20%20ET.)
+[Open in X →](https://x.com/intent/tweet?text=%2451K%20AT%204.4%C3%97%0Aon%20the%20guy%20we%20fade.%0A%0AWe%20normally%20fade%20Trent.%0ATonight%20he%20might%20be%20right.%0A%0ASharps%20we%20track%20are%20on%20the%20Rams%20too.%0A%0A%2451%2C000%20on%20Rams%20-3.5.%204.4%C3%97%20what%20he%20usually%20bets.%209-1%20this%20season.%20Last%2030%20days%207-1%2C%20%2B%2445K.%0A%0AAnother%20one%3A%20%2458K%20on%20the%20same%20number.%207.9%C3%97%20his%20usual.%0A%0AThe%20number%20steamed.%20Opened%20-3.%20Sitting%20-3.5.%0A%0A%24150K%20on%20the%2049ers.%20We%27re%20not%20on%20that.%0A%0A2u.%20Flagged.%20Locks%208%3A20%20ET.)
 
 ### Self-reply
 None.
@@ -139,10 +149,11 @@ None.
 
 ## 2 · HERO — only if you will not QT
 
-Same text. Trent is already named. Do **not** @ him.
+Noun has to live in the hook if there is no parent. Do **not** @ him.
 
 ```
 $51K AT 4.4×
+on Trent. We fade him.
 
 We normally fade Trent.
 Tonight he might be right.
@@ -163,4 +174,4 @@ $150K on the 49ers. We're not on that.
 **Attach:** Action card → flagged card.
 
 ### RT line
-`$51K AT 4.4×. We normally fade Trent. Tonight he might be right.`
+`$51K AT 4.4× on the guy we fade.`

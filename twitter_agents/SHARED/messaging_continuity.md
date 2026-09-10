@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-10 PM r3 · QT GIVE · fade Trent / tonight he might be right / walk Rams sharps |
+| Last updated | 2026-09-10 PM r4 · QT GIVE · hook rewrite · `$51K AT 4.4×` / on the guy we fade |
 | CSV window | Account overview Jun 13–Sep 10 · post-level law Aug 26–Sep 1 content CSV |
 | Ask temperature | **Cold-warm.** Give. MLB ask already fired Sep 6. This post = no ask. Next slot still give unless Dale spines an ask. |
 | Account arc | Morning educate (2 red nights / week +33.4u) staged, not restaged. First NFL Thursday is the live walk. |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/10 PM r3 | QT **GIVE/BUZZ** | `$51K AT 4.4×` / We normally fade Trent. Tonight he might be right. Then walk Rams sharps | **S + C** | none | **Staged — Dale spine is the copy** |
+| 9/10 PM r4 | QT **GIVE/BUZZ** | `$51K AT 4.4×` / on the guy we fade · then fade/might/walk | **S + C** | none | **Staged — hook rewrite** |
 | 9/10 AM r2 | Hero **EDUCATE/GIVE** | `2 RED NIGHTS.` / week still +33.4u (2×+ normal) · 99-night walk | **C + L** | none | Staged — spent; do not restage |
 | 9/10 AM | Ingest | Account-overview CSV | — | none | Done |
 | 9/09 | Hero? | Unidentified (1 Create Post · 196 eng / 17R) | ? | ? | X auth down |
@@ -28,11 +28,12 @@
 ## Angle lock
 **ONE:** We normally fade Trent. Tonight he might be right. Sharps we track are also on the Rams.  
 **Yum:** you see the Rams sharps before 8:20. You are not sitting with the $150K 49ers ticket.  
-**Hook:** `$51K AT 4.4×` / `We normally fade Trent.` / `Tonight he might be right.`  
-**Body:** the walk — $51K 4.4× 9-1 L30 · $58K 7.9× · steam −3 → −3.5 · $150K 49ers we’re not on · 2u flagged · locks 8:20  
+**Hook:** `$51K AT 4.4×` / `on the guy we fade.`  
+**Body:** We normally fade Trent. Tonight he might be right. Then the walk.  
 **Ask:** none. QT of Trent’s 4h TNF 3u Rams post.  
+**Killed r3 hook:** `$51K AT 4.4×` + diary setup — empty-clone printer, line 2 not unique  
 **Killed r1:** `Same side I fade this guy on` · `That's the bit`  
-**Killed r2:** `Tonight he's on the right side` (he said *might*) · clever-paradox caption instead of the walk
+**Killed r2:** `Tonight he's on the right side`
 
 ---
 
