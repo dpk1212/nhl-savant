@@ -2137,7 +2137,7 @@ function JourneyStop({ label, time, odds, color, active }) {
  * Compact: glass pill with tnum countdown → green Check seal when locked.
  * Expanded: larger digital time + progress bar to freeze (countdown) or seal copy.
  */
-function LockFreezeStatus({ commenceMs, compact, strip, bare }) {
+function LockFreezeStatus({ commenceMs, compact, strip, bare, banner }) {
   const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -2211,6 +2211,37 @@ function LockFreezeStatus({ commenceMs, compact, strip, bare }) {
             </span>
           </>
         )}
+      </div>
+    );
+  }
+
+  // Full status line under the header: this ticket is FLAGGED, not final —
+  // it locks at T-15. Says so in words, with the live countdown and the ET
+  // time, so nobody mistakes a provisional flag for a sealed ticket.
+  if (banner) {
+    if (frozen) return null; // the green SET pill already says it
+    const tone = urgent ? '#F87171' : closing ? B.goldHi : C.textSec;
+    return (
+      <div
+        title={`Provisional until T-15 — stake and price can still adjust · locks ${lockEt} ET`}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 7,
+          margin: '-10px 0 16px',
+          fontSize: 11.5, fontWeight: 500, color: C.textMuted,
+          fontFeatureSettings: "'tnum'", letterSpacing: '0.01em',
+        }}
+      >
+        <Clock size={11} strokeWidth={2.8} style={{ color: tone, flexShrink: 0 }} />
+        <span style={{
+          fontSize: 9, fontWeight: 800, letterSpacing: '0.11em',
+          color: B.goldHi, textTransform: 'uppercase',
+        }}>
+          Flagged
+        </span>
+        <span>
+          locks in <span style={{ fontWeight: 700, color: tone }}>{rem}</span>
+          {' · '}{lockEt} ET
+        </span>
       </div>
     );
   }
@@ -2593,7 +2624,6 @@ function CollapsedHeader({ live, inClassName }) {
           <GradedResultPill outcome={f.outcome} profit={f.profit} units={f.units} toWin={f.toWin} compact />
         ) : (
           <>
-            <LockFreezeStatus commenceMs={f.commenceMs} bare />
             {ticketFrozen ? (
               <span
                 title="Ticket sealed at T-15 — set for grading"
@@ -2710,7 +2740,7 @@ function CollapsedHero({ live, pickClass, americanOnly = false }) {
             fontSize: 12, fontWeight: 600, fontFeatureSettings: "'tnum'",
             color: payoutColor, letterSpacing: '-0.01em',
           }}>
-            {americanOnly && !graded && (
+            {!graded && (
               <span style={{ color: C.textFaint, fontWeight: 450, marginRight: 4 }}>to win</span>
             )}
             {payoutLabel}
@@ -2783,7 +2813,7 @@ function TicketPerforation({ edgeAura }) {
  */
 function CollapsedTicketFace({ live, order = 'verdict', gid }) {
   const { f } = live;
-  const hero = <CollapsedHero live={live} pickClass="live-pick" americanOnly />;
+  const hero = <CollapsedHero live={live} pickClass="live-pick" />;
   const trust = <LockedCollapsedStrength f={f} face="subscriber" boardAbove />;
   const money = <LockedCollapsedBattleBars f={f} face="subscriber" flush />;
   const tape = (
@@ -2801,6 +2831,10 @@ function CollapsedTicketFace({ live, order = 'verdict', gid }) {
   return (
     <CollapsedCardFrame live={live} extraClass={`live-ticket live-order-${order}`}>
       <CollapsedHeader live={live} />
+      {/* Provisional state, said out loud — flagged now, official at T-15. */}
+      {!live.tracked && !live.graded && (
+        <LockFreezeStatus commenceMs={f.commenceMs} banner />
+      )}
       {order === 'verdict' && (
         <>{hero}{board}{trust}{perf}{tape}<SectionRule />{money}</>
       )}
