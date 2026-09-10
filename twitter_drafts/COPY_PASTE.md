@@ -1,97 +1,103 @@
-# Twitter — 2026-09-10 PM · QT GIVE · fade-Trent except tonight (Rams −3.5)
-**Pathway:** `hormozi_tweet_process.md` (not the July Coach/Researcher/Strategist/Editor loop)
-**r2:** Dale killed the workshop voice. `Same side I fade this guy on` / `That's the bit` = nobody talks like that. Restart at PURPOSE. Hook first. Stuff stays.
+# Twitter — 2026-09-10 PM · QT GIVE · fade Trent / tonight he might be right / Rams sharps
+**Pathway:** `hormozi_tweet_process.md` (Hormozi only — not the July loop)
+**r3:** Dale: HORMOZI WOULD NOT APPROVE. Restart at PURPOSE. His words are the copy. Do not rewrite them into a hook.
 
 | | |
 |--|--|
-| WHO | Someone who fades Trent on sight — and a stranger staring at a 3u kangaroo meme who thinks that’s the information. |
-| PURPOSE | Give / buzz. Walk the board under his post. |
-| ONE | We fade this guy. Tonight he’s on the right side — a wallet we track just pressed $51K at 4.4× on Rams −3.5. |
-| SPCL | S + C |
+| WHO | Someone who fades Trent on sight — and a stranger looking at a 3u kangaroo meme who thinks that’s the information. |
+| PURPOSE | Give / buzz. Walk the Rams sharps under his post. |
+| ONE | We normally fade Trent. Tonight he might be right. Sharps we track are also on the Rams. |
+| SPCL | S + C (L is his sentences) |
 | Timeline | Ask fired Sep 6. Cold-warm. Give. Do not restage 2 RED NIGHTS. |
 | Ask | **None.** No URL. No trial. No self-reply. |
 
 ---
 
-### 0 · Spine
-Dale: we normally fade Trent. Today he is on the right side. One major sharp is on this play.
-Assets: Trent 3u Rams −3.5 (PrizePicks meme, ~4h) · our flagged card 2.0u · Action sharp …bba3 $51.0K / 4.4× / 9-1.
-Constraint: **give, not ask.** Pre T−15 (8:20pm ET). Do not say locked. Do not @ him in a native hero. QT = the parent.
+### 0 · Spine (Dale — law, do not rewrite)
+- We normally fade Trent
+- Tonight he might be right
+- Here are some sharps also on the Rams
+Assets: Trent 3u Rams −3.5 (~4h) · flagged card 2.0u · Action …bba3 $51.0K / 4.4× / 9-1 · JSON also …7da3d5 $58K / 7.9× same −3.5
+Constraint: give, not ask. Pre T−15 (8:20pm ET). Do not say locked. QT = the parent. Do not @.
 
 ### 0b · Timeline
-Ask fired Sep 6. Cold-warm. **Give.** Forward-look slot #1 was NFL Thursday live walk. Dale’s spine *is* that slot. Convert-as-open still death. Do not restage 2 RED NIGHTS. Do not use `USUAL` in line 1–2. Do not restate Trent’s TNF MEGA MAX open.
+Ask fired Sep 6. Cold-warm. **Give.** Forward-look slot #1 was NFL Thursday live walk. This is that slot. Convert-as-open still death. Do not restage 2 RED NIGHTS. Do not use `USUAL` in line 1–2. Do not restate his TNF MEGA MAX open.
 
-### 0c · Forward look (this request)
-Avatar needs a live NFL ticket with scarce $ / size, not another variance report. S+C starved since the morning educate. Dale override matches slot #1.
+### 0c · Forward look
+Avatar needs a live NFL ticket with scarce $ / size. S+C starved since the morning educate. Dale’s spine *is* slot #1.
 
 ### 1 · WHO
-Someone who fades Trent on sight — and a stranger staring at a 3u kangaroo meme who thinks that’s the information.
+Someone who fades Trent on sight — and a stranger who thinks the kangaroo meme is the information.
 
 ### 2 · PURPOSE
-**Give / buzz.** Walk the board under his post. No URL. No trial. No SR.
+**Give / buzz.** Walk the sharps on the Rams. No URL. No trial. No SR.
+
+Failure of r1/r2: PURPOSE got spent on a “clever fade paradox” instead of walking the board. Hormozi: demonstrate, don’t caption. Restart here.
 
 ### 3 · ONE
-**We fade this guy. Tonight he’s on the right side — because a wallet we track just pressed $51K at 4.4× on Rams −3.5.**
+**We normally fade Trent. Tonight he might be right — sharps we track are also on the Rams.**
 
 | Test | |
 |------|---|
-| Understand | We fade Trent. Tonight the tape is with him. |
-| Believe | $51,000 / 4.43× vs $11,525 avg (origin/main JSON) · Action 9-1 / +75% / L30 7-1 +$45K · steam −3 → −3.5 · 2u flagged |
-| Unique | The fade is the habit. Tonight the $ is why we don’t. Not “we like the Rams.” |
+| Understand | Fade is the habit. Tonight the wallets are with him. |
+| Believe | …bba3 $51,000 / 4.43× / Action 9-1 · L30 7-1 +$45K · …7da3d5 $58,317 / 7.89× · steam −3 → −3.5 · 2u flagged |
+| Unique | The fade + “might” + the walk. Not “we like the Rams.” Not “he’s right.” |
 
-**Yum:** you are not sitting with the $148K 49ers ticket. You see the press before 8:20.
+**Yum:** you see the Rams sharps before 8:20. You are not sitting with the $150K 49ers ticket.
 
 ### 4 · SPCL — **S + C**
-- **S** — $51K at 4.4× we control
-- **C** — 9-1 · L30 +$45K · steam −3 → −3.5 (third-party number moved)
-- L is voice. P is showing up on the first NFL Thursday (not a second spear)
+- **S** — $51K at 4.4× · $58K at 7.9× (scarce tape we control)
+- **C** — 9-1 · L30 +$45K · steam −3 → −3.5
+- **L** — Dale’s three sentences, not workshop
+- P is showing up on the first NFL Thursday (not a second spear)
 
-**Also seated:** pairing = not sitting with the losing/loud pile · proof machine = recent + visual (3 cards) + volume on one spear + pain first (the fade-Trent habit) · Qual = stuff in the words
+Past silhouette already in SPCL canon: `WE FADE ALMOST EVERYTHING TRENT… TODAY SAME SIDE`. This is that job on new tape.
 
-### 5 · STUFF (this run — files + Dale Action paste)
-From `origin/main` `public/sharp_spread_positions.json` NFL.sf_lar (pulled 5:31pm ET):
-- …bba3 (`c9bba3`) Rams −3.5 · **$51,000** · avgSportBet **$11,525** · **4.43×** · firstSeen 2026-09-10T21:19Z
-- Loud other side: …658e 49ers +3.5 · **$147,920** · 2.68×
-- Sides ~even ($153K away / $152K home) — do **not** say unanimous
-Dale Action (same wallet, this chat): 9-1 · +75% ROI · 90% WR · beat close 53% · L10 5-1 · L30 7-1 +$45K · NFL spread L30 2-0 · 51¢ −104 · steam −3 → −3.5
-Our card: Rams −3.5 −110 · **2.0u flagged** · locks **8:20pm ET** · ticket −110 · pin −113 · now −110
+**Also seated:** pairing = not sitting with the 49ers pile · proof machine = recent + visual + volume on one spear + pain first (the fade) · Qual = stuff in the walk
+
+### 5 · STUFF (origin/main JSON + Dale Action paste)
+NFL.sf_lar · sides still even ($155K away / $152K home) — do **not** say unanimous
+
+Rams −3.5 we can walk:
+- …bba3 (`c9bba3`) · **$51,000** · avg **$11,525** · **4.43×** · firstSeen 21:31Z · Dale Action: 9-1 · +75% ROI · 90% WR · L10 5-1 · L30 7-1 +$45K · NFL spread L30 2-0 · steam −3 → −3.5
+- …7da3d5 (`wr0ngw4yb3tt0r`) · **$58,317** · avg **$7,392** · **7.89×** · monthly +$781K · do **not** invent a W-L (no Action card this run)
+
+Loud other side: …658e 49ers +3.5 · **$149,858** · 2.71×
+Our card: Rams −3.5 −110 · **2.0u flagged** · locks **8:20pm ET**
 Trent: Rams −3.5 · **3u** · TNF mortal mega max
-**Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · locked · 7da3d5 second wallet · fade-or-ride on a clean pile
+
+**Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · ELITE · locked · he’s right (he said *might*) · unanimous
 
 ### 6 · HOOK QA
 What: $51K at 4.4×.  
-How: we fade this guy. Tonight he’s on the right side.  
-So what: the wallet is why.  
-Screenshot: stranger sees **$51K / 4.4×** without knowing us.  
-QT law: parent owns MEGA MAX / 3u kangaroo. We do not open on that.
+How: we normally fade Trent. Tonight he might be right.  
+So what: here are the sharps also on the Rams.  
+Screenshot: stranger sees **$51K / 4.4×**.  
+QT law: parent owns MEGA MAX. We do not open on that.
 
-**Killed (Dale — nobody talks like this)**
+**Killed r1**
 ```
 Same side I fade this guy on.
-
 I fade him. That's the bit.
 ```
-Workshop. Meta. “The bit” is an agency talking about its own angle.
+Workshop. Nobody talks like that.
 
-**Killed**
+**Killed r2**
 ```
-WE FADE TRENT.
-```
-Soft diary. No $ in 2 lines.
-
-**Killed**
-```
-TNF. RAMS -3.5.
-```
-Restates the parent.
-
-**Chosen** — Cubs `$XK AT Y×` silhouette + Dale’s actual sentence
-```
-$51K AT 4.4×
-
 We fade this guy.
 Tonight he's on the right side.
 ```
+Rewrote Dale’s sentence into a punch line. He said *might*. Then he said walk the sharps. We captioned instead.
+
+**Chosen** — his words after the $ screenshot
+```
+$51K AT 4.4×
+
+We normally fade Trent.
+Tonight he might be right.
+```
+
+Then the walk. That *is* the Hormozi post.
 
 ---
 
@@ -99,29 +105,32 @@ Tonight he's on the right side.
 
 **When:** NOW — quote Trent’s 4h TNF 3u Rams −3.5 post (tweet id not on this machine — paste as Quote).
 **Attach walk (after his meme):**
-1. Our flagged Rams −3.5 card (2.0u / −3 → −3.5 / locks 8:20)
-2. Action sharp card ($51.0K / 4.4× / 9-1)
+1. Action sharp card ($51.0K / 4.4× / 9-1)
+2. Our flagged Rams −3.5 card (2.0u / −3 → −3.5 / locks 8:20)
+3. Optional third: the $58K / 7.9× card if it’s on screen
 
 **No URL. No ask. No @ in the text.**
 
 ```
 $51K AT 4.4×
 
-We fade this guy.
-Tonight he's on the right side.
+We normally fade Trent.
+Tonight he might be right.
+
+Sharps we track are on the Rams too.
 
 $51,000 on Rams -3.5. 4.4× what he usually bets. 9-1 this season. Last 30 days 7-1, +$45K.
 
+Another one: $58K on the same number. 7.9× his usual.
+
 The number steamed. Opened -3. Sitting -3.5.
 
-There's $148K on the 49ers. We're not on that.
+$150K on the 49ers. We're not on that.
 
 2u. Flagged. Locks 8:20 ET.
-
-You fading him anyway?
 ```
 
-[Open in X →](https://x.com/intent/tweet?text=%2451K%20AT%204.4%C3%97%0A%0AWe%20fade%20this%20guy.%0ATonight%20he%27s%20on%20the%20right%20side.%0A%0A%2451%2C000%20on%20Rams%20-3.5.%204.4%C3%97%20what%20he%20usually%20bets.%209-1%20this%20season.%20Last%2030%20days%207-1%2C%20%2B%2445K.%0A%0AThe%20number%20steamed.%20Opened%20-3.%20Sitting%20-3.5.%0A%0AThere%27s%20%24148K%20on%20the%2049ers.%20We%27re%20not%20on%20that.%0A%0A2u.%20Flagged.%20Locks%208%3A20%20ET.%0A%0AYou%20fading%20him%20anyway%3F)
+[Open in X →](https://x.com/intent/tweet?text=%2451K%20AT%204.4%C3%97%0A%0AWe%20normally%20fade%20Trent.%0ATonight%20he%20might%20be%20right.%0A%0ASharps%20we%20track%20are%20on%20the%20Rams%20too.%0A%0A%2451%2C000%20on%20Rams%20-3.5.%204.4%C3%97%20what%20he%20usually%20bets.%209-1%20this%20season.%20Last%2030%20days%207-1%2C%20%2B%2445K.%0A%0AAnother%20one%3A%20%2458K%20on%20the%20same%20number.%207.9%C3%97%20his%20usual.%0A%0AThe%20number%20steamed.%20Opened%20-3.%20Sitting%20-3.5.%0A%0A%24150K%20on%20the%2049ers.%20We%27re%20not%20on%20that.%0A%0A2u.%20Flagged.%20Locks%208%3A20%20ET.)
 
 ### Self-reply
 None.
@@ -130,26 +139,28 @@ None.
 
 ## 2 · HERO — only if you will not QT
 
-Same ONE. Name Trent so the fade has a noun. Do **not** @ him.
+Same text. Trent is already named. Do **not** @ him.
 
 ```
 $51K AT 4.4×
 
-We fade Trent.
-Tonight he's on the right side.
+We normally fade Trent.
+Tonight he might be right.
+
+Sharps we track are on the Rams too.
 
 $51,000 on Rams -3.5. 4.4× what he usually bets. 9-1 this season. Last 30 days 7-1, +$45K.
 
+Another one: $58K on the same number. 7.9× his usual.
+
 The number steamed. Opened -3. Sitting -3.5.
 
-There's $148K on the 49ers. We're not on that.
+$150K on the 49ers. We're not on that.
 
 2u. Flagged. Locks 8:20 ET.
-
-You fading him anyway?
 ```
 
-**Attach:** flagged card then Action card.
+**Attach:** Action card → flagged card.
 
 ### RT line
-`$51K AT 4.4×. We fade this guy. Not tonight.`
+`$51K AT 4.4×. We normally fade Trent. Tonight he might be right.`
