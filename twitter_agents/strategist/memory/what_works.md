@@ -60,6 +60,11 @@ Seed 2026-07-10:
 - **Proof over promise.** Start free. Four proof elements: recent · visual · volume-on-one-spear · **pain first** (loud side they’re already staring at, classified in ≤2 lines).
 - Vault: `hormozi_brand_pairing.md` · `hormozi_proof_machine.md`
 
+2026-09-10 (two-red-nights expectation report — staged, not yet measured):
+- Dale spine: last 2 nights red → what day/week usually look like. PURPOSE=educate/give. Pain first (`TWO RED NIGHTS.`) then usual +1.9u. Not recap furniture. Not +169.7u as line 1.
+- Own **C + L**. Week paradox in the body (this week still +33.4u). Aug 28 −30.3u is whole truth, not the spear.
+- Attach walk = histogram → weeks → calendar → scatter. No ask.
+
 2026-09-10 (account-overview CSV — daily totals, no post text):
 - Sep 2–9 beat the last content week on the scoreboard that matters: **+37% eng/day · +85% replies/day** at ~1 post/day.
 - **Mon Sep 7 = 89-day champion** (398 eng / 48R / 198 PV on **one** post). Concentration + live board > more posts. Open unidentified (X auth down).

@@ -7,58 +7,60 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-10 AM · **CSV ingest only** · no draft this run |
-| CSV window | Account overview Jun 13–Sep 10 (Sep 10 partial) · post-level law still Aug 26–Sep 1 content CSV |
-| Ask temperature | **Cold-warm.** Give. MLB ask already fired Sep 6. |
-| Account arc | Sep 2–9 crushed the prior week (+85% replies/day). Sep 7 = 89-day #1 (398 eng / 48R / 1 post). Today = NFL week 1 Thursday. Slot open (0 posts this morning). |
+| Last updated | 2026-09-10 AM · Hero EDUCATE · two red nights → day/week grain |
+| CSV window | Account overview Jun 13–Sep 10 · post-level law Aug 26–Sep 1 content CSV |
+| Ask temperature | **Cold-warm.** Give. MLB ask already fired Sep 6. This post = no ask. |
+| Account arc | Last 2 nights red. Report Jun 1–Sep 9: usual night +1.9u · 3/5 green · 9 weeks / 5 red · book +169.7u. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/10 AM | **Ingest** | Account-overview CSV · no hero | — | none | **This run** |
+| 9/10 AM | Hero **EDUCATE/GIVE** | `TWO RED NIGHTS.` / usual night +1.9u · 3/5 · 9w/5r · +169.7u | **C + L** | none | **Staged** |
+| 9/10 AM | Ingest | Account-overview CSV | — | none | Done |
 | 9/09 | Hero? | Unidentified (1 Create Post · 196 eng / 17R) | ? | ? | X auth down |
 | 9/07 | Hero? | Unidentified (1 Create Post · **398 eng / 48R** file max) | ? | ? | X auth down |
-| 9/06 late PM | QT **BUZZ/GIVE** | `2 HIT. 2 MISSED. ONE LEFT.` / PIN max + steam · ND -20.5 | **S + C** | none | **Staged** (last identified copy) |
-| 9/06 AM r4 | Hero ASK | `+104.95u IN MLB` / 12 plays 11-1 | S + C | first week | Staged that morning |
+| 9/06 late PM | QT **BUZZ/GIVE** | `2 HIT. 2 MISSED. ONE LEFT.` / ND -20.5 | **S + C** | none | Staged earlier |
 
 ---
 
 ## Angle lock
-**No tweet this run.** Waiting on Dale’s morning concepts.  
-Last identified ONE: leftover most-bet side = ND -20.5 (spent as that weekend’s unfinished list).  
-**Today’s default slot (unless Dale overrides):** NFL Thursday live give. Pain first + S/C. No ask.
+**ONE:** Two red nights is the normal grain. Usual night +1.9u. 2 of 5 red. 5 of 14 weeks red. Book still +169.7u.  
+**Yum:** you see the real night, including the red ones.  
+**Hook:** `TWO RED NIGHTS.` / `A usual night is +1.9u.`  
+**Close:** 544-436-8 · +169.7u · 6.3%.  
+**Ask:** none.  
+**Attach walk:** histogram → weeks → calendar → scatter.
 
 ---
 
 ## Themes spent / open
-**Spent (do not echo as the same open):** ND leftover-list · MLB +104u ask · `$5.2K` Under · Ole Miss -7 QT as written · `$0 ON LOUISVILLE` · convert-as-open · SUMMER · thankful OG · `$120K at 2×` · `DOWN 76` · lost-on-site FAQ · become-sharp clones  
-**Still open:** **NFL week 1 Thursday lock (today)** · Nats +$69K · ND/Ole Miss only with a **new** scar  
-**Don’t:** convert hero · GOLD / Tier A / Vault / SHARP / AGS / V12 as identity · Over/Under-as-brand · restage Aug 11 62-follow day
+**Spent this beat (once posted):** two-red-nights expectation report · Jun 1–Sep 9 +1.9u usual · 9w/5r · Aug 28 −30.3u as the ugly night  
+**Still open:** NFL week 1 Thursday live lock · Nats +$69K · ND/Ole Miss only with a new scar  
+**Don’t:** convert · GOLD / Vault / AGS / V12 · `$0 ON LOUISVILLE` · recap furniture restage · clone `DOWN 76` · restage this report tomorrow
 
 ---
 
 ## Unfinished
-- NFL week 1 first lock = **today**
+- NFL week 1 first lock still live today — next slot unless Dale spines else
 - ND / Ole Miss — new receipt only
 - Nats +$69K parked
 - Sep 7 / Sep 9 opens unidentified until content CSV or X auth
 
 ---
 
-## FORWARD LOOK — after this ingest (next tweet)
-1. **NFL Thursday live give** — walk the board (proof machine). S+C. Pain-first if loud pile. Pair with “you don’t sit with the dead pile.”
-2. New-scar grade on ND / Ole Miss only if that’s Dale’s spine
+## FORWARD LOOK — after this posts
+1. **NFL Thursday live give** — S+C · pain-first if a loud pile · walk the board
+2. New-scar grade on ND / Ole Miss only if that’s the spine
 3. Nats +$69K only if he dumps it
-**NOT:** another ask · convert-as-open · most-bet list clone · `$0 ON LOUISVILLE` · caption-three-cards
+**NOT:** another ask · another variance-report restage · convert-as-open · most-bet list clone
 
 ---
 
 ## Agent close-out
-- [x] CSV copied to `sources/account_overview_analytics_2026-06-13_2026-09-10.csv`
-- [x] Ingest notes written (daily overview, not content)
-- [x] `recent_timeline_latest.md` overwritten
-- [x] Pathway LIVING WINDOW overwritten
-- [x] growthPulse failed — documented
-- [x] **No draft** until Dale sends morning concepts
+- [x] Dale spine: 2 red days → day/week expectation (overrides NFL-first forward look)
+- [x] Pain first. Not recap furniture. Not +169.7u as line 1
+- [x] Card numbers only. No invented Sep 8/9 units
+- [x] Give. No ask
+- [x] Staged `twitter_drafts/COPY_PASTE.md`

@@ -1,93 +1,92 @@
-# Twitter — 2026-09-06 late PM · QT BUZZ/GIVE · Fawkes most-bet list · ND -20.5
-**Dale:** ND -20.5 is one of the most bet plays this weekend. Indicators flashing: massive steam while Pinnacle max is rising. Sharp up $XXXX L30. Massive hook. Impressions / algorithm. QT the Fawkes 13K parent.
+# Twitter — 2026-09-10 AM · Hero EDUCATE/GIVE · two red nights → day/week expectation
+**Dale:** Negative last 2 days. Share a report on what you can expect day to day / week to week using this Sharp Flow tool. Four report cards (Jun 1–Sep 9).
 
 ---
 
 ### 0 · Spine
-- Parent (@BFawkes22, 13K): five most-bet Week 1 Top 25 sides at BetMGM. LSU -10 ✅ · Bama -28 ✅ · Indiana -40.5 ❌ · Oregon -24.5 ❌ · **ND -20.5 ?**
-- Dale: most-bet play · steam + **Pinnacle max rising** · sharp up L30
-- Receipts: lead **...3bdd7e** L30 **+$36K** · **$2.4K** on ND -20.5 · 3.0u locked · PIN chart spike · PIN **−105** / ticket **−130**
+- Last 2 posted nights red (calendar Sep 8–9). Do not invent those nights’ unit totals — cards don’t label them.
+- Report window **Jun 1–Sep 9**. Numbers from Dale’s cards only.
+- Job = expectation, not a heater recap. Not an NFL lock. Not an ask.
 
 ### 0b · Timeline
-Ask fired this morning (MLB +100u). Last QT = Ole Miss -7 vs ML. This slot = **buzz + give** for impressions. Do not ask. Do not ignore this parent.
+Ask fired Sep 6. CSV: cold-warm, next = give. Forward look wanted NFL Thursday; **Dale spine overrides.** Tension noted. Hook deaths still bind: recap furniture (`here is how the last 30 days played` = 44) vs printer/pain open. Valley silhouette (`DOWN 76`) is the family, not the clone.
 
 ### 1 · WHO
-Someone staring at that 2–2 list, waiting on the last side.
+Someone who just ate two red nights on the tool and thinks the heater died.
 
 ### 2 · PURPOSE
-**Buzz / give.** Unfinished stake. Drive impressions. No URL. No first-week. No UPGRADE.
+**Educate / give.** What a night and a week usually look like. No URL. No trial. No UPGRADE.
 
 ### 3 · ONE
-**The last most-bet side of the weekend is Notre Dame -20.5 — and the market is steaming while Pinnacle max rises.**
+**Two red nights is the normal grain — a usual night is +1.9u, 2 of 5 close red, 5 of 14 weeks are red, and the book is still +169.7u.**
 
 | Test | |
 |------|---|
-| Understand | 2 hit, 2 missed, one left. That’s ND -20.5. |
-| Believe | Parent 2–2 + PIN spike + PIN −105 vs ticket −130 + $36K L30 + 3u lock |
-| Unique | Unfinished list + PIN max rising. Not a tickets-vs-wallets clone. Not `$0 ON LOUISVILLE`. |
+| Understand | Last 2 lost. Most nights still +1.9u. Most weeks still green. |
+| Believe | 99-night histogram · 60/39 calendar · Aug 28 −30.3u · 544-436-8 |
+| Unique | Two red days inside a week that’s still +33.4u (usual week +14.4u). Not “we’re rolling.” Not hide the L. |
 
-**Yum:** you see the last ticket *and* the steam behind it.
+**Yum:** you see the real night, including the red ones. You don’t sit in tipster “every day prints.”
 
-### 4 · SPCL — **S + C**
-- **S** — last side left · we locked 3u · PIN max we can see
-- **C** — parent 2–2 · $36K L30 · $2.4K · 63% beat close · PIN −105 vs −130
-- Do not own L as the pillar
+### 4 · SPCL — **C + L**
+- **C** — report cards: +1.9u usual night · 3/5 green · 9 weeks / 5 red · +33.4u this week · Aug 28 −30.3u · 544-436-8 +169.7u 6.3%
+- **L** — two red nights named first. Dinner-table whole truth.
+- Do not own S as a live lock. Do not own P as a second spear (say–do is in the cards).
 
-### 5 · STUFF
-Parent: 2 ✅ · 2 ❌ · ND -20.5 pending
-Lock: Wisconsin @ ND · **Dame -20.5** · **3.0u** · ticket **−130** · to win +2.31u · ~7h 53m at shot
-Lead **...3bdd7e**: **$2.4K** at **−113** · **1.2×** usual $2.0K · 27-29 · **+54% ROI** · 48% WR · **63% beat close** · L30 **+$36K** / chart **+$35.7K** · L10 6-4
-Plays like this: 58.5% WR · +9.2% ROI
-PIN **−105** · best −112 · fair −119 · now −130 · EV +1.3% · dashed max line **rising** (Dale: Pinnacle max + steam)
-Full split $637K / $103K — mixed book, not the spear
-Confirmed $2.4K vs $1.4K · losing $299 all on ND — **do not open on losing $**
-CFB spread tape 10-15 −$3.2K — **do not claim he’s a spread printer**. +$36K is L30 (CFB overall on the card). **Crop the spread row** if that card is attached.
-**Do not say:** GOLD · SHARP TIER A · Vault · USUAL in line 1–2 · 1.2× as the open · V12 · convert
+### 5 · STUFF (cards Jun 1–Sep 9)
+Night: **+1.9u** usual · **99** nights · ~**10** plays · **3 of every 5** close green · **60** green / **39** red (60.6%)
+Week: **9** green · **5** red · usual week **+14.4u** · this week **+33.4u**
+Months (on calendar image, not extra copy): Jun +46.9 · Jul +17.0 · Aug +50.5 · Sep +55.1
+Scar: **Aug 28 −30.3u**
+Book: **544-436-8 · +169.7u · 6.3% ROI**
+**Do not say:** NHL Savant (on the UI, not in copy) · GOLD · Vault · AGS · V12 · convert · SUMMER · “here’s a report” as line 1 · invent Sep 8/9 units
+
+Card-math check this run: 60+39=99 · 544+436+8=988 · 9+5 weeks · month labels sum ~169.5 vs +169.7u (rounding). Week-bar sum ~167.3 vs book (labels rounded). Use **card copy**, not our sums.
 
 ### 6 · HOOK QA
-What: 2 hit, 2 missed, one left.  
-How: PIN max rising, steam, $36K wallet on ND -20.5.  
-So what: we locked 3u.  
-Uses the parent’s unfinished list. Does **not** restate “Five most-bet Week 1 sides.”
-Not our ✅/❌ ledger — Zeigarnik on *their* leftover ticket.
+What: two red nights.  
+How: usual night +1.9u · 3 of 5 green.  
+So what: that’s the distribution, not a crash. This week still +33.4u.  
+Not recap furniture. Not convert. Pain first, then classify.
 
 **Chosen**
 ```
-2 HIT. 2 MISSED. ONE LEFT.
+TWO RED NIGHTS.
 
-Pinnacle max is rising. Massive steam.
+A usual night is +1.9u.
 ```
 
-Kill list: `$0 ON LOUISVILLE` · BetMGM top-tickets clone · restating the five-game open · convert · GOLD · 1.2× as line 1 · spread 10-15 as a flex
+Kill: `Here’s a report` · `here is how the last 30 days played` · `+169.7u` as line 1 · thankful · SUMMER · NFL lock swap · GOLD / V12 / AGS
 
 ---
 
-## QT — paste this on the Fawkes tweet
+## Hero — paste this
 
-**Attach under the QT:**
-1. Steam / PIN card (max rising — Dale’s indicator). Crop any GOLD / contested-as-identity chrome if it reads as a label.
-2. Lead wallet tape (`+$36K` graph + $2.4K + 63%). **Crop:** GOLD · SHARP TIER A · Vault · the CFB spread 10-15 −$3.2K row.
-3. Money map (70% proven). **Crop:** GOLD · Vault.
+**Attach in this order (the walk, not prettiest-first):**
+1. Night histogram — `twitter_drafts/sep10_expect_report/1_night_histogram.png` — *What a night usually looks like / +1.9u*
+2. Weekly bars — `2_weeks.png` — *9 weeks green. 5 weren’t. This week +33.4u*
+3. Calendar — `3_calendar.png` — last two Sep squares red · Aug 28 −30.3u
+4. Scatter — `4_scatter.png` — every night · book line 544-436-8 +169.7u
 
-**270 chars.** Compose: https://x.com/intent/tweet?text=2%20HIT.%202%20MISSED.%20ONE%20LEFT.%0A%0APinnacle%20max%20is%20rising.%20Massive%20steam.%0A%0ANotre%20Dame%20-20.5.%20Last%20most-bet%20side%20of%20the%20weekend.%0A%0AThe%20sharp%20we%20track%20is%20up%20%2436%2C000%20the%20last%2030%20days.%20%242%2C400%20on%20this%20one.%20Beats%20the%20close%2063%25.%0A%0APinnacle%20still%20-105.%20Ticket%27s%20-130.%0A%0AWe%20locked%203%20units.
+**268 chars.** Compose: https://x.com/intent/tweet?text=TWO%20RED%20NIGHTS.%0A%0AA%20usual%20night%20is%20%2B1.9u.%0A%0A99%20nights.%20About%2010%20plays%20each.%203%20of%20every%205%20close%20green.%202%20of%205%20look%20like%20the%20last%20two.%0A%0AWeeks%3A%209%20green%2C%205%20red.%20Usual%20week%20%2B14.4u.%20This%20week%20is%20still%20%2B33.4u.%0A%0AAug%2028%20was%20-30.3u.%20That%27s%20on%20the%20chart.%0A%0A544-436-8.%20%2B169.7u.%206.3%25.
 **No URL. No ask.**
 
 ```
-2 HIT. 2 MISSED. ONE LEFT.
+TWO RED NIGHTS.
 
-Pinnacle max is rising. Massive steam.
+A usual night is +1.9u.
 
-Notre Dame -20.5. Last most-bet side of the weekend.
+99 nights. About 10 plays each. 3 of every 5 close green. 2 of 5 look like the last two.
 
-The sharp we track is up $36,000 the last 30 days. $2,400 on this one. Beats the close 63%.
+Weeks: 9 green, 5 red. Usual week +14.4u. This week is still +33.4u.
 
-Pinnacle still -105. Ticket's -130.
+Aug 28 was -30.3u. That's on the chart.
 
-We locked 3 units.
+544-436-8. +169.7u. 6.3%.
 ```
 
 ### Self-reply
 None.
 
 ### RT line
-`2 HIT. 2 MISSED. ONE LEFT.`
+`TWO RED NIGHTS.`
