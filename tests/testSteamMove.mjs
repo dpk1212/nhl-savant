@@ -9,9 +9,12 @@ import {
   steamTierFromPct,
   summarizeSteam,
   compactSteam,
+  mainLineTowardTicket,
   STEAM_EVENT_PCT,
   STEAM_GOLD_PCT,
+  STEAM_LINE_MOVE_PTS,
 } from '../src/lib/steamMove.js';
+import { resolveSteamLifecycle } from '../src/lib/steamTailPolicy.js';
 
 assert.equal(STEAM_EVENT_PCT, 3);
 assert.equal(STEAM_GOLD_PCT, 4.5);
@@ -139,6 +142,89 @@ assert.ok(pregame.sinceOpen.dropPct >= 4.5, `pregame still live ${pregame.sinceO
   assert.ok(over.lastHour.dropPct >= 4.5, `last-hour drop ${over.lastHour.dropPct}%`);
   const under = summarizeSteam(cinChc, { marketType: 'total', sideNorm: 'under', line: 8.5, nowSec: now });
   assert.equal(under.goldConfirmed, false, 'Under is the steamed-against side');
+}
+
+assert.equal(STEAM_LINE_MOVE_PTS, 0.5);
+
+// TNF 49ers @ Rams: main −3 → −3.5 toward the home. Juice on −3.5 eased (−113 → −109).
+{
+  const tnf = {
+    commence: new Date((now + 2 * 3600) * 1000).toISOString(),
+    spreadOpener: { t: now - 30 * 3600, homeLine: -3, awayLine: 3, homeOdds: -125, awayOdds: 105, isMain: true },
+    spreadCurrent: { homeLine: -3.5, awayLine: 3.5, homeOdds: -109, awayOdds: -104, max: 7500, isMain: true },
+    spreadHistory: [
+      { t: now - 30 * 3600, homeLine: -3, awayLine: 3, homeOdds: -125, awayOdds: 105, isMain: true },
+      { t: now - 3600, homeLine: -3.5, awayLine: 3.5, homeOdds: -113, awayOdds: -101, isMain: true },
+      { t: now - 60, homeLine: -3.5, awayLine: 3.5, homeOdds: -109, awayOdds: -104, isMain: true },
+      { t: now - 60, homeLine: -2.5, awayLine: 2.5, homeOdds: 105, awayOdds: -118, isMain: false },
+    ],
+    steamDrops: [],
+  };
+  const path = mainLineTowardTicket(tnf, { marketType: 'spread', sideNorm: 'home', nowSec: now });
+  assert.equal(path.steam, true, 'home path is line steam');
+  assert.ok(path.sinceOpenPts >= 0.5, `home toward ${path.sinceOpenPts}`);
+  assert.equal(path.openLine, -3);
+  assert.equal(path.nowLine, -3.5);
+
+  const home = summarizeSteam(tnf, { marketType: 'spread', sideNorm: 'home', line: -3.5, nowSec: now });
+  assert.equal(home.tier, 'steam', `Rams −3.5 tier ${home.tier} juice ${home.lastHour?.dropPct}`);
+  assert.equal(home.show, true);
+  assert.ok(home.lineMovePts >= 0.5, `lineMovePts ${home.lineMovePts}`);
+  assert.ok(!(home.lastHour.dropPct > 0), 'pinned −3.5 juice eased — not juice steam');
+  assert.match(home.tag, /−3 → −3\.5|-3 → -3\.5/);
+  const stamp = compactSteam(home);
+  assert.equal(stamp.tier, 'steam');
+  assert.ok(stamp.lineMovePts >= 0.5);
+  const life = resolveSteamLifecycle([], { steam: stamp });
+  assert.equal(life.steamOnLock, true, 'Policy T sees line-move steam on lock');
+
+  const away = summarizeSteam(tnf, { marketType: 'spread', sideNorm: 'away', line: 3.5, nowSec: now });
+  assert.equal(away.show, false, '49ers +3.5 is the steamed-against side');
+  assert.ok((away.lineMovePts || 0) < 0.5, `away lineMovePts ${away.lineMovePts}`);
+}
+
+// Totals: 47.5 → 48.5 is Over steam, not Under. Flat 0.0 is not an event.
+{
+  const tot = {
+    totalOpener: { t: now - 6 * 3600, line: 47.5, overOdds: -110, underOdds: -110, max: 2000 },
+    totalCurrent: { line: 48.5, overOdds: -108, underOdds: -112, max: 2000, isMain: true },
+    totalHistory: [
+      { t: now - 6 * 3600, line: 47.5, overOdds: -110, underOdds: -110, isMain: true },
+      { t: now - 60, line: 48.5, overOdds: -108, underOdds: -112, isMain: true },
+      { t: now - 60, line: 46.5, overOdds: 105, underOdds: -125, isMain: false },
+    ],
+  };
+  const over = summarizeSteam(tot, { marketType: 'total', sideNorm: 'over', line: 47.5, nowSec: now });
+  assert.equal(over.tier, 'steam', `Over 47.5 after main → 48.5 is ${over.tier}`);
+  assert.ok(over.lineMovePts >= 0.5);
+  const under = summarizeSteam(tot, { marketType: 'total', sideNorm: 'under', line: 47.5, nowSec: now });
+  assert.equal(under.show, false, 'Under does not inherit Over line steam');
+
+  const flatLine = summarizeSteam({
+    spreadOpener: { homeLine: -3, awayLine: 3, homeOdds: -110, awayOdds: -110 },
+    spreadCurrent: { homeLine: -3, awayLine: 3, homeOdds: -110, awayOdds: -110, isMain: true },
+    spreadHistory: [
+      { t: now - 4000, homeLine: -3, awayLine: 3, homeOdds: -110, awayOdds: -110, isMain: true },
+      { t: now - 10, homeLine: -3, awayLine: 3, homeOdds: -110, awayOdds: -110, isMain: true },
+    ],
+  }, { marketType: 'spread', sideNorm: 'home', line: -3, nowSec: now });
+  assert.equal(flatLine.show, false, 'unchanged main is not steam');
+}
+
+// Live prints after kickoff must not invent a −3 → −3.5 tag.
+{
+  const commence = now - 1800;
+  const live = summarizeSteam({
+    commence: new Date(commence * 1000).toISOString(),
+    spreadOpener: { homeLine: -3, awayLine: 3, homeOdds: -125, awayOdds: 105 },
+    spreadCurrent: { homeLine: -3.5, awayLine: 3.5, homeOdds: -109, awayOdds: -104, isMain: true },
+    spreadHistory: [
+      { t: commence - 60, homeLine: -3, awayLine: 3, homeOdds: -125, awayOdds: 105, isMain: true },
+      { t: now - 30, homeLine: -3.5, awayLine: 3.5, homeOdds: -109, awayOdds: -104, isMain: true },
+    ],
+  }, { marketType: 'spread', sideNorm: 'home', line: -3.5, nowSec: now });
+  assert.equal(live.frozen, true);
+  assert.equal(live.show, false, 'post-commence main move is ignored');
 }
 
 console.log('testSteamMove: ok');
