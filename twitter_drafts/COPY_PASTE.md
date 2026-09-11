@@ -1,4 +1,5 @@
 # Twitter — 2026-09-10 PM · QT GIVE · fade Trent / tonight he might be right / Rams sharps
+**POSTED** `2098166189499273311` · 4020 / 227 / 3R / 33 PV. **Do not restage.** Next draft waits on a new Dale spine (Saturday live give).
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not the July loop)
 **r4:** Body held. Hook failed. Dale: hook is the most important part. Rewrite hook only — line 2 = unique (9/01 eve).
 

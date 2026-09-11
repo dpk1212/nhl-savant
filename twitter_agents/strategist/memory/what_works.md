@@ -72,3 +72,10 @@ Seed 2026-07-10:
 - Ask already fired Sep 6. Next slot stays **give**. NFL Thursday is the parked unfinished stake.
 - Post-level hook chart unchanged: `$XK at Y×` · anti-sexy printer · valley/ownership. Convert-as-open still death.
 
+2026-09-11 (content CSV Sep 5–11 — 32 heroes · post-level law updates):
+- Eng king = **printer then tonight’s plays** (`+60u last 7` + four cards + `$100k` D-backs) **540 / 8R**.
+- Conversation king = `+125u since June 1` + need-a-comment **21R**. Human close after pudding. Do not rerun this week.
+- PV king = `$79.5k on over 44.5` vs most-bet Under **52 PV**. Pain-first `$XK` still the compliance open.
+- `$51K AT 4.4× on the guy we normally fade` **posted 227 / 3R** — silhouette works; copy is spent.
+- Convert still dies: grind-EV **5** · better-way tease **43** · tired-of-losing **54**. Camden **0R**. Vault tour **57**. Ask **cold**. Next = Saturday live give.
+

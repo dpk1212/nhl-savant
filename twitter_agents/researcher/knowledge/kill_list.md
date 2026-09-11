@@ -121,5 +121,12 @@ Patterns that underperform, get muted, or trip classifiers.
 - **2026-09-06 Hormozi 2026:** captioning three cards instead of walking the audit · opening on our result/promise when the prospect is still in the loud-side pain · pairing Sharp Flow with Over-as-brand or Under-as-brand (we lock both) · stacked-offer / convert open (proof over promise)
 - **2026-09-06 Dale HARD FAIL:** “we don’t pick games” — we do. Process is wallets → qualify → every position → **pick the game and lock the size** → phone. Never write the opposite.
 - **2026-09-06 Dale HARD FAIL:** BetMGM QT that ignores the parent. `$0 ON LOUISVILLE` when the graphic’s live slip is **Ole Miss -7 (#2 most bet slip)** and we locked **Ole Miss ML**. QT must use the parent’s actual ticket, not a side list we preferred.
+- **2026-09-11 CSV HARD FAIL:** `You don’t have to grind EV or arb or sweat pricing!` (**5 eng / 0R**). Convert promise as hero.
+- **2026-09-11 CSV HARD FAIL:** `If only there was a better way. 🧐` (**43 eng** on 2230 impr) — tease / no stuff.
+- **2026-09-11 CSV HARD FAIL:** `If you’re are tired of losing… There is a better way` (**54 eng**). Convert paragraph still dead vs `+60u` four-plays **540**.
+- **2026-09-11 CSV:** Camden’s story **71 / 0R** · `+$1,742` data-feed pitch **55** · OJ discounts **68** — testimonial/promo as hero. PV ≠ conversation.
+- **2026-09-11 CSV:** Sharp Vault / v12 showcase **57** — product-room tour. Mid. Not our next open (Dale may post it; we do not lead with the room name).
+- **2026-09-11 CSV:** `Adding this while I board… odds are dropping` **39 / 0R** — juice/limit caption, no $ in line 1.
+- **2026-09-11 CSV:** `10 day green streak comes to an end` **89 / 2.3%** — recap furniture. Do not restage fade-Trent (`$51K` **posted**) · `2 RED NIGHTS` · Friday “pretty bad night.”
 - **2026-09-10 overview CSV:** cannot kill individual hooks (no post text). Account-level: Sep 7 is the 89-day champion (**398 eng / 48R / 198 PV on 1 post**). Do not treat a quiet Thursday morning (Sep 10 partial) as a death. Post-level deaths from Aug 26–Sep 1 content CSV still bind.
 
