@@ -103,6 +103,17 @@ export function appendTapePoint(arr, snap, kind, nowSec) {
   return trimHistorySeries(list, nowSec, maxHistoryForKind(kind));
 }
 
+/** Latest print across ML / spread / total tapes. Spread-only games have no ML history. */
+export function lastTapeEpoch(gd) {
+  let max = 0;
+  for (const arr of [gd?.history, gd?.spreadHistory, gd?.totalHistory]) {
+    if (!Array.isArray(arr) || !arr.length) continue;
+    const t = Number(arr[arr.length - 1]?.t);
+    if (Number.isFinite(t) && t > max) max = t;
+  }
+  return max;
+}
+
 export function commenceEpochSec(gd) {
   if (!gd?.commence) return null;
   const ms = Date.parse(gd.commence);

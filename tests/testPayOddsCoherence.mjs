@@ -3,7 +3,7 @@
  * Usage: node tests/testPayOddsCoherence.mjs
  */
 import assert from 'node:assert/strict';
-import { resolvePayOdds } from '../src/lib/payOdds.js';
+import { resolvePayOdds, stampedBookOdds } from '../src/lib/payOdds.js';
 import { mapLockedPickToCardFixture } from '../src/components/sharpFlow/cards/mapPositionCard.js';
 
 // Unit: poly stamp demotes to same-line book.
@@ -89,5 +89,14 @@ assert.ok(
   `poly receipt retained, got ${fixture.polyEntryOdds}`,
 );
 assert.equal(fixture.gotOdds, -108, 'TICKET strip uses book pay odds');
+
+assert.equal(stampedBookOdds({
+  pinnacleOdds: -134, lockPinnOdds: -134, odds: -134,
+  oddsSource: 'poly_avgPrice', book: 'Polymarket',
+}), null, 'poly-copied pinnacleOdds is not book fair');
+assert.equal(stampedBookOdds({
+  pinnacleOdds: -108, lockPinnOdds: -108, odds: 110,
+  oddsSource: 'poly_avgPrice', book: 'Polymarket',
+}), -108, 'real book stamp next to poly ticket is kept');
 
 console.log('testPayOddsCoherence: ok');

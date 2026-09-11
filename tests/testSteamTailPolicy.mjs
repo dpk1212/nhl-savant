@@ -10,6 +10,7 @@ import {
   isSteamTailPolicyLive,
   resolveSteamLifecycle,
   steamTailBand,
+  steamTapeIsObservable,
   STEAM_TAIL_POLICY_FROM,
   STEAM_TAIL_MUTED_BY,
   STEAM_TAIL_ARRIVING_FLOOR,
@@ -264,6 +265,34 @@ function T(args) {
     hasPinnGame: false,
   });
   ok(r.action === 'FAIL_OPEN' && r.units === 5.4, 'from-ticket no pinn and no log fail-open fat');
+}
+
+{
+  const blank = Array.from({ length: 8 }, () => ({
+    gate: 'hourly', offer: -134, fair: null, evPct: null,
+    lastHourPct: null, sinceOpenPct: null, tier: null,
+  }));
+  ok(!steamTapeIsObservable(blank, null, false), 'offer-only log is not steam observation');
+  const r = applySteamTailPolicyFromTicket({
+    units: 2,
+    pickDate: '2026-09-11',
+    walletDetails: [],
+    existingLog: blank,
+    liveSnap: null,
+    hasPinnGame: false,
+    unitsPreSportUnlock: 5.4,
+  });
+  ok(r.action === 'FAIL_OPEN' && r.units === 2, 'norf_uva-style null tape fail-open (not unconfirmed_fat)');
+}
+{
+  const r = applySteamTailPolicyFromTicket({
+    units: 5.4,
+    pickDate: '2026-09-11',
+    existingLog: [{ gate: 'first', offer: -134, fair: -110, evPct: -1, tier: null }],
+    liveSnap: null,
+    hasPinnGame: false,
+  });
+  ok(r.action === 'MUTE' && r.reason === 'unconfirmed_fat', 'fair on the log means steam was observed off');
 }
 
 console.log(`ok — ${n} assertions (steam-tail policy T)`);

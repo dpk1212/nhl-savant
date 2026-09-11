@@ -3517,7 +3517,7 @@ async function createMissingLockedPicks({
       }
       if (Number.isFinite(tapeOdds) && tapeOdds !== 0) {
         peakSnapshot.pinnacleOdds = tapeOdds;
-      } else if (odds != null) {
+      } else if (odds != null && !Number.isFinite(ticketPolyPrice)) {
         peakSnapshot.pinnacleOdds = odds;
       }
       if (line != null) {
@@ -5971,6 +5971,28 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
           };
         }
         changes.push(`fairOdds backfill: ${liveFair} (${fairLabel})`);
+      }
+    }
+
+    // Poly ticket juice copied into pinnacleOdds is not a book fair.
+    // Clear it when we still have no same-line book tape (norf_uva 2026-09-11).
+    const polyCopiedBook = (o) => {
+      if (!o || typeof o !== 'object') return false;
+      const src = `${o.oddsSource || ''} ${o.book || ''}`.toLowerCase();
+      if (!src.includes('poly')) return false;
+      return Number.isFinite(o.pinnacleOdds) && Number.isFinite(o.odds)
+        && Math.round(o.pinnacleOdds) === Math.round(o.odds);
+    };
+    if (!Number.isFinite(liveFair)) {
+      const lockObj = patch.lock || sd.lock || {};
+      const peakObj = patch.peak || sd.peak || {};
+      if (polyCopiedBook(lockObj)) {
+        patch.lock = { ...lockObj, pinnacleOdds: null };
+        changes.push('cleared poly-copied lock.pinnacleOdds');
+      }
+      if (polyCopiedBook(peakObj)) {
+        patch.peak = { ...peakObj, pinnacleOdds: null, updatedAt: now };
+        changes.push('cleared poly-copied peak.pinnacleOdds');
       }
     }
 

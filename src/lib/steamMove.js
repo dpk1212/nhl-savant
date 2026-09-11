@@ -377,6 +377,24 @@ export function summarizeSteam(pinnGame, {
   let hist = filterHist(marketHist(pinnGame, mt), {
     isTotal, isSpread, sideIsAway, line: pinLine,
   });
+  // Ticket alt not on the board (Poly −44.5, Pinny main −46) — steam still
+  // reads the main tape so the game is connected. EV/fair stay same-line.
+  if ((isSpread || isTotal) && hist.length < 2) {
+    const mainLine = isSpread
+      ? (sideIsAway
+        ? Number(pinnGame.spreadCurrent?.awayLine ?? pinnGame.fairSpread?.awayLine)
+        : Number(pinnGame.spreadCurrent?.homeLine ?? pinnGame.fairSpread?.homeLine))
+      : Number(pinnGame.totalCurrent?.line ?? pinnGame.fairTotal?.line);
+    if (Number.isFinite(mainLine) && !(Number.isFinite(pinLine) && linesClose(mainLine, pinLine))) {
+      const mainHist = filterHist(marketHist(pinnGame, mt), {
+        isTotal, isSpread, sideIsAway, line: mainLine,
+      });
+      if (mainHist.length >= 2) {
+        hist = mainHist;
+        pinLine = mainLine;
+      }
+    }
+  }
   if (frozen) {
     hist = hist.filter((h) => !Number.isFinite(h?.t) || h.t <= nowSec);
   }

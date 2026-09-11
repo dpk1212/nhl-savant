@@ -11,9 +11,12 @@
  *   5u                  → always
  *   5.4u+               → keep iff A/B steam on at lock
  *
- * Steam rules fail-open when we cannot observe steam (no tape log AND no
- * Pinnacle game this cycle). 1u cut does not need steam. Live Ev-drift mute
- * stays upstream. Manual stake exempt at the call site.
+ * Steam rules fail-open when we cannot observe steam. A tape log of
+ * offer-only / null-fair / null-tier rows is NOT observation (FCS vs FBS
+ * with no Odds API game — norf_uva 2026-09-11). Need a Pinnacle game this
+ * cycle, a live steam reading, or a log row with fair / steam / last-hour.
+ * 1u cut does not need steam. Live Ev-drift mute stays upstream. Manual
+ * stake exempt at the call site.
  */
 
 import { analyzeTicketTapeLog } from './ticketTapeCapture.js';
@@ -137,11 +140,49 @@ function pack({
   };
 }
 
+const SCORED_STEAM_TIERS = new Set(['watch', 'steam', 'gold']);
+
+function steamTierScored(tier) {
+  return SCORED_STEAM_TIERS.has(String(tier || '').toLowerCase());
+}
+
+function asFiniteTape(v) {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function steamSnapObserved(steam) {
+  if (!steam || typeof steam !== 'object') return false;
+  if (steamTierScored(steam.tier)) return true;
+  if (asFiniteTape(steam.lastHourPct) != null) return true;
+  if (asFiniteTape(steam.sinceOpenPct) != null) return true;
+  return false;
+}
+
+/**
+ * True only when we actually saw a book tape or a steam reading.
+ * Empty / offer-only log rows do not count — those are Poly reprints.
+ */
+export function steamTapeIsObservable(existingLog = null, liveSnap = null, hasPinnGame = false) {
+  if (hasPinnGame) return true;
+  if (steamSnapObserved(liveSnap?.steam)) return true;
+  const rows = Array.isArray(existingLog) ? existingLog : [];
+  for (const r of rows) {
+    if (!r || typeof r !== 'object') continue;
+    if (steamTierScored(r.tier)) return true;
+    if (asFiniteTape(r.lastHourPct) != null) return true;
+    if (asFiniteTape(r.sinceOpenPct) != null) return true;
+    if (asFiniteTape(r.fair) != null) return true;
+  }
+  return false;
+}
+
 /**
  * @param {object} args
  * @param {number} args.units current (post-climate) units
  * @param {number} [args.bandUnits] pre-shrink units for 4u/fat mute (climate/unlock)
- * @param {boolean} args.steamObservable tape log exists OR Pinnacle game this cycle
+ * @param {boolean} args.steamObservable book tape or steam was actually scored
  */
 export function applySteamTailPolicy({
   units,
@@ -266,11 +307,10 @@ export function applySteamTailPolicyFromTicket({
     Number.isFinite(Number(unitsPreClimate)) ? Number(unitsPreClimate) : 0,
     Number.isFinite(Number(unitsPreSportUnlock)) ? Number(unitsPreSportUnlock) : 0,
   );
-  const logN = Array.isArray(existingLog) ? existingLog.length : 0;
   return applySteamTailPolicy({
     units: pre,
     pickDate,
-    steamObservable: logN > 0 || !!hasPinnGame,
+    steamObservable: steamTapeIsObservable(existingLog, liveSnap, hasPinnGame),
     steamOnLock: life.steamOnLock,
     steamArriving: life.steamArriving,
     sharpAB: ab.sharpAB,
