@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, BellOff, Smartphone, Monitor, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import {
@@ -8,6 +8,8 @@ import {
   onesignalSetLockAlertMode,
   LOCK_ALERT_MODE,
   LOCK_ALERT_EDGE_MIN,
+  readStoredLockAlertMode,
+  writeStoredLockAlertMode,
 } from '../lib/onesignal';
 
 const cardShell = {
@@ -44,7 +46,11 @@ export default function LockAlertsCard({ user, isPremium }) {
   const [message, setMessage] = useState(null);
   const [showIos, setShowIos] = useState(false);
   const [showAndroid, setShowAndroid] = useState(false);
-  const [lockMode, setLockMode] = useState(LOCK_ALERT_MODE.ALL);
+  const [lockMode, setLockMode] = useState(
+    () => readStoredLockAlertMode() || LOCK_ALERT_MODE.ALL,
+  );
+  const healKey = useRef('');
+  const pendingMode = useRef(null);
 
   const ios = isIosDevice();
   const standalone = isStandalone();
@@ -52,8 +58,47 @@ export default function LockAlertsCard({ user, isPremium }) {
   const refreshStatus = useCallback(async () => {
     const s = await onesignalGetPushStatus();
     setPushStatus(s);
-    if (s?.lockMode === LOCK_ALERT_MODE.EDGE11 || s?.lockMode === LOCK_ALERT_MODE.ALL) {
-      setLockMode(s.lockMode);
+    const stored = readStoredLockAlertMode();
+    const pending = pendingMode.current;
+
+    // This-session tap wins over a lagging getTags read.
+    if (pending === LOCK_ALERT_MODE.ALL || pending === LOCK_ALERT_MODE.EDGE11) {
+      setLockMode(pending);
+      if (s?.lockModeKnown && s.lockMode === pending) pendingMode.current = null;
+      else if (
+        pending === LOCK_ALERT_MODE.EDGE11
+        && s?.lockModeKnown
+        && s.lockMode !== pending
+      ) {
+        const key = `edge11←${s.lockMode}`;
+        if (healKey.current !== key) {
+          healKey.current = key;
+          onesignalSetLockAlertMode(LOCK_ALERT_MODE.EDGE11);
+        }
+      }
+      return s;
+    }
+
+    // UI follows this device's last tap. Stale getTags used to snap Top → All
+    // every ~8s. Only heal the known clobber (stored Top, remote still All).
+    if (stored === LOCK_ALERT_MODE.EDGE11) {
+      setLockMode(LOCK_ALERT_MODE.EDGE11);
+      if (s?.lockModeKnown && s.lockMode !== LOCK_ALERT_MODE.EDGE11) {
+        const key = `edge11←${s.lockMode}`;
+        if (healKey.current !== key) {
+          healKey.current = key;
+          onesignalSetLockAlertMode(LOCK_ALERT_MODE.EDGE11);
+        }
+      }
+      return s;
+    }
+    if (s?.lockModeKnown && s.lockMode === LOCK_ALERT_MODE.EDGE11) {
+      writeStoredLockAlertMode(LOCK_ALERT_MODE.EDGE11);
+      setLockMode(LOCK_ALERT_MODE.EDGE11);
+      return s;
+    }
+    if (stored === LOCK_ALERT_MODE.ALL) {
+      setLockMode(LOCK_ALERT_MODE.ALL);
     }
     return s;
   }, []);
@@ -130,6 +175,8 @@ export default function LockAlertsCard({ user, isPremium }) {
   const handleModeChange = async (nextMode) => {
     if (nextMode !== LOCK_ALERT_MODE.ALL && nextMode !== LOCK_ALERT_MODE.EDGE11) return;
     setLockMode(nextMode);
+    writeStoredLockAlertMode(nextMode);
+    pendingMode.current = nextMode;
     if (!pushStatus?.optedIn || !user?.uid || !isPremium) return;
     setBusy(true);
     setMessage(null);

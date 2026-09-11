@@ -17,11 +17,45 @@ export const LOCK_ALERT_MODE = Object.freeze({
   OFF: 'false',
 });
 
+/** Browser-only cache so All vs Top does not snap back when OneSignal getTags is stale/empty. */
+export const LOCK_ALERT_MODE_STORAGE_KEY = 'nhlSavant.lockAlertMode';
+
+export function isLockAlertMode(value) {
+  return value === LOCK_ALERT_MODE.ALL || value === LOCK_ALERT_MODE.EDGE11;
+}
+
 /** @param {unknown} paidTag */
 export function normalizeLockAlertMode(paidTag) {
   if (paidTag === LOCK_ALERT_MODE.EDGE11) return LOCK_ALERT_MODE.EDGE11;
   if (paidTag === LOCK_ALERT_MODE.ALL || paidTag === 'true') return LOCK_ALERT_MODE.ALL;
   return LOCK_ALERT_MODE.OFF;
+}
+
+/** True when the tag is an explicit mode (not missing / false). */
+export function paidTagIsExplicitMode(paidTag) {
+  return paidTag === LOCK_ALERT_MODE.EDGE11
+    || paidTag === LOCK_ALERT_MODE.ALL
+    || paidTag === 'true';
+}
+
+export function readStoredLockAlertMode() {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const v = localStorage.getItem(LOCK_ALERT_MODE_STORAGE_KEY);
+    return isLockAlertMode(v) ? v : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+export function writeStoredLockAlertMode(mode) {
+  if (!isLockAlertMode(mode)) return;
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(LOCK_ALERT_MODE_STORAGE_KEY, mode);
+  } catch (_) {
+    /* private mode */
+  }
 }
 
 /**

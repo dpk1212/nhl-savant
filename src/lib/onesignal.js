@@ -26,12 +26,17 @@ import {
   LOCK_ALERT_MODE,
   normalizeLockAlertMode,
   paidTagForEntitlement,
+  paidTagIsExplicitMode,
+  readStoredLockAlertMode,
+  writeStoredLockAlertMode,
 } from './lockAlertMode.js';
 
 export {
   LOCK_ALERT_MODE,
   LOCK_ALERT_EDGE_MIN,
   normalizeLockAlertMode,
+  readStoredLockAlertMode,
+  writeStoredLockAlertMode,
 } from './lockAlertMode.js';
 
 function withOneSignal(fn) {
@@ -94,7 +99,17 @@ export async function onesignalSyncPaidIdentity({ uid }) {
   if (!uid) return;
   await withOneSignal(async (OneSignal) => {
     await OneSignal.login(String(uid));
+    const stored = readStoredLockAlertMode();
     const current = await readPaidTag(OneSignal);
+    // getTags is often empty/stale on web. Never invent paid=all — that
+    // overwrites a live edge11 preference and the Account radios snap back.
+    // Leftover localStorage `all` (from Enable) must not clobber Top set elsewhere.
+    if (stored === LOCK_ALERT_MODE.EDGE11) {
+      await OneSignal.User.addTags({ paid: LOCK_ALERT_MODE.EDGE11 });
+      return;
+    }
+    if (current === LOCK_ALERT_MODE.EDGE11) return;
+    if (!paidTagIsExplicitMode(current)) return;
     const next = paidTagForEntitlement(current);
     await OneSignal.User.addTags({ paid: next });
   });
@@ -110,7 +125,8 @@ export async function onesignalGetPushStatus() {
     permission: false,
     optedIn: false,
     subscriptionId: null,
-    lockMode: LOCK_ALERT_MODE.ALL,
+    lockMode: null,
+    lockModeKnown: false,
   };
   await withOneSignal(async (OneSignal) => {
     const supported =
@@ -121,14 +137,17 @@ export async function onesignalGetPushStatus() {
     const optedIn = !!OneSignal.User?.PushSubscription?.optedIn;
     const subscriptionId = OneSignal.User?.PushSubscription?.id || null;
     const paidTag = await readPaidTag(OneSignal);
+    const known = paidTagIsExplicitMode(paidTag);
     const lockMode = normalizeLockAlertMode(paidTag);
     result = {
       supported: !!supported,
       permission: permission === true || permission === 'granted' ? true : permission === false || permission === 'denied' ? false : 'default',
       optedIn,
       subscriptionId,
-      // UI default for radios: OFF → show All as selected when enabling
-      lockMode: lockMode === LOCK_ALERT_MODE.OFF ? LOCK_ALERT_MODE.ALL : lockMode,
+      lockModeKnown: known,
+      lockMode: known
+        ? (lockMode === LOCK_ALERT_MODE.OFF ? LOCK_ALERT_MODE.ALL : lockMode)
+        : null,
     };
   });
   return result;
@@ -147,6 +166,7 @@ export async function onesignalEnableForPaidUser({ uid, mode = LOCK_ALERT_MODE.A
   const paidValue =
     mode === LOCK_ALERT_MODE.EDGE11 ? LOCK_ALERT_MODE.EDGE11 : LOCK_ALERT_MODE.ALL;
   let outcome = { ok: false, reason: 'unknown' };
+  writeStoredLockAlertMode(paidValue);
   await withOneSignal(async (OneSignal) => {
     await OneSignal.login(String(uid));
     await OneSignal.User.addTags({ paid: paidValue });
@@ -181,6 +201,7 @@ export async function onesignalEnableForPaidUser({ uid, mode = LOCK_ALERT_MODE.A
 export async function onesignalSetLockAlertMode(mode) {
   const paidValue =
     mode === LOCK_ALERT_MODE.EDGE11 ? LOCK_ALERT_MODE.EDGE11 : LOCK_ALERT_MODE.ALL;
+  writeStoredLockAlertMode(paidValue);
   await withOneSignal(async (OneSignal) => {
     await OneSignal.User.addTags({ paid: paidValue });
   });
