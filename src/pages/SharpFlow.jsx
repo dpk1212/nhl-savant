@@ -2860,329 +2860,35 @@ async function loadLockedPicks() {
   }
 }
 
-function tallySides(snap) {
-  let wins = 0, losses = 0, pushes = 0, totalProfit = 0, totalUnits = 0;
-  snap.forEach(d => {
-    const data = d.data();
-    if (data.sides) {
-      for (const sideData of Object.values(data.sides)) {
-        if (sideData.status !== 'COMPLETED') continue;
-        // v5.6: MUTED plays are excluded from totals exactly like CANCELLED — a
-        // muted play is one we explicitly told the user to stand down on (health
-        // signal degraded post-lock), so its outcome must not pollute win-rate,
-        // ROI, or PnL graphs. Cards keep showing the muted state post-grade for
-        // historical context (see LockedPickCard isMuted gate).
-        if (sideData.superseded || sideData.health?.status === 'CANCELLED' || sideData.health?.status === 'MUTED' || sideData.lockStage === 'SHADOW') continue;
-        // LEAN / 0u tracking plays grade as displays-only — they NEVER bet
-        // money. Exclude from W-L-P record, ROI, totalUnits, totalProfit.
-        // The result.tracked flag (set by the Cloud Function grader v2)
-        // is the canonical signal; legacy graded picks fall back to the
-        // unit/lockStage/v8 tier signals so they retroactively get the
-        // same treatment.
-        // AGS-U v9: prefer the cron-stamped finalUnits for tally math (it's
-        // the canonical staking unit the grader booked PnL against). Fall
-        // back to peak/lock for legacy docs. Tracked-only is the grader's
-        // explicit result.tracked flag — NOT a tier-based proxy, since v9
-        // LEAN ships at non-zero units.
-        const u = sideData.finalUnits
-          ?? sideData.v8_agsUnitsApplied
-          ?? sideData.peak?.units
-          ?? sideData.lock?.units
-          ?? 0;
-        const isTrackedOnly = sideData.result?.tracked === true;
-        if (isTrackedOnly) continue;
-        totalUnits += u;
-        const profit = sideData.result?.profit ?? 0;
-        if (sideData.result?.outcome === 'WIN') { wins++; totalProfit += profit; }
-        else if (sideData.result?.outcome === 'LOSS') { losses++; totalProfit += profit; }
-        else if (sideData.result?.outcome === 'PUSH') { pushes++; }
-      }
-    } else {
-      if (data.status !== 'COMPLETED') return;
-      const u = data.units ?? 0;
-      if (!u) return;
-      totalUnits += u;
-      const profit = data.result?.profit ?? 0;
-      if (data.result?.outcome === 'WIN') { wins++; totalProfit += profit; }
-      else if (data.result?.outcome === 'LOSS') { losses++; totalProfit += profit; }
-      else if (data.result?.outcome === 'PUSH') { pushes++; }
-    }
-  });
-  return { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` };
-}
-
-function estimateStarsFromSnap(snap) {
-  if (!snap) return 3;
-  const mp = snap.consensusStrength?.moneyPct ?? 65;
-  const sc = snap.sharpCount || 0;
-  const inv = snap.totalInvested || 0;
-  const avgBet = sc > 0 ? inv / sc : 0;
-  const cSharp = mp != null ? Math.max(0, 100 - mp) : 20;
-  const pinnConf = !!snap.criteria?.pinnacleConfirms;
-  const lineWith = !!snap.criteria?.lineMovingWith;
-  const ev = snap.evEdge || 0;
-
-  const avgBet_w = v7Winsorize(avgBet, V7_STATS.avgBet.lo, V7_STATS.avgBet.hi);
-  const invested_w = v7Winsorize(inv, V7_STATS.invested.lo, V7_STATS.invested.hi);
-  const moneyPct_z = v7Z(mp, V7_STATS.moneyPct.mean, V7_STATS.moneyPct.std);
-  const avgBet_z = v7Z(avgBet_w, V7_STATS.avgBet.mean, V7_STATS.avgBet.std);
-  const invested_z = v7Z(invested_w, V7_STATS.invested.mean, V7_STATS.invested.std);
-  const counterSharp_z = v7Z(cSharp, V7_STATS.counter.mean, V7_STATS.counter.std);
-  const sharpCount_z = v7Z(Math.min(sc, 6), V7_STATS.sharpCount.mean, V7_STATS.sharpCount.std);
-  const qp = v7QualityProxy({ moneyPct: mp, sharpCount: sc, avgBet, counterSharp: cSharp, pinnConfirms: pinnConf, lineMovingWith: lineWith, evEdge: ev, sport: null, odds: snap.odds });
-  const qp_z = v7Z(qp, V7_STATS.qp.mean, V7_STATS.qp.std);
-  const contras = v7Contradictions({ moneyPct: mp, counterSharp: cSharp, sharpCount: sc, evEdge: ev, qp });
-  const pinnCond = (pinnConf && qp >= 0) ? 1 : 0;
-  const evCond = (ev > 0 && qp >= 0) ? 1 : 0;
-  const raw = 3.0 * moneyPct_z + 1.5 * avgBet_z + 1.2 * invested_z + 1.0 * qp_z
-    + 0.8 * sharpCount_z + 0.6 * pinnCond + 0.4 * evCond
-    - 2.5 * counterSharp_z - 1.5 * v7Z(snap.consensusStrength?.walletPct ?? 60, V7_STATS.walletPct.mean, V7_STATS.walletPct.std)
-    - 2.0 * contras;
-  const t = V7_STATS.thresholds;
-  let stars = raw < t.p15 ? 1 : raw < t.p30 ? 2 : raw < t.p50 ? 2.5
-            : raw < t.p75 ? 3 : raw < t.p87 ? 3.5 : raw < t.p93 ? 4
-            : raw < t.p97 ? 4.5 : 5;
-  if (stars >= 5 && (qp < 1 || contras >= 2)) stars = 4.5;
-  if (stars >= 4.5 && contras >= 2) stars = Math.min(stars, 4);
-  return stars;
-}
-
 async function loadAllTimePnL() {
-  try {
-    // v17 — picks now carry AGS-U context (v8_ags, v8_agsTier,
-    // v8_agsComponents, team labels, lock odds) so the new AGS-U
-    // Performance Dashboard can render a per-pick ledger with tier
-    // badge, AGS-U value, dominant feature, and proper sport/market
-    // filtering without an extra Firestore read. v16 byAgsTier
-    // tier counters (wins/losses/pushes/pending/tracked + roi) are
-    // preserved unchanged so the existing Locked-Picks-Today tier
-    // scorecard keeps working.
-    const cacheKey = 'sharpFlow_pnl_v18';
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
+  const cacheKey = 'sharpFlow_pnl_v18';
+  const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
+  const emptyBundle = { pregame: { ...empty }, all: { ...empty }, byStars: {} };
+  const readCache = (maxAgeMs) => {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (!cached) return null;
       const { data, ts } = JSON.parse(cached);
-      if (Date.now() - ts < 30 * 60 * 1000 && data.picks) return data;
+      if (!data?.picks || !data?.byAgsTier) return null;
+      if (maxAgeMs != null && Date.now() - ts >= maxAgeMs) return null;
+      return data;
+    } catch {
+      return null;
     }
-    const [mlSnap, spreadSnap, totalSnap] = await Promise.all([
-      getDocs(collection(db, 'sharpFlowPicks')),
-      getDocs(collection(db, 'sharpFlowSpreads')),
-      getDocs(collection(db, 'sharpFlowTotals')),
-    ]);
-    const allDocs = [];
-    mlSnap.forEach(d => allDocs.push({ ...d.data(), _marketType: 'ml' }));
-    spreadSnap.forEach(d => allDocs.push({ ...d.data(), _marketType: 'spread' }));
-    totalSnap.forEach(d => allDocs.push({ ...d.data(), _marketType: 'total' }));
-    const combinedDocs = { docs: mlSnap.docs, forEach(fn) { allDocs.forEach(item => fn({ data: () => item })); } };
-    const overall = tallySides(combinedDocs);
-    const snap = combinedDocs;
-
-    const byStars = {};
-    const picks = [];
-    // AGS-U tier scorecard, populated only from picks on/after AGS_U_CUTOVER.
-    // `live` rolls picks that actually shipped real money (units > 0,
-    // not tracked-only) into W-L / ROI / PnL totals. `tracked` rolls
-    // intentionally-tracked-only picks (FADE / 0u, or pre-AGS-U-grader
-    // tracked LEAN's) into a parallel record-keeping bucket so the
-    // headline numbers stay clean but volume is visible.
-    const emptyTierBucket = () => ({
-      // Graded counts (W+L+P). `totalPicks` stays as the "all shipped
-      // live" sum (graded + pending) for back-compat, but the UI now
-      // reads `wins+losses+pushes` for the headline N so the record
-      // can never visually disagree with the count.
-      wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0,
-      totalPicks: 0, pendingPicks: 0,
-      trackedPicks: 0, trackedWins: 0, trackedLosses: 0,
-    });
-    const byAgsTier = {
-      ELITE:   emptyTierBucket(),
-      PREMIUM: emptyTierBucket(),
-      LOCK:    emptyTierBucket(),
-      LEAN:    emptyTierBucket(),
-      WEAK:    emptyTierBucket(),
-      FADE:    emptyTierBucket(),
-    };
-    const starBucket = (s) => s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
-    const emptyBucket = () => ({ wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' });
-    const STARS_LIVE_DATE = '2026-04-06';
-    snap.forEach(d => {
-      const data = d.data();
-      const mt = data._marketType || data.marketType || 'ml';
-      const isPostDeploy = data.date >= STARS_LIVE_DATE;
-      const isPostAgsuCutover = (data.date || '') >= AGS_U_CUTOVER;
-      const processSide = (sd) => {
-        // v5.6: treat MUTED the same as CANCELLED for tallying purposes — both
-        // mean "the live signal told us to stand down before tip", so the graded
-        // outcome should not count toward record / ROI / PnL graphs. The pick
-        // is still pushed into `picks` with cancelled=true so individual cards
-        // still render the muted styling and the historical outcome.
-        // LEAN / 0u tracking plays get the same treatment — they were
-        // explicitly tracked-only and never bet, so they don't pollute PnL.
-        // AGS-U v9: tracked iff grader stamped result.tracked === true. Tier
-        // is no longer a proxy (LEAN ships 0.5× under v9).
-        const u = sd.finalUnits
-          ?? sd.v8_agsUnitsApplied
-          ?? sd.peak?.units
-          ?? sd.lock?.units
-          ?? 0;
-        const isTrackedOnly = sd.result?.tracked === true;
-        const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED' || sd.health?.status === 'MUTED' || sd.lockStage === 'SHADOW' || isTrackedOnly);
-        const bestSnap = sd.peak || sd.lock;
-        const lockSnap = sd.lock || bestSnap;
-        const s = bestSnap?.stars ?? estimateStarsFromSnap(bestSnap);
-        const key = starBucket(s);
-        if (!byStars[key]) byStars[key] = emptyBucket();
-        if (!isCancelled) byStars[key].totalPicks++;
-        if (sd.status === 'COMPLETED' && !isCancelled) {
-          byStars[key].totalUnits += u;
-          if (sd.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (sd.result?.profit || 0); }
-          else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
-          else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
-        }
-
-        // ─── AGS-U tier scorecard (post-cutover only) ─────────────
-        // Mirrors the dashboard / daily report's "live vs tracked"
-        // split exactly: live = real money shipped (units > 0, not
-        // grader-tracked-only); tracked = 0u/tracked plays kept
-        // separate so the headline tier ROI doesn't get diluted by
-        // intentionally-tracked picks.
-        if (isPostAgsuCutover) {
-          // v12-first: graded picks won't have v12 (only v11 was stamped
-          // at grade time) — fall through to v8_agsTier. Live picks now
-          // have v12 stamped by the cron and we want analytics to bucket
-          // them under their v12 tier (PREMIUM/LOCK/etc.) not the stale v11.
-          const cronTier = (typeof sd.v8_agsV12Tier === 'string' && sd.v8_agsV12Tier !== 'UNKNOWN')
-            ? sd.v8_agsV12Tier
-            : (typeof sd.v8_agsTier === 'string' && sd.v8_agsTier !== 'UNKNOWN')
-              ? sd.v8_agsTier
-              : (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
-          if (cronTier && byAgsTier[cronTier]) {
-            const tierBucket = byAgsTier[cronTier];
-            const shippedLive = u > 0 && !isTrackedOnly && !isCancelled;
-            if (shippedLive || isTrackedOnly) {
-              if (shippedLive) tierBucket.totalPicks++;
-              else tierBucket.trackedPicks++;
-              if (sd.status === 'COMPLETED') {
-                const outcome = sd.result?.outcome;
-                if (shippedLive) {
-                  tierBucket.totalUnits += u;
-                  if (outcome === 'WIN')      { tierBucket.wins++;   tierBucket.totalProfit += (sd.result?.profit || 0); }
-                  else if (outcome === 'LOSS'){ tierBucket.losses++; tierBucket.totalProfit -= u; }
-                  else if (outcome === 'PUSH'){ tierBucket.pushes++; }
-                } else {
-                  if (outcome === 'WIN')      tierBucket.trackedWins++;
-                  else if (outcome === 'LOSS') tierBucket.trackedLosses++;
-                }
-              } else if (shippedLive) {
-                // Pending / not yet graded — kept separate so the
-                // headline tier record is always pure W-L-P arithmetic.
-                tierBucket.pendingPicks++;
-              }
-            }
-          }
-        }
-        const pickStars = isPostDeploy ? (bestSnap?.stars ?? 0) : s;
-        // Include any pick with a stamped stake tier even if its snapshot stars
-        // are low — v12abc SHARP/MINI rescues are staked off proven money, not
-        // the (often WEAK) score, so the stars gate would otherwise hide them
-        // and the Tier Performance wouldn't match the AGS-U report.
-        if (pickStars >= 2.5 || typeof sd.v8_hcStakeTier === 'string') {
-          const lkStars = lockSnap?.stars ?? 0;
-          const lkEV = lockSnap?.evEdge ?? null;
-          const pkEV = bestSnap?.evEdge ?? null;
-          const regime = bestSnap?.regime || lockSnap?.regime || null;
-          // v14 — carry the V7.2+ stamped TOP PICK / lock-tier fields so
-          // the Performance dashboard's "Top Pick" filter can match the
-          // production badge logic instead of the legacy starDelta proxy.
-          // Pre-v7.1 docs have these undefined and the filter falls back
-          // to the legacy rule for backward compatibility.
-          const pick = {
-            date: data.date, sport: data.sport || 'NHL', marketType: mt,
-            stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV,
-            units: u, status: sd.status || 'PENDING', outcome: null, profit: 0,
-            clv: null, cancelled: isCancelled, tracked: isTrackedOnly, regime,
-            v8_topPick: sd.v8_topPick,
-            v8_superTopPick: sd.v8_superTopPick,
-            v8_lockTier: sd.v8_lockTier,
-            v8_systemVersion: sd.v8_systemVersion,
-            // v17 — AGS-U context for the new Performance Dashboard ledger.
-            // null-safe; pre-cutover picks won't have these and the ledger
-            // filters them out via the AGS_U_CUTOVER date guard.
-            v8_ags: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
-            v8_agsTier: typeof sd.v8_agsTier === 'string' ? sd.v8_agsTier : null,
-            v8_agsComponents: sd.v8_agsComponents || null,
-            // v12abc — carry the stamped stake tier (the staking PATH) + v12
-            // score so the Tier Performance scoreboard can bucket picks into the
-            // 5 display tiers and MATCH the AGS-U daily report.
-            v8_hcStakeTier: typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : null,
-            v8_agsV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
-            v8_agsV12Tier: typeof sd.v8_agsV12Tier === 'string' ? sd.v8_agsV12Tier : null,
-            team: sd.team || null,
-            away: data.away || null,
-            home: data.home || null,
-            oddsLock: Number.isFinite(sd.lock?.odds) ? sd.lock.odds
-                    : Number.isFinite(sd.peak?.odds) ? sd.peak.odds
-                    : null,
-          };
-          if (sd.status === 'COMPLETED') {
-            pick.outcome = sd.result?.outcome || null;
-            // Tracked-only LEAN picks always grade at 0u PnL regardless of W/L.
-            if (isTrackedOnly) { pick.profit = 0; }
-            else if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
-            else if (sd.result?.outcome === 'LOSS') { pick.profit = -u; }
-            if (sd.result?.clv != null) pick.clv = sd.result.clv;
-          }
-          picks.push(pick);
-        }
-      };
-      if (data.sides) {
-        for (const sd of Object.values(data.sides)) processSide(sd);
-      } else {
-        const s = data.stars ?? estimateStarsFromSnap(data);
-        const key = starBucket(s);
-        if (!byStars[key]) byStars[key] = emptyBucket();
-        byStars[key].totalPicks++;
-        const u = data.units || 1;
-        if (data.status === 'COMPLETED') {
-          byStars[key].totalUnits += u;
-          if (data.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (data.result?.profit || 0); }
-          else if (data.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
-          else if (data.result?.outcome === 'PUSH') { byStars[key].pushes++; }
-        }
-        const pickStars = isPostDeploy ? (data.stars ?? 0) : s;
-        if (pickStars >= 2.5) {
-          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
-          if (data.status === 'COMPLETED') {
-            pick.outcome = data.result?.outcome || null;
-            if (data.result?.outcome === 'WIN') { pick.profit = data.result?.profit || 0; }
-            else if (data.result?.outcome === 'LOSS') { pick.profit = -u; }
-          }
-          picks.push(pick);
-        }
-      }
-    });
-
-    for (const v of Object.values(byStars)) {
-      v.totalProfit = +v.totalProfit.toFixed(2);
-      v.record = `${v.wins}-${v.losses}${v.pushes > 0 ? `-${v.pushes}` : ''}`;
-      v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
-    }
-
-    for (const v of Object.values(byAgsTier)) {
-      v.totalProfit = +v.totalProfit.toFixed(2);
-      v.gradedPicks = v.wins + v.losses + v.pushes;
-      v.record = `${v.wins}-${v.losses}${v.pushes > 0 ? `-${v.pushes}` : ''}`;
-      v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
-      v.trackedRecord = `${v.trackedWins}-${v.trackedLosses}`;
-    }
-    const agsTierMeta = { since: AGS_U_CUTOVER };
-
-    const result = { pregame: overall, all: overall, byStars, byAgsTier, agsTierMeta, picks };
-    try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: result, ts: Date.now() })); } catch {}
-    return result;
+  };
+  try {
+    const fresh = readCache(30 * 60 * 1000);
+    if (fresh) return fresh;
+    const res = await fetch(`${import.meta.env.BASE_URL}sharp-flow-pnl.json`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`pnl json ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data?.picks) || !data?.byAgsTier) throw new Error('pnl json shape');
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() })); } catch {}
+    return data;
   } catch (err) {
     console.warn('Failed to load all-time P&L:', err.message);
-    const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
-    return { pregame: { ...empty }, all: { ...empty }, byStars: {} };
+    // Last good tab cache — never fall back to a full Firestore collection scan.
+    return readCache(null) || emptyBundle;
   }
 }
 
