@@ -71,6 +71,9 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   if (mutedBy === 'fav-juice') {
     return pre ? `Favorite juicier than -375 · ${pre}` : 'Favorite juicier than -375 — no ticket';
   }
+  if (mutedBy === 'ev-lt2-no-steam') {
+    return pre ? `Bad price, no confirmation · ${pre}` : 'Bad price — no market confirmation';
+  }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
   if (stakePath === 'MONITORING') return 'Monitoring — never sized';
@@ -86,6 +89,7 @@ function noPlayReason({ mutedBy, tapeAction, stakePath } = {}) {
   if (mutedBy === 'no-confirmed') return 'No confirmed money on our side';
   if (mutedBy === 'steam-tail') return 'Unconfirmed size — no steam';
   if (mutedBy === 'fav-juice') return 'Favorite juicier than -375';
+  if (mutedBy === 'ev-lt2-no-steam') return 'Bad price with no market confirmation';
   if (stakePath === 'FADE') return "Didn't meet the size bar";
   return "Didn't meet the size bar";
 }

@@ -202,8 +202,13 @@ import {
   captureTicketTape,
   applyTicketTapeStamps,
   resolveTicketEvDrift,
+  analyzeTicketTapeLog,
   hoursUntilMs,
 } from '../src/lib/ticketTapeCapture.js';
+import {
+  applyUnitTierEvSteamOverlay,
+  UNIT_TIER_EV_MUTED_BY,
+} from '../src/lib/unitTierEvSteamOverlay.js';
 import {
   SPORT_UNLOCK_GATE_FROM,
   applySportConfirmedUnlockOverlay,
@@ -1234,6 +1239,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreSteamTail = null,
   favJuiceAction = null,
   unitsPreFavJuice = null,
+  unitTierEvSteamAction = null,
+  unitsPreUnitTierEvSteam = null,
   steamTailReason = null,
   steamTailArriving = null,
   steamTailOnLock = null,
@@ -1384,6 +1391,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreFavJuice != null && Number.isFinite(unitsPreFavJuice)) {
     target.v8_unitsPreFavJuice = unitsPreFavJuice;
   }
+  if (unitTierEvSteamAction != null) target.v8_unitTierEvSteamAction = unitTierEvSteamAction;
+  if (unitsPreUnitTierEvSteam != null && Number.isFinite(unitsPreUnitTierEvSteam)) {
+    target.v8_unitsPreUnitTierEvSteam = unitsPreUnitTierEvSteam;
+  }
   if (steamTailReason != null) target.v8_steamTailReason = steamTailReason;
   if (steamTailArriving != null) target.v8_steamTailArriving = !!steamTailArriving;
   if (steamTailOnLock != null) target.v8_steamTailOnLock = !!steamTailOnLock;
@@ -1458,6 +1469,20 @@ function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
   };
 }
 
+function steamInputsForOverlay(snap, sd) {
+  const tape = analyzeTicketTapeLog(sd?.v8_ticketTapeLog);
+  const steamTier = snap?.steam?.tier ?? sd?.v8_steamTier ?? null;
+  const lastHourPct = snap?.steam?.lastHourPct
+    ?? sd?.v8_steamLastHourPct
+    ?? tape.lastHourLock
+    ?? null;
+  return {
+    steamTier,
+    lastHourPct,
+    tapeSteamOnLock: tape.steamOnLock === true,
+  };
+}
+
 function skillStampsDrifted(sd, bundle, {
   tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null,
   flinchFailOpenAction = null, maxSrSub4Action = null, noConfirmedAction = null,
@@ -1467,6 +1492,7 @@ function skillStampsDrifted(sd, bundle, {
   climateAction = null,
   steamTailAction = null,
   favJuiceAction = null,
+  unitTierEvSteamAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1514,6 +1540,7 @@ function skillStampsDrifted(sd, bundle, {
   if (climateAction != null && (sd.v8_climateAction || null) !== climateAction) return true;
   if (steamTailAction != null && (sd.v8_steamTailAction || null) !== steamTailAction) return true;
   if (favJuiceAction != null && (sd.v8_favJuiceAction || null) !== favJuiceAction) return true;
+  if (unitTierEvSteamAction != null && (sd.v8_unitTierEvSteamAction || null) !== unitTierEvSteamAction) return true;
   return false;
 }
 
@@ -3402,6 +3429,20 @@ async function createMissingLockedPicks({
         peakUnitsApplied = favJuicePolicyCreate.units;
       }
 
+      // Unit-tier EV × steam — after fav-juice. Mute EV < −2 no steam;
+      // floor 2–<4u → 4u on steam / lock-EV 0..1 / last-hour ≥ 2%.
+      let unitTierPolicyCreate = null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        const steamCreate = steamInputsForOverlay(liveTapeCreate, null);
+        unitTierPolicyCreate = applyUnitTierEvSteamOverlay({
+          units: peakUnitsApplied,
+          currentEv: evDriftCreate?.currentEv ?? null,
+          pickDate: TARGET_DATE,
+          ...steamCreate,
+        });
+        peakUnitsApplied = unitTierPolicyCreate.units;
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -3640,6 +3681,10 @@ async function createMissingLockedPicks({
           unitsPreFavJuice: (favJuicePolicyCreate && Number.isFinite(favJuicePolicyCreate.unitsPrePolicy))
             ? favJuicePolicyCreate.unitsPrePolicy
             : null,
+          unitTierEvSteamAction: unitTierPolicyCreate?.action ?? null,
+          unitsPreUnitTierEvSteam: (unitTierPolicyCreate && Number.isFinite(unitTierPolicyCreate.unitsPrePolicy))
+            ? unitTierPolicyCreate.unitsPrePolicy
+            : null,
           steamTailReason: steamTailPolicyCreate?.reason ?? null,
           steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
           steamTailOnLock: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamOnLock : null,
@@ -3698,7 +3743,9 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (favJuicePolicyCreate?.mutedBy) {
+      if (unitTierPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = unitTierPolicyCreate.mutedBy;
+      } else if (favJuicePolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = favJuicePolicyCreate.mutedBy;
       } else if (steamTailPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = steamTailPolicyCreate.mutedBy;
@@ -3744,7 +3791,10 @@ async function createMissingLockedPicks({
       const favJuiceMutedCreate = favJuicePolicyCreate?.action === 'MUTE'
         && Number.isFinite(favJuicePolicyCreate.unitsPrePolicy)
         && favJuicePolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const unitTierMutedCreate = unitTierPolicyCreate?.action === 'MUTE'
+        && Number.isFinite(unitTierPolicyCreate.unitsPrePolicy)
+        && unitTierPolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -3756,6 +3806,7 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(unitTierPolicyCreate?.reason ? [unitTierPolicyCreate.reason] : []),
           ...(favJuicePolicyCreate?.reason ? [favJuicePolicyCreate.reason] : []),
           ...(steamTailPolicyCreate?.reason ? [steamTailPolicyCreate.reason] : []),
           ...(evDriftPolicyCreate?.reason ? [evDriftPolicyCreate.reason] : []),
@@ -4994,6 +5045,20 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = favJuicePolicy.units;
   }
 
+  // Unit-tier EV × steam — after fav-juice. Mute EV < −2 no steam;
+  // floor 2–<4u → 4u on steam / lock-EV 0..1 / last-hour ≥ 2%.
+  let unitTierPolicy = null;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    const steamLive = steamInputsForOverlay(liveTapeSnap, sd);
+    unitTierPolicy = applyUnitTierEvSteamOverlay({
+      units: finalUnitsApplied,
+      currentEv: evDriftLive?.currentEv ?? null,
+      pickDate,
+      ...steamLive,
+    });
+    finalUnitsApplied = unitTierPolicy.units;
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP rescue that forced through an AGS mute.
@@ -5059,6 +5124,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (sportUnlockPolicy?.reason && !reasons.includes(sportUnlockPolicy.reason)) reasons.push(sportUnlockPolicy.reason);
   if (steamTailPolicy?.reason && !reasons.includes(steamTailPolicy.reason)) reasons.push(steamTailPolicy.reason);
   if (favJuicePolicy?.reason && !reasons.includes(favJuicePolicy.reason)) reasons.push(favJuicePolicy.reason);
+  if (unitTierPolicy?.reason && !reasons.includes(unitTierPolicy.reason)) reasons.push(unitTierPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -5096,9 +5162,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const favJuiceMuted = favJuicePolicy?.action === 'MUTE'
     && Number.isFinite(favJuicePolicy.unitsPrePolicy)
     && favJuicePolicy.unitsPrePolicy > 0;
+  const unitTierMuted = unitTierPolicy?.action === 'MUTE'
+    && Number.isFinite(unitTierPolicy.unitsPrePolicy)
+    && unitTierPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
   // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift + steam-tail + fav-juice run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  const sizeMuted = unitTierMuted || favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -5141,7 +5210,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const EV_DRIFT_MUTE_VALUES = new Set([EV_DRIFT_EDGE_MUTED_BY]);
   const STEAM_TAIL_MUTE_VALUES = new Set([STEAM_TAIL_MUTED_BY]);
   const FAV_JUICE_MUTE_VALUES = new Set([FAV_JUICE_MUTED_BY]);
-  if (favJuicePolicy?.mutedBy) {
+  const UNIT_TIER_MUTE_VALUES = new Set([UNIT_TIER_EV_MUTED_BY]);
+  if (unitTierPolicy?.mutedBy) {
+    patch.mutedBy = unitTierPolicy.mutedBy;
+  } else if (favJuicePolicy?.mutedBy) {
     patch.mutedBy = favJuicePolicy.mutedBy;
   } else if (steamTailPolicy?.mutedBy) {
     patch.mutedBy = steamTailPolicy.mutedBy;
@@ -5183,7 +5255,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || TOP_CROWDED_MUTE_VALUES.has(sd.mutedBy)
       || EV_DRIFT_MUTE_VALUES.has(sd.mutedBy)
       || STEAM_TAIL_MUTE_VALUES.has(sd.mutedBy)
-      || FAV_JUICE_MUTE_VALUES.has(sd.mutedBy)) {
+      || FAV_JUICE_MUTE_VALUES.has(sd.mutedBy)
+      || UNIT_TIER_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -5596,6 +5669,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreFavJuice: (favJuicePolicy && Number.isFinite(favJuicePolicy.unitsPrePolicy))
         ? favJuicePolicy.unitsPrePolicy
         : null,
+      unitTierEvSteamAction: unitTierPolicy?.action ?? null,
+      unitsPreUnitTierEvSteam: (unitTierPolicy && Number.isFinite(unitTierPolicy.unitsPrePolicy))
+        ? unitTierPolicy.unitsPrePolicy
+        : null,
       steamTailReason: steamTailPolicy?.reason ?? null,
       steamTailArriving: steamTailPolicy ? !!steamTailPolicy.steamArriving : null,
       steamTailOnLock: steamTailPolicy ? !!steamTailPolicy.steamOnLock : null,
@@ -5632,6 +5709,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       climateAction: climatePolicy?.action ?? null,
       steamTailAction: steamTailPolicy?.action ?? null,
       favJuiceAction: favJuicePolicy?.action ?? null,
+      unitTierEvSteamAction: unitTierPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5649,7 +5727,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (sportUnlockPolicy && (sd.v8_sportUnlockAction || null) !== sportUnlockPolicy.action)
         || (climatePolicy && (sd.v8_climateAction || null) !== climatePolicy.action)
         || (steamTailPolicy && (sd.v8_steamTailAction || null) !== steamTailPolicy.action)
-        || (favJuicePolicy && (sd.v8_favJuiceAction || null) !== favJuicePolicy.action)) {
+        || (favJuicePolicy && (sd.v8_favJuiceAction || null) !== favJuicePolicy.action)
+        || (unitTierPolicy && (sd.v8_unitTierEvSteamAction || null) !== unitTierPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
