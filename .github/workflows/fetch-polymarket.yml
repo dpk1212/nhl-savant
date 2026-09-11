@@ -232,6 +232,12 @@ jobs:
             echo "--- auditMarketData ---"
             node scripts/auditMarketData.js || true
 
+            # All-time P&L JSON for Sharp Flow Record / AGS-U / L7-L30.
+            # One Firestore scan ~hourly (script no-ops if file < 55 min old).
+            # Do not run this every cycle — that would re-bill the archive read.
+            echo "--- buildSharpFlowPnl ---"
+            node scripts/buildSharpFlowPnl.mjs || echo "::warning::buildSharpFlowPnl failed (cycle $i — keeping last public/sharp-flow-pnl.json)"
+
             # Commit + push JSON changes to main (retry on conflict).
             # Include scan_heartbeat.json — leaving it unstaged used to make
             # `git pull --rebase` fail every cycle ("unstaged changes"), so the
@@ -251,7 +257,8 @@ jobs:
                     public/sharp_intel_excluded_wallets.json \
                     public/whitelist_scan_diagnostics.json \
                     public/scan_heartbeat.json \
-                    public/sharp_scan_supplement.json 2>/dev/null || true
+                    public/sharp_scan_supplement.json \
+                    public/sharp-flow-pnl.json 2>/dev/null || true
             if ! git diff --staged --quiet; then
               git commit -m "Auto-update: Market data [$(date +'%Y-%m-%d %H:%M') cycle $i]"
               for attempt in 1 2 3; do
@@ -278,6 +285,7 @@ jobs:
                   public/whitelist_scan_diagnostics.json \
                   public/scan_heartbeat.json \
                   public/sharp_scan_supplement.json \
+                  public/sharp-flow-pnl.json \
                   "$json_stash/" 2>/dev/null || true
 
             # Pull latest main BEFORE building. This loop checks out once at
