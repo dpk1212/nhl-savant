@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-09-11T14:41:34.153Z",
-  "elapsedSec": 41.4,
+  "scannedAt": "2026-09-11T14:47:08.395Z",
+  "elapsedSec": 38.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 163,
   "summary": {
     "total": 325,
-    "coveredByMain": 41,
+    "coveredByMain": 40,
     "recovered": 19,
-    "recoveredPositions": 422,
-    "noPositions": 265,
+    "recoveredPositions": 423,
+    "noPositions": 266,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 25,
+      "ml": 26,
       "spread": 21,
-      "total": 11,
-      "dropped_shadow_gate": 285,
+      "total": 10,
+      "dropped_shadow_gate": 286,
       "dropped_excluded": 75,
       "dropped_duplicate": 5
     }
@@ -273,11 +273,11 @@
       "sports": "SOC,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x821dab0565ebf5b327f51db06223fdcfe01acf16",
-      "positionsCount": 15,
+      "positionsCount": 14,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 19565,
       "willPassShadowGate": 2,
-      "willDropAtShadowGate": 13,
+      "willDropAtShadowGate": 12,
       "positions": [
         {
           "sport": "SOC",
@@ -404,15 +404,6 @@
           "invested": 101,
           "entryLine": null,
           "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "epy_osa",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 135,
-          "entryLine": null,
-          "passesShadow": false
         }
       ]
     },
@@ -468,7 +459,8 @@
       "tier": "FLAT",
       "name": "mlbman",
       "sports": "MLB",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x09af203b5af180c61d54eea118a4548a1f209728"
     },
     {
       "walletShort": "20ad01",
@@ -762,7 +754,7 @@
           "gameKey": "val_sev",
           "marketType": "ml",
           "side": "home",
-          "invested": 4076,
+          "invested": 4744,
           "entryLine": null,
           "passesShadow": false
         },
@@ -780,7 +772,7 @@
           "gameKey": "ore_okst",
           "marketType": "ml",
           "side": "home",
-          "invested": 450,
+          "invested": 455,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1181,6 +1173,15 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "sea_oak",
+          "marketType": "total",
+          "side": "over",
+          "invested": 305,
+          "entryLine": 10.5,
+          "passesShadow": false
+        },
+        {
           "sport": "NFL",
           "gameKey": "buf_hou",
           "marketType": "ml",
@@ -1188,15 +1189,6 @@
           "invested": 313,
           "entryLine": null,
           "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "sea_oak",
-          "marketType": "total",
-          "side": "over",
-          "invested": 278,
-          "entryLine": 10.5,
-          "passesShadow": false
         },
         {
           "sport": "NFL",
@@ -2733,7 +2725,7 @@
           "gameKey": "sea_oak",
           "marketType": "total",
           "side": "over",
-          "invested": 3877,
+          "invested": 3879,
           "entryLine": 10.5,
           "passesShadow": true
         },
@@ -3471,10 +3463,10 @@
       "sports": "NBA,UFC,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 8,
+      "positionsCount": 9,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 20012,
-      "willPassShadowGate": 0,
+      "willPassShadowGate": 1,
       "willDropAtShadowGate": 8,
       "positions": [
         {
@@ -3548,6 +3540,15 @@
           "invested": 8,
           "entryLine": null,
           "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "pit_chc",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 48,
+          "entryLine": null,
+          "passesShadow": true
         }
       ]
     },
@@ -4173,8 +4174,8 @@
       "positionsCount": 176,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1002,
-      "willPassShadowGate": 42,
-      "willDropAtShadowGate": 134,
+      "willPassShadowGate": 41,
+      "willDropAtShadowGate": 135,
       "positions": [
         {
           "sport": "CFB",
@@ -4418,15 +4419,6 @@
           "invested": 44,
           "entryLine": null,
           "passesShadow": false
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "navy_fau",
-          "marketType": "total",
-          "side": "under",
-          "invested": 542,
-          "entryLine": 57.5,
-          "passesShadow": true
         },
         {
           "sport": "CFB",
@@ -5191,6 +5183,15 @@
           "side": "away",
           "invested": 45,
           "entryLine": 1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "jvst_ohio",
+          "marketType": "total",
+          "side": "over",
+          "invested": 54,
+          "entryLine": 49.5,
           "passesShadow": false
         },
         {
@@ -6073,11 +6074,11 @@
       "sports": "SOC,NBA,NFL,UFC,CFB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 24,
+      "positionsCount": 25,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 15668,
       "willPassShadowGate": 8,
-      "willDropAtShadowGate": 16,
+      "willDropAtShadowGate": 17,
       "positions": [
         {
           "sport": "CFB",
@@ -6266,6 +6267,15 @@
           "side": "over",
           "invested": 15,
           "entryLine": 64.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "wsu_ksu",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 10,
+          "entryLine": 17.5,
           "passesShadow": false
         },
         {
