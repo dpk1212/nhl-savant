@@ -1,123 +1,112 @@
 # Recent timeline (analytics)
 
-**Window:** 2026-06-13 → 2026-09-10 (Sep 10 **partial**)  
-**Source:** `twitter_agents/researcher/knowledge/sources/account_overview_analytics_2026-06-13_2026-09-10.csv`  
-**Type:** **Account overview (daily totals — no post text).** Notes: `sources/account_overview_2026-09-10_notes.md`  
-**Ingested:** 2026-09-10 (Hormozi desk — engagements / replies / PV / follows > vanity)  
-**X pull:** growthPulse **failed** (`xurl` NoAuthMethod). Cannot rank Sep 2–10 heroes by open.  
-**Post-level law (still binding):** Aug 26–Sep 1 content CSV — `sources/account_analytics_content_2026-08-26_2026-09-01.csv`
+**Window:** 2026-09-05 → 2026-09-11 (Sep 11 **partial evening**)  
+**Source:** `twitter_agents/researcher/knowledge/sources/account_analytics_content_2026-09-05_2026-09-11.csv`  
+**Type:** **Content (post-level).** Notes: `sources/account_analytics_content_2026-09-05_2026-09-11_notes.md`  
+**Ingested:** 2026-09-11 (Hormozi desk — engagements / replies / PV / URL > vanity)  
+**Post-level hook law:** **this file.** Aug 26–Sep 1 deaths still bind; its top-10 is no longer the live silhouette chart.  
+**X pull:** not required — CSV has post ids + text.
 
-Scoreboard this file: **days**, not hooks. Last content-CSV top-10 remains the hook silhouette chart until a new content export lands.
+Scoreboard this file: **heroes**, then conversation. 32 heroes · 126 replies · median hero 98 eng / 2225 impr.
 
 ---
 
-## Account scoreboard — new window vs last content window
+## Post-level top 10 (THIS content CSV)
 
-| Window | Days | Avg impr | Avg eng | Avg R | Avg PV | Avg fol | Posts/d | eng/impr |
-|--------|------|----------|---------|-------|--------|---------|---------|----------|
-| Aug 26–Sep 1 (last content CSV) | 7 | 11800 | 181 | 12.3 | 113 | 7.0 | 1.1 | 1.54% |
-| **Sep 2–9 (since last ingest)** | 8 | **14211** | **248** | **22.8** | **135** | **8.0** | 1.0 | **1.74%** |
-| 89-day baseline | 89 | 9736 | 141 | 8.7 | 90 | 5.8 | 2.0 | 1.44% |
-
-Sep 2–9: **+37% eng/day · +85% replies/day** vs the already-good Aug 26–Sep 1 week, on **fewer** posts. Concentration + live CFB weekend beat volume.
-
-## Daily champions (cannot SPCL-tag — no post text)
-
-| # | Day | Eng | Impr | R | PV | Fol | Posts | Desk read |
-|---|-----|-----|------|---|----|-----|-------|-----------|
-| 1 | **Mon Sep 7** | **398** | 20375 | **48** | **198** | 11 | **1** | 89-day #1 on every compliance proxy. One unidentified post. |
-| 2 | Sun Sep 6 | 331 | 20781 | 31 | 191 | 5 | **3** | Identified cluster: MLB ask · Under give · Ole Miss QT · ND leftover QT staged |
-| 3 | Fri Aug 28 | 297 | 21196 | 29 | 166 | 12 | 2 | Inside last content CSV |
-| — | Wed Sep 9 | 196 | 14875 | 17 | 106 | 9 | 1 | One unidentified post (after weekend peak) |
-| — | Thu Sep 10 | 22 | 1834 | 0 | 20 | 2 | **0** | **Partial morning.** Not a death. Slot is open. |
-
-**Residual law:** Sep 2 and Sep 4 had **0 Create Post** and still **244 eng / 20R**. Good posts keep working. Do not spam to “use the slot.”
-
-**Follows outlier (not this week):** Aug 11 = **62** new follows. Do not chase that day-shape.
-
-## Post-level top 10 (LAST CONTENT CSV — still hook law)
-
-Window Aug 26–Sep 1 · 29 heroes · median 2056 impr. Ranked by engagements then replies / PV.
+Ranked by engagements, then replies / PV.
 
 | # | Eng | Impr | R | PV | URL | Fol | SPCL | Open |
 |---|-----|------|---|----|-----|-----|------|------|
-| 1 | **237** | 2384 | **5** | 34 | 0 | 0 | **SC** | $120K AT 2× USUAL on Cubs ML. +$545K the last 30 days. |
-| 2 | **223** | 4164 | 3 | **49** | 0 | 0 | **LC** | No sexy post here… but this dude hasn’t missed in preseason yet. |
-| 3 | **217** | **4700** | 1 | 28 | 0 | 0 | **SC** | NATS GOT ROCKED 13-1 YESTERDAY. Everyone is moving off baseball. |
-| 4 | **211** | 2493 | 2 | 33 | 0 | 0 | **PC** | +42.06u OVER THE LAST 30 DAYS. Yesterday's top plays got smoked. |
-| 5 | **209** | 3953 | 3 | 28 | 0 | 0 | **LS** | SHARPS MUST BE OUT GOLFING. Slow board. Still like this one while we wait |
-| 6 | **182** | 2161 | **0** | 34 | 0 | 0 | **LC** | Most people try to become sharp. Buy the +EV tool. Pay a million bucks. |
-| 7 | **173** | 3253 | 1 | 24 | 0 | 0 | **SC** | BETMGM IS SHOWING TOP TICKETS We don't ride tickets. We ride the wallet |
-| 8 | **171** | 2162 | **8** | 20 | 0 | 0 | **PC** | DOWN 76 UNITS. THEN V12 WENT LIVE. 89 days later.....all-time high. |
-| 9 | **170** | 1912 | 2 | 19 | 0 | 0 | **S** | $381K on one soccer ticket. Barcelona ML. 6.0× his usual. |
-|10 | **170** | 1586 | 0 | **37** | 0 | 0 | **SC** | Dipping a toe back in tonight trusting this A-tier sharp. +$545K |
+| 1 | **540** | **6628** | **8** | 39 | 0 | 0 | **S+P** | `+60 units in the last 7 days` + four plays tonight + `$100k` on the D-backs |
+| 2 | **335** | 4258 | 6 | 25 | 1 | 0 | **P** | `Short and sweet. Let’s have another night!` (image does the board) |
+| 3 | **299** | 4851 | 2 | **52** | 0 | 1 | **S+C** | `$79.5k on over 44.5` · most-bet total is the Under · L30 `+$207k` · NFL is back |
+| 4 | **291** | 4778 | 4 | 24 | 0 | 0 | **P+C** | `30-8` last 7 · `+67 units` · three early plays |
+| 5 | **267** | 1835 | 4 | 30 | 0 | 0 | **P+L** | `At the airport. But notifications are clutch. Let’s go Jays!!` |
+| 6 | **262** | 4728 | **21** | 41 | 0 | 0 | **C** | `+125 units since June 1st` · `I need a comment here so people know this isn’t fake` |
+| 7 | **227** | 4020 | 3 | 33 | 0 | 1 | **S+C** | `$51K AT 4.4× on the guy we normally fade` · Trent / Rams −3.5 **POSTED** |
+| 8 | **208** | 3714 | 1 | 35 | 0 | 1 | **S** | `OLE MISS -7 IS THE #2 SLIP` · flagged ML · `$3,100` / 1.6× |
+| 9 | **202** | 2714 | 1 | 23 | 0 | 0 | **S** | `2 HIT. 2 MISSED. ONE LEFT.` · ND −20.5 leftover |
+|10 | **173** | 2556 | 5 | 27 | 0 | 0 | **C** | `+60.24u IN 7 DAYS` · raise your hand if you joined this week |
 
-## Compliance proxies (content CSV — still)
+**Also counts (not top-10 eng, but scoreboard):** `$3.3K IN LOSING WALLETS` 161/5R · Yankees/Padres cash 158/**10R** · fade-Trent walk is #7 · `2 RED NIGHTS` 132 · Friday bad-night 85/**10R**.
 
-**Replies:** lost-on-site **9R** · `DOWN 76 UNITS` **8R** · Cubs `$120K` **5R**  
-**PV:** anti-sexy printer **49** · golfing-rinse **46** · Brewers toe-dip **37**  
-**URL:** only SUMMER has 7 — dead hero (13 eng). URL-in-hero ≠ trials.
+## Compliance proxies (this CSV)
 
-Account-overview addendum: **Sep 7 = 48 replies in one day** (file max). That is the conversation peak to beat. We cannot name the open until a content CSV or X auth.
+**Replies:** `+125u` comment-ask **21R** · night-cash congrats **10R** · Friday bad-night **10R** · `+60u` four-plays **8R** · short-and-sweet **6R**  
+**PV:** `$79.5k` Over 44.5 **52** · `+125u` **41** · night-cash **40** · `+60u` four-plays **39**  
+**URL:** still dead as a convert proxy (0–1 on winners). Do not put a trial link in line 1.
 
-## SPCL mix (content CSV top 10 — what’s still hot for hooks)
+Sep 7 is no longer unidentified. Engagement king = `+60u` + tonight’s four plays. Conversation king = `+125u` + need-a-comment.
 
-- **S**: 7/10 · **C**: 8/10 · **L**: 3/10 · **P**: 2/10  
-**Hot letters:** **S + C** live `$XK at Y×`. **L+C** anti-sexy printer = PV. **P+C** valley = replies among proof posts.
+## SPCL mix (this top 10 — what’s hot)
 
-Sep 6–7 account spike is consistent with **S+C live-board / unfinished stake** (ND leftover QT + CFB QTs + MLB printer ask), not with convert-as-open.
+- **S**: 5/10 · **P**: 4/10 · **C**: 5/10 · **L**: 1/10  
+**Hot letters:** **S + C** live `$XK` / dead-pile (`$79.5k` vs most-bet Under · `$51K` fade). **S + P** printer-then-tonight’s-plays (`+60u` **540**). **P+L** say–do cash (airport Jays). **C** printer + human close (`+125u` **21R**).
+
+Image-only “short and sweet” can win when the card is the stuff. Caption-without-$ (`odds dropping` 39/0R · `Add the cubs over` 38/0R) does not.
 
 ## Soft / spent / don’t echo
 
-Content-CSV deaths **still bind** (no new post-level kills from this file):
+Prior Aug 26–Sep 1 deaths **still bind.** New from this file:
 
 | Eng | Open | Verdict |
 |-----|------|---------|
-| **1** | Convert paragraph / Upgrade 25% | **DEAD as hero.** Close only. |
-| **4** | Lecture-ask data/model | Dead. |
-| **13** | Start free PROMO CODE - SUMMER | Dead. 7 URL clicks ≠ trials. |
-| **35** | Thankful to have someone like Dom… | Gratitude QT. Dead vs parent’s result. |
-| **44** | Here is how the last 30 days played | Recap furniture. Printer open wins. |
-| 0R | Most people try to become sharp (clones) | Likes, no conversation. Spent. |
+| **5** | `You don’t have to grind EV or arb or sweat pricing!` | **DEAD.** Convert promise, no pudding. |
+| **43** | `If only there was a better way. 🧐` | Tease / no stuff. Impression trap (2230). |
+| **54** | `If you’re are tired of losing… There is a better way` | Convert paragraph. 2204 impr, still dead vs 540. |
+| **55** | `+$1,742. He didn't buy a data feed` | Member-result pitch. Close energy as a hero. |
+| **68** | `If you missed this deal. I can’t give you OJ discounts` | Promo/OG-discount hero. |
+| **71 / 0R** | Camden’s story | Testimonial. PV 34, **no conversation.** Not an ask vehicle. |
+| **57** | Sharp Vault / v12 showcase | Product-room tour. Mid. Do not lead our next draft here. |
+| **39 / 0R** | `Adding this while I board… odds are dropping` | Juice/limit caption. No $ in line 1. |
+| **89 / 2.3%** | `10 day green streak comes to an end` | Recap furniture. Same family as “here is how the month played.” |
+| **6** | `People tell me all the time my idea is stupid` | Diary / defend-the-idea. Dead. |
 
-**Kill (unchanged):** convert-as-open · SUMMER · thankful OG · recap furniture · Seems legit · become-sharp clone · ✅✅ recap · empty run-it-back · Sports-folder restage · −76u restage · `$0 ON LOUISVILLE` · Over/Under-as-brand · system-label identity
+**Kill (this window + still binding):** convert-as-open · grind-EV / better-way tease · OJ/SUMMER/UPGRADE open · thankful OG · Camden restage · Vault/v12 **as our identity open** · fade-Trent restage · `2 RED NIGHTS` restage · Friday “pretty bad night” restage · most-bet list clone · `USUAL` in line 1–2 · `$0 ON LOUISVILLE` · Over/Under-as-brand · system-label identity in *our* copy
+
+Dale already posted Vault/v12 himself on Sep 11. We do not lecture. We still do not open the next hero on the room name unless he spines it.
 
 ## Themes spent
 
-**This overview window (Sep 2–9, qualitative):** MLB `+104.95u` ask (Sep 6 AM) · `$5.2K` Under give · Ole Miss -7 QT · ND `2 HIT / ONE LEFT` leftover · unidentified Sep 7 champion · unidentified Sep 9 post.
+**Posted and done:** `$3.3K` Under-dead · Sep 6 CFB (Ole Miss / ND leftover) · `+60u` / `+67u` / `+104.95u` / `+125u` MLB printers · `$79.5k` Over 44.5 most-bet-Under · airport Jays · `$51K AT 4.4×` fade-Trent / Rams −3.5 · `2 RED NIGHTS` / +33.4u · Friday bad-night · Vault tour · OK/Mich + Jays/O’s lookahead
 
-**Still spent from content CSV:** Cubs `$120K at 2×` · anti-sexy NFL-preseason printer sentence · become-sharp · `DOWN 76` open · lost-on-site FAQ · August `+46.8u` table restage.
+**Still spent from older CSV:** Cubs `$120K at 2×` · anti-sexy preseason printer sentence · become-sharp · `DOWN 76` open · lost-on-site FAQ · August `+46.8u` table restage
 
 ## Unfinished / serialization still open
 
-- **NFL week 1 first lock — Thu Sep 10 TODAY.** Live S or C give. This was the parked slot.
-- ND / Ole Miss only with a **new** scar/$ — weekend already used the leftover-list silhouette
-- Nats +$69K parked hero
-- Convert ask still unearned as a **hero** (Sep 6 ask fired; convert-as-open still death)
+- **Saturday live board** — CFB / NFL week-1 Sat / MLB. Needs a **new** ticket. This is the open slot.
+- TNF / Rams grade only with a **new** scar — Friday already did “pretty bad night.” Do not restage that paragraph.
+- ND / Ole Miss only with a **new** leftover
+- Nats +$69K still parked
+- Comment-ask (`+125u` 21R) is a spent *shape* this week — do not rerun “need a comment so people know this isn’t fake”
 
 ## Ask temperature
 
-**Cold-warm. Next slot = give, not ask** unless Dale overrides.
+**Cold. Next slot = give, not ask** unless Dale overrides.
 
-- MLB first-week ask already shipped Sep 6
-- Sep 6–7 then printed the best reply/PV days of the 89-day file — free SPCL after the ask, not another ask
-- Convert-as-open still **1 eng** on the content CSV
+- Printer-asks already fired Sep 5–7 (`+60.24u` raise-hand · `+104.95u` · `+125u` comment)
+- Convert-as-open still dies in this file (5 / 43 / 54)
+- Camden story = 0R
+- TNF give just printed (227). Friday already confessed + toured the Vault.
 - URL-in-hero still does not convert
+
+Free SPCL that still pulls a next step: **new-tape** `$XK at Y×` · unfinished leftover on a **new** game · pain-first loud pile vs our side · printer-then-tonight’s-plays (`+60u` + four cards). Not a restage.
 
 ## FORWARD LOOK (what the feed needs next)
 
-1. **NFL Thursday live give** — pain-first if a loud pile exists; `$XK` / unfinished-stake / dead-pile vs our side. Walk the board (proof machine). No ask.
-2. Grade ND / Ole Miss only with a **new** receipt.
-3. Nats +$69K only if Dale spines it — not the default morning.
+1. **Saturday live give** — walk **one** new ticket. S and/or C in line 1. Pain-first if a loud pile exists. Demonstrate, don’t caption. No ask.
+2. Grade TNF / leftover only if Dale dumps a **new** receipt (not the Friday paragraph again).
+3. Nats +$69K only if he spines it.
 
-**NOT:** another convert/MLB ask · `$0 ON LOUISVILLE` · most-bet list clone · SUMMER/UPGRADE open · GOLD/Vault/AGS/V12 identity · Aug 11 follow-spike cosplay · restage `$120K` / `DOWN 76` / lost-on-site
+**NOT:** another convert / grind-EV / better-way · Camden · Vault/v12 identity open · fade-Trent restage · `2 RED NIGHTS` restage · bad-night restage · most-bet list clone · streak-end recap · SUMMER/UPGRADE · `USUAL` in line 1–2
 
 ## Silhouettes safe to reuse (if they fit ONE)
 
-- `$XK AT Y× USUAL` + L30 (Cubs #1) — **new tape only**
-- Unfinished stake (`2 HIT / ONE LEFT`) — **new leftover only**, not ND again
-- “No sexy post here…” + printer **in the image** (PV)
-- Size-educate printer open (`+46.8u IN AUGUST` family) when PURPOSE=educate
-- Pain-first loud pile classified in ≤2 lines (2026 proof machine)
+- `$XK AT Y×` + fade/paradox on **new tape** (Cubs #1 old file · `$51K` this file — both spent as copy)
+- Printer **then** tonight’s plays (`+60u` + four cards = window #1)
+- Pain-first loud pile classified in ≤2 lines (`$79.5k` Over vs most-bet Under = PV king)
+- Unfinished leftover (`2 HIT / ONE LEFT`) — **new** game only
+- Airport / say–do cash — only with a live ticket in the image
+- `+125u` + human close — conversation, **not** this week’s rerun
 
 *Ready for Dale spine → WHO → PURPOSE → ONE → 1–2 SPCL → craft. No tweet until he asks.*

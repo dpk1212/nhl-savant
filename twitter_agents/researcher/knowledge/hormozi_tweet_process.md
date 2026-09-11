@@ -23,50 +23,50 @@
 
 ## LIVING WINDOW (CSV — overwrite on every ingest)
 
-**Source locked:** Account overview Jun 13–Sep 10, 2026 (Sep 10 **partial**) · daily totals, **no post text**  
+**Source locked:** Content CSV Sep 5–11, 2026 (Sep 11 **partial evening**) · 32 heroes · 126 replies  
 **File:** `SHARED/recent_timeline_latest.md`  
-**Ingested:** 2026-09-10  
-**Post-level hook law:** still Aug 26–Sep 1 content CSV (29 heroes) until a new content export lands  
-**X pull:** growthPulse failed (NoAuthMethod) — Sep 7 / Sep 9 opens unidentified  
-**Next tweet:** do not draft until Dale dumps morning concepts. This card binds PURPOSE / hook / ask.
+**Ingested:** 2026-09-11  
+**Post-level hook law:** **this CSV.** Aug 26–Sep 1 deaths still bind; that top-10 is no longer the live silhouette chart.  
+**Sep 7 / Sep 9:** identified. Eng king = `+60u` + four plays (**540**). Conversation king = `+125u` + need-a-comment (**21R**). PV king = `$79.5k` Over 44.5 vs most-bet Under (**52**).  
+**Next tweet:** do not draft until Dale dumps a spine. This card binds PURPOSE / hook / ask.
 
-### What actually converted attention (account window)
+### What actually converted attention (this content window)
 
 | Job | Winner | Why it counts |
 |-----|--------|----------------|
-| Account day (file max) | **Mon Sep 7** · **398 eng / 48R / 198 PV · 1 post** | Best day in 89 days. Concentrated live give, not volume. Open unknown. |
-| Desk cluster | **Sun Sep 6** · 331 / 31R / 191 PV · **3 posts** | MLB ask + Under give + CFB QTs (Ole Miss / ND leftover staged) |
-| Residual | Sep 2 + Sep 4 · **0 posts** · still 244 eng / 20R each | Good posts keep working. Do not spam. |
-| Hook silhouettes (content CSV) | `$120K AT 2×` **237/5R** · anti-sexy printer **49 PV** · `DOWN 76` **8R** · lost-on-site **9R** | Still the post-level chart. Reuse shape on **new tape** only. |
-
-Sep 2–9 vs Aug 26–Sep 1: **+37% eng/day · +85% replies/day** on ~1 post/day. The live-board weekend compounded.
+| Engagement king | **Mon Sep 7** · `+60u last 7` + four plays + `$100k` D-backs · **540 / 8R / 39 PV** | Printer then tonight’s board. Window #1. |
+| Conversation king | **Mon Sep 7** · `+125u since June 1` + need-a-comment · **262 / 21R / 41 PV** | Human close after a printer. Do not rerun this week. |
+| PV king | **Wed Sep 9** · `$79.5k on over 44.5` vs most-bet Under · **299 / 52 PV** | Pain-first `$XK` + loud pile. |
+| Image give | **Sun Sep 6** · `Short and sweet. Let’s have another night!` · **335 / 6R** | Caption is nothing; the card is the stuff. |
+| TNF give (posted) | **Thu Sep 10** · `$51K AT 4.4× on the guy we normally fade` · **227 / 3R / 33 PV** | Spent. Do not restage fade-Trent / Rams. |
+| Confession (posted) | **Fri Sep 11** · `Overall a pretty bad night` · **85 / 10R** | Conversation from honesty. Spent as a restage. |
 
 ### Empirical deaths (do not repeat — this is pathway law now)
 
 | Posted open | Eng | Law |
 |-------------|-----|-----|
-| `I don't know what people are using for their data… Upgrade 25%` | **1** | Convert paragraph as **line 1 / standalone hero** = death. Convert words are the **close**, never the hook. |
-| `I don't know what you're using for your data or model` | **4** | Same death. Lecture-ask without pudding. |
-| `Start free PROMO CODE - SUMMER` | **13** | Promo-code hero. 7 URL clicks ≠ trials. |
-| `Thankful to have someone like Dom willing to dive in.` | **35** | Customer/OG QT opened on **Dale feelings**. Parent already had +7.53u / disaster. QT law: our scarce contrast, not gratitude. |
-| `Here is how the last 30 days played. We really were on something` | **44** | Soft recap furniture. Same month as `+46.8u IN AUGUST` (94/3R) — printer open wins, diary loses. |
-| `Most people try to become sharp` (clone / OG variant) | 182 / 89 · **0R** | Likes without conversation. Spent. Not an ask vehicle. |
-| `Seems legit` · `Chris Sale ✅✅` · empty `run it back` | weak / 0R | Caption, recap checklist, serialization without a new scar. |
-| `$0 ON LOUISVILLE` (Sep 6, killed pre-post) | — | QT that ignores the parent’s live slip. |
-| Sep 10 morning 1834 impr / 0R | — | **Not a death.** Partial day, 0 posts yet. |
+| `You don’t have to grind EV or arb or sweat pricing!` | **5** | Convert promise, no pudding. New death. |
+| `If only there was a better way. 🧐` | **43** | Tease / no stuff. 2230 impr impression trap. |
+| `If you’re are tired of losing… There is a better way` | **54** | Convert paragraph. Still dead vs 540. |
+| `+$1,742` · OJ discounts · Camden’s story | 55 / 68 / **71 0R** | Pitch / promo / testimonial as hero. PV ≠ conversation. |
+| Sharp Vault / v12 showcase | **57** | Product-room tour. Mid. Not our next open. |
+| `Adding this while I board… odds are dropping` | **39 / 0R** | Juice/limit caption. No $ in line 1. |
+| `10 day green streak comes to an end` | **89 / 2.3%** | Recap furniture. Printer open wins. |
+| `I don't know what people are using for their data… Upgrade 25%` | **1** | Still bind from Aug 26–Sep 1. Convert = close only. |
+| `Thankful to have someone like Dom…` · SUMMER · become-sharp · `$0 ON LOUISVILLE` | 35 / 13 / 0R / — | Still bind. |
 
 ### Ask temperature (as of this ingest)
 
-**Cold-warm. Next slot = give, not ask** unless Dale overrides.
+**Cold. Next slot = give, not ask** unless Dale overrides.
 
-MLB first-week ask already fired Sep 6. Sep 6–7 then printed the best reply days of the quarter. Convert-as-open still 1 eng. Free SPCL that still pulls a next step: `$XK at Y×` · unfinished stake on **new** leftover · anti-sexy printer · pain-first loud pile. URL-in-hero still does not convert.
+Printer-asks already fired Sep 5–7. Convert-as-open still dies (5 / 43 / 54). TNF give just printed. Friday already did confession + Vault. Free SPCL that still pulls a next step: **new-tape** `$XK at Y×` · unfinished leftover on a **new** game · pain-first loud pile · printer-then-tonight’s-plays. URL-in-hero still does not convert.
 
 ### Hook QA addendum (from this CSV)
 
-Line 1 must be **S and/or C a stranger can screenshot** — `$XK at Y×` / disaster-hole / loud pile classified / unfinished leftover / anti-sexy + printer image.  
-Feelings, thankfulness, “I don’t know what you’re paying,” promo codes, and “here is how the month played” fail this test **in market**, not just in theory.
+Line 1 must be **S and/or C a stranger can screenshot** — `$XK at Y×` / dead-pile vs our side / unfinished leftover / printer-then-tonight’s-plays.  
+Feelings, grind-EV, “better way,” promo, Camden, Vault-as-open, streak-end recap, and fade-Trent restage fail this test **in market**.
 
-**Account-overview addendum (9/10):** Sep 7’s 48-reply day is the conversation bar. We cannot clone its open (unknown). Default next slot = **NFL Thursday live give** — walk the board, don’t caption. Pair with “you don’t sit with the dead pile,” not Over/Under-as-brand.
+**Default next slot (9/11):** **Saturday live give** — walk one new ticket. Not TNF. Not `2 RED NIGHTS`. Not “pretty bad night.” Pair with “you don’t sit with the dead pile,” not Over/Under-as-brand.
 
 ---
 
