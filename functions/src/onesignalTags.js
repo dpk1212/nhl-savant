@@ -57,8 +57,8 @@ async function syncOnesignalPaidTags(externalId, opts) {
       const current = await fetchPaidTag(externalId);
       paidValue = paidTagForEntitlement(current.paid);
     } catch (err) {
-      console.warn('[OneSignal] could not read current tag — defaulting to all:', err.message || err);
-      paidValue = 'all';
+      console.warn('[OneSignal] could not read current tag — skip write (do not default all):', err.message || err);
+      return { ok: false, reason: 'get_tag_failed' };
     }
   }
 

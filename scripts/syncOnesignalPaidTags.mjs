@@ -140,8 +140,9 @@ async function main() {
           if (current === 'true') stats.migrated_true++;
           next = paidTagForEntitlement(current);
         } catch (err) {
-          console.warn(`  ${uid} GET tag failed — default all: ${err.message || err}`);
-          next = LOCK_ALERT_MODE.ALL;
+          console.warn(`  ${uid} GET tag failed — skip write (do not default all): ${err.message || err}`);
+          stats.errors++;
+          continue;
         }
       } else {
         next = LOCK_ALERT_MODE.ALL;
