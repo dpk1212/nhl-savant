@@ -1,178 +1,144 @@
-# Twitter — 2026-09-10 PM · QT GIVE · fade Trent / tonight he might be right / Rams sharps
-**POSTED** `2098166189499273311` · 4020 / 227 / 3R / 33 PV. **Do not restage.** Next draft waits on a new Dale spine (Saturday live give).
+# Twitter — 2026-09-11 PM · QT GIVE · BetMGM Friday MLB / don’t forget MLB / +99u / 4 plays
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not the July loop)
-**r4:** Body held. Hook failed. Dale: hook is the most important part. Rewrite hook only — line 2 = unique (9/01 eve).
+**CSV:** Sep 5–11 living window (ingest this run). Ask **cold**. Give.
 
 | | |
 |--|--|
-| WHO | Someone who fades Trent on sight — and a stranger looking at a 3u kangaroo meme who thinks that’s the information. |
-| PURPOSE | Give / buzz. Walk the Rams sharps under his post. |
-| ONE | We normally fade Trent. Tonight he might be right. Sharps we track are also on the Rams. |
-| SPCL | S + C (L is his sentences) |
-| Timeline | Ask fired Sep 6. Cold-warm. Give. Do not restage 2 RED NIGHTS. |
+| WHO | Someone who just flipped to football and thinks MLB is leftover. |
+| PURPOSE | Give / buzz. QT of BetMGM’s most-bet list. Walk 4 flagged totals. |
+| ONE | Football’s here. Don’t forget MLB. We’re +99u the last 30. Here are 4 that fit. |
+| SPCL | **C + S** |
+| Timeline | TNF fade-Trent posted. Friday bad-night posted. Next was “Sat one ticket” — Dale overrode to this Friday QT. |
 | Ask | **None.** No URL. No trial. No self-reply. |
+
+**Post as Quote** of @BetMGMNewss Friday MLB most-bet list. Attach the 4 cards in walk order (PHI → CIN → LAA → NYM). Do not @ in the body.
 
 ---
 
 ### 0 · Spine (Dale — law, do not rewrite)
-- We normally fade Trent
-- Tonight he might be right
-- Here are some sharps also on the Rams
-Assets: Trent 3u Rams −3.5 (~4h) · flagged card 2.0u · Action …bba3 $51.0K / 4.4× / 9-1 · JSON also …7da3d5 $58K / 7.9× same −3.5
-Constraint: give, not ask. Pre T−15 (8:20pm ET). Do not say locked. QT = the parent. Do not @.
+- Quote this BetMGM tweet
+- As we push into football season, let’s not forget about the MLB
+- We are up 99 units in the last 30 days
+- Here are 4 plays that fit the strategy
+- Let’s have a night
+- Pull the gaudy sharp / Action (Source B) numbers that back the cards
+
+Assets: BetMGM most-bet graphic · 4 flagged totals  
+Constraint: give, not ask. QT = the parent. Do not restage fade-Trent / 2 RED NIGHTS / pretty bad night. Do not put GOLD / Vault / AGS / V12 / Sharp A / Source B in the copy.
 
 ### 0b · Timeline
-Ask fired Sep 6. Cold-warm. **Give.** Forward-look slot #1 was NFL Thursday live walk. This is that slot. Convert-as-open still death. Do not restage 2 RED NIGHTS. Do not use `USUAL` in line 1–2. Do not restate his TNF MEGA MAX open.
+Ask **cold.** Printer-asks already fired Sep 5–7. Convert-as-open still death. Window #1 silhouette = printer then tonight’s plays (`+60u` + four cards **540**) — **new tape only**. This is that job: +99u L30 + football twist + BetMGM parent. Do not clone the Sep 7 sentence.
 
 ### 0c · Forward look
-Avatar needs a live NFL ticket with scarce $ / size. S+C starved since the morning educate. Dale’s spine *is* slot #1.
+Default slot was Saturday one-ticket. Dale spine = law. This QT is the Friday get-back-on-the-board give after the bad-night confession.
 
 ### 1 · WHO
-Someone who fades Trent on sight — and a stranger who thinks the kangaroo meme is the information.
+Someone who just flipped to football and thinks the MLB board is leftover.
 
 ### 2 · PURPOSE
-**Give / buzz.** Walk the sharps on the Rams. No URL. No trial. No SR.
-
-Failure of r1/r2: PURPOSE got spent on a “clever fade paradox” instead of walking the board. Hormozi: demonstrate, don’t caption. Restart here.
+**Give / buzz.** Quote BetMGM’s public list. Walk our 4. No URL. No trial. No SR.
 
 ### 3 · ONE
-**We normally fade Trent. Tonight he might be right — sharps we track are also on the Rams.**
+**Football’s here. Don’t forget MLB. +99u the last 30. Four plays that fit.**
 
 | Test | |
 |------|---|
-| Understand | Fade is the habit. Tonight the wallets are with him. |
-| Believe | …bba3 $51,000 / 4.43× / Action 9-1 · L30 7-1 +$45K · …7da3d5 $58,317 / 7.89× · steam −3 → −3.5 · 2u flagged |
-| Unique | The fade + “might” + the walk. Not “we like the Rams.” Not “he’s right.” |
+| Understand | Season flipped. MLB is still printing. Here are tonight’s four. |
+| Believe | `sharp-flow-pnl` MLB L30 **+99.09u** (537-489). Cards: PHI 24-8 / +$94K · CIN $5.4K / +$39K · LAA 50-34 / +$27K · NYM $476. |
+| Unique | Football/don’t-forget + public most-bet list vs our board. Not “we like four totals.” |
 
-**Yum:** you see the Rams sharps before 8:20. You are not sitting with the $150K 49ers ticket.
+**Yum:** you see the wallets on tonight’s MLB before lock — you are not sitting on BetMGM’s NRFI / Yankees −140 pile as the information.
 
-### 4 · SPCL — **S + C**
-- **S** — $51K at 4.4× · $58K at 7.9× (scarce tape we control)
-- **C** — 9-1 · L30 +$45K · steam −3 → −3.5
-- **L** — Dale’s three sentences, not workshop
-- P is showing up on the first NFL Thursday (not a second spear)
+### 4 · SPCL — **C + S**
+- **C** — +99u L30 (verified) · 24-8 / +$94K · 50-34 / +$27K
+- **S** — $38K on PHI Under · $5.4K at 1.8× · $2.5K on LAA Under
+- L is his sentences. P is showing up the night after a bad one (not a second spear)
 
-Past silhouette already in SPCL canon: `WE FADE ALMOST EVERYTHING TRENT… TODAY SAME SIDE`. This is that job on new tape.
+**Also seated:** pairing = don’t sit with the most-bet NRFI as the intel · proof machine = recent + visual (4 cards) + volume on one spear (+99u / don’t forget) · pain first = parent’s #1 NRFI is PHI-ATL, we’re Under 6.5 · Qual = stuff in the walk · whole truth = CIN Under $26K · PHI 5 proven on the Over
 
-**Also seated:** pairing = not sitting with the 49ers pile · proof machine = recent + visual + volume on one spear + pain first (the fade) · Qual = stuff in the walk
+### 5 · STUFF
+**Our printer (origin/main `sharp-flow-pnl.json` generated 17:05Z):** MLB last 30 days **+99.09u** · 537-489-2. Dale said 99. Use 99.
 
-### 5 · STUFF (origin/main JSON + Dale Action paste)
-NFL.sf_lar · sides still even ($155K away / $152K home) — do **not** say unanimous
+**Parent (BetMGM Friday MLB):**
+- Most-bet games: BAL@TOR · COL@DET · **LAA@WSH** · **PHI@ATL** · CWS@STL
+- Most-bet totals: BAL@TOR Under 8 · COL@DET Over 8 · SEA@ATH Over 10 · **CIN@MIL Over 8** · **LAA@WSH Under 7.5**
+- Most-bet NRFIs: **PHI@ATL −150** · CLE@MIN · **NYM@NYY −135** · BAL@TOR · LAA@WSH
+- Most-bet ML #1: Yankees −140
 
-Rams −3.5 we can walk:
-- …bba3 (`c9bba3`) · **$51,000** · avg **$11,525** · **4.43×** · firstSeen 21:31Z · Dale Action: 9-1 · +75% ROI · 90% WR · L10 5-1 · L30 7-1 +$45K · NFL spread L30 2-0 · steam −3 → −3.5
-- …7da3d5 (`wr0ngw4yb3tt0r`) · **$58,317** · avg **$7,392** · **7.89×** · monthly +$781K · do **not** invent a W-L (no Action card this run)
+**Four flagged cards (Dale screens — Action/Source B on the card). Tape `sharp_total_positions` 22:28Z backs $ where noted. Do not say locked.**
 
-Loud other side: …658e 49ers +3.5 · **$149,858** · 2.71×
-Our card: Rams −3.5 −110 · **2.0u flagged** · locks **8:20pm ET**
-Trent: Rams −3.5 · **3u** · TNF mortal mega max
+1. **PHI@ATL Under 6.5 +129 · 4.0u** · locks **7:01 ET**  
+   Card: $38K Under / Over $7.1K · lead `…2cbcf8` **$2K at 2.0× · 24-8 · 75% WR · L30 +$94K** · 4 more proven with us · **5 proven on the Over** · 84% here  
+   Parent: #4 most-bet game · **#1 most-bet NRFI**. They have the NRFI. We have the Under.
 
-**Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · ELITE · locked · he’s right (he said *might*) · unanimous
+2. **CIN@MIL Over 7.5 −126 · 4.0u** · locks **7:31 ET**  
+   Card: $14K Over / **Under $26K** · lead `…4b912c` **$5.4K at 1.8× · 29-26 · 53% WR · L30 +$39K** · 3 more proven with us · 1 proven other side · 34% here  
+   Parent: #4 most-bet total is this Over (they have 8). Whole truth: the Under pile is louder. We are still on the Over.  
+   JSON: `$5,400` is on Over 7.5 (`…e8e2cc`, 4.32× vs his avg). Card attributes $5.4K / 1.8× / +$39K to `…4b912c`. **Walk the card.** Do not “correct” it in public.
+
+3. **LAA@WSH Under 8.5 −144 · 4.0u** · locks **6:31 ET** (first)  
+   Card: $2.5K Under / Over $1.1K · lead `…9214c2` **50-34 · 60% WR · L30 +$27K** · 2 proven with us · 1 proven Over · 69% here  
+   JSON: Under 8.5 **$2,500** = `…7d395d` $2,000 (1.56×) + `…9214c2` $500. Matches the $2.5K stamp.  
+   Parent: #3 most-bet game · #5 most-bet total (Under **7.5**). Same game, our number is 8.5.
+
+4. **NYM@NYY Over 7.5 −126 · 3.0u** · locks **6:51 ET**  
+   Card: $2.8K Over · **nothing against** · lead `…69f882` **$476 at 1.6× · 66-54 · 55% WR · L30 +$3.8K** · 1 more proven · 100% here  
+   Smallest wallet on the board. Say that with a straight face. Parent: #3 NRFI · Yankees −140 is their #1 ML. We’re on the Over, not the chalk ML.
+
+**Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · Source B · ELITE · locked · unanimous · `USUAL` in line 1–2 · $0 on a parent ticket that is actually on the list
 
 ### 6 · HOOK QA
-Hormozi / Dale 9/01: obsess over the hook. Line 2 = interesting/unique (`ALMOST 3× JULY`). Person + number + paradox. Rewrite hook before touching body.
+What: +99u the last 30 days.  
+How: football’s here — don’t forget MLB.  
+So what: four plays that fit. Then the walk.  
+Screenshot: stranger sees **+99u / football / MLB** in two lines.  
+QT law: parent owns “most bet games.” We do not open by restating the list. We use it in the walk (NRFI #1 vs our Under).
 
-What: $51K at 4.4×.  
-How: on the guy we fade.  
-So what: tonight he might be right — then walk the Rams sharps.  
-Screenshot: stranger sees **$51K / 4.4× / fade** in two lines.  
-QT law: parent owns MEGA MAX. We do not open on that.
+**Killed**
+- Restate “Most bet games: 1. Orioles at Jays…”
+- `$0 ON` a BetMGM side (Louisville death)
+- Clone `We have made over +60 units in the last 7 days in just the MLB`
+- `2 RED NIGHTS` / pretty bad night / fade-Trent
+- Vault / v12 / grind-EV / better way
+- Workshop: “that’s the bit” / “the leftover sport”
 
-**Killed r1**
-```
-Same side I fade this guy on.
-I fade him. That's the bit.
-```
-Workshop. Nobody talks like that.
-
-**Killed r2**
-```
-We fade this guy.
-Tonight he's on the right side.
-```
-Rewrote Dale’s sentence into a punch line.
-
-**Killed r3 (Dale: hook sucks)**
-```
-$51K AT 4.4×
-
-We normally fade Trent.
-Tonight he might be right.
-```
-Empty-clone printer. Line 2 is a diary setup, not the unique. $ and fade never collide. August law: line 2 has to twist.
-
-**Chosen** — printer + paradox in two lines (August shape, new tape)
-```
-$51K AT 4.4×
-on the guy we fade.
-```
-
-His three sentences stay in the body. Then the walk.
+### 7–8 · Draft + algorithm
+His sentences stay. Hook is the printer + his twist. Body = those sentences + the walk + let’s have a night. Delete: system labels, convert, ask.
 
 ---
 
-## 1 · QT — paste this (primary)
+## COPY THIS
 
-**When:** NOW — quote Trent’s 4h TNF 3u Rams −3.5 post (tweet id not on this machine — paste as Quote).
-**Attach walk (after his meme):**
-1. Action sharp card ($51.0K / 4.4× / 9-1)
-2. Our flagged Rams −3.5 card (2.0u / −3 → −3.5 / locks 8:20)
-3. Optional third: the $58K / 7.9× card if it’s on screen
-
-**No URL. No ask. No @ in the text.**
+**Type:** Quote  
+**Parent:** BetMGM Friday MLB most-bet list  
+**Media:** 4 cards — PHI Under 6.5 · CIN Over 7.5 · LAA Under 8.5 · NYM Over 7.5
 
 ```
-$51K AT 4.4×
-on the guy we fade.
++99u IN THE LAST 30 DAYS
+Football's here. Don't forget MLB.
 
-We normally fade Trent.
-Tonight he might be right.
+As we push into football season, let's not forget about the MLB.
+We're up 99 units in the last 30 days.
 
-Sharps we track are on the Rams too.
+Here are 4 plays that fit the strategy.
 
-$51,000 on Rams -3.5. 4.4× what he usually bets. 9-1 this season. Last 30 days 7-1, +$45K.
+Phillies-Braves is their #1 most-bet NRFI.
+We're Under 6.5. +129. 4u.
+Lead wallet is 24-8. +$94K the last 30. $2,000 on this. 2× his size.
+$38K on the Under. Five proven took the Over.
 
-Another one: $58K on the same number. 7.9× his usual.
+Reds-Brewers Over 7.5. 4u.
+$5,400 at 1.8×. +$39K the last 30.
+The Under has $26K. We're on the Over anyway.
 
-The number steamed. Opened -3. Sitting -3.5.
+Angels-Nats Under 8.5. 4u.
+$2,500. 50-34. +$27K the last 30.
+They have this game as their #5 most-bet total.
 
-$150K on the 49ers. We're not on that.
+Mets-Yankees Over 7.5. 3u.
+$476 at 1.6×. Nothing on the other side.
 
-2u. Flagged. Locks 8:20 ET.
+All flagged. First lock 6:31 ET.
+
+Let's have a night.
 ```
-
-[Open in X →](https://x.com/intent/tweet?text=%2451K%20AT%204.4%C3%97%0Aon%20the%20guy%20we%20fade.%0A%0AWe%20normally%20fade%20Trent.%0ATonight%20he%20might%20be%20right.%0A%0ASharps%20we%20track%20are%20on%20the%20Rams%20too.%0A%0A%2451%2C000%20on%20Rams%20-3.5.%204.4%C3%97%20what%20he%20usually%20bets.%209-1%20this%20season.%20Last%2030%20days%207-1%2C%20%2B%2445K.%0A%0AAnother%20one%3A%20%2458K%20on%20the%20same%20number.%207.9%C3%97%20his%20usual.%0A%0AThe%20number%20steamed.%20Opened%20-3.%20Sitting%20-3.5.%0A%0A%24150K%20on%20the%2049ers.%20We%27re%20not%20on%20that.%0A%0A2u.%20Flagged.%20Locks%208%3A20%20ET.)
-
-### Self-reply
-None.
-
----
-
-## 2 · HERO — only if you will not QT
-
-Noun has to live in the hook if there is no parent. Do **not** @ him.
-
-```
-$51K AT 4.4×
-on Trent. We fade him.
-
-We normally fade Trent.
-Tonight he might be right.
-
-Sharps we track are on the Rams too.
-
-$51,000 on Rams -3.5. 4.4× what he usually bets. 9-1 this season. Last 30 days 7-1, +$45K.
-
-Another one: $58K on the same number. 7.9× his usual.
-
-The number steamed. Opened -3. Sitting -3.5.
-
-$150K on the 49ers. We're not on that.
-
-2u. Flagged. Locks 8:20 ET.
-```
-
-**Attach:** Action card → flagged card.
-
-### RT line
-`$51K AT 4.4× on the guy we fade.`

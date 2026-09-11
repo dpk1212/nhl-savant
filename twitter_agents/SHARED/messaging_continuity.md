@@ -7,65 +7,70 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-11 PM · **CSV ingest only** · no draft |
-| CSV window | Content Sep 5–11 (32 heroes). Post-level hook law = this file. |
-| Ask temperature | **Cold.** Give. Printer-asks already fired Sep 5–7. TNF give posted. Friday already confessed + toured Vault. |
-| Account arc | Fade-Trent / Rams QT **posted** (227/3R). `2 RED NIGHTS` posted. Friday bad-night **10R**. Next slot = Saturday live give on **new** tape. |
+| Last updated | 2026-09-11 PM r1 · QT GIVE · BetMGM Friday MLB · +99u / don’t forget MLB |
+| CSV window | Content Sep 5–11 (32 heroes). Post-level hook law = that ingest. |
+| Ask temperature | **Cold.** This post = no ask. Next slot still give unless Dale spines an ask. |
+| Account arc | Bad-night confession posted AM. This is the Friday live give: MLB still printing while football starts. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/11 PM | **Ingest** | Content CSV Sep 5–11 · living window overwritten | — | none | Done. No draft. |
-| 9/11 AM | Hero **CONFESS** | `Overall a pretty bad night` · process same | **P+L** | none | **Posted** 85/10R — spent as restage |
-| 9/11 AM | Hero **PRODUCT** | Sharp Vault / v12 showcase + OK/Mich lookahead | — | none | Posted. Do not lead our next draft here. |
-| 9/10 PM | QT **GIVE** | `$51K AT 4.4× on the guy we normally fade` | **S+C** | none | **Posted** 227/3R/33PV — spent |
-| 9/10 AM | Hero **EDUCATE** | `2 RED NIGHTS` / week still +33.4u | **C+L** | none | **Posted** 132/3R — spent |
+| 9/11 PM r1 | QT **GIVE** | `+99u IN THE LAST 30 DAYS` / Football's here. Don't forget MLB. · 4 totals | **C + S** | none | **Staged** |
+| 9/11 PM | **Ingest** | Content CSV Sep 5–11 | — | none | Done |
+| 9/11 AM | Hero **CONFESS** | `Overall a pretty bad night` | **P+L** | none | Posted 85/10R — spent |
+| 9/11 AM | Hero **PRODUCT** | Vault / v12 + OK/Mich lookahead | — | none | Posted. Do not lead here. |
+| 9/10 PM | QT **GIVE** | `$51K AT 4.4× on the guy we normally fade` | **S+C** | none | Posted 227/3R — spent |
 
 ---
 
 ## Angle lock
-**ONE:** none — ingest only. Waiting on Dale spine.  
-**Default PURPOSE if he says go with no extra constraint:** Saturday live give. One new ticket. S+C. No ask.  
-**Do not invent** the ticket, the $ , or the hook until he speaks.
+**ONE:** Football’s here. Don’t forget MLB. +99u L30. Four plays that fit.  
+**Yum:** you see the wallets before lock — you are not using BetMGM’s NRFI list as the intel.  
+**Hook:** `+99u IN THE LAST 30 DAYS` / `Football's here. Don't forget MLB.`  
+**Body:** Dale’s three beats, then the walk, then let’s have a night.  
+**Ask:** none. QT of BetMGM Friday most-bet list.
 
 ---
 
 ## Themes spent / open
-**Spent (posted — do not restage):** fade-Trent habit · tonight he might be right · Rams −3.5 walk · `$51K` / 4.4× / `$58K` / 7.9× · `2 RED NIGHTS` / +33.4u · Friday “pretty bad night” · Vault/v12 tour · OK/Mich + Jays/O’s lookahead · `$79.5k` Over 44.5 · airport Jays · `+60u` / `+67u` / `+104.95u` / `+125u` MLB printers · Ole Miss / ND leftover · `$3.3K` Under-dead · Camden story · grind-EV / better-way convert
+**Spent this beat (once posted):** +99u L30 printer · football / don’t forget MLB · BetMGM Friday most-bet QT · PHI Under 6.5 $38K / 24-8 / +$94K · CIN Over 7.5 $5.4K / $26K Under · LAA Under 8.5 $2.5K / 50-34 / +$27K · NYM Over 7.5 $476 · 4u/4u/4u/3u flagged walk
 
-**Still open:** Saturday live board on **new** tape · TNF grade only with a **new** scar · Nats +$69K · ND/Ole Miss only with a new leftover
+**Still spent:** fade-Trent / Rams · `2 RED NIGHTS` · Friday bad-night paragraph · Vault tour · `$79.5k` Over 44.5 · `+60u` / `+67u` / `+104.95u` / `+125u` sentence clones · Ole Miss / ND leftover · Camden · grind-EV
 
-**Don’t:** convert-as-open · grind-EV / better-way tease · OJ / SUMMER / UPGRADE · thankful OG · Camden · Vault/v12 as *our* identity open · fade-Trent restage · `2 RED NIGHTS` restage · bad-night restage · most-bet list clone · `USUAL` in line 1–2 · GOLD / AGS / V12 identity in our copy · rewrite Dale’s sentences into workshop punch lines · July Coach/Researcher/Strategist/Editor loop
+**Still open:** Saturday CFB / NFL Sat leftover only with **new** tape · TNF grade only with a new scar · Nats +$69K parked (not tonight’s Under 8.5)
+
+**Don’t:** convert · GOLD / Vault / AGS / V12 / Sharp A / Source B · restage this QT · restage fade-Trent · clone `+60u last 7 days` sentence · `USUAL` in line 1–2 · `$0 ON` a parent ticket · rewrite Dale’s sentences into a punch line
 
 ---
 
 ## Unfinished
-- Saturday CFB / NFL Sat / MLB — needs Dale spine + live receipts
-- Nats +$69K parked
-- Comment-ask silhouette (`+125u` 21R) spent as a *shape* this week
+- BetMGM tweet id unknown this environment — Dale pastes as Quote
+- Angels lock 6:31 ET may already be due — do not say locked unless it is
+- Nats +$69K still parked (different leftover)
 
 ---
 
-## FORWARD LOOK — after this ingest
-1. **Saturday live give** — walk one new ticket. `$XK` / dead pile / unfinished leftover. S+C. No ask.
-2. Grade TNF / leftover only if he dumps a **new** receipt (not Friday’s paragraph).
+## FORWARD LOOK — after this posts
+1. **Saturday live give** — one **new** CFB / NFL / MLB ticket. S+C. No ask. Not a restage of this four-pack.
+2. Grade tonight’s four only with a **new** scar.
 3. Nats +$69K only if he dumps it.
 
-**NOT:** another ask · convert-as-open · fade-Trent restage · `2 RED NIGHTS` · bad-night restage · Vault identity · Camden · streak-end recap
+**NOT:** another ask · convert-as-open · fade-Trent restage · `2 RED NIGHTS` · bad-night restage · Vault identity · another +99u restage · most-bet list clone without new tape
 
-**Avatar:** they just saw a loss night + a product tour. They need a live Saturday receipt, not another lecture.  
-**Balance:** S+C still hot. P (say–do) just printed via bad-night 10R. Ask is overfed this week.  
-**Hormozi economics:** must give. Not enough unused free SPCL to ask again.  
-**Distribution:** TNF QT + Friday confession already ran. Next compounds by walking a **new** board, not resetting the week’s story.
+**Avatar:** they got the loss night this morning. This post puts them back on a live MLB board while football starts.  
+**Balance:** C+S just printed. Ask still overfed this week.  
+**Hormozi economics:** still give tomorrow.  
+**Distribution:** compounds the “we show up after a red night” Power trail. Next is a new Saturday ticket, not a recap of these four.
 
 ---
 
 ## Agent close-out
-- [x] Content CSV ingested (`analytics_csv_ingest.md`)
-- [x] `recent_timeline_latest.md` overwritten
-- [x] Living window on `hormozi_tweet_process.md` overwritten
+- [x] Dale spine used: football / don’t forget MLB / +99u / 4 plays / let’s have a night
+- [x] Hormozi pathway (not July loop)
+- [x] +99u verified (MLB L30 +99.09u)
+- [x] QT uses parent (NRFI #1 / #5 total) — not a Louisville ignore
+- [x] Whole truth on CIN $26K Under and PHI 5 proven Over
+- [x] Staged `twitter_drafts/COPY_PASTE.md` only
 - [x] Continuity written
-- [x] No draft — waiting on Dale spine
-- [x] Old July loop not launched
