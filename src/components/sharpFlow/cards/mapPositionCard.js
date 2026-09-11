@@ -28,7 +28,7 @@ import {
   coherentTicket,
   resolveInstrument,
 } from '../../../lib/ticketInstrument.js';
-import { resolvePayOdds } from '../../../lib/payOdds.js';
+import { resolvePayOdds, stampedBookOdds } from '../../../lib/payOdds.js';
 import {
   inheritSpreadMarketHints,
   signedSpreadEntryLine,
@@ -1537,13 +1537,22 @@ export function mapLockedPickToCardFixture(pick, {
     ? [recoOdds, market.fairDisplay].filter(Number.isFinite)
     : [market.fairDisplay, recoOdds].filter(Number.isFinite);
   const journey = (pinSeries && pinSeries.length >= 2) ? pinSeries : sparseJourney;
-  // FAIR/NOW = same-line tape as the ticket.
+  // FAIR/NOW = same-line book tape. Never treat a Poly-copied pinnacleOdds
+  // as fair (norf_uva 2026-09-11: −134 poly vs −302 on another handicap).
+  const stampedBook = stampedBookOdds({
+    pinnacleOdds: pick.pinnacleOdds,
+    lockPinnOdds: pick.lockPinnOdds,
+    odds: pick.odds,
+    oddsSource: pick.oddsSource,
+    book: pick.book,
+    fairBook: pick.fairBook,
+  });
   const fairLine = Number.isFinite(market.fairDisplay) ? market.fairDisplay
     : (Number.isFinite(inst.tape?.fair) ? inst.tape.fair
-      : (Number.isFinite(pick.pinnacleOdds) && inst.variant !== 'ALT' ? pick.pinnacleOdds : null));
+      : (Number.isFinite(stampedBook) && inst.variant !== 'ALT' ? stampedBook : null));
   const fairProb = market.fairProb != null
     ? market.fairProb
-    : ip(fairLine);
+    : (fairLine != null ? ip(fairLine) : null);
   // EV of the ticket vs same-line fair (not MAIN reco vs a different handicap).
   const evFlagged = (fairProb != null && Number.isFinite(lockOdds) && inst.variant !== 'ALT')
     ? evPctVsFairProb(lockOdds, fairProb)
@@ -1597,8 +1606,7 @@ export function mapLockedPickToCardFixture(pick, {
   // Poly avgPrice is PM-only — chi_ten 2026-08-29 painted Bears +2.5 +110
   // (poly) next to PIN/NOW −108 (book) and blew the line↔odds contract.
   const bookOnLine = Number.isFinite(tapeNow) ? tapeNow
-    : (Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
-      : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : null));
+    : (Number.isFinite(stampedBook) ? stampedBook : null);
   const pay = resolvePayOdds({
     stampedOdds: lockOdds,
     bookOnLine,

@@ -7,6 +7,36 @@
  * same-line Pinnacle tape was −108. That pairing is why spreads/totals
  * "break every day": two venues, one hero slot.
  */
+/** Polymarket receipt / oddsSource — not a sportsbook fair. */
+export function isPolyBookStamp({ oddsSource, book, fairBook } = {}) {
+  const src = `${oddsSource || ''} ${fairBook || ''} ${book || ''}`.toLowerCase();
+  return src.includes('poly');
+}
+
+/**
+ * Same-line book juice from lock/peak stamps. Null when pinnacleOdds is
+ * just a copy of the Poly ticket (norf_uva 2026-09-11: −134 → −134).
+ */
+export function stampedBookOdds({
+  pinnacleOdds = null,
+  lockPinnOdds = null,
+  odds = null,
+  oddsSource = null,
+  book = null,
+  fairBook = null,
+} = {}) {
+  const bookPx = Number.isFinite(Number(lockPinnOdds)) && Number(lockPinnOdds) !== 0
+    ? Number(lockPinnOdds)
+    : (Number.isFinite(Number(pinnacleOdds)) && Number(pinnacleOdds) !== 0
+      ? Number(pinnacleOdds)
+      : null);
+  if (bookPx == null) return null;
+  if (!isPolyBookStamp({ oddsSource, book, fairBook })) return bookPx;
+  const ticket = Number.isFinite(Number(odds)) && Number(odds) !== 0 ? Number(odds) : null;
+  if (ticket != null && Math.round(bookPx) === Math.round(ticket)) return null;
+  return bookPx;
+}
+
 export function resolvePayOdds({
   stampedOdds = null,
   bookOnLine = null,

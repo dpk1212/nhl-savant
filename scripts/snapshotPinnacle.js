@@ -30,6 +30,7 @@ import {
   appendTapePoint,
   enforceGitSafeSize,
   GIT_SAFE_MAX_BYTES,
+  lastTapeEpoch,
 } from './lib/pinnacleTape.js';
 import { dhSecondKey } from './lib/doubleheaderKey.js';
 import { overrideCommenceIso } from './lib/commenceOverrides.js';
@@ -480,13 +481,20 @@ async function run() {
         fairBook, fairAway, fairHome, fairDraw,
         bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks,
       } = extractBookOdds(game);
-      if (fairAway == null || fairHome == null || !fairBook) {
+      const awayName = game.away_team;
+      const homeName = game.home_team;
+      const spreadPeek = pickFairSpread(game, fairBook);
+      const totalPeek = pickFairTotal(game, fairBook);
+      const hasMl = fairAway != null && fairHome != null && !!fairBook;
+      const hasSpread = !!spreadPeek?.fairSpread;
+      const hasTotal = !!totalPeek?.fairTotal;
+      // FCS/FBS blowouts often have Pinnacle spreads + totals and no ML
+      // (norf_uva 2026-09-11). Skipping them left Sharp Flow with Poly-only tape.
+      if (!hasMl && !hasSpread && !hasTotal) {
         sportSkip++;
         continue;
       }
 
-      const awayName = game.away_team;
-      const homeName = game.home_team;
       let gameKey = makeGameKey(awayName, homeName, label);
       if (!gameKey) continue; // SOC country we can't resolve to a FIFA code
       if (label === 'MLB') {
@@ -538,43 +546,52 @@ async function run() {
       }
 
       // ML history (draw stored only when present — 3-way soccer).
-      const snapshot = { t: now, away: fairAway, home: fairHome, fairBook };
-      if (fairDraw != null) snapshot.draw = fairDraw;
-      if (max != null) snapshot.max = max;
-      if (maxMoneyLine != null) snapshot.maxMoneyLine = maxMoneyLine;
-      if (maxSpread != null) snapshot.maxSpread = maxSpread;
-      if (maxTotal != null) snapshot.maxTotal = maxTotal;
-      if (!existing.opener) {
-        existing.opener = { ...snapshot };
+      // Spread/total-only games (no h2h) skip this block so we don't stamp
+      // null current and then purge the row as stale.
+      const hasMlNow = fairAway != null && fairHome != null && !!fairBook;
+      if (hasMlNow) {
+        const snapshot = { t: now, away: fairAway, home: fairHome, fairBook };
+        if (fairDraw != null) snapshot.draw = fairDraw;
+        if (max != null) snapshot.max = max;
+        if (maxMoneyLine != null) snapshot.maxMoneyLine = maxMoneyLine;
+        if (maxSpread != null) snapshot.maxSpread = maxSpread;
+        if (maxTotal != null) snapshot.maxTotal = maxTotal;
+        if (!existing.opener) {
+          existing.opener = { ...snapshot };
+        }
+        existing.current = fairDraw != null
+          ? { away: fairAway, home: fairHome, draw: fairDraw }
+          : { away: fairAway, home: fairHome };
+        if (max != null) existing.current.max = max;
+        if (maxMoneyLine != null) existing.current.maxMoneyLine = maxMoneyLine;
+        if (maxSpread != null) existing.current.maxSpread = maxSpread;
+        if (maxTotal != null) existing.current.maxTotal = maxTotal;
+        existing.fairBook = fairBook;
+        if (max != null) existing.max = max;
+        if (maxMoneyLine != null) existing.maxMoneyLine = maxMoneyLine;
+        if (maxSpread != null) existing.maxSpread = maxSpread;
+        if (maxTotal != null) existing.maxTotal = maxTotal;
+
+        existing.history = appendTapePoint(existing.history, snapshot, 'ml', now);
+
+        const opAway = existing.opener.away;
+        const opHome = existing.opener.home;
+        const currAwayProb = impliedProb(fairAway);
+        const openAwayProb = impliedProb(opAway);
+        const currHomeProb = impliedProb(fairHome);
+        const openHomeProb = impliedProb(opHome);
+        existing.movement = {
+          away: fairAway - opAway,
+          home: fairHome - opHome,
+          direction: currAwayProb > openAwayProb ? 'away'
+                   : currHomeProb > openHomeProb ? 'home'
+                   : null,
+        };
+      } else {
+        if (max != null) existing.max = max;
+        if (maxSpread != null) existing.maxSpread = maxSpread;
+        if (maxTotal != null) existing.maxTotal = maxTotal;
       }
-      existing.current = fairDraw != null
-        ? { away: fairAway, home: fairHome, draw: fairDraw }
-        : { away: fairAway, home: fairHome };
-      if (max != null) existing.current.max = max;
-      if (maxMoneyLine != null) existing.current.maxMoneyLine = maxMoneyLine;
-      if (maxSpread != null) existing.current.maxSpread = maxSpread;
-      if (maxTotal != null) existing.current.maxTotal = maxTotal;
-      existing.fairBook = fairBook;
-      if (max != null) existing.max = max;
-      if (maxMoneyLine != null) existing.maxMoneyLine = maxMoneyLine;
-      if (maxSpread != null) existing.maxSpread = maxSpread;
-      if (maxTotal != null) existing.maxTotal = maxTotal;
-
-      existing.history = appendTapePoint(existing.history, snapshot, 'ml', now);
-
-      const opAway = existing.opener.away;
-      const opHome = existing.opener.home;
-      const currAwayProb = impliedProb(fairAway);
-      const openAwayProb = impliedProb(opAway);
-      const currHomeProb = impliedProb(fairHome);
-      const openHomeProb = impliedProb(opHome);
-      existing.movement = {
-        away: fairAway - opAway,
-        home: fairHome - opHome,
-        direction: currAwayProb > openAwayProb ? 'away'
-                 : currHomeProb > openHomeProb ? 'home'
-                 : null,
-      };
 
       existing.bestAway = bestAway;
       existing.bestHome = bestHome;
@@ -582,15 +599,17 @@ async function run() {
       existing.bestHomeBook = bestHomeBook;
       if (bestDraw != null) { existing.bestDraw = bestDraw; existing.bestDrawBook = bestDrawBook; }
 
-      const fairAwayProb = impliedProb(fairAway);
-      const fairHomeProb = impliedProb(fairHome);
-      const bestAwayProb = impliedProb(bestAway);
-      const bestHomeProb = impliedProb(bestHome);
+      if (hasMlNow) {
+        const fairAwayProb = impliedProb(fairAway);
+        const fairHomeProb = impliedProb(fairHome);
+        const bestAwayProb = impliedProb(bestAway);
+        const bestHomeProb = impliedProb(bestHome);
 
-      existing.ev = {
-        away: (fairAwayProb && bestAwayProb) ? +((fairAwayProb - bestAwayProb) * 100).toFixed(1) : null,
-        home: (fairHomeProb && bestHomeProb) ? +((fairHomeProb - bestHomeProb) * 100).toFixed(1) : null,
-      };
+        existing.ev = {
+          away: (fairAwayProb && bestAwayProb) ? +((fairAwayProb - bestAwayProb) * 100).toFixed(1) : null,
+          home: (fairHomeProb && bestHomeProb) ? +((fairHomeProb - bestHomeProb) * 100).toFixed(1) : null,
+        };
+      }
 
       existing.allBooks = allBooks;
       existing.awayTeam = awayName;
@@ -807,7 +826,8 @@ async function run() {
 
       history[label][gameKey] = existing;
       sportFair++;
-      fairSourceCounts[fairBook] = (fairSourceCounts[fairBook] || 0) + 1;
+      const srcKey = fairBook || existing.fairSpreadBook || existing.fairTotalBook || 'markets';
+      fairSourceCounts[srcKey] = (fairSourceCounts[srcKey] || 0) + 1;
     }
 
     if (sportFair > 0 || sportSkip > 0) {
@@ -817,7 +837,7 @@ async function run() {
     // Purge stale and completed games
     const completedCutoff = now - COMPLETED_HOURS * 3600;
     for (const [gk, gd] of Object.entries(history[label])) {
-      const lastT = gd.history?.[gd.history.length - 1]?.t || 0;
+      const lastT = lastTapeEpoch(gd);
       if (lastT < staleCutoff) { delete history[label][gk]; continue; }
       if (gd.commence) {
         const commenceEpoch = Math.floor(new Date(gd.commence).getTime() / 1000);

@@ -227,4 +227,17 @@ assert.equal(STEAM_LINE_MOVE_PTS, 0.5);
   assert.equal(live.show, false, 'post-commence main move is ignored');
 }
 
+// Poly alt −44.5 with only Pinny main −46 on the board: steam reads main.
+{
+  const uva = {
+    spreadCurrent: { homeLine: -46, awayLine: 46, homeOdds: -121, awayOdds: 100, isMain: true },
+    spreadHistory: [
+      { t: now - 6 * 3600, homeLine: -46, awayLine: 46, homeOdds: -105, awayOdds: -115, isMain: true },
+      { t: now - 60, homeLine: -46, awayLine: 46, homeOdds: -121, awayOdds: 100, isMain: true },
+    ],
+  };
+  const s = summarizeSteam(uva, { marketType: 'spread', sideNorm: 'home', line: -44.5, nowSec: now });
+  assert.ok(s.tier === 'steam' || s.tier === 'watch' || s.show === true, `main fallback steam, got ${s.tier} show=${s.show} lh=${s.lastHour?.dropPct}`);
+}
+
 console.log('testSteamMove: ok');

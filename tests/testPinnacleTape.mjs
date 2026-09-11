@@ -11,6 +11,7 @@ import {
   HISTORY_KEEP_HOURS,
   isDenseTapeGame,
   pruneHistoryObject,
+  lastTapeEpoch,
   trimHistorySeries,
   FAR_ML_KEEP,
 } from '../scripts/lib/pinnacleTape.js';
@@ -120,6 +121,15 @@ const now = 1_780_000_000;
   const gd = { history: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] };
   clipFarGameTape(gd);
   assert.deepEqual(gd.history, [3, 4, 5, 6, 7, 8, 9, 10]);
+}
+
+{
+  const gd = {
+    spreadHistory: [{ t: now - 10, homeLine: -46, homeOdds: -121 }],
+    history: [],
+  };
+  assert.equal(lastTapeEpoch(gd), now - 10, 'spread-only games still have a tape clock');
+  assert.equal(lastTapeEpoch({}), 0);
 }
 
 console.log('testPinnacleTape: ok');
