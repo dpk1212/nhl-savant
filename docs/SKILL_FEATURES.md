@@ -10,7 +10,7 @@ These metrics are product core — Path C door, TOP mute, EDGE band size on A/C,
 
 **Expected win** (`v8_expWin`) is **tracking only** (not on the card yet). Market implied + a shrunk log-odds bump when the ticket is **4u+ and (tape BOOST or EDGE ≥ 11)**. Path is not an input. `v8_expWinFrozen` always uses the pre-August λ (+3–4pp near a −140) so we can compare expanding vs conservative for a week.
 
-**Ticket EV + steam** (`v8_ticketEvPct`, `v8_steam`) is **tracking only**. Same numbers the Locked card paints: flagged ticket vs same-line no-vig fair, plus last-hour / since-open Pinnacle drop. Latest scalars freeze at T-15. The **lifecycle log** (`v8_ticketTapeLog`) keeps first / hourly / T-60 / T-15 / grade samples so steam and EV can be analyzed against W/L and CLV. Does **not** size units.
+**Ticket EV + steam** (`v8_ticketEvPct`, `v8_steam`) still paints the Locked card and fills the lifecycle log. The **unit-tier overlay** (after fav-juice) is the size consumer: mute current EV &lt; −2 with no steam; promote 2–&lt;4u → 4u only on arriving or last-hour ≥ 3%, not LEAN/FADE, lock-EV &lt; −1 veto. Steam-on / tiny EV alone does not size.
 
 ---
 
@@ -49,6 +49,7 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **TOP crowded-conviction mute** | 2026-08-26+: after no-CONFIRMED · TOP/TOP+ only · `leadSR≥3` **OR** `EDGE&lt;10` **OR** (`forRoiNormMean≥42` ∧ `leadSR≥2`) → **0u** · other tiers EXEMPT · never resizes/repaths · `mutedBy=top-crowded` · manual exempt |
 | **Ev-drift × EDGE mute** | 2026-08-26+: after TOP-crowded · any path · `EDGE≥15` **AND** `dEv≤−1.5` **AND** `currentEv&lt;−1` → **0u** · missing Ev/EDGE fail-open · `mutedBy=ev-drift-edge` · manual exempt |
 | **Sport Confirmed unlock CAP** | 2026-08-29+: **absolute last** · **NFL / CFB only** · sport-wide CONFIRMED n → max u: &lt;5→**1u** · 5–9→**2u** · 10–14→**3u** · ≥15→full · CAP only (never mute) · MLB/SOC/etc. EXEMPT · stamps `v8_sportUnlockAction` / `v8_sportConfirmedN` / `v8_sportUnlockCap` |
+| **Unit-tier EV × steam** | 2026-09-11+ mute · **2026-09-12+ timing promote** · after fav-juice · current EV &lt; −2 and no steam → **0u** · 2–&lt;4u → **4u** iff arriving **or** last-hour ≥ 3%, last-hour not &lt; 0, lock EV missing or ≥ −1, lock tier not LEAN/FADE · steam-on / EV `[0,1)` alone is not a yes · `mutedBy=ev-lt2-no-steam` · stamp `v8_unitTierEvSteamAction` |
 
 ---
 

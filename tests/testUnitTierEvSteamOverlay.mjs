@@ -1,6 +1,7 @@
 /**
- * Unit-tier EV × steam overlay (2026-09-11+).
- * MUTE EV < −2 with no steam. PROMOTE 2–<4u → 4u on steam / lock-EV 0..1 / lh≥2.
+ * Unit-tier EV × steam overlay (2026-09-11+; promote tightened 2026-09-12).
+ * MUTE EV < −2 with no steam. PROMOTE 2–<4u → 4u on arriving / last-hour ≥ 3%,
+ * unless fade, lock-EV < −1, or LEAN/FADE.
  * Usage: node tests/testUnitTierEvSteamOverlay.mjs
  */
 import assert from 'assert';
@@ -12,6 +13,8 @@ import {
   UNIT_TIER_EV_MUTED_BY,
   UNIT_TIER_EV_MUTE_MAX,
   UNIT_TIER_PROMOTE_UNITS,
+  UNIT_TIER_LH_PROMOTE_MIN,
+  UNIT_TIER_LOCK_EV_VETO,
 } from '../src/lib/unitTierEvSteamOverlay.js';
 
 let n = 0;
@@ -29,6 +32,8 @@ ok(!isUnitTierEvSteamLive('2026-09-10'), 'not live before cutover');
 ok(UNIT_TIER_EV_STEAM_FROM === '2026-09-11', 'cutover date');
 ok(UNIT_TIER_EV_MUTE_MAX === -2, 'mute thr');
 ok(UNIT_TIER_PROMOTE_UNITS === 4, 'promote floor');
+ok(UNIT_TIER_LH_PROMOTE_MIN === 3, 'last-hour steam floor, not watch');
+ok(UNIT_TIER_LOCK_EV_VETO === -1, 'lock-EV veto');
 ok(UNIT_TIER_EV_MUTED_BY === 'ev-lt2-no-steam', 'mutedBy');
 ok(isSteamOn({ steamTier: 'steam' }), 'steam tier is on');
 ok(isSteamOn({ steamTier: 'gold' }), 'gold tier is on');
@@ -52,10 +57,6 @@ ok(!isSteamOn({ steamTier: 'none' }), 'none is off');
   ok(r.mutedBy == null, 'no mutedBy on steam fail-open');
 }
 {
-  const r = run({ units: 3, currentEv: -2.5, steamTier: 'gold' });
-  ok(r.action === 'PROMOTE' && r.units === 4, 'gold fail-open mute then 3u steam promote');
-}
-{
   const r = run({ units: 3, currentEv: null, steamTier: null });
   ok(r.action === 'HOLD' && r.units === 3, 'missing EV fail-open (no mute)');
 }
@@ -71,33 +72,67 @@ ok(!isSteamOn({ steamTier: 'none' }), 'none is off');
 }
 
 {
-  const r = run({ units: 2, currentEv: -0.5, steamTier: 'steam' });
-  ok(r.action === 'PROMOTE' && r.units === 4, '2u steam-on → 4u');
-  ok(r.reason === 'unit_tier_promote_4u', 'promote reason');
+  const r = run({ units: 2, steamArriving: true, lockTier: 'ELITE' });
+  ok(r.action === 'PROMOTE' && r.units === 4, '2u arriving → 4u');
+  ok(r.reason === 'unit_tier_promote_timing', 'timing promote reason');
 }
 {
-  const r = run({ units: 3, currentEv: 0.4, steamTier: null });
-  ok(r.action === 'PROMOTE' && r.units === 4, 'lock-EV 0..1 → 4u');
+  const r = run({ units: 3, lastHourPct: 3.1, lockTier: 'PREMIUM' });
+  ok(r.action === 'PROMOTE' && r.units === 4, 'last-hour ≥ 3% → 4u');
 }
 {
-  const r = run({ units: 2.5, currentEv: -0.4, lastHourPct: 2.1, steamTier: null });
-  ok(r.action === 'PROMOTE' && r.units === 4, 'last-hour ≥ 2% → 4u');
+  const r = run({ units: 3, lastHourPct: 2.1, steamTier: 'steam', lockTier: 'LOCK' });
+  ok(r.action === 'HOLD' && r.units === 3, 'watch 2% + steam-on is not timing');
 }
 {
-  const r = run({ units: 3, currentEv: 0.2, lastHourPct: -0.4, steamTier: 'steam' });
-  ok(r.action === 'HOLD' && r.units === 3, 'last-hour < 0 blocks promote even with steam');
+  const r = run({ units: 3, currentEv: 0.4, lockEv: 0.4, steamTier: null });
+  ok(r.action === 'HOLD' && r.units === 3, 'tiny lock-EV alone does not promote');
 }
 {
-  const r = run({ units: 1, currentEv: 0.4, steamTier: 'steam' });
+  const r = run({ units: 2, steamTier: 'steam', lockTier: 'WEAK' });
+  ok(r.action === 'HOLD' && r.units === 2, 'already-on steam alone does not promote');
+}
+{
+  const r = run({
+    units: 3, steamArriving: true, lastHourPct: -0.4, lockTier: 'ELITE',
+  });
+  ok(r.action === 'HOLD' && r.units === 3, 'last-hour < 0 blocks even arriving');
+}
+{
+  const r = run({
+    units: 3, steamArriving: true, lockEv: -1.4, lockTier: 'ELITE',
+  });
+  ok(r.action === 'HOLD' && r.units === 3, 'lock-EV < −1 vetoes arriving');
+}
+{
+  const r = run({
+    units: 3, steamArriving: true, lockEv: -1.0, lockTier: 'ELITE',
+  });
+  ok(r.action === 'PROMOTE' && r.units === 4, 'lock-EV exactly −1 is not the veto');
+}
+{
+  const r = run({ units: 3, steamArriving: true, lockEv: null, lockTier: 'WEAK' });
+  ok(r.action === 'PROMOTE' && r.units === 4, 'missing lock-EV fail-open on timing');
+}
+{
+  const r = run({
+    units: 3, steamArriving: true, lastHourPct: 3.5, lockTier: 'LEAN',
+  });
+  ok(r.action === 'HOLD' && r.units === 3, 'LEAN does not get fatter');
+}
+{
+  const r = run({
+    units: 2, lastHourPct: 3.1, lockTier: 'FADE',
+  });
+  ok(r.action === 'HOLD' && r.units === 2, 'FADE does not get fatter');
+}
+{
+  const r = run({ units: 1, steamArriving: true, lastHourPct: 4, lockTier: 'ELITE' });
   ok(r.action === 'HOLD' && r.units === 1, 'does not rescue <2u');
 }
 {
-  const r = run({ units: 5.4, currentEv: 0.4, steamTier: 'steam' });
+  const r = run({ units: 5.4, steamArriving: true, lastHourPct: 4, lockTier: 'ELITE' });
   ok(r.action === 'HOLD' && r.units === 5.4, 'does not boost already-4u+');
-}
-{
-  const r = run({ units: 3, currentEv: 1.0, steamTier: null });
-  ok(r.action === 'HOLD' && r.units === 3, 'lock-EV exactly 1 is not the band');
 }
 {
   const r = run({ units: 3, currentEv: -1.4, steamTier: null });
