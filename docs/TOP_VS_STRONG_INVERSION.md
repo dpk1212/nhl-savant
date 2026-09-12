@@ -112,3 +112,41 @@ That is a real inventory effect. It is also n=5 against an August cell of 28. Cl
 - Not a reason to drop A/B from the gate. Every muted winner already had A/B. Dropping A/B would not have saved them. **Dropping the steam half of the AND on fat would.**
 
 Candidate if you pick it later: **HOLD 5.4u+ when A/B is on, even if steam is off. Keep muting 4u unless both.** That is a one-band relaxation, not a T revert. Still a watch until fat n is not 5.
+
+## What “steam on at lock” actually means
+
+It is **not** “Pin is moving right now.” T reads a snapshot classification at the lock row (`t15`, else last) **or** this cycle’s live snap. ON if that snapshot’s `tier` is `steam` or `gold`.
+
+A snapshot is ON if **any** of these hold (`summarizeSteam` in `src/lib/steamMove.js`):
+
+- last-hour juice drop ≥ **3%** (currently printing)
+- since-open juice drop ≥ **3%** (the move is still stuck)
+- a stored Pinnacle `steamDrops` event ≥3% toward the ticket (sticky has-event)
+- 0.5pt main line toward the ticket (last hour **or** since open)
+
+WATCH is 2% — stored, not ON. Last hour can be **0 or negative** and the snapshot stays ON if since-open is still ≥3%. That is “steamed a huge amount, now flat / gave a little back.”
+
+What T **kept** this window (9 `steam_confirmed`) is that stuck-move book, not a printing book:
+
+- 0 of 9 had last-hour ≥3% at lock
+- 8 of 9 still ≥3% vs open (Nationals +4.3%, Under 9.5 **+12% while last hour −1.9%**, Madrid +16.6% last hour −0.2%, Rutgers +13.5% last hour 0)
+- 6 already-on at first flag (August coin-flip cell) · 3 arriving
+
+So “gave back a little” already keeps. T does not require the last hour to still be printing.
+
+What T **muted** (17, A/B, steam off) is not “steamed then died”:
+
+| Tape shape | N | W-L | PnL |
+|------------|--:|:---:|----:|
+| Never steam on any log row | 13 | 10-3 | **+23.1u** |
+| Steamed then quiet at lock | 4 | 1-3 | −6.6u |
+| Lock last-hour ≥3% | 0 | — | — |
+| Lock since-open ≥3% | 0 | — | — |
+
+The fat 5-0 (except Over 8.5 6u, which printed gold then t15 went 0/0) **never had steam on the tape**. Pin was flat — or we wrote 0/0. Widening “on at lock” to “ever steamed” would have kept the 1-3 died-print losers and still missed the quiet fat winners.
+
+Tweaks the tape does **not** support: require last-hour ≥3% (would mute every confirmed tail we kept); ever-on / sticky log (keeps 1-3, −6.6u); lower the floor to WATCH 2% (Campbell peaked so=2.9 then zeroed; the one lock so=2.97 is Under 8.5, a loser).
+
+The only steam-definition hole: after a real print, later rows sometimes write **0/0** (Over 8.5 6u gold → t15 off; Twins gold → t60 off; Campbell watch-all-day → t60 0/0). We treat 0/0 as “observable, no steam,” not fail-open. Fail-open is only empty log + no Pin game. That is a measurement bug, not a new steam meaning — and it still does not explain the all-day-zero fat winners.
+
+A steam-meaning tweak does not recover the +23u quiet fat pile. That pile has no Pin move. The AND’s steam half is measuring a real stuck ≥3% vs open. Those tickets just never had one.
