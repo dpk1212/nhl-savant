@@ -2861,24 +2861,23 @@ async function loadLockedPicks() {
 }
 
 async function loadAllTimePnL() {
-  const cacheKey = 'sharpFlow_pnl_v19';
+  const cacheKey = 'sharpFlow_pnl_v20';
   const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
   const emptyBundle = { pregame: { ...empty }, all: { ...empty }, byStars: {} };
-  const readCache = (maxAgeMs) => {
+  const readFallback = () => {
     try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (!cached) return null;
-      const { data, ts } = JSON.parse(cached);
-      if (!data?.picks || !data?.byAgsTier) return null;
-      if (maxAgeMs != null && Date.now() - ts >= maxAgeMs) return null;
-      return data;
-    } catch {
-      return null;
-    }
+      for (const key of [cacheKey, 'sharpFlow_pnl_v19', 'sharpFlow_pnl_v18']) {
+        const cached = sessionStorage.getItem(key);
+        if (!cached) continue;
+        const { data } = JSON.parse(cached);
+        if (data?.picks && data?.byAgsTier) return data;
+      }
+    } catch { /* ignore */ }
+    return null;
   };
   try {
-    const fresh = readCache(30 * 60 * 1000);
-    if (fresh) return fresh;
+    // Static JSON is cheap. Do not short-circuit on sessionStorage —
+    // that hid hourly rebuilds for 30 minutes (refresh does not clear it).
     const res = await fetch(`${import.meta.env.BASE_URL}sharp-flow-pnl.json`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`pnl json ${res.status}`);
     const data = await res.json();
@@ -2887,8 +2886,7 @@ async function loadAllTimePnL() {
     return data;
   } catch (err) {
     console.warn('Failed to load all-time P&L:', err.message);
-    // Last good tab cache — never fall back to a full Firestore collection scan.
-    return readCache(null) || emptyBundle;
+    return readFallback() || emptyBundle;
   }
 }
 
