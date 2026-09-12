@@ -8,6 +8,7 @@ import {
   normalizeLockAlertMode,
   paidTagForEntitlement,
   paidTagIsExplicitMode,
+  paidTagToWriteOnPaidVisit,
   isLockAlertMode,
 } from '../src/lib/lockAlertMode.js';
 
@@ -37,5 +38,13 @@ ok(paidTagForEntitlement('edge11') === 'edge11', 'entitlement keeps Top');
 ok(paidTagForEntitlement('all') === 'all', 'entitlement keeps All');
 ok(paidTagForEntitlement('true') === 'all', 'entitlement migrates true → all');
 ok(paidTagForEntitlement(null) === 'all', 'entitlement default all only when caller already decided to write');
+
+ok(paidTagToWriteOnPaidVisit('false', 'all') === 'all', 'paid visit restores untagged → all');
+ok(paidTagToWriteOnPaidVisit('false', null) === 'all', 'paid visit restores untagged with no stored pref');
+ok(paidTagToWriteOnPaidVisit('false', 'edge11') === 'edge11', 'stored Top wins over untagged');
+ok(paidTagToWriteOnPaidVisit('edge11', 'all') === null, 'do not clobber live Top with leftover all');
+ok(paidTagToWriteOnPaidVisit(null, 'all') === null, 'empty getTags: do not invent all');
+ok(paidTagToWriteOnPaidVisit('all', null) === 'all', 'normalize live all');
+ok(paidTagToWriteOnPaidVisit('true', null) === 'all', 'migrate legacy true');
 
 console.log(`ok ${n}`);

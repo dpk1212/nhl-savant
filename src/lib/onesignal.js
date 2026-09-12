@@ -11,8 +11,9 @@
  *   paid ∈ {all, edge11, true} in sendLockAlerts. Auto-optOut was wiping
  *   Enable after brief isPremium=false races (Stripe sync lag / check errors).
  * - Logout clears External ID only (device stays subscribed).
- * - Lapse/free → paid=false only (stops sends; subscription stays so
- *   re-subscribe resumes alerts without tapping Enable again).
+ * - Client never writes paid=false. Stripe webhook untag on real lapse.
+ *   A paid visit restores paid=false → all|edge11 so opted-in subscribers
+ *   stay in the send filter.
  *
  * Tag plan limit: only use the single tag `paid`. Values:
  *   all | edge11 | false  (legacy `true` = all)
@@ -25,8 +26,8 @@
 import {
   LOCK_ALERT_MODE,
   normalizeLockAlertMode,
-  paidTagForEntitlement,
   paidTagIsExplicitMode,
+  paidTagToWriteOnPaidVisit,
   readStoredLockAlertMode,
   writeStoredLockAlertMode,
 } from './lockAlertMode.js';
@@ -101,16 +102,8 @@ export async function onesignalSyncPaidIdentity({ uid }) {
     await OneSignal.login(String(uid));
     const stored = readStoredLockAlertMode();
     const current = await readPaidTag(OneSignal);
-    // getTags is often empty/stale on web. Never invent paid=all — that
-    // overwrites a live edge11 preference and the Account radios snap back.
-    // Leftover localStorage `all` (from Enable) must not clobber Top set elsewhere.
-    if (stored === LOCK_ALERT_MODE.EDGE11) {
-      await OneSignal.User.addTags({ paid: LOCK_ALERT_MODE.EDGE11 });
-      return;
-    }
-    if (current === LOCK_ALERT_MODE.EDGE11) return;
-    if (!paidTagIsExplicitMode(current)) return;
-    const next = paidTagForEntitlement(current);
+    const next = paidTagToWriteOnPaidVisit(current, stored);
+    if (!next) return;
     await OneSignal.User.addTags({ paid: next });
   });
 }
