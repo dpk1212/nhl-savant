@@ -9,6 +9,8 @@ import {
   resolveActionSport,
   sportsWithActionPositions,
   buildConfirmedActionRows,
+  sortActionRows,
+  pinMoveFor,
 } from '../src/lib/confirmedActionDesk.js';
 
 assert.equal(actionSportMatches('CFB', 'All'), true);
@@ -91,5 +93,51 @@ const leaked = buildConfirmedActionRows({
   sportFilter: 'MLB',
 }).rows;
 assert.equal(leaked.length, 0, 'CFB slug in the MLB bucket is dropped from MLB');
+
+const recovered = buildConfirmedActionRows({
+  totalPositions: {
+    MLB: {
+      unlv_unt: {
+        away: 'UNLV', home: 'North Texas',
+        positions: [{
+          wallet: '0xaaaaaaaaaaaaaa11bb', side: 'over', invested: 14800,
+          slug: 'cfb-unlv-unt-2026-09-12',
+        }],
+      },
+    },
+  },
+  walletProfiles: profiles,
+  sportFilter: 'CFB',
+}).rows;
+assert.equal(recovered.length, 1, 'CFB slug in the MLB bucket still shows on the CFB chip');
+assert.equal(recovered[0].sport, 'CFB');
+
+const rail = sportsWithActionPositions({
+  MLB: {
+    unlv_unt: { positions: [{ slug: 'cfb-unlv-unt-2026-09-12' }] },
+  },
+});
+assert.equal(rail.has('CFB'), true, 'mis-bucketed CFB tickets keep CFB on the Action rail');
+
+const sortRows = [
+  { sport: 'MLB', team: 'Phillies', invested: 2000, sizeRatio: 1.1, displaySizeRatio: 1.1, ts: 10, skillKey: 'low', skillWeight: 2, strengthScore: 90, trust: { wr: 54 }, form: { l10: { w: 4, l: 6 } }, opposed: 'clear', pinMove: null, steam: null },
+  { sport: 'CFB', team: 'Over', invested: 14800, sizeRatio: 2.4, displaySizeRatio: 3.3, ts: 5, skillKey: 'high', skillWeight: 4, strengthScore: 40, trust: { wr: 71 }, form: { actionL10: { w: 8, l: 2 } }, opposed: 'contested', pinMove: null, steam: { show: true } },
+  { sport: 'MLB', team: 'Cubs', invested: 2100, sizeRatio: 0.4, displaySizeRatio: 0.4, ts: 20, skillKey: 'high', skillWeight: 4, strengthScore: 80, trust: { wr: 61 }, form: { l10: { w: 6, l: 4 } }, opposed: 'clear', pinMove: 'with', steam: null },
+];
+assert.deepEqual(sortActionRows(sortRows, 'dollars').map((r) => r.team), ['Over', 'Cubs', 'Phillies']);
+assert.deepEqual(sortActionRows(sortRows, 'size').map((r) => r.team), ['Over', 'Phillies', 'Cubs']);
+assert.deepEqual(sortActionRows(sortRows, 'recency').map((r) => r.team), ['Cubs', 'Phillies', 'Over']);
+assert.deepEqual(sortActionRows(sortRows, 'skill').map((r) => r.team), ['Over', 'Cubs', 'Phillies']);
+assert.deepEqual(sortActionRows(sortRows, 'form').map((r) => r.team), ['Over', 'Cubs', 'Phillies']);
+
+assert.deepEqual(filterActionRows(sortRows, { sport: 'CFB', minInvested: 0 }).map((r) => r.team), ['Over']);
+assert.deepEqual(filterActionRows(sortRows, { sport: 'All', sizedOnly: true, minInvested: 0 }).map((r) => r.team), ['Phillies', 'Over']);
+assert.deepEqual(filterActionRows(sortRows, { sport: 'All', clearOnly: true, minInvested: 0 }).map((r) => r.team), ['Phillies', 'Cubs']);
+assert.deepEqual(filterActionRows(sortRows, { sport: 'All', pinWithOnly: true, minInvested: 0 }).map((r) => r.team), ['Over', 'Cubs']);
+assert.deepEqual(filterActionRows(sortRows, { sport: 'All', highMidOnly: true, minInvested: 0 }).map((r) => r.team), ['Over', 'Cubs']);
+
+assert.equal(pinMoveFor({ MLB: { x: { movement: { direction: 'over' } } } }, 'MLB', 'x', 'over'), 'with');
+assert.equal(pinMoveFor({ MLB: { x: { movement: { direction: 'under' } } } }, 'MLB', 'x', 'over'), 'against');
+assert.equal(pinMoveFor({}, 'MLB', 'x', 'over', { show: true }), 'with');
 
 console.log('testActionSportFilter: ok');
