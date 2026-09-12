@@ -2489,7 +2489,7 @@ function CollapsedSpark({ f, gid, bleed = false }) {
       movePp={f.pinnMovePp}
       polyEntry={f.polyEntryOdds}
       clvPct={f.clvPct}
-      bestNow={f.liveBestOdds ?? f.bestOdds}
+      bestNow={f.bestOdds}
       compact
       showStory={false}
       showMetrics
@@ -2498,6 +2498,10 @@ function CollapsedSpark({ f, gid, bleed = false }) {
       gid={gid}
       chartLineLabel={f.chartLineLabel}
       ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
+      linePath={f.linePath}
+      openMainLine={f.openMainLine}
+      nowMainLine={f.nowMainLine}
+      isSpread={f.marketType === 'spread'}
     />
   );
 }
