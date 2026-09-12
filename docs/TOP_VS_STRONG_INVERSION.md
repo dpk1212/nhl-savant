@@ -150,3 +150,26 @@ Tweaks the tape does **not** support: require last-hour ≥3% (would mute every 
 The only steam-definition hole: after a real print, later rows sometimes write **0/0** (Over 8.5 6u gold → t15 off; Twins gold → t60 off; Campbell watch-all-day → t60 0/0). We treat 0/0 as “observable, no steam,” not fail-open. Fail-open is only empty log + no Pin game. That is a measurement bug, not a new steam meaning — and it still does not explain the all-day-zero fat winners.
 
 A steam-meaning tweak does not recover the +23u quiet fat pile. That pile has no Pin move. The AND’s steam half is measuring a real stuck ≥3% vs open. Those tickets just never had one.
+
+## What ELITE / PREMIUM actually are
+
+They are **v12 score quintiles**, not a size band (`agsV12TierFromValue`). ELITE = score > q80 (top fifth of positive scores). PREMIUM = q60–q80. The old v12 writeup wanted ELITE at 5× and PREMIUM at 3× because per-bet edge concentrated there. Production does **not** size from that multiplier.
+
+Shipped units come from a **different ladder**: HC path (SUPER 6 / TOP 4 / MINI 3), RANK 4, SHARP, or Q1 restore 2–3u — then EDGE / tape / leftover / T. High score + mid path = ELITE/PREMIUM sitting at 3u.
+
+Why the 14 tickets are 3u (Aug 31+, 13-1):
+
+| Why 3u | N | W-L | bumpΔ | What it is |
+|--------|--:|:---:|------:|------------|
+| RANK EDGE-SOFT 4→3 | 5 | 5-0 | +3.9u | RANK starts 4u; RANK EDGE 0–7 ×0.75. Score high, EDGE mid. |
+| MINI native | 3 | 3-0 | +3.0u | Mini-HC is *defined* as 3u. Model loves it; wallets are not full-HC. |
+| Q1 floor after mute/cap | 5 | 4-1 | +2.6u | Tape/EDGE killed them; Q1 rescued to 3u. The only loss lives here. |
+| SHARP HOLD at 3u | 1 | 1-0 | — | Path C already 3u |
+
+Tighter cuts inside the 13-1:
+
+- **not Q1: 9-0 / +23.2u / Δ+7.8u** — drops the loss and the “already muted then restored” pile
+- **RANK or MINI, no Q1: 8-0 / +20.7u / Δ+6.9u** — the clean “score high, path mid” flatten
+- Steam / EV do not tighten (steam-off is 10-1; ev&lt;0 is 9-0)
+
+Bumping Q1 ELITE/PREM reopens tape/leftover. Bumping MINI is a new size (MINI is supposed to be 3u). Restoring RANK SOFT is putting back the 4u RANK already had.
