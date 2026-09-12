@@ -227,4 +227,5 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 
 - [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md) — full grading/staking/sizing stack  
 - [`TAPE_SIZING.md`](./TAPE_SIZING.md) — tape mute/boost + RANK exempt  
+- [`UNIT_TIER_STEAM_SCOREBOARD.md`](./UNIT_TIER_STEAM_SCOREBOARD.md) — unit-tile W/L/PnL + each promote/cut still-working (re-run `node scripts/analyzeUnitTierSteamBook.mjs`)  
 - `scripts/dailyAgsUReport.js` — § 5e / § 5f skill impact · § 5d ticket EV/steam lifecycle  
