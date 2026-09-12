@@ -33,13 +33,15 @@ export function sportsWithActionPositions(...feeds) {
   for (const feed of feeds) {
     if (!feed || typeof feed !== 'object') continue;
     for (const sport of ACTION_BOARD_SPORTS) {
-      if (out.has(sport)) continue;
       const games = feed[sport];
       if (!games || typeof games !== 'object') continue;
       for (const gd of Object.values(games)) {
-        if (Array.isArray(gd?.positions) && gd.positions.length > 0) {
-          out.add(sport);
-          break;
+        const list = gd?.positions;
+        if (!Array.isArray(list) || list.length === 0) continue;
+        out.add(sport);
+        for (const p of list) {
+          const resolved = resolveActionSport(sport, p);
+          if (ACTION_BOARD_SPORTS.includes(resolved)) out.add(resolved);
         }
       }
     }
@@ -151,13 +153,20 @@ export function formatMarketLabel(marketType, entryLine) {
   return mkt;
 }
 
-export function pinMoveFor(pinnacleHistory, sport, gameKey, side) {
+export function pinMoveFor(pinnacleHistory, sport, gameKey, side, steam = null) {
   const g = pinnacleHistory?.[sport]?.[gameKey];
   const dir = g?.movement?.direction;
-  if (!dir || !side) return null;
-  if (side === 'over' || side === 'under') return null; // ML movement only for now
-  if (dir === side) return 'with';
-  if (dir === 'away' || dir === 'home') return 'against';
+  if (dir && side) {
+    if (dir === side) return 'with';
+    if (side === 'over' || side === 'under') {
+      if (dir === 'over' || dir === 'under') return 'against';
+    } else if (dir === 'away' || dir === 'home') {
+      return 'against';
+    }
+  }
+  // Totals/spreads often have no ML movement stamp — steam toward the ticket
+  // is the same "line with" claim the chip already paints.
+  if (steam?.show) return 'with';
   return null;
 }
 
@@ -565,11 +574,10 @@ function fmtAmerican(odds) {
   return odds > 0 ? `+${odds}` : `${odds}`;
 }
 
-function collectPositions(feed, marketType, sportFilter = 'All') {
+function collectPositions(feed, marketType) {
   const out = [];
   if (!feed || typeof feed !== 'object') return out;
   for (const sport of SPORTS) {
-    if (!actionSportMatches(sport, sportFilter)) continue;
     const games = feed[sport];
     if (!games || typeof games !== 'object') continue;
     for (const [gameKey, gd] of Object.entries(games)) {
@@ -597,9 +605,9 @@ export function buildConfirmedActionRows({
 } = {}) {
   const qBySport = buildFlatDollarQBySport(walletProfiles);
   const raw = [
-    ...collectPositions(sharpPositions, 'ML', sportFilter),
-    ...collectPositions(spreadPositions, 'SPREAD', sportFilter),
-    ...collectPositions(totalPositions, 'TOTAL', sportFilter),
+    ...collectPositions(sharpPositions, 'ML'),
+    ...collectPositions(spreadPositions, 'SPREAD'),
+    ...collectPositions(totalPositions, 'TOTAL'),
   ];
 
   const rows = [];
@@ -634,7 +642,6 @@ export function buildConfirmedActionRows({
     const counted = isCountedProvenSize(sr);
     const form = formFromProfile(prof, sport);
     const formDisp = formLabel(form);
-    const pin = pinMoveFor(pinnacleHistory, sport, gameKey, side);
     const invested = Number(pos.invested || pos.size || 0) || 0;
     const ts = entryTsMs(pos);
     const rawPrice = pos.entryAvgPrice ?? pos.avgPrice ?? pos.price ?? null;
@@ -658,6 +665,7 @@ export function buildConfirmedActionRows({
       sideNorm: side,
       line: entryLine,
     });
+    const pin = pinMoveFor(pinnacleHistory, sport, gameKey, side, steam);
 
     rows.push({
       id: `${sport}|${gameKey}|${marketType}|${short}|${side}`,
@@ -832,18 +840,40 @@ export function strengthScore(r) {
   return s;
 }
 
+function sizeForSort(r) {
+  const d = Number(r.displaySizeRatio);
+  if (Number.isFinite(d)) return d;
+  const s = Number(r.sizeRatio);
+  return Number.isFinite(s) ? s : 0;
+}
+
+function recordForSort(r) {
+  const wr = Number(r.trust?.wr);
+  if (Number.isFinite(wr)) return wr;
+  return (Number(r.skillWeight) || 0) * 10;
+}
+
+function formPnlForSort(r) {
+  if (Number.isFinite(r.actionDollarEnd)) return r.actionDollarEnd;
+  if (Number.isFinite(r.l30Pnl)) return r.l30Pnl;
+  if (Number.isFinite(r.flatEnd)) return r.flatEnd;
+  return 0;
+}
+
 export function sortActionRows(rows, mode = 'strength') {
   const list = [...rows];
   const cmp = {
     strength: (a, b) => (b.strengthScore - a.strengthScore) || (b.invested - a.invested),
-    size: (a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0) || (b.invested - a.invested),
-    skill: (a, b) => (b.skillWeight - a.skillWeight) || (b.strengthScore - a.strengthScore),
+    size: (a, b) => sizeForSort(b) - sizeForSort(a) || (b.invested - a.invested),
+    skill: (a, b) => recordForSort(b) - recordForSort(a)
+      || (b.skillWeight - a.skillWeight)
+      || (b.strengthScore - a.strengthScore),
     form: (a, b) => {
       const ar = formWinRate(a);
       const br = formWinRate(b);
-      return br - ar || (b.flatEnd || 0) - (a.flatEnd || 0);
+      return br - ar || formPnlForSort(b) - formPnlForSort(a);
     },
-    trend: (a, b) => (b.flatEnd || -999) - (a.flatEnd || -999),
+    trend: (a, b) => formPnlForSort(b) - formPnlForSort(a),
     recency: (a, b) => (b.ts || 0) - (a.ts || 0),
     dollars: (a, b) => b.invested - a.invested,
   };
@@ -851,12 +881,34 @@ export function sortActionRows(rows, mode = 'strength') {
   return list;
 }
 
+function formWl(block) {
+  if (!block) return 0;
+  const w = Number(block.w);
+  const l = Number(block.l);
+  if (!(w + l > 0)) return 0;
+  return w / (w + l);
+}
+
 function formWinRate(r) {
   const f = r.form;
-  if (f?.l10 && (f.l10.w + f.l10.l) > 0) return f.l10.w / (f.l10.w + f.l10.l);
-  if (f?.l5 && (f.l5.w + f.l5.l) > 0) return f.l5.w / (f.l5.w + f.l5.l);
+  const action = formWl(f?.actionL10) || formWl(f?.actionL5);
+  if (action > 0) return action;
+  const featured = formWl(f?.l10) || formWl(f?.l5);
+  if (featured > 0) return featured;
   if (f?.book && f.book.n > 0) return f.book.w / f.book.n;
+  if (Number.isFinite(r.trust?.wr)) return r.trust.wr / 100;
   return 0;
+}
+
+function displaySized(r) {
+  const d = Number(r.displaySizeRatio);
+  if (Number.isFinite(d)) return d >= 1;
+  const s = Number(r.sizeRatio);
+  return Number.isFinite(s) && s >= 0.5;
+}
+
+function lineWithTicket(r) {
+  return r.pinMove === 'with' || !!r.steam?.show;
 }
 
 export function filterActionRows(rows, {
@@ -874,9 +926,9 @@ export function filterActionRows(rows, {
     if (Number.isFinite(minInvested) && minInvested > 0
       && !(Number(r.invested) >= minInvested)) return false;
     if (highMidOnly && r.skillKey !== 'high' && r.skillKey !== 'mid') return false;
-    if (sizedOnly && !(Number.isFinite(r.sizeRatio) && r.sizeRatio >= 0.5)) return false;
+    if (sizedOnly && !displaySized(r)) return false;
     if (clearOnly && r.opposed !== 'clear') return false;
-    if (pinWithOnly && r.pinMove !== 'with') return false;
+    if (pinWithOnly && !lineWithTicket(r)) return false;
     return true;
   });
 }

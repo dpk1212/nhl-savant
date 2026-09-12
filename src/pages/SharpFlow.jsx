@@ -8881,9 +8881,9 @@ export default function SharpFlow() {
   const headerSportTabs = useMemo(() => {
     if (viewMode !== 'flow') return mainSportTabs;
     return MAIN_SPORT_TAB_ORDER.filter((sp) => (
-      mainSportTabs.includes(sp) || actionBoardSports.has(sp)
+      mainSportTabs.includes(sp) || actionBoardSports.has(sp) || sportFilter === sp
     ));
-  }, [viewMode, mainSportTabs, actionBoardSports]);
+  }, [viewMode, mainSportTabs, actionBoardSports, sportFilter]);
 
   const climateBySportVisible = useMemo(() => {
     const next = {};
@@ -8894,10 +8894,13 @@ export default function SharpFlow() {
   }, [climateBySportToday, headerSportTabs]);
 
   useEffect(() => {
+    // Action tickets are not Poly/Kalshi games. Snapping the chip back to
+    // All here is what painted MLB rows after a CFB click.
+    if (viewMode === 'flow') return;
     if (sportFilter !== 'All' && !headerSportTabs.includes(sportFilter)) {
       setSportFilter('All');
     }
-  }, [sportFilter, headerSportTabs]);
+  }, [sportFilter, headerSportTabs, viewMode]);
 
   const gameFlowMap = useMemo(() => {
     const m = {};

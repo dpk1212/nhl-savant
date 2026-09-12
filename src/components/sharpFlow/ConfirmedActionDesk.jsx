@@ -109,6 +109,15 @@ const SORTS = [
   { id: 'form', label: 'Form' },
 ];
 
+/** Survive desk remounts (wallet-profile refresh / empty-state flicker). */
+const deskUi = {
+  sortMode: 'strength',
+  highMidOnly: false,
+  sizedOnly: false,
+  clearOnly: false,
+  pinWithOnly: false,
+};
+
 const FlatSpark = memo(function FlatSpark({ points, width = 64, height = 20 }) {
   if (!points || points.length < 5) return null;
   const min = Math.min(...points);
@@ -1162,7 +1171,7 @@ function ActionRow({ row, isMobile, expanded, onToggle }) {
 
   if (isMobile) {
     return (
-      <div style={shell}>
+      <div data-action-sport={row.sport} style={shell}>
         <button {...headerBtnProps}>
           <div style={{ padding: '1rem 1rem 0.85rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
@@ -1216,6 +1225,7 @@ function ActionRow({ row, isMobile, expanded, onToggle }) {
 
   return (
     <div
+      data-action-sport={row.sport}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={shell}
@@ -1301,13 +1311,39 @@ export default function ConfirmedActionDesk({
   sportFilter = 'All',
   isMobile = false,
 }) {
-  const [sortMode, setSortMode] = useState('strength');
-  const [highMidOnly, setHighMidOnly] = useState(false);
-  const [sizedOnly, setSizedOnly] = useState(false);
-  const [clearOnly, setClearOnly] = useState(false);
-  const [pinWithOnly, setPinWithOnly] = useState(false);
+  const [sortMode, setSortModeState] = useState(deskUi.sortMode);
+  const [highMidOnly, setHighMidOnlyState] = useState(deskUi.highMidOnly);
+  const [sizedOnly, setSizedOnlyState] = useState(deskUi.sizedOnly);
+  const [clearOnly, setClearOnlyState] = useState(deskUi.clearOnly);
+  const [pinWithOnly, setPinWithOnlyState] = useState(deskUi.pinWithOnly);
   const [cellStatsTable, setCellStatsTable] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+
+  const setSortMode = (next) => {
+    const value = typeof next === 'function' ? next(deskUi.sortMode) : next;
+    deskUi.sortMode = value;
+    setSortModeState(value);
+  };
+  const setHighMidOnly = (next) => {
+    const value = typeof next === 'function' ? next(deskUi.highMidOnly) : next;
+    deskUi.highMidOnly = value;
+    setHighMidOnlyState(value);
+  };
+  const setSizedOnly = (next) => {
+    const value = typeof next === 'function' ? next(deskUi.sizedOnly) : next;
+    deskUi.sizedOnly = value;
+    setSizedOnlyState(value);
+  };
+  const setClearOnly = (next) => {
+    const value = typeof next === 'function' ? next(deskUi.clearOnly) : next;
+    deskUi.clearOnly = value;
+    setClearOnlyState(value);
+  };
+  const setPinWithOnly = (next) => {
+    const value = typeof next === 'function' ? next(deskUi.pinWithOnly) : next;
+    deskUi.pinWithOnly = value;
+    setPinWithOnlyState(value);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -1331,9 +1367,8 @@ export default function ConfirmedActionDesk({
       pinnacleHistory,
       cellStatsTable,
       polyData,
-      sportFilter,
     }),
-    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData, sportFilter],
+    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData],
   );
 
   const visible = useMemo(() => {
@@ -1392,13 +1427,17 @@ export default function ConfirmedActionDesk({
         <Pill active={sizedOnly} onClick={() => setSizedOnly((v) => !v)}>Sized</Pill>
         <Pill active={clearOnly} onClick={() => setClearOnly((v) => !v)}>Unopposed</Pill>
         <Pill active={pinWithOnly} onClick={() => setPinWithOnly((v) => !v)}>Line with</Pill>
-        <span style={{ ...T.micro, color: B.textSubtle, marginLeft: 'auto', fontFeatureSettings: "'tnum'" }}>
+        <span
+          data-action-count={visible.length}
+          data-action-sport={sportFilter || 'All'}
+          style={{ ...T.micro, color: B.textSubtle, marginLeft: 'auto', fontFeatureSettings: "'tnum'" }}
+        >
           {visible.length}
-          {sportFilter && sportFilter !== 'All' ? ` · ${sportFilter}` : ''}
+          {sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL' ? ` · ${sportFilter}` : ''}
         </span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div data-action-list={sportFilter || 'All'} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {visible.filter((r) => actionSportMatches(r.sport, sportFilter)).map((r) => (
           <ActionRow
             key={`${sportFilter}:${r.id}`}
@@ -1412,7 +1451,9 @@ export default function ConfirmedActionDesk({
 
       {visible.length === 0 && (
         <div style={{ ...T.body, color: B.textMuted, padding: '1.5rem', textAlign: 'center' }}>
-          Nothing matches these filters.
+          {sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
+            ? `No ${sportFilter} tickets match these filters.`
+            : 'Nothing matches these filters.'}
         </div>
       )}
     </div>
