@@ -7,6 +7,7 @@ import {
   AGS_U_CUTOVER,
   buildSharpFlowPnl,
   isSharpFlowPnlBundle,
+  pnlBundleAgeMs,
   tallySidesFromDocs,
 } from '../src/lib/sharpFlowPnl.js';
 
@@ -101,5 +102,12 @@ const pending = {
 const b2 = buildSharpFlowPnl([liveWin, pending]);
 ok(b2.byAgsTier.PREMIUM.pendingPicks === 1, 'pending live counted');
 ok(b2.picks.some((p) => p.status === 'PENDING' && p.v8_hcStakeTier === 'MAX'), 'pending row in ledger');
+
+const now = Date.parse('2026-09-12T11:40:00Z');
+ok(pnlBundleAgeMs({ generatedAt: '2026-09-11T17:05:47.452Z' }, now) > 55 * 60 * 1000, 'stale generatedAt rebuilds');
+ok(pnlBundleAgeMs({ generatedAt: '2026-09-12T11:00:00Z' }, now) < 55 * 60 * 1000, 'fresh generatedAt skips');
+ok(pnlBundleAgeMs('{"generatedAt":"2026-09-11T17:05:47.452Z"}', now) > 55 * 60 * 1000, 'json string age');
+ok(pnlBundleAgeMs({}, now) === Infinity, 'missing generatedAt rebuilds');
+ok(pnlBundleAgeMs('not-json', now) === Infinity, 'invalid json rebuilds');
 
 console.log(`ok ${n}`);
