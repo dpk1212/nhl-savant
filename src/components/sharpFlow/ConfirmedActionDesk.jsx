@@ -8,6 +8,7 @@ import {
   buildConfirmedActionRows,
   buildConfirmedActionMarquee,
   filterActionRows,
+  actionSportMatches,
   sortActionRows,
   sparkPointsForTab,
 } from '../../lib/confirmedActionDesk.js';
@@ -1330,8 +1331,9 @@ export default function ConfirmedActionDesk({
       pinnacleHistory,
       cellStatsTable,
       polyData,
+      sportFilter,
     }),
-    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData],
+    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData, sportFilter],
   );
 
   const visible = useMemo(() => {
@@ -1355,7 +1357,8 @@ export default function ConfirmedActionDesk({
     );
   }
 
-  if (rows.length === 0) {
+  const browsingAll = !sportFilter || sportFilter === 'All' || sportFilter === 'ALL';
+  if (rows.length === 0 && browsingAll) {
     return (
       <div style={{
         textAlign: 'center', padding: '3rem 1.5rem', borderRadius: '12px',
@@ -1396,9 +1399,9 @@ export default function ConfirmedActionDesk({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {visible.map((r) => (
+        {visible.filter((r) => actionSportMatches(r.sport, sportFilter)).map((r) => (
           <ActionRow
-            key={r.id}
+            key={`${sportFilter}:${r.id}`}
             row={r}
             isMobile={isMobile}
             expanded={expandedId === r.id}
