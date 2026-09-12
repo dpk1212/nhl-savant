@@ -19,7 +19,33 @@ import { signedSpreadEntryLine } from './spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
 import { rejectNonFullGameBoardPosition } from '../../scripts/lib/totalMarketFilter.js';
 
-const SPORTS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
+export const ACTION_BOARD_SPORTS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
+const SPORTS = ACTION_BOARD_SPORTS;
+
+/** Sports that have at least one open position on the Action feeds. */
+export function sportsWithActionPositions(...feeds) {
+  const out = new Set();
+  for (const feed of feeds) {
+    if (!feed || typeof feed !== 'object') continue;
+    for (const sport of ACTION_BOARD_SPORTS) {
+      if (out.has(sport)) continue;
+      const games = feed[sport];
+      if (!games || typeof games !== 'object') continue;
+      for (const gd of Object.values(games)) {
+        if (Array.isArray(gd?.positions) && gd.positions.length > 0) {
+          out.add(sport);
+          break;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+export function actionSportMatches(rowSport, sportFilter) {
+  if (!sportFilter || sportFilter === 'All' || sportFilter === 'ALL') return true;
+  return String(rowSport || '').toUpperCase() === String(sportFilter).toUpperCase();
+}
 
 /** Action tape = CONFIRMED only (FLAT wins less — kept off this board). */
 const ACTION_TIERS = new Set(['CONFIRMED']);
@@ -825,7 +851,7 @@ export function filterActionRows(rows, {
   minInvested = MIN_ACTION_INVESTED,
 } = {}) {
   return rows.filter((r) => {
-    if (sport && sport !== 'All' && sport !== 'ALL' && r.sport !== sport) return false;
+    if (!actionSportMatches(r.sport, sport)) return false;
     if (Number.isFinite(minInvested) && minInvested > 0
       && !(Number(r.invested) >= minInvested)) return false;
     if (highMidOnly && r.skillKey !== 'high' && r.skillKey !== 'mid') return false;

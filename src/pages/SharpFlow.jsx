@@ -64,6 +64,7 @@ import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
 import { compareLockedPicks } from '../lib/lockedPickSort.js';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
+import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -8869,19 +8870,34 @@ export default function SharpFlow() {
     [allGames, pinnacleHistory, lockedPicks],
   );
 
+  // Action tickets live on sharp/spread/total feeds, not Poly/Kalshi.
+  // Keep those sports on the Action rail even when the prediction-market
+  // slate is empty or already graded off.
+  const actionBoardSports = useMemo(
+    () => sportsWithActionPositions(sharpPositions, spreadPositions, totalPositions),
+    [sharpPositions, spreadPositions, totalPositions],
+  );
+
+  const headerSportTabs = useMemo(() => {
+    if (viewMode !== 'flow') return mainSportTabs;
+    return MAIN_SPORT_TAB_ORDER.filter((sp) => (
+      mainSportTabs.includes(sp) || actionBoardSports.has(sp)
+    ));
+  }, [viewMode, mainSportTabs, actionBoardSports]);
+
   const climateBySportVisible = useMemo(() => {
     const next = {};
     for (const [sp, row] of Object.entries(climateBySportToday || {})) {
-      if (mainSportTabs.includes(sp)) next[sp] = row;
+      if (headerSportTabs.includes(sp)) next[sp] = row;
     }
     return next;
-  }, [climateBySportToday, mainSportTabs]);
+  }, [climateBySportToday, headerSportTabs]);
 
   useEffect(() => {
-    if (sportFilter !== 'All' && !mainSportTabs.includes(sportFilter)) {
+    if (sportFilter !== 'All' && !headerSportTabs.includes(sportFilter)) {
       setSportFilter('All');
     }
-  }, [sportFilter, mainSportTabs]);
+  }, [sportFilter, headerSportTabs]);
 
   const gameFlowMap = useMemo(() => {
     const m = {};
@@ -9448,10 +9464,13 @@ export default function SharpFlow() {
 
   const isFreeUser = !isPremium;
 
-  if (filteredGames.length === 0) {
+  // Signals/Intel read Poly+Kalshi games. Action and Vault do not —
+  // unmounting the page here made the sport rail look broken on Action
+  // whenever a selected sport had tickets but no prediction-market board.
+  if (filteredGames.length === 0 && viewMode !== 'flow' && viewMode !== 'sharpVault') {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
-        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={mainSportTabs} />
+        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} />
         <div style={{
           textAlign: 'center', padding: '3rem', borderRadius: '12px',
           background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -9475,7 +9494,7 @@ export default function SharpFlow() {
           which is what sells the glassmorphism. pointer-events: none and
           z-index below content; honors prefers-reduced-motion via CSS. */}
       <div className="sf-aurora" aria-hidden="true" />
-      <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={mainSportTabs} />
+      <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} />
 
       {/* ─── Orientation strip — free users, dismissible ───
           Layer-1 onboarding: answers "what is this and why trust it" in one
