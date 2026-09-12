@@ -54,6 +54,14 @@ export function actionSportMatches(rowSport, sportFilter) {
   return String(rowSport || '').toUpperCase() === String(sportFilter).toUpperCase();
 }
 
+/** Chip match on stamped sport AND slug. Leftover CFB rows cannot paint on MLB. */
+export function rowMatchesActionSport(row, sportFilter) {
+  if (!row) return false;
+  if (!actionSportMatches(row.sport, sportFilter)) return false;
+  if (row.slug && !actionSportMatches(resolveActionSport(row.sport, row), sportFilter)) return false;
+  return true;
+}
+
 /** Prefer Polymarket league slug over a wrong feed bucket. */
 export function resolveActionSport(feedSport, pos) {
   const league = slugLeague(pos?.slug || pos?.eventSlug);
@@ -921,8 +929,7 @@ export function filterActionRows(rows, {
   minInvested = MIN_ACTION_INVESTED,
 } = {}) {
   return rows.filter((r) => {
-    if (!actionSportMatches(r.sport, sport)) return false;
-    if (r.slug && !actionSportMatches(resolveActionSport(r.sport, r), sport)) return false;
+    if (!rowMatchesActionSport(r, sport)) return false;
     if (Number.isFinite(minInvested) && minInvested > 0
       && !(Number(r.invested) >= minInvested)) return false;
     if (highMidOnly && r.skillKey !== 'high' && r.skillKey !== 'mid') return false;

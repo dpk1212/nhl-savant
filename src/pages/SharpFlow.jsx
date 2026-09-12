@@ -9730,6 +9730,7 @@ export default function SharpFlow() {
       {/* ─── CONFIRMED Action (strength desk) ─── */}
       {viewMode === 'flow' && (
         <ConfirmedActionDesk
+          key={sportFilter || 'All'}
           sharpPositions={sharpPositions}
           spreadPositions={spreadPositions}
           totalPositions={totalPositions}

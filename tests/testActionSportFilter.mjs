@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   actionSportMatches,
+  rowMatchesActionSport,
   filterActionRows,
   resolveActionSport,
   sportsWithActionPositions,
@@ -18,6 +19,11 @@ assert.equal(actionSportMatches('CFB', 'ALL'), true);
 assert.equal(actionSportMatches('CFB', 'CFB'), true);
 assert.equal(actionSportMatches('cfb', 'CFB'), true);
 assert.equal(actionSportMatches('MLB', 'CFB'), false);
+assert.equal(rowMatchesActionSport({ sport: 'CFB', slug: 'cfb-unlv-unt-2026-09-12' }, 'CFB'), true);
+assert.equal(rowMatchesActionSport({ sport: 'MLB', slug: 'mlb-phi-atl-2026-09-12' }, 'CFB'), false);
+assert.equal(rowMatchesActionSport({ sport: 'CFB', slug: 'cfb-unlv-unt-2026-09-12' }, 'NHL'), false);
+assert.equal(rowMatchesActionSport({ sport: 'MLB', slug: 'cfb-unlv-unt-2026-09-12' }, 'MLB'), false);
+assert.equal(rowMatchesActionSport({ sport: 'MLB', slug: 'mlb-phi-atl-2026-09-12-total-7pt5' }, 'MLB'), true);
 
 const rows = [
   { sport: 'CFB', invested: 2000, skillKey: 'high', sizeRatio: 1, opposed: 'clear', pinMove: 'with' },
