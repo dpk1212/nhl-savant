@@ -1471,15 +1471,19 @@ function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
 
 function steamInputsForOverlay(snap, sd) {
   const tape = analyzeTicketTapeLog(sd?.v8_ticketTapeLog);
+  const life = resolveSteamLifecycle(sd?.v8_ticketTapeLog, snap);
   const steamTier = snap?.steam?.tier ?? sd?.v8_steamTier ?? null;
   const lastHourPct = snap?.steam?.lastHourPct
     ?? sd?.v8_steamLastHourPct
     ?? tape.lastHourLock
     ?? null;
+  const snapEv = snap && Number.isFinite(Number(snap.evPct)) ? Number(snap.evPct) : null;
   return {
     steamTier,
     lastHourPct,
-    tapeSteamOnLock: tape.steamOnLock === true,
+    tapeSteamOnLock: life.steamOnLock === true || tape.steamOnLock === true,
+    steamArriving: life.steamArriving === true,
+    lockEv: tape.evLock ?? snapEv,
   };
 }
 
@@ -3430,7 +3434,8 @@ async function createMissingLockedPicks({
       }
 
       // Unit-tier EV × steam — after fav-juice. Mute EV < −2 no steam;
-      // floor 2–<4u → 4u on steam / lock-EV 0..1 / last-hour ≥ 2%.
+      // floor 2–<4u → 4u only on arriving / last-hour ≥ 3%, not LEAN/FADE,
+      // lock-EV < −1 veto. Steam-on / tiny EV alone is not a yes.
       let unitTierPolicyCreate = null;
       if (createV121Eligible && peakUnitsApplied > 0) {
         const steamCreate = steamInputsForOverlay(liveTapeCreate, null);
@@ -3438,6 +3443,7 @@ async function createMissingLockedPicks({
           units: peakUnitsApplied,
           currentEv: evDriftCreate?.currentEv ?? null,
           pickDate: TARGET_DATE,
+          lockTier: finalTier,
           ...steamCreate,
         });
         peakUnitsApplied = unitTierPolicyCreate.units;
@@ -5046,7 +5052,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // Unit-tier EV × steam — after fav-juice. Mute EV < −2 no steam;
-  // floor 2–<4u → 4u on steam / lock-EV 0..1 / last-hour ≥ 2%.
+  // floor 2–<4u → 4u only on arriving / last-hour ≥ 3%, not LEAN/FADE,
+  // lock-EV < −1 veto. Steam-on / tiny EV alone is not a yes.
   let unitTierPolicy = null;
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
     const steamLive = steamInputsForOverlay(liveTapeSnap, sd);
@@ -5054,6 +5061,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       units: finalUnitsApplied,
       currentEv: evDriftLive?.currentEv ?? null,
       pickDate,
+      lockTier: liveTier,
       ...steamLive,
     });
     finalUnitsApplied = unitTierPolicy.units;
