@@ -70,6 +70,29 @@ export function paidTagForEntitlement(currentPaidTag) {
 }
 
 /**
+ * Tag to write on a confirmed-paid visit. `null` = do not write.
+ *
+ * Account "Lock alerts on" is optedIn. Sends require paid ∈ {all,true,edge11}.
+ * A Stripe/Firestore flicker used to set paid=false, then this path refused
+ * to restore because false is not an "explicit mode" — paid users stayed
+ * subscribed and selected, but dropped out of every lock blast.
+ *
+ * Restore false → stored preference or all. Still do not invent all when
+ * getTags is empty: that can overwrite a live edge11 on another device.
+ *
+ * @param {unknown} current
+ * @param {unknown} stored
+ * @returns {'all'|'edge11'|null}
+ */
+export function paidTagToWriteOnPaidVisit(current, stored) {
+  if (stored === LOCK_ALERT_MODE.EDGE11) return LOCK_ALERT_MODE.EDGE11;
+  if (current === LOCK_ALERT_MODE.EDGE11) return null;
+  if (current === LOCK_ALERT_MODE.OFF) return LOCK_ALERT_MODE.ALL;
+  if (paidTagIsExplicitMode(current)) return paidTagForEntitlement(current);
+  return null;
+}
+
+/**
  * OneSignal notification filters for a lock at the given EDGE.
  * Always includes `all` + legacy `true`. Adds `edge11` when EDGE ≥ min.
  * @param {number|null|undefined} edge
