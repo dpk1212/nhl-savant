@@ -1,121 +1,117 @@
-# Twitter — 2026-09-12 · HERO GIVE · CFB warming / one wallet sized up / UNLV-NTX Over
+# Twitter — 2026-09-12 · HERO GIVE · first CFB shape / Boise −8.5 / $16.5K unopposed
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
 **CSV:** Sep 5–11 living window. Ask **cold**. Give.
 
 | | |
 |--|--|
-| WHO | Someone refreshing Saturday waiting for CFB to get loud. The night games aren't on yet. |
-| PURPOSE | Give. Walk one wallet on one live ticket. |
-| ONE | CFB isn't loud yet. One wallet is already printing it — and he just sized up. |
+| WHO | Someone who has been watching CFB all Saturday waiting for a shape that looks like the ones we actually take. |
+| PURPOSE | Give. Walk one locked ticket. |
+| ONE | First CFB play this season I really love the shape of — $16.5K proven, nobody against, one wallet 4.6×, three more with him. |
 | SPCL | **S + C** |
-| Timeline | Saturday +100u MLB QT is staged/spent as a restage. This is the open CFB slot: new tape, one ticket. |
+| Timeline | Morning UNLV `$14,800 AT 3.3×` is staged/spent. This is new tape, new game, the shape — not that hook again. |
 | Ask | **None.** No URL. No trial. No self-reply. |
 
-**Post as a single hero.** Attach the Action card (UNLV @ North Texas Over expand). Not a QT.
+**Post as a single hero.** Attach both cards in walk order: lock card → map. Not a QT.
 
 ---
 
 ### 0 · Spine (Dale — law, do not rewrite)
-- I need the perfect Hormozi process tweet for this
-- While we wait for CFB to heat up
-- Here's one wallet crushing CFB so far
-- And he's sized up
+- I need the perfect post for this college football play
+- This is the first one of the season that I really love the shape of
 
-Assets: Action card · UNLV @ North Texas Over · $14.8K · 3.3× press · L10 7-1 · L30 +$50K · CFB 10-3  
-Constraint: give, not ask. Do not restage +100u / +99u MLB. Do not put GOLD / Vault / AGS / V12 / Sharp A / Source B / ELITE in the copy. Do not dump the whole CFB ticket list.
+Assets: lock card (BState −8.5 3u · $17K / $16.5K unopposed) · map ($5.1K at 4.6× · 4 proven)  
+Constraint: give, not ask. Do not restage `$14,800 AT 3.3×` / +100u / +99u. Do not put GOLD / Vault / AGS / V12 / Sharp A / Source B / ELITE / HC / Confirmed in the copy. Do not write EV.
 
 ### 0b · Timeline
-Ask **cold.** Window #1 silhouette = `$XK at Y×` / printer then tonight’s play. TNF `$51K AT 4.4×` is spent — this is **new** tape on a **new** game. Forward look wanted a Saturday CFB leftover only with new tape. Dale dumped it.
+Ask **cold.** Window silhouette = `$XK` unopposed / `$XK at Y×` on **new** tape. TNF `$51K AT 4.4×` spent. Morning UNLV 3.3× spent as a restage. Dale spine = the shape, not a wallet sequel.
 
 ### 0c · Forward look
-Slot #1 after the MLB QT was a live give on one new ticket. Dale spine = that slot, on CFB.
+Continuity wanted a grade of UNLV or a new CFB ticket. Dale dumped a new ticket and named the job: first shape of the season he loves.
 
 ### 1 · WHO
-Someone sitting on Saturday waiting for CFB to heat up — night games, bigger money, the slate getting loud.
+Someone who sat through Saturday CFB waiting for a board that looks like the ones we take — unopposed proven money, someone sized, not a lonely $2K.
 
 ### 2 · PURPOSE
-**Give.** One wallet. One ticket. No URL. No trial. No SR.
+**Give.** Walk this lock. No URL. No trial. No SR.
 
 ### 3 · ONE
-**CFB isn't loud yet. One wallet is already printing it — and he just sized up.**
+**First CFB play this season I really love the shape of — $16.5K proven, nobody against, one wallet 4.6×, three more with him.**
 
 | Test | |
 |------|---|
-| Understand | Slate is still warming. This wallet is already crushing CFB and pressed this Over. |
-| Believe | Live tape `sharp_total_positions` 15:50Z: `0xb4f978…` **$14,778** Over 57.5. Card: **3.3× · L10 7-1 · L30 +$50K · CFB 10-3**. Kickoff **3:45 ET**. First seen **2:55 AM ET**. |
-| Unique | Not “don’t forget MLB.” Not a four-play walk. One guy, already green on CFB, sized up while we wait. |
+| Understand | This is the first CFB ticket this year whose shape he actually likes. |
+| Believe | Live tape 21:50Z: Boise spread home **$16,741** vs Memphis **$50**. Four proven = $6,750 + $5,072 + $2,931 + $1,785 = **$16,538**. Sized wallet `…cd2f63` **$5,072 / $1,100 usual = 4.61×**. Kickoff **6:00 PM ET**. Card = **LOCKED**. |
+| Unique | Not “CFB is here.” Not the morning UNLV 3.3× hook. The shape: unopposed cluster + a 4.6× press. |
 
-**Yum:** you see the wallet size up on a CFB total before the slate gets loud — you are not waiting for the night-game pile to tell you who is serious.
+**Yum:** you get put on the CFB ticket that finally has the shape — you are not guessing which Saturday dog is “the play.”
 
 ### 4 · SPCL — **S + C**
-- **S** — $14,800 at 3.3× while the slate is still quiet
-- **C** — 10-3 CFB · +$50K L30 · L10 7-1 · $14,778 on the ticket · 2:55 AM ET stamp
-- L is his sentences. P is “crushing so far” → sized up (not a second spear)
+- **S** — $16,500 unopposed · $5,100 at 4.6×
+- **C** — four proven wallets · lock card · 10-5 / +$48K stamp on the lead · 3u locked
+- L is his “shape” sentence. P is Saturday still showing up (not a second spear)
 
-**Also seated:** pairing = size up with a wallet that’s already printing CFB, without becoming sharp · proof machine = recent (this morning + this season) + visual (the card) + volume on one spear (crushing → sized up) · pain first = waiting for CFB to heat up · Qual = walk this card, not 12 legs · whole truth = $13,511 Under the other way (sharp contested)
+**Also seated:** pairing = this shape, not Boise-as-brand · proof machine = recent (tonight) + visual (2 cards) + volume on one spear (the shape) · pain first = waited all season for a CFB board that looks like this · Qual = walk the two cards, not the juice row · whole truth = do not write $0 if we mean proven; $50 token Memphis spread is noise vs $16.5K — card says unopposed, tape agrees for proven $
 
 ### 5 · STUFF
-**Live ticket** (`sharp_total_positions.json` pulled 15:50Z):
-- UNLV @ North Texas · Over **57.5** · slug `cfb-unlv-ntx-2026-09-12-total-57pt5`
-- Lead wallet `0xb4f978be63cdf75554b0b46a4262a6db597cc9a7` · **$14,778** Over
-- First seen **2026-09-12T06:55:16Z** = **2:55 AM ET** (card clock)
-- Kickoff **2026-09-12T19:45:00Z** = **3:45 PM ET** — not locked
-- Game Over $16,821 / Under $14,579. Other wallet `wr0ngw4yb3tt0r` **$13,511** Under. **Contested.** Do not write unopposed / unanimous / $0 on the Under.
-- Same-wallet extra legs on this game (do not walk unless asked): $2,043 Over 58.5 · $983 Under 57.5 · $85 Under 58.5. The card is the **$14.8K Over 57.5**.
+**Live ticket** (`sharp_spread_positions.json` pulled ~21:50Z):
+- Memphis @ Boise State · Boise **−8.5** · slug `cfb-mphs-boise-2026-09-12-spread-home-8pt5`
+- Kickoff **2026-09-12T22:00:00Z** = **6:00 PM ET**
+- Card: **LOCKED** · **3.0u** · −113 (53%)
+- Spread proven home **$16,741** / away **$50** (token). Card stamp: **$16.5K unopposed** / **$17K** nothing against.
 
-**Card (Dale screen — the attach):**
-- $14.8K · **3.3× press** · L10 **7-1** · L30 **+$50K** · Sharp contested · Line with
-- CFB **10-3** · +$50K last 30
-- Do not invent 87% / steam 4.3% in copy (OCR mush). The card shows steam + line with — write **line with him**.
+**Four proven on Boise (the cluster):**
+| tail | $ | line | note |
+|------|---|------|------|
+| `…1ac9bba3` | **$6,750** | −8.5 | |
+| `…cd2f63` | **$5,072** | −8.5 | avgSportBet **$1,100** → **4.61×** — the $5.1K / 4.6× on both cards |
+| `…af7a4cdf` | **$2,931** | −7.5 | |
+| `…7cc9a7` | **$1,785** | −9.5 | lock-card “led by” · 10-5 · 67% WR · L30 +$48K |
 
-**Sports sharps (same wallet, live):** CFB 17 bets / $101,618 / avg $5,978. 10-3 graded + this live ticket is the early-season book. Do not write the $5,978 usual (conflicts with the card’s 3.3×). Walk the card.
+Sum of four = **$16,538**. “3 more proven alongside” the $5.1K.
 
-**Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · Source B · ELITE · locked · unanimous · `USUAL` in line 1–2 · +100u / +99u · 5-3 yesterday · fade-Trent · ticket-dump of Virginia / Mizzou / etc.
+**Map card (Dale):** $5.1K · 4.6× · usual $1.1K · 38-35 · +18% ROI · 52% wins · beat close 55% · other side $0. Do not write `USUAL` in line 1–2. Do not write 38-35 in the hero if it fights the 10-5 CFB stamp (different wallet / different book). Walk $5.1K / 4.6× / unopposed.
+
+**Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · Source B · ELITE · HC · Confirmed · EV −1.5% · juice/limit caption · `$14,800 AT 3.3×` · UNLV · +100u / +99u · unanimous (we have a $50 token) · `USUAL` in line 1–2
 
 ### 6 · HOOK QA
-What: $14,800 at 3.3×.  
-How: while we wait for CFB to heat up. One wallet is already crushing it.  
-So what: he sized up on UNLV-North Texas Over.  
-Screenshot: stranger sees **$14,800 AT 3.3×** in line 1.
+What: $16,500 unopposed.  
+How: first CFB play this season I really love the shape of.  
+So what: $5,100 at 4.6×, three more proven, 3u locked on Boise −8.5.  
+Screenshot: stranger sees **$16,500 UNOPPOSED** in line 1.
 
 **Killed**
-- Calendar open without $ (“Saturday CFB is here”)
-- Restage +100u / don’t-forget-MLB / 5-3
-- `$51K AT 4.4×` clone wording on Trent
+- Feelings as line 1 (“I love this shape”)
+- Morning UNLV 3.3× restage
+- `$51K AT 4.4×` clone
 - Convert / better way / grind-EV
-- Over-as-brand
-- 12-leg Action dump
-- Unopposed (false)
-- Locked (false — 3:45 ET)
+- EV / Pin / +0.7pp juice row
+- All-money $34K / $19K as a second spear
+- Merging 10-5 and 4.6× into one wallet
 
 ### 7–8 · Draft + algorithm
-His sentences stay. Hook is the $ + his wait. Body = crushing book + this press + contested whole truth + clock. Delete: system labels, convert, ask, MLB printer.
+His sentence stays. Hook is the unopposed $ + the shape. Body = this lock, the $5.1K press, the three with him, the 10-5 stamp. Delete: system labels, convert, ask, UNLV, EV.
 
 ---
 
 ## COPY THIS
 
 **Type:** Hero  
-**Media:** the Action card he dumped (UNLV @ North Texas Over expand)
+**Media:** lock card first, then the map
 
 ```
-$14,800 AT 3.3×
-While we wait for CFB to heat up.
+$16,500 UNOPPOSED
+First CFB play this season I really love the shape of.
 
-One wallet is already crushing it.
-And he sized up.
+Memphis @ Boise State.
+Boise -8.5. -113. 3u. Locked.
 
-UNLV @ North Texas. Over 57.5.
-$14,800. 3.3×.
-10-3 on CFB. +$50K the last 30.
-Last 10: 7-1.
+$16,500 proven on Boise.
+Nothing against.
 
-He was on this at 2:55 AM ET.
-Kickoff 3:45 ET.
+One wallet $5,100 at 4.6×.
+Three more proven with him.
 
-Not clean. $13,500 on the Under the other way.
-Sharp contested. Line still with him.
+Lead on the card is 10-5. +$48K the last 30.
 
-The slate isn't loud yet.
-He's already pressing.
+This is the shape.
 ```
