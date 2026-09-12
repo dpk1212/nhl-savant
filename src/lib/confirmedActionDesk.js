@@ -18,6 +18,11 @@ import { steamForGame } from './steamMove.js';
 import { signedSpreadEntryLine } from './spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
 import { rejectNonFullGameBoardPosition } from '../../scripts/lib/totalMarketFilter.js';
+import { BOARD_SPORT_SLUG, slugLeague, SOC_SLUG_LEAGUES } from './sportSlug.js';
+
+const SLUG_TO_SPORT = Object.fromEntries(
+  Object.entries(BOARD_SPORT_SLUG).map(([sport, slug]) => [slug, sport]),
+);
 
 export const ACTION_BOARD_SPORTS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 const SPORTS = ACTION_BOARD_SPORTS;
@@ -45,6 +50,14 @@ export function sportsWithActionPositions(...feeds) {
 export function actionSportMatches(rowSport, sportFilter) {
   if (!sportFilter || sportFilter === 'All' || sportFilter === 'ALL') return true;
   return String(rowSport || '').toUpperCase() === String(sportFilter).toUpperCase();
+}
+
+/** Prefer Polymarket league slug over a wrong feed bucket. */
+export function resolveActionSport(feedSport, pos) {
+  const league = slugLeague(pos?.slug || pos?.eventSlug);
+  if (league && SLUG_TO_SPORT[league]) return SLUG_TO_SPORT[league];
+  if (league && SOC_SLUG_LEAGUES.has(league)) return 'SOC';
+  return String(feedSport || '').toUpperCase();
 }
 
 /** Action tape = CONFIRMED only (FLAT wins less — kept off this board). */
@@ -552,10 +565,11 @@ function fmtAmerican(odds) {
   return odds > 0 ? `+${odds}` : `${odds}`;
 }
 
-function collectPositions(feed, marketType) {
+function collectPositions(feed, marketType, sportFilter = 'All') {
   const out = [];
   if (!feed || typeof feed !== 'object') return out;
   for (const sport of SPORTS) {
+    if (!actionSportMatches(sport, sportFilter)) continue;
     const games = feed[sport];
     if (!games || typeof games !== 'object') continue;
     for (const [gameKey, gd] of Object.entries(games)) {
@@ -579,16 +593,19 @@ export function buildConfirmedActionRows({
   pinnacleHistory,
   cellStatsTable = null,
   polyData = null,
+  sportFilter = 'All',
 } = {}) {
   const qBySport = buildFlatDollarQBySport(walletProfiles);
   const raw = [
-    ...collectPositions(sharpPositions, 'ML'),
-    ...collectPositions(spreadPositions, 'SPREAD'),
-    ...collectPositions(totalPositions, 'TOTAL'),
+    ...collectPositions(sharpPositions, 'ML', sportFilter),
+    ...collectPositions(spreadPositions, 'SPREAD', sportFilter),
+    ...collectPositions(totalPositions, 'TOTAL', sportFilter),
   ];
 
   const rows = [];
-  for (const { sport, gameKey, gd, marketType, pos } of raw) {
+  for (const { sport: feedSport, gameKey, gd, marketType, pos } of raw) {
+    const sport = resolveActionSport(feedSport, pos);
+    if (!actionSportMatches(sport, sportFilter)) continue;
     const polyGame = polyData?.[sport]?.[gameKey];
     if (rejectNonFullGameBoardPosition(pos, {
       marketType,
@@ -645,6 +662,7 @@ export function buildConfirmedActionRows({
     rows.push({
       id: `${sport}|${gameKey}|${marketType}|${short}|${side}`,
       sport,
+      slug: pos.slug || pos.eventSlug || null,
       gameKey,
       marketType,
       side,
@@ -852,6 +870,7 @@ export function filterActionRows(rows, {
 } = {}) {
   return rows.filter((r) => {
     if (!actionSportMatches(r.sport, sport)) return false;
+    if (r.slug && !actionSportMatches(resolveActionSport(r.sport, r), sport)) return false;
     if (Number.isFinite(minInvested) && minInvested > 0
       && !(Number(r.invested) >= minInvested)) return false;
     if (highMidOnly && r.skillKey !== 'high' && r.skillKey !== 'mid') return false;
