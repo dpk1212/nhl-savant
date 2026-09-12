@@ -1117,8 +1117,8 @@ function CellHistLine({ text }) {
 
 function ActionRow({ row, sportFilter = 'All', isMobile, expanded, onToggle }) {
   const [hover, setHover] = useState(false);
-  if (!rowMatchesActionSport(row, sportFilter)) return null;
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
+  if (!rowMatchesActionSport(row, sportFilter)) return null;
   const clock = entryClock(row.ts);
   const accent = row.skillKey === 'high' ? B.gold
     : row.skillKey === 'mid' ? B.green
