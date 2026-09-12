@@ -21,17 +21,16 @@ Sep 11 PROMOTE stamps are the old OR. Timing-only (Sep 12) would not have pushed
 
 Two different piles:
 
-**Still 4u+ when the late stack saw them (into-T):** 24-15 / +16.4u muted.
+**Still 4u+ when T ran, then muted:** see [Policy T’s AND gate](#policy-t--the-and-gate-on-tails) below. Clean cut is **17 · 11-6 / +16.4u**, all A/B, all steam off. The +16.4u is almost entirely **fat 5-0 / +23.2u**. The 4u half is **6-6 / −6.8u** — T is working there.
 
 | mutedBy | N | W-L | PnL | Read |
 |---------|--:|:---:|----:|------|
-| **steam-tail** (unconfirmed 4u / fat, steam off) | 20 | 13-7 | **+19.3u** | WATCH — T’s “keep 4u iff A/B + steam” is cutting a hot no-steam 4u book this window |
+| **steam-tail unconfirmed 4u** | 12 | 6-6 | **−6.8u** | WORKING — same leak August priced |
+| **steam-tail unconfirmed fat** | 5 | 5-0 | **+23.2u** | WATCH — August said this cell leaks; this window it is the whole + |
 | ev-drift-edge | 3 | 0-3 | −14.8u | WORKING |
 | tape-weak | 5 | 3-2 | −4.7u | WORKING |
 | top-crowded (still 4u at T) | 3 | 1-2 | −7.4u | WORKING at this gate |
 | winner_align_fade | 4 | 4-0 | +19.4u | WATCH, pre-steam fade |
-
-T fat / unconfirmed-fat with steam off is the sharpest TOP-inventory watch (includes the 5–6 fat winners). Thesis still says no-steam 4u is the cut. One window does not revert it.
 
 **top-crowded (earlier, path TOP):** 15 native-4u tickets, **11-4 / +18u** (u4 subset 11-2 / +29u). That mute is aimed at crowded TOP conviction, not steam. It is the other big eater of “would-have-been TOP.” WR is the watch; do not flip from n=15.
 
@@ -59,3 +58,57 @@ Steam is not why ELITE/PREMIUM is winning: steam-off ELITE/PREM is **10-1 / +22.
 2. **Do not** revert T’s 4u steam gate from this window. Keep logging fat + into-T steam-tail.
 3. Candidate if we want the ladder back: **ELITE (maybe PREMIUM) floor 4u**, or **RANK ELITE/PREMIUM HOLD instead of EDGE-SOFT**. That is a quality restore, not another steam promote.
 4. Second watch, not a ship: **top-crowded** on native 4u (11-2). Separate question from steam.
+5. Third watch, not a ship: **unmute A/B fat when steam is off** (the 5-0). Do not unmute the 4u half with it.
+
+## Policy T — the AND gate on tails
+
+T does not re-size the book. It is a **permission slip on the tails**. The sizer already made a 4u or 5.4u+ ticket. T answers one question: *do we still believe that tail?*
+
+```
+keep 4u / 5.4u+  iff  Source A/B CONFIRMED on our side  AND  steam on at lock
+keep 5u always
+leave 2–3u alone
+fail-open if steam is unobservable
+```
+
+The stamp reason `unconfirmed_4u` / `unconfirmed_fat` does **not** mean “no wallets.” It means the AND failed. In the Aug 31–Sep 11 window the AND failed the same way every time:
+
+**17 tickets still 4u+ when T ran. All 17 had A/B. All 17 had steam off. T muted them. 11-6 / +16.4u left on the table (stake 75.6u).**
+
+Zero of these were muted for missing A/B. Pin never printed steam at lock. T treated that as “tail not confirmed” and wrote 0u.
+
+### The +16.4u is not one pile
+
+| Cell | N | W-L | PnL | vs August T thesis |
+|------|--:|:---:|----:|--------------------|
+| 4u, A/B, steam off | 12 | 6-6 | **−6.8u** | August 4u-without-AND was **12 · 7-5 · −3.3u**. T is still doing that job. |
+| 5.4u+, A/B, steam off | 5 | 5-0 | **+23.2u** | August 5.4u+ without AND was **28 · 16-12 · −8.9% · −13.7u**. This window fights that cell. |
+
+If you unmute all 17, you buy the fat 5-0 **and** the 4u 6-6 drag. The impact you are feeling is the **fat** half.
+
+Fat tickets T zeroed (all A/B, steam off, all won):
+
+- 9/4 MLB Over 7.5 5.4u ELITE/RANK +5.9u
+- 9/4 MLB Over 8.5 6u LEAN/SUPER +5.4u (A/B count 5/6 — wallets everywhere, path LEAN)
+- 9/5 UFC Benouaich 5.4u PREMIUM/SHARP +4.1u
+- 9/5 UFC Campbell 5.4u ELITE/MINI- +1.5u
+- 9/6 MLB Dodgers 5.4u PREMIUM/SHARP-LEAN +6.3u
+
+4u T zeroed is a different book: Rockies/Yankees RANK wins, then a WEAK/Q1 grind (Padres, both Jays, Twins, Overs) that nets **−6.8u**. That is not a TOP we miss. That is T working.
+
+### What T let through this window
+
+`steam_confirmed` (A/B **and** steam on) on 4u+: **9 · 4-5 · −3.1u**. Two of those nines are Kansas / Rutgers — overlay later pushed them to 4u and a later Fetch restamped T as confirmed. Strip the restamps and the native confirmed tail is still not the hot book.
+
+So the permission slip flipped vs August: **the tails T trusted (steam on) are ≤flat; the fat tails T refused (wallets on, Pin quiet) went 5-0.**
+
+That is a real inventory effect. It is also n=5 against an August cell of 28. Closing Dime said do not mute *all* fat — mute fat **unless** A/B steam. Live we have A/B and are missing only steam. August bundled “A/B + no steam” into the same AND-fail pile as “no A/B.” We have not isolated whether A/B-without-steam fat is actually the leak, or whether the leak was no-A/B fat.
+
+### What this is not
+
+- Not “T is broken.” The 4u AND-fail cut still matches August.
+- Not “unmute everything T cut.” That reopens the 4u −6.8u.
+- Not a reason to bump 3u. These tickets were already 4u+.
+- Not a reason to drop A/B from the gate. Every muted winner already had A/B. Dropping A/B would not have saved them. **Dropping the steam half of the AND on fat would.**
+
+Candidate if you pick it later: **HOLD 5.4u+ when A/B is on, even if steam is off. Keep muting 4u unless both.** That is a one-band relaxation, not a T revert. Still a watch until fat n is not 5.
