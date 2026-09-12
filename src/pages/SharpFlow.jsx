@@ -2861,7 +2861,7 @@ async function loadLockedPicks() {
 }
 
 async function loadAllTimePnL() {
-  const cacheKey = 'sharpFlow_pnl_v18';
+  const cacheKey = 'sharpFlow_pnl_v19';
   const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
   const emptyBundle = { pregame: { ...empty }, all: { ...empty }, byStars: {} };
   const readCache = (maxAgeMs) => {

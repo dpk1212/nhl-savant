@@ -237,3 +237,19 @@ export function buildSharpFlowPnl(docs) {
 export function isSharpFlowPnlBundle(data) {
   return !!(data && Array.isArray(data.picks) && data.byAgsTier && data.all);
 }
+
+/**
+ * Age of a built bundle. Use generatedAt, never filesystem mtime —
+ * `git checkout` / `reset --hard` resets mtime to now and the fetch
+ * loop then skipped the rebuild forever (frozen at 2026-09-11 17:05Z).
+ * Missing or invalid generatedAt → Infinity (rebuild).
+ */
+export function pnlBundleAgeMs(bundleOrJson, now = Date.now()) {
+  try {
+    const j = typeof bundleOrJson === 'string' ? JSON.parse(bundleOrJson) : bundleOrJson;
+    const t = Date.parse(j?.generatedAt);
+    return Number.isFinite(t) ? now - t : Infinity;
+  } catch {
+    return Infinity;
+  }
+}

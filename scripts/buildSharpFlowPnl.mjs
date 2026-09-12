@@ -2,16 +2,17 @@
  * Build public/sharp-flow-pnl.json — processed all-time P&L for Sharp Flow.
  *
  * One Firestore scan of sharpFlowPicks/Spreads/Totals, then compact JSON.
- * Skip if the file is < 55 minutes old so a 12-cycle market-data job does
- * not rescan 12 times. FORCE=1 rebuilds anyway.
+ * Skip if generatedAt is < 55 minutes old so a 12-cycle job does not
+ * rescan 12 times. Do not use filesystem mtime — checkout/reset makes
+ * the file look brand new every cycle. FORCE=1 rebuilds anyway.
  *
  * Usage: node scripts/buildSharpFlowPnl.mjs
  */
-import { existsSync, readFileSync, writeFileSync, statSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import admin from 'firebase-admin';
-import { buildSharpFlowPnl, isSharpFlowPnlBundle, SHARP_FLOW_PNL_VERSION } from '../src/lib/sharpFlowPnl.js';
+import { buildSharpFlowPnl, isSharpFlowPnlBundle, pnlBundleAgeMs, SHARP_FLOW_PNL_VERSION } from '../src/lib/sharpFlowPnl.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -38,19 +39,22 @@ function initFirebase() {
   return admin.firestore();
 }
 
-function fileAgeMs(path) {
+function existingBundleAgeMs(path) {
   try {
-    return Date.now() - statSync(path).mtimeMs;
+    return pnlBundleAgeMs(readFileSync(path, 'utf8'));
   } catch {
     return Infinity;
   }
 }
 
 async function main() {
-  if (!FORCE && existsSync(OUT) && fileAgeMs(OUT) < MAX_AGE_MS) {
-    const ageMin = (fileAgeMs(OUT) / 60000).toFixed(1);
-    console.log(`[sharp-flow-pnl] skip — ${OUT} is ${ageMin} min old (rebuild after 55 min or FORCE=1)`);
-    return;
+  if (!FORCE && existsSync(OUT)) {
+    const age = existingBundleAgeMs(OUT);
+    if (age < MAX_AGE_MS) {
+      const ageMin = (age / 60000).toFixed(1);
+      console.log(`[sharp-flow-pnl] skip — generatedAt is ${ageMin} min old (rebuild after 55 min or FORCE=1)`);
+      return;
+    }
   }
 
   const db = initFirebase();
