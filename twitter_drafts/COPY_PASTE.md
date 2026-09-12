@@ -1,144 +1,156 @@
-# Twitter — 2026-09-11 PM · QT GIVE · BetMGM Friday MLB / don’t forget MLB / +99u / 4 plays
-**Pathway:** `hormozi_tweet_process.md` (Hormozi only — not the July loop)
-**CSV:** Sep 5–11 living window (ingest this run). Ask **cold**. Give.
+# Twitter — 2026-09-12 · QT GIVE · BetMGM Saturday MLB / CFB saturation / +100u / 5-3 yest
+**Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
+**CSV:** Sep 5–11 living window. Ask **cold**. Give.
 
 | | |
 |--|--|
-| WHO | Someone who just flipped to football and thinks MLB is leftover. |
-| PURPOSE | Give / buzz. QT of BetMGM’s most-bet list. Walk 4 flagged totals. |
-| ONE | Football’s here. Don’t forget MLB. We’re +99u the last 30. Here are 4 that fit. |
+| WHO | Someone who flipped the app to Saturday CFB and thinks the MLB book is closed. |
+| PURPOSE | Give / buzz. QT of BetMGM’s Saturday most-bet list. Walk 4 flagged tickets. |
+| ONE | CFB owns today. Our MLB book is +100u in 30 days, went 5-3 yesterday, and the same wallets are still on this slate. |
 | SPCL | **C + S** |
-| Timeline | TNF fade-Trent posted. Friday bad-night posted. Next was “Sat one ticket” — Dale overrode to this Friday QT. |
+| Timeline | Friday +99u / don’t-forget-MLB is spent. This is the Saturday Power trail: they printed, they’re back. |
 | Ask | **None.** No URL. No trial. No self-reply. |
 
-**Post as Quote** of @BetMGMNewss Friday MLB most-bet list. Attach the 4 cards in walk order (PHI → CIN → LAA → NYM). Do not @ in the body.
+**Post as Quote** of @BetMGMNewess Saturday MLB most-bet list. Attach the 4 cards in walk order (NYM Over → Padres → Rangers → Dodgers). Do not @ in the body.
 
 ---
 
 ### 0 · Spine (Dale — law, do not rewrite)
-- Quote this BetMGM tweet
-- As we push into football season, let’s not forget about the MLB
-- We are up 99 units in the last 30 days
-- Here are 4 plays that fit the strategy
-- Let’s have a night
-- Pull the gaudy sharp / Action (Source B) numbers that back the cards
+- Quote this BetMGM Saturday tweet
+- Everyone is going to be all over CFB today
+- We are up 100 units in MLB over the last 30 days
+- Went 5-2 yesterday → **live same-book is 5-3** (do not write 5-2)
+- Our sharps are NOT taking a break today
+- Massive MLB slate
 
-Assets: BetMGM most-bet graphic · 4 flagged totals  
-Constraint: give, not ask. QT = the parent. Do not restage fade-Trent / 2 RED NIGHTS / pretty bad night. Do not put GOLD / Vault / AGS / V12 / Sharp A / Source B in the copy.
+Assets: BetMGM Saturday most-bet graphic · Record tile (+100.59u) · 4 flagged cards  
+Constraint: give, not ask. QT = the parent. Do not clone Friday `+99u` / `Don't forget MLB`. Do not put GOLD / Vault / AGS / V12 / Sharp A / Source B in the copy.
 
 ### 0b · Timeline
-Ask **cold.** Printer-asks already fired Sep 5–7. Convert-as-open still death. Window #1 silhouette = printer then tonight’s plays (`+60u` + four cards **540**) — **new tape only**. This is that job: +99u L30 + football twist + BetMGM parent. Do not clone the Sep 7 sentence.
+Ask **cold.** Printer-asks already fired Sep 5–7. Convert-as-open still death. Window #1 silhouette = printer then tonight’s plays — **new tape only**. Friday already used +99u + football reminder. Today’s twist is CFB saturation + yesterday’s cash + still working. Do not clone the Sep 7 `+60u last 7` sentence or Friday’s two-line open.
 
 ### 0c · Forward look
-Default slot was Saturday one-ticket. Dale spine = law. This QT is the Friday get-back-on-the-board give after the bad-night confession.
+Default slot was Saturday one-ticket. Dale spine = law: Saturday QT, four tickets, printer + not-taking-a-break.
 
 ### 1 · WHO
-Someone who just flipped to football and thinks the MLB board is leftover.
+Someone who flipped to Saturday CFB and thinks the MLB book is closed for the day.
 
 ### 2 · PURPOSE
-**Give / buzz.** Quote BetMGM’s public list. Walk our 4. No URL. No trial. No SR.
+**Give / buzz.** Quote BetMGM’s public Saturday list. Walk our 4. No URL. No trial. No SR.
 
 ### 3 · ONE
-**Football’s here. Don’t forget MLB. +99u the last 30. Four plays that fit.**
+**CFB owns today. +100u MLB last 30. 5-3 yesterday. The wallets aren’t taking a break.**
 
 | Test | |
 |------|---|
-| Understand | Season flipped. MLB is still printing. Here are tonight’s four. |
-| Believe | `sharp-flow-pnl` MLB L30 **+99.09u** (537-489). Cards: PHI 24-8 / +$94K · CIN $5.4K / +$39K · LAA 50-34 / +$27K · NYM $476. |
-| Unique | Football/don’t-forget + public most-bet list vs our board. Not “we like four totals.” |
+| Understand | Timeline is CFB. Our MLB book is still printing and still live. |
+| Believe | Live `sharp-flow-pnl` generated 13:58Z: MLB 31d **+100.59u · 144-120 · 264 graded · +16.4% ROI**. Yesterday **5-3 / +1.92u** on the same book. Cards tape-backed 14:47Z. |
+| Unique | Not “don’t forget baseball” (Friday). They cashed yesterday and they’re on today’s slate while CFB eats the feed. |
 
-**Yum:** you see the wallets on tonight’s MLB before lock — you are not sitting on BetMGM’s NRFI / Yankees −140 pile as the information.
+**Yum:** you see the wallets on today’s MLB before lock — you are not sitting on BetMGM’s Yankees −170 / Over 8 pile as the information.
 
 ### 4 · SPCL — **C + S**
-- **C** — +99u L30 (verified) · 24-8 / +$94K · 50-34 / +$27K
-- **S** — $38K on PHI Under · $5.4K at 1.8× · $2.5K on LAA Under
-- L is his sentences. P is showing up the night after a bad one (not a second spear)
+- **C** — +100.59u L30 verified · 144-120 · 5-3 yesterday · 56-36 / +$32K · 41-36 / +$121K · 11-6 / +$10K · 310-267 / +$38K
+- **S** — $3.8K at 4.3× · $10K Padres · $2K Rangers · $4.8K Dodgers unopposed proven
+- L is his sentences. P is 5-3 yesterday → back on the board (not a second spear)
 
-**Also seated:** pairing = don’t sit with the most-bet NRFI as the intel · proof machine = recent + visual (4 cards) + volume on one spear (+99u / don’t forget) · pain first = parent’s #1 NRFI is PHI-ATL, we’re Under 6.5 · Qual = stuff in the walk · whole truth = CIN Under $26K · PHI 5 proven on the Over
+**Also seated:** pairing = don’t sit with the most-bet NRFI / Yankees −170 as the intel · proof machine = recent (yesterday + today) + visual (4 cards) + volume on one spear (+100u / not taking a break) · pain first = CFB ate the timeline · Qual = stuff in the walk · whole truth = yesterday 5-3 not 5-2 · Dodgers $1.9K losing on our side · Mets one proven Under
 
 ### 5 · STUFF
-**Our printer (origin/main `sharp-flow-pnl.json` generated 17:05Z):** MLB last 30 days **+99.09u** · 537-489-2. Dale said 99. Use 99.
+**Our printer (nhlsavant `sharp-flow-pnl.json` generated 13:58Z):** MLB last **31d** (Aug 13–Sep 11) **+100.59u · 144-120 · 264 graded · +16.4% ROI**. Matches Dale’s Record tile. Dale said 100. Use **100**.
 
-**Parent (BetMGM Friday MLB):**
-- Most-bet games: BAL@TOR · COL@DET · **LAA@WSH** · **PHI@ATL** · CWS@STL
-- Most-bet totals: BAL@TOR Under 8 · COL@DET Over 8 · SEA@ATH Over 10 · **CIN@MIL Over 8** · **LAA@WSH Under 7.5**
-- Most-bet NRFIs: **PHI@ATL −150** · CLE@MIN · **NYM@NYY −135** · BAL@TOR · LAA@WSH
-- Most-bet ML #1: Yankees −140
+**Yesterday (same book, units>0):** **5-3 · +1.92u** — not 5-2.
+- W: Tigers ML 3u · Cubs ML 4u · D-backs ML 4u · LAA Under 8.5 4u · NYM Over 7.5 3u
+- L: White Sox ML 3u · PHI Under 7.5 4u · SD Under 7.5 4u
 
-**Four flagged cards (Dale screens — Action/Source B on the card). Tape `sharp_total_positions` 22:28Z backs $ where noted. Do not say locked.**
+**Parent (BetMGM Saturday MLB — @BetMGMNewess, ~22m when screenshotted):**
+- Most-bet ML (tickets): Yankees −170 · Jays −120 · Cubs −130 · Braves −120 · Red Sox −220
+- Most-bet ML ($): Guardians −110 · Cubs −130 · Yankees −170 · Red Sox −220 · Braves −120
+- Most-bet totals: PIT@CHC Over 9 · **NYM@NYY Over 8** · COL@DET Over 8.5 · PHI@ATL Over 8 · BAL@TOR Over 8.5
+- Most-bet NRFI: BAL@TOR · PIT@CHC · LAA@WSH · **LAD@MIA** · **SD@SF**
 
-1. **PHI@ATL Under 6.5 +129 · 4.0u** · locks **7:01 ET**  
-   Card: $38K Under / Over $7.1K · lead `…2cbcf8` **$2K at 2.0× · 24-8 · 75% WR · L30 +$94K** · 4 more proven with us · **5 proven on the Over** · 84% here  
-   Parent: #4 most-bet game · **#1 most-bet NRFI**. They have the NRFI. We have the Under.
+**Four flagged cards (Dale screens). Tape `sharp_*_positions` 14:47Z backs $. Walk the card. Do not say locked.**
 
-2. **CIN@MIL Over 7.5 −126 · 4.0u** · locks **7:31 ET**  
-   Card: $14K Over / **Under $26K** · lead `…4b912c` **$5.4K at 1.8× · 29-26 · 53% WR · L30 +$39K** · 3 more proven with us · 1 proven other side · 34% here  
-   Parent: #4 most-bet total is this Over (they have 8). Whole truth: the Under pile is louder. We are still on the Over.  
-   JSON: `$5,400` is on Over 7.5 (`…e8e2cc`, 4.32× vs his avg). Card attributes $5.4K / 1.8× / +$39K to `…4b912c`. **Walk the card.** Do not “correct” it in public.
+1. **NYM@NYY Over 8.5 +103 · 3.0u** · locks **1:21 ET**  
+   Card: $4.0K Over / Under $867 · lead `…9214c2` **$3.8K at 4.3× · 56-36 · 61% WR · L30 +$32K** · 1 proven Under · 82% here  
+   JSON: Over **$3,799** (`…9214c2`) + $190 · Under **$867** (`…4b912c`). Matches.  
+   Parent: **#2 most-bet total** is this Over (they have 8). Our number is 8.5.
 
-3. **LAA@WSH Under 8.5 −144 · 4.0u** · locks **6:31 ET** (first)  
-   Card: $2.5K Under / Over $1.1K · lead `…9214c2` **50-34 · 60% WR · L30 +$27K** · 2 proven with us · 1 proven Over · 69% here  
-   JSON: Under 8.5 **$2,500** = `…7d395d` $2,000 (1.56×) + `…9214c2` $500. Matches the $2.5K stamp.  
-   Parent: #3 most-bet game · #5 most-bet total (Under **7.5**). Same game, our number is 8.5.
+2. **Padres ML −173 · 5.4u** · locks **3:51 ET**  
+   Card: $10K Padres / Giants $4.2K · lead `…a8409` **$8.3K · 41-36 · 53% WR · L30 +$121K** · 1 more proven with us · 71% here  
+   JSON: Padres **$10,298** (`…a8409` $8,298 + `…51176e` $2,000) / Giants **$4,223**. Matches.  
+   Parent: **#5 most-bet NRFI**. They have the NRFI. We have the ML.  
+   GOLD badge on the card — **do not say GOLD**.
 
-4. **NYM@NYY Over 7.5 −126 · 3.0u** · locks **6:51 ET**  
-   Card: $2.8K Over · **nothing against** · lead `…69f882` **$476 at 1.6× · 66-54 · 55% WR · L30 +$3.8K** · 1 more proven · 100% here  
-   Smallest wallet on the board. Say that with a straight face. Parent: #3 NRFI · Yankees −140 is their #1 ML. We’re on the Over, not the chalk ML.
+3. **Rangers ML +111 · 4.0u** · locks **7:56 ET**  
+   Card: $2.5K Rangers / D-backs $410 · lead `…51176e` **$2K at 1.0× · 11-6 · 65% WR · L30 +$10K** · 1 proven other side · 86% here  
+   JSON: Rangers **$2,500** / D-backs **$410**. Matches.  
+   Parent: **not on** either most-bet ML list (their chalk is Yankees / Cubs / Red Sox / Guardians / Braves).
 
-**Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · Source B · ELITE · locked · unanimous · `USUAL` in line 1–2 · $0 on a parent ticket that is actually on the list
+4. **Dodgers ML −181 · 3.0u** · locks **3:56 ET**  
+   Card: $4.8K Dodgers / nothing against · lead `…4b912c` **$1.3K at 1.7× · 310-267 · 54% WR · L30 +$38K** · 2 more proven with us · **$1.9K losing on our side** · 100% here  
+   JSON: Dodgers **$4,770** / Marlins **$0**. Losing stamp is the $1,905 HC wallet. Matches.  
+   Parent: **#4 most-bet NRFI**. They have the NRFI. We have the ML.  
+   Do not write EV −0.3% (jargon).
+
+**Do not say:** GOLD · Vault · AGS · V12 · Sharp tier A · Source B · ELITE · locked · unanimous · `USUAL` in line 1–2 · 5-2 · Don’t forget MLB · +99u
 
 ### 6 · HOOK QA
-What: +99u the last 30 days.  
-How: football’s here — don’t forget MLB.  
-So what: four plays that fit. Then the walk.  
-Screenshot: stranger sees **+99u / football / MLB** in two lines.  
-QT law: parent owns “most bet games.” We do not open by restating the list. We use it in the walk (NRFI #1 vs our Under).
+What: +100u MLB the last 30 days.  
+How: 5-3 yesterday. Our sharps aren’t taking a break for CFB.  
+So what: four live tickets on a massive slate. Then the walk.  
+Screenshot: stranger sees **+100u / 5-3 / CFB** in two lines.  
+QT law: parent owns “most bet moneylines / totals.” We do not open by restating the list. We use it in the walk (#2 total, #4/#5 NRFI, Rangers off their ML list).
 
 **Killed**
-- Restate “Most bet games: 1. Orioles at Jays…”
-- `$0 ON` a BetMGM side (Louisville death)
-- Clone `We have made over +60 units in the last 7 days in just the MLB`
+- Restate “Most bet moneylines: 1. Yankees −170…”
+- Friday clone `+99u IN THE LAST 30 DAYS` / `Football's here. Don't forget MLB.`
+- Write 5-2 when the same book is 5-3
+- `$0 ON` a BetMGM side
+- Clone `We have made over +60 units in the last 7 days`
 - `2 RED NIGHTS` / pretty bad night / fade-Trent
-- Vault / v12 / grind-EV / better way
-- Workshop: “that’s the bit” / “the leftover sport”
+- Vault / v12 / GOLD / grind-EV / better way
 
 ### 7–8 · Draft + algorithm
-His sentences stay. Hook is the printer + his twist. Body = those sentences + the walk + let’s have a night. Delete: system labels, convert, ask.
+His sentences stay. Hook is the printer + yesterday + his twist. Body = those sentences + the walk. Delete: system labels, convert, ask, 5-2.
 
 ---
 
 ## COPY THIS
 
 **Type:** Quote  
-**Parent:** BetMGM Friday MLB most-bet list  
-**Media:** 4 cards — PHI Under 6.5 · CIN Over 7.5 · LAA Under 8.5 · NYM Over 7.5
+**Parent:** BetMGM Saturday MLB most-bet list (@BetMGMNewess)  
+**Media:** 4 cards — NYM Over 8.5 · Padres ML · Rangers ML · Dodgers ML
 
 ```
-+99u IN THE LAST 30 DAYS
-Football's here. Don't forget MLB.
++100u MLB IN THE LAST 30 DAYS
+5-3 yesterday. Our sharps aren't taking a break for CFB.
 
-As we push into football season, let's not forget about the MLB.
-We're up 99 units in the last 30 days.
+Everyone's going to be all over college football today.
+We're up 100 units in MLB the last 30 days.
+Went 5-3 yesterday.
+Massive slate. They're still on it.
 
-Here are 4 plays that fit the strategy.
+Mets-Yankees is their #2 most-bet total.
+They have Over 8. We're Over 8.5. +103. 3u.
+Lead wallet $3,800 at 4.3×. 56-36. +$32K the last 30.
+$4,000 on the Over. One proven took the Under.
 
-Phillies-Braves is their #1 most-bet NRFI.
-We're Under 6.5. +129. 4u.
-Lead wallet is 24-8. +$94K the last 30. $2,000 on this. 2× his size.
-$38K on the Under. Five proven took the Over.
+Padres-Giants is their #5 most-bet NRFI.
+We're Padres ML. -173. 5.4u.
+Lead wallet $8,300. 41-36. +$121K the last 30.
+$10K on the Padres. Giants have $4,200.
 
-Reds-Brewers Over 7.5. 4u.
-$5,400 at 1.8×. +$39K the last 30.
-The Under has $26K. We're on the Over anyway.
+Rangers +111. 4u.
+Not on their most-bet moneyline list.
+$2,000. 11-6. +$10K the last 30.
+One proven took the Diamondbacks.
 
-Angels-Nats Under 8.5. 4u.
-$2,500. 50-34. +$27K the last 30.
-They have this game as their #5 most-bet total.
+Dodgers-Marlins is their #4 most-bet NRFI.
+We're Dodgers ML. -181. 3u.
+$1,300 at 1.7×. 310-267. +$38K the last 30.
+$4,800 on the Dodgers. Nothing against.
+$1,900 losing wallets on our side.
 
-Mets-Yankees Over 7.5. 3u.
-$476 at 1.6×. Nothing on the other side.
-
-All flagged. First lock 6:31 ET.
-
-Let's have a night.
+All flagged. First lock 1:21 ET.
 ```
