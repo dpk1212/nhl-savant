@@ -295,7 +295,7 @@ async function main() {
   push('');
   push(`_Generated ${new Date().toISOString()} · AGSU sides Aug 31+ (T live) unless noted._`);
   push('');
-  push('Re-run: `node scripts/analyzeUnitTierSteamBook.mjs`');
+  push('Re-run: `node scripts/analyzeUnitTierSteamBook.mjs` · 3u vs TOP inversion: `node scripts/analyzeTopVsStrongSlice.mjs` · [`TOP_VS_STRONG_INVERSION.md`](./TOP_VS_STRONG_INVERSION.md)');
   push('');
   push('WATCH ≠ revert. Two-phase steam/EV sample is still filling. Do not change production sizing from a WATCH row.');
 

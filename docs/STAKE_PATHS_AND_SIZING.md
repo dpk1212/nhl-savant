@@ -14,7 +14,7 @@ The July table below is the pre-steam stack. After sport-unlock CAP, production 
 2. **−375 mute** (Sep 5) — favorites juicier than −375 → 0u.
 3. **Unit-tier overlay** (`src/lib/unitTierEvSteamOverlay.js`, Sep 11 mute / Sep 12 timing promote) — mute live EV &lt; −2 with no steam; promote 2–&lt;4u → 4u only on arriving or last-hour ≥ 3%, not LEAN/FADE, lock-EV &lt; −1 veto.
 
-Unit-tile W/L/PnL and each cut/promote still-working: [`UNIT_TIER_STEAM_SCOREBOARD.md`](./UNIT_TIER_STEAM_SCOREBOARD.md) — re-run `node scripts/analyzeUnitTierSteamBook.mjs` as the tape log grows. WATCH ≠ revert.
+Unit-tile W/L/PnL and each cut/promote still-working: [`UNIT_TIER_STEAM_SCOREBOARD.md`](./UNIT_TIER_STEAM_SCOREBOARD.md) — re-run `node scripts/analyzeUnitTierSteamBook.mjs` as the tape log grows. WATCH ≠ revert. Why 3u is beating 4–5.4u: [`TOP_VS_STRONG_INVERSION.md`](./TOP_VS_STRONG_INVERSION.md).
 
 ## Where we are (2026-07-22)
 

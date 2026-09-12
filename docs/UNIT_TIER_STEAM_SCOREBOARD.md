@@ -2,7 +2,7 @@
 
 _Generated 2026-09-12T12:25:30.449Z · AGSU sides Aug 31+ (T live) unless noted._
 
-Re-run: `node scripts/analyzeUnitTierSteamBook.mjs`
+Re-run: `node scripts/analyzeUnitTierSteamBook.mjs` · 3u vs TOP inversion: `node scripts/analyzeTopVsStrongSlice.mjs` · [`TOP_VS_STRONG_INVERSION.md`](./TOP_VS_STRONG_INVERSION.md)
 
 WATCH ≠ revert. Two-phase steam/EV sample is still filling. Do not change production sizing from a WATCH row.
 

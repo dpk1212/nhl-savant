@@ -227,5 +227,6 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 
 - [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md) — full grading/staking/sizing stack  
 - [`TAPE_SIZING.md`](./TAPE_SIZING.md) — tape mute/boost + RANK exempt  
-- [`UNIT_TIER_STEAM_SCOREBOARD.md`](./UNIT_TIER_STEAM_SCOREBOARD.md) — unit-tile W/L/PnL + each promote/cut still-working (re-run `node scripts/analyzeUnitTierSteamBook.mjs`)  
+- [`UNIT_TIER_STEAM_SCOREBOARD.md`](./UNIT_TIER_STEAM_SCOREBOARD.md) — unit-tile W/L/PnL + each promote/cut still-working (re-run `node scripts/analyzeUnitTierSteamBook.mjs`)
+- [`TOP_VS_STRONG_INVERSION.md`](./TOP_VS_STRONG_INVERSION.md) — why 3u is beating 4–5.4u (re-run `node scripts/analyzeTopVsStrongSlice.mjs`)  
 - `scripts/dailyAgsUReport.js` — § 5e / § 5f skill impact · § 5d ticket EV/steam lifecycle  
