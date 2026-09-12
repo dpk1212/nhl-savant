@@ -41,15 +41,30 @@ const UFC_ALIASES = {
   levirodrigues: 'levirodrigues',
   seokhyeonko: 'seokhyunko',
   seokhyunko: 'seokhyunko',
+  // Noche UFC 2026-09-12 — Odds/Pinnacle legal vs Poly card name
+  tommygantt: 'thomasgantt',
+  thomasgantt: 'thomasgantt',
+  rongzhu: 'zhurong',
+  zhurong: 'zhurong',
 };
+
+/**
+ * Strip card branding so fighter A is not "Noche UFC: Jean Silva".
+ * Numbered cards, Fight Night, Apex broadcasts, and Noche all use `…UFC…:`.
+ */
+export function stripUFCEventPrefix(s) {
+  return String(s || '').replace(
+    /^(?:noche\s+)?ufc(?:\s+(?:fight\s+night|on\s+[^:]+|\d+))?\s*:\s*/i,
+    '',
+  );
+}
 
 /** Resolve a raw fighter string to a canonical normalized key, or null. */
 export function resolveUFCFighter(raw) {
   if (!raw) return null;
-  const cleaned = String(raw)
+  const cleaned = stripUFCEventPrefix(String(raw)
     .replace(/\s*\([^)]*\)\s*$/g, '') // strip trailing (Welterweight) etc.
-    .replace(/^ufc\s*(?:fight\s+night|on\s+[^:]+|\d+)\s*:\s*/i, '')
-    .replace(/\s+,?\s*(jr\.?|sr\.?|ii|iii|iv)\s*$/i, '')
+    .replace(/\s+,?\s*(jr\.?|sr\.?|ii|iii|iv)\s*$/i, ''))
     .trim();
   const n = normalizeFighterName(cleaned);
   if (!n || n.length < 3) return null;
@@ -72,14 +87,11 @@ export function makeUFCGameKey(a, b) {
 export function extractUFCFightersFromTitle(title) {
   let t = (title || '').trim();
   if (!t) return null;
-  // Numbered cards ("UFC 329:") and Fight Night / Apex branding
-  // ("UFC Fight Night:") — without the Fight Night strip, fighter A becomes
-  // "UFC Fight Night: Kamaru Usman" and the game key never matches Odds API
-  // / Pinnacle (`kamaruusman_dricusduplessis`), so the whole UFC bucket
-  // fetches empty on Sharp Flow.
-  t = t.replace(/^ufc\s*\d+\s*:\s*/i, '');
-  t = t.replace(/^ufc\s+fight\s+night\s*:\s*/i, '');
-  t = t.replace(/^ufc\s+on\s+[^:]+:\s*/i, '');
+  // Numbered cards ("UFC 329:"), Fight Night / Apex ("UFC Fight Night:"),
+  // and branded cards ("Noche UFC:") — without the prefix strip, fighter A
+  // becomes "Noche UFC: Jean Silva" and the game key never matches Odds API
+  // / Pinnacle, so the live UFC bucket fetches empty on Sharp Flow.
+  t = stripUFCEventPrefix(t);
   t = t.replace(
     /\s*\([^)]*(?:weight|prelim|main\s*card|early\s*prelim|co-?main)[^)]*\)\s*$/i,
     '',
