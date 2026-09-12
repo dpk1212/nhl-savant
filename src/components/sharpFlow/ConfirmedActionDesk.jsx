@@ -8,7 +8,7 @@ import {
   buildConfirmedActionRows,
   buildConfirmedActionMarquee,
   filterActionRows,
-  actionSportMatches,
+  rowMatchesActionSport,
   sortActionRows,
   sparkPointsForTab,
 } from '../../lib/confirmedActionDesk.js';
@@ -1115,9 +1115,10 @@ function CellHistLine({ text }) {
   );
 }
 
-function ActionRow({ row, isMobile, expanded, onToggle }) {
+function ActionRow({ row, sportFilter = 'All', isMobile, expanded, onToggle }) {
   const [hover, setHover] = useState(false);
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
+  if (!rowMatchesActionSport(row, sportFilter)) return null;
   const clock = entryClock(row.ts);
   const accent = row.skillKey === 'high' ? B.gold
     : row.skillKey === 'mid' ? B.green
@@ -1155,7 +1156,11 @@ function ActionRow({ row, isMobile, expanded, onToggle }) {
 
   const headerBtnProps = {
     type: 'button',
-    onClick: onToggle,
+    onClick: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onToggle();
+    },
     'aria-expanded': expanded,
     style: {
       display: 'block',
@@ -1356,7 +1361,7 @@ export default function ConfirmedActionDesk({
 
   useEffect(() => {
     setExpandedId(null);
-  }, [sportFilter, sortMode, highMidOnly, sizedOnly, clearOnly, pinWithOnly]);
+  }, [sortMode, highMidOnly, sizedOnly, clearOnly, pinWithOnly]);
 
   const { rows } = useMemo(
     () => buildConfirmedActionRows({
@@ -1367,8 +1372,9 @@ export default function ConfirmedActionDesk({
       pinnacleHistory,
       cellStatsTable,
       polyData,
+      sportFilter,
     }),
-    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData],
+    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData, sportFilter],
   );
 
   const visible = useMemo(() => {
@@ -1378,7 +1384,7 @@ export default function ConfirmedActionDesk({
       sizedOnly,
       clearOnly,
       pinWithOnly,
-    });
+    }).filter((r) => rowMatchesActionSport(r, sportFilter));
     return sortActionRows(filtered, sortMode);
   }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, sortMode]);
 
@@ -1437,23 +1443,28 @@ export default function ConfirmedActionDesk({
         </span>
       </div>
 
-      <div data-action-list={sportFilter || 'All'} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {visible.filter((r) => actionSportMatches(r.sport, sportFilter)).map((r) => (
-          <ActionRow
-            key={`${sportFilter}:${r.id}`}
-            row={r}
-            isMobile={isMobile}
-            expanded={expandedId === r.id}
-            onToggle={() => setExpandedId((cur) => (cur === r.id ? null : r.id))}
-          />
-        ))}
-      </div>
-
-      {visible.length === 0 && (
+      {visible.length === 0 ? (
         <div style={{ ...T.body, color: B.textMuted, padding: '1.5rem', textAlign: 'center' }}>
           {sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
             ? `No ${sportFilter} tickets match these filters.`
             : 'Nothing matches these filters.'}
+        </div>
+      ) : (
+        <div
+          key={sportFilter || 'All'}
+          data-action-list={sportFilter || 'All'}
+          style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+        >
+          {visible.map((r) => (
+            <ActionRow
+              key={`${sportFilter}:${r.id}`}
+              row={r}
+              sportFilter={sportFilter}
+              isMobile={isMobile}
+              expanded={expandedId === r.id}
+              onToggle={() => setExpandedId((cur) => (cur === r.id ? null : r.id))}
+            />
+          ))}
         </div>
       )}
     </div>
