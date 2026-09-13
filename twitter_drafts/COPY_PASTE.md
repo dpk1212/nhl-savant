@@ -1,121 +1,118 @@
-# Twitter — 2026-09-13 · QT GIVE · JamKam Saturday / best September start / before the tool
+# Twitter — 2026-09-13 · HERO GIVE · two losing months then us / last story before the slate
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
-**CSV:** Sep 5–11 living window. Ask **cold**. Showcase. Give.
+**CSV:** Sep 5–11 living window. Ask **cold**. Give.
 
 | | |
 |--|--|
-| WHO | Someone who ate a couple red days this week and thinks the month is cooked — or thinks you have to grind EV / arb / data to print. |
-| PURPOSE | Give / showcase. QT of a long-time user. Educate after the pudding. |
-| ONE | A couple down days didn’t ruin September. It’s already the best month-start we’ve ever had — and a user who’s been here since before the tool just printed a 31-unit Saturday. CLV only matters if you don’t win. |
+| WHO | Someone who thinks the 177-unit posts are fake — or only sees green months. |
+| PURPOSE | Give / credibility. One last user receipt. Then the slate. |
+| ONE | Two losing months. Then he found us. September is sitting on the chart. That’s why I share these. |
 | SPCL | **C + P** |
-| Timeline | Saturday CFB shape / UNLV 3.3× / +100u MLB are spent as restages. This is a new-tape user QT. Convert is **not** the open. |
-| Ask | **None.** No URL. No trial. No “follow our prediction engine.” No self-reply. |
+| Timeline | JamKam QT is staged/spent (best September start / CLV). This is a **different** user: red months → us → turnaround. Not that hook. |
+| Ask | **None.** No URL. No trial. No self-reply. |
 
-**Post as Quote** of @JamKam77 Saturday recap (7:57 AM Sep 13). Do not @ in the body. The parent already tags us.
+**Post as a single hero.** Attach **year chart first** (the two red months), then the September month. DM — no name, no handle, no Quote.
 
 ---
 
 ### 0 · Spine (Dale — law, do not rewrite)
-- Rewrite this post. It’s not good enough. Huge post to showcase. I quoted the attached tweet.
-- He’s been a user of the site since before the SharpFlow tool existed.
-- A couple down days isn’t going to ruin the month.
-- September is the best start we have ever had to any month. That includes a slow start to CFB.
-- You don’t have to grind thousands of EV plays. You don’t have to spend hours arbing. You don’t have to have access to better or more data. Here you barely have to do anything if you don’t want to.
-- Follow our prediction engine and we will make you look sharp. ← **shape / do not run as copy** (convert-as-open death · tipster close)
-- CLV only matters if you don’t win.
+- Perfect writeup for this
+- One last success story before we move on to the MASSIVE SLATE today
+- I have to share these, otherwise people think my up 177 unit posts are fake
+- This guy had two losing months before he found SharpFlow
+- Pretty easy to spot when he found us
 
-Assets: @JamKam77 tweet + two Savant charts  
-Constraint: QT. Showcase, not ask. Do not open with grind-EV / better-way / thankful OG. Do not restate “best day ever” / +31.52u as **our** line 1. Do not put GOLD / Vault / AGS / V12 / Sharp A / prediction engine in the copy.
+Assets: iMessage year tile + September month tile (he said we can share)  
+Constraint: give, not ask. Do not open with “people think I’m fake.” Do not clone JamKam `BEST START WE'VE EVER HAD` / CLV / grind-EV. Do not put GOLD / Vault / AGS / V12 / Sharp A / prediction engine in the copy. Do not name him.
 
 ### 0b · Timeline
-Ask **cold.** Convert-as-open still death (5 / 43 / 54). Thankful OG QT = 35. Grind-EV hero = **5**. His convert sentences live **after** the month + the user receipt. Forward look wanted a Boise grade — Dale spine overrides: this QT.
+Ask **cold.** Defend-the-idea opens die (`People tell me all the time my idea is stupid` = 6). Fake-doubt is the **so what**, not line 1. Pain first = **his** July/August. Forward look wanted a Saturday grade — Dale spine = one last user story, then the slate.
 
 ### 0c · Forward look
-This slot is the Sunday showcase QT. Next is a grade or new tape, not another convert paragraph.
+This is the last showcase. Next slot **is** the massive slate (new tape). Not another user recap.
 
 ### 1 · WHO
-Someone staring at a red Thursday/Friday who thinks September is cooked, or who thinks the only way to print is grinding EV / arb / extra data.
+Someone scrolling past 177-unit posts who thinks they’re fake — or who has only ever seen the green month.
 
 ### 2 · PURPOSE
-**Give / showcase.** Quote his Saturday. Educate the “you don’t have to” after the pudding. No URL. No trial. No SR.
+**Give / credibility.** Walk the year, then September. Close on the slate. No URL. No trial. No SR.
 
 ### 3 · ONE
-**A couple down days didn’t ruin September. Best month-start we’ve ever had. He’s been here since before the tool. CLV only matters if you don’t win.**
+**Two losing months. Then he found us. Pretty easy to spot. I share it so the 177-unit posts don’t look fake. Then today’s slate.**
 
 | Test | |
 |------|---|
-| Understand | Red days happened. The month is still the best start we’ve had. An OG user just printed Saturday. |
-| Believe | Our book `sharp-flow-pnl.json` generated 12:01Z: Sep 1–13 **+61.45u** — best first-13 of any month on tape (Jun +35.5 · May +32.8). CFB Sep **84-85 / −13.1u**. Red days Sep 8–11 (−1.6 / −2.4 / −13.5 / −6.1) then Sat **+25.9u**. Parent (his book): **+31.52u · 14-4-0 · +57.1% · +93.48u in 13 days · 91-53-1 · +17.55% · day CLV 9-8**. |
-| Unique | Not “best day ever” (his open). Ours: down days + slow CFB + still best September + user predates the tool + CLV 9-8 and he still printed. |
+| Understand | He was losing. He found us. The chart changes in September. |
+| Believe | Year tile: Jul **−$688 · 25-96** · Aug **−$848 · 36-91** · Sep **+$1,926 · 52-28**. YTD **+$340 · 114-220 · 34% · +1.9%**. Month tile: **+$1,926 · +21.4% · 52-28 · 65% · $9,010 risked · 96.3u**. He cut to **$20/u** after the three-day dip. |
+| Unique | Not JamKam’s best-September / +31.5u. Not “trust me.” The year is ugly until September. That’s the find. |
 
-**Yum:** you can sit through a couple red days and still be on the best month-start — you do not have to become an EV grinder to get there.
+**Yum:** you can see when someone found us — you are not being sold a photoshopped 177.
 
 ### 4 · SPCL — **C + P**
-- **C** — his charts (+31.52u / +93.48u / 14-4 / 9-8 CLV) · our Sep first-13 is the best on tape
-- **P** — been here since before the tool · down days → Saturday still printed
-- L is his sentences. S is the parent’s Saturday (we do not steal it as line 1)
+- **C** — year tile (Jul/Aug red → Sep green) · 52-28 · +$1,926 · 114-220 YTD
+- **P** — we share the losing months, not just the heater · he sat the dip and cut size
+- L is “pretty easy to spot” / “177 looks fake.” S is the Sep $ (not line 1 — year pain is line 1)
 
-**Also seated:** pairing = best month-start without becoming sharp · proof machine = recent (yesterday + this month) + visual (his charts) + volume on one spear (down days didn’t kill September) · pain first = the red days they’re still looking at · Qual = walk his card after our hook · whole truth = CFB is slow · his CLV was 9-8 not a smash
-
-**Killed from the old draft:** grind-EV as the open · “follow our prediction engine” · “we will make you look sharp” · thankful-OG energy
+**Also seated:** pairing = you can see the turnaround, not “we only post winners” · proof machine = recent (this month) + visual (year then month) + volume on one spear (found us) · pain first = two red months · Qual = walk both tiles · whole truth = YTD still +$340 / 34% because Jul–Aug buried him · three-day dip · $20/u
 
 ### 5 · STUFF
-**Parent (@JamKam77, 7:57 AM Sep 13, ~1.7K views when screenshotted):**
-- +31.52u Saturday · 14-4-0 · +57.10% ROI · all straights · no lucky parlay
-- +93.48u first 13 days of September · 91-53-1 · +17.55% ROI
-- Units 33% more $ wagered (updated bankroll)
-- Day CLV **9–8–0** · longer book CLV **62–60–4**
-- “Best day ever” is **his** open — we do not rerun it
+**Year tile (Dale screen):**
+- Oct ’25–May: $0
+- Jun **−$52**
+- Jul **−$688 · 25-96**
+- Aug **−$848 · 36-91**
+- Sep **+$1,926 · 52-28**
+- YTD **+$339.76 · +1.9% · 114-220 · 17u? / $17,996 risked · 34.13%** — write **+$340 · 114-220 · 34%**. Do not write the 17u if it fights 96.3u (different window / OCR). Risked $18K is enough if needed.
 
-**Our book (do not mash with his 93u):** Sep 1–13 **+61.45u** best first-13 on tape. CFB **−13.1u**. Down days Sep 8–11. Sat +25.91u. Use “best start we’ve ever had” + “slow CFB” + “couple down days.” Do **not** write +61 next to his +93 (two books).
+**September tile:**
+- **+$1,926 · +21.4% · 52-28 · 65% · $9,010 risked · 96.3u**
+- His words: after the three-day dip this is where I am for the month. Took per unit back to **$20** after Wednesday.
 
-**Dale facts (no file):** user since before the SharpFlow tool existed.
+**Dale:** two losing months before he found us. Easy to spot. Share so 177-unit posts don’t look fake. Then the massive slate today.
 
-**Do not say:** GOLD · Vault · AGS · V12 · Sharp A · prediction engine · make you look sharp · grind-EV as line 1 · thankful to have him · $16.5K / $14.8K / +100u restage · Boise / UNLV
+**Do not say:** his name · SharpFlow as a product-room tour (write **us** / **the site**) · GOLD · Vault · AGS · V12 · prediction engine · grind-EV · JamKam +31.5u / best September start · CLV only matters · $16.5K / $14.8K / +100u
 
 ### 6 · HOOK QA
-What: September is the best start we’ve ever had.  
-How: a couple down days isn’t going to ruin the month. That includes a slow CFB.  
-So what: he’s been here since before the tool — then walk his Saturday — then you don’t have to grind EV — then CLV only matters if you don’t win.  
-Screenshot: stranger sees **BEST START WE’VE EVER HAD** / **down days** in two lines.  
-QT law: parent owns +31.52u / best day ever. We do not open there.
+What: July −$688. August −$848.  
+How: pretty easy to spot when he found us.  
+So what: September +$1,926 · 52-28. I share these so the 177-unit posts don’t look fake. Massive slate today.  
+Screenshot: stranger sees **two red months** in line 1.  
+Not a QT — no parent hook to steal.
 
 **Killed**
-- `You don’t have to grind EV or arb` as line 1 (CSV death = 5)
-- `If only there was a better way` family
-- Thankful OG
-- Restate “Best day ever!” / +31.52u as our open
-- Follow our prediction engine / we will make you look sharp
-- $16.5K unopposed / $14.8K / +100u
+- `People think my 177u posts are fake` as line 1 (defend-the-idea)
+- `SEPTEMBER IS THE BEST START WE'VE EVER HAD` clone
+- Thankful OG / “this is awesome”
+- Convert / grind-EV / better way
+- Vault / SharpFlow identity open
+- Walking the Sunday slate (he didn’t dump tickets)
 
 ### 7–8 · Draft + algorithm
-His sentences stay. Hook is **our** month + the down days. Body = slow CFB + before the tool + walk his charts + you-don’t-have-to + CLV closer. Delete: engine, look-sharp, ask, URL.
+His “easy to spot” / “177 looks fake” / “massive slate” stay. Hook is the two red months. Body = found us + September walk + the dip + why we share + slate. Delete: name, engine, ask, JamKam restage.
 
 ---
 
 ## COPY THIS
 
-**Type:** Quote  
-**Parent:** @JamKam77 · Saturday 9/12 recap (the two Savant charts)
+**Type:** Hero  
+**Media:** year chart first, September month second
 
 ```
-SEPTEMBER IS THE BEST START WE'VE EVER HAD
-A couple down days isn't going to ruin the month.
+JULY -$688. AUGUST -$848.
+Pretty easy to spot when he found us.
 
-That includes a slow start to CFB.
+September +$1,926. 52-28. 65%.
 
-He's been on the site since before the tool even existed.
+He had two losing months before he found the site.
+Year-to-date was 114-220. +$340. That's the hole he was in.
 
-+31.5 units yesterday. 14-4. All straights.
-+93 units through 13 days of September.
-His unit is 33% bigger now.
+Then a three-day dip this week.
+He cut his unit to $20 and kept going.
+Still +$1,926 for the month.
 
-You don't have to grind thousands of EV plays.
-You don't have to spend hours arbing.
-You don't have to have better data.
+I have to share these.
+Otherwise people think the 177-unit posts are fake.
 
-You barely have to do anything if you don't want to.
-
-CLV only matters if you don't win.
-He was 9-8 on CLV yesterday.
+One last one.
+Massive slate today.
 ```
