@@ -1,0 +1,145 @@
+[![Logo](https://otcdn.virginia.us-east-1.oddstrader.com/OT-LogoWhiteGreen.svg)](https://www.oddstrader.com/)
+
+- [ODDS](https://www.oddstrader.com/)
+- [OFFSHORE SPORTSBOOKS](https://www.oddstrader.com/sportsbooks/offshore-versus-regulated/)
+- [NEWS](https://www.oddstrader.com/news/)
+- [PICKS](https://www.oddstrader.com/today/picks/)
+- [BETTING](https://www.oddstrader.com/betting/)
+
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldtoday.svg)Today](https://www.oddstrader.com/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NFL](https://www.oddstrader.com/nfl/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NCAAF](https://www.oddstrader.com/ncaa-college-football/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldBaseball.svg)MLB](https://www.oddstrader.com/mlb/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldBasketball.svg)NBA](https://www.oddstrader.com/nba/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldHockey.svg)NHL](https://www.oddstrader.com/nhl/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldBasketball.svg)NCAAB](https://www.oddstrader.com/ncaa-college-basketball/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/)
+
+NHL
+
+[ODDS](https://www.oddstrader.com/nhl/) [PICKS](https://www.oddstrader.com/nhl/picks/) [PLAYER PROPS](https://www.oddstrader.com/nhl/player-props/) [FUTURES](https://www.oddstrader.com/nhl/futures/) [PLAYER FUTURES](https://www.oddstrader.com/nhl/player-futures/) [INJURIES](https://www.oddstrader.com/nhl/injuries/) [RANKINGS](https://www.oddstrader.com/nhl/rankings/) [STANDINGS](https://www.oddstrader.com/nhl/standings/)
+
+# NHL Betting Odds
+
+Compare the [best regulated and offshore sportsbooks](https://www.oddstrader.com/sportsbooks/offshore-versus-regulated/) for NHL betting, including hockey odds, limits, banking, bonuses and availability.
+
+Money
+
+- Puck Line
+
+- Money
+
+- Total
+
+- Merged
+
+Game
+
+- Game
+
+- 1P
+
+- 2P
+
+- 3P
+
+TodayYesterday
+
+![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
+
+NHLTue 09/29
+
+[Opener](https://www.oddstrader.com/betting/)
+
+[![BetOnline](https://www.oddstrader.com/wp-content/uploads/2025/12/betonline.webp)](https://www.oddstrader.com/sportsbooks/betonline/)
+
+[![BetAnything](https://www.oddstrader.com/wp-content/uploads/2025/12/betanything-black-logo.webp)](https://www.oddstrader.com/sportsbooks/betanything/)
+
+[![Bovada](https://www.oddstrader.com/wp-content/uploads/2025/12/Bovada.webp)](https://www.oddstrader.com/sportsbooks/bovada/)
+
+[![Heritage](https://www.oddstrader.com/wp-content/uploads/2025/12/Heritage.webp)](https://www.oddstrader.com/sportsbooks/heritage/)
+
+[![Bookmaker](https://www.oddstrader.com/wp-content/uploads/2025/12/Bookmaker-1.webp)](https://www.oddstrader.com/sportsbooks/bookmaker/)
+
+[![JustBet](https://www.oddstrader.com/wp-content/uploads/2025/12/Justbet-hp.webp)](https://www.oddstrader.com/sportsbooks/justbet/)
+
+|     |     |     |     |     |     |     |     |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+| TUE 09/295:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>40-42<br>-<br>+115Bovada | +106 | +109 | +110 | +115 | +109 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>69-32<br>-<br>-121Heritage | -120 | -123 | -130 | -135 | -121 | - | - |
+
+| TUE 09/297:00 PM<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>57-44<br>-<br>-101Heritage | -104 | -109 | -110 | -105 | -101 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>32-50<br>-<br>-105BetOnline | -110 | -105 | -110 | -115 | -109 | - | - |
+
+| TUE 09/298:00 PM<br>![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>34-48<br>-<br>+115Bovada | +104 | +110 | +110 | +115 | +107 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>47-41<br>-<br>-119Heritage | -118 | -125 | -130 | -135 | -119 | - | - |
+
+| TUE 09/2910:00 PM<br>![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>25-57<br>-<br>+229Heritage | +224 | +220 | +215 | +220 | +229 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>43-45<br>-<br>-255BetOnline | -260 | -255 | -265 | -270 | -257 | - | - |
+
+| TUE 09/2910:30 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>29-53<br>-<br>+216BetOnline | +216 | +216 | +200 | +205 | +216 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>53-51<br>-<br>-244Heritage | -250 | -250 | -250 | -245 | -244 | - | - |
+
+| WED 09/307:30 PM<br>![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>43-45<br>-<br>+116Heritage | +110 | +110 | - | +105 | +116 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>47-45<br>-<br>-125BetOnline | -125 | -125 | - | -125 | -128 | - | - |
+
+| WED 09/3010:00 PM<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>35-51<br>-<br>+158Bovada | +149 | +147 | - | +158 | +150 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>63-32<br>-<br>-166Heritage | -170 | -167 | - | -183 | -166 | - | - |
+
+| THU 10/017:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>47-45<br>-<br>+133Bovada | - | - | - | +133 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>42-40<br>-<br>-155Bovada | - | - | - | -155 | - | - | - |
+
+| THU 10/017:00 PM<br>![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>57-38<br>-<br>-105Bovada | - | - | - | -105 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)<br>Columbus<br>40-42<br>-<br>-115Bovada | - | - | - | -115 | - | - | - |
+
+| THU 10/017:00 PM<br>![](https://logos.oddstrader.com/logos-original/c8d52a39-5aa1-4997-8c81-7618dfbd5e22-original.PNG?d=100x100)<br>Tampa Bay<br>53-36<br>-<br>-140Bovada | - | - | - | -140 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>34-48<br>-<br>+120Bovada | - | - | - | +120 | - | - | - |
+
+| THU 10/018:00 PM<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>51-42<br>-<br>-147Bovada | - | - | - | -147 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/5e8d35d8-0bed-4ae7-a56f-519fdfc050f0-original.PNG?d=100x100)<br>Nashville<br>38-44<br>-<br>+127Bovada | - | - | - | +127 | - | - | - |
+
+| THU 10/019:30 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>29-53<br>-<br>+168Bovada | - | - | - | +168 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>45-43<br>-<br>-198Bovada | - | - | - | -198 | - | - | - |
+
+| THU 10/0110:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>40-42<br>-<br>-140Bovada | - | - | - | -140 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>39-43<br>-<br>+120Bovada | - | - | - | +120 | - | - | - |
+
+| THU 10/0110:00 PM<br>![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>43-45<br>-<br>-198Bovada | - | - | - | -198 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>25-57<br>-<br>+168Bovada | - | - | - | +168 | - | - | - |
+
+[![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
+
+![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
+
+BetStationThe future of Betting
+
+[NHL](https://www.oddstrader.com/nhl/)
+
+Report
+
+![oddstraderLogo](https://otcdn.virginia.us-east-1.oddstrader.com/OT-LogoWhiteGreen.svg)
+
+Follow us on
+
+[About Us](https://www.oddstrader.com/about-us/) [Editorial Policy](https://www.oddstrader.com/editorial-policy/) [Affiliate Disclosure](https://www.oddstrader.com/affiliate-disclosure/) [Responsible Gambling](https://www.oddstrader.com/responsible-gambling/)
+
+[Authors](https://www.oddstrader.com/betting/authors/) [Privacy Policy](https://www.oddstrader.com/privacy-policy/) [Terms of Use](https://www.oddstrader.com/terms-of-use/) [Contact Us](https://www.oddstrader.com/contact/) [DMCA](https://www.oddstrader.com/dmca/) [App](https://www.oddstrader.com/sports-betting-app/)
+
+© OddsTrader 2026 All Rights Reserved
+
+The content on this site is for entertainment purposes only. OddsTrader makes no representation or warranty as to the accuracy of the information given or the outcome of any game or event. Please be aware of and respect the laws regarding sports betting for your jurisdiction as they vary from state to state. OddsTrader does not target underaged persons. Using this information to contravene any law or statute is prohibited. This site contains commercial content, and OddsTrader may be compensated for the links provided on this site. [Disclosure.](https://www.oddstrader.com/affiliate-disclosure/)
+
+OddsTrader no longer operates under any U.S. license, including Pennsylvania.
+
+Seek help with a gambling addiction at 1-800-MY-RESET.
+
+×Feedback
+
+![Paperclip Icon](<Base64-Image-Removed>)Upload files
+
+Send
+
+[Powered by Doorbell.io](https://doorbell.io/?utm_source=feedback_form&utm_medium=web_sdk&utm_campaign=application_10828)
