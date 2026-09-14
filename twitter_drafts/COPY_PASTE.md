@@ -1,150 +1,136 @@
-# Twitter — 2026-09-14 eve · QT ASK · Jim signed up to check the claims
+# Twitter — 2026-09-14 eve r2 · QT ASK · Jim missed the best day / still +32u
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
-**CSV:** Sep 8–14 attention. Overlay: member receipt + fork in the same tweet. PURPOSE=**ask**.
+**CSV:** Sep 8–14. Overlay: member receipt + **one** fork in the same tweet. PURPOSE=**ask**.
 
 | | |
 |--|--|
-| WHO | Someone who thinks the Twitter numbers are a performance and will not start a trial from a toast or a coffee price. |
-| PURPOSE | **Ask.** Jim is the proof. The room is the product. Trial in this tweet. |
-| ONE | He signed up to see if the claims were real. Two weeks in he’s green, and he missed the best day. That’s sitting in the room with the sharps. |
+| WHO | Someone staring at Jim’s two cards who still thinks the tweets might be a performance. |
+| PURPOSE | **Ask.** One job: start a trial. |
+| ONE | He missed the best day we’ve had. He’s still +32u. That’s the room. |
 | SPCL | **C + P** |
-| Timeline | Morning football/MLB ask is live (Dale posted a variant). This is a new dump: Jim’s ledger. Second ask same day = Dale override. Do not restage +29u / Don / Jul-Aug / Camden. |
-| Ask | **In the QT:** `Would you try it?` + `Free trial — watch it live and grade it yourself.` No coffee price. No URL. No MVP25. No SR. |
+| Timeline | Morning ask is live. This QT has to land. v1 was a thesis with an imagine-if. Rewrite hook before body. |
+| Ask | **One close:** `Would you try it — watch it live and grade it yourself.` No coffee. No URL. No second CTA. No SR. |
 
-**Post as Quote** of @JPWilliams37. Do not @ in the body. Do not attach extra images — his two cards are the stuff.
+**Post as Quote** of @JPWilliams37. No extra images. Walk **left card (1W)** then **right card (ALL)** — attach order is already in the parent.
 
 ---
 
-### 0 · Spine (Dale — law, do not rewrite)
+### 0 · Spine (Dale — law)
 - People like Jim are the best
 - Start of the month he wanted to track the success and see if the claims were as good as I was posting
 - Through 2 weeks it’s been good
 - He missed part of our best day ever as a system
-- Imagine if you could sit in the same room with all the sharp bettors as they placed their bets, and you could decide who to follow or not
-- Imagine that access only costs a couple cups of coffee a week? Would you try it?
-- That’s what we are doing here
-- **Now turn that into the perfect post. Fully utilize the Hormozi techniques.**
+- Sit in the same room with the sharps as they bet, decide who to follow
+- Cups of coffee a week? Would you try it? That’s what we are doing here
+- **r2: Hormozi would demand better. Full process. Refinement. This one needs to land.**
 
-Assets: Jim’s tweet (Week 2 + ALL charts)  
-Constraint: QT. Do **not** write GOLD / Vault / AGS / V12 / HC / Confirmed / ELITE / EV / `USUAL` / grind-EV / SharpFlow-as-our-open / prices / `$5.35` / lunch / coffee-as-punchline / thankful-OG open / restage +29u / invent a Saturday unit total.
+Assets: Jim’s tweet.  
+Constraint: QT. No GOLD / Vault / AGS / V12 / EV / `USUAL` / coffee-as-punchline / thankful open / invent Saturday’s units / mash our +29u / restage Camden.
 
 ### 0b · Timeline
-Camden-as-hero = **0R**. Overlay: member receipts convert **with a visible fork**. Thankful OG QT = 35. QT law: do not restate his open (`Results from Week 2` / `up over 32u` / `Give it a try yourself!`). Parent owns the charts. We own the skeptic + missed-the-best-day + the room.  
-Morning ask already fired. Dale dumped another ask. Spine = law. Next slot after this = give.
+Camden hero = 0R (testimonial, no fork). Overlay: member receipt **with a fork** converts. Thankful OG = 35. QT law: parent owns Week 2 / “over 32u” / “missed some big wins Saturday” / “Give it a try yourself.” We own **best day we’ve had** + **he tracked it to check the tweets** + the room as what he’s already doing.
 
 ### 0c · Forward look
-After this: one live ticket (give). DM fence-sitters in Jim’s thread and this QT.
+Lands → next is a live ticket, no ask. Misses → do not restage this paragraph.
 
 ### 1 · WHO
-A skeptic who has been watching the printer posts and has not started a trial because he doesn’t know if it shows up in a real book. Jim is that person, two weeks later.
+A lurker looking at Jim’s charts. Pain they’re in: the left card is a grind, the right card is green, and the caption says he missed Saturday. They need to know what that means — and that they can sit in the same room.
 
 ### 2 · PURPOSE
-**Ask.** One job: start trials. Pudding = Jim checked. Close = the room + would you try it / free trial. Same tweet.
+**Ask.** Trials. Pudding first. One close.
 
 ### 3 · ONE
-**He signed up to see if the claims were real. Two weeks later he’s green — and he missed the best day. That’s the room.**
+**He missed the best day we’ve had. He’s still +32u. That’s sitting in the room with the sharps.**
 
 | Test | |
 |------|---|
-| Understand | A guy tested us. His book is green. He still missed Saturday. You can sit in that room. |
-| Believe | His cards: week **32-33 · +1.55u · +0.75%** (he said not exciting, still green). Month **46-38 · +32.69u · +11.98%**. He wrote: missed Saturday afternoon. Dale: that was part of the best day we’ve had. Start-of-month check = Dale (no DM screenshot; don’t invent quotes). |
-| Unique | Not “thankful Jim.” Not coffee. Not restating +32u as the open. The spear is the audit + the miss. The room is what he bought. |
+| Understand | He wasn’t on Saturday. His month is still +32u. That’s the product. |
+| Believe | Left card **32-33 · +1.55u** (he said not exciting). Right card **46-38 · +32.69u**. He wrote missed Saturday afternoon. Dale: that was part of our best day. Start-of-month check = Dale. |
+| Unique | Not “claims were real” as a thesis. Not coffee. Not thank-you. Paradox: missed the heater, month still prints. Line 2 = `He's still +32u.` (August `ALMOST 3× JULY` job). |
 
-**Yum:** you sit with the sharps we track as they bet. You decide who to follow. You grade it in your own book.
+**Yum:** you sit with the sharps we track as they bet. You decide who to follow. You grade it in your book — even if you miss a day.
+
+v1 ONE failed Masterson #3: “signed up to see if the claims were real” is easy to understand and believe. It is **not** interesting. The miss is.
 
 ### 4 · SPCL — **C + P**
-- **C** — public ledger 46-38 +32.69u · week 32-33 on the card · he posted it
-- **P** — he showed up to check · two weeks · missed Saturday · still here
-- L is dinner-table (not the pillar). S is the room (scarce access) — proves the ONE, not a second spear
+- **C** — walk the two cards; +32.69u is on the right
+- **P** — he checked for two weeks · posted the boring week · posted the miss · still there
+- S = the room (scarce access) proves the ONE after the hook. Not a second spear.
 
-**Hormozi stack (all of it, one spear):**
-- Rule of One: audit → miss → room. Everything else only proves that.
-- Pairing: Sharp Flow = sit with the sharps, not buy a capper
-- Proof machine: recent (this month) · visual (his two cards) · volume on one spear · pain first (he didn’t believe the tweets yet)
-- Value equation: dream = the room · likelihood = Jim’s book · time = as they bet · effort = you decide who to follow, we already tracked them
-- Diagnostic: current = “are the tweets real?” → desired = my own book is the proof → obstacle = have to test / might miss a day → vehicle = the room / free trial
-- Qual: week honesty + month number + Saturday miss + room · stuff > container
-- Whole truth: week 2 was 32-33, not a heater. He said it. The 1W card dipped (label −17.45u) — do **not** narrate that valley unless we need it; he didn’t. Don’t invent Saturday’s unit total.
-- Trust: we don’t hide that he missed the best day
-- Overlay ask: fork in the hero after pudding
+**Levers that earn a seat (delete the rest):**
+- Pairing: sit with the sharps, not buy a capper
+- Proof machine: recent · visual (walk left then right) · volume on **one** spear (miss + still green) · pain first (they’re already on the miss in the parent)
+- Value equation: dream = the room · likelihood = his book · time = while they bet · effort = you decide who to follow
+- Diagnostic **in the words:** didn’t trust the tweets → tracked two weeks → missed the best day → still +32u → vehicle = that room / trial
+- Trust: 32-33 week stays. We don’t hide the miss.
+- Qual: stuff inside. Complete sentences. No slogan close.
+- Overlay: one fork, in this tweet
 
-**Deleted:**
-- “People like Jim are the best” as the open (thankful OG death)
-- Cups of coffee / lunch / `$5.35` (price as punchline. Aug 2 = 11.9k impr, 2 t.co trials. Shape the *try* into the trial. Keep the room.)
-- Restate “Give it a try yourself!” as our close (parent owns it)
-- Camden restage · Jul/Aug · +29u restage · grind-EV · become-sharp lecture · “we don’t pick games”
+**Deleted this pass:** imagine-if · “that’s what this is” · dual CTA · fragment-stack swagger · coffee · gratitude · become-sharp lecture · “we don’t pick”
 
 ### 5 · STUFF
-**Parent (@JPWilliams37, ~1h):**
-- “Results from Week 2 of September using SharpFlow from @Real_NHL_Savant.”
-- “Not exciting, but green is all that matters.”
-- “Now up over 32u for the month.”
-- “I missed some big wins on Saturday afternoon otherwise this would be even better.”
-- “Give it a try yourself!”
-- 1W card: **+1.55u · +0.75% · 32-33-0** · 13.73u in
-- ALL card: **+32.69u · +11.98% · 46-38-0** · 41.93u in
-- His open. We do not rerun Week 2 / +32u / try-it as line 1.
+**Parent:** Week 2, not exciting but green, over 32u month, missed Saturday afternoon big wins, give it a try. 1W **+1.55u / 32-33 / +0.75%**. ALL **+32.69u / 46-38 / +11.98%**.  
+**Dale:** checked the claims at the start of the month · two weeks good · missed part of the best day we’ve had · the room · would you try it.  
+**Do not invent** Saturday’s unit total. Do not narrate the −17.45u valley on his 1W card (he didn’t).
 
-**Dale:**
-- Start of month: wanted to track if the claims were as good as posted
-- Two weeks: good
-- Missed part of **our best day ever as a system** (Saturday afternoon — do not invent the day’s units)
-- The room: sit with the sharps as they bet, decide who to follow
-- That’s what we’re doing
+### 6 · HOOK QA (rewrite hook before body — Dale 9/01)
 
-**Do not say:** GOLD · Vault · AGS · V12 · EV · `USUAL` · SharpFlow as our identity line · coffee/lunch/`$5.35` · Don · +29u · Jul −$688 · JamKam’s Saturday +31u mashed into Jim · thankful · “best kept secret”
+| | v1 | r2 |
+|--|----|----|
+| Line 1 | HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL | **HE MISSED THE BEST DAY WE'VE HAD** |
+| Line 2 | restated the thesis | **He's still +32u.** |
+| Screenshot | a motive | a paradox with a number |
+| QT law | ok-ish (not his open) | parent said “big wins Saturday” — **best day we’ve had** is ours |
 
-### 6 · HOOK QA
-What: He signed up to see if the claims were real.  
-How: Two weeks. Week 2 was 32-33, not exciting, still green. Month +32.69u. He missed Saturday — part of the best day we’ve had.  
-So what: That’s sitting in the room with the sharps we track. You decide who to follow. Would you try it? Free trial — watch it live and grade it yourself.  
-Screenshot: **SIGNED UP TO SEE IF THE CLAIMS WERE REAL** — skeptic, not a thank-you.  
-QT law: parent owns Week 2 / +32u / try it. We name the check and the miss.
+What: he missed the best day we’ve had.  
+How: he signed up to check the tweets. Two weeks. 32-33 this week, +32.69u the month. Saturday he wasn’t on.  
+So what: that’s the room. Would you try it — watch it live and grade it yourself.
+
+**Why v1 would disgust Hormozi**
+- Hook was a press release. Line 2 did not do the interesting/unique job.
+- “Imagine if” is a promise. Jim already sat in the room. Proof *is* likelihood.
+- Two closes (“Would you try it?” + “Free trial…”) = toss salad ask.
+- “That’s what this is.” = slogan.
+- Fragment stack. Brand kit: complete sentences.
+- Did not walk the cards (caption, not audit).
+- Buried the miss in the middle. The miss is the spear.
 
 **Killed hooks**
-- `People like Jim are the best` (gratitude)
-- `JIM IS +32u` (his open)
-- `A COUPLE CUPS OF COFFEE A WEEK` (lunch death)
-- `IMAGINE IF…` as line 1 (promise before pudding)
-- `GIVE IT A TRY YOURSELF` (parent)
+- People like Jim are the best (thank-you)
+- JIM IS +32u (his open)
+- Cups of coffee (lunch death)
+- Imagine if… as the open (promise)
+- Give it a try yourself (parent)
+- HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL (v1 — thesis, not a paradox)
 
-### 7 · Options (pick one)
-
-**A — BEST. QT. Skeptic open. Room after pudding. Trial fork.**  
-Uses every Hormozi lever on one spear. Keeps Dale’s room and “would you try it.” Kills coffee. Kills thank-you.
-
-**B — Coffee in the close.** His words. Empirically the lunch death. Kill.
-
-**C — Hero, not QT.** We’d have to screenshot his cards. QT *is* the receipt. Kill.
-
-### 8 · Algorithm
-Delete B, C, gratitude, coffee, restated try-it as line 1. Keep imagine *after* Jim’s book (proof then dream). One ask: try it = the free trial. No URL. No SR.
+### 7 · Algorithm
+One idea. Walk left card → right card → miss → room as fact (what Jim is doing) → one ask. Delete imagine. Delete the second CTA. Keep Dale’s “would you try it” inside the converting trial sentence. No URL. No SR.
 
 ---
 
-## COPY THIS — OPTION A (the one)
+## COPY THIS
 
 **Type:** Quote  
-**Parent:** @JPWilliams37 · Week 2 SharpFlow / +32u month / missed Saturday / give it a try  
-**Media:** none extra (his two cards)
+**Parent:** @JPWilliams37  
+**Media:** none extra. Eye goes left card, then right.
 
 ```
-HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL
+HE MISSED THE BEST DAY WE'VE HAD
+He's still +32u.
+
 Start of the month Jim wanted to track it himself.
 See if what I was posting actually showed up in his book.
 
-Two weeks in.
-This week was 32-33. Not exciting. Still green.
+Look at the cards.
+This week was 32-33. +1.55u. He called it not exciting. Still green.
 The month is +32.69u. 46-38.
 
-He missed Saturday afternoon.
+Saturday afternoon he wasn't on it.
 That was part of the best day we've had.
 
-Imagine sitting in the same room as the sharps we track while they put the money down.
+You sit with the sharps we track while they put the money down.
 You decide who to follow.
+Jim's been doing that for two weeks.
 
-That's what this is.
-
-Would you try it?
-Free trial — watch it live and grade it yourself.
+Would you try it — watch it live and grade it yourself.
 ```
