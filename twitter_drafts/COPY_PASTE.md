@@ -1,136 +1,97 @@
-# Twitter — 2026-09-14 eve r2 · QT ASK · Jim missed the best day / still +32u
-**Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
-**CSV:** Sep 8–14. Overlay: member receipt + **one** fork in the same tweet. PURPOSE=**ask**.
+# Twitter — 2026-09-14 eve r5 · QT EDUCATE · hook + first sentences
+**Pathway:** `hormozi_tweet_process.md` (Hormozi only)
+**This pass:** Hook QA only. Dale: the hook plus first few sentences is the most critical, and r4’s sucks.
 
 | | |
 |--|--|
-| WHO | Someone staring at Jim’s two cards who still thinks the tweets might be a performance. |
-| PURPOSE | **Ask.** One job: start a trial. |
-| ONE | He missed the best day we’ve had. He’s still +32u. That’s the room. |
-| SPCL | **C + P** |
-| Timeline | Morning ask is live. This QT has to land. v1 was a thesis with an imagine-if. Rewrite hook before body. |
-| Ask | **One close:** `Would you try it — watch it live and grade it yourself.` No coffee. No URL. No second CTA. No SR. |
+| WHO | Someone inside BetMGM’s most-bet graphic. |
+| PURPOSE | **Educate.** How the +118u happens. No ask. |
+| ONE | The +118u is the other side of the most-bet list. Tonight: Mets ML. |
+| SPCL | **S + C** in the open. Everything else waits. |
+| Timeline | r4 kept a jargon hook and opened on a scold. Rewrite hook before body. |
+| Ask | **None.** |
 
-**Post as Quote** of @JPWilliams37. No extra images. Walk **left card (1W)** then **right card (ALL)** — attach order is already in the parent.
+**Quote** @BetMGMNews. **Attach:** Mets card, then L30 chart. Skip the map.
 
 ---
 
 ### 0 · Spine (Dale — law)
-- People like Jim are the best
-- Start of the month he wanted to track the success and see if the claims were as good as I was posting
-- Through 2 weeks it’s been good
-- He missed part of our best day ever as a system
-- Sit in the same room with the sharps as they bet, decide who to follow
-- Cups of coffee a week? Would you try it? That’s what we are doing here
-- **r2: Hormozi would demand better. Full process. Refinement. This one needs to land.**
+Same spine. **r5: THE HOOK PLUS FIRST FEW SENTENCES IS THE MOST CRITICAL AND IT SUCKS IN THIS VERSION.**
 
-Assets: Jim’s tweet.  
-Constraint: QT. No GOLD / Vault / AGS / V12 / EV / `USUAL` / coffee-as-punchline / thankful open / invent Saturday’s units / mash our +29u / restage Camden.
+### Why r4’s open dies
+```
+THEY HAVE THE ORIOLES ON THE MONEY LIST
+$138k is on the Mets.
 
-### 0b · Timeline
-Camden hero = 0R (testimonial, no fork). Overlay: member receipt **with a fork** converts. Thankful OG = 35. QT law: parent owns Week 2 / “over 32u” / “missed some big wins Saturday” / “Give it a try yourself.” We own **best day we’ve had** + **he tracked it to check the tweets** + the room as what he’s already doing.
+You're looking at that graphic like it's the work.
+It isn't.
 
-### 0c · Forward look
-Lands → next is a live ticket, no ask. Misses → do not restage this paragraph.
+We're +118u on MLB in the last 30 days.
+```
+- Line 1: jargon. “Money list.” Orioles aren’t even #1. No $ a stranger screenshots.
+- Line 2: our $ buried under “they have.”
+- Next two sentences: a dunk. No number. Hormozi pain-first is *their pile classified*, not “you’re doing the work wrong.”
+- 118u lands as a recap after the scold. Dale 9/01: line 2 does unique. Jim: person + number + paradox. `$79.5k` vs most-bet Under: **our $ in line 1.**
 
-### 1 · WHO
-A lurker looking at Jim’s charts. Pain they’re in: the left card is a grind, the right card is green, and the caption says he missed Saturday. They need to know what that means — and that they can sit in the same room.
+### 6 · HOOK QA (this is the work)
 
-### 2 · PURPOSE
-**Ask.** Trials. Pudding first. One close.
-
-### 3 · ONE
-**He missed the best day we’ve had. He’s still +32u. That’s sitting in the room with the sharps.**
-
-| Test | |
-|------|---|
-| Understand | He wasn’t on Saturday. His month is still +32u. That’s the product. |
-| Believe | Left card **32-33 · +1.55u** (he said not exciting). Right card **46-38 · +32.69u**. He wrote missed Saturday afternoon. Dale: that was part of our best day. Start-of-month check = Dale. |
-| Unique | Not “claims were real” as a thesis. Not coffee. Not thank-you. Paradox: missed the heater, month still prints. Line 2 = `He's still +32u.` (August `ALMOST 3× JULY` job). |
-
-**Yum:** you sit with the sharps we track as they bet. You decide who to follow. You grade it in your book — even if you miss a day.
-
-v1 ONE failed Masterson #3: “signed up to see if the claims were real” is easy to understand and believe. It is **not** interesting. The miss is.
-
-### 4 · SPCL — **C + P**
-- **C** — walk the two cards; +32.69u is on the right
-- **P** — he checked for two weeks · posted the boring week · posted the miss · still there
-- S = the room (scarce access) proves the ONE after the hook. Not a second spear.
-
-**Levers that earn a seat (delete the rest):**
-- Pairing: sit with the sharps, not buy a capper
-- Proof machine: recent · visual (walk left then right) · volume on **one** spear (miss + still green) · pain first (they’re already on the miss in the parent)
-- Value equation: dream = the room · likelihood = his book · time = while they bet · effort = you decide who to follow
-- Diagnostic **in the words:** didn’t trust the tweets → tracked two weeks → missed the best day → still +32u → vehicle = that room / trial
-- Trust: 32-33 week stays. We don’t hide the miss.
-- Qual: stuff inside. Complete sentences. No slogan close.
-- Overlay: one fork, in this tweet
-
-**Deleted this pass:** imagine-if · “that’s what this is” · dual CTA · fragment-stack swagger · coffee · gratitude · become-sharp lecture · “we don’t pick”
-
-### 5 · STUFF
-**Parent:** Week 2, not exciting but green, over 32u month, missed Saturday afternoon big wins, give it a try. 1W **+1.55u / 32-33 / +0.75%**. ALL **+32.69u / 46-38 / +11.98%**.  
-**Dale:** checked the claims at the start of the month · two weeks good · missed part of the best day we’ve had · the room · would you try it.  
-**Do not invent** Saturday’s unit total. Do not narrate the −17.45u valley on his 1W card (he didn’t).
-
-### 6 · HOOK QA (rewrite hook before body — Dale 9/01)
-
-| | v1 | r2 |
+| | r4 | r5 |
 |--|----|----|
-| Line 1 | HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL | **HE MISSED THE BEST DAY WE'VE HAD** |
-| Line 2 | restated the thesis | **He's still +32u.** |
-| Screenshot | a motive | a paradox with a number |
-| QT law | ok-ish (not his open) | parent said “big wins Saturday” — **best day we’ve had** is ours |
+| Line 1 | THEY HAVE THE ORIOLES ON THE MONEY LIST | **$138K ON THE METS** |
+| Line 2 | $138k is on the Mets. | **Baltimore made the most-bet list.** |
+| Next | You're looking at that graphic like it's the work. It isn't. | **Three proven. $98k at 1.6×.** |
+| Then | We're +118u… | **That's +118u. You're not going to find it on that list.** |
+| Screenshot | a label | $ vs the parent |
+| Unique | thesis + scold | number paradox, then Dale’s unique as so-what |
 
-What: he missed the best day we’ve had.  
-How: he signed up to check the tweets. Two weeks. 32-33 this week, +32.69u the month. Saturday he wasn’t on.  
-So what: that’s the room. Would you try it — watch it live and grade it yourself.
+What: $138k on the Mets. Baltimore made the most-bet list.  
+How: three proven. One has $98k at 1.6×. 129-120. +$568k.  
+So what: that’s +118u on MLB in 30 days. Not that list.
 
-**Why v1 would disgust Hormozi**
-- Hook was a press release. Line 2 did not do the interesting/unique job.
-- “Imagine if” is a promise. Jim already sat in the room. Proof *is* likelihood.
-- Two closes (“Would you try it?” + “Free trial…”) = toss salad ask.
-- “That’s what this is.” = slogan.
-- Fragment stack. Brand kit: complete sentences.
-- Did not walk the cards (caption, not audit).
-- Buried the miss in the middle. The miss is the spear.
+**Killed in the open:** “you’re looking at that graphic like it’s the work” · “it isn’t” · MONEY LIST jargon · THEY HAVE · 118u as the first proof · juice · become-sharp · Yankees/Dodgers clone
 
-**Killed hooks**
-- People like Jim are the best (thank-you)
-- JIM IS +32u (his open)
-- Cups of coffee (lunch death)
-- Imagine if… as the open (promise)
-- Give it a try yourself (parent)
-- HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL (v1 — thesis, not a paradox)
+Line 2 uses the parent (Orioles/Baltimore on the list). Does not say #1. Does not say “money list.”
 
-### 7 · Algorithm
-One idea. Walk left card → right card → miss → room as fact (what Jim is doing) → one ask. Delete imagine. Delete the second CTA. Keep Dale’s “would you try it” inside the converting trial sentence. No URL. No SR.
+### Body after the open
+Same audit. Do not repeat the $98k walk. Do not scold. Juice after $. One proven against stays. Clock. Trap earned at the end, not as the open.
 
 ---
 
 ## COPY THIS
 
-**Type:** Quote  
-**Parent:** @JPWilliams37  
-**Media:** none extra. Eye goes left card, then right.
+**Type:** Quote · @BetMGMNews  
+**Media:** Mets card, then L30 chart. No map.
 
 ```
-HE MISSED THE BEST DAY WE'VE HAD
-He's still +32u.
+$138K ON THE METS
+Baltimore made the most-bet list.
 
-Start of the month Jim wanted to track it himself.
-See if what I was posting actually showed up in his book.
+Three proven winners we track are on this.
+One of them put $98k on it — 1.6× what he normally puts down.
+129-120. +$568k the last 30.
 
-Look at the cards.
-This week was 32-33. +1.55u. He called it not exciting. Still green.
-The month is +32.69u. 46-38.
+That's +118u on MLB in the last 30 days.
+You're not going to find it on that list.
 
-Saturday afternoon he wasn't on it.
-That was part of the best day we've had.
+Mets ML. -138. Four units.
+$22k on Baltimore.
 
-You sit with the sharps we track while they put the money down.
-You decide who to follow.
-Jim's been doing that for two weeks.
+One proven took the Orioles.
+We don't skip that.
+The losing money is still on Baltimore. $26k of it.
 
-Would you try it — watch it live and grade it yourself.
+We flagged it at -125.
+It's -138 now.
+The limit is coming in.
+
+That's the line moving after the money sat down.
+
+You don't have to become that guy.
+You have to see it before the game.
+The work is already on the table.
+Until 6:56 ET.
+
+The trap is taking that list and calling it the card.
 ```
+
+**Do not post from here.** Stage only.
