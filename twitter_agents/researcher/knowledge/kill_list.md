@@ -129,4 +129,10 @@ Patterns that underperform, get muted, or trip classifiers.
 - **2026-09-11 CSV:** `Adding this while I board… odds are dropping` **39 / 0R** — juice/limit caption, no $ in line 1.
 - **2026-09-11 CSV:** `10 day green streak comes to an end` **89 / 2.3%** — recap furniture. Do not restage fade-Trent (`$51K` **posted**) · `2 RED NIGHTS` · Friday “pretty bad night.”
 - **2026-09-10 overview CSV:** cannot kill individual hooks (no post text). Account-level: Sep 7 is the 89-day champion (**398 eng / 48R / 198 PV on 1 post**). Do not treat a quiet Thursday morning (Sep 10 partial) as a death. Post-level deaths from Aug 26–Sep 1 content CSV still bind.
+- **2026-09-14 overlay HARD FAIL:** price as punchline — Aug 2 `82.8% / +82u` + `$5.35/week` SR = **11,888 impr / 2 t.co trials**. Highest reach, weak convert. Lunch/`$5.35`/SUMMER-as-hero still dead.
+- **2026-09-14 overlay HARD FAIL:** buried trial — “first week is free” / MVP25 at **270–400 impr**. Sep 13 MVP25 = **296 impr / 1 t.co trial**. Parent story did fine (1,491). Ask was invisible.
+- **2026-09-14 overlay HARD FAIL:** how-to lock-alert threads. People do not click a product manual.
+- **2026-09-14 overlay:** ticket-slip reach alone (`$79.5k` / BetMGM most-bet / `+100u` 5948/0R) is not a trial plan. Helps the week only with a proof/invite post also up.
+- **2026-09-14 overlay — do not kill:** honest L + 30-day still green (Sep 9 streak-end = **11 trials**). Attention looks like recap furniture; trials say write the family on a **new** scar.
+- **2026-09-14 CSV HARD FAIL:** MVP25 hero **9 eng / 296 impr**. `officially 5-2` **52 / 2106**. Vault **67**. Camden **71 / 0R**.
 

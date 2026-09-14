@@ -57,7 +57,7 @@ Translate into our domain only where SPCL exists:
 | Power | Say–do: pointed → graded; soft day → still showing up |
 | Credibility | Hard UI / third-party tags / beat-close / units |
 | Qual | Stuff = receipts + whole truth; container = format |
-| Ask | Free trial — watch and grade yourself (SR when PURPOSE=ask) |
+| Ask | Free trial — watch and grade yourself. PURPOSE=ask → fork **in the hero** with the number (`trial_overlay.md`). SR only for a code/link after the parent converted. |
 
 If a teaching doesn’t map, park it under “not our domain” — don’t force fashion-tips-from-money-guy errors.
 

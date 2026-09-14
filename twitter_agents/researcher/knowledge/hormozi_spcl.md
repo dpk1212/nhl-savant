@@ -45,7 +45,7 @@ Status = you **control reinforcers / scarce resources** people want *in a given 
 **Sharp Flow / X — how we build Power**
 - Every graded win after “watch this wallet / this shape” is a reinforcement cycle.
 - Confession + honest L next to W builds Power too (avoided bad outcome / trust that we don’t hide blemishes) — see `THE +100U IS NOT THE RECEIPT. THE 5.4U SPARKS LOSS IS.`
-- Soft ask only works after enough say–do cycles. **Free proof in hero** = planting the next cycle; **ask in self-reply** = the request.
+- Soft ask only works after enough say–do cycles. **Free proof in hero** = planting the next cycle; **fork in the same tweet** when PURPOSE=ask (overlay 9/14). A 270-imp self-reply is not an ask.
 
 **Hero test:** If they followed the last 3 things we pointed at, did good things happen (or bad things get avoided)? Show that trail.
 
@@ -110,7 +110,7 @@ Psychological match (shared values / “vibe” / behavior set that matched posi
 
 ### 5. Ask sizing
 - Influence needed scales with ask size (like / follow / soft trial / paid).
-- Stack SPCL **before** bigger asks. Our law unchanged: **desire + proof in hero · soft ask + link in self-reply only.**
+- Stack SPCL **before** bigger asks. Overlay 9/14: **hard number + fork in the hero** when PURPOSE=ask. Code/link in SR only if the parent converted. Convert-paragraph / `$5.35` as open still death.
 
 ### 6. Domain specificity
 - Fashion tips from a money guy = low SPCL in that domain.
@@ -129,7 +129,7 @@ Every hero should consciously stamp:
 | **C** | Hard-to-fake receipt — UI screenshot, public split $, beat-close %, third-party market move |
 | **L** | Dale voice — confrontation + confession, not tipster NPC |
 
-**Convert:** free SPCL in hero → request in SR (watch/grade yourself).  
+**Convert:** free SPCL in hero → when PURPOSE=ask, invite in the **same tweet** as the number. Overlay: buried trial SR and price-as-punchline do not convert.  
 **Kill:** vanity hooks that attract wrong avatar; Status flex without Power trail; Credibility adjectives without observables; Likeness cosplay.
 
 ---

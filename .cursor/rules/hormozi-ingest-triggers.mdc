@@ -12,11 +12,12 @@ When Dale **pastes a Hormozi transcript** or says add/lock/use this teaching:
 2. Do not draft tweets until leverage card + canon/notes are updated
 3. Then run `hormozi_tweet_process.md` if he also wants a post
 
-When Dale **drops an analytics CSV** (e.g. `account_analytics_content_*.csv`):
+When Dale **drops an analytics CSV** (e.g. `account_analytics_content_*.csv`) or a **GA4 trial overlay / `trial_started` paste**:
 
 1. Run `twitter_agents/researcher/knowledge/analytics_csv_ingest.md`
-2. Overwrite `twitter_agents/SHARED/recent_timeline_latest.md`
-3. Only then draft via `hormozi_tweet_process.md`
+2. Content CSV → overwrite `twitter_agents/SHARED/recent_timeline_latest.md` + LIVING WINDOW
+3. Trial overlay → overwrite `trial_overlay.md` + TRIAL OVERLAY block (do not wipe the other scoreboard)
+4. Only then draft via `hormozi_tweet_process.md`
 
 Never skim a transcript into one poetic summary without file updates.  
-Never draft off a stale timeline when a fresh CSV was attached this session.
+Never draft off a stale timeline when a fresh CSV or trial overlay was attached this session.

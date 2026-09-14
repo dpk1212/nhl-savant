@@ -14,59 +14,102 @@
 7. `SHARED/brand_seed.md` (voice + bans + dream)
 8. `TWITTER.md`
 9. `SHARED/recent_timeline_latest.md` (must be fresh this run)
-10. If Dale dropped a **new Hormozi transcript** this session → finish `hormozi_ingest.md` **before** drafting
-11. If Dale dropped an **analytics CSV** → finish `analytics_csv_ingest.md` **before** drafting
+10. `trial_overlay.md` (compliance scoreboard — standing read)
+11. If Dale dropped a **new Hormozi transcript** this session → finish `hormozi_ingest.md` **before** drafting
+12. If Dale dropped an **analytics CSV** → finish `analytics_csv_ingest.md` **before** drafting
+13. If Dale dropped a **new trial overlay / GA4 `trial_started` paste** → overwrite `trial_overlay.md` **before** drafting (do not confuse with the content CSV)
 
 **Never auto-publish.** Stage in `twitter_drafts/COPY_PASTE.md`.
 
 ---
 
-## LIVING WINDOW (CSV — overwrite on every ingest)
+## TRIAL OVERLAY (GA4 — overwrite only on a new trial paste)
 
-**Source locked:** Content CSV Sep 5–11, 2026 (Sep 11 **partial evening**) · 32 heroes · 126 replies  
+**Canon:** `trial_overlay.md` · notes `sources/trial_overlay_2026-09-14_notes.md`  
+**Locked:** 2026-09-14 · 211 `trial_started` / 181 users · Jul 17–Sep 13 · GA4 509696488 ET · @Real_NHL_Savant  
+**Method:** same-day t.co overlay. **`?ref=` is broken.** Not a pixel on each tweet.
+
+**Do not wipe this block when ingesting a content CSV.** Content CSV = attention. This block = trials (north star).
+
+| Stat | Value |
+|------|--------|
+| t.co trial users | **89** (49% of trial users) |
+| t.co sess → trial | **2.4%** vs direct **0.4%** |
+| Events | t.co 97 (46%) · direct 43 · Stripe return 38 (**pollution**) · Google 27 · other 6 |
+| Funnel | 1,752 first-visit → 754 paywall → 228 begin-checkout → 181 trial |
+
+### Write this (converts)
+
+Hard number, then a **fork in the same tweet** — “who’s with us” / “raise your hand” / “comment so people know this isn’t fake” / “Free trial — watch sharps like this live and grade it yourself.”  
+Seats, not a storefront (Aug 4 ONTHEHOUSE = biggest single t.co day, **7**).  
+Trial in the **hero**, not a 270-imp self-reply.  
+Member receipts + fence-sitter DMs in the thread.  
+Honest red day if the 30-day number is still green (Sep 9 = **11 trials**).
+
+### Skip this (does not convert, even at reach)
+
+Price as the punchline (`$5.35/week` · lunch · SUMMER as hero). Aug 2 = **11,888 impr / 2 t.co trials**.  
+How-to lock-alert threads. “First week is free” SRs at 270–400 impr.  
+A code with no heat (Sep 13 MVP25 = **296 impr / 1 t.co trial**).  
+Ticket-slip reach alone (`$79.5k` / BetMGM most-bet) unless a proof/invite post is also up.
+
+**Ask shape:** convert-**paragraph**-as-open still dies. Proof-as-open + invite-as-close **in one tweet** is the ask. Do not flip the desk to price-forward heroes. Invite is **words**. A tracking URL in line 1 does not work.
+
+---
+
+## LIVING WINDOW (CSV — overwrite on every content ingest)
+
+**Source locked:** Content CSV Sep 8–14, 2026 (Sep 14 **partial**) · 26 heroes · 106 replies  
 **File:** `SHARED/recent_timeline_latest.md`  
-**Ingested:** 2026-09-11  
-**Post-level hook law:** **this CSV.** Aug 26–Sep 1 deaths still bind; that top-10 is no longer the live silhouette chart.  
-**Sep 7 / Sep 9:** identified. Eng king = `+60u` + four plays (**540**). Conversation king = `+125u` + need-a-comment (**21R**). PV king = `$79.5k` Over 44.5 vs most-bet Under (**52**).  
+**Ingested:** 2026-09-14  
+**Post-level attention law:** **this CSV.** Aug 26–Sep 1 + Sep 5–11 convert-paragraph deaths still bind. Sep 5–7 kings (`+60u` **540** · `+125u` **21R**) are not in this file — they still bind from the overlay + the prior CSV.  
+**Compliance law:** `trial_overlay.md` (above). Do not let a mid-eng honest-L kill a converting family.  
 **Next tweet:** do not draft until Dale dumps a spine. This card binds PURPOSE / hook / ask.
 
 ### What actually converted attention (this content window)
 
 | Job | Winner | Why it counts |
 |-----|--------|----------------|
-| Engagement king | **Mon Sep 7** · `+60u last 7` + four plays + `$100k` D-backs · **540 / 8R / 39 PV** | Printer then tonight’s board. Window #1. |
-| Conversation king | **Mon Sep 7** · `+125u since June 1` + need-a-comment · **262 / 21R / 41 PV** | Human close after a printer. Do not rerun this week. |
-| PV king | **Wed Sep 9** · `$79.5k on over 44.5` vs most-bet Under · **299 / 52 PV** | Pain-first `$XK` + loud pile. |
-| Image give | **Sun Sep 6** · `Short and sweet. Let’s have another night!` · **335 / 6R** | Caption is nothing; the card is the stuff. |
-| TNF give (posted) | **Thu Sep 10** · `$51K AT 4.4× on the guy we normally fade` · **227 / 3R / 33 PV** | Spent. Do not restage fade-Trent / Rams. |
-| Confession (posted) | **Fri Sep 11** · `Overall a pretty bad night` · **85 / 10R** | Conversation from honesty. Spent as a restage. |
+| Engagement king | **Wed Sep 9** · `$79.5k on over 44.5` vs most-bet Under · **305 / 53 PV** | Pain-first `$XK`. Ticket-slip — overlay: pair with a proof/invite post the same week. |
+| Conversation (tie) | **Sat Sep 12** UFC gem **281 / 10R** · **Fri Sep 11** pretty bad night **88 / 10R** | Human. Spent as restage. |
+| Highest reach | **Fri Sep 11** · `+99u IN THE LAST 30 DAYS` · **6752 / 285 / 7R** | BetMGM / don’t-forget-MLB. Reach ≠ trials. |
+| Member receipt | **Sun Sep 13** · `JULY -$688. AUGUST -$848.` · **188 / 1492 / 2R** | Overlay: 6 trials / 1 t.co. Story worked; MVP25 SR did not. |
+| Say–do cash | **Wed Sep 9** · airport Jays · **272 / 4R** | Image is the stuff. |
+| TNF give (posted) | **Thu Sep 10** · `$51K AT 4.4×` fade-Trent · **232 / 3R** | Spent. Do not restage. |
 
 ### Empirical deaths (do not repeat — this is pathway law now)
 
 | Posted open | Eng | Law |
 |-------------|-----|-----|
-| `You don’t have to grind EV or arb or sweat pricing!` | **5** | Convert promise, no pudding. New death. |
-| `If only there was a better way. 🧐` | **43** | Tease / no stuff. 2230 impr impression trap. |
-| `If you’re are tired of losing… There is a better way` | **54** | Convert paragraph. Still dead vs 540. |
-| `+$1,742` · OJ discounts · Camden’s story | 55 / 68 / **71 0R** | Pitch / promo / testimonial as hero. PV ≠ conversation. |
-| Sharp Vault / v12 showcase | **57** | Product-room tour. Mid. Not our next open. |
-| `Adding this while I board… odds are dropping` | **39 / 0R** | Juice/limit caption. No $ in line 1. |
-| `10 day green streak comes to an end` | **89 / 2.3%** | Recap furniture. Printer open wins. |
-| `I don't know what people are using for their data… Upgrade 25%` | **1** | Still bind from Aug 26–Sep 1. Convert = close only. |
-| `Thankful to have someone like Dom…` · SUMMER · become-sharp · `$0 ON LOUISVILLE` | 35 / 13 / 0R / — | Still bind. |
+| `If you havent signed up… code - MVP25` | **9 / 296** | Code with no heat. Ask under the fold. Overlay: 1 t.co trial. |
+| `You don’t have to grind EV…` | **5** | Still bind (Sep 5–11). Convert promise, no pudding. |
+| `If only there was a better way. 🧐` | **43** | Still bind. Tease / no stuff. |
+| `If you’re are tired of losing… There is a better way` | **54** | Still bind. Convert paragraph. |
+| `Adding this while I board… odds are dropping` | **44 / 0R** | Juice/limit caption. |
+| `MLB we got back to winning.. officially 5-2` | **52 / 2106** | Recap furniture, high reach. |
+| Sharp Vault / v12 showcase | **67** | Product-room tour. |
+| Camden’s story | **71 / 0R** | Testimonial as hero. PV ≠ conversation. Member receipts convert **with a visible fork**. |
+| `+100u MLB` BetMGM | **139 / 0R / 5948** | Ticket-slip, no conversation. |
+| `I don't know what people are using for their data… Upgrade 25%` | **1** | Still bind from Aug 26–Sep 1. |
+| `Thankful to have someone like Dom…` · SUMMER-as-hero · `$5.35/week` · lunch | 35 / 13 / Aug 2 overlay | Still bind. Price as punchline. |
+
+**Do not kill from attention alone:** `10 day green streak comes to an end` (this file **90 / 4049 / 5R**). Overlay Sep 9 = **11 trials / 4 t.co**. Honest L + month still green is a converting family. Do not restage that exact copy.
 
 ### Ask temperature (as of this ingest)
 
-**Cold. Next slot = give, not ask** unless Dale overrides.
+**Give unless Dale sets PURPOSE=ask.** Last ask in-window (MVP25) was invisible and does not count as a spent successful ask.
 
-Printer-asks already fired Sep 5–7. Convert-as-open still dies (5 / 43 / 54). TNF give just printed. Friday already did confession + Vault. Free SPCL that still pulls a next step: **new-tape** `$XK at Y×` · unfinished leftover on a **new** game · pain-first loud pile · printer-then-tonight’s-plays. URL-in-hero still does not convert.
+If PURPOSE=ask: **hard number in line 1, fork in the same tweet.** Not `$5.35`. Not a 300-imp SR. Not a convert paragraph. Seats > storefront. Link/`?ref=` in line 1 still does not convert.
 
-### Hook QA addendum (from this CSV)
+Free SPCL that still pulls a next step: **new-tape** `$XK at Y×` · unfinished leftover on a **new** game · pain-first loud pile · printer-then-tonight’s-plays · honest L with 30-day still green.
 
-Line 1 must be **S and/or C a stranger can screenshot** — `$XK at Y×` / dead-pile vs our side / unfinished leftover / printer-then-tonight’s-plays.  
-Feelings, grind-EV, “better way,” promo, Camden, Vault-as-open, streak-end recap, and fade-Trent restage fail this test **in market**.
+### Hook QA addendum (from this CSV + overlay)
 
-**Default next slot (9/11):** **Saturday live give** — walk one new ticket. Not TNF. Not `2 RED NIGHTS`. Not “pretty bad night.” Pair with “you don’t sit with the dead pile,” not Over/Under-as-brand.
+Line 1 must be **S and/or C a stranger can screenshot** — `$XK at Y×` / dead-pile vs our side / unfinished leftover / printer-then-tonight’s-plays / hard unit printer.  
+Feelings, grind-EV, “better way,” promo-code, price-as-punchline, Camden-without-fork, Vault-as-open, and fade-Trent restage fail this test **in market**.  
+Honest-L opens fail **engagement rate** and still **start trials** if the month is green — do not use that as a reason to open on price.
+
+**Default next slot (9/14):** **grade / new-tape give.** Not Don restage. Not MVP25. Not grind-EV. If Dale spines an ask, use the overlay fork — not a buried code.
 
 ---
 
@@ -110,8 +153,8 @@ Capture only what Dale gave + live receipts:
 
 If continuity is stale (>2 days or empty last-beats) and no CSV, reconstruct from last known posts / COPY_PASTE / Dale’s words — then write continuity before drafting.
 
-**B · Analytics when Dale drops CSV**
-Run `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` → merge winners/SPCL mix into `messaging_continuity.md`.
+**B · Analytics when Dale drops CSV or a trial overlay**
+Run `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` (content CSV) and/or `trial_overlay.md` (GA4 paste) → merge winners/SPCL mix **and** ask-shape into `messaging_continuity.md`.
 
 **C · Capture into continuity every run (also at END — see close-out)**
 
@@ -150,7 +193,7 @@ Pick **one**:
 | **Give / connect** | Milestone, OG proof, soft day honesty | Usually **none** |
 | **Educate** | Mechanism / filter / sized vs dump | None or desire plant only |
 | **Buzz / engagement** | Forced take, unfinished stake | None |
-| **Ask** | After free SPCL already landed (or QT of proof) | Soft trial as **close** — **never line 1**. SR for DM/link. CSV 9/01: convert-hero = 1 eng. |
+| **Ask** | After free SPCL already landed (or QT of proof) | Hard number in line 1, **fork in the same tweet** (raise your hand / who’s with us / comment / “free trial — watch and grade it yourself”). Never price-as-open. Never a 270-imp SR for the ask. Link/`?ref=` is broken — invite is words. SR only for a code/link *after* the parent already converted. Overlay 9/14: buried MVP25 = 1 t.co trial; `$476k` + trial in-hero converted. |
 
 If you can’t say the job in one line, you are not ready to draft.
 
@@ -199,7 +242,8 @@ Line 1–3 must pass:
 If hook fails, **rewrite hook before touching body**.  
 **(Dale 8/27):** Deep body + Hook QA kill on soft calendar open → blowout/scarce-$ rewrite = validated pathway. Keep that order.  
 **(Dale 8/27 eve):** Ask/cash posts still need **give-post stuff density**. Do not starve receipts to “tighten” a CTA. Ask is the close — pudding is the meal. 1-tweet asks keep Dale’s convert words; they do not delete the board.  
-**(CSV 9/01):** Convert words as the **open** = 1 eng. Thankful OG QT = 35 eng. Same convert block **after** a `$XK` / disaster / valley open is still the close we use when PURPOSE=ask — never line 1, never a standalone pitch hero.  
+**(CSV 9/01):** Convert *paragraph* as the **open** = 1 eng. Thankful OG QT = 35 eng. Never a standalone pitch hero. Never `$5.35/week` as the punchline (overlay Aug 2 = 11.9k impr / 2 t.co trials).  
+**(Overlay 9/14):** When PURPOSE=ask, the fork belongs **in the hero with the hard number** — not under the fold. “First week is free” / MVP25 at 270–400 impr does not convert. Seats > storefront.  
 **(Dale 9/01):** Starving an **educate QT** to a 250-char W-L table to “fit 280” is majoring in minors. Hormozi techniques (SPCL / diagnostic / value equation / Qual stuff) must live **in the words**, not the header. August `+46.8u IN AUGUST` won WITH depth. Give-post stuff density is law for educate too. If Dale says “Hormozi would be disgusted,” restart at PURPOSE — do not tighten.  
 **(Dale 9/01 night):** We do **not** need every SPCL letter every post. We **do** need an amazing hook. Kill insider jargon in line 1–2 (`USUAL`, `THEIR #1 TOTAL`). Person + number + paradox. Rewrite hook before touching body.  
 **(Dale 9/01 night 2):** An amazing hook with a starved body is a **caption**. Qual = stuff inside. Trust = whole truth. Educate = easy to follow + worth the gamble. Time-with-prospect = long-form. August `+46.8u` is the depth template. After the hook is right, **add the stuff back**. Do not “refine” by deleting the pudding.
@@ -209,7 +253,7 @@ If hook fails, **rewrite hook before touching body**.
 - Dale dinner-table — not tipster, not brochure, not CAPS spam unless $ contrast earns it  
 - Stuff inside > production  
 - QT: purpose must use the parent (don’t ignore what’s in the image)  
-- Single tweet default; self-reply **only** when PURPOSE = ask
+- Single tweet default. PURPOSE=ask: fork lives **in the hero**. Self-reply is optional extra (code/link) only if the parent already has heat — not the hiding place for the trial.
 
 ### 8 · Algorithm pass (before showing Dale)
 1. Question requirements  
@@ -245,7 +289,7 @@ Without this write-back, the next session loses the plot — which is the failur
 | **QT customer/OG** | Credibility deposit / educate dream | **Their** result / disaster / units — **not** “thankful to have them.” CSV 9/01: gratitude open = 35 eng. |
 | **QT BetMGM / public** | Status contrast tickets vs printers | Public board vs our wallet $ |
 | **QT high-velocity (any)** | Buzz + give (impressions) | Our scarce open — never restate parent’s calendar/leave hook |
-| **Ask / convert** | Compliance | Sensational proof first → USP → trial as **close**. Convert paragraph is never the hero. Soft trial / DM / link in **SR** if it doesn’t fit the 1-tweet close. |
+| **Ask / convert** | Compliance | Hard number first → **fork in the same tweet**. Convert paragraph is never the hero. Price is never the punchline. Soft trial *words* in-hero; DM closes fence-sitters already in the thread; code/link in SR only if the parent converted. |
 
 ---
 
@@ -253,7 +297,7 @@ Without this write-back, the next session loses the plot — which is the failur
 
 Before send:
 
-- [ ] **Living window** — hook is not a convert-paragraph / thankful OG / promo-code / recap-furniture open (CSV 9/01 deaths)  
+- [ ] **Living window + trial overlay** — hook is not a convert-paragraph / thankful OG / promo-code / `$5.35` / buried-trial-SR open. If PURPOSE=ask, fork is in the hero with the number.  
 - [ ] **Refresh FORWARD LOOK** — what the feed needs *after* this post (balance table + next 2–3 slots)
 - [ ] WHO + PURPOSE locked (PURPOSE usually matches forward-look slot #1 unless Dale overrides)
 - [ ] Timeline review done (`messaging_continuity.md` + `recent_timeline_latest.md` this run)  
@@ -262,7 +306,7 @@ Before send:
 - [ ] Hook survives what / how / so what + doesn’t ignore recent winners/failures  
 - [ ] Stuff > container  
 - [ ] Whole truth where it matters  
-- [ ] Ask decision conscious (ask temperature from timeline)  
+- [ ] Ask decision conscious (attention CSV + `trial_overlay.md` — trials win the ask shape; attention wins the give-hook)  
 - [ ] Sounds like Dale at dinner — not an ad  
 
 If Dale says “Hormozi would be disgusted,” you skipped PURPOSE or majored in minors. Restart at step 2.

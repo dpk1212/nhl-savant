@@ -7,7 +7,7 @@ Updated 2026-07-12 — expert grade (jargon leak FAIL) + Editor interview.
 - **Dale-supplied spine is LAW** — shape Dale’s words; don’t invent a competing feeling
 - “I” for felt/confession · “we” for sharps/system
 - Prefer **sharps we track / our sharps / sharp wallets**
-- Soft-ask *intent*: free trial / watch and grade yourself (SR only)
+- Soft-ask *intent*: free trial / watch and grade yourself. PURPOSE=ask → fork in the hero with the number (`trial_overlay.md`).
 - Editor invents the RT line every post (unless Dale already wrote it)
 
 ## PUBLIC COPY LAW (2026-07-12 — hard)

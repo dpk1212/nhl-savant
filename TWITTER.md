@@ -92,12 +92,12 @@ Full checklist: `hormozi_tweet_process.md`. Compressed:
 7. STUFF     — live receipts; whole truth; stuff > container
 8. HOOK QA   — what/how/so what; S/C screenshot test; timeline silhouettes only if they fit
 9. DRAFT     — Dale human voice; not brochure
-10. ASK      — respect ask temperature; soft trial in SR only if PURPOSE=ask
+10. ASK      — respect overlay: PURPOSE=ask → hard number then fork **in the same tweet**; never `$5.35` / buried code SR
 11. QUAL     — question → delete → simplify → ship 95%
 12. STAGE    — COPY_PASTE + write-back continuity (**including refreshed FORWARD LOOK**)
 ```
 
-**Drops:** analytics CSV → `analytics_csv_ingest.md` before draft · Hormozi transcript → `hormozi_ingest.md` before draft.
+**Drops:** analytics CSV or trial overlay → `analytics_csv_ingest.md` before draft · Hormozi transcript → `hormozi_ingest.md` before draft.
 
 **Fluid timeline (day-to-day):**  
 - Start: read `SHARED/messaging_continuity.md` (last beats / spent themes / ask temp)  
@@ -114,11 +114,12 @@ Drafts that ignore last beats restart at TIMELINE.
 
 | Place | Job |
 |-------|-----|
-| **Hero** | Give — SPCL + education + whole truth + open loop |
-| **Self-reply** | Ask — soft “watch and grade it yourself” + link |
+| **Hero (give)** | SPCL + education + whole truth + open loop. No fork. |
+| **Hero (ask)** | Hard number first, **then the invite in the same tweet** (raise your hand / who’s with us / comment / “free trial — watch and grade it yourself”). Overlay 9/14. Never price-as-punchline. |
+| **Self-reply** | Extra code/link **only if the parent already converted**. Buried “first week is free” / MVP25 at 270–400 impr does not convert. Fence-sitter DMs close people already in the thread. |
 | **Outbound** | Substance under velocity · profile only · no site link |
 
-Ask size must match influence earned. Don’t hard-sell cold.
+Ask size must match influence earned. Don’t hard-sell cold. Don’t hide the trial under the fold. `?ref=` per-tweet is broken — invite is words, not a tracking URL in line 1.
 
 ---
 
@@ -153,7 +154,7 @@ There is **one desk**: Hormozi X for Sharp Flow.
 - Lock WHO + PURPOSE + ONE idea first; own 1–2 SPCL letters only.
 - Stuff > container (Qual). Hook must pass what/how/so what.
 - Prefer deletion and speed over process theater.
-- Ask is a conscious choice (ask temperature from timeline); soft trial in SR only when PURPOSE=ask.
+- Ask is a conscious choice (attention CSV + `trial_overlay.md`); when PURPOSE=ask the fork is in the hero with the number, not a 270-imp SR.
 - Parent may draft when Dale dumps a spine; no requirement to launch four Task agents.
 - If subagents are used, they only exist to stamp SPCL / raise Qual / enforce Rule of One — model: Grok per Dale — and must not revive retired gates.
 

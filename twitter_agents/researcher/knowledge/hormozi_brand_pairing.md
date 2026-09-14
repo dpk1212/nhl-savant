@@ -22,7 +22,7 @@ Coca-Cola: drink it → yum → reach for Coke next time you want yum.
 **Branding** = what that stuff gets paired with after they see it / use it.
 
 Good branding = pair Sharp Flow with **good outcomes for sports bettors who want proof**.  
-Bad branding = pair Sharp Flow with outcomes / identities that audience hates or that are random (tipster theater, convert-as-open, fade-Under-as-religion, V12-as-identity).
+Bad branding = pair Sharp Flow with outcomes / identities that audience hates or that are random (tipster theater, convert-paragraph-as-open, `$5.35` storefront, fade-Under-as-religion, V12-as-identity).
 
 What we pair determines:
 
@@ -49,7 +49,7 @@ Product after purchase does most of the branding. Premium that doesn’t deliver
 |----------------------|------------------|
 | Being on the side the **losing money isn’t** | Tipster “we have a lock tonight” as identity |
 | Sizing up with proven wallets **without becoming sharp** | Become-sharp homework / data-feed lecture |
-| Proof you can grade yourself | SUMMER / UPGRADE / convert paragraph as the open |
+| Proof you can grade yourself | SUMMER / UPGRADE / `$5.35` / convert paragraph as the open |
 | Tonight’s board, walked in public | System labels (V12, Vault, Tier A, AGS) |
 | **This total’s** dead pile vs our side | Over-as-brand or Under-as-brand (we lock both) |
 
@@ -63,7 +63,7 @@ Product after purchase does most of the branding. Premium that doesn’t deliver
 - [ ] Every line / image serves that pairing — no random flowers
 - [ ] Line 1–2 cannot be screenshot as the *wrong* pairing (e.g. “we fade Unders”)
 - [ ] PURPOSE=give is the pairing in public; PURPOSE=ask is only after enough of that yum has landed
-- [ ] Kill distant pairings: gratitude, promo codes, convert-as-open, system-label identity
+- [ ] Kill distant pairings: gratitude, promo codes as the open, convert-paragraph-as-open, `$5.35` punchline, system-label identity
 
 ```
 LEVERAGE CARD
