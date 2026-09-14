@@ -15,7 +15,8 @@ Researcher appends; never delete without logging why in research_log.
 | [cross_niche_wins.md](cross_niche_wins.md) | Stealable mechanics from outside niche |
 | [kill_list.md](kill_list.md) | Patterns that die / Learn auto-kills |
 | [hormozi_ingest.md](hormozi_ingest.md) | **Hormozi transcript ingest** — max-leverage synthesize → canon + leverage card |
-| [analytics_csv_ingest.md](analytics_csv_ingest.md) | **Analytics CSV ingest** — rank hooks/SPCL mix → `recent_timeline_latest.md` |
+| [analytics_csv_ingest.md](analytics_csv_ingest.md) | **Analytics ingest** — content CSV → attention timeline; GA4 overlay → `trial_overlay.md` |
+| [trial_overlay.md](trial_overlay.md) | **Trial overlay (compliance)** — X wording that starts trials. Proof + invite in-hero. `$5.35` / buried codes die. |
 | [hormozi_tweet_process.md](hormozi_tweet_process.md) | **Mandatory tweet pathway** — Timeline→WHO→PURPOSE→ONE→1–2 SPCL→HOOK QA→draft |
 | [hormozi_rule_of_one.md](hormozi_rule_of_one.md) | **Rule of One** (Masterson / *Great Leads*) — one big idea; kill toss salad copy |
 | [hormozi_spcl.md](hormozi_spcl.md) | **Hormozi SPCL canon** — Status·Power·Credibility·Likeness + influence laws |
@@ -62,4 +63,5 @@ Researcher appends; never delete without logging why in research_log.
 - 2026-09-06 **Hormozi 2026 brand stack** (desk fetch, not Dale paste): Ep 958 pairing · Ep 976 demonstrate/document · Ep 990 start-free + proof-over-promise + pain-first — see `hormozi_brand_pairing.md`, `hormozi_proof_machine.md`, `sources/hormozi_brand_2026-09-06_notes.md`
 - 2026-09-10 **Account-overview CSV** Jun 13–Sep 10: daily totals (no post text). Sep 2–9 **+85% replies/day** vs Aug 26–Sep 1. Sep 7 = 89-day max (**398 eng / 48R / 1 post**). Ask still cold-warm. NFL Thursday = next give. Post-level hook law still Aug 26–Sep 1 content CSV. See `recent_timeline_latest.md`, `sources/account_overview_2026-09-10_notes.md`
 - 2026-09-11 **Content CSV Sep 5–11** (32 heroes): post-level hook law updates. Eng king = `+60u` + four plays **540**. Conversation = `+125u` need-a-comment **21R**. PV = `$79.5k` Over 44.5 **52**. TNF `$51K` fade-Trent **posted 227**. Ask **cold**. Next = Saturday live give. Deaths: grind-EV **5** · better-way tease **43** · convert **54** · Camden **0R**. See `recent_timeline_latest.md`, `sources/account_analytics_content_2026-09-05_2026-09-11_notes.md`
+- 2026-09-14 **Trial overlay + content CSV Sep 8–14**: GA4 211 `trial_started` / 181 users. t.co **89 users / 49% / 2.4% sess→trial**. Ask law rewrite: proof + invite **in the hero**; `$5.35` and buried MVP25 die; seats > storefront; honest L + month green converts. Attention CSV: `$79.5k` **305** · UFC **10R** · `+99u` **6752** · MVP25 **9/296**. Canon `trial_overlay.md`. Do not wipe overlay on the next content CSV.
 

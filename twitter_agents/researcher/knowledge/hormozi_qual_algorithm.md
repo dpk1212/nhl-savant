@@ -118,7 +118,7 @@ SPCL (what influence is made of)
 ```
 
 **Free vs ask:** Give SPCL + education + whole truth in the hero.  
-Ask (soft trial / link) only in the self-reply — sized to current influence.
+When PURPOSE=ask: hard number then fork **in the same tweet** (overlay 9/14). Link/`?ref=` in line 1 is broken. Buried “first week is free” SRs at 270–400 impr do not convert.
 
 ---
 

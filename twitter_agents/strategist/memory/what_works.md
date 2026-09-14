@@ -79,3 +79,11 @@ Seed 2026-07-10:
 - `$51K AT 4.4× on the guy we normally fade` **posted 227 / 3R** — silhouette works; copy is spent.
 - Convert still dies: grind-EV **5** · better-way tease **43** · tired-of-losing **54**. Camden **0R**. Vault tour **57**. Ask **cold**. Next = Saturday live give.
 
+2026-09-14 (trial overlay Jul 17–Sep 13 + content CSV Sep 8–14):
+- **Two scoreboards.** Attention ≠ trials. t.co = **89 trial users / 49%** · 2.4% sess→trial vs 0.4% direct. `?ref=` broken.
+- **Ask shape:** hard number then a fork **in the same tweet**. Seats > storefront (Aug 4 = 7 t.co). `$476k` + free trial in-hero converted. Buried MVP25 / “first week is free” did not.
+- **Skip:** `$5.35/week` as punchline (Aug 2 = 11.9k impr / 2 t.co trials) · how-to threads · ticket-slip reach alone.
+- **Do not kill:** honest L + month still green (Sep 9 = 11 trials) even when eng rate looks like recap furniture.
+- Attention this CSV: `$79.5k` **305** · UFC **10R** · `+99u` **6752**. Convert-paragraph-as-open still dies. Do not flip the desk to price-forward heroes.
+- Vault: `trial_overlay.md`
+

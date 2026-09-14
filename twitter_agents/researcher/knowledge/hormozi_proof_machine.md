@@ -24,7 +24,7 @@ That *is* a Sharp Flow hero give. We are not “making content.” We are captur
 
 Always start free. Free users pay you three ways: they leave proof · they refer · they stay when it stops being free.
 
-Hidden cost of a betting product is usually **not the subscription price** — it’s the homework, the data, the capper they have to follow. Our dream already kills that cost: size up without becoming sharp. **Show the work being done for them.** Do not ask what they’re paying for data (CSV: convert-as-open = 1 eng).
+Hidden cost of a betting product is usually **not the subscription price** — it’s the homework, the data, the capper they have to follow. Our dream already kills that cost: size up without becoming sharp. **Show the work being done for them.** Do not ask what they’re paying for data (CSV: convert-paragraph-as-open = 1 eng). Overlay: `$5.35/week` as the punchline is the same death at 11.9k impressions.
 
 ---
 
@@ -32,7 +32,7 @@ Hidden cost of a betting product is usually **not the subscription price** — i
 
 Promises approximate likelihood. Proof *is* likelihood.
 
-Crazy grand-slam stack + no testimonials loses to the same product + a wall of proof. Our UPGRADE / SUMMER / “we’ve got you covered” as **line 1** is promise. Same words after pudding can be a close when PURPOSE=ask.
+Crazy grand-slam stack + no testimonials loses to the same product + a wall of proof. Our UPGRADE / SUMMER / “we’ve got you covered” as **line 1** is promise. Same words after a hard number, **in the same tweet**, can be a close when PURPOSE=ask. A 270-imp self-reply is not a close (MVP25).
 
 ---
 
@@ -67,7 +67,7 @@ Attach order should match the walk (pain they see → decision → say–do tape
 - [ ] Proof is recent + visual + volume-on-one-spear
 - [ ] Hook starts in **their** current pain, not our result / promise
 - [ ] Line 1–2 still pass screenshot S/C (pain has a number)
-- [ ] No ask unless PURPOSE=ask and enough free proof already landed
+- [ ] No ask unless PURPOSE=ask and enough free proof already landed — then the fork is **in the hero**, not under the fold
 - [ ] Whole truth still binds (misses, thin $, 0% ROI on the loud side)
 
 ```

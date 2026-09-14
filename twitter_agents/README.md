@@ -8,6 +8,8 @@ Old closed-loop org (Social Neuron shape, angle factory, 4-agent gate chain) is 
 | Doc | Job |
 |-----|-----|
 | `TWITTER.md` | OS — what we optimize for + only loop |
+| `researcher/knowledge/hormozi_tweet_process.md` | Mandatory pathway |
+| `researcher/knowledge/trial_overlay.md` | X wording that starts trials (compliance scoreboard) |
 | `researcher/knowledge/hormozi_spcl.md` | Status · Power · Credibility · Likeness |
 | `researcher/knowledge/hormozi_qual_algorithm.md` | Qual · Algorithm · Trust economy |
 | `SHARED/brand_seed.md` | Voice + product bans |
@@ -20,7 +22,7 @@ Not vanity views. Not tipster theater. **Never auto-publish.**
 ## Loop
 
 ```
-Spine → SPCL → Stuff → Craft → Ask(SR) → Qual → Stage
+Spine → Timeline → WHO → PURPOSE → ONE → 1–2 SPCL → Stuff → Hook QA → Craft → Ask(fork in-hero when PURPOSE=ask) → Qual → Stage
 ```
 
 Dale spine = law. Stuff inside > container. Quality volume (Qual). Automate last.

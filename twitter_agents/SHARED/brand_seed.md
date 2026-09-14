@@ -93,19 +93,19 @@ strategy/Editor notes only — **never** in hero `text` without a plain-English 
 ### 7 · Platform X overrides
 
 - Heroes: **precision band 120–200** for single-play claim+proof (`lengthException: precision_120_200`); comparison/binary up to **250–280**; punch 71–100 only with exception; valley padding banned
-- Soft ask + link **only in self-reply**
+- PURPOSE=ask: **fork in the hero with the hard number.** Code/link in self-reply only if the parent already has heat. Overlay 9/14: buried trial SR dies; `$5.35` as punchline dies.
 - Outbound replies: proprietary receipt + calm contrast · **profile only · no site link**
 - Emoji: **≤1 functional** on heroes (📊 proof / 🔒 lock); pin/receipt may use 2–4 structural; never spam walls
 - Never auto-publish
 
 ### 8 · Soft-ask / offer intent
 
-Every tier has a free trial. Intent: **free trial — watch and grade it yourself** (wording flexible). Desire plant in hero; CTA + link in self-reply only.
+Every tier has a free trial. Intent: **free trial — watch and grade it yourself** (wording flexible). Hard number in the hero; when PURPOSE=ask the invite is **in the same tweet**. Code/link may follow in a self-reply that actually gets seen. Promo-in-hero (`$5.35`, lunch, SUMMER-as-open) still banned.
 
 **Rule of One:** one big idea per hero (understand · believe · unique); subpoints reinforce only — no toss salad.  
 **Hormozi SPCL (influence stack):** Status · Power · Credibility · Likeness.  
 **Qual / Algorithm / Trust:** quality volume · delete→simplify→accelerate→automate last · show-me whole truth.  
-Influence = compliance with a request. Free SPCL in hero → ask in SR.  
+Influence = compliance with a request. Free SPCL in hero → fork in-hero when PURPOSE=ask (`trial_overlay.md`).  
 OS: `TWITTER.md` · `hormozi_rule_of_one.md` · `hormozi_spcl.md` · `hormozi_qual_algorithm.md` · `hormozi_brand_pairing.md` · `hormozi_proof_machine.md`
 
 ---
