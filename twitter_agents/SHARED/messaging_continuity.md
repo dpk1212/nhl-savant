@@ -7,42 +7,42 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-14 eve r2 · QT **GIVE** · $138k Mets vs BetMGM most-bet |
+| Last updated | 2026-09-14 eve r3 · QT **EDUCATE** · Orioles on the list / $138k Mets / how the 118u happens |
 | CSV window | Content Sep 8–14. Overlay ask-shape binds. |
-| Ask temperature | **This post = give.** Jim already took the ask. Next ask only on a new printer + fork. |
-| Account arc | v1 cloned +Xu 30d. Spear is now live $ vs Orioles-on-the-list. 118u is the close. |
+| Ask temperature | **This post = educate / give.** Jim already took the ask. Next ask only on a new printer + fork. |
+| Account arc | v1 printer clone. v2 $ caption. Spear is now the filter: popular list vs proven side. Techniques in the words. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/14 eve r2 | QT **GIVE** | `$138k ON THE METS` / Baltimore made the most-bet money list / 118u close | **S + C** | none | **Staged** |
+| 9/14 eve r3 | QT **EDUCATE** | `THEY HAVE THE ORIOLES ON THE MONEY LIST` / `$138k is on the Mets.` / trap = taking that list | **S + C** (P+L in the walk) | none | **Staged** |
+| 9/14 eve r2 | QT GIVE | `$138k ON THE METS` / Baltimore made the list | S + C | none | **Killed** — caption, no techniques in the words |
 | 9/14 eve v1 | QT GIVE | `+118u MLB IN THE LAST 30 DAYS` / not on that list | S + C | none | **Killed** — printer restage |
-| 9/14 eve r2 | QT ASK | `HE MISSED THE BEST DAY WE'VE HAD` / He's still +32u / room as fact | **C + P** | **one trial close** | **Staged** |
-| 9/14 eve v1 | QT ASK | `HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL` / imagine-if / dual CTA | C + P | two closes | **Killed** — thesis hook |
+| 9/14 eve r2 | QT ASK | `HE MISSED THE BEST DAY WE'VE HAD` / He's still +32u | **C + P** | **one trial close** | **Staged** |
 | 9/14 AM | Hero ASK | `+29u MLB` / Dale posted a variant | C + P | trial | Posted |
 
 ---
 
 ## Angle lock
-**ONE:** The +118u is not the most-bet list. Tonight looks like Mets ML.  
-**Yum:** public sheet vs proven money on the other side.  
-**Hook:** `$138k ON THE METS` / `Baltimore made the most-bet money list.`  
-**Body:** Mets ML -138 4u · 3 proven · $98k at 1.6× · 129-120 +$568k L30 · one proven against · losing $ on BAL · flagged -125 now -138 · limit coming in · **+118u as close** · locks 6:56 ET  
-**Ask:** none  
-**Killed:** v1 +118u open · “you’re not finding tonight on that list” as line 2 · juice-first · map $38k mash · “3 proven losers” · GOLD / V12 / EV · Saturday +100u restage · four-card walk · trial close · most-bet list clone
+**ONE:** The +118u is the other side of the most-bet list. Tonight looks like Mets ML.  
+**Yum:** you don’t sit with the dead pile. You sit with proven money on the other side of the popular sheet.  
+**Hook:** `THEY HAVE THE ORIOLES ON THE MONEY LIST` / `$138k is on the Mets.`  
+**Body:** 118u as likelihood · $138k vs $22k · 3 proven · $98k at 1.6× · 129-120 +$568k · one proven against · $26k losing on BAL · flagged -125 now -138 · limit coming in · trap = taking that list · if/if diagnostic · locks 6:56 ET  
+**Ask:** none. Desire plant = the trap.  
+**Killed:** v1 printer open · v2 caption · juice-first · map $38k mash · “3 proven losers” · GOLD / V12 / EV · Saturday +100u · four-card walk · trial close · become-sharp · grind-EV · header-only SPCL
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** Mets $138k vs Orioles-on-the-list · this $98k lead · +118u as the close (not as a third 30d printer open)
+**Spent this beat (once posted):** Orioles-on-the-list vs Mets $138k as the 118u filter · this $98k lead · trap line
 
-**Still spent:** v1 +118u-as-open · Jim miss/+32u · morning +29u · Don · Jul/Aug · JamKam · fade-Trent · Vault · grind-EV · MVP25 · `$5.35` · coffee · Camden · Saturday `+100u` BetMGM · Friday `+99u` · juice-only odds-dropping caption
+**Still spent:** v1 +118u-as-open · v2 $ caption · Jim miss/+32u · morning +29u · Don · Jul/Aug · JamKam · fade-Trent · Vault · grind-EV · MVP25 · `$5.35` · coffee · Camden · Saturday `+100u` · Friday `+99u` · juice-only odds-dropping
 
 **Still open:** Mets grade if Dale dumps the scar · fence-sitter DMs · Nats +$69K · SNF grade if new scar
 
-**Don't:** restage v1 printer open · mash $98k with $38k · invent 3 proven losers · write GOLD / Vault / V12 / EV · restage Jim · restage +100u · coffee · convert paragraph · clone the Yankees/Dodgers/Padres list
+**Don't:** restage v1/v2 · mash $98k with $38k · invent 3 proven losers · write GOLD / Vault / V12 / EV · restage Jim · restage +100u · coffee · convert paragraph · clone Yankees/Dodgers/Padres · put Hormozi in the header and caption the card
 
 ---
 
@@ -59,22 +59,23 @@
 2. DM anyone who raised a hand on Jim.
 3. Next ask only on a **new** printer + fork in the same tweet. Not a third convert tonight.
 
-**NOT:** v1 restage · Jim restage · +100u / +99u restage · juice-first · map-wallet mash · Don · Camden · convert paragraph · MVP25 · coffee
+**NOT:** v1/v2 restage · Jim restage · +100u / +99u restage · juice-first · map-wallet mash · Don · Camden · convert paragraph · MVP25 · coffee · become-sharp lecture
 
-**Avatar:** they just saw $138k vs the list they were already looking at. Next they need the grade.  
-**Balance:** S+C live ticket (needed after C+P ask). Ask is fed. Stay give until a new printer.  
-**Hormozi economics:** two asks today already (morning + Jim). This is free SPCL.  
-**Distribution:** quote BetMGM for reach; conversation from Mets $ vs Orioles-on-the-list, not another 30-day printer ad.
+**Avatar:** they were inside the most-bet graphic. They now have a filter. Next they need the grade, not another sheet.  
+**Balance:** Educate S+C after C+P ask. Ask is fed. Stay give/educate until a new printer.  
+**Hormozi economics:** two asks today (morning + Jim). This is free proof demonstrated in public.  
+**Distribution:** quote BetMGM for the pain they’re in; conversation from the filter, not another 30-day printer ad.
 
 ---
 
 ## Agent close-out
-- [x] Dale r2: different hook · we have to do better · rewrite hook before body
-- [x] v1 +118u open killed (Fri/Sat clone, 0R Saturday)
-- [x] Hook: `$138k ON THE METS` / Baltimore made the most-bet money list ($79.5k silhouette)
-- [x] 118u moved to the close — still in the tweet, earned
-- [x] Attach order flipped: card then chart
-- [x] Used the parent (Orioles on the money list) — not `$0 ON LOUISVILLE`
-- [x] One play. $98k lead only. No 3 proven losers. Flagged, not locked.
+- [x] Dale r3: not close · PSCL · full process · techniques in the words
+- [x] Restarted at PURPOSE = educate (here’s exactly how)
+- [x] v1 printer open killed · v2 caption killed
+- [x] Hook: pain-first Orioles on the money list / $138k on the Mets
+- [x] Pairing, diagnostic, value equation, proof-machine walk, SPCL, Qual — each has a sentence
+- [x] August depth, not a 280 receipt dump
+- [x] Used the parent. One play. $98k lead only. No 3 proven losers. Flagged, not locked.
+- [x] No trial close
 - [x] Staged COPY_PASTE only
 - [x] Continuity written
