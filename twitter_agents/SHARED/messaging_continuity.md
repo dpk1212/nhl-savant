@@ -7,70 +7,73 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-14 · **INGEST** · content CSV Sep 8–14 + GA4 trial overlay Jul 17–Sep 13 |
-| CSV window | Content Sep 8–14 (26 heroes). Attention hook law = that ingest. |
-| Trial overlay | 211 events / 181 users. t.co **89 users / 49%**. Ask shape = proof + invite **in the hero**. |
-| Ask temperature | **Give unless Dale sets PURPOSE=ask.** If he does: hard number then fork in the same tweet. MVP25 does not count as a spent successful ask. |
-| Account arc | Don `$20k` QT is the live board. Overlay just rewrote the ask law. No new draft this run. |
+| Last updated | 2026-09-14 r3 · HERO **ASK** · +29u MLB / product depth / trial in the hero |
+| CSV window | Content Sep 8–14. Overlay ask-shape binds. |
+| Ask temperature | **This post = ask.** Mechanism + today's slate in the body. Trial words in the hero. Next = one live MLB ticket (give). |
+| Account arc | v2 was still a caption. Depth = wallets we track, football sized small until they like it, sit on today's MLB, grade it yourself. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/14 | **INGEST** | Trials ≠ impressions. Proof + invite in-hero. `$5.35` and buried codes die. | — | — | **This run** |
-| 9/13 SNF | QT **GIVE** | `$20,000 AT 4× JUST SAT DOWN NEXT TO DON` / Nobody throws money around quite like Don. Tonight he's in good company. | **S + C** | none | Live / do not restage |
-| 9/13 r2 | Hero **GIVE** | `JULY -$688. AUGUST -$848.` / Pretty easy to spot when he found us. | **C + P** | MVP25 SR **failed** | Story 188 eng; code 296 impr / 1 t.co trial |
-| 9/13 | QT **GIVE** | `SEPTEMBER IS THE BEST START WE'VE EVER HAD` / JamKam | **C + P** | none | Spent |
-| 9/12 eve | Hero **GIVE** | `$16,500 UNOPPOSED` / First CFB shape. | **S + C** | none | Spent |
+| 9/14 AM r3 | Hero **ASK** | `+29u MLB IN THE LAST 7 DAYS` / wallets we track · sit on today's slate · trial in-hero | **C + P** | **trial in hero** | **Staged** |
+| 9/14 AM r2 | Hero ASK | same hook, caption body, trial close | C + P | trial in hero | **Killed** — starved product |
+| 9/14 AM v1 | Hero GIVE | same printer, `Who's with us?` | C + P | comment-bait | **Killed** — wrong job |
+| 9/14 | INGEST | Proof + invite in-hero. `$5.35` and buried codes die. | — | — | Process |
+| 9/13 SNF | QT GIVE | `$20,000 AT 4× JUST SAT DOWN NEXT TO DON` | S + C | none | Do not restage |
 
 ---
 
 ## Angle lock
-**This run = process, not a tweet.**  
-**ONE (overlay):** Proof plus an invite beats a promo code.  
-**Ask shape:** hard number → fork in the same tweet. Seats > storefront. Trial in the hero, not a 270-imp reply.  
-**Kill:** `$5.35/week` · lunch · convert paragraph · MVP25 / first-week-free under the fold · how-to threads · ticket-slip as the whole plan.
+**ONE:** You were on football. MLB printed. Sit on today’s slate, watch the wallets, grade it yourself.  
+**Yum:** put on the sharp tickets. Don’t buy a capper. Grade today.  
+**Hook:** `+29u MLB IN THE LAST 7 DAYS` / You spent the weekend on football. We spent it on this.  
+**Body:** 33-23 · +29.09u · 58.9% · 56 · losses included · football units small until the wallets like it · they already like baseball · follow that money for months · post before first pitch · sit on today’s slate  
+**Ask:** `Free trial — watch sharps like this live and grade it yourself.` Same tweet. No URL. No code. No SR.  
+**Killed:** v1 who’s-with-us · v2 caption · seats-without-a-count · grind-EV / become-sharp lecture · “we don’t pick games”
 
 ---
 
 ## Themes spent / open
-**Spent this beat:** trial-overlay ingest · Sep 8–14 attention ranks · MVP25 as a failed ask
+**Spent this beat (once posted):** +29u MLB last 7 · football-weekend paradox · wallets-we-track mechanism · sit on today's slate · in-hero free trial
 
-**Still spent:** Don $32.4K QT · $20K at 4× · Jul/Aug turnaround · JamKam · `$16,500 UNOPPOSED` · `$14,800 AT 3.3×` · +100u / +99u · fade-Trent · `2 RED NIGHTS` · Vault · grind-EV as open · UFC gem · `$79.5k` copy
+**Still spent:** Don QT · Jul/Aug · JamKam · `$16.5K` / `$14.8K` · +100u / +99u · fade-Trent · Vault · grind-EV · MVP25 · `$5.35` · v1 who's-with-us
 
-**Still open:** grade this SNF · Nats +$69K parked · overlay ask-shape (new printer + fork) when Dale sets PURPOSE=ask
+**Still open:** today's MLB live ticket (give, after this ask) · SNF grade if Dale dumps the scar · Nats +$69K · fence-sitter DMs in this thread
 
-**Don’t:** restage Don / $20K · write unopposed · write $102K · convert-paragraph · GOLD / Vault / AGS / V12 · restage 177u / Jul −$688 / JamKam · bury a code · price as punchline
+**Don't:** restage this +29u · bury a code · price as punchline · write +96u all-sports · V12/AGS · invent CFB W-L · second ask tonight
 
 ---
 
 ## Unfinished
-- Kickoff was **8:20 PM ET** Sep 13 — grade still open if Dale dumps the scar
-- Two proven were on Giants
-- Nats +$69K still parked
-- `?ref=` still broken — do not promise per-tweet trial pixels
+- Full MLB slate today — walk **one** ticket after this ask
+- Fence-sitters in the replies: DM close, not a new hero
+- SNF grade only with a new scar
+- Nats +$69K parked
 
 ---
 
-## FORWARD LOOK — after this ingest
-1. **Grade Cowboys ML** (and Don’s −3 only if Dale dumps the scar). S+C. No ask unless he spines one.
-2. Next live ticket only with **new** tape.
-3. If PURPOSE=ask: **new** hard number + fork in the hero. Not MVP25. Not `$5.35`.
+## FORWARD LOOK — after this posts
+1. **One live MLB ticket** from today's slate. S/C in line 1. No ask. Demonstrate.
+2. DM anyone who raises a hand in this thread (overlay: fence-sitter DMs close).
+3. Grade Cowboys only if Dale dumps the scar.
 
-**NOT:** another user-recap · convert-as-open · Don dunk · this $20K hook again · fade-Trent · Jul/Aug restage · buried trial SR
+**NOT:** this printer restage · Don · +100u MLB · convert paragraph · MVP25 SR · `$5.35` · V12 identity · comment-bait restage
 
-**Avatar:** they have receipts. They have not been invited in the same tweet as the number since Sep 7.  
-**Balance:** S+C live `$XK` is fed. Ask was overfed as *codes* and underfed as *forks*.  
-**Hormozi economics:** still give until he spines an ask. Overlay says the ask, when it comes, is an invite next to pudding — not a storefront.  
-**Distribution:** next is a grade, not another celebrity QT, not a promo.
+**Avatar:** they got invited. Next they need a play to grade.  
+**Balance:** ask just fired the overlay shape. Next is give.  
+**Hormozi economics:** enough free SPCL already landed this week. This is the ask. Then give.  
+**Distribution:** Aug 27 trial-in-hero on a new MLB printer. Do not hide the next close.
 
 ---
 
 ## Agent close-out
-- [x] No tweet this run (Dale: update the process)
-- [x] Content CSV Sep 8–14 ingested
-- [x] Trial overlay locked (`trial_overlay.md` + pathway block)
-- [x] Ask law: fork in-hero; SR-only convert **overwritten**
+- [x] Dale r3: depth · refined · product messaging that converts
+- [x] PURPOSE=ask. v1 give killed. v2 caption killed.
+- [x] Mechanism after the number: track wallets · post before pitch · football sized small until they like it
+- [x] Seats as “sit on today’s slate” — no fake headcount
+- [x] Overlay CTA in the hero. No grind-EV / become-sharp lecture / “we don’t pick”
+- [x] Did not write V12 / +96u / invented CFB / URL / `$5.35`
+- [x] Staged COPY_PASTE only
 - [x] Continuity written
-- [x] Did not restage Don / Jul-Aug / JamKam

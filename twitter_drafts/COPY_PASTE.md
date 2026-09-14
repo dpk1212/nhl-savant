@@ -1,117 +1,121 @@
-# Twitter — 2026-09-13 · QT GIVE · Don $32.4K Cowboys / tonight he’s in good company
+# Twitter — 2026-09-14 r3 · HERO ASK · +29u MLB / product depth / trial in the hero
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
-**CSV:** Sep 5–11 living window. Ask **cold**. Give.
+**CSV:** Sep 8–14 attention. **Overlay:** trial in the hero with the number. PURPOSE=**ask**.
 
 | | |
 |--|--|
-| WHO | Someone watching Don drop $32K on Dallas who thinks that’s the whole story. |
-| PURPOSE | Give. QT Don. Show the wallets are on Dallas with him. |
-| ONE | Nobody throws money around quite like Don. Tonight he’s in good company. |
-| SPCL | **S + C** |
-| Timeline | User-story Sunday is spent. This is the live board he promised. New tape. SNF. |
-| Ask | **None.** No URL. No trial. No self-reply. |
+| WHO | Someone who burned the weekend on football, thinks we went quiet, and will not start a trial from a caption. |
+| PURPOSE | **Ask.** Start free trials. Hard number first. Mechanism + today's slate as pudding. Trial words in this tweet. |
+| ONE | You were on football. MLB printed. Sit on today's slate free and grade the wallets yourself. |
+| SPCL | **C + P** |
+| Timeline | v1 give killed. v2 ask was still a caption (292 chars, CTA with no product). Dale r3: add depth — the product messaging that converts. |
+| Ask | **In the hero:** `Free trial — watch sharps like this live and grade it yourself.` No URL. No `$5.35`. No MVP25. No SR. |
 
-**Post as Quote** of @MoneylineMafia ($32.4K Cowboys −3). Attach our Cowboys ML card, then the map. Do not @ in the body.
+**Post as** a single hero. Attach the **MLB last-7 chart**. Do not attach the all-sports +96u chart.
 
 ---
 
 ### 0 · Spine (Dale — law, do not rewrite)
-- I need to quote this tweet
-- Nobody throws money around quite like Don
-- But tonight he is in good company
+- slower football weekend than I wanted
+- that's why units are smaller as it warms up
+- MLB printed though
+- another full slate today
+- MLB last 7 days has been awesome
+- r2: make an ask, get free trials
+- **r3:** add depth · more refined · **the actual product messaging that converts**
 
-Assets: Don slip · Cowboys ML lock card · map  
-Constraint: QT. Give, not ask. Do **not** restate “I bet $32.4K on the Dallas Cowboys” as our line 1. Do not write GOLD / Vault / AGS / V12 / HC / Confirmed / ELITE / EV / `USUAL` in line 1–2. Do not write unopposed. Do not dunk Don.
+Assets: last-7 MLB chart (post) · last-30 all-sports (source only — do not write +96.25u)  
+Constraint: morning hero ASK with Qual depth. Do **not** write GOLD / Vault / AGS / V12 / HC / Confirmed / ELITE / EV / `USUAL` / grind-EV / become-sharp lecture / “we don’t pick games” / prices / invented CFB W-L / tonight’s games.
 
 ### 0b · Timeline
-Ask **cold.** Next slot after the turnaround story was the live slate. This is it — one SNF ticket, not a third testimonial. Fade-Trent / $16.5K / Jul-Aug / JamKam hooks are spent.
+Overlay converting product language is not price and not a how-to. It is: hard number → what we actually do (track the wallets, post before pitch) → sit on a live day → `Free trial — watch sharps like this live and grade it yourself.`  
+Pin/brochure “we don’t handicap” is retired (Dale: we do pick and lock a size). Become-sharp / grind-EV as the *open* still dies. Those words do not belong in line 1–2. Mechanism belongs **after** the receipt.  
+v2 still failed Qual: ask posts need give-post stuff density. August `+46.8u` won WITH depth.
 
 ### 0c · Forward look
-Dale spine = this QT. After it posts: grade SNF or the next new ticket.
+This is the ask. After it posts: one live MLB ticket (give). Fence-sitter DMs close this thread.
 
 ### 1 · WHO
-Someone who just saw Don’s $32K Cowboys slip and thinks that’s a lone celebrity bet.
+A football-weekend bettor who will not click a caption-CTA. He needs to understand what he’d be grading today: the wallets, the size discipline on football, a full MLB slate he can sit on.
 
 ### 2 · PURPOSE
-**Give.** Quote Don. Walk our Dallas ML. No URL. No trial. No SR.
+**Ask.** Trials. Pudding = card + mechanism + why football is small + today’s slate. Close = free trial in the same tweet.
 
 ### 3 · ONE
-**Nobody throws money around quite like Don. Tonight he’s in good company.**
+**You were on football. MLB printed. Sit on today’s slate, watch the wallets, grade it yourself.**
 
 | Test | |
 |------|---|
-| Understand | Don always bets huge. Tonight the wallets are on Dallas too. |
-| Believe | Parent: **$32,400** Cowboys **−3 −108**. Our card: Cowboys **ML −168 · 3u** · **$20K at 4×** · 5 more proven · 2 proven Giants. Live ML tape 00:08Z: `JUSTINHERBERTMVP` **$20,407 / $5,144 = 3.97×** on Cowboys (away). Kickoff **8:20 PM ET**. |
-| Unique | Not “we also like Dallas.” Not restating his $32.4K. The company — sized proven money on the same side, different market (he’s −3, we’re ML). |
+| Understand | Baseball paid. Football isn’t sized up yet. You can watch today’s MLB card for free. |
+| Believe | **+29.09u · 33-23 · 58.9% · 56 graded · losses on the card.** Dale: football slower, units stay small while it warms up, full slate today. Mechanism is the live product (track wallets → post before pitch), not a slogan. |
+| Unique | Not a thinner +60u clone. Paradox + *why* the football units are small (wallets we track don’t like that shape yet) + a day you can actually sit on. |
 
-**Yum:** you are not sitting alone with a $32K celebrity slip. The wallets are on Dallas with him.
+**Yum:** you get put on the sharp tickets. You don’t buy a capper. You grade today’s slate yourself.
 
-### 4 · SPCL — **S + C**
-- **S** — $20K at 4× · six proven on Dallas
-- **C** — Don’s slip (third-party $) · our card · 3.97× tape match
-- L is “nobody throws money around quite like Don.” P is we showed up on the same side (not a second spear)
+### 4 · SPCL — **C + P**
+- **C** — the card (33-23 / +29.09u / 58.9% / 56 / losses included)
+- **P** — football sized small on purpose until the wallets like it; baseball they already like; we post it before pitch; you can grade today
+- S is the printer in line 1. L is “slower than I wanted.”
 
-**Also seated:** pairing = same-side company, not Cowboys-as-brand · proof machine = tonight + visual (slip then card) + volume on one spear (good company) · pain first = the $32K slip they’re already looking at · Qual = walk Don → our $20K / 4× / two against · whole truth = 2 proven on the Giants · 55% here · not unopposed · he’s −3 we’re ML
+**Also seated:**  
+- Pairing: sharp tickets, not capper homework  
+- Proof machine: recent 7d · visual chart · volume on one spear · pain first (football weekend they lived)  
+- Value equation: dream = sit on the printer without the homework · likelihood = this card · time = today’s slate · effort = trial, we already tracked the wallets  
+- Diagnostic: current = football weekend → desired = on the printer → obstacle = thought football was the whole sport / thought we went quiet → vehicle = free trial on today’s MLB  
+- Qual: mechanism in the words, not the header  
+- Whole truth: 23 losses are on the card; football was slower
+
+**Deleted (does not raise the ONE):** grind-EV · become-sharp lecture · `$5.35` · “first week is free” as a slogan · lock-alert how-to · +96u all-sports · seat count we don’t have · “we don’t pick games”
 
 ### 5 · STUFF
-**Parent (@MoneylineMafia, ~41m when screenshotted):**
-- “I bet $32.4K on the Dallas Cowboys.”
-- Cowboys **−3 · −108** · stake **$32,400** · to win path $62,400
-- Today 5:20 PM on his slip (ticket stamp). Game is **8:20 PM ET**.
-- His open. We do not rerun it as ours.
+**MLB last 7:** +29.09u · 33-23 · 58.9% · 56 graded · 185.8u risked (skip unless it earns) · +15.7% ROI (skip — extra letter, not the spear) · peak now · last **7** not 8d · no tier names
 
-**Our card (Dale screen):**
-- Cowboys @ Giants · **ML −168 (63%)** · **3.0u**
-- $20K at 4× · 5 more proven alongside · **2 proven took the other side**
-- Led by `…e55973` 3-0 · 100% WR · +67% ROI (card stamp — do not merge with map `…7d395d` $3.2K / 5-1)
-- Card $102K / $84K is a wider pile than raw sharp ML ($60.6K / $106.2K at 00:08Z). **Do not write $102K.** Walk the $20K / 4× / six proven / two against. Don’t pick a fight with the bar.
-- 55% here. SET. Footer: no-play size bar — **do not write**. EV −1.5% — **do not write**.
+**Product (converting, after the number):** we track those wallets for months · post where the money goes before first pitch · football units stay small until those wallets like the shape · they already like baseball · today’s full slate is a day you can sit on and grade
 
-**Live ML (00:08Z, Cowboys = away):** sized Cowboys stamp = JUSTIN **$20,407 at 3.97×**. Giants have real $ too. Not unopposed.
-
-**Do not say:** GOLD · Vault · AGS · V12 · HC · Confirmed · ELITE · EV · unopposed · locked (card says SET) · `USUAL` in line 1–2 · fade-Trent · $16.5K / $14.8K / Jul −$688 · JamKam
+**Do not say:** GOLD · Vault · AGS · V12 · EV · `USUAL` · Don · +100u restage · Jul −$688 · JamKam · MVP25 · `$5.35` · grind-EV · “you don’t have to become a sharp” as a pitch line (become-sharp clones = 0R) · “we don’t handicap / we don’t pick” · empty “board” · “the Ls stay up”
 
 ### 6 · HOOK QA
-What: $20,000 at 4× just sat down next to Don.  
-How: nobody throws money around quite like Don.  
-So what: tonight he’s in good company.  
-Screenshot: stranger sees **$20K + Don + sat down next to** — company, not another bare `AT 4×` clone.  
-QT law: parent owns $32.4K. We name Don. We do not name his stake.
+What: +29u MLB in the last 7 days.  
+How: you spent the weekend on football. We spent it on this.  
+So what: football stays small until the wallets like it. Baseball they already like. Sit on today’s slate. Free trial — watch it live and grade it yourself.  
+Screenshot: **+29u MLB LAST 7** + you/football in line 2.
 
-**Killed**
-- Bare `$20,000 AT 4×` (TNF `$51K AT 4.4×` silhouette, no paradox)
-- Restate “I bet $32.4K on the Dallas Cowboys”
-- Unopposed (false)
-- $102K (fights the live sharp split)
-- EV / no-play / juice row
-- Dunk Don
-- Convert / 177u / two losing months
+**Why v2 still failed:** CTA was converting. The *body* was not. Overlay pudding is the receipt *and* what you’d be watching. v2 skipped the mechanism. Hormozi: an amazing hook with a starved body is a caption. Add the stuff back.
 
-### 7–8 · Draft + algorithm
-His two sentences stay. Hook rewrite only: line 1 is the company arriving. Body unchanged.
+### 7 · What “product messaging that converts” means on this post
+From overlay + brand kit, **after** the number:
+
+| In | Out |
+|----|-----|
+| Track the wallets · post before pitch · sit on a live day · watch and grade it yourself | `$5.35/week` · lunch · grind-EV open · become-sharp lecture · how-to alerts · buried “first week is free” · a code |
+| Seats as *sit on today’s slate* (no fake headcount) | “10 seats” we don’t have |
+| Losses included (33-23) | Slogan “every L public” |
+
+### 8 · Algorithm
+Keep v2’s hook and Aug 27 close. Add mechanism + sizing honesty + today’s-slate seat. Delete brochure. Delete second ask. No URL. No SR.
 
 ---
 
 ## COPY THIS
 
-**Type:** Quote  
-**Parent:** @MoneylineMafia · “I bet $32.4K on the Dallas Cowboys.”  
-**Media:** our Cowboys ML card, then the map
+**Type:** Hero  
+**Media:** MLB last-7 chart only
 
 ```
-$20,000 AT 4× JUST SAT DOWN NEXT TO DON
-Nobody throws money around quite like Don.
-Tonight he's in good company.
++29u MLB IN THE LAST 7 DAYS
+You spent the weekend on football.
+We spent it on this.
 
-Cowboys @ Giants.
-We're Dallas ML. -168. 3u.
+33-23. +29.09u. 58.9%.
+56 plays. Losses included.
 
-A proven NFL wallet has $20,000 on this at 4×.
-Five more proven with him.
-Two proven took the Giants.
+Football was slower than I wanted.
+That's why the units stay smaller while it warms up.
+We're waiting until the wallets we track actually like football.
+They already like baseball.
 
-He's on the Cowboys -3.
-We're on the Cowboys.
+We follow that money for months and post the plays before first pitch.
+There's another full MLB slate today. Sit on it.
 
-Kickoff 8:20 ET.
+Free trial — watch sharps like this live and grade it yourself.
 ```
