@@ -1585,8 +1585,8 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           </div>
           {f.mainNowLabel ? (
             <div style={{
-              marginTop: 4, fontSize: 10, fontWeight: 600,
-              letterSpacing: '0.02em', color: C.textMuted,
+              marginTop: 4, fontSize: 10, fontWeight: 500,
+              letterSpacing: '0.02em', color: C.textFaint,
             }}>
               {f.mainNowLabel}
             </div>
@@ -2713,10 +2713,10 @@ function CollapsedHero({ live, pickClass, americanOnly = false }) {
         </div>
         {contextLine && (
           <div
-            title="Sharp money on a different line than the ticket we grade and pay"
+            title="Ticket we grade and pay"
             style={{
-              marginTop: 8, fontSize: 11.5, fontWeight: 450,
-              letterSpacing: '0.005em', color: C.textFaint, lineHeight: 1.4,
+              marginTop: 6, fontSize: 11, fontWeight: 450,
+              letterSpacing: '0.005em', color: C.textFaint, lineHeight: 1.35,
             }}
           >
             {contextLine}

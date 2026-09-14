@@ -1223,9 +1223,9 @@ export default function LockedClarityExpanded({
           <SteamTag steam={f.steam} compact />
           {f.mainNowLabel && (
             <span
-              title="Sharp money is on this line — we grade and pay the ticket above"
+              title="Ticket we grade and pay"
               style={{
-                width: '100%', fontSize: 11, fontWeight: 600, color: C.textMuted, marginTop: 2,
+                width: '100%', fontSize: 11, fontWeight: 500, color: C.textFaint, marginTop: 2,
               }}
             >
               {f.mainNowLabel}

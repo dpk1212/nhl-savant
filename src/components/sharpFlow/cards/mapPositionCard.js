@@ -39,6 +39,7 @@ import {
   fairProbFromNoVig,
   evPctVsFairProb,
   mlFairOddsList,
+  fmtFlaggedAtLabel,
 } from '../../../lib/oddsEv.js';
 import { shortTeamNick as shortTeam } from '../../../utils/teamIdentity.js';
 
@@ -1171,6 +1172,13 @@ export function mapLockedPickToCardFixture(pick, {
   if (Number.isFinite(inst.ticket?.american)) {
     polyEntryOdds = inst.ticket.american;
   }
+  // Graded / post T-15: live vault is gone. Keep the stamped Poly receipt
+  // so "flagged at" can still show under the book hero.
+  if (!Number.isFinite(polyEntryOdds)) {
+    const stampedPoly = Number.isFinite(pick.polyReceipt) ? pick.polyReceipt
+      : (Number.isFinite(pick.flaggedOdds) ? pick.flaggedOdds : null);
+    if (Number.isFinite(stampedPoly) && stampedPoly !== 0) polyEntryOdds = stampedPoly;
+  }
   // Hero / lock juice = coherent instrument (vault Poly unless spread Poly/book signs clash).
   // Frozen ticket keeps the sealed peak/lock line — bound.line is live vault.
   if (Number.isFinite(bound.odds) && !ticketFrozen) {
@@ -1265,12 +1273,8 @@ export function mapLockedPickToCardFixture(pick, {
     : isDraw ? 'Draw'
       : (sideNorm === 'away' ? awayShort : homeShort);
 
-  // Hero = grade line + pay odds. Sharp on another number → "flagged at".
+  // Hero = book juice. Poly receipt sits under as "flagged at".
   const fmtSpreadLn = (ln) => (Number.isFinite(ln) ? `${ln > 0 ? '+' : ''}${ln}` : '');
-  const fmtAm = (o) => {
-    if (!Number.isFinite(o) || o === 0) return null;
-    return o > 0 ? `+${Math.round(o)}` : `${Math.round(o)}`;
-  };
   const fmtLineLabel = (ln) => {
     if (isSpread && Number.isFinite(ln)) return `${teamShort} ${fmtSpreadLn(ln)}`;
     if (isTotal && Number.isFinite(ln) && ln >= 1.5) return `${teamShort} ${ln}`;
@@ -1315,9 +1319,10 @@ export function mapLockedPickToCardFixture(pick, {
   // never the American glued to "+2.5" when same-line tape disagrees.
   const heroOdds = lockOdds;
   const flaggedAtLabel = sharpOffTicket
-    ? `flagged at ${fmtLineLabel(sharpLine) || sharpLine}${
-      fmtAm(sharpOdds) ? ` · ${fmtAm(sharpOdds)}` : ''
-    }`
+    ? fmtFlaggedAtLabel(
+      Number.isFinite(sharpOdds) ? sharpOdds : polyEntryOdds,
+      fmtLineLabel(sharpLine) || sharpLine,
+    )
     : null;
   let mainNowLabel = flaggedAtLabel;
 
@@ -1609,9 +1614,12 @@ export function mapLockedPickToCardFixture(pick, {
   });
   if (Number.isFinite(pay.polyReceipt)) polyEntryOdds = pay.polyReceipt;
   const payOdds = Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds;
-  if (pay.demotedPoly && Number.isFinite(polyEntryOdds) && !flaggedAtLabel) {
-    const pm = fmtAm(polyEntryOdds);
-    if (pm) mainNowLabel = `PM ${pm}`;
+  const polyForLabel = Number.isFinite(pay.polyReceipt) ? pay.polyReceipt
+    : (Number.isFinite(polyEntryOdds) ? polyEntryOdds : null);
+  if (!flaggedAtLabel && Number.isFinite(polyForLabel) && Number.isFinite(payOdds)
+      && Math.round(polyForLabel) !== Math.round(payOdds)) {
+    const lbl = fmtFlaggedAtLabel(polyForLabel);
+    if (lbl) mainNowLabel = lbl;
   }
 
   // Beating Close = ticket vs same-line NOW. Never MAIN closingOdds vs an alt.
