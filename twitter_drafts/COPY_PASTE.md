@@ -1,121 +1,136 @@
-# Twitter — 2026-09-14 r3 · HERO ASK · +29u MLB / product depth / trial in the hero
+# Twitter — 2026-09-14 eve r2 · QT ASK · Jim missed the best day / still +32u
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
-**CSV:** Sep 8–14 attention. **Overlay:** trial in the hero with the number. PURPOSE=**ask**.
+**CSV:** Sep 8–14. Overlay: member receipt + **one** fork in the same tweet. PURPOSE=**ask**.
 
 | | |
 |--|--|
-| WHO | Someone who burned the weekend on football, thinks we went quiet, and will not start a trial from a caption. |
-| PURPOSE | **Ask.** Start free trials. Hard number first. Mechanism + today's slate as pudding. Trial words in this tweet. |
-| ONE | You were on football. MLB printed. Sit on today's slate free and grade the wallets yourself. |
+| WHO | Someone staring at Jim’s two cards who still thinks the tweets might be a performance. |
+| PURPOSE | **Ask.** One job: start a trial. |
+| ONE | He missed the best day we’ve had. He’s still +32u. That’s the room. |
 | SPCL | **C + P** |
-| Timeline | v1 give killed. v2 ask was still a caption (292 chars, CTA with no product). Dale r3: add depth — the product messaging that converts. |
-| Ask | **In the hero:** `Free trial — watch sharps like this live and grade it yourself.` No URL. No `$5.35`. No MVP25. No SR. |
+| Timeline | Morning ask is live. This QT has to land. v1 was a thesis with an imagine-if. Rewrite hook before body. |
+| Ask | **One close:** `Would you try it — watch it live and grade it yourself.` No coffee. No URL. No second CTA. No SR. |
 
-**Post as** a single hero. Attach the **MLB last-7 chart**. Do not attach the all-sports +96u chart.
+**Post as Quote** of @JPWilliams37. No extra images. Walk **left card (1W)** then **right card (ALL)** — attach order is already in the parent.
 
 ---
 
-### 0 · Spine (Dale — law, do not rewrite)
-- slower football weekend than I wanted
-- that's why units are smaller as it warms up
-- MLB printed though
-- another full slate today
-- MLB last 7 days has been awesome
-- r2: make an ask, get free trials
-- **r3:** add depth · more refined · **the actual product messaging that converts**
+### 0 · Spine (Dale — law)
+- People like Jim are the best
+- Start of the month he wanted to track the success and see if the claims were as good as I was posting
+- Through 2 weeks it’s been good
+- He missed part of our best day ever as a system
+- Sit in the same room with the sharps as they bet, decide who to follow
+- Cups of coffee a week? Would you try it? That’s what we are doing here
+- **r2: Hormozi would demand better. Full process. Refinement. This one needs to land.**
 
-Assets: last-7 MLB chart (post) · last-30 all-sports (source only — do not write +96.25u)  
-Constraint: morning hero ASK with Qual depth. Do **not** write GOLD / Vault / AGS / V12 / HC / Confirmed / ELITE / EV / `USUAL` / grind-EV / become-sharp lecture / “we don’t pick games” / prices / invented CFB W-L / tonight’s games.
+Assets: Jim’s tweet.  
+Constraint: QT. No GOLD / Vault / AGS / V12 / EV / `USUAL` / coffee-as-punchline / thankful open / invent Saturday’s units / mash our +29u / restage Camden.
 
 ### 0b · Timeline
-Overlay converting product language is not price and not a how-to. It is: hard number → what we actually do (track the wallets, post before pitch) → sit on a live day → `Free trial — watch sharps like this live and grade it yourself.`  
-Pin/brochure “we don’t handicap” is retired (Dale: we do pick and lock a size). Become-sharp / grind-EV as the *open* still dies. Those words do not belong in line 1–2. Mechanism belongs **after** the receipt.  
-v2 still failed Qual: ask posts need give-post stuff density. August `+46.8u` won WITH depth.
+Camden hero = 0R (testimonial, no fork). Overlay: member receipt **with a fork** converts. Thankful OG = 35. QT law: parent owns Week 2 / “over 32u” / “missed some big wins Saturday” / “Give it a try yourself.” We own **best day we’ve had** + **he tracked it to check the tweets** + the room as what he’s already doing.
 
 ### 0c · Forward look
-This is the ask. After it posts: one live MLB ticket (give). Fence-sitter DMs close this thread.
+Lands → next is a live ticket, no ask. Misses → do not restage this paragraph.
 
 ### 1 · WHO
-A football-weekend bettor who will not click a caption-CTA. He needs to understand what he’d be grading today: the wallets, the size discipline on football, a full MLB slate he can sit on.
+A lurker looking at Jim’s charts. Pain they’re in: the left card is a grind, the right card is green, and the caption says he missed Saturday. They need to know what that means — and that they can sit in the same room.
 
 ### 2 · PURPOSE
-**Ask.** Trials. Pudding = card + mechanism + why football is small + today’s slate. Close = free trial in the same tweet.
+**Ask.** Trials. Pudding first. One close.
 
 ### 3 · ONE
-**You were on football. MLB printed. Sit on today’s slate, watch the wallets, grade it yourself.**
+**He missed the best day we’ve had. He’s still +32u. That’s sitting in the room with the sharps.**
 
 | Test | |
 |------|---|
-| Understand | Baseball paid. Football isn’t sized up yet. You can watch today’s MLB card for free. |
-| Believe | **+29.09u · 33-23 · 58.9% · 56 graded · losses on the card.** Dale: football slower, units stay small while it warms up, full slate today. Mechanism is the live product (track wallets → post before pitch), not a slogan. |
-| Unique | Not a thinner +60u clone. Paradox + *why* the football units are small (wallets we track don’t like that shape yet) + a day you can actually sit on. |
+| Understand | He wasn’t on Saturday. His month is still +32u. That’s the product. |
+| Believe | Left card **32-33 · +1.55u** (he said not exciting). Right card **46-38 · +32.69u**. He wrote missed Saturday afternoon. Dale: that was part of our best day. Start-of-month check = Dale. |
+| Unique | Not “claims were real” as a thesis. Not coffee. Not thank-you. Paradox: missed the heater, month still prints. Line 2 = `He's still +32u.` (August `ALMOST 3× JULY` job). |
 
-**Yum:** you get put on the sharp tickets. You don’t buy a capper. You grade today’s slate yourself.
+**Yum:** you sit with the sharps we track as they bet. You decide who to follow. You grade it in your book — even if you miss a day.
+
+v1 ONE failed Masterson #3: “signed up to see if the claims were real” is easy to understand and believe. It is **not** interesting. The miss is.
 
 ### 4 · SPCL — **C + P**
-- **C** — the card (33-23 / +29.09u / 58.9% / 56 / losses included)
-- **P** — football sized small on purpose until the wallets like it; baseball they already like; we post it before pitch; you can grade today
-- S is the printer in line 1. L is “slower than I wanted.”
+- **C** — walk the two cards; +32.69u is on the right
+- **P** — he checked for two weeks · posted the boring week · posted the miss · still there
+- S = the room (scarce access) proves the ONE after the hook. Not a second spear.
 
-**Also seated:**  
-- Pairing: sharp tickets, not capper homework  
-- Proof machine: recent 7d · visual chart · volume on one spear · pain first (football weekend they lived)  
-- Value equation: dream = sit on the printer without the homework · likelihood = this card · time = today’s slate · effort = trial, we already tracked the wallets  
-- Diagnostic: current = football weekend → desired = on the printer → obstacle = thought football was the whole sport / thought we went quiet → vehicle = free trial on today’s MLB  
-- Qual: mechanism in the words, not the header  
-- Whole truth: 23 losses are on the card; football was slower
+**Levers that earn a seat (delete the rest):**
+- Pairing: sit with the sharps, not buy a capper
+- Proof machine: recent · visual (walk left then right) · volume on **one** spear (miss + still green) · pain first (they’re already on the miss in the parent)
+- Value equation: dream = the room · likelihood = his book · time = while they bet · effort = you decide who to follow
+- Diagnostic **in the words:** didn’t trust the tweets → tracked two weeks → missed the best day → still +32u → vehicle = that room / trial
+- Trust: 32-33 week stays. We don’t hide the miss.
+- Qual: stuff inside. Complete sentences. No slogan close.
+- Overlay: one fork, in this tweet
 
-**Deleted (does not raise the ONE):** grind-EV · become-sharp lecture · `$5.35` · “first week is free” as a slogan · lock-alert how-to · +96u all-sports · seat count we don’t have · “we don’t pick games”
+**Deleted this pass:** imagine-if · “that’s what this is” · dual CTA · fragment-stack swagger · coffee · gratitude · become-sharp lecture · “we don’t pick”
 
 ### 5 · STUFF
-**MLB last 7:** +29.09u · 33-23 · 58.9% · 56 graded · 185.8u risked (skip unless it earns) · +15.7% ROI (skip — extra letter, not the spear) · peak now · last **7** not 8d · no tier names
+**Parent:** Week 2, not exciting but green, over 32u month, missed Saturday afternoon big wins, give it a try. 1W **+1.55u / 32-33 / +0.75%**. ALL **+32.69u / 46-38 / +11.98%**.  
+**Dale:** checked the claims at the start of the month · two weeks good · missed part of the best day we’ve had · the room · would you try it.  
+**Do not invent** Saturday’s unit total. Do not narrate the −17.45u valley on his 1W card (he didn’t).
 
-**Product (converting, after the number):** we track those wallets for months · post where the money goes before first pitch · football units stay small until those wallets like the shape · they already like baseball · today’s full slate is a day you can sit on and grade
+### 6 · HOOK QA (rewrite hook before body — Dale 9/01)
 
-**Do not say:** GOLD · Vault · AGS · V12 · EV · `USUAL` · Don · +100u restage · Jul −$688 · JamKam · MVP25 · `$5.35` · grind-EV · “you don’t have to become a sharp” as a pitch line (become-sharp clones = 0R) · “we don’t handicap / we don’t pick” · empty “board” · “the Ls stay up”
+| | v1 | r2 |
+|--|----|----|
+| Line 1 | HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL | **HE MISSED THE BEST DAY WE'VE HAD** |
+| Line 2 | restated the thesis | **He's still +32u.** |
+| Screenshot | a motive | a paradox with a number |
+| QT law | ok-ish (not his open) | parent said “big wins Saturday” — **best day we’ve had** is ours |
 
-### 6 · HOOK QA
-What: +29u MLB in the last 7 days.  
-How: you spent the weekend on football. We spent it on this.  
-So what: football stays small until the wallets like it. Baseball they already like. Sit on today’s slate. Free trial — watch it live and grade it yourself.  
-Screenshot: **+29u MLB LAST 7** + you/football in line 2.
+What: he missed the best day we’ve had.  
+How: he signed up to check the tweets. Two weeks. 32-33 this week, +32.69u the month. Saturday he wasn’t on.  
+So what: that’s the room. Would you try it — watch it live and grade it yourself.
 
-**Why v2 still failed:** CTA was converting. The *body* was not. Overlay pudding is the receipt *and* what you’d be watching. v2 skipped the mechanism. Hormozi: an amazing hook with a starved body is a caption. Add the stuff back.
+**Why v1 would disgust Hormozi**
+- Hook was a press release. Line 2 did not do the interesting/unique job.
+- “Imagine if” is a promise. Jim already sat in the room. Proof *is* likelihood.
+- Two closes (“Would you try it?” + “Free trial…”) = toss salad ask.
+- “That’s what this is.” = slogan.
+- Fragment stack. Brand kit: complete sentences.
+- Did not walk the cards (caption, not audit).
+- Buried the miss in the middle. The miss is the spear.
 
-### 7 · What “product messaging that converts” means on this post
-From overlay + brand kit, **after** the number:
+**Killed hooks**
+- People like Jim are the best (thank-you)
+- JIM IS +32u (his open)
+- Cups of coffee (lunch death)
+- Imagine if… as the open (promise)
+- Give it a try yourself (parent)
+- HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL (v1 — thesis, not a paradox)
 
-| In | Out |
-|----|-----|
-| Track the wallets · post before pitch · sit on a live day · watch and grade it yourself | `$5.35/week` · lunch · grind-EV open · become-sharp lecture · how-to alerts · buried “first week is free” · a code |
-| Seats as *sit on today’s slate* (no fake headcount) | “10 seats” we don’t have |
-| Losses included (33-23) | Slogan “every L public” |
-
-### 8 · Algorithm
-Keep v2’s hook and Aug 27 close. Add mechanism + sizing honesty + today’s-slate seat. Delete brochure. Delete second ask. No URL. No SR.
+### 7 · Algorithm
+One idea. Walk left card → right card → miss → room as fact (what Jim is doing) → one ask. Delete imagine. Delete the second CTA. Keep Dale’s “would you try it” inside the converting trial sentence. No URL. No SR.
 
 ---
 
 ## COPY THIS
 
-**Type:** Hero  
-**Media:** MLB last-7 chart only
+**Type:** Quote  
+**Parent:** @JPWilliams37  
+**Media:** none extra. Eye goes left card, then right.
 
 ```
-+29u MLB IN THE LAST 7 DAYS
-You spent the weekend on football.
-We spent it on this.
+HE MISSED THE BEST DAY WE'VE HAD
+He's still +32u.
 
-33-23. +29.09u. 58.9%.
-56 plays. Losses included.
+Start of the month Jim wanted to track it himself.
+See if what I was posting actually showed up in his book.
 
-Football was slower than I wanted.
-That's why the units stay smaller while it warms up.
-We're waiting until the wallets we track actually like football.
-They already like baseball.
+Look at the cards.
+This week was 32-33. +1.55u. He called it not exciting. Still green.
+The month is +32.69u. 46-38.
 
-We follow that money for months and post the plays before first pitch.
-There's another full MLB slate today. Sit on it.
+Saturday afternoon he wasn't on it.
+That was part of the best day we've had.
 
-Free trial — watch sharps like this live and grade it yourself.
+You sit with the sharps we track while they put the money down.
+You decide who to follow.
+Jim's been doing that for two weeks.
+
+Would you try it — watch it live and grade it yourself.
 ```

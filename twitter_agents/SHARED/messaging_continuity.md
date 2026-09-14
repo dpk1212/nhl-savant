@@ -7,73 +7,73 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-14 r3 · HERO **ASK** · +29u MLB / product depth / trial in the hero |
+| Last updated | 2026-09-14 eve r2 · QT **ASK** · Jim missed the best day / still +32u |
 | CSV window | Content Sep 8–14. Overlay ask-shape binds. |
-| Ask temperature | **This post = ask.** Mechanism + today's slate in the body. Trial words in the hero. Next = one live MLB ticket (give). |
-| Account arc | v2 was still a caption. Depth = wallets we track, football sized small until they like it, sit on today's MLB, grade it yourself. |
+| Ask temperature | **This post = ask** (second today). One close. Next = give. |
+| Account arc | v1 was a thesis + imagine-if. Spear is now the miss paradox. Room is what Jim already did. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/14 AM r3 | Hero **ASK** | `+29u MLB IN THE LAST 7 DAYS` / wallets we track · sit on today's slate · trial in-hero | **C + P** | **trial in hero** | **Staged** |
-| 9/14 AM r2 | Hero ASK | same hook, caption body, trial close | C + P | trial in hero | **Killed** — starved product |
-| 9/14 AM v1 | Hero GIVE | same printer, `Who's with us?` | C + P | comment-bait | **Killed** — wrong job |
-| 9/14 | INGEST | Proof + invite in-hero. `$5.35` and buried codes die. | — | — | Process |
+| 9/14 eve r2 | QT **ASK** | `HE MISSED THE BEST DAY WE'VE HAD` / He's still +32u / room as fact | **C + P** | **one trial close** | **Staged** |
+| 9/14 eve v1 | QT ASK | `HE SIGNED UP TO SEE IF THE CLAIMS WERE REAL` / imagine-if / dual CTA | C + P | two closes | **Killed** — thesis hook |
+| 9/14 AM | Hero ASK | `+29u MLB` / Dale posted a variant | C + P | trial | Posted |
+| 9/14 | INGEST | Proof + invite. Coffee/lunch die. | — | — | Process |
 | 9/13 SNF | QT GIVE | `$20,000 AT 4× JUST SAT DOWN NEXT TO DON` | S + C | none | Do not restage |
 
 ---
 
 ## Angle lock
-**ONE:** You were on football. MLB printed. Sit on today’s slate, watch the wallets, grade it yourself.  
-**Yum:** put on the sharp tickets. Don’t buy a capper. Grade today.  
-**Hook:** `+29u MLB IN THE LAST 7 DAYS` / You spent the weekend on football. We spent it on this.  
-**Body:** 33-23 · +29.09u · 58.9% · 56 · losses included · football units small until the wallets like it · they already like baseball · follow that money for months · post before first pitch · sit on today’s slate  
-**Ask:** `Free trial — watch sharps like this live and grade it yourself.` Same tweet. No URL. No code. No SR.  
-**Killed:** v1 who’s-with-us · v2 caption · seats-without-a-count · grind-EV / become-sharp lecture · “we don’t pick games”
+**ONE:** He missed the best day we’ve had. He’s still +32u. That’s the room.  
+**Yum:** sit with the sharps we track as they bet. Decide who to follow. Grade it in your book.  
+**Hook:** `HE MISSED THE BEST DAY WE'VE HAD` / `He's still +32u.`  
+**Body:** checked the tweets · walk 1W 32-33 +1.55u · walk ALL +32.69u 46-38 · Saturday miss · room as what Jim is doing  
+**Ask:** Would you try it — watch it live and grade it yourself. One sentence. No coffee. No URL.  
+**Killed:** v1 thesis hook · imagine-if · dual CTA · “that’s what this is” · coffee · thank-you Jim
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** +29u MLB last 7 · football-weekend paradox · wallets-we-track mechanism · sit on today's slate · in-hero free trial
+**Spent this beat (once posted):** Jim missed the best day · still +32u · room-as-fact · this trial close
 
-**Still spent:** Don QT · Jul/Aug · JamKam · `$16.5K` / `$14.8K` · +100u / +99u · fade-Trent · Vault · grind-EV · MVP25 · `$5.35` · v1 who's-with-us
+**Still spent:** morning +29u · Don · Jul/Aug · JamKam · fade-Trent · Vault · grind-EV · MVP25 · `$5.35` · coffee · Camden · v1 “claims were real”
 
-**Still open:** today's MLB live ticket (give, after this ask) · SNF grade if Dale dumps the scar · Nats +$69K · fence-sitter DMs in this thread
+**Still open:** one live ticket (give) · SNF grade if Dale dumps the scar · Nats +$69K · fence-sitter DMs
 
-**Don't:** restage this +29u · bury a code · price as punchline · write +96u all-sports · V12/AGS · invent CFB W-L · second ask tonight
+**Don't:** restage Jim · restage v1 · coffee · thankful OG · Don · convert paragraph · V12 · mash JamKam Saturday into Jim
 
 ---
 
 ## Unfinished
-- Full MLB slate today — walk **one** ticket after this ask
-- Fence-sitters in the replies: DM close, not a new hero
+- Live ticket still open
+- Fence-sitters: DM close
 - SNF grade only with a new scar
 - Nats +$69K parked
 
 ---
 
 ## FORWARD LOOK — after this posts
-1. **One live MLB ticket** from today's slate. S/C in line 1. No ask. Demonstrate.
-2. DM anyone who raises a hand in this thread (overlay: fence-sitter DMs close).
+1. **One live ticket.** S/C. No ask.
+2. DM anyone who raises a hand.
 3. Grade Cowboys only if Dale dumps the scar.
 
-**NOT:** this printer restage · Don · +100u MLB · convert paragraph · MVP25 SR · `$5.35` · V12 identity · comment-bait restage
+**NOT:** Jim restage · v1 restage · coffee · +29u · Don · Camden · convert paragraph · MVP25
 
-**Avatar:** they got invited. Next they need a play to grade.  
-**Balance:** ask just fired the overlay shape. Next is give.  
-**Hormozi economics:** enough free SPCL already landed this week. This is the ask. Then give.  
-**Distribution:** Aug 27 trial-in-hero on a new MLB printer. Do not hide the next close.
+**Avatar:** they felt the miss. Next they need a play, not another member.  
+**Balance:** C+P paradox (needed). Ask overfed. Next is give.  
+**Hormozi economics:** this ask has to land. Then stop.  
+**Distribution:** do not run a third convert tonight.
 
 ---
 
 ## Agent close-out
-- [x] Dale r3: depth · refined · product messaging that converts
-- [x] PURPOSE=ask. v1 give killed. v2 caption killed.
-- [x] Mechanism after the number: track wallets · post before pitch · football sized small until they like it
-- [x] Seats as “sit on today’s slate” — no fake headcount
-- [x] Overlay CTA in the hero. No grind-EV / become-sharp lecture / “we don’t pick”
-- [x] Did not write V12 / +96u / invented CFB / URL / `$5.35`
+- [x] Dale r2: Hormozi would demand better · full process · land it
+- [x] Hook rewritten before body: miss + still +32u (v1 thesis killed)
+- [x] Imagine-if killed. Room is what Jim already did.
+- [x] One close, not two
+- [x] Walk left card then right
+- [x] Coffee / thank-you / Saturday unit invention still off
 - [x] Staged COPY_PASTE only
 - [x] Continuity written
