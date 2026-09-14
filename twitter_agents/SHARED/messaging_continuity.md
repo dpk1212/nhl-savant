@@ -7,70 +7,71 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-13 · HERO GIVE · two losing months then us / last story before the slate |
+| Last updated | 2026-09-13 · QT GIVE · Don $32.4K Cowboys / tonight he’s in good company |
 | CSV window | Content Sep 5–11 (32 heroes). Post-level hook law = that ingest. |
-| Ask temperature | **Cold.** This post = no ask. Next slot = the massive slate (new tape). |
-| Account arc | JamKam was OG-user Saturday printer. This is the turnaround user: Jul/Aug red, September green, then we board today. |
+| Ask temperature | **Cold.** This post = no ask. Next = grade SNF or new tape. |
+| Account arc | Sunday was user stories. This is the live board: Don’s $32K slip, our wallets on Dallas ML with him. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/13 r2 | Hero **GIVE** | `JULY -$688. AUGUST -$848.` / Pretty easy to spot when he found us. · Sep +$1,926 | **C + P** | none | **Staged** |
-| 9/13 | QT **GIVE** | `SEPTEMBER IS THE BEST START WE'VE EVER HAD` / A couple down days isn't going to ruin the month. · JamKam | **C + P** | none | Staged / spent as restage |
-| 9/12 eve | Hero **GIVE** | `$16,500 UNOPPOSED` / First CFB play this season I really love the shape of. | **S + C** | none | Staged / spent as restage |
-| 9/12 PM | Hero **GIVE** | `$14,800 AT 3.3×` / While we wait for CFB to heat up. | **S + C** | none | Staged / spent as restage |
+| 9/13 SNF | QT **GIVE** | `$20,000 AT 4×` / Nobody throws money around quite like Don. Tonight he's in good company. | **S + C** | none | **Staged** |
+| 9/13 r2 | Hero **GIVE** | `JULY -$688. AUGUST -$848.` / Pretty easy to spot when he found us. | **C + P** | none | Staged / spent as restage |
+| 9/13 | QT **GIVE** | `SEPTEMBER IS THE BEST START WE'VE EVER HAD` / JamKam | **C + P** | none | Staged / spent as restage |
+| 9/12 eve | Hero **GIVE** | `$16,500 UNOPPOSED` / First CFB shape. | **S + C** | none | Staged / spent as restage |
 | 9/11 AM | Hero **CONFESS** | `Overall a pretty bad night` | **P+L** | none | Posted 85/10R — spent |
 
 ---
 
 ## Angle lock
-**ONE:** Two losing months. Then he found us. Pretty easy to spot. Share so the 177-unit posts don’t look fake. Then the slate.  
-**Yum:** you can see the turnaround on the year tile — you are not being sold a fake 177.  
-**Hook:** `JULY -$688. AUGUST -$848.` / `Pretty easy to spot when he found us.`  
-**Body:** September walk · YTD hole · dip + $20/u · why we share · massive slate.  
-**Ask:** none. Hero + year tile + month tile. No name.
+**ONE:** Nobody throws money around quite like Don. Tonight he’s in good company.  
+**Yum:** you’re not alone with a celebrity $32K slip — proven money is on Dallas too.  
+**Hook:** `$20,000 AT 4×` / Dale’s two sentences.  
+**Body:** Dallas ML 3u · five more proven · two on the Giants · he’s −3 we’re ML · 8:20.  
+**Ask:** none. QT of @MoneylineMafia.
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** two losing months · found us · Jul −$688 / Aug −$848 · Sep +$1,926 / 52-28 · 177-unit posts look fake · last story before the slate
+**Spent this beat (once posted):** Don $32.4K QT · $20K at 4× · good company · Cowboys ML 3u · two proven Giants
 
-**Still spent:** JamKam best-September / CLV / +31.5u · `$16,500 UNOPPOSED` · `$14,800 AT 3.3×` · +100u / +99u · fade-Trent · `2 RED NIGHTS` · Friday bad-night · Vault tour · grind-EV **as open**
+**Still spent:** Jul/Aug turnaround · JamKam best-September / CLV · `$16,500 UNOPPOSED` · `$14,800 AT 3.3×` · +100u / +99u · fade-Trent · `2 RED NIGHTS` · Vault · grind-EV as open
 
-**Still open:** **today’s massive slate** (Dale’s next) · grade Boise / UNLV only with a new scar · Nats +$69K parked
+**Still open:** grade this SNF · Nats +$69K parked
 
-**Don’t:** convert-as-open · defend-the-idea as line 1 · prediction engine · thankful OG · GOLD / Vault / AGS / V12 · restage this Jul/Aug hook · restage JamKam best-start · restage $16.5K / $14.8K / +100u · name the DM user
+**Don’t:** restage this $20K / Don hook · write unopposed · write $102K · convert · GOLD / Vault / AGS / V12 · restage 177u / Jul −$688 / JamKam
 
 ---
 
 ## Unfinished
-- He consented to share (Dale asked in-thread). No public handle.
-- Next post = massive slate — do not draft it until he dumps tickets
+- Kickoff **8:20 PM ET** — card said SET when dumped
+- Two proven still on Giants
 - Nats +$69K still parked
 
 ---
 
 ## FORWARD LOOK — after this posts
-1. **Today’s massive slate** — walk new tape. S+C. No ask. This is the slot he named.
-2. Grade Saturday only with a new scar.
+1. **Grade Cowboys ML** (and Don’s −3 only if Dale dumps the scar). S+C. No ask.
+2. Next live ticket only with **new** tape.
 3. Nats +$69K only if he dumps it.
 
-**NOT:** another user-recap restage · convert-as-open · grind-EV hero · JamKam best-start again · this Jul/Aug hook again · Vault identity · 177u as the **open**
+**NOT:** another user-recap · convert-as-open · Don dunk · this $20K hook again · fade-Trent · Jul/Aug restage
 
-**Avatar:** they got one OG printer (JamKam). This post is the hole-then-us chart so 177u is believable.  
-**Balance:** C+P user proof two days in a row. Next must be a **live board**, not a third testimonial.  
-**Hormozi economics:** still give. Slate is the next give.  
-**Distribution:** last showcase → board. Do not stack a third DM story.
+**Avatar:** they were on testimonials. This puts them back on a live NFL side.  
+**Balance:** S+C live `$XK at Y×` (needed). Ask still overfed.  
+**Hormozi economics:** still give.  
+**Distribution:** compounds the Sunday slate promise. Next is a grade, not another celebrity QT.
 
 ---
 
 ## Agent close-out
-- [x] Dale spine used: last story · massive slate · 177 looks fake · two losing months · easy to spot
+- [x] Dale spine used: quote Don · nobody throws money around like Don · good company
 - [x] Hormozi pathway (not Pulse/Learn/4-agent)
-- [x] Did not open on “people think I’m fake”
-- [x] Did not clone JamKam hook
-- [x] Year tile walked before September
+- [x] QT law: did not open on $32.4K
+- [x] $20,407 at 3.97× verified on Cowboys
+- [x] Whole truth: two proven Giants
+- [x] Did not write $102K / unopposed / EV
 - [x] Staged `twitter_drafts/COPY_PASTE.md` only
 - [x] Continuity written

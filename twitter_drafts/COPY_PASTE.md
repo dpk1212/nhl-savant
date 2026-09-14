@@ -1,118 +1,116 @@
-# Twitter — 2026-09-13 · HERO GIVE · two losing months then us / last story before the slate
+# Twitter — 2026-09-13 · QT GIVE · Don $32.4K Cowboys / tonight he’s in good company
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
 **CSV:** Sep 5–11 living window. Ask **cold**. Give.
 
 | | |
 |--|--|
-| WHO | Someone who thinks the 177-unit posts are fake — or only sees green months. |
-| PURPOSE | Give / credibility. One last user receipt. Then the slate. |
-| ONE | Two losing months. Then he found us. September is sitting on the chart. That’s why I share these. |
-| SPCL | **C + P** |
-| Timeline | JamKam QT is staged/spent (best September start / CLV). This is a **different** user: red months → us → turnaround. Not that hook. |
+| WHO | Someone watching Don drop $32K on Dallas who thinks that’s the whole story. |
+| PURPOSE | Give. QT Don. Show the wallets are on Dallas with him. |
+| ONE | Nobody throws money around quite like Don. Tonight he’s in good company. |
+| SPCL | **S + C** |
+| Timeline | User-story Sunday is spent. This is the live board he promised. New tape. SNF. |
 | Ask | **None.** No URL. No trial. No self-reply. |
 
-**Post as a single hero.** Attach **year chart first** (the two red months), then the September month. DM — no name, no handle, no Quote.
+**Post as Quote** of @MoneylineMafia ($32.4K Cowboys −3). Attach our Cowboys ML card, then the map. Do not @ in the body.
 
 ---
 
 ### 0 · Spine (Dale — law, do not rewrite)
-- Perfect writeup for this
-- One last success story before we move on to the MASSIVE SLATE today
-- I have to share these, otherwise people think my up 177 unit posts are fake
-- This guy had two losing months before he found SharpFlow
-- Pretty easy to spot when he found us
+- I need to quote this tweet
+- Nobody throws money around quite like Don
+- But tonight he is in good company
 
-Assets: iMessage year tile + September month tile (he said we can share)  
-Constraint: give, not ask. Do not open with “people think I’m fake.” Do not clone JamKam `BEST START WE'VE EVER HAD` / CLV / grind-EV. Do not put GOLD / Vault / AGS / V12 / Sharp A / prediction engine in the copy. Do not name him.
+Assets: Don slip · Cowboys ML lock card · map  
+Constraint: QT. Give, not ask. Do **not** restate “I bet $32.4K on the Dallas Cowboys” as our line 1. Do not write GOLD / Vault / AGS / V12 / HC / Confirmed / ELITE / EV / `USUAL` in line 1–2. Do not write unopposed. Do not dunk Don.
 
 ### 0b · Timeline
-Ask **cold.** Defend-the-idea opens die (`People tell me all the time my idea is stupid` = 6). Fake-doubt is the **so what**, not line 1. Pain first = **his** July/August. Forward look wanted a Saturday grade — Dale spine = one last user story, then the slate.
+Ask **cold.** Next slot after the turnaround story was the live slate. This is it — one SNF ticket, not a third testimonial. Fade-Trent / $16.5K / Jul-Aug / JamKam hooks are spent.
 
 ### 0c · Forward look
-This is the last showcase. Next slot **is** the massive slate (new tape). Not another user recap.
+Dale spine = this QT. After it posts: grade SNF or the next new ticket.
 
 ### 1 · WHO
-Someone scrolling past 177-unit posts who thinks they’re fake — or who has only ever seen the green month.
+Someone who just saw Don’s $32K Cowboys slip and thinks that’s a lone celebrity bet.
 
 ### 2 · PURPOSE
-**Give / credibility.** Walk the year, then September. Close on the slate. No URL. No trial. No SR.
+**Give.** Quote Don. Walk our Dallas ML. No URL. No trial. No SR.
 
 ### 3 · ONE
-**Two losing months. Then he found us. Pretty easy to spot. I share it so the 177-unit posts don’t look fake. Then today’s slate.**
+**Nobody throws money around quite like Don. Tonight he’s in good company.**
 
 | Test | |
 |------|---|
-| Understand | He was losing. He found us. The chart changes in September. |
-| Believe | Year tile: Jul **−$688 · 25-96** · Aug **−$848 · 36-91** · Sep **+$1,926 · 52-28**. YTD **+$340 · 114-220 · 34% · +1.9%**. Month tile: **+$1,926 · +21.4% · 52-28 · 65% · $9,010 risked · 96.3u**. He cut to **$20/u** after the three-day dip. |
-| Unique | Not JamKam’s best-September / +31.5u. Not “trust me.” The year is ugly until September. That’s the find. |
+| Understand | Don always bets huge. Tonight the wallets are on Dallas too. |
+| Believe | Parent: **$32,400** Cowboys **−3 −108**. Our card: Cowboys **ML −168 · 3u** · **$20K at 4×** · 5 more proven · 2 proven Giants. Live ML tape 00:08Z: `JUSTINHERBERTMVP` **$20,407 / $5,144 = 3.97×** on Cowboys (away). Kickoff **8:20 PM ET**. |
+| Unique | Not “we also like Dallas.” Not restating his $32.4K. The company — sized proven money on the same side, different market (he’s −3, we’re ML). |
 
-**Yum:** you can see when someone found us — you are not being sold a photoshopped 177.
+**Yum:** you are not sitting alone with a $32K celebrity slip. The wallets are on Dallas with him.
 
-### 4 · SPCL — **C + P**
-- **C** — year tile (Jul/Aug red → Sep green) · 52-28 · +$1,926 · 114-220 YTD
-- **P** — we share the losing months, not just the heater · he sat the dip and cut size
-- L is “pretty easy to spot” / “177 looks fake.” S is the Sep $ (not line 1 — year pain is line 1)
+### 4 · SPCL — **S + C**
+- **S** — $20K at 4× · six proven on Dallas
+- **C** — Don’s slip (third-party $) · our card · 3.97× tape match
+- L is “nobody throws money around quite like Don.” P is we showed up on the same side (not a second spear)
 
-**Also seated:** pairing = you can see the turnaround, not “we only post winners” · proof machine = recent (this month) + visual (year then month) + volume on one spear (found us) · pain first = two red months · Qual = walk both tiles · whole truth = YTD still +$340 / 34% because Jul–Aug buried him · three-day dip · $20/u
+**Also seated:** pairing = same-side company, not Cowboys-as-brand · proof machine = tonight + visual (slip then card) + volume on one spear (good company) · pain first = the $32K slip they’re already looking at · Qual = walk Don → our $20K / 4× / two against · whole truth = 2 proven on the Giants · 55% here · not unopposed · he’s −3 we’re ML
 
 ### 5 · STUFF
-**Year tile (Dale screen):**
-- Oct ’25–May: $0
-- Jun **−$52**
-- Jul **−$688 · 25-96**
-- Aug **−$848 · 36-91**
-- Sep **+$1,926 · 52-28**
-- YTD **+$339.76 · +1.9% · 114-220 · 17u? / $17,996 risked · 34.13%** — write **+$340 · 114-220 · 34%**. Do not write the 17u if it fights 96.3u (different window / OCR). Risked $18K is enough if needed.
+**Parent (@MoneylineMafia, ~41m when screenshotted):**
+- “I bet $32.4K on the Dallas Cowboys.”
+- Cowboys **−3 · −108** · stake **$32,400** · to win path $62,400
+- Today 5:20 PM on his slip (ticket stamp). Game is **8:20 PM ET**.
+- His open. We do not rerun it as ours.
 
-**September tile:**
-- **+$1,926 · +21.4% · 52-28 · 65% · $9,010 risked · 96.3u**
-- His words: after the three-day dip this is where I am for the month. Took per unit back to **$20** after Wednesday.
+**Our card (Dale screen):**
+- Cowboys @ Giants · **ML −168 (63%)** · **3.0u**
+- $20K at 4× · 5 more proven alongside · **2 proven took the other side**
+- Led by `…e55973` 3-0 · 100% WR · +67% ROI (card stamp — do not merge with map `…7d395d` $3.2K / 5-1)
+- Card $102K / $84K is a wider pile than raw sharp ML ($60.6K / $106.2K at 00:08Z). **Do not write $102K.** Walk the $20K / 4× / six proven / two against. Don’t pick a fight with the bar.
+- 55% here. SET. Footer: no-play size bar — **do not write**. EV −1.5% — **do not write**.
 
-**Dale:** two losing months before he found us. Easy to spot. Share so 177-unit posts don’t look fake. Then the massive slate today.
+**Live ML (00:08Z, Cowboys = away):** sized Cowboys stamp = JUSTIN **$20,407 at 3.97×**. Giants have real $ too. Not unopposed.
 
-**Do not say:** his name · SharpFlow as a product-room tour (write **us** / **the site**) · GOLD · Vault · AGS · V12 · prediction engine · grind-EV · JamKam +31.5u / best September start · CLV only matters · $16.5K / $14.8K / +100u
+**Do not say:** GOLD · Vault · AGS · V12 · HC · Confirmed · ELITE · EV · unopposed · locked (card says SET) · `USUAL` in line 1–2 · fade-Trent · $16.5K / $14.8K / Jul −$688 · JamKam
 
 ### 6 · HOOK QA
-What: July −$688. August −$848.  
-How: pretty easy to spot when he found us.  
-So what: September +$1,926 · 52-28. I share these so the 177-unit posts don’t look fake. Massive slate today.  
-Screenshot: stranger sees **two red months** in line 1.  
-Not a QT — no parent hook to steal.
+What: $20,000 at 4×.  
+How: nobody throws money around quite like Don. Tonight he’s in good company.  
+So what: we’re Dallas ML with six proven. He’s Dallas −3. Same side.  
+Screenshot: stranger sees **$20,000 AT 4×** then Don.  
+QT law: parent owns $32.4K. We do not open there.
 
 **Killed**
-- `People think my 177u posts are fake` as line 1 (defend-the-idea)
-- `SEPTEMBER IS THE BEST START WE'VE EVER HAD` clone
-- Thankful OG / “this is awesome”
-- Convert / grind-EV / better way
-- Vault / SharpFlow identity open
-- Walking the Sunday slate (he didn’t dump tickets)
+- Restate “I bet $32.4K on the Dallas Cowboys”
+- Unopposed (false)
+- $102K (fights the live sharp split)
+- EV / no-play / juice row
+- Dunk Don
+- Convert / 177u / two losing months
 
 ### 7–8 · Draft + algorithm
-His “easy to spot” / “177 looks fake” / “massive slate” stay. Hook is the two red months. Body = found us + September walk + the dip + why we share + slate. Delete: name, engine, ask, JamKam restage.
+His two sentences stay. Hook is **our** $20K at 4×. Body = company walk + two against + he’s −3 we’re ML + 8:20. Delete: system labels, $102K, ask.
 
 ---
 
 ## COPY THIS
 
-**Type:** Hero  
-**Media:** year chart first, September month second
+**Type:** Quote  
+**Parent:** @MoneylineMafia · “I bet $32.4K on the Dallas Cowboys.”  
+**Media:** our Cowboys ML card, then the map
 
 ```
-JULY -$688. AUGUST -$848.
-Pretty easy to spot when he found us.
+$20,000 AT 4×
+Nobody throws money around quite like Don.
+Tonight he's in good company.
 
-September +$1,926. 52-28. 65%.
+Cowboys @ Giants.
+We're Dallas ML. -168. 3u.
 
-He had two losing months before he found the site.
-Year-to-date was 114-220. +$340. That's the hole he was in.
+A proven NFL wallet has $20,000 on this at 4×.
+Five more proven with him.
+Two proven took the Giants.
 
-Then a three-day dip this week.
-He cut his unit to $20 and kept going.
-Still +$1,926 for the month.
+He's on the Cowboys -3.
+We're on the Cowboys.
 
-I have to share these.
-Otherwise people think the 177-unit posts are fake.
-
-One last one.
-Massive slate today.
+Kickoff 8:20 ET.
 ```
