@@ -1,117 +1,115 @@
-# Twitter — 2026-09-13 · QT GIVE · Don $32.4K Cowboys / tonight he’s in good company
+# Twitter — 2026-09-14 · HERO GIVE · +29u MLB last 7 / football still warming up
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
-**CSV:** Sep 5–11 living window. Ask **cold**. Give.
+**CSV:** Sep 8–14 attention. Overlay: proof + invite in-hero. This is the Sep 7 *shape* on new tape.
 
 | | |
 |--|--|
-| WHO | Someone watching Don drop $32K on Dallas who thinks that’s the whole story. |
-| PURPOSE | Give. QT Don. Show the wallets are on Dallas with him. |
-| ONE | Nobody throws money around quite like Don. Tonight he’s in good company. |
-| SPCL | **S + C** |
-| Timeline | User-story Sunday is spent. This is the live board he promised. New tape. SNF. |
-| Ask | **None.** No URL. No trial. No self-reply. |
+| WHO | Someone who watched football all weekend and thinks we cooled off. |
+| PURPOSE | Give. Hard number, then a fork in the same tweet. No URL. No code. No trial. |
+| ONE | MLB last 7 printed. Football stayed small on purpose. Another slate today. |
+| SPCL | **C + P** |
+| Timeline | Don QT is live. Do not restage $20K / Jul-Aug / JamKam / +100u MLB. This is our book, MLB 7-day, Monday morning. |
+| Ask | Overlay fork only: **Who's with us?** No URL. No MVP25. No `$5.35`. No SR. |
 
-**Post as Quote** of @MoneylineMafia ($32.4K Cowboys −3). Attach our Cowboys ML card, then the map. Do not @ in the body.
+**Post as** a single hero. Attach the **MLB last-7 chart** (`l7_mlb_+29.09u.png`). Do not attach the all-sports +96u chart in the same post — that number fights Saturday's `+100u MLB` L30.
 
 ---
 
 ### 0 · Spine (Dale — law, do not rewrite)
-- I need to quote this tweet
-- Nobody throws money around quite like Don
-- But tonight he is in good company
+- slower football weekend than I wanted
+- that's why units are smaller as it warms up
+- MLB printed though
+- another full slate today
+- MLB last 7 days has been awesome
 
-Assets: Don slip · Cowboys ML lock card · map  
-Constraint: QT. Give, not ask. Do **not** restate “I bet $32.4K on the Dallas Cowboys” as our line 1. Do not write GOLD / Vault / AGS / V12 / HC / Confirmed / ELITE / EV / `USUAL` in line 1–2. Do not write unopposed. Do not dunk Don.
+Assets: last-7 MLB chart · last-30 all-sports chart (do **not** write the +96.25u in copy — mash risk vs +100u MLB)  
+Constraint: morning hero. Give + overlay fork. Do **not** write GOLD / Vault / AGS / V12 / HC / Confirmed / ELITE / EV / `USUAL`. Do not invent a CFB W-L. Do not list tonight's games (he didn't dump the board).
 
 ### 0b · Timeline
-Ask **cold.** Next slot after the turnaround story was the live slate. This is it — one SNF ticket, not a third testimonial. Fade-Trent / $16.5K / Jul-Aug / JamKam hooks are spent.
+Ask temperature: give unless PURPOSE=ask. He dumped a printer + “perfect post” the morning after the overlay lock. Fork = **who's with us** (Sep 7 converting family), not a code. Don / fade-Trent / JamKam / Jul-Aug / +99u / +100u hooks are spent.
 
 ### 0c · Forward look
-Dale spine = this QT. After it posts: grade SNF or the next new ticket.
+Dale spine = this hero. After it posts: one live MLB ticket from today's slate, or SNF grade only if he dumps the scar.
 
 ### 1 · WHO
-Someone who just saw Don’s $32K Cowboys slip and thinks that’s a lone celebrity bet.
+Someone who spent the weekend on CFB/NFL, thinks the desk went quiet, and doesn't know MLB just printed +29u in 7 days.
 
 ### 2 · PURPOSE
-**Give.** Quote Don. Walk our Dallas ML. No URL. No trial. No SR.
+**Give** with overlay fork in the hero. No URL. No trial. No SR.
 
 ### 3 · ONE
-**Nobody throws money around quite like Don. Tonight he’s in good company.**
+**MLB last 7 printed. Football stayed small on purpose. Another slate today.**
 
 | Test | |
 |------|---|
-| Understand | Don always bets huge. Tonight the wallets are on Dallas too. |
-| Believe | Parent: **$32,400** Cowboys **−3 −108**. Our card: Cowboys **ML −168 · 3u** · **$20K at 4×** · 5 more proven · 2 proven Giants. Live ML tape 00:08Z: `JUSTINHERBERTMVP` **$20,407 / $5,144 = 3.97×** on Cowboys (away). Kickoff **8:20 PM ET**. |
-| Unique | Not “we also like Dallas.” Not restating his $32.4K. The company — sized proven money on the same side, different market (he’s −3, we’re ML). |
+| Understand | Baseball paid. Football isn't sized up yet. There's another MLB card today. |
+| Believe | Card (MLB · last 7): **+29.09u** · **33-23** · **58.9%** · +15.7% ROI · 56 graded · peak **+29.1u** Sep 13 · drawdown **0.0u**. Dale: football weekend slower than he wanted; units stay smaller while it warms up; full slate today. |
+| Unique | Not another `+60u last 7` clone. Not `+100u MLB` L30 restage. The paradox: football is here and the units on it stay small **on purpose** — MLB is the printer. |
 
-**Yum:** you are not sitting alone with a $32K celebrity slip. The wallets are on Dallas with him.
+**Yum:** you didn't miss the week. You missed baseball. It's still going today.
 
-### 4 · SPCL — **S + C**
-- **S** — $20K at 4× · six proven on Dallas
-- **C** — Don’s slip (third-party $) · our card · 3.97× tape match
-- L is “nobody throws money around quite like Don.” P is we showed up on the same side (not a second spear)
+### 4 · SPCL — **C + P**
+- **C** — +29.09u · 33-23 · 58.9% · the chart
+- **P** — slower football, still here, sized small on purpose, another slate today
+- S is the printer number (not a second spear). L is Dale's "slower than I wanted."
 
-**Also seated:** pairing = same-side company, not Cowboys-as-brand · proof machine = tonight + visual (slip then card) + volume on one spear (good company) · pain first = the $32K slip they’re already looking at · Qual = walk Don → our $20K / 4× / two against · whole truth = 2 proven on the Giants · 55% here · not unopposed · he’s −3 we’re ML
+**Also seated:** pairing = you size with the printer without becoming sharp · proof machine = recent MLB 7d + visual chart + volume on one spear (MLB printed) + pain first (football weekend they already watched) · Qual = record + units + why football is small · whole truth = football was slower; do not invent the CFB ledger
 
 ### 5 · STUFF
-**Parent (@MoneylineMafia, ~41m when screenshotted):**
-- “I bet $32.4K on the Dallas Cowboys.”
-- Cowboys **−3 · −108** · stake **$32,400** · to win path $62,400
-- Today 5:20 PM on his slip (ticket stamp). Game is **8:20 PM ET**.
-- His open. We do not rerun it as ours.
+**MLB last 7 (Dale screen, V12 LIVE · MLB chip · 7D):**
+- **+29.09u** · **33-23** · **58.9%** WR (breakeven 52.4% — do not write)
+- +15.7% ROI · ≈ +$2,909 @ $100/unit — **do not write the dollar conversion**
+- 56 graded · 185.8u risked · 0 pending
+- Peak +29.1u Sep 13 · drawdown +0.0u
+- UI also stamps `8d · 56 graded` on a 7D filter. Say **last 7** as the chip and Dale did. Do not write 8 days.
+- Best tier on the card is STRONG 17-9 +19.63u — **do not write STRONG / MAX / LEAN / AGS / V12**
 
-**Our card (Dale screen):**
-- Cowboys @ Giants · **ML −168 (63%)** · **3.0u**
-- $20K at 4× · 5 more proven alongside · **2 proven took the other side**
-- Led by `…e55973` 3-0 · 100% WR · +67% ROI (card stamp — do not merge with map `…7d395d` $3.2K / 5-1)
-- Card $102K / $84K is a wider pile than raw sharp ML ($60.6K / $106.2K at 00:08Z). **Do not write $102K.** Walk the $20K / 4× / six proven / two against. Don’t pick a fight with the bar.
-- 55% here. SET. Footer: no-play size bar — **do not write**. EV −1.5% — **do not write**.
+**Last 30 all sports (Dale screen — supporting only, not in copy):**
+- +96.25u · 211-168-1 · 55.7% · peak +96.3u · drawdown 0.0u
+- **Do not write +96u.** Saturday already posted `+100u MLB IN THE LAST 30 DAYS`. Strangers will mash the books.
 
-**Live ML (00:08Z, Cowboys = away):** sized Cowboys stamp = JUSTIN **$20,407 at 3.97×**. Giants have real $ too. Not unopposed.
+**Football:** Dale's words only. JamKam QT already said a slow start to CFB. Do not invent a weekend W-L. Saturday AM recap `CFB was 0-2` is stale for a full weekend.
 
-**Do not say:** GOLD · Vault · AGS · V12 · HC · Confirmed · ELITE · EV · unopposed · locked (card says SET) · `USUAL` in line 1–2 · fade-Trent · $16.5K / $14.8K / Jul −$688 · JamKam
+**Today:** Monday Sep 14. He said another full MLB slate. No game list on this dump.
+
+**Do not say:** GOLD · Vault · AGS · V12 · HC · Confirmed · ELITE · EV · `USUAL` · Don / $20K · +100u / +99u restage · Jul −$688 · JamKam · MVP25 · `$5.35` · grind-EV · unopposed · `$16,500` · `$14,800`
 
 ### 6 · HOOK QA
-What: $20,000 at 4× just sat down next to Don.  
-How: nobody throws money around quite like Don.  
-So what: tonight he’s in good company.  
-Screenshot: stranger sees **$20K + Don + sat down next to** — company, not another bare `AT 4×` clone.  
-QT law: parent owns $32.4K. We name Don. We do not name his stake.
+What: +29u MLB in the last 7 days.  
+How: football weekend was slower than I wanted — that's why the units stay smaller while football warms up.  
+So what: MLB printed anyway. Another full slate today. Who's with us?  
+Screenshot: stranger sees **+29u MLB LAST 7**.
 
 **Killed**
-- Bare `$20,000 AT 4×` (TNF `$51K AT 4.4×` silhouette, no paradox)
-- Restate “I bet $32.4K on the Dallas Cowboys”
-- Unopposed (false)
-- $102K (fights the live sharp split)
-- EV / no-play / juice row
-- Dunk Don
-- Convert / 177u / two losing months
+- Open on football being slow (feelings first)
+- `+96u` last 30 (mash vs +100u MLB)
+- `+60u last 7` clone
+- `+100u MLB` restage
+- V12 / AGS / tier names
+- Invented CFB record
+- Tonight's games (not dumped)
+- Trial / code / `$5.35` / URL
+- `$2,909` @ $100/unit
+- Don QT restage
 
 ### 7–8 · Draft + algorithm
-His two sentences stay. Hook rewrite only: line 1 is the company arriving. Body unchanged.
+His feeling stays. Line 1 is the printer. Line 2–3 are the football honesty. Body is the card. Close is today's slate + who's with us.
 
 ---
 
 ## COPY THIS
 
-**Type:** Quote  
-**Parent:** @MoneylineMafia · “I bet $32.4K on the Dallas Cowboys.”  
-**Media:** our Cowboys ML card, then the map
+**Type:** Hero  
+**Media:** MLB last-7 chart only (`twitter_drafts/2026-09-14_mlb_7d/l7_mlb_+29.09u.png`)
 
 ```
-$20,000 AT 4× JUST SAT DOWN NEXT TO DON
-Nobody throws money around quite like Don.
-Tonight he's in good company.
++29u MLB IN THE LAST 7 DAYS
+Football weekend was slower than I wanted.
+That's why the units stay smaller while football warms up.
 
-Cowboys @ Giants.
-We're Dallas ML. -168. 3u.
+MLB printed anyway.
+33-23. +29.09u. 58.9%.
 
-A proven NFL wallet has $20,000 on this at 4×.
-Five more proven with him.
-Two proven took the Giants.
-
-He's on the Cowboys -3.
-We're on the Cowboys.
-
-Kickoff 8:20 ET.
+Another full MLB slate today.
+Who's with us?
 ```
