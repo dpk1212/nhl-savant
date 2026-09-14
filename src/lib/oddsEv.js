@@ -25,6 +25,15 @@ export function fmtAmericanWithPm(o) {
   return pct == null ? am : `${am} (${pct}%)`;
 }
 
+/** Subtitle under the hero: `flagged at -125 (56%)` or `flagged at Over 6.5 · -116 (54%)`. */
+export function fmtFlaggedAtLabel(odds, lineLabel = null) {
+  if (odds == null || !Number.isFinite(Number(odds)) || Number(odds) === 0) return null;
+  const juice = fmtAmericanWithPm(Math.round(Number(odds)));
+  if (!juice || juice === '—') return null;
+  const line = lineLabel != null && String(lineLabel).trim() ? String(lineLabel).trim() : null;
+  return line ? `flagged at ${line} · ${juice}` : `flagged at ${juice}`;
+}
+
 export function americanFromProb(p) {
   if (p == null || !Number.isFinite(p) || p <= 0 || p >= 1) return null;
   if (p >= 0.5) return Math.round((-100 * p) / (1 - p));

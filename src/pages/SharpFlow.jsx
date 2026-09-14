@@ -30,6 +30,7 @@ import {
   NET_CLV_PRIOR_AG,
 } from '../components/sharpFlow/cards/mapPositionCard';
 import { vaultTicket, classifyFamily, vaultConsensusLine, resolveInstrument, coherentTicket, stampJuice, stampTape, tapeOnLine } from '../lib/ticketInstrument';
+import { fmtFlaggedAtLabel } from '../lib/oddsEv.js';
 import { signedSpreadEntryLine } from '../lib/spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
@@ -7928,9 +7929,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   }).american;
   const mlTicketOff = Number.isFinite(mlFlaggedPx) && Number.isFinite(mlNowPx)
     && Math.round(mlFlaggedPx) !== Math.round(mlNowPx);
-  const mlFlaggedLbl = mlTicketOff
-    ? `flagged at ${mlFlaggedPx > 0 ? '+' : ''}${Math.round(mlFlaggedPx)}`
-    : null;
+  const mlFlaggedLbl = mlTicketOff ? fmtFlaggedAtLabel(mlFlaggedPx) : null;
 
   const mlFixture = mapLiveGameToCardFixture({
     gd,
@@ -12787,6 +12786,11 @@ export default function SharpFlow() {
                           isDownsized: sizing.isDownsized,
                           lockTier: resolvedTier,
                           odds: cardOdds,
+                          polyReceipt: pickFiniteOdds(vaultPolyOdds)
+                            || (stampIsPoly
+                              ? (pickFiniteOdds(peakOddsRaw) || pickFiniteOdds(lockOddsRaw))
+                              : null)
+                            || null,
                           // Default to 'Pinnacle' when neither peak nor lock
                           // book is set — closingOdds is from Pinnacle, so
                           // when we fell back to closingOdds the book label
