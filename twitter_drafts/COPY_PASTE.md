@@ -1,4 +1,4 @@
-# Twitter — 2026-09-14 eve · QT GIVE · +118u MLB / Mets vs the most-bet list
+# Twitter — 2026-09-14 eve r2 · QT GIVE · $138k on the Mets vs the most-bet list
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only — not Pulse/Learn/4-agent)
 **CSV:** Sep 8–14. Overlay: ticket-slip reach needs a proof post, not another ask. PURPOSE=**give**.
 
@@ -6,13 +6,13 @@
 |--|--|
 | WHO | Someone staring at BetMGM’s Monday most-bet list who thinks that’s where the 30-day printer comes from. |
 | PURPOSE | **Give.** One live ticket. No ask. Continuity already spent the Jim trial close. |
-| ONE | The +118u is not the most-bet list. It’s plays like Mets ML tonight. |
+| ONE | The +118u is not the most-bet list. Tonight looks like Mets ML. |
 | SPCL | **S + C** |
-| Timeline | Jim ask is staged. This slot is the live ticket. Do not restage `+100u MLB` / clone the list. |
+| Timeline | v1 hook was a third `+Xu IN THE LAST 30 DAYS` this week. Rewrite hook before body. Saturday that open = 0R. |
 | Ask | **None.** |
 
 **Post as Quote** of @BetMGMNews “Monday MLB betting at @BetMGM”.  
-**Attach (walk order):** 1) L30 MLB chart (+118.47u) · 2) Mets ML card. Skip the map — that wallet is $38k / 1.2×, not the $98k lead.
+**Attach (walk order):** 1) Mets ML card ($138k) · 2) L30 MLB chart (+118.47u as the so-what). Skip the map — that wallet is $38k / 1.2×, not the $98k lead.
 
 ---
 
@@ -23,18 +23,19 @@
 - You’re not going to find it on the most popular play list tonight
 - Plays that look like this
 - Pinnacle limit rising · odds dropping · 3 proven winners for · 3 losers on the opposite side
+- **r2: different hook. We can do better. We have to do better.**
 
 Assets: BetMGM parent · L30 MLB chart · Mets card · map (do not mash).  
 Constraint: QT. Give, not ask. No GOLD / Vault / AGS / V12 / EV / `USUAL` in line 1–2 / locked (it’s flagged) / $11,847 / mash $98k with $38k / invent 3 proven losers / restage Saturday `+100u` / restage Jim / coffee.
 
 ### 0b · Timeline
-Saturday `+100u MLB` BetMGM = **139 / 0R / 5948** — ticket-slip, no conversation. Overlay: pair with proof, don’t empty-clone. `$79.5k` vs most-bet Under = 305 eng — dead-pile vs our side is the silhouette. Juice-only “odds dropping / pinnacle limit” = **44 / 0R** — juice is supporting stuff after $ in line 1, never the open. QT hard fail: `$0 ON LOUISVILLE` ignored the parent. Use the parent: Orioles are on the money list. Mets are not. We’re Mets.
+Saturday `+100u MLB` BetMGM = **139 / 0R / 5948**. Friday `+99u IN THE LAST 30 DAYS` = reach, 7R. v1 cloned that open and put the unique in a thesis line (`You're not finding tonight on that list`). `$79.5k on over 44.5` vs most-bet Under = **305 / 53 PV** — pain-first `$XK` is the silhouette for this parent. Juice-only odds-dropping = **44 / 0R**. QT hard fail: `$0 ON LOUISVILLE` ignored the parent. Use Orioles on the money list. Mets are not on it. We’re Mets.
 
 ### 0c · Forward look
-This is the live ticket the Jim ask owed. After it posts: grade Mets if Dale dumps the scar, or one fence-sitter DM. Not a third convert tonight.
+This is still the live ticket the Jim ask owed. After it posts: grade Mets if Dale dumps the scar. Not a third convert tonight.
 
 ### 1 · WHO
-A lurker on the BetMGM most-bet graphic. Pain they’re in: Yankees / Dodgers / Padres / Orioles look like the smart sheet. They need to see the 30-day printer is the other shape.
+A lurker on the BetMGM most-bet graphic. Pain they’re in: Yankees / Dodgers / Padres / Orioles look like the smart sheet. They need to see $138k on the side that isn’t on it.
 
 ### 2 · PURPOSE
 **Give.** Demonstrate and document one play. No fork. No trial sentence.
@@ -44,29 +45,27 @@ A lurker on the BetMGM most-bet graphic. Pain they’re in: Yankees / Dodgers / 
 
 | Test | |
 |------|---|
-| Understand | We’re up 118u on MLB in 30 days. Tonight’s play is not on that graphic. |
-| Believe | Chart: **+118.47u · 149-120 · 55.4% · 269 graded**. Card: Mets ML **-138 · 4u**, flagged at **-125**, **$138k** vs Orioles **$22k**, 3 proven, lead **$98k at 1.6×**, one proven against, losing $ on Baltimore. Parent: Orioles **+105** is #5 most-bet *money*. Mets are on neither ML list. |
-| Unique | Not “don’t forget MLB.” Not “everyone’s on CFB.” Line 2 = you’re not finding tonight on that list. Then one play, not a four-card walk. |
+| Understand | Popular list has Baltimore. $138k is on the Mets. That’s the 30 days. |
+| Believe | Card: Mets ML **-138 · 4u**, flagged at **-125**, **$138k** vs Orioles **$22k**, 3 proven, lead **$98k at 1.6×**, one proven against, losing $ on Baltimore. Parent: Orioles **+105** is #5 most-bet *money*. Mets on neither ML list. Chart: **+118.47u · 149-120 · 55.4%**. |
+| Unique | v1 failed #3: `+118u MLB IN THE LAST 30 DAYS` is Friday and Saturday. Line 2 was a caption of the idea. Line 1 = `$138k ON THE METS`. Line 2 = Baltimore made the most-bet money list. 118u is the close — earned. |
 
 **Yum:** you see the public sheet, then you see where the proven money actually is.
 
-Saturday ONE was printer + CFB. This ONE is printer vs *tonight’s* most-bet sheet + one card.
-
 ### 4 · SPCL — **S + C**
-- **S** — $138k / $98k at 1.6× / we can see the side that isn’t on the popular list
-- **C** — +118.47u chart · parent is third-party · 129-120 · +$568k last 30 on the lead
-- P = the 30-day trail is on the chart, not a second spear
+- **S** — $138k in line 1 / $98k at 1.6× in the walk / the side that isn’t on the popular list
+- **C** — parent is third-party · 129-120 · +$568k last 30 on the lead · +118.47u chart after they believe the shape
+- P = the 30-day trail is the close, not a second spear
 - L = voice only
 
 **Levers that earn a seat (delete the rest):**
 - Pairing: public most-bet vs proven money on the other side — not Over/Under-as-brand, not V12
-- Proof machine: recent · visual (chart then card) · volume on **one** spear (118u = this shape) · pain first (they’re already on the BetMGM list)
-- Value equation: dream = size with proven when the sheet is loud the other way · likelihood = 30-day book + this card · time = before 6:56 ET · effort = look at the card
-- Diagnostic **in the words:** most-bet list → Orioles on it → we’re Mets → $138k / 3 proven / odds dropped / limit coming in
+- Proof machine: recent · visual (card then chart) · volume on **one** spear ($138k vs that list) · pain first (they’re already on the BetMGM list — classify Baltimore, then our $)
+- Value equation: dream = size with proven when the sheet is loud the other way · likelihood = this card, then the 30-day book · time = before 6:56 ET · effort = look at the card
+- Diagnostic **in the words:** list → Orioles on it → $138k Mets → 3 proven / $98k 1.6× → odds dropped / limit coming in → that’s the +118u
 - Trust: one proven took Baltimore. Losing money is on the Orioles. Flagged, not locked. Do not invent 3 proven losers (card = 1 proven against + 3 secondary / $26k losing on BAL).
-- Qual: stuff inside. Dale’s juice after the $.
+- Qual: stuff inside. Dale’s juice after the $. 118u after the walk.
 
-**Deleted this pass:** GOLD · V12 · AGS · Vault · EV +1.3% · $11,847 · HC 71% · wallet hashes · $38k / 1.2× map mash · “3 losers” as proven · clone Yankees -130 list · CFB calendar open · trial close · “that’s what this is” · `USUAL` in the hook · “Pinnacle” as the open (44 eng death)
+**Deleted this pass:** v1 printer open · juice-first · GOLD · V12 · AGS · Vault · EV +1.3% · $11,847 · HC 71% · wallet hashes · $38k / 1.2× map mash · “3 losers” as proven · clone Yankees -130 list · CFB calendar open · trial close · “that’s what this is” · `USUAL` in the hook · `$98k AT 1.6×` as line 1 (1.6× is not 4.4×; the pile is $138k / 3 proven)
 
 ### 5 · STUFF
 **Parent (@BetMGMNews):** Most-bet ML *tickets:* Yankees -130 · Dodgers -220 · Jays -140 · Guardians -155 · Padres -210. Most-bet ML *money:* Padres -210 · Dodgers -220 · Yankees -130 · Guardians -155 · **Orioles +105**. Mets **not** on either ML list.
@@ -79,33 +78,39 @@ Saturday ONE was printer + CFB. This ONE is printer vs *tonight’s* most-bet sh
 
 **Dale “3 losers”:** shaped to losing money on the Orioles + one proven against. Do not invent three proven losers.
 
-### 6 · HOOK QA (rewrite hook before body)
+### 6 · HOOK QA (rewrite hook before body — Dale r2)
 
-| | Kill | This |
-|--|------|------|
-| Line 1 | Monday MLB betting / most-bet clone / odds dropping | **+118u MLB IN THE LAST 30 DAYS** |
-| Line 2 | Everyone’s on football (Saturday) / juice | **You're not finding tonight on that list.** |
-| Screenshot | a calendar | printer + scarce contrast |
-| QT law | restating the parent’s menu | parent owns the list; we own 118u + Mets vs Orioles-on-the-list |
+| | v1 | r2 |
+|--|----|----|
+| Line 1 | +118u MLB IN THE LAST 30 DAYS | **$138k ON THE METS** |
+| Line 2 | You're not finding tonight on that list. | **Baltimore made the most-bet money list.** |
+| Screenshot | last week’s printer ad | live $ vs the parent |
+| QT law | thesis about the list | parent owns the menu; we own Mets $ vs Orioles-on-the-list |
+| Unique | failed (Fri +99u / Sat +100u) | $79.5k vs most-bet Under job |
 
-What: +118u MLB last 30 days, and tonight isn’t on that sheet.  
-How: Orioles are on their most-bet money list. We’re Mets ML. $138k. 3 proven. $98k at 1.6×. Flagged -125, now -138. Limit coming in.  
-So what: that’s the shape of the 30 days. Not the popular moneyline.
+What: $138k on the Mets. Baltimore made the popular money list.  
+How: 3 proven. $98k at 1.6×. 129-120. +$568k the last 30. One proven took Baltimore. Losing money on the Orioles. Flagged -125, now -138. Limit coming in.  
+So what: that’s +118u MLB in the last 30 days. Not the most-bet moneyline.
 
-**Why juice-first would disgust Hormozi**
-- “Odds dropping, pinnacle limit rising” as the open already died (44 / 0R).
-- Dale still gets the mechanism — after the $.
+**Why v1 would disgust Hormozi**
+- Line 1 is Friday and Saturday. Printer with no new paradox.
+- Line 2 *named* the unique instead of *showing* it. Caption of the idea.
+- Body then repeated “They have the Orioles / We’re on the Mets” — the contrast never got to be the hook.
+- Saturday that silhouette = 0 replies. Conversation comes from the Mets contrast, not the 30-day number alone.
+- Dale 9/01: line 2 does the interesting/unique job. `ALMOST 3× JULY` was a number. “You’re not finding tonight on that list” is a lecture.
 
 **Killed hooks**
 - Monday MLB betting (parent)
-- +100u MLB IN THE LAST 30 DAYS (spent Saturday)
+- +118u / +100u / +99u IN THE LAST 30 DAYS as line 1 (v1 + spent)
+- You're not finding tonight on that list (v1 line 2 — thesis)
 - Don’t forget baseball (Friday)
-- Pinnacle limit rising as line 1
-- Mets ML -138 as line 1 with no 30-day number (Dale led 118)
+- Pinnacle limit rising as line 1 (44 / 0R)
+- $98k AT 1.6× as line 1 (weak ×; pile is three proven / $138k)
+- THEY HAVE THE ORIOLES as if it’s #1 (it’s #5 money — true in line 2 as “made the list”)
 - Convert / trial close (Jim just asked)
 
 ### 7 · Algorithm
-One idea. Quote the list. Open on 118u. Unique = not on that list. Walk Orioles-on-the-list → Mets card ($138k → 3 proven → $98k 1.6× → 129-120 +$568k → one proven against → losing $ on BAL → flagged -125 now -138, limit coming in). Stop. No ask. No map wallet. No four-play Saturday restage.
+One idea. Quote the list. Open on $138k Mets. Unique = Baltimore made the money list. Walk the card ($138k already in the hook → 3 proven → $98k 1.6× → 129-120 +$568k → one proven against → losing $ on BAL → flagged -125 now -138, limit coming in). Close on +118u as the so-what. Stop. No ask. No map wallet. No four-play Saturday restage.
 
 ---
 
@@ -113,17 +118,13 @@ One idea. Quote the list. Open on 118u. Unique = not on that list. Walk Orioles-
 
 **Type:** Quote  
 **Parent:** @BetMGMNews — Monday MLB betting  
-**Media:** 1) L30 MLB chart · 2) Mets ML card. Do not attach the map.
+**Media:** 1) Mets ML card · 2) L30 MLB chart. Do not attach the map.
 
 ```
-+118u MLB IN THE LAST 30 DAYS
-You're not finding tonight on that list.
-
-They have the Orioles on the most-bet moneyline list.
-We're on the Mets.
+$138k ON THE METS
+Baltimore made the most-bet money list.
 
 Mets ML -138. 4u.
-$138k on the Mets. 86% of the money.
 Three proven on this side.
 One of them has $98k on it — 1.6× what he normally puts down.
 129-120. +$568k the last 30.
@@ -131,6 +132,8 @@ One proven took Baltimore.
 The losing money is on the Orioles.
 
 We flagged it at -125. It's -138 now. The limit is coming in.
+
+That's +118u MLB in the last 30 days.
 Locks 6:56 ET.
 ```
 
