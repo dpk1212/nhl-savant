@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/13 SNF | QT **GIVE** | `$20,000 AT 4×` / Nobody throws money around quite like Don. Tonight he's in good company. | **S + C** | none | **Staged** |
+| 9/13 SNF | QT **GIVE** | `$20,000 AT 4× JUST SAT DOWN NEXT TO DON` / Nobody throws money around quite like Don. Tonight he's in good company. | **S + C** | none | **Staged** |
 | 9/13 r2 | Hero **GIVE** | `JULY -$688. AUGUST -$848.` / Pretty easy to spot when he found us. | **C + P** | none | Staged / spent as restage |
 | 9/13 | QT **GIVE** | `SEPTEMBER IS THE BEST START WE'VE EVER HAD` / JamKam | **C + P** | none | Staged / spent as restage |
 | 9/12 eve | Hero **GIVE** | `$16,500 UNOPPOSED` / First CFB shape. | **S + C** | none | Staged / spent as restage |
@@ -28,7 +28,7 @@
 ## Angle lock
 **ONE:** Nobody throws money around quite like Don. Tonight he’s in good company.  
 **Yum:** you’re not alone with a celebrity $32K slip — proven money is on Dallas too.  
-**Hook:** `$20,000 AT 4×` / Dale’s two sentences.  
+**Hook:** `$20,000 AT 4× JUST SAT DOWN NEXT TO DON` / Dale’s two sentences.  
 **Body:** Dallas ML 3u · five more proven · two on the Giants · he’s −3 we’re ML · 8:20.  
 **Ask:** none. QT of @MoneylineMafia.
 

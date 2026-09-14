@@ -72,13 +72,14 @@ Someone who just saw Don’s $32K Cowboys slip and thinks that’s a lone celebr
 **Do not say:** GOLD · Vault · AGS · V12 · HC · Confirmed · ELITE · EV · unopposed · locked (card says SET) · `USUAL` in line 1–2 · fade-Trent · $16.5K / $14.8K / Jul −$688 · JamKam
 
 ### 6 · HOOK QA
-What: $20,000 at 4×.  
-How: nobody throws money around quite like Don. Tonight he’s in good company.  
-So what: we’re Dallas ML with six proven. He’s Dallas −3. Same side.  
-Screenshot: stranger sees **$20,000 AT 4×** then Don.  
-QT law: parent owns $32.4K. We do not open there.
+What: $20,000 at 4× just sat down next to Don.  
+How: nobody throws money around quite like Don.  
+So what: tonight he’s in good company.  
+Screenshot: stranger sees **$20K + Don + sat down next to** — company, not another bare `AT 4×` clone.  
+QT law: parent owns $32.4K. We name Don. We do not name his stake.
 
 **Killed**
+- Bare `$20,000 AT 4×` (TNF `$51K AT 4.4×` silhouette, no paradox)
 - Restate “I bet $32.4K on the Dallas Cowboys”
 - Unopposed (false)
 - $102K (fights the live sharp split)
@@ -87,7 +88,7 @@ QT law: parent owns $32.4K. We do not open there.
 - Convert / 177u / two losing months
 
 ### 7–8 · Draft + algorithm
-His two sentences stay. Hook is **our** $20K at 4×. Body = company walk + two against + he’s −3 we’re ML + 8:20. Delete: system labels, $102K, ask.
+His two sentences stay. Hook rewrite only: line 1 is the company arriving. Body unchanged.
 
 ---
 
@@ -98,7 +99,7 @@ His two sentences stay. Hook is **our** $20K at 4×. Body = company walk + two a
 **Media:** our Cowboys ML card, then the map
 
 ```
-$20,000 AT 4×
+$20,000 AT 4× JUST SAT DOWN NEXT TO DON
 Nobody throws money around quite like Don.
 Tonight he's in good company.
 
