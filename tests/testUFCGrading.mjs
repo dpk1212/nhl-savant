@@ -11,6 +11,10 @@ import {
   makeUFCGameKey,
   extractUFCFightersFromTitle,
   stripUFCEventPrefix,
+  isUFCBrandedTitle,
+  isUFCMarketTitle,
+  isUfcPolyOnlyWindow,
+  isMainUFCFightSlug,
 } from '../scripts/lib/ufcFighters.js';
 
 let pass = 0, fail = 0;
@@ -146,6 +150,23 @@ for (const [title, pinKey] of nocheCard) {
   const k2 = pair ? makeUFCGameKey(pair[1], pair[0]) : null;
   check(`Noche ingest ${pinKey}`, !!(pair && (pinTonight.has(k1) || pinTonight.has(k2)) && (k1 === pinKey || k2 === pinKey)));
 }
+
+const dwcsTitle = "Dana White's Contender Series: Zevan Hunt vs. Mayton Perea (Welterweight, Main Card)";
+check('strip DWCS prefix',
+  stripUFCEventPrefix(dwcsTitle) === 'Zevan Hunt vs. Mayton Perea (Welterweight, Main Card)');
+check('DWCS title does not glue branding onto fighter A',
+  extractUFCFightersFromTitle(dwcsTitle)?.[0] === 'Zevan Hunt');
+check('DWCS Hunt/Perea key',
+  makeUFCGameKey('Zevan Hunt', 'Mayton Perea') === 'zevanhunt_maytonperea');
+check('DWCS slug is a main fight',
+  isMainUFCFightSlug('ufc-zevhun-mayper-2026-09-15') === true);
+check('DWCS branded without the letters UFC',
+  isUFCBrandedTitle(dwcsTitle) === true && isUFCMarketTitle(dwcsTitle) === true);
+const nowTue = Date.parse('2026-09-15T17:50:00Z');
+check('DWCS tonight is inside poly-only window',
+  isUfcPolyOnlyWindow('2026-09-15T23:00:00Z', nowTue) === true);
+check('UFC 331 stays outside 72h poly-only window on Tue',
+  isUfcPolyOnlyWindow('2026-09-19T21:00:00Z', nowTue) === false);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);

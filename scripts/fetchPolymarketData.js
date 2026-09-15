@@ -20,6 +20,7 @@ import {
   makeUFCGameKey,
   extractUFCFightersFromTitle,
   isMainUFCFightSlug,
+  isUfcPolyOnlyWindow,
 } from './lib/ufcFighters.js';
 import {
   makeWNBAGameKey,
@@ -682,6 +683,38 @@ async function loadTodaysSchedule(cbbMap) {
       console.warn('Could not load UFC schedule from Odds API:', e.message);
     }
   }
+  // DWCS / Apex: Poly lists fight-card MLs that FD/DK/Pinnacle often skip.
+  // Seed validUFC from Gamma main-fight slugs in the 6h / 72h window so the
+  // schedule gate doesn't drop the night when Odds API is empty.
+  {
+    const nowMsSeed = Date.now();
+    for (const tagSlug of ['ufc', 'mma']) {
+      try {
+        const list = await listEvents(tagSlug, 300);
+        let seeded = 0;
+        for (const ev of list) {
+          if (!isMainUFCFightSlug(ev.slug)) continue;
+          const title = ev.title || ev.question || '';
+          const pair = extractUFCFightersFromTitle(title);
+          if (!pair) continue;
+          const gk = makeUFCGameKey(pair[0], pair[1]) || makeUFCGameKey(pair[1], pair[0]);
+          if (!gk) {
+            console.warn(`UFC Poly seed miss: "${title}" (${ev.slug})`);
+            continue;
+          }
+          if (!isUfcPolyOnlyWindow(ev.startTime, nowMsSeed)) continue;
+          if (!validUFC.has(gk)) seeded++;
+          validUFC.add(gk);
+          if (ev.startTime && !commenceTimes[`UFC:${gk}`]) {
+            commenceTimes[`UFC:${gk}`] = ev.startTime;
+          }
+        }
+        console.log(`📋 UFC Poly seed (${tagSlug}): +${seeded} → ${validUFC.size} cumulative`);
+      } catch (e) {
+        console.warn(`Could not seed UFC from Polymarket tag ${tagSlug}:`, e.message);
+      }
+    }
+  }
 
   // WNBA: Odds API basketball_wnba. Polymarket gate (isMainWNBAGameSlug)
   // drops futures/props. Separate from NBA — never reuse NBA_MAP.
@@ -1044,6 +1077,22 @@ async function run() {
       : validNHL;
     const keyReversed = !(key1 && validSet.has(key1)) && (key2 && validSet.has(key2));
     let key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
+    // DWCS / Apex cards often have Polymarket ML markets with no US book
+    // h2h on Odds API, so validUFC is empty and a hard schedule gate drops
+    // the whole night. Accept main-fight slugs in a short window using Poly
+    // startTime (same 6h-back / 72h-forward band as NFL).
+    if (!key && sport === 'UFC' && isMainUFCFightSlug(ev.slug)) {
+      const polyKey = key1 || key2;
+      if (polyKey && isUfcPolyOnlyWindow(ev.startTime, nowMs)) {
+        key = polyKey;
+        if (!key1 && key2) teams.reverse();
+        validUFC.add(key);
+        if (ev.startTime && !commenceTimes[`UFC:${key}`]) {
+          commenceTimes[`UFC:${key}`] = ev.startTime;
+        }
+        console.log(`UFC poly-only (no Odds API row): ${key} — ${title}`);
+      }
+    }
     if (!key) continue;
     if (keyReversed) teams.reverse();
     key = pickScheduleKeyByStart(sport, key, ev.startTime, commenceTimes, validSet);
