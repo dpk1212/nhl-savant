@@ -1,105 +1,101 @@
-# Twitter — 2026-09-15 · Hero GIVE · last night we didn’t make a million dollars
+# Twitter — 2026-09-15 · Reply GIVE · Guardians -1.5 unopposed / Foster Griffin
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only)
-**CSV:** Sep 8–14. Overlay: honest L + still-green converts; how-to / Vault tour / convert paragraph die. PURPOSE=**give**.
+**CSV:** Sep 8–14. `$XK` unopposed still works. Do not clone Mets $138k onto $2.3k. PURPOSE=**give**.
 
 | | |
 |--|--|
-| WHO | Someone who scrolled a million-dollar timeline last night and thinks that’s the work. |
-| PURPOSE | **Give.** Weekly mid-month report. Same numbers he uses. No ask. |
-| ONE | We didn’t print a million last night. Here’s the report I actually look at. I’ll drop these weekly. |
-| SPCL | **L + C** in the open. S = the report in the image. P = weekly say–do. |
-| Timeline | Jim + morning asks already fired. Mets QT was educate. This is the unglamorous weekly. |
-| Ask | **None.** Desire plant: I’ll drop these weekly. |
+| WHO | Someone on Dan’s Foster Griffin 18-5 ML graphic. |
+| PURPOSE | **Give.** Receipt that we’re on Cleveland with him. No ask. |
+| ONE | Sharps we track are on Cleveland with you. $2.3k unopposed on Guardians -1.5. $0 on the Sox. |
+| SPCL | **S + C** |
+| Timeline | Mid-month hero staged. This is a live reply. Don’t restage Mets. Don’t ask. |
+| Ask | **None.** |
 
-**Post as Hero.** Attach the mid-month progress report. Image is the walk. Do not invent the report’s units — they weren’t in the paste.
+**Post as Reply** to @DanielKarpuc (the Foster Griffin Day QT).  
+**Attach:** Guardians -1.5 card. That’s the walk.
 
 ---
 
 ### 0 · Spine (Dale — law)
-- Last night we didn’t make a million dollars. Which judging from the timeline, I really missed out.
-- I really try to drop these types of updates weekly.
-- I want you all to see the same metrics I am using to drive the algorithm under the hood.
-- So here is one of the mid-month progress reports.
+- Reply to this tweet
+- The sharps are definitely in line with you on this one so far
 
-**Shape, don’t replace.** Keep the million-dollar miss. Keep weekly. Keep “you’re looking at what I look at.” Kill: “algorithm under the hood” (Vault/v12 room tour, **67 eng**). Kill: “however really try.” Don’t dunk the timeline (hard ban). Don’t invent the report’s PnL.
+Assets: Dan’s tweet (18-5 ML when O/U ≥ 8) · our Guardians -1.5 card.  
+Constraint: reply, not hero. Don’t mash his ML 18-5 onto our -1.5. Don’t write GOLD / Vault / V12 / EV / locked / `USUAL` in the open / 1.0× as a size-up (it isn’t). Don’t dunk. Don’t invent. Don’t trial.
 
 ### 0b · Timeline
-Airport Jays: image is the stuff, caption can be human. Juice caption with no $ = **44 / 0R**. Honest L + month green converts (Sep 9 = **11 trials**). Recap furniture (`here is how the last 30 days played` **44**) loses to a printer with a paradox. This open is anti-flex + the report. How-to lock-alert threads die — do not teach the 5-step algorithm. Camden testimonial **0R**. Convert paragraph dies.
+`$16,500 UNOPPOSED` worked as a silhouette — this is $2.3k, so the scarce thing is **$0 on the other side**, not whale $. Don’t clone `$138K ON THE METS`. Juice-first dies. Thankful OG dies. `$0 ON LOUISVILLE` = ignore the parent — use his Cleveland/Griffin side, tell the truth that we’re on the spread.
 
 ### 0c · Forward look
-Serialization: next week another report. Grade Mets only if Dale dumps the scar. No third convert.
+Grade this if Dale dumps the scar. Next ask still needs a new printer + fork. Not this reply.
 
 ### 1 · WHO
-A lurker who watched the timeline print million-dollar nights. Pain: that looks like the job. They’ve never seen the mid-month page Dale actually uses.
+Dan’s readers looking at 18-5 on the ML. They need live money on Cleveland, not “nice graphic.”
 
 ### 2 · PURPOSE
-**Give.** Demonstrate the report. Promise weekly. No trial sentence.
+**Give.** Same side, our board. No trial.
 
 ### 3 · ONE
-**Last night wasn’t a million-dollar night. The mid-month report is what I actually use. You’re going to see it every week.**
+**The wallets we track are on Cleveland with you. $2.3k unopposed on Guardians -1.5. Nothing on the Sox. So far.**
 
 | Test | |
 |------|---|
-| Understand | We didn’t hit a million last night. This is the weekly report. |
-| Believe | His words. Image is the receipt. We do not invent September units. |
-| Unique | Timeline was loud. We post the unglamorous page. Not a heater recap. Not a product-room tour. |
+| Understand | He’s on CLE ML. We’re CLE -1.5. Same side. No money on Chicago. |
+| Believe | Card: **Guardians -1.5 +147 · 4.0u · $2.3K unopposed · Sox $0 · flagged +158 · lead $2.0K · 22-11 · +33% ROI · 67% wins · 63% beat close · proven 1 / secondary 2**. Parent: 18-5 ML when total ≥ 8. |
+| Unique | Not “we agree.” Not his 18-5 as our record. Unopposed $ vs $0. “So far” = still flagged. |
 
-**Yum:** you see the same numbers he uses to size or pass. You don’t sit through a million-dollar highlight reel and call that the book.
+**Yum:** you can see the same side with live $ and an empty other side.
 
 ### 4 · Levers in the words
-- **L** — line 1–2 are Dale at dinner. “I really missed out.”
-- **C** — the attached report. Copy tells the eye that’s the page he uses.
-- **S** — scarce: the metrics that decide size vs pass, not a flex night
-- **P** — “I want to drop one of these every week” = say. Next week’s post is do.
-- Pairing: Sharp Flow ↔ you see the real report. Not ↔ algorithm / V12 / Vault.
-- Proof machine: pain = the timeline they already scrolled. Classify: we didn’t make a million. Then the report.
-- Value equation: dream = see what he sees without becoming a sharp · likelihood = the page · time = weekly, mid-month now · effort = look at the image
-- Diagnostic: current = timeline as the work · desired = see the book · obstacle = only heaters get posted · vehicle = this weekly report
-- Qual: hook + first sentences. Don’t scold. Don’t “under the hood.”
-- Trust: last night wasn’t special. Mid-month isn’t a highlight reel.
+- **S** — $2.3k unopposed / $0 Sox
+- **C** — parent is third-party; 22-11; flagged +158 → +147
+- Pairing: same side as the loud Griffin take, empty other side — not “we have a lock”
+- Proof machine: they’re already on his graphic. Classify: we’re on Cleveland too. Then the $
+- Whole truth: -1.5 not ML. 1.0× = his usual $2k, not a size-up. Don’t write it as 1.6× energy. One proven, two secondary. Still flagged.
+- Qual: hook is $. Dale’s “in line with you so far” is the close, earned.
 
-**Deleted:** algorithm under the hood · V12 · Vault · however really try · how-to steps · grind-EV · trial close · dunking accounts · invented September units · “that’s what this is”
+**Deleted:** Vault · 5.0% open · locked · USUAL · 1.0× flex · mash 18-5 · Mets restage · trial · dunk · “we agree” as line 1
 
 ### 5 · STUFF
-**Dale:** no million last night · timeline he missed out · wants weekly · same metrics he uses · mid-month progress report (image).  
-**Do not invent** the report’s W-L / units / ROI. If he pastes the headline number, it goes in the first sentences after the hook.
+**Parent (@DanielKarpuc QT of @trendscenterapp):** Foster Griffin, O/U 8.0 or higher, **18-5 on the ML**. Card: 18-5-0 · 54.4% ROI · 78.26% WR · 14.9u · L2 · last 10 7-3-0 · 23 games · total ≥ 8.
+
+**Ours:** CWS @ CLE 6:40 PM. **Guardians -1.5 +147 (40%) · 4.0u**. Flagged at **+158 (39%)**. **$2.3K UNOPPOSED**. Proven 65% / secondary 35%. Lead `…51176e` **$2.0K · 22-11 · +33% ROI · 67% wins · 63% beat close · 1.0×** (usual $2.0k / this $2.0k). Sox **$0**. No sharp money on the other side. Locks in 5h 01m. Do not write Vault / 5.0% open / locked.
 
 ### 6 · HOOK QA
 
-| | Raw paste | This |
-|--|-----------|------|
-| Line 1 | Last night we didn't make a million dollars. | **LAST NIGHT WE DIDN'T MAKE A MILLION DOLLARS** |
-| Line 2 | Which juding from the timeline, I really missed out. | **Judging by the timeline, I really missed out.** |
-| Next | However, really try to drop these types of updates weekly… | **This is the mid-month report. Same numbers I look at when we size a play or pass on one.** |
-| Screenshot | a joke | anti-flex + then the page |
-| Unique | cadence promise | timeline was the million; this is the book |
+| | Kill | This |
+|--|------|------|
+| Line 1 | Sharps are in line with you / Foster Griffin Day | **$2.3K UNOPPOSED ON THE GUARDIANS** |
+| Line 2 | 18-5 clone | **$0 on the Sox.** |
+| Then | we agree | -1.5, 4u, flagged +158, lead 22-11, then Dale’s sentence |
 
-What: we didn’t make a million last night.  
-How: the attached report is what he uses to size or skip.  
-So what: you’re going to see that page every week.
-
-**Killed opens:** printer flex · “here’s a mid-month progress report” recap furniture · algorithm/V12 tour · scold · convert
+What: $2.3k on CLE, $0 on CWS.  
+How: -1.5 +147, 4u, one proven + two with him, flagged +158 now +147.  
+So what: in line with you on Cleveland. So far. Still flagged.
 
 ### 7 · Algorithm
-Keep his joke. Delete “however really try.” Translate under-the-hood into size-or-pass. Image does the numbers. Ship. Don’t publish.
+Show the $ first. Tell the truth on spread vs ML. Dale’s line last. Don’t publish.
 
 ---
 
 ## COPY THIS
 
-**Type:** Hero  
-**Media:** the mid-month progress report. That’s the walk.
+**Type:** Reply to @DanielKarpuc  
+**Media:** Guardians -1.5 card
 
 ```
-LAST NIGHT WE DIDN'T MAKE A MILLION DOLLARS
-Judging by the timeline, I really missed out.
+$2.3K UNOPPOSED ON THE GUARDIANS
+$0 on the Sox.
 
-This is the mid-month report.
-Same numbers I look at when we size a play or pass on one.
+We're on the spread. Guardians -1.5. +147. Four units.
+Flagged it at +158.
 
-I want to drop one of these every week.
-So you're looking at what I'm looking at.
-Not last night. The month.
+Lead wallet $2k. 22-11. +33% ROI.
+One proven. Two more with him.
+No sharp money on Chicago.
+
+They're in line with you on this one so far.
+Still flagged.
 ```
 
-**Do not post from here.** Stage only. If the report’s headline units are in the image, leave them in the image — don’t invent them in the caption. If Dale pastes the headline number, it belongs in the first sentences after line 2.
+**Do not post from here.** Stage only.
