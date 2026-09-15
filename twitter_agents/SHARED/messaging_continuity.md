@@ -7,74 +7,72 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-14 eve r5 · QT **EDUCATE** · hook rewrite: $138k Mets / Baltimore made the list |
+| Last updated | 2026-09-15 · Hero **GIVE** · last night we didn’t make a million dollars / mid-month report |
 | CSV window | Content Sep 8–14. Overlay ask-shape binds. |
-| Ask temperature | **This post = educate / give.** Jim already took the ask. |
-| Account arc | r4 open was a jargon hook + a scold. Spear is now $ vs the parent, then 118u as so-what. |
+| Ask temperature | **This post = give.** Jim + morning already asked. Weekly report is free SPCL. |
+| Account arc | Timeline was loud. We post the unglamorous page. Serialization: weekly. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/14 eve r5 | QT **EDUCATE** | `$138K ON THE METS` / Baltimore made the most-bet list / then $98k → 118u | **S + C** | none | **Staged** |
-| 9/14 eve r4 | QT EDUCATE | Orioles on the money list / “graphic like it’s the work” | all four in body | none | **Killed** — open sucked |
-| 9/14 eve r3 | QT EDUCATE | THEY HAVE THE ORIOLES ON THE MONEY LIST | S + C | none | **Killed** |
-| 9/14 eve r2 | QT GIVE | `$138k ON THE METS` caption | S + C | none | **Killed** |
-| 9/14 eve | QT ASK | HE MISSED THE BEST DAY / still +32u | C + P | trial | **Staged** |
+| 9/15 | Hero **GIVE** | `LAST NIGHT WE DIDN'T MAKE A MILLION DOLLARS` / timeline miss / mid-month page | **L + C** | none | **Staged** |
+| 9/14 eve r5 | QT EDUCATE | `$138K ON THE METS` / Baltimore made the most-bet list | S + C | none | Staged |
+| 9/14 eve r4–v1 | QT | jargon hook / scold / printer clone | — | none | **Killed** |
+| 9/14 eve | QT ASK | HE MISSED THE BEST DAY / still +32u | C + P | trial | Staged |
+| 9/14 AM | Hero ASK | +29u MLB | C + P | trial | Posted |
 
 ---
 
 ## Angle lock
-**ONE:** The +118u is the other side of the most-bet list. Tonight: Mets ML.  
-**Yum:** size with proven when they’re on it, without becoming a sharp.  
-**Hook:** `$138K ON THE METS` / `Baltimore made the most-bet list.`  
-**First sentences:** three proven · $98k at 1.6× · 129-120 · +$568k · **then** that’s +118u · you’re not going to find it on that list  
-**Body:** -138 4u · $22k · one proven against · $26k losing · flagged -125 now -138 · limit · see him don’t become him · 6:56 · trap  
-**Ask:** none  
-**Killed:** r4 scold open · MONEY LIST jargon · THEY HAVE · 118u as line 1 · juice-first · if/if · 3 proven losers · GOLD / V12 / EV · +100u restage · trial
+**ONE:** We didn’t print a million last night. Here’s the report I actually use. Weekly.  
+**Yum:** you see the same numbers he uses to size or pass.  
+**Hook:** `LAST NIGHT WE DIDN'T MAKE A MILLION DOLLARS` / `Judging by the timeline, I really missed out.`  
+**First sentences:** mid-month report · same numbers for size or pass · weekly · you’re looking at what I’m looking at · not last night, the month  
+**Ask:** none. Desire plant = weekly.  
+**Killed:** algorithm under the hood · V12 / Vault · invented report units · how-to · convert · dunking the timeline
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** $138k Mets vs Baltimore-on-the-list as the open · this $98k lead as the first proof
+**Spent this beat (once posted):** million-dollar miss · weekly mid-month report as a series
 
-**Still spent:** v1–r4 opens · Jim · morning +29u · Don · Jul/Aug · JamKam · fade-Trent · Vault · grind-EV · MVP25 · coffee · Saturday +100u · Friday +99u · juice-only caption
+**Still spent:** Mets $138k open · Jim · morning +29u · Don · Jul/Aug · JamKam · fade-Trent · Vault · grind-EV · MVP25 · coffee · +100u / +99u · juice caption
 
-**Still open:** Mets grade · fence-sitter DMs · Nats +$69K · SNF grade if new scar
+**Still open:** Mets grade · fence-sitter DMs · Nats +$69K · SNF grade · **next week’s report** (this post’s say–do)
 
-**Don't:** restage the scold open · mash $98k/$38k · invent 3 proven losers · GOLD / Vault / V12 / EV · restage Jim · convert paragraph · lecture in line 3–4
+**Don't:** invent the report’s units · V12 tour · restage Jim · convert paragraph · dunk accounts · restage Mets card
 
 ---
 
 ## Unfinished
-- Grade Mets / Orioles only with a new scar
-- Fence-sitters: DM close (Jim already asked)
-- SNF grade only with a new scar
+- Next weekly report (Power: he said he would)
+- Grade Mets only with a new scar
+- Fence-sitters: DM close
 - Nats +$69K parked
 
 ---
 
 ## FORWARD LOOK — after this posts
-1. **Grade the Mets card** if Dale dumps the result.
-2. DM anyone who raised a hand on Jim.
+1. **Next weekly report** — that’s the Power cycle. Put a number in the first sentences if he pastes it.
+2. Grade Mets if Dale dumps the scar.
 3. Next ask only on a new printer + fork.
 
-**NOT:** r4 scold · v1 printer open · Jim restage · +100u / +99u · juice-first · convert paragraph
+**NOT:** V12 room tour · how-to algorithm thread · Jim restage · Mets restage · convert paragraph · million-dollar joke restage
 
-**Avatar:** they see $138k vs the list they were already looking at, in the first two lines.  
-**Balance:** S+C open after two asks. Stay give.  
-**Hormozi economics:** hook is the post. First sentences are Qual, not a dunk.  
-**Distribution:** parent = pain. Open is our $ vs Baltimore on that list.
+**Avatar:** they laughed at line 1. They need the page, not another joke.  
+**Balance:** L+C after S+C educate and two asks. Ask is fed.  
+**Hormozi economics:** free proof, serialized.  
+**Distribution:** image is the stuff. Caption is the miss + the why.
 
 ---
 
 ## Agent close-out
-- [x] Dale r5: hook + first sentences are the most critical · r4 sucked
-- [x] Rewrote hook before body
-- [x] Line 1 `$138K ON THE METS` (screenshot S)
-- [x] Line 2 Baltimore made the most-bet list (unique, uses parent)
-- [x] First sentences = 3 proven / $98k 1.6× / 129-120 — then 118u as so-what
-- [x] Killed “you’re looking at that graphic like it’s the work”
+- [x] Dale spine kept: million last night · timeline miss · weekly · same metrics · mid-month report
+- [x] Hook is his open, screenshot anti-flex
+- [x] First sentences = the page, not a scold, not “under the hood”
+- [x] Did not invent report units (image wasn’t numbered in the paste)
+- [x] No ask · no V12 · no dunk
 - [x] Staged COPY_PASTE only
 - [x] Continuity written

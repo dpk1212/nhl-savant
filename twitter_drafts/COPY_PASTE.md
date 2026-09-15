@@ -1,97 +1,105 @@
-# Twitter — 2026-09-14 eve r5 · QT EDUCATE · hook + first sentences
+# Twitter — 2026-09-15 · Hero GIVE · last night we didn’t make a million dollars
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only)
-**This pass:** Hook QA only. Dale: the hook plus first few sentences is the most critical, and r4’s sucks.
+**CSV:** Sep 8–14. Overlay: honest L + still-green converts; how-to / Vault tour / convert paragraph die. PURPOSE=**give**.
 
 | | |
 |--|--|
-| WHO | Someone inside BetMGM’s most-bet graphic. |
-| PURPOSE | **Educate.** How the +118u happens. No ask. |
-| ONE | The +118u is the other side of the most-bet list. Tonight: Mets ML. |
-| SPCL | **S + C** in the open. Everything else waits. |
-| Timeline | r4 kept a jargon hook and opened on a scold. Rewrite hook before body. |
-| Ask | **None.** |
+| WHO | Someone who scrolled a million-dollar timeline last night and thinks that’s the work. |
+| PURPOSE | **Give.** Weekly mid-month report. Same numbers he uses. No ask. |
+| ONE | We didn’t print a million last night. Here’s the report I actually look at. I’ll drop these weekly. |
+| SPCL | **L + C** in the open. S = the report in the image. P = weekly say–do. |
+| Timeline | Jim + morning asks already fired. Mets QT was educate. This is the unglamorous weekly. |
+| Ask | **None.** Desire plant: I’ll drop these weekly. |
 
-**Quote** @BetMGMNews. **Attach:** Mets card, then L30 chart. Skip the map.
+**Post as Hero.** Attach the mid-month progress report. Image is the walk. Do not invent the report’s units — they weren’t in the paste.
 
 ---
 
 ### 0 · Spine (Dale — law)
-Same spine. **r5: THE HOOK PLUS FIRST FEW SENTENCES IS THE MOST CRITICAL AND IT SUCKS IN THIS VERSION.**
+- Last night we didn’t make a million dollars. Which judging from the timeline, I really missed out.
+- I really try to drop these types of updates weekly.
+- I want you all to see the same metrics I am using to drive the algorithm under the hood.
+- So here is one of the mid-month progress reports.
 
-### Why r4’s open dies
-```
-THEY HAVE THE ORIOLES ON THE MONEY LIST
-$138k is on the Mets.
+**Shape, don’t replace.** Keep the million-dollar miss. Keep weekly. Keep “you’re looking at what I look at.” Kill: “algorithm under the hood” (Vault/v12 room tour, **67 eng**). Kill: “however really try.” Don’t dunk the timeline (hard ban). Don’t invent the report’s PnL.
 
-You're looking at that graphic like it's the work.
-It isn't.
+### 0b · Timeline
+Airport Jays: image is the stuff, caption can be human. Juice caption with no $ = **44 / 0R**. Honest L + month green converts (Sep 9 = **11 trials**). Recap furniture (`here is how the last 30 days played` **44**) loses to a printer with a paradox. This open is anti-flex + the report. How-to lock-alert threads die — do not teach the 5-step algorithm. Camden testimonial **0R**. Convert paragraph dies.
 
-We're +118u on MLB in the last 30 days.
-```
-- Line 1: jargon. “Money list.” Orioles aren’t even #1. No $ a stranger screenshots.
-- Line 2: our $ buried under “they have.”
-- Next two sentences: a dunk. No number. Hormozi pain-first is *their pile classified*, not “you’re doing the work wrong.”
-- 118u lands as a recap after the scold. Dale 9/01: line 2 does unique. Jim: person + number + paradox. `$79.5k` vs most-bet Under: **our $ in line 1.**
+### 0c · Forward look
+Serialization: next week another report. Grade Mets only if Dale dumps the scar. No third convert.
 
-### 6 · HOOK QA (this is the work)
+### 1 · WHO
+A lurker who watched the timeline print million-dollar nights. Pain: that looks like the job. They’ve never seen the mid-month page Dale actually uses.
 
-| | r4 | r5 |
-|--|----|----|
-| Line 1 | THEY HAVE THE ORIOLES ON THE MONEY LIST | **$138K ON THE METS** |
-| Line 2 | $138k is on the Mets. | **Baltimore made the most-bet list.** |
-| Next | You're looking at that graphic like it's the work. It isn't. | **Three proven. $98k at 1.6×.** |
-| Then | We're +118u… | **That's +118u. You're not going to find it on that list.** |
-| Screenshot | a label | $ vs the parent |
-| Unique | thesis + scold | number paradox, then Dale’s unique as so-what |
+### 2 · PURPOSE
+**Give.** Demonstrate the report. Promise weekly. No trial sentence.
 
-What: $138k on the Mets. Baltimore made the most-bet list.  
-How: three proven. One has $98k at 1.6×. 129-120. +$568k.  
-So what: that’s +118u on MLB in 30 days. Not that list.
+### 3 · ONE
+**Last night wasn’t a million-dollar night. The mid-month report is what I actually use. You’re going to see it every week.**
 
-**Killed in the open:** “you’re looking at that graphic like it’s the work” · “it isn’t” · MONEY LIST jargon · THEY HAVE · 118u as the first proof · juice · become-sharp · Yankees/Dodgers clone
+| Test | |
+|------|---|
+| Understand | We didn’t hit a million last night. This is the weekly report. |
+| Believe | His words. Image is the receipt. We do not invent September units. |
+| Unique | Timeline was loud. We post the unglamorous page. Not a heater recap. Not a product-room tour. |
 
-Line 2 uses the parent (Orioles/Baltimore on the list). Does not say #1. Does not say “money list.”
+**Yum:** you see the same numbers he uses to size or pass. You don’t sit through a million-dollar highlight reel and call that the book.
 
-### Body after the open
-Same audit. Do not repeat the $98k walk. Do not scold. Juice after $. One proven against stays. Clock. Trap earned at the end, not as the open.
+### 4 · Levers in the words
+- **L** — line 1–2 are Dale at dinner. “I really missed out.”
+- **C** — the attached report. Copy tells the eye that’s the page he uses.
+- **S** — scarce: the metrics that decide size vs pass, not a flex night
+- **P** — “I want to drop one of these every week” = say. Next week’s post is do.
+- Pairing: Sharp Flow ↔ you see the real report. Not ↔ algorithm / V12 / Vault.
+- Proof machine: pain = the timeline they already scrolled. Classify: we didn’t make a million. Then the report.
+- Value equation: dream = see what he sees without becoming a sharp · likelihood = the page · time = weekly, mid-month now · effort = look at the image
+- Diagnostic: current = timeline as the work · desired = see the book · obstacle = only heaters get posted · vehicle = this weekly report
+- Qual: hook + first sentences. Don’t scold. Don’t “under the hood.”
+- Trust: last night wasn’t special. Mid-month isn’t a highlight reel.
+
+**Deleted:** algorithm under the hood · V12 · Vault · however really try · how-to steps · grind-EV · trial close · dunking accounts · invented September units · “that’s what this is”
+
+### 5 · STUFF
+**Dale:** no million last night · timeline he missed out · wants weekly · same metrics he uses · mid-month progress report (image).  
+**Do not invent** the report’s W-L / units / ROI. If he pastes the headline number, it goes in the first sentences after the hook.
+
+### 6 · HOOK QA
+
+| | Raw paste | This |
+|--|-----------|------|
+| Line 1 | Last night we didn't make a million dollars. | **LAST NIGHT WE DIDN'T MAKE A MILLION DOLLARS** |
+| Line 2 | Which juding from the timeline, I really missed out. | **Judging by the timeline, I really missed out.** |
+| Next | However, really try to drop these types of updates weekly… | **This is the mid-month report. Same numbers I look at when we size a play or pass on one.** |
+| Screenshot | a joke | anti-flex + then the page |
+| Unique | cadence promise | timeline was the million; this is the book |
+
+What: we didn’t make a million last night.  
+How: the attached report is what he uses to size or skip.  
+So what: you’re going to see that page every week.
+
+**Killed opens:** printer flex · “here’s a mid-month progress report” recap furniture · algorithm/V12 tour · scold · convert
+
+### 7 · Algorithm
+Keep his joke. Delete “however really try.” Translate under-the-hood into size-or-pass. Image does the numbers. Ship. Don’t publish.
 
 ---
 
 ## COPY THIS
 
-**Type:** Quote · @BetMGMNews  
-**Media:** Mets card, then L30 chart. No map.
+**Type:** Hero  
+**Media:** the mid-month progress report. That’s the walk.
 
 ```
-$138K ON THE METS
-Baltimore made the most-bet list.
+LAST NIGHT WE DIDN'T MAKE A MILLION DOLLARS
+Judging by the timeline, I really missed out.
 
-Three proven winners we track are on this.
-One of them put $98k on it — 1.6× what he normally puts down.
-129-120. +$568k the last 30.
+This is the mid-month report.
+Same numbers I look at when we size a play or pass on one.
 
-That's +118u on MLB in the last 30 days.
-You're not going to find it on that list.
-
-Mets ML. -138. Four units.
-$22k on Baltimore.
-
-One proven took the Orioles.
-We don't skip that.
-The losing money is still on Baltimore. $26k of it.
-
-We flagged it at -125.
-It's -138 now.
-The limit is coming in.
-
-That's the line moving after the money sat down.
-
-You don't have to become that guy.
-You have to see it before the game.
-The work is already on the table.
-Until 6:56 ET.
-
-The trap is taking that list and calling it the card.
+I want to drop one of these every week.
+So you're looking at what I'm looking at.
+Not last night. The month.
 ```
 
-**Do not post from here.** Stage only.
+**Do not post from here.** Stage only. If the report’s headline units are in the image, leave them in the image — don’t invent them in the caption. If Dale pastes the headline number, it belongs in the first sentences after line 2.
