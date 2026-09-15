@@ -49,14 +49,29 @@ const UFC_ALIASES = {
 };
 
 /**
- * Strip card branding so fighter A is not "Noche UFC: Jean Silva".
- * Numbered cards, Fight Night, Apex broadcasts, and Noche all use `…UFC…:`.
+ * Strip card branding so fighter A is not "Noche UFC: Jean Silva"
+ * or "Dana White's Contender Series: Zevan Hunt".
+ * Numbered cards, Fight Night, Apex, Noche, and DWCS all use `Brand:`.
  */
 export function stripUFCEventPrefix(s) {
-  return String(s || '').replace(
-    /^(?:noche\s+)?ufc(?:\s+(?:fight\s+night|on\s+[^:]+|\d+))?\s*:\s*/i,
-    '',
-  );
+  return String(s || '')
+    .replace(/^(?:noche\s+)?ufc(?:\s+(?:fight\s+night|on\s+[^:]+|\d+))?\s*:\s*/i, '')
+    .replace(/^(?:dana\s+white['\u2019]?s?\s+)?contender\s+series\s*:\s*/i, '')
+    .replace(/^dwcs\s*:\s*/i, '');
+}
+
+/** Same 6h-back / 72h-forward band as NFL Odds-API keep. */
+export const UFC_POLY_ONLY_BACK_MS = 6 * 3600 * 1000;
+export const UFC_POLY_ONLY_FWD_MS = 72 * 3600 * 1000;
+
+/**
+ * DWCS / Apex cards often have Poly ML markets with no US-book Odds API row.
+ * Keep main-fight slugs whose startTime is in this short window.
+ */
+export function isUfcPolyOnlyWindow(startIso, nowMs = Date.now()) {
+  const startMs = startIso ? new Date(startIso).getTime() : NaN;
+  if (!Number.isFinite(startMs) || !Number.isFinite(nowMs)) return false;
+  return startMs >= nowMs - UFC_POLY_ONLY_BACK_MS && startMs <= nowMs + UFC_POLY_ONLY_FWD_MS;
 }
 
 /** Resolve a raw fighter string to a canonical normalized key, or null. */
@@ -117,13 +132,21 @@ export function isMainUFCFightSlug(slug) {
   return /^ufc-[a-z0-9]+-[a-z0-9]+-\d{4}-\d{2}-\d{2}$/i.test(slug || '');
 }
 
+/** True for UFC-branded titles including DWCS (titles often omit the letters UFC). */
+export function isUFCBrandedTitle(title) {
+  const t = (title || '').toLowerCase();
+  if (/\bufc\b/.test(t)) return true;
+  if (/contender\s+series/.test(t) || /\bdwcs\b/.test(t)) return true;
+  return false;
+}
+
 /**
  * Precise UFC-title classifier for wallet-universe sport tagging.
- * Requires an explicit UFC mention — never bare "fight" (CBB Fighting Illini).
+ * Requires UFC / DWCS branding — never bare "fight" (CBB Fighting Illini).
  */
 export function isUFCMarketTitle(title) {
   const t = (title || '').toLowerCase();
-  if (!/\bufc\b/.test(t)) return false;
+  if (!isUFCBrandedTitle(t)) return false;
   if (/\bvs\.?\b/.test(t)) return true;
   if (/win by|go the distance|method of|o\/u\s*\d|over\/under|rounds?\b/.test(t)) return true;
   if (/^will\s+.+\s+win\b/.test(t)) return true;
@@ -145,7 +168,7 @@ export function isUFCMarketTitle(title) {
  */
 export function matchUFCPositionTitle(posTitle, todaysGames) {
   const t = (posTitle || '').trim();
-  if (!t || !/\bufc\b/i.test(t)) return null;
+  if (!t || !isUFCBrandedTitle(t)) return null;
 
   // Event-level / ML title with both fighters
   const pair = extractUFCFightersFromTitle(t);

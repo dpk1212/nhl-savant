@@ -22,6 +22,10 @@ assert.equal(
   stripUFCEventPrefix('UFC Fight Night: Kamaru Usman vs. Dricus Du Plessis'),
   'Kamaru Usman vs. Dricus Du Plessis',
 );
+assert.equal(
+  stripUFCEventPrefix("Dana White's Contender Series: Zevan Hunt vs. Mayton Perea"),
+  'Zevan Hunt vs. Mayton Perea',
+);
 
 assert.equal(
   extractUFCFightersFromTitle(
