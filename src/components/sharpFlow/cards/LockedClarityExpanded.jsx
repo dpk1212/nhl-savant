@@ -1724,6 +1724,10 @@ export default function LockedClarityExpanded({
                 showStory
                 chartLineLabel={f.chartLineLabel}
                 ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
+                linePath={f.linePath}
+                openMainLine={f.openMainLine}
+                nowMainLine={f.nowMainLine}
+                isSpread={f.marketType === 'spread'}
               />
             </div>
           </div>
