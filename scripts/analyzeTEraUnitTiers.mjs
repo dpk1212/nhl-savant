@@ -474,9 +474,10 @@ p('');
     ['believed-cut all', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'believed-cut'), 'uPre', 'pnlPre'))],
     ['  · no steam', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'believed-cut' && !r.steamOn), 'uPre', 'pnlPre'))],
     ['  · A/B already-on', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'believed-cut' && r.steamCell === 'ab_already_on'), 'uPre', 'pnlPre'))],
-    ['  · A/B arriving (HOLD leak)', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'believed-cut' && r.abArr), 'uPre', 'pnlPre'))],
+    ['  · A/B arriving before HOLD (Sep 9)', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'believed-cut' && r.abArr && r.date < SHIP_FROM), 'tAtPaper', 'pnlTPaper'))],
+    ['  · A/B arriving after HOLD (leak)', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'believed-cut' && r.abArr && r.date >= SHIP_FROM), 'tAtPaper', 'pnlTPaper'))],
     ['fail-open-sub4 all', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'fail-open-sub4'), 'uPre', 'pnlPre'))],
-    ['  · T would still mute (1u)', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'fail-open-sub4' && !(r.tAtPaper > 0)), 'uPre', 'pnlPre'))],
+    ['  · T would still mute (1u lean)', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'fail-open-sub4' && !(r.tAtPaper > 0)), 'uPre', 'pnlPre'))],
     ['  · T would ship (2–3u / floor)', ...rowCells(agg(lo.filter((r) => r.mutedBy === 'fail-open-sub4' && r.tAtPaper > 0), 'tAtPaper', 'pnlTPaper'))],
     ['**leftover all**', ...rowCells(agg(lo, 'uPre', 'pnlPre'))],
   ];
