@@ -1,7 +1,7 @@
 # Steam mute revisit — extra week after the Sep 8 papers
 
 _Pulled 2026-09-16. Graded AGS-U Aug 19–Sep 15. Paper window Aug 19–Sep 8. New nights: Sep 9–15 (leftover A/B arriving HOLD + native 2–3u arriving → 4u live since Sep 9)._
-_Re-run: `node scripts/analyzeSteamMuteRevisit.mjs`. Machine dump: [`STEAM_MUTE_REVISIT_DUMP_2026-09-16.md`](./STEAM_MUTE_REVISIT_DUMP_2026-09-16.md)._
+_Re-run: `node scripts/analyzeSteamMuteRevisit.mjs`. Machine dump: [`STEAM_MUTE_REVISIT_DUMP_2026-09-16.md`](./STEAM_MUTE_REVISIT_DUMP_2026-09-16.md). Full T-era unit-tier + mute ticket ledger: [`STEAM_T_ERA_UNIT_TIERS_2026-09-16.md`](./STEAM_T_ERA_UNIT_TIERS_2026-09-16.md)._
 _**No live policy in this commit.**_
 
 Mute CF sign: **positive = we left money on the table. Negative = the mute saved us.**
