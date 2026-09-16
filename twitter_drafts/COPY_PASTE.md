@@ -1,76 +1,101 @@
-# Twitter — 2026-09-15 · QT ASK · BetMGM Tuesday / +118u / four tonight
+# Twitter — 2026-09-16 · Hero GIVE · lab / vs the number / down night
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only)
-**CSV:** Sep 8–14. Overlay: hard number in line 1, fork in the same tweet. PURPOSE=**ask**.
+**CSV:** Sep 8–14. Overlay: honest L + month still green converts. PURPOSE=**give / educate**. No ask. Depth template (August `+46.8u`).
 
 | | |
 |--|--|
-| WHO | Someone inside BetMGM’s Tuesday most-bet graphic. |
-| PURPOSE | **Ask.** Start using Sharp Flow. Fork in-hero. |
-| ONE | +118u on MLB in 30 days is this process. Tonight it has four on. That’s how you stop guessing tickets vs the wallets we track. |
-| SPCL | **S + C** in the open. P = four live + the ask. |
-| Timeline | Griffin $2.3k unopposed is stale. CLE is $8.1k / $5.6k now. Mets $138k spent. Don’t recap their list. |
-| Ask | **In-hero.** Sharp Flow on NHL Savant. Watch these four grade tonight. |
+| WHO | Someone who thinks winners hit 70% and a 4-7 night means the process is dead. |
+| PURPOSE | **Give / educate.** Show the lab: edge is vs the *price*, not the win%. Sweeping a night is rare. |
+| ONE | 53% looks average. Against those prices it isn’t. −120 to +150 is +138u because we beat the number, not because we run the table. |
+| SPCL | **C + P.** Walk the sheet. Said those plays, they lost, still here. |
+| Timeline | BetMGM ask spent. This is the scar + the audit. Don’t restage the four. Don’t say elite / v12 / HEAVY_FAV in the caption (table already has the bands). |
+| Ask | **None.** Authority is the give. |
 
-**Quote** @BetMGMNews Tuesday MLB graphic.  
-**Attach (walk order):** Guardians -1.5 · two-up (Rays Over 7.5 + Pirates +1.5) · Brewers/Pirates Over 7.5.
+**Attach:** his odds-band table. Caption *walks* it. Don’t recap every cell — walk the inversion.
 
 ---
 
 ### 0 · Spine (Dale — law)
-- Perfect quoted tweet of that BetMGM Tuesday list
-- Stop wondering if you are with the public or sharps
-- Start using Sharpflow on NHL savant
-- +118 units MLB last 30 days
-- 4 picks that fit the strategy tonight
+- Lab every morning, win or lose
+- More depth: real edge is vs those market segments
+- “Elite” but still low 50s — shape: 53% vs a 45% number is the job. **Do not write elite.**
+- Extremely profitable vs the market here
+- Sweeping every night is truly rare
+- Share the data he’s monitoring → trust / authority
+- Table in the post
+- Last night: Guardians −1.5 and those Pirates didn’t hit
 
-**Shape, don’t replace.** Stop-wondering is the close, not line 1. Don’t recap their most-bet hook. Don’t call all four fades (MIL/PIT Over 7.5 is #2 most-bet total). Don’t write CLE unopposed.
+**Shape, don’t replace.** Keep lab + last night + the table. Add the vs-market walk. CLE −1.5 was **+158** (not the +150 bucket). Pirates +1.5 was **+114**. Night **4-7, −11.3u**.
+
+### Stuff (don’t invent)
+- Book: **1,041** · 577-464 · 55.4% · market 54.0% · **+1.4pp** · +186.7u · +6.5% ROI
+- −120 to +150 (PICK_EM + MOD_DOG): **663** · 348-315 · **52.5%** · market **49.9%** · **+2.6pp** · **+138u** · +7.7% ROI
+- The beat-the-price slice: +109 to +150 · **175** · 93-82 · **53.1%** · market **44.8%** · **+8.3pp** · +77.9u · **+20.9% ROI**
+- Coin-flip / pick’em: **488** · 255-233 · 52.3% · market 51.7% · **+0.6pp** · +60.0u · +4.2% ROI
+- Big favorites (−186 or shorter): **123** · 87-36 · **70.7%** · market **74.0%** · **−3.3pp** · +9.9u · +2.3% ROI — the “high WR” that loses to the price
+- Last 19 live days: one **4-0**, one **0-5**, five red, last night **4-7**. 70%+ nights happen. Perfect slates almost don’t.
 
 ### 6 · HOOK QA
 
 | | Kill | This |
 |--|------|------|
-| Line 1 | Stop wondering if you’re with the public | **+118U ON MLB** |
-| Line 2 | Here’s what they’re betting / money list | **Last 30 days.** |
-| Next | scold / graphic isn’t the work | **Tonight the same process has four on.** |
+| Line 1 | One thing you can always be assured of / we are elite | **Last night didn’t hit.** |
+| Line 2 | edge/metrics / HEAVY_FAV | **Guardians −1.5. Those Pirates.** |
+| Next | 70% swagger | **53% vs a 45% number. That’s the job.** |
 
-What: +118u MLB, 30 days.  
-How: four live from the same process (walk the cards).  
-So what: stop guessing tickets vs wallets we track. Sharp Flow.
+What: those two lost; 53% is the real book.  
+How: walk vs-market on the table.  
+So what: you don’t sweep nights. You beat the price over 1,041 plays.
 
-**Killed:** unopposed · money list · recap most-bet games · all-four fade · $138k clone · Vault / HC / Confirmed / locked · convert paragraph as open · 1.0× as a size-up
+**Killed:** elite · v12 · HEAVY_FAV in *our* words · CLE −1.5 as a +150 · PIT ML +197 in this bucket · restage +118u / the four · ask · streak-end clone · “absolutely hammer”
 
 ---
 
 ## COPY THIS
 
-**Type:** Quote · @BetMGMNews  
-**Media:** CLE -1.5, then the two-up (Rays Over + PIT +1.5), then MIL/PIT Over 7.5
+**Type:** Hero  
+**Media:** the odds-band table he already made
 
 ```
-+118U ON MLB
-Last 30 days.
+Last night didn’t hit.
+Guardians −1.5. Those Pirates.
 
-Tonight the same process has four on.
+I still ran the sheet this morning. I do that every morning. Win or lose.
 
-Guardians -1.5. +142. Four units.
-$8.1k on Cleveland. $5.6k on the Sox.
-Proven $2k. One proven took Chicago.
+1,041 plays. That’s the sample.
 
-Rays Over 7.5. -136. Four units.
-Proven $810. Two more with him.
+People see 52–53% and think it’s not good.
 
-Pirates +1.5. +105. Four units.
-$25k — 5.5× what he normally puts down.
-Two more with him.
-Brewers made the moneyline list.
+That’s the whole trick.
 
-Pirates/Brewers Over 7.5. +105. Three units.
-$1.4k. Nothing against.
+Look at the table.
 
-That's how you stop wondering if you're with the tickets or with the wallets we track.
+−120 to +150 is 663 of those plays.
+348-315. 52.5%.
+The market on those same bets was 49.9%.
++2.6 points vs the number.
++138 units. +7.7% ROI.
 
-Sharp Flow on NHL Savant.
-Watch these four grade tonight.
+The plus-money slice is where we’re actually beating the price:
++109 to +150. 175 plays. 93-82.
+53.1%.
+They were priced like a 44.8% shot.
+That’s +8.3 points on the number. +78 units. +21% ROI.
+
+52% vs a coin flip is nothing.
+53% vs a 45% number is the job.
+
+The row that *looks* elite is the shorts.
+−186 and shorter. 71% winners.
+The market was 74%. We’re −3 points on those. Almost no profit.
+
+So no — we do not sweep slates.
+Last 19 days we went 4-0 once and 0-5 once. Last night was 4-7, −11 units.
+
+I don’t need last night to go 7-0.
+I need 1,041 plays to keep beating the number.
+
+That’s what I’m looking at every morning.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
