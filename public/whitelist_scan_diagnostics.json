@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-09-16T00:55:14.723Z",
-  "elapsedSec": 44.6,
+  "scannedAt": "2026-09-16T01:09:20.849Z",
+  "elapsedSec": 43.6,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 180,
+  "todayGamesCount": 179,
   "summary": {
     "total": 345,
-    "coveredByMain": 39,
+    "coveredByMain": 38,
     "recovered": 25,
     "recoveredPositions": 168,
-    "noPositions": 281,
+    "noPositions": 282,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 27,
+      "ml": 26,
       "spread": 5,
-      "total": 1,
-      "dropped_shadow_gate": 121,
+      "total": 3,
+      "dropped_shadow_gate": 120,
       "dropped_excluded": 13,
       "dropped_duplicate": 1
     }
@@ -857,11 +857,11 @@
       "sports": "WNBA,SOC,UFC,CFB,MLB,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 41,
+      "positionsCount": 43,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 4298,
       "willPassShadowGate": 5,
-      "willDropAtShadowGate": 36,
+      "willDropAtShadowGate": 38,
       "positions": [
         {
           "sport": "UFC",
@@ -1179,6 +1179,24 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "mia_ari",
+          "marketType": "total",
+          "side": "under",
+          "invested": 19,
+          "entryLine": 8.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sea_laa",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 15,
+          "entryLine": 1.5,
+          "passesShadow": false
+        },
+        {
           "sport": "SOC",
           "gameKey": "osa_mad",
           "marketType": "ml",
@@ -1410,10 +1428,10 @@
       "sports": "UFC,MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x7e5972bfc25819775ee5a9d4f191919375487b8b",
-      "positionsCount": 16,
+      "positionsCount": 14,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 932,
-      "willPassShadowGate": 13,
+      "willPassShadowGate": 11,
       "willDropAtShadowGate": 3,
       "positions": [
         {
@@ -1458,15 +1476,6 @@
           "marketType": "ml",
           "side": "away",
           "invested": 172,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "UFC",
-          "gameKey": "zevanhunt_maytonperea",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 55,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1534,15 +1543,6 @@
           "passesShadow": true
         },
         {
-          "sport": "UFC",
-          "gameKey": "zevanhunt_maytonperea",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 65,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
           "sport": "SOC",
           "gameKey": "rea_mad",
           "marketType": "ml",
@@ -1575,24 +1575,8 @@
       "tier": "CONFIRMED",
       "name": "0x2c335066FE58fe9237c3d3Dc7b275C2a034a0563-1759935795465",
       "sports": "NBA,NHL",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563",
-      "positionsCount": 1,
-      "statsSource": "sports_sharps.perSport",
-      "avgSportBet": 20664,
-      "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
-      "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "zevanhunt_maytonperea",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 1096,
-          "entryLine": null,
-          "passesShadow": false
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563"
     },
     {
       "walletShort": "4a1eeb",
@@ -1929,7 +1913,7 @@
           "gameKey": "lsu_miss",
           "marketType": "ml",
           "side": "away",
-          "invested": 13,
+          "invested": 43,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1982,12 +1966,39 @@
       "sports": "MLB,UFC,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
-      "positionsCount": 4,
+      "positionsCount": 7,
       "statsSource": "profile.bySport.positions",
-      "avgSportBet": 2792,
-      "willPassShadowGate": 0,
+      "avgSportBet": 285,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 4,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "mia_ari",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 476,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sea_laa",
+          "marketType": "total",
+          "side": "over",
+          "invested": 190,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "mia_ari",
+          "marketType": "total",
+          "side": "over",
+          "invested": 190,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
         {
           "sport": "SOC",
           "gameKey": "rrc_bar",
@@ -2264,10 +2275,10 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa3c52f48fad1b6888d58c7aa30a5d1cefe786930",
-      "positionsCount": 2,
+      "positionsCount": 1,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 10231,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 0,
       "willDropAtShadowGate": 1,
       "positions": [
         {
@@ -2278,15 +2289,6 @@
           "invested": 708,
           "entryLine": null,
           "passesShadow": false
-        },
-        {
-          "sport": "UFC",
-          "gameKey": "zevanhunt_maytonperea",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 481,
-          "entryLine": null,
-          "passesShadow": true
         }
       ]
     },
@@ -2738,21 +2740,12 @@
       "sports": "NBA,UFC,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 3,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
-      "avgSportBet": 2291,
-      "willPassShadowGate": 1,
+      "avgSportBet": 19809,
+      "willPassShadowGate": 0,
       "willDropAtShadowGate": 2,
       "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "zevanhunt_maytonperea",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 880,
-          "entryLine": null,
-          "passesShadow": true
-        },
         {
           "sport": "SOC",
           "gameKey": "che_bre",
@@ -2970,8 +2963,24 @@
       "tier": "FLAT",
       "name": "johnny234",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xd38ad20037839959d89165cf448568d584b28d26"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xd38ad20037839959d89165cf448568d584b28d26",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 13884,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "mia_ari",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 7888,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "b31fc6",
@@ -3031,7 +3040,7 @@
           "gameKey": "det_buf",
           "marketType": "ml",
           "side": "away",
-          "invested": 956,
+          "invested": 957,
           "entryLine": null,
           "passesShadow": false
         }
@@ -3302,7 +3311,8 @@
       "tier": "CONFIRMED",
       "name": "Erickaguilar",
       "sports": "MLB",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xfb20c7b499b536121fc3cbe8aa6256cbf2ca3b5c"
     },
     {
       "walletShort": "ca3e2a",
@@ -3354,8 +3364,8 @@
       "positionsCount": 50,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 7820,
-      "willPassShadowGate": 11,
-      "willDropAtShadowGate": 39,
+      "willPassShadowGate": 12,
+      "willDropAtShadowGate": 38,
       "positions": [
         {
           "sport": "NFL",
@@ -3407,8 +3417,17 @@
           "gameKey": "mia_wake",
           "marketType": "spread",
           "side": "away",
-          "invested": 625,
+          "invested": 635,
           "entryLine": -20.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "mia_ari",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 698,
+          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -3426,15 +3445,6 @@
           "marketType": "ml",
           "side": "away",
           "invested": 18,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "mia_ari",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 409,
           "entryLine": null,
           "passesShadow": false
         },
@@ -4182,7 +4192,7 @@
           "gameKey": "sea_laa",
           "marketType": "spread",
           "side": "away",
-          "invested": 14418,
+          "invested": 14431,
           "entryLine": -1.5,
           "passesShadow": true
         },
@@ -4325,21 +4335,12 @@
       "sports": "MLB,NHL,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xd81e5bc01e4a98d0af93d82dc2c542a4c0f9e3d0",
-      "positionsCount": 2,
+      "positionsCount": 1,
       "statsSource": "fallback",
       "avgSportBet": 105934,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 1,
       "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "zevanhunt_maytonperea",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 247,
-          "entryLine": null,
-          "passesShadow": false
-        },
         {
           "sport": "NFL",
           "gameKey": "det_buf",
