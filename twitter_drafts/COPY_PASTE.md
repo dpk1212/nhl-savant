@@ -1,101 +1,97 @@
-# Twitter — 2026-09-16 · Hero GIVE · lab / vs the number / down night
+# Twitter — 2026-09-16 · Hero GIVE · day baseball bounce-back · 3 locked
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only)
-**CSV:** Sep 8–14. Overlay: honest L + month still green converts. PURPOSE=**give / educate**. No ask. Depth template (August `+46.8u`).
+**PURPOSE:** **Give.** Live `$XK` after the down-night lab post. Ask stays **cold**.
 
 | | |
 |--|--|
-| WHO | Someone who thinks winners hit 70% and a 4-7 night means the process is dead. |
-| PURPOSE | **Give / educate.** Show the lab: edge is vs the *price*, not the win%. Sweeping a night is rare. |
-| ONE | 53% looks average. Against those prices it isn’t. −120 to +150 is +138u because we beat the number, not because we run the table. |
-| SPCL | **C + P.** Walk the sheet. Said those plays, they lost, still here. |
-| Timeline | BetMGM ask spent. This is the scar + the audit. Don’t restage the four. Don’t say elite / v12 / HEAVY_FAV in the caption (table already has the bands). |
-| Ask | **None.** Authority is the give. |
+| WHO | Someone who thinks a 4-7 night means you hide until tonight. |
+| PURPOSE | **Give.** Bounce back is day baseball, not a speech. Three locked, more coming. |
+| ONE | No better way to bounce back than with day baseball. |
+| SPCL | **S.** $2K / 5u Under 7.5, $1K at 1.1×, $10K tracked Over. |
+| Timeline | Odds-lab give was the scar. This is the live receipt that post promised next. Don’t restage CLE −1.5 / Pirates. |
+| Ask | **None in hero.** SR = watch-and-grade only. |
 
-**Attach:** his odds-band table. Caption *walks* it. Don’t recap every cell — walk the inversion.
+**Attach:** the three **LOCKED** cards (CWS/CLE Under 7.5 5u · SF/STL Under 8.5 3u · NYY/MIN Over 8.5 2u). Not the SET screens.
 
 ---
 
 ### 0 · Spine (Dale — law)
-- Lab every morning, win or lose
-- More depth: real edge is vs those market segments
-- “Elite” but still low 50s — shape: 53% vs a 45% number is the job. **Do not write elite.**
-- Extremely profitable vs the market here
-- Sweeping every night is truly rare
-- Share the data he’s monitoring → trust / authority
-- Table in the post
-- Last night: Guardians −1.5 and those Pirates didn’t hit
+- No better way to bounce back than with day baseball
+- Here are 3 plays so far
+- More will be locking in soon
 
-**Shape, don’t replace.** Keep lab + last night + the table. Add the vs-market walk. CLE −1.5 was **+158** (not the +150 bucket). Pirates +1.5 was **+114**. Night **4-7, −11.3u**.
+**Shape, don’t replace.** Don’t open on last night’s 4-7 ledger. Don’t restage Guardians −1.5 / Pirates. Today’s CLE play is **Under 7.5**, a different ticket.
 
-### Stuff (don’t invent)
-- Book: **1,041** · 577-464 · 55.4% · market 54.0% · **+1.4pp** · +186.7u · +6.5% ROI
-- −120 to +150 (PICK_EM + MOD_DOG): **663** · 348-315 · **52.5%** · market **49.9%** · **+2.6pp** · **+138u** · +7.7% ROI
-- The beat-the-price slice: +109 to +150 · **175** · 93-82 · **53.1%** · market **44.8%** · **+8.3pp** · +77.9u · **+20.9% ROI**
-- Coin-flip / pick’em: **488** · 255-233 · 52.3% · market 51.7% · **+0.6pp** · +60.0u · +4.2% ROI
-- Big favorites (−186 or shorter): **123** · 87-36 · **70.7%** · market **74.0%** · **−3.3pp** · +9.9u · +2.3% ROI — the “high WR” that loses to the price
-- Last 19 live days: one **4-0**, one **0-5**, five red, last night **4-7**. 70%+ nights happen. Perfect slates almost don’t.
+### Stuff (don’t invent · don’t mash wallets)
+- **CWS @ CLE** Under 7.5 **−154** · **5.0u** · flagged **−113** · now **−154** · EV **+5.9%** · move **+11.4pp** · LOCKED
+  - Lead wallet **51176e** (not 9214c2): **$2.0K** · 18% of board · 23-11 · **+35% ROI** · 68% wins · 65% beat close · **1.0×** usual ($2.0K)
+  - SET bar: **$2.8K** tracked on Under, **2 proven** with · **4 proven** on the Over · Over **$12K / $12.5K** other side
+- **SF @ STL** Under 8.5 **−119** · **3.0u** · flagged **−108** · LOCKED
+  - Lead **9214c2**: **$1.0K** at **1.1×** usual ($903 → $1.0K) · 78-51 · **+26% ROI** · 61% wins · 63% beat close
+  - **$2.1K** 11% of board · **$3.1K** tracked on Under · one proven against · Over **$25.6K** other side
+- **NYY @ MIN** Over 8.5 **+107** · **2.0u** · flagged **+122** · LOCKED
+  - Lead **9214c2**: **$518** at **0.6×** usual · 78-51 · **+26% ROI** · 61% · 63% beat close
+  - **$1.4K** 63% of board · **$10K** tracked on Over · 2 proven with · 1 proven against
+- First pitches: CLE **1:11** · STL **1:16** · MIN **1:41** ET
+- Do **not** put 9214c2’s $1K on the Guardians card. Do **not** say Confirmed / Vault / GOLD. Do **not** fake zero against.
 
 ### 6 · HOOK QA
 
 | | Kill | This |
 |--|------|------|
-| Line 1 | One thing you can always be assured of / we are elite | **Last night didn’t hit.** |
-| Line 2 | edge/metrics / HEAVY_FAV | **Guardians −1.5. Those Pirates.** |
-| Next | 70% swagger | **53% vs a 45% number. That’s the job.** |
+| Line 1 | WE’RE BACK / last night didn’t hit | **No better way to bounce back than with day baseball.** |
+| Line 2 | 4-7 ledger / CLE −1.5 | **3 so far. More locking soon.** |
+| Body | three-play dump with no $ | **5u $2K + line was −113 · 3u $1K at 1.1× · 2u Over** |
 
-What: those two lost; 53% is the real book.  
-How: walk vs-market on the table.  
-So what: you don’t sweep nights. You beat the price over 1,041 plays.
+What: day baseball is the bounce-back.  
+How: three locked receipts, biggest first.  
+So what: more still coming; grade this afternoon.
 
-**Killed:** elite · v12 · HEAVY_FAV in *our* words · CLE −1.5 as a +150 · PIT ML +197 in this bucket · restage +118u / the four · ask · streak-end clone · “absolutely hammer”
+**Killed:** WE’RE BACK · last-night 4-7 table · Guardians −1.5 / Pirates restage · +118u · BetMGM four · 53% lab · Confirmed/Vault · fake unanimous · mash 9214c2 onto CLE · ask · `?ref=`
 
 ---
 
 ## COPY THIS
 
 **Type:** Hero  
-**Media:** the odds-band table he already made
+**Media:** 3 LOCKED cards — Sox/Guardians Under 7.5 5u · Giants/Cards Under 8.5 3u · Yankees/Twins Over 8.5 2u  
+**Do not attach the SET screens.**
 
 ```
-Last night didn’t hit.
-Guardians −1.5. Those Pirates.
+No better way to bounce back than with day baseball.
 
-I still ran the sheet this morning. I do that every morning. Win or lose.
+3 so far. More locking soon.
 
-1,041 plays. That’s the sample.
+White Sox/Guardians Under 7.5 -154 · 5u
+$2K from a sharp we track. Line was -113.
 
-People see 52–53% and think it’s not good.
+Giants/Cards Under 8.5 -119 · 3u
+$1K at 1.1× his usual.
 
-That’s the whole trick.
-
-Look at the table.
-
-−120 to +150 is 663 of those plays.
-348-315. 52.5%.
-The market on those same bets was 49.9%.
-+2.6 points vs the number.
-+138 units. +7.7% ROI.
-
-The plus-money slice is where we’re actually beating the price:
-+109 to +150. 175 plays. 93-82.
-53.1%.
-They were priced like a 44.8% shot.
-That’s +8.3 points on the number. +78 units. +21% ROI.
-
-52% vs a coin flip is nothing.
-53% vs a 45% number is the job.
-
-The row that *looks* elite is the shorts.
-−186 and shorter. 71% winners.
-The market was 74%. We’re −3 points on those. Almost no profit.
-
-So no — we do not sweep slates.
-Last 19 days we went 4-0 once and 0-5 once. Last night was 4-7, −11 units.
-
-I don’t need last night to go 7-0.
-I need 1,041 plays to keep beating the number.
-
-That’s what I’m looking at every morning.
+Yankees/Twins Over 8.5 +107 · 2u
 ```
 
-**Do not post from here.** Stage only. Never auto-publish.
+---
+
+## 2 · SELF-REPLY — honest against + watch
+**When:** Reply 1 under the hero  
+**Attach:** none (cards already on the hero)  
+**Ask:** watch-and-grade only. No promo price. No site URL.
+
+```
+Guardians Under is 18% of the board. Four proven sharps on the Over. We're 5u on the Under anyway.
+
+Cards Under: 78-51, +26% ROI, $1K at 1.1× his usual.
+
+Twins Over: $10K tracked. The lead wallet is $518 — 0.6× his usual. That's the 2u.
+
+Watch them grade.
+```
+
+---
+
+## Order of operations
+1. **HERO** — NOW — attach the three LOCKED cards
+2. **SELF-REPLY** — honest against / size-vs-usual · watch-and-grade
+
+**Never auto-publish.**
