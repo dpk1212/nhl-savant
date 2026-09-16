@@ -37,14 +37,14 @@ const TRIAL_DAYS = {
   pro: 10,
 };
 
-// 72h flash — mirrors frontend PAYWALL_PROMO / PROMO_CODES.UPGRADE.
+// Flash — mirrors frontend PAYWALL_PROMO / PROMO_CODES.SHARPFLOW.
 // Auto-applied at Checkout for monthly/weekly only. Keep Stripe coupon
-// restricted to scout + elite price IDs (duration: forever).
+// restricted to scout + elite price IDs (33% off, repeating 2 months).
 const FLASH_PROMO = {
-  code: 'Upgrade',
-  codeAliases: ['Upgrade', 'UPGRADE', 'upgrade'],
+  code: 'SHARPFLOW',
+  codeAliases: ['SharpFlow', 'SHARPFLOW', 'sharpflow'],
   tiers: new Set(['scout', 'elite']),
-  endMs: Date.parse('2026-08-30T10:00:00Z'), // Sun Aug 30, 6:00am ET
+  endMs: Date.parse('2026-09-19T16:00:00Z'), // Sat Sep 19, 12:00pm ET
 };
 
 async function resolveFlashPromoId(stripeClient, tier) {
@@ -218,7 +218,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
       },
     };
 
-    // Flash: auto-apply Upgrade on monthly/weekly so users don't miss the code.
+    // Flash: auto-apply SHARPFLOW on monthly/weekly so users don't miss the code.
     // Stripe forbids discounts + allow_promotion_codes together.
     const flashPromoId = await resolveFlashPromoId(stripeClient, tier);
     if (flashPromoId) {

@@ -25,14 +25,16 @@ const logEvent = (eventName, params) => {
 };
 
 const PROMO_CODES = {
-  // 72h flash — monthly (elite) + weekly (scout) only. Annual (pro) excluded.
-  // Stripe promotion code `Upgrade` must also be limited to those two price IDs.
-  UPGRADE: {
-    code: 'Upgrade',
-    discount: 25,
-    label: '72-Hour Flash Sale',
-    forLife: true,
-    expires: new Date('2026-08-30T10:00:00Z'), // Sun Aug 30, 6:00am ET
+  // Flash — monthly (elite) + weekly (scout) only. Annual (pro) excluded.
+  // Stripe promotion code `SharpFlow` must also be limited to those two price IDs.
+  SHARPFLOW: {
+    code: 'SHARPFLOW',
+    discount: 33,
+    label: 'Flash Sale',
+    forLife: false,
+    flash: true,
+    durationLabel: 'first 2 weeks / 2 months',
+    expires: new Date('2026-09-19T16:00:00Z'), // Sat Sep 19, 12:00pm ET
     tiers: ['scout', 'elite'],
   },
 };
@@ -50,11 +52,12 @@ const Pricing = () => {
   const [activeDiscount, setActiveDiscount] = useState(null); // { code, discount, timeLeft }
   const [copied, setCopied] = useState(false);
   const [promoApplied, setPromoApplied] = useState(false);
+  const [nowMs, setNowMs] = useState(Date.now());
 
-  // Check for promo code in URL query params — also auto-apply live Upgrade flash
+  // Check for promo code in URL query params — also auto-apply live SHARPFLOW flash
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const promo = (params.get('promo') || 'Upgrade')?.toUpperCase();
+    const promo = (params.get('promo') || 'SHARPFLOW')?.toUpperCase();
     if (promo && PROMO_CODES[promo]) {
       const p = PROMO_CODES[promo];
       if (p.expires && new Date() > p.expires) return;
@@ -64,12 +67,20 @@ const Pricing = () => {
         timeLeft: null,
         label: p.label,
         forLife: p.forLife,
+        flash: p.flash,
+        durationLabel: p.durationLabel || null,
         tiers: p.tiers || null,
         expires: p.expires || null,
       });
       setPromoApplied(true);
     }
   }, [location.search]);
+
+  useEffect(() => {
+    if (!activeDiscount?.flash || !activeDiscount?.expires) return;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [activeDiscount?.flash, activeDiscount?.expires]);
 
   // Load spins remaining and check for active discount on mount
   useEffect(() => {
@@ -199,11 +210,24 @@ const Pricing = () => {
     'Full model transparency'
   ];
 
-  const flashLive = !!(activeDiscount?.forLife
+  const flashLive = !!(activeDiscount?.flash
     && activeDiscount?.tiers?.length
-    && (!activeDiscount.expires || new Date() <= activeDiscount.expires));
+    && (!activeDiscount.expires || nowMs <= activeDiscount.expires.getTime()));
 
-  // During flash: Monthly + Weekly highlighted. Annual demoted (no Upgrade discount).
+  const flashRemaining = flashLive && activeDiscount?.expires
+    ? Math.max(0, activeDiscount.expires.getTime() - nowMs)
+    : 0;
+  const flashCountdown = (() => {
+    if (!flashRemaining) return '';
+    const d = Math.floor(flashRemaining / 86400000);
+    const h = Math.floor((flashRemaining % 86400000) / 3600000);
+    const m = Math.floor((flashRemaining % 3600000) / 60000);
+    const s = Math.floor((flashRemaining % 60000) / 1000);
+    if (d > 0) return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+  })();
+
+  // During flash: Monthly + Weekly highlighted. Annual demoted (no SHARPFLOW discount).
   const tiers = [
     {
       id: 'elite',
@@ -216,10 +240,11 @@ const Pricing = () => {
       popular: true,
       popularLabel: flashLive ? 'Flash Sale' : 'Most Popular',
       priceAnchor: flashLive
-        ? '25% off for life with code Upgrade'
+        ? '33% off your first 2 months with code SHARPFLOW'
         : 'One blown $20 parlay costs more than this',
       pricePerDay: '87¢/day',
-      savings: flashLive ? 'Save 25% for life' : 'Save $9/month vs weekly',
+      savings: flashLive ? 'Save 33% for 2 months' : 'Save $9/month vs weekly',
+      saleBadge: ' FIRST 2 MONTHS',
       cta: 'Start 7-Day Trial',
       highlight: flashLive ? 'Flash sale — monthly & weekly only' : 'Most popular with serious bettors'
     },
@@ -234,12 +259,13 @@ const Pricing = () => {
       featured: flashLive,
       featuredLabel: 'Weekly Flash',
       priceAnchor: flashLive
-        ? '25% off for life with code Upgrade'
+        ? '33% off your first 2 weeks with code SHARPFLOW'
         : 'Less than one stadium beer',
       pricePerDay: '$1.14/day',
-      savings: flashLive ? 'Save 25% for life' : null,
+      savings: flashLive ? 'Save 33% for 2 weeks' : null,
+      saleBadge: ' FIRST 2 WEEKS',
       cta: 'Start 5-Day Trial',
-      highlight: flashLive ? 'Same 25% off for life — try a week' : 'No commitment — cancel any week'
+      highlight: flashLive ? 'Same 33% off — try a week before CFB' : 'No commitment — cancel any week'
     },
     {
       id: 'pro',
@@ -279,8 +305,8 @@ const Pricing = () => {
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
-        {/* For-life promo banner (Upgrade) */}
-        {activeDiscount?.forLife && (
+        {/* Flash promo banner (SHARPFLOW) */}
+        {flashLive && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(16,185,129,0.1) 100%)',
             border: '1px solid rgba(212,175,55,0.4)',
@@ -307,7 +333,7 @@ const Pricing = () => {
               color: 'rgba(241,245,249,0.8)',
               lineHeight: 1.5,
             }}>
-              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off for life</strong> on Monthly & Weekly only — locked forever. 72-hour flash; Annual excluded.
+              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off your first 2 weeks / 2 months</strong> on Monthly & Weekly — gone Saturday at noon ET, before CFB kickoff. Annual excluded.
               <br />Use code <strong style={{
                 color: '#D4AF37',
                 padding: '0.1rem 0.4rem',
@@ -315,6 +341,18 @@ const Pricing = () => {
                 background: 'rgba(212,175,55,0.15)',
               }}>{activeDiscount.code}</strong> at Stripe checkout.
             </div>
+            {flashCountdown && (
+              <div style={{
+                marginTop: '0.7rem',
+                fontSize: window.innerWidth < 640 ? '0.82rem' : '0.9rem',
+                fontWeight: 800,
+                color: '#D4AF37',
+                fontFamily: 'monospace',
+                letterSpacing: '0.06em',
+              }}>
+                ENDS IN {flashCountdown}
+              </div>
+            )}
           </div>
         )}
 
@@ -393,7 +431,7 @@ const Pricing = () => {
         </div>
 
         {/* Promo code applied banner — replaces spinner when arriving via promo link */}
-        {!isPremium && promoApplied && activeDiscount && (
+        {!isPremium && promoApplied && flashLive && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(212,175,55,0.12) 100%)',
             border: '2px solid rgba(16,185,129,0.5)',
@@ -416,14 +454,14 @@ const Pricing = () => {
                 background: 'linear-gradient(135deg, #10B981 0%, #D4AF37 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0,
               }}>
-                {activeDiscount.discount}% Off For Life — Monthly & Weekly
+                {activeDiscount.discount}% Off First 2 Weeks / 2 Months
               </h3>
             </div>
             <p style={{
               fontSize: window.innerWidth < 640 ? '0.938rem' : '1rem',
               color: 'rgba(241,245,249,0.8)', marginBottom: '0.75rem', lineHeight: 1.5,
             }}>
-              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> locks {activeDiscount.discount}% off forever on Monthly & Weekly. Annual excluded.
+              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is 33% off your first 2 weeks (Weekly) or 2 months (Monthly). Ends Saturday noon ET. Annual excluded.
             </p>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
@@ -793,8 +831,8 @@ const Pricing = () => {
             margin: '0 auto 0.5rem auto',
             lineHeight: '1.6'
           }}>
-            {activeDiscount?.forLife
-              ? `Every plan includes everything. Code ${activeDiscount.code} = ${activeDiscount.discount}% off for life on Monthly & Weekly only.`
+            {flashLive
+              ? `Every plan includes everything. Code ${activeDiscount.code} = ${activeDiscount.discount}% off your first 2 weeks / 2 months on Monthly & Weekly only.`
               : 'Every plan includes everything — pick the commitment that fits.'}
           </p>
           <div style={{
@@ -975,7 +1013,7 @@ const Pricing = () => {
                   {tierInfo.description}
                 </p>
 
-                {/* Price — Upgrade flash only discounts monthly/weekly */}
+                {/* Price — SHARPFLOW flash only discounts monthly/weekly */}
                 <div style={{ marginBottom: '1rem' }}>
                   {onSale ? (
                     <>
@@ -1030,7 +1068,7 @@ const Pricing = () => {
                       fontWeight: '700',
                       color: '#10B981'
                     }}>
-                      {activeDiscount.discount}% OFF{activeDiscount.forLife ? ' FOR LIFE' : ''}
+                      {activeDiscount.discount}% OFF{activeDiscount.forLife ? ' FOR LIFE' : (tierInfo.saleBadge || '')}
                     </div>
                   )}
                 </div>
