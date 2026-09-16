@@ -1,101 +1,159 @@
-# Twitter — 2026-09-16 · Hero GIVE · lab / vs the number / down night
+# Twitter — 2026-09-16 · Hero GIVE · day baseball bounce-back · AUDIT (not a caption)
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only)
-**CSV:** Sep 8–14. Overlay: honest L + month still green converts. PURPOSE=**give / educate**. No ask. Depth template (August `+46.8u`).
+**PURPOSE:** **Give.** Live audit of three locked tickets. Ask stays **cold**.
 
 | | |
 |--|--|
-| WHO | Someone who thinks winners hit 70% and a 4-7 night means the process is dead. |
-| PURPOSE | **Give / educate.** Show the lab: edge is vs the *price*, not the win%. Sweeping a night is rare. |
-| ONE | 53% looks average. Against those prices it isn’t. −120 to +150 is +138u because we beat the number, not because we run the table. |
-| SPCL | **C + P.** Walk the sheet. Said those plays, they lost, still here. |
-| Timeline | BetMGM ask spent. This is the scar + the audit. Don’t restage the four. Don’t say elite / v12 / HEAVY_FAV in the caption (table already has the bands). |
-| Ask | **None.** Authority is the give. |
+| WHO | Someone who thinks bounce-back means a speech — or that $12K / $26K / $10K is the play. |
+| PURPOSE | **Give.** Walk the tape. Units match the wallet, not the pile. |
+| ONE | Bounce back is day baseball sized to the wallet, not the pile. |
+| SPCL | **S + C.** $2K 23-11 +35% vs $12.5K Over · $1K at 1.1× · $10K tracked with $8.7K losers and a 0.6× lead. |
+| Timeline | Odds-lab was the scar. This is the live receipt. Don’t restage CLE −1.5 / Pirates. |
+| Ask | **None.** Close = watch them grade. |
 
-**Attach:** his odds-band table. Caption *walks* it. Don’t recap every cell — walk the inversion.
+**Attach (walk order):** LOCKED Sox/Guardians (scatter + 23-11) → LOCKED Giants/Cards (1.1×) → SET Yankees ($10K / $8.7K losers) if you have a 4th slot, else LOCKED Yankees (0.6× $518). Odds/units are lock-time on all of them.
 
 ---
 
 ### 0 · Spine (Dale — law)
-- Lab every morning, win or lose
-- More depth: real edge is vs those market segments
-- “Elite” but still low 50s — shape: 53% vs a 45% number is the job. **Do not write elite.**
-- Extremely profitable vs the market here
-- Sweeping every night is truly rare
-- Share the data he’s monitoring → trust / authority
-- Table in the post
-- Last night: Guardians −1.5 and those Pirates didn’t hit
+- No better way to bounce back than with day baseball
+- Here are 3 plays so far
+- More will be locking in soon
+- **THIS NEEDS TO BE BETTER — Hormozi techniques · sharp data that is meaningful**
 
-**Shape, don’t replace.** Keep lab + last night + the table. Add the vs-market walk. CLE −1.5 was **+158** (not the +150 bucket). Pirates +1.5 was **+114**. Night **4-7, −11.3u**.
+**Shape, don’t replace the hook.** The miss was the body. Last draft was a caption. This one is the audit.
 
-### Stuff (don’t invent)
-- Book: **1,041** · 577-464 · 55.4% · market 54.0% · **+1.4pp** · +186.7u · +6.5% ROI
-- −120 to +150 (PICK_EM + MOD_DOG): **663** · 348-315 · **52.5%** · market **49.9%** · **+2.6pp** · **+138u** · +7.7% ROI
-- The beat-the-price slice: +109 to +150 · **175** · 93-82 · **53.1%** · market **44.8%** · **+8.3pp** · +77.9u · **+20.9% ROI**
-- Coin-flip / pick’em: **488** · 255-233 · 52.3% · market 51.7% · **+0.6pp** · +60.0u · +4.2% ROI
-- Big favorites (−186 or shorter): **123** · 87-36 · **70.7%** · market **74.0%** · **−3.3pp** · +9.9u · +2.3% ROI — the “high WR” that loses to the price
-- Last 19 live days: one **4-0**, one **0-5**, five red, last night **4-7**. 70%+ nights happen. Perfect slates almost don’t.
+### Stuff (don’t invent · don’t mash wallets)
+**CWS @ CLE** Under 7.5 **−154** · **5.0u** · flagged **−113** · LOCKED
+- Lead **51176e** (NOT 9214c2): **$2.0K** · 18% of board · **23-11** · **+35% ROI** · **68% wins** · **65% beat close** · **1.0×** usual ($2.0K)
+- Other side Over **$12.5K** · **4 proven · 3 secondary** · 52.4% · 62.6% beat close · **+4.4% ROI**
+- SET: **$2.8K** tracked · 2 proven with · 4 proven against · losing **$5.6K all on the Over**
+- Do **not** put 78-51 / +$34K / 9214c2 on this card
+
+**SF @ STL** Under 8.5 **−119** · **3.0u** · flagged **−108** · LOCKED
+- Lead **9214c2**: **$1.0K** at **1.1×** (usual **$903**) · **78-51** · **+26% ROI** · **61% wins** · **63% beat close** · L30 **+$34K**
+- **$2.1K** · 11% of board · Other Over **$25.6K / $26K** · 1 proven + 1 secondary against
+- SET: **$3.1K** tracked · 1 more proven alongside · losing **$1.0K on our side**
+
+**NYY @ MIN** Over 8.5 **+107** · **2.0u** · flagged **+122** · LOCKED
+- SET: **$10K** tracked · **2 proven** with · 1 proven against · losing **$8.7K on our side** · Under **$6.1K**
+- Lead **9214c2** (same wallet as Cards): **$518** at **0.6×** (usual $903) · 78-51 · +26% · 61% · 63% beat close
+- LOCKED board **$1.4K** 63% · other side Under **$6.1K** · 56% · 71% beat close · **+14% ROI** · 1 proven
+
+### Hormozi (in the words, not the header)
+- **Rule of One:** size the wallet, not the pile. All three tickets prove that one claim.
+- **Proof machine:** pain first — $12.5K / $26K / $10K is what they see. Then classify it. Then the lock.
+- **Pairing:** being on the side the *person* is on. Not Over-as-brand, not Under-as-brand (we have both).
+- **SPCL:** S = we control the wallet tape. C = WR / ROI / × usual / against $. P = last night lost, still posting locks (implied, not restaged). L = Dale, not a menu.
+- **Trust:** four proven against the 5u · one proven against Cards · $8.7K losers on the $10K Over · Under against is +14% ROI.
+- **Qual:** stuff inside. August depth. Not 256 characters of labels.
+- **Value equation:** you don’t become the 23-11 guy. You see that he’s full size before the pile talks you off it.
+- **Diagnostic:** current = loud $ looks like the play / hide until tonight. Desired = bounce back with sized tickets. Obstacle = the pile. Vehicle = these three.
 
 ### 6 · HOOK QA
 
 | | Kill | This |
 |--|------|------|
-| Line 1 | One thing you can always be assured of / we are elite | **Last night didn’t hit.** |
-| Line 2 | edge/metrics / HEAVY_FAV | **Guardians −1.5. Those Pirates.** |
-| Next | 70% swagger | **53% vs a 45% number. That’s the job.** |
+| Line 1 | WE’RE BACK / last night 4-7 | **No better way to bounce back than with day baseball.** |
+| Line 2 | empty “3 plays” with no $ | **3 so far. More locking soon.** then immediately the $12.5K Over. |
+| Body | caption of units | **Audit walk:** pile → person → why the units. |
 
-What: those two lost; 53% is the real book.  
-How: walk vs-market on the table.  
-So what: you don’t sweep nights. You beat the price over 1,041 plays.
+What: bounce back is day baseball.  
+How: three locked tickets sized to the wallet tape.  
+So what: 5u on 18% · 3u on a 1.1× · 2u on a $10K pile with losers in it.
 
-**Killed:** elite · v12 · HEAVY_FAV in *our* words · CLE −1.5 as a +150 · PIT ML +197 in this bucket · restage +118u / the four · ask · streak-end clone · “absolutely hammer”
+**Killed:** caption draft · WE’RE BACK · CLE −1.5 / Pirates · +118u · 53% lab · mash 9214c2 onto CLE · Confirmed/Vault/GOLD · fake unanimous · become-sharp sermon · `?ref=` · ask
 
 ---
 
 ## COPY THIS
 
 **Type:** Hero  
-**Media:** the odds-band table he already made
+**Media (walk order):** 1) LOCKED Sox/Guardians  2) LOCKED Giants/Cards  3) LOCKED Yankees/Twins. If you have a 4th: SET Yankees ($10K / $8.7K losers).
 
 ```
-Last night didn’t hit.
-Guardians −1.5. Those Pirates.
+No better way to bounce back than with day baseball.
 
-I still ran the sheet this morning. I do that every morning. Win or lose.
+3 so far. More locking soon.
 
-1,041 plays. That’s the sample.
+White Sox / Guardians Under 7.5
+-154. 5u.
 
-People see 52–53% and think it’s not good.
+There's $12.5K on the Over.
+Four proven sharps we track took that side.
+We're 18% of the board.
 
-That’s the whole trick.
+5u on the Under anyway.
 
-Look at the table.
+$2K from a sharp we track. His usual size.
+23-11. +35% ROI. 68% wins.
+Beats the closing line 65% of the time.
 
-−120 to +150 is 663 of those plays.
-348-315. 52.5%.
-The market on those same bets was 49.9%.
-+2.6 points vs the number.
-+138 units. +7.7% ROI.
+The Over is 52% and +4% ROI.
+This guy is +35%.
 
-The plus-money slice is where we’re actually beating the price:
-+109 to +150. 175 plays. 93-82.
-53.1%.
-They were priced like a 44.8% shot.
-That’s +8.3 points on the number. +78 units. +21% ROI.
+That's the 5u.
+Not the pile. The person.
 
-52% vs a coin flip is nothing.
-53% vs a 45% number is the job.
+Flagged at -113. It's -154 now.
 
-The row that *looks* elite is the shorts.
-−186 and shorter. 71% winners.
-The market was 74%. We’re −3 points on those. Almost no profit.
+Giants / Cards Under 8.5
+-119. 3u.
 
-So no — we do not sweep slates.
-Last 19 days we went 4-0 once and 0-5 once. Last night was 4-7, −11 units.
+$26K on the Over.
+$2.1K on us.
 
-I don’t need last night to go 7-0.
-I need 1,041 plays to keep beating the number.
+A proven winner we track has $1K on this — 1.1× his usual.
+He sits $903. He sat $1K.
+78-51. +26% ROI. 61% wins.
+Beats the close 63%.
++$34K the last 30.
 
-That’s what I’m looking at every morning.
+One proven took the Over.
+We don't skip that.
+
+Yankees / Twins Over 8.5
++107. 2u.
+
+$10K of tracked money is on this.
+Two proven winners aboard.
+
+Don't get drunk on the $10K.
+
+$8.7K of it is losing money on our side.
+
+The lead wallet is the same 78-51. +26% ROI. 63% beat close.
+He's on it for $518. 0.6× his usual.
+
+One proven took the Under.
+That side is +14% ROI.
+
+So it's 2u.
+We like who's on it. He's not loading it. The pile has losers in it.
+
+Flagged at +122.
+
+Size the wallet. Not the pile.
+That's the bounce back.
+
+More locking soon.
+Watch them grade.
 ```
 
-**Do not post from here.** Stage only. Never auto-publish.
+---
+
+## 2 · SELF-REPLY — optional
+**When:** only if the hero is live and you want a second beat. Not required. Pudding is already in the parent.
+**Ask:** none.
+
+```
+I'll drop the next ones as they lock.
+```
+
+---
+
+## Order of operations
+1. **HERO** — NOW — attach LOCKED cards in walk order (CLE → STL → NYY)
+2. **SELF-REPLY** — optional. “I'll drop the next ones as they lock.”
+
+**Never auto-publish.**
