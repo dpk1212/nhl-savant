@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-09-16T04:10:39.765Z",
-  "elapsedSec": 41.3,
+  "scannedAt": "2026-09-16T04:15:56.740Z",
+  "elapsedSec": 40.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 164,
   "summary": {
     "total": 345,
-    "coveredByMain": 27,
+    "coveredByMain": 26,
     "recovered": 22,
-    "recoveredPositions": 176,
-    "noPositions": 296,
+    "recoveredPositions": 178,
+    "noPositions": 297,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 20,
+      "ml": 21,
       "spread": 4,
       "total": 1,
-      "dropped_shadow_gate": 131,
+      "dropped_shadow_gate": 132,
       "dropped_excluded": 19,
       "dropped_duplicate": 1
     }
@@ -835,11 +835,11 @@
       "sports": "WNBA,SOC,UFC,CFB,MLB,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 51,
+      "positionsCount": 52,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 3963,
       "willPassShadowGate": 10,
-      "willDropAtShadowGate": 41,
+      "willDropAtShadowGate": 42,
       "positions": [
         {
           "sport": "MLB",
@@ -900,7 +900,7 @@
           "gameKey": "rrc_bar",
           "marketType": "ml",
           "side": "home",
-          "invested": 4465,
+          "invested": 4490,
           "entryLine": null,
           "passesShadow": false
         },
@@ -1055,6 +1055,15 @@
           "side": "away",
           "invested": 265,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "cws_cle",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 112,
+          "entryLine": -1.5,
           "passesShadow": false
         },
         {
@@ -3154,7 +3163,8 @@
       "tier": "CONFIRMED",
       "name": "SDTrading",
       "sports": "CFB,MLB",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x16bb9951a36fce71e2ef57890b786145e0ba8492"
     },
     {
       "walletShort": "bbaa3a",
@@ -4250,10 +4260,10 @@
       "sports": "SOC,NBA,UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 12647,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 2,
       "positions": [
         {
@@ -4262,6 +4272,15 @@
           "marketType": "ml",
           "side": "home",
           "invested": 9934,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "det_tor",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 3842,
           "entryLine": null,
           "passesShadow": true
         },
