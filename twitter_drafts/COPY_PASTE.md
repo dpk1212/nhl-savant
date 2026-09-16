@@ -1,76 +1,68 @@
-# Twitter — 2026-09-15 · QT ASK · BetMGM Tuesday / +118u / four tonight
+# Twitter — 2026-09-16 · Hero GIVE · lab / −120 to +150 / down night
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only)
-**CSV:** Sep 8–14. Overlay: hard number in line 1, fork in the same tweet. PURPOSE=**ask**.
+**CSV:** Sep 8–14. Overlay: honest L + month still green converts. PURPOSE=**give**. No ask.
 
 | | |
 |--|--|
-| WHO | Someone inside BetMGM’s Tuesday most-bet graphic. |
-| PURPOSE | **Ask.** Start using Sharp Flow. Fork in-hero. |
-| ONE | +118u on MLB in 30 days is this process. Tonight it has four on. That’s how you stop guessing tickets vs the wallets we track. |
-| SPCL | **S + C** in the open. P = four live + the ask. |
-| Timeline | Griffin $2.3k unopposed is stale. CLE is $8.1k / $5.6k now. Mets $138k spent. Don’t recap their list. |
-| Ask | **In-hero.** Sharp Flow on NHL Savant. Watch these four grade tonight. |
+| WHO | Someone who faded last night or thinks one red card kills the process. |
+| PURPOSE | **Give / connect.** Down night, still in the lab, here’s where the 1,000-play book actually prints. |
+| ONE | Guardians −1.5 and those Pirates didn’t hit. −120 to +150 is still +138u on 1,041 plays. One night doesn’t move that. |
+| SPCL | **P + C.** Said those plays, they lost, still ran the sheet. 1,041 / +138u is the receipt. |
+| Timeline | BetMGM four-tonight ask is staged/spent. This is the grade/scar, not a restage of the four. Don’t open Vault / v12 / band jargon. |
+| Ask | **None.** Honest L family. Fork would fight the lab. |
 
-**Quote** @BetMGMNews Tuesday MLB graphic.  
-**Attach (walk order):** Guardians -1.5 · two-up (Rays Over 7.5 + Pirates +1.5) · Brewers/Pirates Over 7.5.
+**Attach:** his odds-band table (the image). Caption does not recap every row.
 
 ---
 
 ### 0 · Spine (Dale — law)
-- Perfect quoted tweet of that BetMGM Tuesday list
-- Stop wondering if you are with the public or sharps
-- Start using Sharpflow on NHL savant
-- +118 units MLB last 30 days
-- 4 picks that fit the strategy tonight
+- Always in the lab every morning, win or lose
+- Where is the value: hammer −120s to +150s → +137u
+- Last night that was Guardians −1.5 and those Pirates — didn’t work
+- 1,000+ plays, sample is meaningful
+- Posted with the band table
 
-**Shape, don’t replace.** Stop-wondering is the close, not line 1. Don’t recap their most-bet hook. Don’t call all four fades (MIL/PIT Over 7.5 is #2 most-bet total). Don’t write CLE unopposed.
+**Shape, don’t replace.** Lab stays. Number gets into the screenshot. Don’t call CLE −1.5 a −120/+150 ticket (it was **+158**). Pirates +1.5 was **+114** (in band). Pirates ML was **+197** (long dog — not this bucket). Night was **4-7, −11.3u**.
+
+### Stuff (don’t invent)
+- Live book 2026-06-01 → 2026-09-14: **1,041** plays, +186.7u, +6.5% ROI
+- PICK_EM (−121 to +108) + MOD_DOG (+109 to +150) = **663** plays, **+137.9u** → say **+138 units**
+- Sep 15: CLE −1.5 **+158 / 4u / LOSS −4** · PIT +1.5 **+114 / 4u / LOSS −4** · PIT ML +197 1.5u LOSS (not this band) · night 4-7 −11.3u
+- In-range last night was mixed (some overs hit). Named scars lost. Don’t claim the band went 0-fer.
 
 ### 6 · HOOK QA
 
 | | Kill | This |
 |--|------|------|
-| Line 1 | Stop wondering if you’re with the public | **+118U ON MLB** |
-| Line 2 | Here’s what they’re betting / money list | **Last 30 days.** |
-| Next | scold / graphic isn’t the work | **Tonight the same process has four on.** |
+| Line 1 | One thing you can always be assured of… | **Last night didn’t hit.** |
+| Line 2 | Here is one worth sharing / edge/metrics | **Guardians −1.5. Those Pirates.** |
+| Next | absolutely hammer / HEAVY_FAV | **I still ran the sheet. −120 to +150 is +138u.** |
 
-What: +118u MLB, 30 days.  
-How: four live from the same process (walk the cards).  
-So what: stop guessing tickets vs wallets we track. Sharp Flow.
+What: those two lost.  
+How: 1,041-play sheet, −120 to +150 = +138u.  
+So what: one night is not the sample.
 
-**Killed:** unopposed · money list · recap most-bet games · all-four fade · $138k clone · Vault / HC / Confirmed / locked · convert paragraph as open · 1.0× as a size-up
+**Killed:** V12 · HEAVY_FAV in caption · CLE −1.5 as a +150 · PIT ML +197 in this bucket · “absolutely hammer” · restage +118u / the four · ask / trial · streak-end clone
 
 ---
 
 ## COPY THIS
 
-**Type:** Quote · @BetMGMNews  
-**Media:** CLE -1.5, then the two-up (Rays Over + PIT +1.5), then MIL/PIT Over 7.5
+**Type:** Hero  
+**Media:** the odds-band table he already made
 
 ```
-+118U ON MLB
-Last 30 days.
+Last night didn’t hit.
+Guardians −1.5. Those Pirates.
 
-Tonight the same process has four on.
+I still ran the numbers this morning. I do that every morning. Win or lose.
 
-Guardians -1.5. +142. Four units.
-$8.1k on Cleveland. $5.6k on the Sox.
-Proven $2k. One proven took Chicago.
+1,041 plays now.
 
-Rays Over 7.5. -136. Four units.
-Proven $810. Two more with him.
+Most of the profit is −120 to +150.
++138 units. 663 bets.
 
-Pirates +1.5. +105. Four units.
-$25k — 5.5× what he normally puts down.
-Two more with him.
-Brewers made the moneyline list.
-
-Pirates/Brewers Over 7.5. +105. Three units.
-$1.4k. Nothing against.
-
-That's how you stop wondering if you're with the tickets or with the wallets we track.
-
-Sharp Flow on NHL Savant.
-Watch these four grade tonight.
+Didn’t work last night. The sample still shows it.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
