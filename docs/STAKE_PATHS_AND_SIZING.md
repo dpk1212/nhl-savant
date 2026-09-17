@@ -83,6 +83,14 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
      └─ sport-wide CONFIRMED count gates max publishable units
      └─ <5 → 1u · 5–9 → 2u · 10–14 → 3u · ≥15 → full ladder
      └─ CAP only (never mute to 0) · after all mutes · MLB/deep sports EXEMPT
+12c. Board $ share mute (2026-09-17+)
+     └─ mute 25–45 · <25 keep only proven ≥50% · missing details fail-open
+     └─ mutedBy=board-share
+12d. Spread/total fat mute (2026-09-17+) — **SPREAD / TOTAL only**
+     └─ leftover BOTH (EDGE≥10 ∧ tape BOOST) any current units → 0u
+     └─ arriving (off→on) and units ≥4 → 0u
+     └─ ML exempt · BOTH reason wins if both fire · fail-open if both unknown
+     └─ mutedBy=st-fat
 13. T-15 → freeze
 ```
 
@@ -107,6 +115,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-08-19** | **Flinch / fail-open leftover mute** — still &lt;4u AND (odds-capped native RANK/TOP/SUPER **or** tape BOOST leftover **or** E≥10 leftover **or** tape FAIL_OPEN) → **0u**. 4u+ never touched. Native 3u RANK/TOP favorites without those flags stay. After Q1/UNOPP restore so those floors cannot revive a stub. |
 | **2026-09-09** | **Leftover A/B arriving HOLD** — leftover mute skips when Source A/B CONFIRMED and steam arrived (off→on). No-steam / already-on leftover still 0u. Later mutes (maxSR, ev-drift, T) still run. **Policy T native 2–3u A/B arriving → 4u.** 1u arriving stays floor 2u. Climate/unlock shrink not restacked. |
 | **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
+| **2026-09-17** | **Board $ share mute** — mute 25–45 · &lt;25 keep only proven ≥50% (junk-against) · after unit-tier. **Spread/total fat mute** — leftover BOTH any units + arriving ≥4u → 0u on SPREAD/TOTAL only. ML exempt. After board-share. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |
 | **2026-08-08** | **CONFIRMED-UNOPP promote** — CONFIRMED × size≥0.5× × unopposed → 1u (after SHARP / before DISSENT) · FOOLS back to hard 0u cancel |
@@ -337,7 +346,7 @@ Details: [`TAPE_SIZING.md`](./TAPE_SIZING.md).
 | `v8_tapeScore` / `v8_tapeAction` | Tape + `MUTE\|HOLD\|BOOST\|FAIL_OPEN` |
 | `v8_unitsPreTape` | Units entering tape (after soft size) |
 | `v8_winnerAlignEdge` / `v8_netMeanPrior` | EDGE / netCLV |
-| `mutedBy` | `winner_align_fade` · `tape-weak` · `believed-cut` · `fail-open-sub4` · … |
+| `mutedBy` | `winner_align_fade` · `tape-weak` · `believed-cut` · `fail-open-sub4` · `board-share` · `st-fat` · … |
 
 Full schema: [`SKILL_FEATURES.md`](./SKILL_FEATURES.md).
 

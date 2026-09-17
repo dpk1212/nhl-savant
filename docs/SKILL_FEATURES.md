@@ -1,6 +1,6 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 16` from **2026-08-19**_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 19` from **2026-09-17**_  
 _Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
@@ -50,6 +50,8 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **Ev-drift × EDGE mute** | 2026-08-26+: after TOP-crowded · any path · `EDGE≥15` **AND** `dEv≤−1.5` **AND** `currentEv&lt;−1` → **0u** · missing Ev/EDGE fail-open · `mutedBy=ev-drift-edge` · manual exempt |
 | **Sport Confirmed unlock CAP** | 2026-08-29+: **absolute last** · **NFL / CFB only** · sport-wide CONFIRMED n → max u: &lt;5→**1u** · 5–9→**2u** · 10–14→**3u** · ≥15→full · CAP only (never mute) · MLB/SOC/etc. EXEMPT · stamps `v8_sportUnlockAction` / `v8_sportConfirmedN` / `v8_sportUnlockCap` |
 | **Unit-tier EV × steam** | 2026-09-11+ mute · **2026-09-12+ timing promote** · after fav-juice · current EV &lt; −2 and no steam → **0u** · 2–&lt;4u → **4u** iff arriving **or** last-hour ≥ 3%, last-hour not &lt; 0, lock EV missing or ≥ −1, lock tier not LEAN/FADE · steam-on / EV `[0,1)` alone is not a yes · `mutedBy=ev-lt2-no-steam` · stamp `v8_unitTierEvSteamAction` |
+| **Board $ share mute** | 2026-09-17+: after unit-tier · mute all-$ FOR share in **[25%, 45%)** · &lt;25% keep only when proven $ share ≥ 50% (junk-against) · missing details fail-open · `mutedBy=board-share` · stamp `v8_boardShareAction` |
+| **Spread/total fat mute** | 2026-09-17+: after board-share · **SPREAD / TOTAL only** · leftover **BOTH** (EDGE≥10 ∧ tape BOOST) any current units → **0u** · arriving (off→on) **and** units ≥ 4 → **0u** · ML exempt · BOTH reason wins if both fire · missing BOTH + arriving unknown fail-open · `mutedBy=st-fat` · stamp `v8_stFatAction` |
 
 ---
 
@@ -122,7 +124,12 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_steamLastHourPct` / `v8_steamSinceOpenPct` / `v8_steamTier` | flat copies for queries |
 | `v8_ticketTapeLog` | compact lifecycle `[{ at, gate, hoursOut, evPct, fair, offer, lastHourPct, sinceOpenPct, tier, goldConfirmed?, limitRising? }]`. Gates: `first` · `hourly` (≤1/UTC hour) · `t60` · `t15` · `grade`. Cap 24; named gates kept. `goldConfirmed` / `limitRising` stored only when true. Tracking only. |
 | `v8_skillAgsV12` | AGS v12 score at stamp time |
-| `v8_skillFeatureVersion` | schema version (**16**) |
+| `v8_boardShareAction` | `MUTE` \| `HOLD` \| `EXEMPT` \| `PASS` — 25–45 / buried board $ share |
+| `v8_unitsPreBoardShare` | units entering board-share mute |
+| `v8_boardShare` / `v8_boardShareProven` | all-$ FOR share · proven (CONFIRMED+FLAT) FOR share |
+| `v8_stFatAction` | `MUTE` \| `HOLD` \| `EXEMPT` \| `PASS` — leftover BOTH / arriving ≥4u on S/T |
+| `v8_unitsPreStFat` | units entering spread/total fat mute |
+| `v8_skillFeatureVersion` | schema version (**19**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
 
 Frozen at **T-15** (last scalar write sticks). **COMPLETED** docs never rewritten. The lifecycle log is appended on each due gate until that freeze (Locked) or until `grade` (Action).
@@ -220,6 +227,7 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **14** | **2026-08-19** | `v8_expWin` / `v8_expWinFrozen` market-anchored expected WR (tracking only) |
 | **15** | **2026-08-19** | `v8_ticketEvPct` + `v8_steam` (card EV and Pinnacle steam, tracking only) |
 | **16** | **2026-08-19** | `v8_ticketTapeLog` lifecycle (first / hourly / t60 / t15 / grade) |
+| **19** | **2026-09-17** | `v8_stFatAction` / `v8_unitsPreStFat` — S/T leftover BOTH + arriving ≥4u mute |
 
 ---
 

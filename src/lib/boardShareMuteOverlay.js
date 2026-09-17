@@ -1,5 +1,5 @@
 /**
- * Board $ share mute — last step after unit-tier EV × steam.
+ * Board $ share mute — after unit-tier EV × steam, before S/T fat mute.
  *
  * Ship (2026-09-17+):
  *   Mute all-$ FOR share in [0.25, 0.45).

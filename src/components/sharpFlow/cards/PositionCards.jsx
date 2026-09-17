@@ -33,18 +33,20 @@ function formatLockCountdown(ms) {
 }
 
 /** Audit tooltip for a 0u / NO PLAY card — technical mute reason. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, steamTailReason, stakePath } = {}) {
-  const preU = Number.isFinite(unitsPreFavJuice) && unitsPreFavJuice > 0
-    ? unitsPreFavJuice
-    : (Number.isFinite(unitsPreSteamTail) && unitsPreSteamTail > 0
-      ? unitsPreSteamTail
-      : (Number.isFinite(unitsPreNoConfirmed) && unitsPreNoConfirmed > 0
-        ? unitsPreNoConfirmed
-        : (Number.isFinite(unitsPreMaxSrSub4) && unitsPreMaxSrSub4 > 0
-          ? unitsPreMaxSrSub4
-          : (Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
-            ? unitsPreFlinchFailOpen
-            : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null)))));
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, steamTailReason, stakePath } = {}) {
+  const preU = Number.isFinite(unitsPreStFat) && unitsPreStFat > 0
+    ? unitsPreStFat
+    : (Number.isFinite(unitsPreFavJuice) && unitsPreFavJuice > 0
+      ? unitsPreFavJuice
+      : (Number.isFinite(unitsPreSteamTail) && unitsPreSteamTail > 0
+        ? unitsPreSteamTail
+        : (Number.isFinite(unitsPreNoConfirmed) && unitsPreNoConfirmed > 0
+          ? unitsPreNoConfirmed
+          : (Number.isFinite(unitsPreMaxSrSub4) && unitsPreMaxSrSub4 > 0
+            ? unitsPreMaxSrSub4
+            : (Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
+              ? unitsPreFlinchFailOpen
+              : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null))))));
   const pre = preU != null
     ? `${preU % 1 === 0 ? preU.toFixed(0) : preU.toFixed(1)}u → 0u`
     : null;
@@ -74,6 +76,9 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   if (mutedBy === 'ev-lt2-no-steam') {
     return pre ? `Bad price, no confirmation · ${pre}` : 'Bad price — no market confirmation';
   }
+  if (mutedBy === 'st-fat') {
+    return pre ? `Spread/total size · ${pre}` : 'Spread/total size — no ticket';
+  }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
   if (stakePath === 'MONITORING') return 'Monitoring — never sized';
@@ -90,6 +95,7 @@ function noPlayReason({ mutedBy, tapeAction, stakePath } = {}) {
   if (mutedBy === 'steam-tail') return 'Unconfirmed size — no steam';
   if (mutedBy === 'fav-juice') return 'Favorite juicier than -375';
   if (mutedBy === 'ev-lt2-no-steam') return 'Bad price with no market confirmation';
+  if (mutedBy === 'st-fat') return 'Spread/total size';
   if (stakePath === 'FADE') return "Didn't meet the size bar";
   return "Didn't meet the size bar";
 }
@@ -2892,6 +2898,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     unitsPreNoConfirmed: f.unitsPreNoConfirmed,
     unitsPreSteamTail: f.unitsPreSteamTail,
     unitsPreFavJuice: f.unitsPreFavJuice,
+    unitsPreStFat: f.unitsPreStFat,
     steamTailReason: f.steamTailReason || f.v8_steamTailReason || null,
     stakePath: f.stakePath,
   };

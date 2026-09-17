@@ -1780,6 +1780,9 @@ export function mapLockedPickToCardFixture(pick, {
     unitsPreFavJuice: Number.isFinite(pick.unitsPreFavJuice) ? pick.unitsPreFavJuice
       : Number.isFinite(pick.v8_unitsPreFavJuice) ? pick.v8_unitsPreFavJuice
       : null,
+    unitsPreStFat: Number.isFinite(pick.unitsPreStFat) ? pick.unitsPreStFat
+      : Number.isFinite(pick.v8_unitsPreStFat) ? pick.v8_unitsPreStFat
+      : null,
     steamTailReason: pick.steamTailReason || pick.v8_steamTailReason || null,
     marketAgreement: sma,
     marketSignals,
