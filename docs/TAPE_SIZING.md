@@ -41,6 +41,7 @@ Thresholds ≈ June 15+ path-stamped p40 / p80.
 5. **Tape** mute / hold / boost (RANK mute-exempt)  
 6. Odds cap + global 6u inside tape boost  
 7. **2026-08-19+ leftover mute:** still &lt;4u after all dials + Q1/UNOPP restore, and (native-4u plus-money **or** BOOST leftover **or** E≥10 leftover **or** FAIL_OPEN) → **0u**. 4u+ never touched.  
+8. **2026-09-17+ S/T fat mute:** leftover BOTH (any units) and arriving ≥4u → **0u** on SPREAD/TOTAL. ML exempt. After board-share.
 
 `v8_unitsPreTape` = units **after** EDGE band / soft size, **before** tape.
 
