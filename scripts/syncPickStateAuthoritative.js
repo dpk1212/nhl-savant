@@ -210,6 +210,10 @@ import {
   UNIT_TIER_EV_MUTED_BY,
 } from '../src/lib/unitTierEvSteamOverlay.js';
 import {
+  applyBoardShareMuteOverlayFromTicket,
+  BOARD_SHARE_MUTED_BY,
+} from '../src/lib/boardShareMuteOverlay.js';
+import {
   SPORT_UNLOCK_GATE_FROM,
   applySportConfirmedUnlockOverlay,
   buildSportConfirmedCounts,
@@ -1241,6 +1245,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreFavJuice = null,
   unitTierEvSteamAction = null,
   unitsPreUnitTierEvSteam = null,
+  boardShareAction = null,
+  unitsPreBoardShare = null,
+  boardShare = null,
+  boardShareProven = null,
   steamTailReason = null,
   steamTailArriving = null,
   steamTailOnLock = null,
@@ -1395,6 +1403,16 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreUnitTierEvSteam != null && Number.isFinite(unitsPreUnitTierEvSteam)) {
     target.v8_unitsPreUnitTierEvSteam = unitsPreUnitTierEvSteam;
   }
+  if (boardShareAction != null) target.v8_boardShareAction = boardShareAction;
+  if (unitsPreBoardShare != null && Number.isFinite(unitsPreBoardShare)) {
+    target.v8_unitsPreBoardShare = unitsPreBoardShare;
+  }
+  if (boardShare != null && Number.isFinite(Number(boardShare))) {
+    target.v8_boardShare = Number(boardShare);
+  }
+  if (boardShareProven != null && Number.isFinite(Number(boardShareProven))) {
+    target.v8_boardShareProven = Number(boardShareProven);
+  }
   if (steamTailReason != null) target.v8_steamTailReason = steamTailReason;
   if (steamTailArriving != null) target.v8_steamTailArriving = !!steamTailArriving;
   if (steamTailOnLock != null) target.v8_steamTailOnLock = !!steamTailOnLock;
@@ -1497,6 +1515,7 @@ function skillStampsDrifted(sd, bundle, {
   steamTailAction = null,
   favJuiceAction = null,
   unitTierEvSteamAction = null,
+  boardShareAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1545,6 +1564,7 @@ function skillStampsDrifted(sd, bundle, {
   if (steamTailAction != null && (sd.v8_steamTailAction || null) !== steamTailAction) return true;
   if (favJuiceAction != null && (sd.v8_favJuiceAction || null) !== favJuiceAction) return true;
   if (unitTierEvSteamAction != null && (sd.v8_unitTierEvSteamAction || null) !== unitTierEvSteamAction) return true;
+  if (boardShareAction != null && (sd.v8_boardShareAction || null) !== boardShareAction) return true;
   return false;
 }
 
@@ -3449,6 +3469,21 @@ async function createMissingLockedPicks({
         peakUnitsApplied = unitTierPolicyCreate.units;
       }
 
+      // Board $ share — after unit-tier. Mute 25–45 always;
+      // <25 keep only proven ≥50% (junk-against). Missing details fail-open.
+      let boardSharePolicyCreate = null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        boardSharePolicyCreate = applyBoardShareMuteOverlayFromTicket({
+          units: peakUnitsApplied,
+          pickDate: TARGET_DATE,
+          walletDetails,
+          side,
+          sport,
+          walletProfiles,
+        });
+        peakUnitsApplied = boardSharePolicyCreate.units;
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -3691,6 +3726,12 @@ async function createMissingLockedPicks({
           unitsPreUnitTierEvSteam: (unitTierPolicyCreate && Number.isFinite(unitTierPolicyCreate.unitsPrePolicy))
             ? unitTierPolicyCreate.unitsPrePolicy
             : null,
+          boardShareAction: boardSharePolicyCreate?.action ?? null,
+          unitsPreBoardShare: (boardSharePolicyCreate && Number.isFinite(boardSharePolicyCreate.unitsPrePolicy))
+            ? boardSharePolicyCreate.unitsPrePolicy
+            : null,
+          boardShare: boardSharePolicyCreate?.share ?? null,
+          boardShareProven: boardSharePolicyCreate?.shareP ?? null,
           steamTailReason: steamTailPolicyCreate?.reason ?? null,
           steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
           steamTailOnLock: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamOnLock : null,
@@ -3749,7 +3790,9 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (unitTierPolicyCreate?.mutedBy) {
+      if (boardSharePolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = boardSharePolicyCreate.mutedBy;
+      } else if (unitTierPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = unitTierPolicyCreate.mutedBy;
       } else if (favJuicePolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = favJuicePolicyCreate.mutedBy;
@@ -3800,7 +3843,10 @@ async function createMissingLockedPicks({
       const unitTierMutedCreate = unitTierPolicyCreate?.action === 'MUTE'
         && Number.isFinite(unitTierPolicyCreate.unitsPrePolicy)
         && unitTierPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const boardShareMutedCreate = boardSharePolicyCreate?.action === 'MUTE'
+        && Number.isFinite(boardSharePolicyCreate.unitsPrePolicy)
+        && boardSharePolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -3812,6 +3858,7 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(boardSharePolicyCreate?.reason ? [boardSharePolicyCreate.reason] : []),
           ...(unitTierPolicyCreate?.reason ? [unitTierPolicyCreate.reason] : []),
           ...(favJuicePolicyCreate?.reason ? [favJuicePolicyCreate.reason] : []),
           ...(steamTailPolicyCreate?.reason ? [steamTailPolicyCreate.reason] : []),
@@ -5067,6 +5114,21 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = unitTierPolicy.units;
   }
 
+  // Board $ share — after unit-tier. Mute 25–45 always;
+  // <25 keep only proven ≥50% (junk-against). Missing details fail-open.
+  let boardSharePolicy = null;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    boardSharePolicy = applyBoardShareMuteOverlayFromTicket({
+      units: finalUnitsApplied,
+      pickDate,
+      walletDetails: wd,
+      side,
+      sport,
+      walletProfiles,
+    });
+    finalUnitsApplied = boardSharePolicy.units;
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP rescue that forced through an AGS mute.
@@ -5133,6 +5195,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (steamTailPolicy?.reason && !reasons.includes(steamTailPolicy.reason)) reasons.push(steamTailPolicy.reason);
   if (favJuicePolicy?.reason && !reasons.includes(favJuicePolicy.reason)) reasons.push(favJuicePolicy.reason);
   if (unitTierPolicy?.reason && !reasons.includes(unitTierPolicy.reason)) reasons.push(unitTierPolicy.reason);
+  if (boardSharePolicy?.reason && !reasons.includes(boardSharePolicy.reason)) reasons.push(boardSharePolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -5173,9 +5236,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const unitTierMuted = unitTierPolicy?.action === 'MUTE'
     && Number.isFinite(unitTierPolicy.unitsPrePolicy)
     && unitTierPolicy.unitsPrePolicy > 0;
+  const boardShareMuted = boardSharePolicy?.action === 'MUTE'
+    && Number.isFinite(boardSharePolicy.unitsPrePolicy)
+    && boardSharePolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
-  // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift + steam-tail + fav-juice run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = unitTierMuted || favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift + steam-tail + fav-juice + share run AFTER those floors, so they still win if they cancelled.
+  const sizeMuted = boardShareMuted || unitTierMuted || favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -5219,7 +5285,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const STEAM_TAIL_MUTE_VALUES = new Set([STEAM_TAIL_MUTED_BY]);
   const FAV_JUICE_MUTE_VALUES = new Set([FAV_JUICE_MUTED_BY]);
   const UNIT_TIER_MUTE_VALUES = new Set([UNIT_TIER_EV_MUTED_BY]);
-  if (unitTierPolicy?.mutedBy) {
+  const BOARD_SHARE_MUTE_VALUES = new Set([BOARD_SHARE_MUTED_BY]);
+  if (boardSharePolicy?.mutedBy) {
+    patch.mutedBy = boardSharePolicy.mutedBy;
+  } else if (unitTierPolicy?.mutedBy) {
     patch.mutedBy = unitTierPolicy.mutedBy;
   } else if (favJuicePolicy?.mutedBy) {
     patch.mutedBy = favJuicePolicy.mutedBy;
@@ -5264,7 +5333,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || EV_DRIFT_MUTE_VALUES.has(sd.mutedBy)
       || STEAM_TAIL_MUTE_VALUES.has(sd.mutedBy)
       || FAV_JUICE_MUTE_VALUES.has(sd.mutedBy)
-      || UNIT_TIER_MUTE_VALUES.has(sd.mutedBy)) {
+      || UNIT_TIER_MUTE_VALUES.has(sd.mutedBy)
+      || BOARD_SHARE_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -5552,6 +5622,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${favJuicePolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
+  if (boardSharePolicy?.action === 'MUTE') {
+    const sharePct = boardSharePolicy.share == null ? '—' : `${(boardSharePolicy.share * 100).toFixed(0)}%`;
+    const provenPct = boardSharePolicy.shareP == null ? '—' : `${(boardSharePolicy.shareP * 100).toFixed(0)}%`;
+    changes.push(
+      `BOARD-SHARE-MUTE: ${boardSharePolicy.reason || 'board-share'} `
+      + `share=${sharePct} proven=${provenPct} `
+      + `${boardSharePolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -5681,6 +5760,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreUnitTierEvSteam: (unitTierPolicy && Number.isFinite(unitTierPolicy.unitsPrePolicy))
         ? unitTierPolicy.unitsPrePolicy
         : null,
+      boardShareAction: boardSharePolicy?.action ?? null,
+      unitsPreBoardShare: (boardSharePolicy && Number.isFinite(boardSharePolicy.unitsPrePolicy))
+        ? boardSharePolicy.unitsPrePolicy
+        : null,
+      boardShare: boardSharePolicy?.share ?? null,
+      boardShareProven: boardSharePolicy?.shareP ?? null,
       steamTailReason: steamTailPolicy?.reason ?? null,
       steamTailArriving: steamTailPolicy ? !!steamTailPolicy.steamArriving : null,
       steamTailOnLock: steamTailPolicy ? !!steamTailPolicy.steamOnLock : null,
@@ -5718,6 +5803,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       steamTailAction: steamTailPolicy?.action ?? null,
       favJuiceAction: favJuicePolicy?.action ?? null,
       unitTierEvSteamAction: unitTierPolicy?.action ?? null,
+      boardShareAction: boardSharePolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5736,7 +5822,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (climatePolicy && (sd.v8_climateAction || null) !== climatePolicy.action)
         || (steamTailPolicy && (sd.v8_steamTailAction || null) !== steamTailPolicy.action)
         || (favJuicePolicy && (sd.v8_favJuiceAction || null) !== favJuicePolicy.action)
-        || (unitTierPolicy && (sd.v8_unitTierEvSteamAction || null) !== unitTierPolicy.action)) {
+        || (unitTierPolicy && (sd.v8_unitTierEvSteamAction || null) !== unitTierPolicy.action)
+        || (boardSharePolicy && (sd.v8_boardShareAction || null) !== boardSharePolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -5756,7 +5843,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (topCrowdedPolicy?.action ? ` topCrowdAct=${topCrowdedPolicy.action}` : '')
         + (evDriftPolicy?.action ? ` evDriftAct=${evDriftPolicy.action}` : '')
         + (steamTailPolicy?.action ? ` steamTailAct=${steamTailPolicy.action}` : '')
-        + (favJuicePolicy?.action ? ` favJuiceAct=${favJuicePolicy.action}` : ''),
+        + (favJuicePolicy?.action ? ` favJuiceAct=${favJuicePolicy.action}` : '')
+        + (boardSharePolicy?.action ? ` boardShareAct=${boardSharePolicy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
