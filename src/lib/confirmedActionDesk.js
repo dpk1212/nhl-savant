@@ -56,6 +56,17 @@ export function formatActionDateChip(dateKey, todayKey) {
   return `${wk} ${d}`;
 }
 
+/** Stacked rail labels: TODAY / 18, SAT / 19. */
+export function actionDateParts(dateKey, todayKey) {
+  if (!dateKey) return { kicker: '', day: '' };
+  const [y, m, d] = String(dateKey).split('-').map(Number);
+  if (!y || !m || !d) return { kicker: String(dateKey), day: '' };
+  const day = String(d);
+  if (dateKey === todayKey) return { kicker: 'TODAY', day };
+  const wk = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  return { kicker: wk, day };
+}
+
 export function parseActionCommenceMs(...cands) {
   for (const raw of cands) {
     if (raw == null || raw === '') continue;
