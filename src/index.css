@@ -1267,6 +1267,15 @@ p {
 }
 .sf-chiprail::-webkit-scrollbar { display: none; }
 
+/* Action date rail — hover / keyboard only; active gold is inline. */
+.sf-date-rail button:hover:not([aria-selected="true"]) {
+  background: rgba(255,255,255,0.035);
+}
+.sf-date-rail button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(212,175,55,0.55), 0 0 0 2px rgba(212,175,55,0.16);
+}
+
 /* Collapsible mobile filter drawer. Native <details> toggle, custom
    chevron that flips when open, no default disclosure triangle. */
 .sf-mfilters > summary { list-style: none; -webkit-tap-highlight-color: transparent; }

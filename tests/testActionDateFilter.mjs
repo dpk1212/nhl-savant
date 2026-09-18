@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {
   actionDateKeys,
   formatActionDateChip,
+  actionDateParts,
   etDateKey,
   rowMatchesActionDate,
   filterActionRows,
@@ -24,6 +25,10 @@ assert.equal(formatActionDateChip('2026-09-18', '2026-09-18'), 'Today');
 assert.equal(formatActionDateChip('2026-09-19', '2026-09-18'), 'Sat 19');
 assert.equal(formatActionDateChip('2026-09-20', '2026-09-18'), 'Sun 20');
 assert.equal(formatActionDateChip('2026-09-21', '2026-09-18'), 'Mon 21');
+assert.deepEqual(actionDateParts('2026-09-18', '2026-09-18'), { kicker: 'TODAY', day: '18' });
+assert.deepEqual(actionDateParts('2026-09-19', '2026-09-18'), { kicker: 'SAT', day: '19' });
+assert.deepEqual(actionDateParts('2026-09-20', '2026-09-18'), { kicker: 'SUN', day: '20' });
+assert.deepEqual(actionDateParts('2026-09-21', '2026-09-18'), { kicker: 'MON', day: '21' });
 
 const mlbToday = { sport: 'MLB', invested: 2000, commenceMs: Date.parse('2026-09-18T23:06:00Z') };
 const cfbSat = { sport: 'CFB', invested: 4100, commenceMs: Date.parse('2026-09-19T23:00:00Z') };

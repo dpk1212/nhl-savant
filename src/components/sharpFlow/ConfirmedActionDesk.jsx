@@ -14,6 +14,7 @@ import {
   actionDateKeys,
   etDateKey,
   formatActionDateChip,
+  actionDateParts,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import SteamTag from './cards/SteamTag';
@@ -929,6 +930,98 @@ function Pill({ active, onClick, children }) {
   );
 }
 
+/** ET date rail — same instrument as sport tabs, stacked weekday + day. */
+function DateRail({ keys, selected, todayKey, onChange, isMobile }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Ticket date"
+      className="sf-date-rail"
+      style={{
+        display: 'flex',
+        width: '100%',
+        gap: 2,
+        padding: 3,
+        borderRadius: 12,
+        background: 'rgba(255,255,255,0.03)',
+        border: `1px solid ${B.border}`,
+        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.025)',
+        marginBottom: '0.85rem',
+      }}
+    >
+      {keys.map((k) => {
+        const active = selected === k;
+        const { kicker, day } = actionDateParts(k, todayKey);
+        return (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            aria-label={formatActionDateChip(k, todayKey)}
+            onClick={() => onChange(k)}
+            style={{
+              position: 'relative',
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: isMobile ? 1 : 2,
+              padding: isMobile ? '0.46rem 0.18rem 0.62rem' : '0.55rem 0.4rem 0.7rem',
+              border: 'none',
+              borderRadius: 9,
+              cursor: 'pointer',
+              background: active
+                ? `linear-gradient(180deg, ${B.gold}33 0%, ${B.gold}0f 100%)`
+                : 'transparent',
+              boxShadow: active
+                ? `inset 0 0 0 1px ${B.gold}4d, 0 2px 10px rgba(0,0,0,0.28)`
+                : 'none',
+              transition: 'background 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s cubic-bezier(0.4,0,0.2,1)',
+            }}
+          >
+            <span style={{
+              ...T.tiny,
+              letterSpacing: '0.16em',
+              fontWeight: 800,
+              color: active ? B.gold : B.textSubtle,
+            }}>
+              {kicker}
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.98rem' : '1.12rem',
+              fontWeight: 800,
+              lineHeight: 1,
+              letterSpacing: '-0.04em',
+              fontFeatureSettings: "'tnum'",
+              fontVariantNumeric: 'tabular-nums',
+              color: active ? '#E8D28A' : B.textSec,
+            }}>
+              {day}
+            </span>
+            {active ? (
+              <span
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  left: '28%',
+                  right: '28%',
+                  bottom: 5,
+                  height: 1.5,
+                  borderRadius: 2,
+                  background: `linear-gradient(90deg, transparent, ${B.gold}, transparent)`,
+                }}
+              />
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const ActionTape = memo(function ActionTape({ items }) {
   if (!items?.length) return null;
   const renderRun = (prefix) => items.map((it, i) => (
@@ -1436,22 +1529,13 @@ export default function ConfirmedActionDesk({
   return (
     <div>
       {dateKeys.length > 1 && (
-        <div
-          style={{
-            display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center',
-            marginBottom: '0.75rem',
-          }}
-        >
-          {dateKeys.map((k) => (
-            <Pill
-              key={k}
-              active={selectedDate === k}
-              onClick={() => setDateKey(k)}
-            >
-              {formatActionDateChip(k, todayKey)}
-            </Pill>
-          ))}
-        </div>
+        <DateRail
+          keys={dateKeys}
+          selected={selectedDate}
+          todayKey={todayKey}
+          onChange={setDateKey}
+          isMobile={isMobile}
+        />
       )}
       <ActionTape items={marquee} />
 
