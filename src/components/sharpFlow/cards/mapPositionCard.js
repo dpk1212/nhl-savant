@@ -48,6 +48,7 @@ import {
   bookOnTicketLine,
   keepTicketLineBooks,
   markGoldFromTicketBooks,
+  shopRailHidden,
 } from '../../../lib/shopTicketLine.js';
 
 export { americanFromPolyPrice };
@@ -853,10 +854,10 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     // Retail strip on the ticket line (allTotalBooks from snapshot; fallback best*).
     {
       const allT = pinnGame.allTotalBooks || {};
-      const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'lowvig', 'bookmaker', 'circa'];
+      const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'bookmaker', 'circa'];
       const keys = [
         ...prefer.filter((k) => allT[k]),
-        ...Object.keys(allT).filter((k) => !prefer.includes(k) && k !== 'pinnacle'),
+        ...Object.keys(allT).filter((k) => !prefer.includes(k) && k !== 'pinnacle' && !shopRailHidden(k)),
       ];
       const seen = new Set(books.map((b) => String(b.name).toLowerCase()));
       for (const k of keys) {
@@ -866,6 +867,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         const o = sideKey === 'under' ? b.under : b.over;
         if (!Number.isFinite(o)) continue;
         const name = b.name || k;
+        if (shopRailHidden(name) || shopRailHidden(k)) continue;
         if (seen.has(String(name).toLowerCase())) continue;
         seen.add(String(name).toLowerCase());
         const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
@@ -874,6 +876,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       }
       if (books.length < 2 && bestBook && Number.isFinite(bestOdds)
           && bestBook.toLowerCase() !== 'pinnacle'
+          && !shopRailHidden(bestBook)
           && !seen.has(bestBook.toLowerCase())
           && (stakedLine == null || linesClose(best?.line, stakedLine))) {
         books.push({ name: bestBook, odds: bestOdds, best: true, line: best?.line ?? stakedLine });
@@ -1017,7 +1020,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       });
     }
     if (bestBook && Number.isFinite(bestOdds)
-        && (stakedLine == null || linesClose(best?.line, stakedLine))) {
+        && (stakedLine == null || linesClose(best?.line, stakedLine))
+        && !shopRailHidden(bestBook)) {
       books.push({
         name: bestBook,
         odds: bestOdds,
@@ -1085,16 +1089,17 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       const allBooks = pinnGame.allBooks || {};
       const sideOdds = (b) => (sideKey === 'away' ? b?.away : sideKey === 'draw' ? b?.draw : b?.home);
       const seen = new Set(books.map((b) => b.name.toLowerCase()));
-      const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'lowvig', 'bookmaker', 'circa'];
+      const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'bookmaker', 'circa'];
       const keys = [
         ...prefer.filter((k) => allBooks[k]),
-        ...Object.keys(allBooks).filter((k) => !prefer.includes(k) && k !== 'pinnacle'),
+        ...Object.keys(allBooks).filter((k) => !prefer.includes(k) && k !== 'pinnacle' && !shopRailHidden(k)),
       ];
       for (const k of keys) {
         const b = allBooks[k];
         const o = sideOdds(b);
         if (!Number.isFinite(o)) continue;
         const name = b?.name || k;
+        if (shopRailHidden(name) || shopRailHidden(k)) continue;
         if (seen.has(String(name).toLowerCase())) continue;
         seen.add(String(name).toLowerCase());
         const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
@@ -1102,6 +1107,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         if (books.length >= 12) break;
       }
       if (bestBook && Number.isFinite(bestOdds)
+          && !shopRailHidden(bestBook)
           && !books.some((b) => String(b.name).toLowerCase() === String(bestBook).toLowerCase())) {
         books.push({ name: bestBook, odds: bestOdds, best: true });
       }
@@ -1125,7 +1131,13 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     const kept = keepTicketLineBooks(books, stakedLine);
     books.length = 0;
     books.push(...kept);
-    const gold = markGoldFromTicketBooks(books);
+  } else {
+    const shown = (books || []).filter((b) => !shopRailHidden(b?.name));
+    books.length = 0;
+    books.push(...shown);
+  }
+  const gold = markGoldFromTicketBooks(books);
+  if (gold.bestOdds != null) {
     bestOdds = gold.bestOdds;
     bestBook = gold.bestBook;
   }
