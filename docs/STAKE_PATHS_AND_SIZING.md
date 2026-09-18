@@ -13,7 +13,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **AGS v12** | Side select | `score > 0` or no stake |
 | **Paths A–D + Q1 / UNOPP** | Who + base u | HC → RANK → SHARP/LEAN → **CONFIRMED-Q1 @ 2–3u** → **CONFIRMED-UNOPP @ 1u** → DISSENT |
 | **TOP NEITHER mute** | Hard kill | TOP/TOP+ with E&lt;5 **and** net&lt;5 → **0u** |
-| **FadeTop** | Toxic AG | top AG WR ≥ 60 beating FOR → **0u** |
+| **FadeTop** | Toxic AG | top AG WR ≥ 60 beating FOR → **0u** · **2026-09-18+ SHARP-LEAN ML proven ≥50% HOLDS** (continues to tape / leftover / steam-tail / board-share) |
 | **EDGE band size** | A/C dial | E&lt;7 → **0u** · 7–10 → ×**0.75** · ≥10 → ×**1.25** · **RANK/DISSENT/CONFIRMED-UNOPP exempt** |
 | **EDGE/net size** | Soft dial (non–A/C) | BOTH ×**1.25** · ONE hold · NEITHER ×**0.5** on remaining soft tiers · **RANK exempt** |
 | **Tape** | Near-final dial | `&lt;0` mute (except **RANK** / **CONFIRMED-UNOPP**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
@@ -48,6 +48,8 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 7. If still 0u → Path D DISSENT       → DISSENT @ 1u  (MLB only)
 
 7. Winner-align fadeTop≥60 mute       → 0u if toxic AG top WR
+   └─ **2026-09-18+** SHARP-LEAN **ML** proven $ ≥50% → HOLD (do not mute; later filters still run)
+   └─ missing proven $ is not an exception · SPREAD/TOTAL and Path A/RANK/SHARP still fade
    └─ EDGE size / WINNER rescue / Policy E  → FROZEN (no unit effect)
 
 8. EDGE band size (Path A/C, 2026-07-20+)
@@ -115,7 +117,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-08-19** | **Flinch / fail-open leftover mute** — still &lt;4u AND (odds-capped native RANK/TOP/SUPER **or** tape BOOST leftover **or** E≥10 leftover **or** tape FAIL_OPEN) → **0u**. 4u+ never touched. Native 3u RANK/TOP favorites without those flags stay. After Q1/UNOPP restore so those floors cannot revive a stub. |
 | **2026-09-09** | **Leftover A/B arriving HOLD** — leftover mute skips when Source A/B CONFIRMED and steam arrived (off→on). No-steam / already-on leftover still 0u. Later mutes (maxSR, ev-drift, T) still run. **Policy T native 2–3u A/B arriving → 4u.** 1u arriving stays floor 2u. Climate/unlock shrink not restacked. |
 | **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
-| **2026-09-17** | **Board $ share mute** — mute 25–45 · &lt;25 keep only proven ≥50% (junk-against) · after unit-tier. **Spread/total fat mute** — leftover BOTH any units + arriving ≥4u → 0u on SPREAD/TOTAL only. ML exempt. After board-share. |
+| **2026-09-18** | **Fade proven-$ hold** — SHARP-LEAN ML with proven $ share ≥50% skips fadeTop mute and continues to the next filter. Missing proven still fades. SPREAD/TOTAL and SUPER/TOP/MINI/RANK/SHARP still fade. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |
 | **2026-08-08** | **CONFIRMED-UNOPP promote** — CONFIRMED × size≥0.5× × unopposed → 1u (after SHARP / before DISSENT) · FOOLS back to hard 0u cancel |

@@ -220,6 +220,9 @@ import {
   ST_FAT_MUTED_BY,
 } from '../src/lib/stFatMuteOverlay.js';
 import {
+  evaluateFadeProvenHoldFromTicket,
+} from '../src/lib/fadeProvenHold.js';
+import {
   SPORT_UNLOCK_GATE_FROM,
   applySportConfirmedUnlockOverlay,
   buildSportConfirmedCounts,
@@ -1154,7 +1157,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 19; // v19: S/T fat mute (leftover BOTH any u + arriving ≥4u after board-share)
+const SKILL_FEATURE_VERSION = 20; // v20: fade proven-$ hold (SHARP-LEAN ML proven ≥50 skips fadeTop)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1257,6 +1260,9 @@ function applySkillFeatureStamps(target, bundle, now, {
   boardShareProven = null,
   stFatAction = null,
   unitsPreStFat = null,
+  fadeProvenHoldAction = null,
+  fadeProvenHoldReason = null,
+  fadeProvenShare = null,
   steamTailReason = null,
   steamTailArriving = null,
   steamTailOnLock = null,
@@ -1425,6 +1431,11 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreStFat != null && Number.isFinite(unitsPreStFat)) {
     target.v8_unitsPreStFat = unitsPreStFat;
   }
+  if (fadeProvenHoldAction != null) target.v8_fadeProvenHoldAction = fadeProvenHoldAction;
+  if (fadeProvenHoldReason != null) target.v8_fadeProvenHoldReason = fadeProvenHoldReason;
+  if (fadeProvenShare != null && Number.isFinite(Number(fadeProvenShare))) {
+    target.v8_fadeProvenShare = Number(fadeProvenShare);
+  }
   if (steamTailReason != null) target.v8_steamTailReason = steamTailReason;
   if (steamTailArriving != null) target.v8_steamTailArriving = !!steamTailArriving;
   if (steamTailOnLock != null) target.v8_steamTailOnLock = !!steamTailOnLock;
@@ -1529,6 +1540,7 @@ function skillStampsDrifted(sd, bundle, {
   unitTierEvSteamAction = null,
   boardShareAction = null,
   stFatAction = null,
+  fadeProvenHoldAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1579,6 +1591,7 @@ function skillStampsDrifted(sd, bundle, {
   if (unitTierEvSteamAction != null && (sd.v8_unitTierEvSteamAction || null) !== unitTierEvSteamAction) return true;
   if (boardShareAction != null && (sd.v8_boardShareAction || null) !== boardShareAction) return true;
   if (stFatAction != null && (sd.v8_stFatAction || null) !== stFatAction) return true;
+  if (fadeProvenHoldAction != null && (sd.v8_fadeProvenHoldAction || null) !== fadeProvenHoldAction) return true;
   return false;
 }
 
@@ -1941,7 +1954,7 @@ function computePathDSlice(walletDetails, mySide) {
 // Cutover: WINNER_ALIGN_LIVE_FROM. Pre-cutover history is never rewritten.
 //
 // From TAPE_SIZING_LIVE_FROM (2026-07-15): EDGE stake overrides are FROZEN.
-// Pipeline becomes: Paths A–D → fadeTop60 mute only → TAPE mute/boost on
+// Pipeline becomes: Paths A–D → fadeTop60 mute only (SHARP-LEAN ML proven ≥50 HOLD 2026-09-18+) → TAPE mute/boost on
 // path units. EDGE is still stamped (tape input). No EDGE size ladder,
 // WINNER rescue, or Top-Winner Policy E unit effects.
 //
@@ -4567,6 +4580,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let winnerTopCapped = false;
   let winnerTopJunkCut = false;
   let winnerAlignAction = null; // 'mute' | 'size' | 'rescue' | 'top_floor' | 'top_cap' | 'top_junk' | null
+  let fadeProvenHold = null;
   const tapeSizingLive = isTapeSizingLive(pickDate);
   const edgeStakeLive = isWinnerAlignEdgeStakeLive(pickDate);
   if (winnerAlign
@@ -4577,13 +4591,25 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const wa = winnerAlign;
 
     // 1) MUTE — tape era: fadeTop60 only. Pre-tape: fadeTop60 OR EDGE≤−5.
+    // 2026-09-18+: SHARP-LEAN ML with proven $ ≥50 HOLDS through fade.
     const muteToxic = tapeSizingLive
       ? wa.fadeTop60
       : (wa.fadeTop60 || wa.meanBehind5);
-    if (finalUnitsApplied > 0
-        && tierNow
-        && WINNER_ALIGN_MUTE_TIERS.has(tierNow)
-        && muteToxic) {
+    const fadeWouldMute = finalUnitsApplied > 0
+      && !!tierNow
+      && WINNER_ALIGN_MUTE_TIERS.has(tierNow)
+      && !!muteToxic;
+    fadeProvenHold = evaluateFadeProvenHoldFromTicket({
+      pickDate,
+      marketType: mkt,
+      path: tierNow,
+      fadeWouldMute,
+      walletDetails: wd,
+      side,
+      sport: pick.sport,
+      walletProfiles,
+    });
+    if (fadeWouldMute && !fadeProvenHold.hold) {
       finalUnitsApplied = 0;
       winnerMuted = true;
       winnerAlignAction = 'mute';
@@ -5846,6 +5872,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreStFat: (stFatPolicy && Number.isFinite(stFatPolicy.unitsPrePolicy))
         ? stFatPolicy.unitsPrePolicy
         : null,
+      fadeProvenHoldAction: fadeProvenHold?.action ?? null,
+      fadeProvenHoldReason: fadeProvenHold?.reason ?? null,
+      fadeProvenShare: fadeProvenHold?.shareP ?? null,
       steamTailReason: steamTailPolicy?.reason ?? null,
       steamTailArriving: steamTailPolicy ? !!steamTailPolicy.steamArriving : null,
       steamTailOnLock: steamTailPolicy ? !!steamTailPolicy.steamOnLock : null,
@@ -5885,6 +5914,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitTierEvSteamAction: unitTierPolicy?.action ?? null,
       boardShareAction: boardSharePolicy?.action ?? null,
       stFatAction: stFatPolicy?.action ?? null,
+      fadeProvenHoldAction: fadeProvenHold?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5905,7 +5935,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (favJuicePolicy && (sd.v8_favJuiceAction || null) !== favJuicePolicy.action)
         || (unitTierPolicy && (sd.v8_unitTierEvSteamAction || null) !== unitTierPolicy.action)
         || (boardSharePolicy && (sd.v8_boardShareAction || null) !== boardSharePolicy.action)
-        || (stFatPolicy && (sd.v8_stFatAction || null) !== stFatPolicy.action)) {
+        || (stFatPolicy && (sd.v8_stFatAction || null) !== stFatPolicy.action)
+        || (fadeProvenHold && (sd.v8_fadeProvenHoldAction || null) !== fadeProvenHold.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -5927,7 +5958,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (steamTailPolicy?.action ? ` steamTailAct=${steamTailPolicy.action}` : '')
         + (favJuicePolicy?.action ? ` favJuiceAct=${favJuicePolicy.action}` : '')
         + (boardSharePolicy?.action ? ` boardShareAct=${boardSharePolicy.action}` : '')
-        + (stFatPolicy?.action ? ` stFatAct=${stFatPolicy.action}` : ''),
+        + (stFatPolicy?.action ? ` stFatAct=${stFatPolicy.action}` : '')
+        + (fadeProvenHold?.action ? ` fadeHold=${fadeProvenHold.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -5946,6 +5978,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       ? `fadeTop ${winnerAlign.topAg?.toFixed?.(1) ?? winnerAlign.topAg}`
       : `meanEdge ${winnerAlign?.edge?.toFixed?.(1) ?? winnerAlign?.edge}`;
     changes.push(`WINNER-ALIGN MUTE: ${why} → 0u`);
+  } else if (fadeProvenHold?.hold) {
+    const pct = fadeProvenHold.shareP == null ? '—' : `${(fadeProvenHold.shareP * 100).toFixed(0)}%`;
+    changes.push(`FADE-PROVEN HOLD: SHARP-LEAN ML proven=${pct} → pass fade`);
   }
   if (winnerSized) {
     changes.push(

@@ -1,6 +1,6 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 19` from **2026-09-17**_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 20` from **2026-09-18**_  
 _Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
@@ -52,6 +52,7 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **Unit-tier EV × steam** | 2026-09-11+ mute · **2026-09-12+ timing promote** · after fav-juice · current EV &lt; −2 and no steam → **0u** · 2–&lt;4u → **4u** iff arriving **or** last-hour ≥ 3%, last-hour not &lt; 0, lock EV missing or ≥ −1, lock tier not LEAN/FADE · steam-on / EV `[0,1)` alone is not a yes · `mutedBy=ev-lt2-no-steam` · stamp `v8_unitTierEvSteamAction` |
 | **Board $ share mute** | 2026-09-17+: after unit-tier · mute all-$ FOR share in **[25%, 45%)** · &lt;25% keep only when proven $ share ≥ 50% (junk-against) · missing details fail-open · `mutedBy=board-share` · stamp `v8_boardShareAction` |
 | **Spread/total fat mute** | 2026-09-17+: after board-share · **SPREAD / TOTAL only** · leftover **BOTH** (EDGE≥10 ∧ tape BOOST) any current units → **0u** · arriving (off→on) **and** units ≥ 4 → **0u** · ML exempt · BOTH reason wins if both fire · missing BOTH + arriving unknown fail-open · `mutedBy=st-fat` · stamp `v8_stFatAction` |
+| **Fade proven-$ hold** | 2026-09-18+: fadeTop mute **skips** SHARP-LEAN **ML** when proven $ share ≥ 50% · missing proven still fades · SPREAD/TOTAL and Path A/RANK/SHARP still fade · later filters still run · stamp `v8_fadeProvenHoldAction` |
 
 ---
 
@@ -128,6 +129,9 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_unitsPreBoardShare` | units entering board-share mute |
 | `v8_boardShare` / `v8_boardShareProven` | all-$ FOR share · proven (CONFIRMED+FLAT) FOR share |
 | `v8_stFatAction` | `MUTE` \| `HOLD` \| `EXEMPT` \| `PASS` — leftover BOTH / arriving ≥4u on S/T |
+| `v8_fadeProvenHoldAction` | `HOLD` \| `SKIP` \| `EXEMPT` \| `PASS` — SHARP-LEAN ML proven ≥50 skips fade |
+| `v8_fadeProvenHoldReason` | `fade_proven_hold` \| `not_ml` \| `not_sharp_lean` \| `proven_missing` \| `proven_lt50` \| `pre_cutover` |
+| `v8_fadeProvenShare` | proven $ share used at the fade gate |
 | `v8_unitsPreStFat` | units entering spread/total fat mute |
 | `v8_skillFeatureVersion` | schema version (**19**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
@@ -228,6 +232,7 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **15** | **2026-08-19** | `v8_ticketEvPct` + `v8_steam` (card EV and Pinnacle steam, tracking only) |
 | **16** | **2026-08-19** | `v8_ticketTapeLog` lifecycle (first / hourly / t60 / t15 / grade) |
 | **19** | **2026-09-17** | `v8_stFatAction` / `v8_unitsPreStFat` — S/T leftover BOTH + arriving ≥4u mute |
+| **20** | **2026-09-18** | `v8_fadeProvenHoldAction` / `v8_fadeProvenShare` — SHARP-LEAN ML proven ≥50 skip fade |
 
 ---
 
