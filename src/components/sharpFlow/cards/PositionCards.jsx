@@ -13,7 +13,7 @@ import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
 import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
-import { SHOP_GOLD_KEYS } from '../../../lib/shopTicketLine.js';
+import { pinPostedOdds, bookBeatsPin, shopRailHidden } from '../../../lib/shopTicketLine.js';
 import { unitMarketHit } from '../../../lib/unitMarketHit.js';
 
 function fmtAmericanPrice(o) {
@@ -2821,24 +2821,27 @@ function TicketPerforation({ edgeAura }) {
 
 const SHOP_PREFER = [
   'fanduel', 'draftkings', 'betmgm', 'caesars', 'fanatics',
-  'circa', 'circasports', 'betonlineag', 'betonline', 'lowvig', 'bookmaker',
+  'circa', 'circasports', 'betonlineag', 'betonline', 'bookmaker',
 ];
 const SHOP_EXCHANGE = new Set(EXCHANGE_BOOK_KEYS);
-const SHOP_GOLD = new Set(SHOP_GOLD_KEYS);
 
 function shopLineMatch(bookLine, ticketLine) {
   if (ticketLine == null || !Number.isFinite(ticketLine)) return true;
   return Number.isFinite(bookLine) && Math.abs(bookLine - ticketLine) <= 0.051;
 }
 
-/** Chip rail under the tape. Same line as the hero. Gold = retail best on that line. */
+/** Chip rail under the tape. Same line as the hero. Gold = best on that line. Green = beats Pinnacle. */
 function CollapsedShopStrip({ f }) {
   const fair = Number.isFinite(f?.fairLine) ? f.fairLine
     : (Number.isFinite(f?.liveFair) ? f.liveFair : null);
   const ticketLine = Number.isFinite(f?.ticketLine) ? f.ticketLine : null;
   const lineName = f?.ourMarketLabel || f?.pickLabel || null;
   const raw = Array.isArray(f?.books) ? f.books : [];
-  const usable = raw.filter((b) => Number.isFinite(b?.odds) && shopLineMatch(b.line, ticketLine));
+  const usable = raw.filter((b) => (
+    Number.isFinite(b?.odds)
+    && shopLineMatch(b.line, ticketLine)
+    && !shopRailHidden(b.name)
+  ));
   const isPinn = (b) => shopBookKey(b.name) === 'pinnacle';
   const sharp = usable.filter(isPinn).slice(0, 1);
   const retail = [...usable]
@@ -2856,17 +2859,20 @@ function CollapsedShopStrip({ f }) {
   const ranked = [...sharp, ...retail, ...exchanges];
   if (ranked.length < 2) return null;
 
-  const goldPool = ranked.filter((b) => SHOP_GOLD.has(shopBookKey(b.name)));
-  const goldOdds = goldPool.length ? Math.max(...goldPool.map((b) => b.odds)) : null;
-  const isBest = (b) => (
-    SHOP_GOLD.has(shopBookKey(b.name))
-    && Number.isFinite(goldOdds)
-    && b.odds === goldOdds
+  const goldOdds = ranked.length ? Math.max(...ranked.map((b) => b.odds)) : null;
+  const isBest = (b) => Number.isFinite(goldOdds) && b.odds === goldOdds;
+  const pinOdds = pinPostedOdds(ranked);
+  const evBench = Number.isFinite(pinOdds) ? pinOdds : fair;
+  const plusEv = (b) => (
+    Number.isFinite(evBench)
+    && !isPinn(b)
+    && (Number.isFinite(pinOdds) ? bookBeatsPin(b, pinOdds) : b.odds > evBench)
   );
-  const plusEv = (b) => Number.isFinite(fair) && b.odds > fair;
   const toneOf = (b) => (isBest(b) ? 'gold' : plusEv(b) ? 'green' : 'flat');
-  const beatFair = ranked.filter(plusEv).length;
-  const count = Number.isFinite(fair) ? `${beatFair} beat fair` : `${ranked.length} books`;
+  const beatN = ranked.filter(plusEv).length;
+  const count = Number.isFinite(pinOdds)
+    ? `${beatN} beat Pin`
+    : Number.isFinite(fair) ? `${beatN} beat fair` : `${ranked.length} books`;
   const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
 
   const TONE = {
@@ -2889,7 +2895,7 @@ function CollapsedShopStrip({ f }) {
       color: C.text,
       background: 'transparent',
       ring: 'none',
-      opacity: Number.isFinite(fair) ? 0.55 : 1,
+      opacity: Number.isFinite(evBench) ? 0.55 : 1,
     },
   };
 
@@ -2924,7 +2930,7 @@ function CollapsedShopStrip({ f }) {
           return (
             <span
               key={String(b.name)}
-              title={`${b.name}${lineName ? ` ${lineName}` : ''} ${fmtOdds(b.odds)}${isBest(b) ? ' · best' : plusEv(b) ? ' · plus EV' : ''}`}
+              title={`${b.name}${lineName ? ` ${lineName}` : ''} ${fmtOdds(b.odds)}${isBest(b) ? ' · best' : plusEv(b) ? (Number.isFinite(pinOdds) ? ' · beats Pin' : ' · plus EV') : ''}`}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '4px 8px 4px 4px', borderRadius: 999,

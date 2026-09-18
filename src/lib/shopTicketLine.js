@@ -3,10 +3,20 @@
  * Missing line is a miss — never paint 8.5 onto Over 7.5.
  */
 
-export const SHOP_GOLD_KEYS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
-
 function shopBookKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/** Kept for callers that still import it. Gold is now any book on the line. */
+export const SHOP_GOLD_KEYS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
+
+export function shopRailHidden(name) {
+  const k = shopBookKey(name);
+  return k === 'lowvig' || k === 'lv' || k.includes('lowvig');
+}
+
+export function isPinnacleBook(name) {
+  return shopBookKey(name) === 'pinnacle';
 }
 
 export function linesClose(a, b, eps = 0.051) {
@@ -19,25 +29,43 @@ export function bookOnTicketLine(bookLine, stakedLine) {
 }
 
 export function keepTicketLineBooks(books, stakedLine) {
-  if (stakedLine == null || !Number.isFinite(stakedLine)) return books || [];
-  return (books || []).filter((b) => bookOnTicketLine(b?.line, stakedLine));
+  const onLine = stakedLine == null || !Number.isFinite(stakedLine)
+    ? (books || [])
+    : (books || []).filter((b) => bookOnTicketLine(b?.line, stakedLine));
+  return onLine.filter((b) => !shopRailHidden(b?.name));
 }
 
-/** Gold / Best implied from books already filtered to this ticket’s line. */
-export function markGoldFromTicketBooks(books) {
-  const gold = new Set(SHOP_GOLD_KEYS);
-  let best = null;
+export function pinPostedOdds(books) {
   for (const b of books || []) {
-    if (!b || !Number.isFinite(b.odds)) continue;
-    const k = shopBookKey(b.name);
-    if (!gold.has(k)) continue;
-    if (!best || b.odds > best.odds) best = b;
+    if (!b || !Number.isFinite(b.odds) || shopRailHidden(b.name)) continue;
+    if (isPinnacleBook(b.name)) return b.odds;
   }
+  return null;
+}
+
+/** Green = better American than Pinnacle’s posted number on this line. */
+export function bookBeatsPin(book, pinOdds) {
+  if (!book || !Number.isFinite(book.odds) || !Number.isFinite(pinOdds)) return false;
+  if (shopRailHidden(book.name) || isPinnacleBook(book.name)) return false;
+  return book.odds > pinOdds;
+}
+
+/** Gold / Best implied = best American on this ticket’s line. Ties all gold. */
+export function markGoldFromTicketBooks(books) {
+  let bestOdds = null;
+  for (const b of books || []) {
+    if (!b || !Number.isFinite(b.odds) || shopRailHidden(b.name)) continue;
+    if (bestOdds == null || b.odds > bestOdds) bestOdds = b.odds;
+  }
+  let bestBook = null;
   for (const b of books || []) {
     if (!b) continue;
-    b.best = !!(best && shopBookKey(b.name) === shopBookKey(best.name));
+    const win = Number.isFinite(bestOdds)
+      && Number.isFinite(b.odds)
+      && b.odds === bestOdds
+      && !shopRailHidden(b.name);
+    b.best = win;
+    if (win && !bestBook) bestBook = b.name;
   }
-  return best
-    ? { bestOdds: best.odds, bestBook: best.name }
-    : { bestOdds: null, bestBook: null };
+  return { bestOdds, bestBook };
 }
