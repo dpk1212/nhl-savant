@@ -2,6 +2,8 @@
  * Dual-axis Pinnacle tape — odds (left) + max limit line (right).
  * Industry pattern: shared plot, stepped odds, limit as a full series with nodes.
  */
+import { impliedFromAmerican } from '../../../lib/oddsEv.js';
+
 const C = {
   text: '#F4F7FB',
   textSec: '#9aa6bd',
@@ -21,6 +23,12 @@ export function fmtOdds(o) {
   const n = Number(o);
   if (o == null || Number.isNaN(n) || n === 0) return '—';
   return n > 0 ? `+${n}` : `${n}`;
+}
+
+function impliedPct1(o) {
+  const p = impliedFromAmerican(o);
+  if (p == null || !(p > 0 && p < 1)) return null;
+  return Math.round(p * 1000) / 10;
 }
 
 function fmtMax(n) {
@@ -221,32 +229,14 @@ function MetricStrip({
   curated = false,
   premium = false,
   bestNow = null,
+  hit = null,
 }) {
-  // Collapsed Locked card price desk — what sharps need:
-  // TICKET · BEST · EV · FAIR · PIN · NOW (drop empties; cap at 5–6).
+  // Collapsed desk: Ticket/Best/Pin/Now already live on the hero + gold chip.
+  // EV · Fair · actual win (this unit×market) · this ticket's best implied · hit edge.
   if (curated && compact) {
     const cells = [];
-    const liveNow = Number.isFinite(now) ? now : fair;
-    const best = Number.isFinite(bestNow) ? bestNow : null;
+    const bestImplied = impliedPct1(bestNow);
 
-    if (Number.isFinite(flagged)) {
-      cells.push({
-        key: 'got',
-        label: 'TICKET',
-        value: fmtOdds(flagged),
-        color: C.text,
-      });
-    }
-    if (Number.isFinite(best)
-        && (!Number.isFinite(flagged) || Math.abs(best - flagged) > 1)
-        && (!Number.isFinite(liveNow) || Math.abs(best - liveNow) > 1)) {
-      cells.push({
-        key: 'best',
-        label: 'BEST',
-        value: fmtOdds(best),
-        color: GOLD_HI,
-      });
-    }
     if (Number.isFinite(evPct)) {
       cells.push({
         key: 'ev',
@@ -255,67 +245,67 @@ function MetricStrip({
         color: evPct >= 0.3 ? GREEN : evPct <= -0.3 ? VS : C.textSec,
       });
     }
-    if (Number.isFinite(fair)
-        && (!Number.isFinite(entry) || Math.abs(fair - entry) > 1)) {
+    if (Number.isFinite(fair)) {
       cells.push({
         key: 'fair',
-        label: 'FAIR',
+        label: 'Fair',
         value: fmtOdds(fair),
         color: C.textSec,
+        keepLabel: true,
       });
     }
-    // Premium: never print the same price twice (PIN +125 next to NOW +125
-    // was the tell of a machine-made card). NOW wins; PIN shows only when it
-    // actually differs.
-    if (Number.isFinite(entry)
-        && !(premium && Number.isFinite(liveNow) && Math.abs(entry - liveNow) <= 1)) {
+    if (hit && Number.isFinite(hit.wr)) {
+      const wr = hit.wr.toFixed(1);
       cells.push({
-        key: 'pin',
-        label: 'PIN',
-        value: fmtOdds(entry),
+        key: 'win',
+        label: 'Actual win',
+        value: `${wr}%`,
         color: C.text,
+        keepLabel: true,
+        title: `Our ${hit.label} book hits ${wr}% (n=${hit.n}, Jun 1–Sep 17).`,
       });
-    }
-    cells.push({
-      key: 'now',
-      label: 'NOW',
-      value: fmtOdds(liveNow),
-      // Green is for good news only — a neutral market quote painted green
-      // was decoration lying about meaning. Premium keeps it white.
-      color: premium ? C.text : GREEN,
-    });
-    // Prefer MOVE as last cell when we don't already have 6.
-    if (cells.length < 6 && Number.isFinite(movePp) && Math.abs(movePp) >= 0.25) {
-      cells.push({
-        key: 'move',
-        label: 'MOVE',
-        value: `${movePp > 0 ? '+' : ''}${movePp.toFixed(1)}pp`,
-        color: movePp >= 0.25 ? GREEN : movePp <= -0.25 ? VS : C.textSec,
-      });
+      if (Number.isFinite(bestImplied)) {
+        cells.push({
+          key: 'imp',
+          label: 'Best implied',
+          value: `${bestImplied.toFixed(1)}%`,
+          color: C.text,
+          keepLabel: true,
+          title: `Best available ${fmtOdds(bestNow)} → ${bestImplied.toFixed(1)}% implied.`,
+        });
+        const edge = Math.round((hit.wr - bestImplied) * 10) / 10;
+        cells.push({
+          key: 'hitEdge',
+          label: 'Hit edge',
+          value: `${edge > 0 ? '+' : ''}${edge.toFixed(1)}pp`,
+          color: edge >= 0.5 ? GREEN : edge <= -0.5 ? VS : C.textSec,
+          keepLabel: true,
+          title: `Hit edge = actual win % minus implied of this ticket’s best price. ${wr}% − ${bestImplied.toFixed(1)}% = ${edge > 0 ? '+' : ''}${edge.toFixed(1)}pp.`,
+        });
+      }
     }
 
     const shown = cells.slice(0, 6);
     if (premium) {
-      // Open stats — label over value, no box, no cell borders. Sentence-case
-      // labels: editorial, not shouting (Linear/Lightyear), with EV kept as
-      // the initialism it is.
-      const caseLabel = (s) => (s === 'EV' ? 'EV' : s.charAt(0) + s.slice(1).toLowerCase());
+      const caseLabel = (c) => (c.keepLabel || c.label === 'EV'
+        ? c.label
+        : c.label.charAt(0) + c.label.slice(1).toLowerCase());
       return (
         <div style={{
           display: 'flex',
           alignItems: 'baseline',
           justifyContent: 'space-between',
-          gap: 12,
+          gap: 10,
           padding: '2px 2px 0',
           marginBottom: 4,
         }}>
           {shown.map((c) => (
-            <div key={c.key} style={{ minWidth: 0 }}>
+            <div key={c.key} style={{ minWidth: 0 }} title={c.title || undefined}>
               <div style={{
                 fontSize: 10.5, fontWeight: 500,
                 letterSpacing: '0.01em', color: C.textMuted, marginBottom: 5,
               }}>
-                {caseLabel(c.label)}
+                {caseLabel(c)}
               </div>
               <div style={{
                 fontSize: 15, fontWeight: 650, letterSpacing: '-0.025em',
@@ -352,6 +342,7 @@ function MetricStrip({
                 ? 'none'
                 : '1px solid rgba(212,175,55,0.10)',
             }}
+            title={c.title || undefined}
           >
             <div style={{
               fontFamily: MONO, fontSize: labFs, fontWeight: 700,
@@ -937,6 +928,7 @@ export default function OddsLimitSpark({
   ticketOffMain = false,
   /** Brokerage order: tape directly under the hero, price cells below it. */
   chartFirst = false,
+  hit = null,
 }) {
   const liveNow = Number.isFinite(now) ? now : fair;
   // Chart is book tape on this line. Ticket juice stays in the FLAGGED cell —
@@ -1009,6 +1001,7 @@ export default function OddsLimitSpark({
       premium={premiumCompact}
       bestNow={bestNow}
       ticketOffMain={ticketOffMain}
+      hit={hit}
     />
   );
 

@@ -13,6 +13,7 @@ import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
 import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
+import { unitMarketHit } from '../../../lib/unitMarketHit.js';
 
 function fmtAmericanPrice(o) {
   if (o == null || !Number.isFinite(Number(o)) || Number(o) === 0) return '—';
@@ -2497,6 +2498,7 @@ function CollapsedSpark({ f, gid, bleed = false }) {
       polyEntry={f.polyEntryOdds}
       clvPct={f.clvPct}
       bestNow={f.liveBestOdds ?? f.bestOdds}
+      hit={unitMarketHit(f.units, f.marketType, f.pickLabel)}
       compact
       showStory={false}
       showMetrics
