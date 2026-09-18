@@ -2498,7 +2498,7 @@ function CollapsedSpark({ f, gid, bleed = false }) {
       polyEntry={f.polyEntryOdds}
       clvPct={f.clvPct}
       bestNow={f.liveBestOdds ?? f.bestOdds}
-      hit={unitMarketHit(f.units, f.marketType, f.pickLabel)}
+      hit={unitMarketHit(f.units, f.marketType, f.pickLabel, f.liveBestOdds ?? f.bestOdds)}
       compact
       showStory={false}
       showMetrics
