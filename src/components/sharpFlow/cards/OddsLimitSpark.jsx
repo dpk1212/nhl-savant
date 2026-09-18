@@ -232,7 +232,7 @@ function MetricStrip({
   hit = null,
 }) {
   // Collapsed desk: Ticket/Best/Pin/Now already live on the hero + gold chip.
-  // EV · Fair · actual win (this unit×market) · this ticket's best implied · hit edge.
+  // EV · Fair · actual win (unit×market×similar juice) · this ticket's best implied · hit edge.
   if (curated && compact) {
     const cells = [];
     const bestImplied = impliedPct1(bestNow);
@@ -262,7 +262,9 @@ function MetricStrip({
         value: `${wr}%`,
         color: C.text,
         keepLabel: true,
-        title: `Our ${hit.label} book hits ${wr}% (n=${hit.n}, Jun 1–Sep 17).`,
+        title: hit.scope === 'unit-market-odds'
+          ? `Our ${hit.label} book hits ${wr}% (n=${hit.n}, Jun 1–Sep 17). Same unit, market, and juice band as this ticket.`
+          : `Our ${hit.label} book hits ${wr}% (n=${hit.n}, Jun 1–Sep 17). Same market and juice band — this unit×juice cell is too thin (n<20).`,
       });
       if (Number.isFinite(bestImplied)) {
         cells.push({
@@ -280,7 +282,7 @@ function MetricStrip({
           value: `${edge > 0 ? '+' : ''}${edge.toFixed(1)}pp`,
           color: edge >= 0.5 ? GREEN : edge <= -0.5 ? VS : C.textSec,
           keepLabel: true,
-          title: `Hit edge = actual win % minus implied of this ticket’s best price. ${wr}% − ${bestImplied.toFixed(1)}% = ${edge > 0 ? '+' : ''}${edge.toFixed(1)}pp.`,
+          title: `Hit edge = ${hit.label} actual win % minus implied of this ticket’s best price. ${wr}% − ${bestImplied.toFixed(1)}% = ${edge > 0 ? '+' : ''}${edge.toFixed(1)}pp.`,
         });
       }
     }
