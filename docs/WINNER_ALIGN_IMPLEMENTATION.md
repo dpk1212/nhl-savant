@@ -1,6 +1,6 @@
 # Winner-Align Implementation
 
-_Status: **EDGE stamps LIVE** · **EDGE stake overrides FROZEN** from **2026-07-15** (tape sizing owns mute/boost). FadeTop≥60 mute still active._
+_Status: **EDGE stamps LIVE** · **EDGE stake overrides FROZEN** from **2026-07-15** (tape sizing owns mute/boost). FadeTop≥60 mute still active (2026-09-18+: SHARP-LEAN ML proven ≥50% HOLDS)._
 
 Site thesis: **follow the real winners.**
 
@@ -17,7 +17,7 @@ Full stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md).
 | Step | Active? |
 |------|---------|
 | Stamp EDGE + top-winner diagnostics | **yes** |
-| Mute fadeTop≥60 on A/B/C | **yes** |
+| Mute fadeTop≥60 on A/B/C | **yes** (2026-09-18+: SHARP-LEAN ML proven ≥50% HOLD) |
 | Mute EDGE≤−5 | **no** (tape covers weak composite) |
 | SIZE by EDGE / WINNER rescue / Policy E units | **no** (frozen) |
 

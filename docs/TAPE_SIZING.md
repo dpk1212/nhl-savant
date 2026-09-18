@@ -57,7 +57,7 @@ EDGE-driven stake overrides from winner-align (2026-07-12 … 2026-07-14):
 
 - EDGE size ladders · WINNER rescue · Policy E · EDGE≤−5 mute  
 
-fadeTop60 mute **kept**. EDGE still computed — feeds tape + EDGE band / edge-net size.
+fadeTop60 mute **kept** (2026-09-18+: SHARP-LEAN ML proven ≥50% HOLDS through fade). EDGE still computed — feeds tape + EDGE band / edge-net size.
 
 ## Stamps
 
