@@ -11,6 +11,9 @@ import {
   rowMatchesActionSport,
   sortActionRows,
   sparkPointsForTab,
+  actionDateKeys,
+  etDateKey,
+  formatActionDateChip,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import SteamTag from './cards/SteamTag';
@@ -116,6 +119,7 @@ const deskUi = {
   sizedOnly: false,
   clearOnly: false,
   pinWithOnly: false,
+  dateKey: null,
 };
 
 const FlatSpark = memo(function FlatSpark({ points, width = 64, height = 20 }) {
@@ -1321,6 +1325,7 @@ export default function ConfirmedActionDesk({
   const [sizedOnly, setSizedOnlyState] = useState(deskUi.sizedOnly);
   const [clearOnly, setClearOnlyState] = useState(deskUi.clearOnly);
   const [pinWithOnly, setPinWithOnlyState] = useState(deskUi.pinWithOnly);
+  const [dateKey, setDateKeyState] = useState(deskUi.dateKey);
   const [cellStatsTable, setCellStatsTable] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
 
@@ -1349,6 +1354,11 @@ export default function ConfirmedActionDesk({
     deskUi.pinWithOnly = value;
     setPinWithOnlyState(value);
   };
+  const setDateKey = (next) => {
+    const value = typeof next === 'function' ? next(deskUi.dateKey) : next;
+    deskUi.dateKey = value;
+    setDateKeyState(value);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -1361,7 +1371,7 @@ export default function ConfirmedActionDesk({
 
   useEffect(() => {
     setExpandedId(null);
-  }, [sortMode, highMidOnly, sizedOnly, clearOnly, pinWithOnly]);
+  }, [sortMode, highMidOnly, sizedOnly, clearOnly, pinWithOnly, dateKey]);
 
   const { rows } = useMemo(
     () => buildConfirmedActionRows({
@@ -1377,6 +1387,11 @@ export default function ConfirmedActionDesk({
     [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData, sportFilter],
   );
 
+  const nowMs = Date.now();
+  const todayKey = etDateKey(nowMs);
+  const dateKeys = actionDateKeys(nowMs);
+  const selectedDate = dateKeys.includes(dateKey) ? dateKey : todayKey;
+
   const visible = useMemo(() => {
     const filtered = filterActionRows(rows, {
       sport: sportFilter,
@@ -1384,9 +1399,11 @@ export default function ConfirmedActionDesk({
       sizedOnly,
       clearOnly,
       pinWithOnly,
+      dateKey: selectedDate,
+      nowMs: Date.now(),
     }).filter((r) => rowMatchesActionSport(r, sportFilter));
     return sortActionRows(filtered, sortMode);
-  }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, sortMode]);
+  }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, sortMode, selectedDate]);
 
   const marquee = useMemo(() => buildConfirmedActionMarquee(visible), [visible]);
 
@@ -1418,6 +1435,24 @@ export default function ConfirmedActionDesk({
 
   return (
     <div>
+      {dateKeys.length > 1 && (
+        <div
+          style={{
+            display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center',
+            marginBottom: '0.75rem',
+          }}
+        >
+          {dateKeys.map((k) => (
+            <Pill
+              key={k}
+              active={selectedDate === k}
+              onClick={() => setDateKey(k)}
+            >
+              {formatActionDateChip(k, todayKey)}
+            </Pill>
+          ))}
+        </div>
+      )}
       <ActionTape items={marquee} />
 
       {/* Compact toolbar only — no manifesto, no filler stats */}
@@ -1436,6 +1471,7 @@ export default function ConfirmedActionDesk({
         <span
           data-action-count={visible.length}
           data-action-sport={sportFilter || 'All'}
+          data-action-date={selectedDate}
           style={{ ...T.micro, color: B.textSubtle, marginLeft: 'auto', fontFeatureSettings: "'tnum'" }}
         >
           {visible.length}
@@ -1445,13 +1481,15 @@ export default function ConfirmedActionDesk({
 
       {visible.length === 0 ? (
         <div style={{ ...T.body, color: B.textMuted, padding: '1.5rem', textAlign: 'center' }}>
-          {sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
-            ? `No ${sportFilter} tickets match these filters.`
-            : 'Nothing matches these filters.'}
+          {selectedDate !== todayKey
+            ? `No tickets ${formatActionDateChip(selectedDate, todayKey)}.`
+            : (sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
+              ? `No ${sportFilter} tickets match these filters.`
+              : 'Nothing matches these filters.')}
         </div>
       ) : (
         <div
-          key={sportFilter || 'All'}
+          key={`${sportFilter || 'All'}:${selectedDate}`}
           data-action-list={sportFilter || 'All'}
           style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
         >

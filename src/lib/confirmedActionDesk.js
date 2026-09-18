@@ -27,6 +27,62 @@ const SLUG_TO_SPORT = Object.fromEntries(
 export const ACTION_BOARD_SPORTS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 const SPORTS = ACTION_BOARD_SPORTS;
 
+/** Action date chips: today through whatever 72h reaches in ET. */
+export const ACTION_AHEAD_MS = 72 * 3600 * 1000;
+const LIVE_HOLD_MS = 6 * 3600 * 1000;
+
+export function etDateKey(ms) {
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+export function actionDateKeys(nowMs = Date.now()) {
+  const keys = [];
+  for (let h = 0; h <= 72; h += 3) {
+    const k = etDateKey(nowMs + h * 3600 * 1000);
+    if (k && !keys.includes(k)) keys.push(k);
+  }
+  const end = etDateKey(nowMs + ACTION_AHEAD_MS);
+  if (end && !keys.includes(end)) keys.push(end);
+  return keys;
+}
+
+export function formatActionDateChip(dateKey, todayKey) {
+  if (!dateKey) return '';
+  if (dateKey === todayKey) return 'Today';
+  const [y, m, d] = String(dateKey).split('-').map(Number);
+  if (!y || !m || !d) return dateKey;
+  const wk = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short' });
+  return `${wk} ${d}`;
+}
+
+export function parseActionCommenceMs(...cands) {
+  for (const raw of cands) {
+    if (raw == null || raw === '') continue;
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+      return raw > 1e12 ? raw : raw * 1000;
+    }
+    if (typeof raw?.toMillis === 'function') {
+      const t = raw.toMillis();
+      if (Number.isFinite(t)) return t;
+    }
+    const t = Date.parse(raw);
+    if (Number.isFinite(t)) return t;
+  }
+  return null;
+}
+
+/** Selected ET calendar day. Unknown commence stays on Today. */
+export function rowMatchesActionDate(row, dateKey, nowMs = Date.now()) {
+  if (!dateKey) return true;
+  const todayKey = etDateKey(nowMs);
+  const ms = Number(row?.commenceMs);
+  if (!Number.isFinite(ms)) return dateKey === todayKey;
+  if (etDateKey(ms) === dateKey) return true;
+  if (dateKey === todayKey && ms < nowMs && (nowMs - ms) <= LIVE_HOLD_MS) return true;
+  return false;
+}
+
 /** Sports that have at least one open position on the Action feeds. */
 export function sportsWithActionPositions(...feeds) {
   const out = new Set();
@@ -623,6 +679,16 @@ export function buildConfirmedActionRows({
     const sport = resolveActionSport(feedSport, pos);
     if (!actionSportMatches(sport, sportFilter)) continue;
     const polyGame = polyData?.[sport]?.[gameKey];
+    const pinnGame = pinnacleHistory?.[sport]?.[gameKey];
+    const commenceMs = parseActionCommenceMs(
+      pos.commenceTime,
+      pos.commence,
+      gd.commenceTime,
+      gd.commence,
+      polyGame?.commence,
+      polyGame?.commenceTime,
+      pinnGame?.commence,
+    );
     if (rejectNonFullGameBoardPosition(pos, {
       marketType,
       sport,
@@ -746,6 +812,8 @@ export function buildConfirmedActionRows({
       opposedBy: 0,
       ts,
       firstSeen: pos.firstSeen || null,
+      commenceMs,
+      commenceDateKey: etDateKey(commenceMs),
       odds: americanOdds,
     });
   }
@@ -925,6 +993,8 @@ export function filterActionRows(rows, {
   sizedOnly = false,
   clearOnly = false,
   pinWithOnly = false,
+  dateKey = null,
+  nowMs = Date.now(),
   /** Dollar floor; default hides sub-$500. Pass 0 to show all sizes. */
   minInvested = MIN_ACTION_INVESTED,
 } = {}) {
@@ -936,6 +1006,7 @@ export function filterActionRows(rows, {
     if (sizedOnly && !displaySized(r)) return false;
     if (clearOnly && r.opposed !== 'clear') return false;
     if (pinWithOnly && !lineWithTicket(r)) return false;
+    if (dateKey && !rowMatchesActionDate(r, dateKey, nowMs)) return false;
     return true;
   });
 }
