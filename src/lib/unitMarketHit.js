@@ -2,60 +2,58 @@
  * Actual WR for this ticket’s unit × market × similar juice.
  * Hit edge on the tape = that WR minus implied of this ticket’s gold chip.
  *
- * V12 AGS-U live stakes · Firestore · 2026-06-01 → 2026-09-17.
+ * Juice bands are American, capped at the chalk end so −225 is not mixed
+ * with −400. V12 AGS-U · Firestore · 2026-06-01 → 2026-09-17.
  * Historical juice is max(flagged, Pinnacle) — retail gold was never stamped.
  *
- * 3-way cells with n<20 fall back to market × juice so the strip still
- * paints a comparable cohort. Never fall back to unit×market without juice.
+ * 3-way cells with n<20 fall back to market × juice. Never fall back to
+ * unit×market without juice. 0u cards return null.
  */
-import { impliedFromAmerican } from './oddsEv.js';
 
 /** unit|market|band — only n≥20. */
 const CELLS = {
-  '≤1u|ml|plus': { wr: 47.2, n: 53 },
-  '≤1u|ml|pick': { wr: 38.2, n: 34 },
-  '≤1u|ml|short': { wr: 62.8, n: 43 },
-  '≤1u|ml|fav': { wr: 40.7, n: 27 },
-  '≤1u|ml|heavy': { wr: 56.0, n: 25 },
-  '≤1u|total|pick': { wr: 34.5, n: 29 },
-  '≤1u|total|short': { wr: 53.8, n: 39 },
-  '1.5–2.5u|ml|plus': { wr: 35.4, n: 65 },
-  '1.5–2.5u|ml|pick': { wr: 53.3, n: 30 },
-  '1.5–2.5u|total|short': { wr: 41.7, n: 24 },
-  '3u|ml|short': { wr: 62.8, n: 43 },
-  '3u|ml|fav': { wr: 58.3, n: 24 },
-  '3u|total|pick': { wr: 54.2, n: 24 },
-  '3u|total|short': { wr: 53.6, n: 56 },
-  '4–5u|ml|short': { wr: 67.6, n: 34 },
-  '4–5u|ml|fav': { wr: 61.3, n: 31 },
-  '4–5u|ml|heavy': { wr: 85.7, n: 21 },
-  '4–5u|total|short': { wr: 49.4, n: 87 },
-  '>5u|ml|heavy': { wr: 80.6, n: 36 },
+  '≤1u|ml|plus': { wr: 50.0, n: 66 },
+  '≤1u|ml|pick': { wr: 47.8, n: 46 },
+  '≤1u|ml|n130': { wr: 54.8, n: 31 },
+  '≤1u|total|plus': { wr: 36.1, n: 36 },
+  '≤1u|total|pick': { wr: 52.1, n: 48 },
+  '1.5–2.5u|ml|plus': { wr: 41.6, n: 89 },
+  '1.5–2.5u|total|pick': { wr: 42.3, n: 26 },
+  '3u|ml|pick': { wr: 54.5, n: 22 },
+  '3u|ml|n130': { wr: 65.8, n: 38 },
+  '3u|ml|n175': { wr: 60.0, n: 20 },
+  '3u|total|plus': { wr: 50.0, n: 28 },
+  '3u|total|pick': { wr: 55.2, n: 67 },
+  '4–5u|ml|pick': { wr: 68.2, n: 22 },
+  '4–5u|ml|n130': { wr: 63.3, n: 30 },
+  '4–5u|ml|n175': { wr: 56.5, n: 23 },
+  '4–5u|total|pick': { wr: 50.5, n: 95 },
 };
 
 /** market|band — fallback when the 3-way cell is thin. */
 const MARKET_BAND = {
-  'ml|plus': { wr: 43.9, n: 139 },
-  'ml|pick': { wr: 50.0, n: 92 },
-  'ml|short': { wr: 64.1, n: 142 },
-  'ml|fav': { wr: 59.1, n: 93 },
-  'ml|heavy': { wr: 73.1, n: 104 },
-  'spread|plus': { wr: 46.3, n: 41 },
-  'spread|pick': { wr: 41.2, n: 34 },
-  'spread|short': { wr: 66.7, n: 27 },
-  'spread|fav': { wr: 50.0, n: 20 },
-  'total|plus': { wr: 48.1, n: 54 },
-  'total|pick': { wr: 49.4, n: 85 },
-  'total|short': { wr: 51.1, n: 221 },
+  'ml|plus': { wr: 48.1, n: 185 },
+  'ml|pick': { wr: 53.8, n: 106 },
+  'ml|n130': { wr: 64.1, n: 117 },
+  'ml|n175': { wr: 56.9, n: 72 },
+  'ml|n225': { wr: 60.0, n: 35 },
+  'ml|n300': { wr: 75.0, n: 20 },
+  'ml|n400': { wr: 88.6, n: 35 },
+  'spread|plus': { wr: 46.0, n: 50 },
+  'spread|pick': { wr: 48.8, n: 41 },
+  'total|plus': { wr: 46.3, n: 95 },
+  'total|pick': { wr: 51.8, n: 251 },
 };
 
 const MKT_LABEL = { ml: 'ML', spread: 'Spread', total: 'Total' };
 const BAND_LABEL = {
   plus: 'plus',
-  pick: 'pick',
-  short: '−110s',
-  fav: '−150s',
-  heavy: '−200+',
+  pick: '−110s',
+  n130: '−130s',
+  n175: '−160 to −200',
+  n225: '−200 to −250',
+  n300: '−250 to −350',
+  n400: '−350+',
 };
 
 export function unitHitBucket(units) {
@@ -79,18 +77,22 @@ export function marketHitKey(marketType, pickLabel = '') {
   return 'ml';
 }
 
-/** Similar-juice bands from this ticket’s best American. */
+/**
+ * Similar-juice bands from this ticket’s best American.
+ * Chalk is capped: −225 does not sit with −400.
+ */
 export function oddsHitBand(american) {
-  const p = impliedFromAmerican(american);
-  if (p == null || !(p > 0 && p < 1)) return null;
-  if (p < 0.48) return 'plus';
-  if (p < 0.52) return 'pick';
-  if (p < 0.58) return 'short';
-  if (p < 0.65) return 'fav';
-  return 'heavy';
+  const n = Number(american);
+  if (!Number.isFinite(n) || n === 0) return null;
+  if (n > 0) return 'plus';
+  if (n >= -120) return 'pick';
+  if (n >= -150) return 'n130';
+  if (n >= -200) return 'n175';
+  if (n >= -250) return 'n225';
+  if (n >= -350) return 'n300';
+  return 'n400';
 }
 
-/** Hide thin cells so the strip does not paint n=10 noise. */
 const MIN_N = 20;
 
 function pack(row, { bucket, market, band, scope }) {
