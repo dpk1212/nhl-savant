@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-18T11:51:57.221Z",
-  "elapsedSec": 51.9,
+  "scannedAt": "2026-09-18T11:59:23.049Z",
+  "elapsedSec": 51.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 171,
   "summary": {
     "total": 368,
-    "coveredByMain": 35,
-    "recovered": 24,
-    "recoveredPositions": 428,
+    "coveredByMain": 34,
+    "recovered": 25,
+    "recoveredPositions": 430,
     "noPositions": 309,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,8 +16,8 @@
       "ml": 97,
       "spread": 33,
       "total": 15,
-      "dropped_shadow_gate": 215,
-      "dropped_excluded": 58,
+      "dropped_shadow_gate": 216,
+      "dropped_excluded": 59,
       "dropped_duplicate": 10
     }
   },
@@ -327,11 +327,11 @@
       "sports": "SOC,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x821dab0565ebf5b327f51db06223fdcfe01acf16",
-      "positionsCount": 23,
+      "positionsCount": 22,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 19565,
       "willPassShadowGate": 8,
-      "willDropAtShadowGate": 15,
+      "willDropAtShadowGate": 14,
       "positions": [
         {
           "sport": "SOC",
@@ -528,15 +528,6 @@
           "marketType": "ml",
           "side": "away",
           "invested": 206,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "rso_val",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 142,
           "entryLine": null,
           "passesShadow": false
         }
@@ -751,7 +742,7 @@
     {
       "walletShort": "2f2a9e",
       "tier": "CONFIRMED",
-      "name": "purplegatto",
+      "name": null,
       "sports": "SOC,NBA",
       "status": "SCANNED_NO_POSITIONS_TODAY",
       "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e"
@@ -1288,6 +1279,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "mil_bal",
+          "marketType": "total",
+          "side": "over",
+          "invested": 108,
+          "entryLine": 8.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
           "gameKey": "sfg_lad",
           "marketType": "spread",
           "side": "away",
@@ -1500,15 +1500,6 @@
           "side": "over",
           "invested": 14,
           "entryLine": 53.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "mil_bal",
-          "marketType": "total",
-          "side": "over",
-          "invested": 11,
-          "entryLine": 8.5,
           "passesShadow": false
         },
         {
@@ -4907,7 +4898,42 @@
       "tier": "CONFIRMED",
       "name": "maz26",
       "sports": "SOC,CFB",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x67542c3219b37fd1610aad290676ff91cdbfe3bc",
+      "positionsCount": 3,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 10012,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 2,
+      "positions": [
+        {
+          "sport": "NFL",
+          "gameKey": "mia_sf",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 3000,
+          "entryLine": -12.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "cin_hou",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 910,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "mia_sf",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 395,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "c19b3c",
@@ -6640,7 +6666,7 @@
           "gameKey": "colo_nw",
           "marketType": "ml",
           "side": "home",
-          "invested": 1752,
+          "invested": 1818,
           "entryLine": null,
           "passesShadow": true
         },
