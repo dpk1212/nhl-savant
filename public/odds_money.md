@@ -1,3 +1,8 @@
+- [Facebook](https://www.facebook.com/OddsTrader1/ "Facebook")
+- [X](https://twitter.com/oddstrader_ "X")
+- [Instagram](https://www.instagram.com/oddstrader_/ "Instagram")
+- [YouTube](https://www.youtube.com/@oddstraderbetstation "YouTube")
+
 [![Logo](https://otcdn.virginia.us-east-1.oddstrader.com/OT-LogoWhiteGreen.svg)](https://www.oddstrader.com/)
 
 - [ODDS](https://www.oddstrader.com/)
@@ -68,8 +73,8 @@ NHLTue 09/29
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| TUE 09/295:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>40-42<br>-<br>+115Bovada | +106 | +109 | +105 | +115 | +109 | - | - |
-| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>69-32<br>-<br>-121Heritage | -120 | -123 | -125 | -135 | -121 | - | - |
+| TUE 09/295:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>40-42<br>-<br>+115Bovada | +106 | +113 | +108 | +115 | +115 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>69-32<br>-<br>-127Heritage | -120 | -128 | -128 | -135 | -127 | - | - |
 
 | TUE 09/297:00 PM<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>57-44<br>-<br>-101Heritage | -104 | -104 | -110 | -105 | -101 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>32-50<br>-<br>-109Heritage | -110 | -110 | -110 | -115 | -109 | - | - |
@@ -86,8 +91,8 @@ NHLTue 09/29
 | WED 09/307:30 PM<br>![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>43-45<br>-<br>+116Heritage | +110 | +110 | - | +105 | +116 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>47-45<br>-<br>-125BetOnline | -125 | -125 | - | -125 | -128 | - | - |
 
-| WED 09/3010:00 PM<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>35-51<br>-<br>+158Bovada | +149 | +147 | - | +158 | +150 | - | - |
-| ![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>63-32<br>-<br>-166Heritage | -170 | -167 | - | -183 | -166 | - | - |
+| WED 09/3010:00 PM<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>35-51<br>-<br>+158Bovada | +149 | +152 | - | +158 | +150 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>63-32<br>-<br>-166Heritage | -170 | -173 | - | -183 | -166 | - | - |
 
 | THU 10/017:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>47-45<br>-<br>+133Bovada | - | - | - | +133 | - | - | - |
 | ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>42-40<br>-<br>-155Bovada | - | - | - | -155 | - | - | - |
@@ -206,13 +211,66 @@ Look for short answers to common questions like how the puck line works or how t
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
 
-![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
-
-BetStationThe future of Betting
-
 [NHL](https://www.oddstrader.com/nhl/)
 
 Report
+
+OT Writers
+
+INSIGHTS / ANALYSIS / BETTING NEWS
+
+[![Charlie Boudreau](https://www.oddstrader.com/wp-content/uploads/2025/10/charlie-boudreau-300x300.webp)](https://www.oddstrader.com/betting/author/charlieboudreau/)
+
+[Charlie Boudreau](https://www.oddstrader.com/betting/author/charlieboudreau/)
+
+Sports Betting Writer
+
+[![Frank Ammirante](https://www.oddstrader.com/wp-content/uploads/2025/10/frank-ammirante-bmr-expert-290x300.jpg)](https://www.oddstrader.com/betting/author/frankammirante/)
+
+[Frank Ammirante](https://www.oddstrader.com/betting/author/frankammirante/)
+
+Sports Betting & Fantasy Analyst
+
+[![Garrett Chorpenning](https://www.oddstrader.com/wp-content/uploads/2026/09/garrett-300x300.jpeg)](https://www.oddstrader.com/betting/author/garrettchorpenning/)
+
+[Garrett Chorpenning](https://www.oddstrader.com/betting/author/garrettchorpenning/)
+
+Sports Betting Writer
+
+[![Dallas Stars Vegas Golden Knights Game Three NHL best bet Roope Hintz](https://www.oddstrader.com/wp-content/uploads/2024/04/Roope-Hintz-24-of-the-Dallas-Stars-takes-a-shot-against-the-Vegas-Golden-Knights-in-the-third-period-of-Game-Three-of-the-First-Round-of-the-2024-Stanley-Cup-Playoffs-768x558.jpg)](https://www.oddstrader.com/betting/stanley-cup-betting-odds/)
+
+NHL
+
+### [Betting Favorites, Sleepers, & Longshots To Win The 2026 Stanley Cup](https://www.oddstrader.com/betting/stanley-cup-betting-odds/)
+
+[Read More »](https://www.oddstrader.com/betting/stanley-cup-betting-odds/)
+
+[OddsTrader](https://www.oddstrader.com/betting/author/oddstrader/)
+April 17, 2026
+
+[![2025 Stanley Cup Final - Game Six](https://www.oddstrader.com/wp-content/uploads/2025/07/Connor-McDavid-3-768x512.jpg)](https://www.oddstrader.com/betting/stanley-cup-betting-trends/)
+
+NHL
+
+### [Stanley Cup Playoff Betting Trends & Stats: 8 Must-Know Angles for the 2026 NHL Postseason](https://www.oddstrader.com/betting/stanley-cup-betting-trends/)
+
+[Read More »](https://www.oddstrader.com/betting/stanley-cup-betting-trends/)
+
+[OddsTrader](https://www.oddstrader.com/betting/author/oddstrader/)
+April 17, 2026
+
+[![Thomas Harley Dallas Stars Second Round of the 2024 Stanley Cup Playoffs Texas](https://www.oddstrader.com/wp-content/uploads/2024/05/Thomas-Harley-Dallas-Stars-768x512.jpg)](https://www.oddstrader.com/betting/nhl-picks-today/)
+
+NHL
+
+### [NHL Picks Today: Mar 12](https://www.oddstrader.com/betting/nhl-picks-today/)
+
+[Read More »](https://www.oddstrader.com/betting/nhl-picks-today/)
+
+[OddsTrader](https://www.oddstrader.com/betting/author/oddstrader/)
+March 12, 2026
+
+[Load More](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1789757092608#)
 
 ![oddstraderLogo](https://otcdn.virginia.us-east-1.oddstrader.com/OT-LogoWhiteGreen.svg)
 
