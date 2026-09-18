@@ -40,8 +40,10 @@ import {
   evPctVsFairProb,
   mlFairOddsList,
   fmtFlaggedAtLabel,
+  americanFromProb,
 } from '../../../lib/oddsEv.js';
 import { shortTeamNick as shortTeam } from '../../../utils/teamIdentity.js';
+import { shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
 
 export { americanFromPolyPrice };
 export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb, mlFairOddsList };
@@ -356,6 +358,74 @@ export function sameSpreadHandicap(ticketLine, otherLine) {
 
 function linesClose(a, b, eps = 0.051) {
   return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= eps;
+}
+
+function pctToAmerican(pct) {
+  if (!Number.isFinite(pct) || pct <= 0) return null;
+  const p = pct > 1 ? pct / 100 : pct;
+  return americanFromProb(p);
+}
+
+/** Novig / Polymarket / Kalshi onto the shop rail. Snapshot first; live ML feeds as backup. */
+function appendExchangeQuotes(books, {
+  pinnGame,
+  isTotal,
+  isSpread,
+  sideKey,
+  stakedLine,
+  polyGame,
+  kalshiGame,
+}) {
+  if (!Array.isArray(books) || !pinnGame) return;
+  const seen = new Set(books.map((b) => shopBookKey(b.name)));
+  const add = (name, odds) => {
+    if (!Number.isFinite(odds)) return;
+    const k = shopBookKey(name);
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    books.push({ name, odds });
+  };
+
+  if (isTotal) {
+    const bag = pinnGame.allTotalBooks || {};
+    for (const k of EXCHANGE_BOOK_KEYS) {
+      const b = bag[k];
+      if (!b) continue;
+      if (stakedLine != null && Number.isFinite(b.line) && !linesClose(b.line, stakedLine)) continue;
+      add(b.name || k, sideKey === 'under' ? b.under : b.over);
+    }
+    return;
+  }
+
+  if (isSpread) {
+    const bag = pinnGame.allSpreadBooks || {};
+    for (const k of EXCHANGE_BOOK_KEYS) {
+      const b = bag[k];
+      if (!b) continue;
+      const ln = sideKey === 'away' ? b.awayLine : b.homeLine;
+      if (stakedLine != null && Number.isFinite(ln) && !linesClose(ln, stakedLine)) continue;
+      add(b.name || k, sideKey === 'away' ? b.away : b.home);
+    }
+    return;
+  }
+
+  const bag = pinnGame.allBooks || {};
+  const sideOdds = (b) => (sideKey === 'away' ? b?.away : sideKey === 'draw' ? b?.draw : b?.home);
+  for (const k of EXCHANGE_BOOK_KEYS) {
+    const b = bag[k];
+    if (!b) continue;
+    add(b.name || k, sideOdds(b));
+  }
+  add('Polymarket', pctToAmerican(
+    sideKey === 'away' ? polyGame?.awayProb
+      : sideKey === 'draw' ? polyGame?.drawProb
+        : polyGame?.homeProb,
+  ));
+  add('Kalshi', pctToAmerican(
+    sideKey === 'away' ? kalshiGame?.awayProb
+      : sideKey === 'draw' ? kalshiGame?.drawProb
+        : kalshiGame?.homeProb,
+  ));
 }
 
 /** Commence / freeze timestamps from Firestore, ISO, or epoch ms. */
@@ -790,7 +860,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         seen.add(String(name).toLowerCase());
         const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
         books.push({ name, odds: o, best: !!isBest });
-        if (books.length >= 8) break;
+        if (books.length >= 12) break;
       }
       if (books.length < 2 && bestBook && Number.isFinite(bestOdds)
           && bestBook.toLowerCase() !== 'pinnacle'
@@ -1007,13 +1077,25 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         seen.add(String(name).toLowerCase());
         const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
         books.push({ name, odds: o, best: !!isBest });
-        if (books.length >= 8) break;
+        if (books.length >= 12) break;
       }
       if (bestBook && Number.isFinite(bestOdds)
           && !books.some((b) => String(b.name).toLowerCase() === String(bestBook).toLowerCase())) {
         books.push({ name: bestBook, odds: bestOdds, best: true });
       }
     }
+  }
+
+  if (!sealed) {
+    appendExchangeQuotes(books, {
+      pinnGame,
+      isTotal,
+      isSpread,
+      sideKey,
+      stakedLine,
+      polyGame: opts.polyData?.[sport]?.[gk] || null,
+      kalshiGame: opts.kalshiData?.[sport]?.[gk] || null,
+    });
   }
 
   let updatedAgoSec = null;
@@ -1532,7 +1614,7 @@ export function mapLockedPickToCardFixture(pick, {
       side: pick.side || pick.pickSide || sideNorm,
     },
     pinnacleHistory,
-    { freezeAtMs: ticketFrozen ? freezeAtMs : null },
+    { freezeAtMs: ticketFrozen ? freezeAtMs : null, polyData, kalshiData },
   );
   const recoOdds = Number.isFinite(market.bestOdds) ? market.bestOdds
     : (Number.isFinite(market.fairDisplay) ? market.fairDisplay : null);
