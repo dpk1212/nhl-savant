@@ -44,6 +44,11 @@ import {
 } from '../../../lib/oddsEv.js';
 import { shortTeamNick as shortTeam } from '../../../utils/teamIdentity.js';
 import { shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
+import {
+  bookOnTicketLine,
+  keepTicketLineBooks,
+  markGoldFromTicketBooks,
+} from '../../../lib/shopTicketLine.js';
 
 export { americanFromPolyPrice };
 export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb, mlFairOddsList };
@@ -378,12 +383,16 @@ function appendExchangeQuotes(books, {
 }) {
   if (!Array.isArray(books) || !pinnGame) return;
   const seen = new Set(books.map((b) => shopBookKey(b.name)));
-  const add = (name, odds) => {
+  const add = (name, odds, line = null) => {
     if (!Number.isFinite(odds)) return;
     const k = shopBookKey(name);
     if (!k || seen.has(k)) return;
     seen.add(k);
-    books.push({ name, odds });
+    books.push({
+      name,
+      odds,
+      line: Number.isFinite(line) ? line : null,
+    });
   };
 
   if (isTotal) {
@@ -391,8 +400,8 @@ function appendExchangeQuotes(books, {
     for (const k of EXCHANGE_BOOK_KEYS) {
       const b = bag[k];
       if (!b) continue;
-      if (stakedLine != null && Number.isFinite(b.line) && !linesClose(b.line, stakedLine)) continue;
-      add(b.name || k, sideKey === 'under' ? b.under : b.over);
+      if (!bookOnTicketLine(b.line, stakedLine)) continue;
+      add(b.name || k, sideKey === 'under' ? b.under : b.over, b.line);
     }
     return;
   }
@@ -403,8 +412,8 @@ function appendExchangeQuotes(books, {
       const b = bag[k];
       if (!b) continue;
       const ln = sideKey === 'away' ? b.awayLine : b.homeLine;
-      if (stakedLine != null && Number.isFinite(ln) && !linesClose(ln, stakedLine)) continue;
-      add(b.name || k, sideKey === 'away' ? b.away : b.home);
+      if (!bookOnTicketLine(ln, stakedLine)) continue;
+      add(b.name || k, sideKey === 'away' ? b.away : b.home, ln);
     }
     return;
   }
@@ -838,6 +847,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         name: (pinnGame.fairTotalBook || 'pinnacle').replace(/^\w/, (c) => c.toUpperCase()),
         odds: fairNow,
         sharp: true,
+        line: stakedLine,
       });
     }
     // Retail strip on the ticket line (allTotalBooks from snapshot; fallback best*).
@@ -852,20 +862,21 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       for (const k of keys) {
         const b = allT[k];
         if (!b) continue;
-        if (stakedLine != null && Number.isFinite(b.line) && !linesClose(b.line, stakedLine)) continue;
+        if (!bookOnTicketLine(b.line, stakedLine)) continue;
         const o = sideKey === 'under' ? b.under : b.over;
         if (!Number.isFinite(o)) continue;
         const name = b.name || k;
         if (seen.has(String(name).toLowerCase())) continue;
         seen.add(String(name).toLowerCase());
         const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
-        books.push({ name, odds: o, best: !!isBest });
+        books.push({ name, odds: o, best: !!isBest, line: b.line });
         if (books.length >= 12) break;
       }
       if (books.length < 2 && bestBook && Number.isFinite(bestOdds)
           && bestBook.toLowerCase() !== 'pinnacle'
-          && !seen.has(bestBook.toLowerCase())) {
-        books.push({ name: bestBook, odds: bestOdds, best: true });
+          && !seen.has(bestBook.toLowerCase())
+          && (stakedLine == null || linesClose(best?.line, stakedLine))) {
+        books.push({ name: bestBook, odds: bestOdds, best: true, line: best?.line ?? stakedLine });
       }
     }
   } else if (isSpread) {
@@ -998,10 +1009,21 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     }
     oppLabel = `${oppShort} ${fmtLn(opp?.line ?? (lineMoved ? liveMarketLine : marketLine))}`.trim();
     if (Number.isFinite(fairNow)) {
-      books.push({ name: pinnGame.fairSpreadBook || 'Pinnacle', odds: fairNow, sharp: true });
+      books.push({
+        name: pinnGame.fairSpreadBook || 'Pinnacle',
+        odds: fairNow,
+        sharp: true,
+        line: stakedLine,
+      });
     }
-    if (bestBook && Number.isFinite(bestOdds)) {
-      books.push({ name: bestBook, odds: bestOdds, best: true });
+    if (bestBook && Number.isFinite(bestOdds)
+        && (stakedLine == null || linesClose(best?.line, stakedLine))) {
+      books.push({
+        name: bestBook,
+        odds: bestOdds,
+        best: true,
+        line: best?.line ?? stakedLine,
+      });
     }
   } else {
     // Moneyline
@@ -1096,6 +1118,16 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       polyGame: opts.polyData?.[sport]?.[gk] || null,
       kalshiGame: opts.kalshiData?.[sport]?.[gk] || null,
     });
+  }
+
+  // Hero line only. Snapshot bestOver/bestSpread can be another book's main.
+  if ((isTotal || isSpread) && stakedLine != null) {
+    const kept = keepTicketLineBooks(books, stakedLine);
+    books.length = 0;
+    books.push(...kept);
+    const gold = markGoldFromTicketBooks(books);
+    bestOdds = gold.bestOdds;
+    bestBook = gold.bestBook;
   }
 
   let updatedAgoSec = null;

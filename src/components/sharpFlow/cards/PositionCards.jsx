@@ -13,6 +13,7 @@ import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
 import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
+import { SHOP_GOLD_KEYS } from '../../../lib/shopTicketLine.js';
 import { unitMarketHit } from '../../../lib/unitMarketHit.js';
 
 function fmtAmericanPrice(o) {
@@ -2497,8 +2498,8 @@ function CollapsedSpark({ f, gid, bleed = false }) {
       movePp={f.pinnMovePp}
       polyEntry={f.polyEntryOdds}
       clvPct={f.clvPct}
-      bestNow={f.liveBestOdds ?? f.bestOdds}
-      hit={unitMarketHit(f.units, f.marketType, f.pickLabel, f.liveBestOdds ?? f.bestOdds)}
+      bestNow={f.bestOdds}
+      hit={unitMarketHit(f.units, f.marketType, f.pickLabel, f.bestOdds)}
       compact
       showStory={false}
       showMetrics
@@ -2823,33 +2824,45 @@ const SHOP_PREFER = [
   'circa', 'circasports', 'betonlineag', 'betonline', 'lowvig', 'bookmaker',
 ];
 const SHOP_EXCHANGE = new Set(EXCHANGE_BOOK_KEYS);
+const SHOP_GOLD = new Set(SHOP_GOLD_KEYS);
 
-/** Chip rail under the tape. Gold = retail best. Green = plus EV vs fair. */
+function shopLineMatch(bookLine, ticketLine) {
+  if (ticketLine == null || !Number.isFinite(ticketLine)) return true;
+  return Number.isFinite(bookLine) && Math.abs(bookLine - ticketLine) <= 0.051;
+}
+
+/** Chip rail under the tape. Same line as the hero. Gold = retail best on that line. */
 function CollapsedShopStrip({ f }) {
   const fair = Number.isFinite(f?.fairLine) ? f.fairLine
     : (Number.isFinite(f?.liveFair) ? f.liveFair : null);
+  const ticketLine = Number.isFinite(f?.ticketLine) ? f.ticketLine : null;
+  const lineName = f?.ourMarketLabel || f?.pickLabel || null;
   const raw = Array.isArray(f?.books) ? f.books : [];
-  const usable = raw.filter((b) => Number.isFinite(b?.odds) && shopBookKey(b.name) !== 'pinnacle');
+  const usable = raw.filter((b) => Number.isFinite(b?.odds) && shopLineMatch(b.line, ticketLine));
+  const isPinn = (b) => shopBookKey(b.name) === 'pinnacle';
+  const sharp = usable.filter(isPinn).slice(0, 1);
   const retail = [...usable]
-    .filter((b) => !SHOP_EXCHANGE.has(shopBookKey(b.name)))
+    .filter((b) => !SHOP_EXCHANGE.has(shopBookKey(b.name)) && !isPinn(b))
     .sort((a, b) => {
       const ia = SHOP_PREFER.indexOf(shopBookKey(a.name));
       const ib = SHOP_PREFER.indexOf(shopBookKey(b.name));
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     })
     .slice(0, 5);
-  const seen = new Set(retail.map((b) => shopBookKey(b.name)));
+  const seen = new Set([...sharp, ...retail].map((b) => shopBookKey(b.name)));
   const exchanges = EXCHANGE_BOOK_KEYS
     .map((k) => usable.find((b) => shopBookKey(b.name) === k && !seen.has(k)))
     .filter(Boolean);
-  const ranked = [...retail, ...exchanges];
+  const ranked = [...sharp, ...retail, ...exchanges];
   if (ranked.length < 2) return null;
 
-  const bestName = shopBookKey(f.liveBestBook || f.bestBook);
-  const isBest = (b) => {
-    if (SHOP_EXCHANGE.has(shopBookKey(b.name))) return false;
-    return !!b.best || (bestName && shopBookKey(b.name) === bestName);
-  };
+  const goldPool = ranked.filter((b) => SHOP_GOLD.has(shopBookKey(b.name)));
+  const goldOdds = goldPool.length ? Math.max(...goldPool.map((b) => b.odds)) : null;
+  const isBest = (b) => (
+    SHOP_GOLD.has(shopBookKey(b.name))
+    && Number.isFinite(goldOdds)
+    && b.odds === goldOdds
+  );
   const plusEv = (b) => Number.isFinite(fair) && b.odds > fair;
   const toneOf = (b) => (isBest(b) ? 'gold' : plusEv(b) ? 'green' : 'flat');
   const beatFair = ranked.filter(plusEv).length;
@@ -2885,20 +2898,33 @@ function CollapsedShopStrip({ f }) {
       className="sf-shop-desk"
       onClick={stop}
       onKeyDown={(e) => e.stopPropagation()}
-      aria-label={`Line shop. ${count}.`}
+      aria-label={`${lineName ? `${lineName}. ` : ''}Line shop. ${count}.`}
       style={{
         marginTop: 12,
         paddingTop: 11,
         borderTop: '1px solid rgba(148,163,184,0.08)',
       }}
     >
+      {lineName && (
+        <div style={{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          gap: 10, marginBottom: 7,
+        }}>
+          <span style={{
+            fontSize: 11, fontWeight: 800, letterSpacing: '-0.01em', color: C.text,
+          }}>
+            {lineName}
+          </span>
+          <span style={{ fontSize: 10.5, fontWeight: 500, color: C.textMuted }}>{count}</span>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         {ranked.map((b) => {
           const tone = TONE[toneOf(b)];
           return (
             <span
               key={String(b.name)}
-              title={`${b.name} ${fmtOdds(b.odds)}${isBest(b) ? ' · best' : plusEv(b) ? ' · plus EV' : ''}`}
+              title={`${b.name}${lineName ? ` ${lineName}` : ''} ${fmtOdds(b.odds)}${isBest(b) ? ' · best' : plusEv(b) ? ' · plus EV' : ''}`}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '4px 8px 4px 4px', borderRadius: 999,
@@ -2919,7 +2945,9 @@ function CollapsedShopStrip({ f }) {
             </span>
           );
         })}
-        <span style={{ marginLeft: 'auto', fontSize: 10.5, fontWeight: 500, color: C.textMuted }}>{count}</span>
+        {!lineName && (
+          <span style={{ marginLeft: 'auto', fontSize: 10.5, fontWeight: 500, color: C.textMuted }}>{count}</span>
+        )}
       </div>
     </div>
   );
