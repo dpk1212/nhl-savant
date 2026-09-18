@@ -12,6 +12,7 @@ import LockedCollapsedStrength from './LockedCollapsedStrength';
 import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
+import { BookLogo, shopBookKey } from './bookLogo.jsx';
 
 function fmtAmericanPrice(o) {
   if (o == null || !Number.isFinite(Number(o)) || Number(o) === 0) return '—';
@@ -2814,6 +2815,104 @@ function TicketPerforation({ edgeAura }) {
   );
 }
 
+
+const SHOP_PREFER = [
+  'fanduel', 'draftkings', 'betmgm', 'caesars', 'fanatics',
+  'circa', 'circasports', 'betonlineag', 'betonline', 'lowvig', 'bookmaker',
+];
+
+/** Chip rail under the tape. Gold = best price. Green = plus EV vs fair. */
+function CollapsedShopStrip({ f }) {
+  const fair = Number.isFinite(f?.fairLine) ? f.fairLine
+    : (Number.isFinite(f?.liveFair) ? f.liveFair : null);
+  const raw = Array.isArray(f?.books) ? f.books : [];
+  const ranked = [...raw]
+    .filter((b) => Number.isFinite(b?.odds) && shopBookKey(b.name) !== 'pinnacle')
+    .sort((a, b) => {
+      const ia = SHOP_PREFER.indexOf(shopBookKey(a.name));
+      const ib = SHOP_PREFER.indexOf(shopBookKey(b.name));
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    })
+    .slice(0, 5);
+  if (ranked.length < 2) return null;
+
+  const bestName = shopBookKey(f.liveBestBook || f.bestBook);
+  const isBest = (b) => !!b.best || (bestName && shopBookKey(b.name) === bestName);
+  const plusEv = (b) => Number.isFinite(fair) && b.odds > fair;
+  const toneOf = (b) => (isBest(b) ? 'gold' : plusEv(b) ? 'green' : 'flat');
+  const beatFair = ranked.filter(plusEv).length;
+  const count = Number.isFinite(fair) ? `${beatFair} beat fair` : `${ranked.length} books`;
+  const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
+
+  const TONE = {
+    gold: {
+      border: `1px solid ${B.gold}`,
+      color: B.goldHi,
+      background: 'rgba(212,175,55,0.14)',
+      ring: `0 0 0 1.5px ${B.goldHi}`,
+      opacity: 1,
+    },
+    green: {
+      border: '1px solid rgba(47,213,126,0.62)',
+      color: B.profit,
+      background: 'rgba(47,213,126,0.10)',
+      ring: '0 0 0 1.5px rgba(47,213,126,0.85)',
+      opacity: 1,
+    },
+    flat: {
+      border: '1px solid rgba(148,163,184,0.14)',
+      color: C.text,
+      background: 'transparent',
+      ring: 'none',
+      opacity: Number.isFinite(fair) ? 0.55 : 1,
+    },
+  };
+
+  return (
+    <div
+      className="sf-shop-desk"
+      onClick={stop}
+      onKeyDown={(e) => e.stopPropagation()}
+      aria-label={`Line shop. ${count}.`}
+      style={{
+        marginTop: 12,
+        paddingTop: 11,
+        borderTop: '1px solid rgba(148,163,184,0.08)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {ranked.map((b) => {
+          const tone = TONE[toneOf(b)];
+          return (
+            <span
+              key={String(b.name)}
+              title={`${b.name} ${fmtOdds(b.odds)}${isBest(b) ? ' · best' : plusEv(b) ? ' · plus EV' : ''}`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 8px 4px 4px', borderRadius: 999,
+                border: tone.border, background: tone.background,
+                fontSize: 12, fontWeight: 650, letterSpacing: '-0.02em',
+                fontVariantNumeric: 'tabular-nums',
+                color: tone.color, opacity: tone.opacity,
+              }}
+            >
+              <span style={{
+                width: 20, height: 20, borderRadius: 4, overflow: 'hidden',
+                display: 'grid', placeItems: 'center', flexShrink: 0,
+                boxShadow: tone.ring,
+              }}>
+                <BookLogo name={b.name} size={20} />
+              </span>
+              {fmtOdds(b.odds)}
+            </span>
+          );
+        })}
+        <span style={{ marginLeft: 'auto', fontSize: 10.5, fontWeight: 500, color: C.textMuted }}>{count}</span>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Three concepts, one skin:
  *   verdict   — Editorial. The sentences lead; evidence follows.
@@ -2833,6 +2932,7 @@ function CollapsedTicketFace({ live, order = 'verdict', gid }) {
       <CollapsedSpark f={f} gid={gid} bleed />
     </div>
   );
+  const shop = <CollapsedShopStrip f={f} />;
 
   const perf = <TicketPerforation edgeAura={live.edgeAura} />;
   // The cornerstone. Every wallet on the board, drawn to the dollar.
@@ -2861,7 +2961,7 @@ function CollapsedTicketFace({ live, order = 'verdict', gid }) {
         </>
       )}
       {order === 'brokerage' && (
-        <>{hero}{board}{trust}{perf}{money}<SectionRule />{tape}</>
+        <>{hero}{board}{trust}{perf}{money}<SectionRule />{tape}{shop}</>
       )}
     </CollapsedCardFrame>
   );
