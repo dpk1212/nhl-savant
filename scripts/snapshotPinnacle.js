@@ -65,8 +65,10 @@ const SPORTS = [
 // Reputation order for fair line (highest → lowest). First with both sides wins.
 const FAIR_BOOKS = ['pinnacle', 'circa', 'bookmaker', 'lowvig', 'betonlineag'];
 const RETAIL_BOOKS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
-const BOOKMAKERS = [...FAIR_BOOKS, ...RETAIL_BOOKS].join(',');
-const ODDS_REGIONS = 'us,uk,eu';
+// Same HTTP call as fair+retail — extra bookmakers, not an extra round-trip.
+const EXCHANGE_BOOKS = ['novig', 'polymarket', 'kalshi'];
+const BOOKMAKERS = [...FAIR_BOOKS, ...RETAIL_BOOKS, ...EXCHANGE_BOOKS].join(',');
+const ODDS_REGIONS = 'us,uk,eu,us_ex';
 // Tape retention lives in scripts/lib/pinnacleTape.js (7-day dense tape for
 // games inside an 8-day commence horizon; far slates keep opener/current only).
 // GitHub rejects blobs > 100 MB — never pretty-print this file.
@@ -130,6 +132,9 @@ const BOOK_DISPLAY = {
   bookmaker: 'Bookmaker',
   lowvig: 'LowVig',
   betonlineag: 'BetOnline',
+  novig: 'Novig',
+  polymarket: 'Polymarket',
+  kalshi: 'Kalshi',
 };
 
 function fairBookDisplayName(key) {
@@ -254,7 +259,8 @@ function pickFairH2h(game) {
   const order = [
     ...FAIR_BOOKS,
     ...RETAIL_BOOKS,
-    ...Object.keys(byKey).filter((k) => !FAIR_BOOKS.includes(k) && !RETAIL_BOOKS.includes(k)),
+    ...Object.keys(byKey).filter((k) =>
+      !FAIR_BOOKS.includes(k) && !RETAIL_BOOKS.includes(k) && !EXCHANGE_BOOKS.includes(k)),
   ];
   for (const key of order) {
     const bk = byKey[key];
@@ -375,6 +381,7 @@ function extractSpreadOdds(game, preferFairBook = null) {
   const awayName = game.away_team;
   const homeName = game.home_team;
   let bestAwaySpread = null, bestHomeSpread = null;
+  const allSpreadBooks = {};
 
   for (const bk of (game.bookmakers || [])) {
     const spreadMkt = bk.markets?.find(m => m.key === 'spreads');
@@ -383,8 +390,16 @@ function extractSpreadOdds(game, preferFairBook = null) {
     const hm = spreadMkt.outcomes.find(o => o.name === homeName);
     if (!aw || !hm) continue;
 
+    const bookName = BOOK_DISPLAY[bk.key] || bk.title || bk.key;
+    allSpreadBooks[bk.key] = {
+      away: aw.price,
+      home: hm.price,
+      awayLine: aw.point,
+      homeLine: hm.point,
+      name: bookName,
+    };
+
     if (RETAIL_BOOKS.includes(bk.key)) {
-      const bookName = BOOK_DISPLAY[bk.key] || bk.title;
       if (bestAwaySpread === null || aw.price > bestAwaySpread.odds) {
         bestAwaySpread = { line: aw.point, odds: aw.price, book: bookName };
       }
@@ -399,6 +414,7 @@ function extractSpreadOdds(game, preferFairBook = null) {
     fairSpreadBook: fair?.fairBook || null,
     bestAwaySpread,
     bestHomeSpread,
+    allSpreadBooks,
   };
 }
 
@@ -443,6 +459,7 @@ function extractTotalOdds(game, preferFairBook = null) {
 async function run() {
   console.log('📌 Sharp odds snapshot (fair book cascade + retail)\n');
   console.log(`   Fair order: ${FAIR_BOOKS.join(' → ')}`);
+  console.log(`   Exchanges: ${EXCHANGE_BOOKS.join(', ')}`);
   console.log(`   Regions: ${ODDS_REGIONS}`);
   console.log(`   pinnapi: ${process.env.PINNAPI_KEY ? 'enabled' : 'off (no PINNAPI_KEY)'}\n`);
   const now = Math.floor(Date.now() / 1000);
@@ -601,7 +618,7 @@ async function run() {
       // Spread data — Odds API `spreads` is the labeled main. Do not replace
       // that LINE with pinnapi's unlabeled bag (closest-to-0 was picking MLB +1
       // over the 1.5 run line). Attach Pinnacle odds at the labeled line.
-      let { fairSpread, fairSpreadBook, bestAwaySpread, bestHomeSpread } = extractSpreadOdds(game, fairBook);
+      let { fairSpread, fairSpreadBook, bestAwaySpread, bestHomeSpread, allSpreadBooks } = extractSpreadOdds(game, fairBook);
       const labeledHomeLine = fairSpread?.homeLine;
       if (pin?.allSpreads?.length && Number.isFinite(labeledHomeLine)) {
         const pinOnLabeled = pin.allSpreads.find((s) => linesClose(s.homeLine, labeledHomeLine));
@@ -693,6 +710,9 @@ async function run() {
       }
       if (bestAwaySpread) existing.bestAwaySpread = bestAwaySpread;
       if (bestHomeSpread) existing.bestHomeSpread = bestHomeSpread;
+      if (allSpreadBooks && Object.keys(allSpreadBooks).length) {
+        existing.allSpreadBooks = allSpreadBooks;
+      }
 
       // Total data — Odds API `totals` is the labeled main. Same as spreads:
       // keep that LINE, attach Pinnacle odds at it. Alts go on the board.

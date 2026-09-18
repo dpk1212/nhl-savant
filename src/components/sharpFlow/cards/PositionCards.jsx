@@ -12,7 +12,7 @@ import LockedCollapsedStrength from './LockedCollapsedStrength';
 import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
-import { BookLogo, shopBookKey } from './bookLogo.jsx';
+import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
 
 function fmtAmericanPrice(o) {
   if (o == null || !Number.isFinite(Number(o)) || Number(o) === 0) return '—';
@@ -2820,24 +2820,34 @@ const SHOP_PREFER = [
   'fanduel', 'draftkings', 'betmgm', 'caesars', 'fanatics',
   'circa', 'circasports', 'betonlineag', 'betonline', 'lowvig', 'bookmaker',
 ];
+const SHOP_EXCHANGE = new Set(EXCHANGE_BOOK_KEYS);
 
-/** Chip rail under the tape. Gold = best price. Green = plus EV vs fair. */
+/** Chip rail under the tape. Gold = retail best. Green = plus EV vs fair. */
 function CollapsedShopStrip({ f }) {
   const fair = Number.isFinite(f?.fairLine) ? f.fairLine
     : (Number.isFinite(f?.liveFair) ? f.liveFair : null);
   const raw = Array.isArray(f?.books) ? f.books : [];
-  const ranked = [...raw]
-    .filter((b) => Number.isFinite(b?.odds) && shopBookKey(b.name) !== 'pinnacle')
+  const usable = raw.filter((b) => Number.isFinite(b?.odds) && shopBookKey(b.name) !== 'pinnacle');
+  const retail = [...usable]
+    .filter((b) => !SHOP_EXCHANGE.has(shopBookKey(b.name)))
     .sort((a, b) => {
       const ia = SHOP_PREFER.indexOf(shopBookKey(a.name));
       const ib = SHOP_PREFER.indexOf(shopBookKey(b.name));
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     })
     .slice(0, 5);
+  const seen = new Set(retail.map((b) => shopBookKey(b.name)));
+  const exchanges = EXCHANGE_BOOK_KEYS
+    .map((k) => usable.find((b) => shopBookKey(b.name) === k && !seen.has(k)))
+    .filter(Boolean);
+  const ranked = [...retail, ...exchanges];
   if (ranked.length < 2) return null;
 
   const bestName = shopBookKey(f.liveBestBook || f.bestBook);
-  const isBest = (b) => !!b.best || (bestName && shopBookKey(b.name) === bestName);
+  const isBest = (b) => {
+    if (SHOP_EXCHANGE.has(shopBookKey(b.name))) return false;
+    return !!b.best || (bestName && shopBookKey(b.name) === bestName);
+  };
   const plusEv = (b) => Number.isFinite(fair) && b.odds > fair;
   const toneOf = (b) => (isBest(b) ? 'gold' : plusEv(b) ? 'green' : 'flat');
   const beatFair = ranked.filter(plusEv).length;

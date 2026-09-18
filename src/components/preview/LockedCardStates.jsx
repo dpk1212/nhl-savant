@@ -122,6 +122,17 @@ const base = {
   pinPath: pinPath(-104, -118, -120, 2100),
   evFlagged: -2.8,
   edge: 14,
+  bestBook: 'FanDuel',
+  liveBestBook: 'FanDuel',
+  books: [
+    { name: 'FanDuel', odds: -102, best: true },
+    { name: 'DraftKings', odds: -126 },
+    { name: 'BetMGM', odds: -120 },
+    { name: 'Circa', odds: -105 },
+    { name: 'Novig', odds: -106 },
+    { name: 'Polymarket', odds: -101 },
+    { name: 'Kalshi', odds: -114 },
+  ],
 };
 
 const FIXTURES = [

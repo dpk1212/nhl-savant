@@ -7,6 +7,9 @@ export function shopBookKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+/** Prediction-market / exchange books (Odds API `us_ex`). Not retail "best". */
+export const EXCHANGE_BOOK_KEYS = ['novig', 'polymarket', 'kalshi'];
+
 /** Unique brands with a real mark on disk. Aliases (circasports, hardrockbet) share a file. */
 export const BOOK_LOGO_BRANDS = [
   'FanDuel',
@@ -22,6 +25,9 @@ export const BOOK_LOGO_BRANDS = [
   'bet365',
   'Hard Rock',
   'PointsBet',
+  'Polymarket',
+  'Kalshi',
+  'Novig',
 ];
 
 const FILES = {
@@ -41,6 +47,9 @@ const FILES = {
   hardrock: '/books/hardrock.png',
   hardrockbet: '/books/hardrock.png',
   pointsbet: '/books/pointsbet.svg',
+  polymarket: '/books/polymarket.png',
+  kalshi: '/books/kalshi.png',
+  novig: '/books/novig.png',
 };
 
 function resolveId(name) {
@@ -59,6 +68,9 @@ function resolveId(name) {
   if (k.includes('365')) return 'bet365';
   if (k.includes('hardrock')) return 'hardrock';
   if (k.includes('pointsbet') || k === 'pb') return 'pointsbet';
+  if (k.includes('poly')) return 'polymarket';
+  if (k.includes('kalshi')) return 'kalshi';
+  if (k.includes('novig')) return 'novig';
   if (k.includes('lowvig') || k === 'lv') return null;
   return null;
 }
