@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-09-18T23:25:54.744Z",
+  "updatedAt": "2026-09-18T23:31:56.870Z",
   "minPositionUsd": 2000,
-  "walletCount": 437,
+  "walletCount": 438,
   "wallets": {
     "0xe6bff499390d0988f81967d095925b44aad38380": {
       "addr": "0xe6bff499390d0988f81967d095925b44aad38380",
@@ -10622,17 +10622,33 @@
       "directionalWhy": "DIRECTIONAL_SHARP: hold 100%, both-sides 0%",
       "addedAt": "2026-09-18T20:53:16.933Z",
       "source": "scan_supplement"
+    },
+    "0x4a3beb266c0240f41a2e9f298eac472044512eb3": {
+      "addr": "0x4a3beb266c0240f41a2e9f298eac472044512eb3",
+      "name": "HukaBars",
+      "sportPnlTotal": 3901,
+      "sportVol": 205651,
+      "sportROI": 1.9,
+      "leaderboardRank": 12175,
+      "monthPnl": 875,
+      "monthVol": 37119,
+      "monthROI": 2.4,
+      "monthRank": 2331,
+      "avgSportBet": 2486,
+      "foundOn": [
+        {
+          "sport": "CFB",
+          "gameKey": "mia_wake",
+          "usd": 2486,
+          "conditionId": "0x7ca11d47d552880eb28453dcd52c1f7945d683bcb7f8ec75001efb2bc307ee51"
+        }
+      ],
+      "directionalWhy": "DIRECTIONAL_SHARP: hold 98.5%, both-sides 1%",
+      "addedAt": "2026-09-18T23:31:56.227Z",
+      "source": "scan_supplement"
     }
   },
   "rejects": {
-    "0x52f5efdfb8759d4b9be1fbe63f80401474445e8a": {
-      "reason": "lifetime_red",
-      "until": 1789774018912
-    },
-    "0x2b52fd7b8dcf25ed0dc30115a7fcb98d3ab0e5f2": {
-      "reason": "month_red",
-      "until": 1789774018912
-    },
     "0xb3cfe7615d64db8dfa743a1b1a2b976911460ebd": {
       "reason": "month_red",
       "until": 1789775204590
@@ -11356,6 +11372,14 @@
     "0xb077e7482c6bea18f75e33bf823cbbe59cda8fe8": {
       "reason": "churn_1854x_0.1pct",
       "until": 1789860220320
+    },
+    "0x52f5efdfb8759d4b9be1fbe63f80401474445e8a": {
+      "reason": "lifetime_red",
+      "until": 1789860586508
+    },
+    "0x2f983f2a36c462320331eff6901db9307d1abd4c": {
+      "reason": "THIN:only 6 sports markets",
+      "until": 1789860586508
     }
   }
 }
