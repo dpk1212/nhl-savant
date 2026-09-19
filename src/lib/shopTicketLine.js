@@ -3,6 +3,13 @@
  * Missing line is a miss — never paint 8.5 onto Over 7.5.
  */
 import { evPctVsFairProb, impliedFromAmerican } from './oddsEv.js';
+import {
+  bookBeatsConsensus,
+  evPctVsConsensus,
+  sharpConsensusFromBooks,
+} from './sharpConsensus.js';
+
+export { bookBeatsConsensus, evPctVsConsensus, sharpConsensusFromBooks };
 
 function shopBookKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -70,8 +77,10 @@ export function resolveHeroShop({ bestOdds, bestBook, books, fallbackOdds } = {}
     : (Number.isFinite(fallbackOdds) ? fallbackOdds : null);
   const book = bestBook || null;
   const pinOdds = pinPostedOdds(books);
-  const evPct = evPctVsPinPosted(odds, pinOdds);
-  return { odds, book, pinOdds, evPct };
+  const consensus = sharpConsensusFromBooks(books);
+  const consensusOdds = Number.isFinite(consensus.odds) ? consensus.odds : pinOdds;
+  const evPct = evPctVsConsensus(odds, consensusOdds);
+  return { odds, book, pinOdds, consensusOdds, evPct };
 }
 
 /** Gold / Best implied = best American on this ticket’s line. Ties all gold. */

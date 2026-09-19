@@ -50,6 +50,7 @@ import {
   markGoldFromTicketBooks,
   shopRailHidden,
 } from '../../../lib/shopTicketLine.js';
+import { SHOP_BOOK_PREFER, sharpConsensusFromBooks } from '../../../lib/sharpConsensus.js';
 
 export { americanFromPolyPrice };
 export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb, mlFairOddsList };
@@ -854,7 +855,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     // Retail strip on the ticket line (allTotalBooks from snapshot; fallback best*).
     {
       const allT = pinnGame.allTotalBooks || {};
-      const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'bookmaker', 'circa'];
+      const prefer = SHOP_BOOK_PREFER;
       const keys = [
         ...prefer.filter((k) => allT[k]),
         ...Object.keys(allT).filter((k) => !prefer.includes(k) && k !== 'pinnacle' && !shopRailHidden(k)),
@@ -1029,6 +1030,30 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         line: best?.line ?? stakedLine,
       });
     }
+    {
+      const allS = pinnGame.allSpreadBooks || {};
+      const prefer = SHOP_BOOK_PREFER;
+      const keys = [
+        ...prefer.filter((k) => allS[k]),
+        ...Object.keys(allS).filter((k) => !prefer.includes(k) && k !== 'pinnacle' && !shopRailHidden(k)),
+      ];
+      const seen = new Set(books.map((b) => String(b.name).toLowerCase()));
+      for (const k of keys) {
+        const b = allS[k];
+        if (!b) continue;
+        const ln = sideKey === 'away' ? b.awayLine : b.homeLine;
+        if (!bookOnTicketLine(ln, stakedLine)) continue;
+        const o = sideKey === 'away' ? b.away : b.home;
+        if (!Number.isFinite(o)) continue;
+        const name = b.name || k;
+        if (shopRailHidden(name) || shopRailHidden(k)) continue;
+        if (seen.has(String(name).toLowerCase())) continue;
+        seen.add(String(name).toLowerCase());
+        const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
+        books.push({ name, odds: o, best: !!isBest, line: ln });
+        if (books.length >= 12) break;
+      }
+    }
   } else {
     // Moneyline
     const hist = histUpTo(
@@ -1089,7 +1114,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       const allBooks = pinnGame.allBooks || {};
       const sideOdds = (b) => (sideKey === 'away' ? b?.away : sideKey === 'draw' ? b?.draw : b?.home);
       const seen = new Set(books.map((b) => b.name.toLowerCase()));
-      const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'bookmaker', 'circa'];
+      const prefer = SHOP_BOOK_PREFER;
       const keys = [
         ...prefer.filter((k) => allBooks[k]),
         ...Object.keys(allBooks).filter((k) => !prefer.includes(k) && k !== 'pinnacle' && !shopRailHidden(k)),
@@ -1168,6 +1193,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     }
   }
 
+  const consensus = sharpConsensusFromBooks(books);
   return {
     pinSeries,
     pinPath: Array.isArray(pinPath) && pinPath.length >= 2 ? pinPath : null,
@@ -1179,6 +1205,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     fairProb: fairProb != null ? fairProb : null,
     fairIsNoVig,
     fairDisplay,
+    consensusOdds: Number.isFinite(consensus.odds) ? consensus.odds : null,
+    consensusProb: consensus.prob != null ? consensus.prob : null,
     marketLine: Number.isFinite(marketLine) ? marketLine : null,
     liveMarketLine: Number.isFinite(liveMarketLine) ? liveMarketLine : null,
     lineMoved: !!lineMoved,
@@ -1675,14 +1703,16 @@ export function mapLockedPickToCardFixture(pick, {
   const fairProb = market.fairProb != null
     ? market.fairProb
     : ip(fairLine);
-  // EV of the ticket vs same-line fair (not MAIN reco vs a different handicap).
-  const evFlagged = (fairProb != null && Number.isFinite(lockOdds) && inst.variant !== 'ALT')
-    ? evPctVsFairProb(lockOdds, fairProb)
-    : (fairProb != null && Number.isFinite(lockOdds) && Number.isFinite(fairLine)
-      ? evPctVsFairProb(lockOdds, fairProb)
+  const consensus = sharpConsensusFromBooks(market.books);
+  const evProb = Number.isFinite(consensus.odds) ? ip(consensus.odds) : fairProb;
+  // EV of the ticket vs same-line sharp consensus (Pin-heavy posted blend).
+  const evFlagged = (evProb != null && Number.isFinite(lockOdds) && inst.variant !== 'ALT')
+    ? evPctVsFairProb(lockOdds, evProb)
+    : (evProb != null && Number.isFinite(lockOdds) && Number.isFinite(fairLine)
+      ? evPctVsFairProb(lockOdds, evProb)
       : null);
-  const evBest = (fairProb != null && Number.isFinite(market.bestOdds))
-    ? evPctVsFairProb(market.bestOdds, fairProb)
+  const evBest = (evProb != null && Number.isFinite(market.bestOdds))
+    ? evPctVsFairProb(market.bestOdds, evProb)
     : null;
 
   // Sharp–Market Agreement on the PLAYABLE line (odds + max story).
@@ -1817,6 +1847,8 @@ export function mapLockedPickToCardFixture(pick, {
     fairIsNoVig: !!market.fairIsNoVig,
     evFlagged: Number.isFinite(evFlagged) ? evFlagged : null,
     evBest: Number.isFinite(evBest) ? evBest : null,
+    consensusOdds: Number.isFinite(consensus.odds) ? consensus.odds
+      : (Number.isFinite(market.consensusOdds) ? market.consensusOdds : null),
     tapeAction,
     tapeScore,
     edgeBandAction,

@@ -68,6 +68,7 @@ export function buildMarketStory({
   entry = null,
   now = null,
   fair = null,
+  consensus = null,
   maxNow = null,
   movePp = null,
 } = {}) {
@@ -105,13 +106,15 @@ export function buildMarketStory({
     parts.push('No steam yet on this number.');
   }
 
-  if (Number.isFinite(evPct) && Number.isFinite(flagged) && Number.isFinite(fairRef)) {
+  const evRef = Number.isFinite(consensus) ? consensus : fairRef;
+  const evName = Number.isFinite(consensus) ? 'sharp consensus' : 'fair';
+  if (Number.isFinite(evPct) && Number.isFinite(flagged) && Number.isFinite(evRef)) {
     if (evPct >= 0.3) {
-      parts.push(`Ticket ${fmtOdds(flagged)} clears fair ${fmtOdds(fairRef)} (+${evPct.toFixed(1)}% EV).`);
+      parts.push(`Ticket ${fmtOdds(flagged)} clears ${evName} ${fmtOdds(evRef)} (+${evPct.toFixed(1)}% EV).`);
     } else if (evPct <= -0.3) {
-      parts.push(`Ticket ${fmtOdds(flagged)} is short of fair ${fmtOdds(fairRef)} (${evPct.toFixed(1)}% EV).`);
+      parts.push(`Ticket ${fmtOdds(flagged)} is short of ${evName} ${fmtOdds(evRef)} (${evPct.toFixed(1)}% EV).`);
     } else {
-      parts.push(`Ticket and fair are close (${fmtOdds(flagged)} vs ${fmtOdds(fairRef)}).`);
+      parts.push(`Ticket and ${evName} are close (${fmtOdds(flagged)} vs ${fmtOdds(evRef)}).`);
     }
   }
 
@@ -230,6 +233,7 @@ function MetricStrip({
   premium = false,
   bestNow = null,
   hit = null,
+  consensus = null,
 }) {
   // Collapsed desk: Ticket/Best/Pin/Now already live on the hero + gold chip.
   // EV · Fair · actual win (unit×market×similar juice) · this ticket's best implied · hit edge.
@@ -243,6 +247,9 @@ function MetricStrip({
         label: 'EV',
         value: `${evPct >= 0 ? '+' : ''}${evPct.toFixed(1)}%`,
         color: evPct >= 0.3 ? GREEN : evPct <= -0.3 ? VS : C.textSec,
+        title: Number.isFinite(consensus)
+          ? `Ticket EV vs sharp consensus ${fmtOdds(consensus)}.`
+          : 'Ticket EV vs fair.',
       });
     }
     if (Number.isFinite(fair)) {
@@ -931,6 +938,7 @@ export default function OddsLimitSpark({
   /** Brokerage order: tape directly under the hero, price cells below it. */
   chartFirst = false,
   hit = null,
+  consensus = null,
 }) {
   const liveNow = Number.isFinite(now) ? now : fair;
   // Chart is book tape on this line. Ticket juice stays in the FLAGGED cell —
@@ -959,6 +967,7 @@ export default function OddsLimitSpark({
     entry: strip.entry,
     now: strip.now,
     fair,
+    consensus,
     maxNow: maxNow ?? sma?.maxNow,
     movePp,
   });
@@ -1004,6 +1013,7 @@ export default function OddsLimitSpark({
       bestNow={bestNow}
       ticketOffMain={ticketOffMain}
       hit={hit}
+      consensus={consensus}
     />
   );
 

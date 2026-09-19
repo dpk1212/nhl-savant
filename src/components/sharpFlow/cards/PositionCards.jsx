@@ -13,7 +13,12 @@ import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
 import HeroShopPrice from './HeroShopPrice.jsx';
-import { pinPostedOdds, bookBeatsPin, shopRailHidden } from '../../../lib/shopTicketLine.js';
+import {
+  pinPostedOdds,
+  shopRailHidden,
+  sharpConsensusFromBooks,
+  bookBeatsConsensus,
+} from '../../../lib/shopTicketLine.js';
 import { unitMarketHit } from '../../../lib/unitMarketHit.js';
 
 function fmtAmericanPrice(o) {
@@ -2493,6 +2498,7 @@ function CollapsedSpark({ f, gid, bleed = false }) {
       now={f.currentFairOdds ?? f.nowOdds}
       fair={f.fairLine}
       evPct={f.evFlagged}
+      consensus={f.consensusOdds}
       sma={f.marketAgreement}
       maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
       movePp={f.pinnMovePp}
@@ -2828,7 +2834,7 @@ function shopLineMatch(bookLine, ticketLine) {
   return Number.isFinite(bookLine) && Math.abs(bookLine - ticketLine) <= 0.051;
 }
 
-/** Chip rail under the tape. Same line as the hero. Gold = best on that line. Green = beats Pinnacle. */
+/** Chip rail under the tape. Same line as the hero. Gold = best on that line. Green = beats sharp consensus. */
 function CollapsedShopStrip({ f }) {
   const fair = Number.isFinite(f?.fairLine) ? f.fairLine
     : (Number.isFinite(f?.liveFair) ? f.liveFair : null);
@@ -2841,9 +2847,20 @@ function CollapsedShopStrip({ f }) {
     && !shopRailHidden(b.name)
   ));
   const isPinn = (b) => shopBookKey(b.name) === 'pinnacle';
-  const sharp = usable.filter(isPinn).slice(0, 1);
+  const isBetfair = (b) => shopBookKey(b.name).includes('betfair');
+  const isMatchbook = (b) => shopBookKey(b.name).includes('matchbook');
+  const sharp = [
+    ...usable.filter(isPinn).slice(0, 1),
+    ...usable.filter(isBetfair).slice(0, 1),
+    ...usable.filter(isMatchbook).slice(0, 1),
+  ];
   const retail = [...usable]
-    .filter((b) => !SHOP_EXCHANGE.has(shopBookKey(b.name)) && !isPinn(b))
+    .filter((b) => (
+      !SHOP_EXCHANGE.has(shopBookKey(b.name))
+      && !isPinn(b)
+      && !isBetfair(b)
+      && !isMatchbook(b)
+    ))
     .sort((a, b) => {
       const ia = SHOP_PREFER.indexOf(shopBookKey(a.name));
       const ib = SHOP_PREFER.indexOf(shopBookKey(b.name));
@@ -2860,17 +2877,20 @@ function CollapsedShopStrip({ f }) {
   const goldOdds = ranked.length ? Math.max(...ranked.map((b) => b.odds)) : null;
   const isBest = (b) => Number.isFinite(goldOdds) && b.odds === goldOdds;
   const pinOdds = pinPostedOdds(ranked);
-  const evBench = Number.isFinite(pinOdds) ? pinOdds : fair;
+  const consensus = sharpConsensusFromBooks(usable);
+  const evBench = Number.isFinite(consensus.odds) ? consensus.odds
+    : (Number.isFinite(pinOdds) ? pinOdds : fair);
   const plusEv = (b) => (
     Number.isFinite(evBench)
-    && !isPinn(b)
-    && (Number.isFinite(pinOdds) ? bookBeatsPin(b, pinOdds) : b.odds > evBench)
+    && bookBeatsConsensus(b, evBench)
   );
   const toneOf = (b) => (isBest(b) ? 'gold' : plusEv(b) ? 'green' : 'flat');
   const beatN = ranked.filter(plusEv).length;
-  const count = Number.isFinite(pinOdds)
-    ? `${beatN} beat Pin`
-    : Number.isFinite(fair) ? `${beatN} beat fair` : `${ranked.length} books`;
+  const count = Number.isFinite(consensus.odds)
+    ? `${beatN} beat sharp`
+    : Number.isFinite(pinOdds)
+      ? `${beatN} beat Pin`
+      : Number.isFinite(fair) ? `${beatN} beat fair` : `${ranked.length} books`;
   const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
 
   const TONE = {
@@ -2928,7 +2948,7 @@ function CollapsedShopStrip({ f }) {
           return (
             <span
               key={String(b.name)}
-              title={`${b.name}${lineName ? ` ${lineName}` : ''} ${fmtOdds(b.odds)}${isBest(b) ? ' · best' : plusEv(b) ? (Number.isFinite(pinOdds) ? ' · beats Pin' : ' · plus EV') : ''}`}
+              title={`${b.name}${lineName ? ` ${lineName}` : ''} ${fmtOdds(b.odds)}${isBest(b) ? ' · best' : plusEv(b) ? (Number.isFinite(evBench) ? ' · beats sharp' : ' · plus EV') : ''}`}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '4px 8px 4px 4px', borderRadius: 999,
