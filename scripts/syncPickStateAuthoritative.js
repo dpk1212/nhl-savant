@@ -184,7 +184,7 @@ import {
 } from '../src/lib/expectedWin.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameSidePosition, acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
-import { flipUFCGameKey, remapUFCPinnSides } from './lib/ufcFighters.js';
+import { flipUFCGameKey, remapUFCPinnSides, canonicalUFCKey, isUFCFlipAlias } from './lib/ufcFighters.js';
 import { slugDatesAreBoardLeftovers } from './lib/positionEventMatch.js';
 import {
   collectScanBoardProvenPositions,
@@ -7024,6 +7024,17 @@ async function main() {
 
   const groups = buildPositionGroupsFromFirestore(positions);
   console.log(`Loaded ${positions.length} sharp_action_positions in ${groups.size} game-market clusters`);
+  const scanUFCKeys = new Set();
+  for (const gk of groups.keys()) {
+    const [sp, key] = gk.split('|');
+    if (sp === 'UFC' && key) scanUFCKeys.add(key);
+  }
+  let polyUFCKeys = new Set();
+  try {
+    const poly = JSON.parse(readFileSync(join(PUBLIC, 'polymarket_data.json'), 'utf8'));
+    polyUFCKeys = new Set(Object.keys(poly.UFC || {}));
+  } catch { /* poly already logged in loadGameMetadata */ }
+  const liveUFCKeys = new Set([...scanUFCKeys, ...polyUFCKeys]);
 
   // Needed by reconcileSide (spread lock-odds repair) AND createMissingLockedPicks.
   // Must load before the reconcile loop — TDZ crash if declared later
@@ -7129,6 +7140,31 @@ async function main() {
         console.warn(`  ⚠ GHOST doc detected: ${col}/${pick._id} (${sideEntries.length} side(s), 0 live) — will let createMissingLockedPicks rebuild`);
       } else {
         existingDocIds.add(`${col}|${pick._id}`);
+      }
+      if (liveUFCKeys.size
+          && String(pick.sport || '').toUpperCase() === 'UFC'
+          && pick.status !== 'COMPLETED'
+          && isUFCFlipAlias(pick.gameKey, { preferred: liveUFCKeys })) {
+        const aliasPatch = {};
+        for (const [sideKey, sd] of Object.entries(sides)) {
+          if (!sd || sd.superseded || sd.status === 'COMPLETED') continue;
+          aliasPatch[sideKey] = {
+            superseded: true,
+            supersededReason: 'ufc_flip_alias',
+            supersededAt: now,
+          };
+        }
+        if (Object.keys(aliasPatch).length && !DRY_RUN) {
+          await db.collection(col).doc(pick._id).set(
+            { sides: aliasPatch, lastWriteAt: now, lastAction: 'ufc_flip_alias' },
+            { merge: true },
+          );
+          console.log(
+            `  ↳ UFC flip alias ${col}/${pick._id} ${pick.gameKey}`
+            + ` → ${canonicalUFCKey(pick.gameKey, { preferred: liveUFCKeys })}`,
+          );
+        }
+        continue;
       }
       // Track sides reconcile superseded THIS cycle (v12 live side-flip) so we
       // can demote the doc to ghost below and rebuild the better side now.

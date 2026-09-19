@@ -65,7 +65,7 @@ import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
 import { compareLockedPicks } from '../lib/lockedPickSort.js';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
-import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
+import { lookupPinnGame, flipUFCGameKey, isUFCFlipAlias } from '../../scripts/lib/ufcFighters.js';
 import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
 import { walletPriorStatsPreferB } from '../lib/actionLockPin.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
@@ -3224,6 +3224,14 @@ function buildGameData(polyData, kalshiData) {
     const allKeys = new Set([...Object.keys(polyGames), ...Object.keys(kalshiGames)]);
 
     for (const key of allKeys) {
+      if (sport === 'UFC') {
+        const flip = flipUFCGameKey(key);
+        if (flip && allKeys.has(flip)) {
+          if (!polyGames[key] && polyGames[flip]) continue;
+          if (polyGames[key] && polyGames[flip] && key > flip) continue;
+          if (!polyGames[key] && !polyGames[flip] && key > flip) continue;
+        }
+      }
       const poly = polyGames[key];
       const kalshi = kalshiGames[key];
 
@@ -10995,10 +11003,13 @@ export default function SharpFlow() {
                 ? buildWalletPriorStatsFnForUI(walletProfiles)
                 : null;
               const v12SortToday = todayET();
+              const liveUfcPreferred = new Set(Object.keys(sharpPositions?.UFC || {}));
+              const liveUfcAlso = new Set(Object.keys(polyData?.UFC || {}));
               for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
                 if (sportFilter !== 'All' && sport !== sportFilter) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
+                  if (sport === 'UFC' && isUFCFlipAlias(key, { preferred: liveUfcPreferred, also: liveUfcAlso })) continue;
                   if (!gd.positions || gd.positions.length === 0) continue;
                   // Display floor for Live Positions cards (qualified sharp $).
                   if ((gd.summary?.totalInvested || 0) < 750) continue;
@@ -12337,10 +12348,15 @@ export default function SharpFlow() {
                     const yesterdayD = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
                     const yesterday = yesterdayD.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
                     const targetDate = lockedDay === 'today' ? today : yesterday;
+                    const ufcPreferred = new Set([
+                      ...Object.keys(sharpPositions?.UFC || {}),
+                      ...Object.keys(polyData?.UFC || {}),
+                    ]);
                     const allLockedArr = [];
                     for (const [docId, doc] of Object.entries(lockedPicks)) {
                       if (!docId.startsWith(targetDate)) continue;
                       const docSport = doc.sport || 'NHL';
+                      if (docSport === 'UFC' && isUFCFlipAlias(doc.gameKey, { preferred: ufcPreferred })) continue;
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
                         // Hide SHADOW. Superseded sides stay hidden UNLESS
                         // they are the only cron ticket left (LOCKED + u>0 +
