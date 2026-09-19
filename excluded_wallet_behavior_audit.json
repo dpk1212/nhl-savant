@@ -1,0 +1,2629 @@
+{
+  "auditedAt": "2026-07-17T19:17:54.574Z",
+  "mode": "ranked",
+  "maxClosed": 400,
+  "summary": {
+    "wallets": 40,
+    "byVerdict": {
+      "MIXED": 6,
+      "HEDGE_TRADER": 28,
+      "THIN": 2,
+      "FLIPPER_MM": 1,
+      "DIRECTIONAL_SHARP": 3
+    },
+    "byRec": {
+      "REVIEW": 8,
+      "KEEP_EXCLUDED": 29,
+      "CONSIDER_REINSTATE": 3
+    }
+  },
+  "results": [
+    {
+      "addr": "0x161eb16874e34f545991e774b4e1ac5b65f86ef0",
+      "name": "Countrysid",
+      "currentTag": "TRADER",
+      "mmScore": 35,
+      "catalogSportPnl": 372832,
+      "catalogSportROI": 0.6,
+      "catalogWnba": {
+        "bets": 287,
+        "invested": 10421471,
+        "pnl": 219022,
+        "avgBet": 36312,
+        "roi": 2.1
+      },
+      "closedFetched": 400,
+      "sportsLegs": 42,
+      "markets": 36,
+      "bothSidesMarkets": 6,
+      "oneSidedSettled": 30,
+      "settledLegs": 36,
+      "earlyExitLegs": 6,
+      "wins": 36,
+      "losses": 0,
+      "wr": 100,
+      "invested": 4386423,
+      "pnl": 73125,
+      "roi": 1.7,
+      "holdToResolvePct": 85.7,
+      "bothSidesPct": 16.7,
+      "earlyExitPct": 14.3,
+      "bySport": {
+        "WNBA": {
+          "n": 2,
+          "invested": 24287,
+          "pnl": 381,
+          "both": 0,
+          "settled": 2,
+          "roi": 1.6
+        },
+        "NBA": {
+          "n": 40,
+          "invested": 4362137,
+          "pnl": 72744,
+          "both": 6,
+          "settled": 34,
+          "roi": 1.7
+        }
+      },
+      "verdict": "MIXED",
+      "why": "hold 86% / both-sides 17% / early 14% / ROI 1.7%",
+      "recommendation": "REVIEW"
+    },
+    {
+      "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+      "name": "HomeRunHazard",
+      "currentTag": "TRADER",
+      "mmScore": 35,
+      "catalogSportPnl": 1230979,
+      "catalogSportROI": 0.8,
+      "catalogWnba": {
+        "bets": 215,
+        "invested": 2381803,
+        "pnl": 2025069,
+        "avgBet": 11078,
+        "roi": 85
+      },
+      "closedFetched": 400,
+      "sportsLegs": 45,
+      "markets": 23,
+      "bothSidesMarkets": 22,
+      "oneSidedSettled": 1,
+      "settledLegs": 23,
+      "earlyExitLegs": 22,
+      "wins": 23,
+      "losses": 0,
+      "wr": 100,
+      "invested": 176615,
+      "pnl": -65185,
+      "roi": -36.9,
+      "holdToResolvePct": 51.1,
+      "bothSidesPct": 95.7,
+      "earlyExitPct": 48.9,
+      "bySport": {
+        "WNBA": {
+          "n": 24,
+          "invested": 58157,
+          "pnl": 4538,
+          "both": 12,
+          "settled": 12,
+          "roi": 7.8
+        },
+        "MLB": {
+          "n": 21,
+          "invested": 118458,
+          "pnl": -69722,
+          "both": 10,
+          "settled": 11,
+          "roi": -58.9
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "96% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2",
+      "name": "AnonymousUsername",
+      "currentTag": "TRADER",
+      "mmScore": 35,
+      "catalogSportPnl": 422616,
+      "catalogSportROI": 0.4,
+      "catalogWnba": {
+        "bets": 209,
+        "invested": 1107545,
+        "pnl": 720243,
+        "avgBet": 5299,
+        "roi": 65
+      },
+      "closedFetched": 400,
+      "sportsLegs": 238,
+      "markets": 168,
+      "bothSidesMarkets": 70,
+      "oneSidedSettled": 92,
+      "settledLegs": 162,
+      "earlyExitLegs": 76,
+      "wins": 161,
+      "losses": 1,
+      "wr": 99.4,
+      "invested": 3955832,
+      "pnl": 255237,
+      "roi": 6.5,
+      "holdToResolvePct": 68.1,
+      "bothSidesPct": 41.7,
+      "earlyExitPct": 31.9,
+      "bySport": {
+        "WNBA": {
+          "n": 67,
+          "invested": 367511,
+          "pnl": 18557,
+          "both": 17,
+          "settled": 47,
+          "roi": 5
+        },
+        "MLB": {
+          "n": 118,
+          "invested": 346220,
+          "pnl": 179112,
+          "both": 34,
+          "settled": 81,
+          "roi": 51.7
+        },
+        "SOC": {
+          "n": 51,
+          "invested": 3241230,
+          "pnl": 56111,
+          "both": 19,
+          "settled": 32,
+          "roi": 1.7
+        },
+        "TENNIS": {
+          "n": 2,
+          "invested": 872,
+          "pnl": 1456,
+          "both": 0,
+          "settled": 2,
+          "roi": 167
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "42% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x30ceffb3ac4ea49881e271d5a69883b60e0dfdce",
+      "name": "LaGalaxyLover",
+      "currentTag": "MM",
+      "mmScore": 50,
+      "catalogSportPnl": 328848,
+      "catalogSportROI": 4.4,
+      "catalogWnba": {
+        "bets": 247,
+        "invested": 248777,
+        "pnl": 42885,
+        "avgBet": 1007,
+        "roi": 17.2
+      },
+      "closedFetched": 400,
+      "sportsLegs": 42,
+      "markets": 26,
+      "bothSidesMarkets": 16,
+      "oneSidedSettled": 6,
+      "settledLegs": 22,
+      "earlyExitLegs": 20,
+      "wins": 22,
+      "losses": 0,
+      "wr": 100,
+      "invested": 75777,
+      "pnl": 12899,
+      "roi": 17,
+      "holdToResolvePct": 52.4,
+      "bothSidesPct": 61.5,
+      "earlyExitPct": 47.6,
+      "bySport": {
+        "WNBA": {
+          "n": 42,
+          "invested": 75777,
+          "pnl": 12899,
+          "both": 16,
+          "settled": 22,
+          "roi": 17
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "62% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x6d3c5bd13984b2de47c3a88ddc455309aab3d294",
+      "name": "VeryLucky888",
+      "currentTag": "MM+TRADER",
+      "mmScore": 43,
+      "catalogSportPnl": 447129,
+      "catalogSportROI": 0.1,
+      "catalogWnba": {
+        "bets": 224,
+        "invested": 1404443,
+        "pnl": 303734,
+        "avgBet": 6270,
+        "roi": 21.6
+      },
+      "closedFetched": 400,
+      "sportsLegs": 65,
+      "markets": 48,
+      "bothSidesMarkets": 17,
+      "oneSidedSettled": 1,
+      "settledLegs": 18,
+      "earlyExitLegs": 47,
+      "wins": 18,
+      "losses": 0,
+      "wr": 100,
+      "invested": 186042,
+      "pnl": -55206,
+      "roi": -29.7,
+      "holdToResolvePct": 27.7,
+      "bothSidesPct": 35.4,
+      "earlyExitPct": 72.3,
+      "bySport": {
+        "WNBA": {
+          "n": 39,
+          "invested": 71495,
+          "pnl": -28733,
+          "both": 10,
+          "settled": 11,
+          "roi": -40.2
+        },
+        "NBA": {
+          "n": 1,
+          "invested": 152,
+          "pnl": 6,
+          "both": 0,
+          "settled": 0,
+          "roi": 3.9
+        },
+        "UFC": {
+          "n": 4,
+          "invested": 45976,
+          "pnl": -5572,
+          "both": 1,
+          "settled": 1,
+          "roi": -12.1
+        },
+        "MLB": {
+          "n": 16,
+          "invested": 50509,
+          "pnl": -19182,
+          "both": 4,
+          "settled": 4,
+          "roi": -38
+        },
+        "SOC": {
+          "n": 1,
+          "invested": 427,
+          "pnl": -427,
+          "both": 0,
+          "settled": 0,
+          "roi": -100
+        },
+        "TENNIS": {
+          "n": 4,
+          "invested": 17484,
+          "pnl": -1298,
+          "both": 2,
+          "settled": 2,
+          "roi": -7.4
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "35% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319",
+      "name": "ferrariChampions2026",
+      "currentTag": "TRADER",
+      "mmScore": 35,
+      "catalogSportPnl": 1291488,
+      "catalogSportROI": 0.2,
+      "catalogWnba": {
+        "bets": 105,
+        "invested": 3780654,
+        "pnl": 2973779,
+        "avgBet": 36006,
+        "roi": 78.7
+      },
+      "closedFetched": 400,
+      "sportsLegs": 45,
+      "markets": 30,
+      "bothSidesMarkets": 15,
+      "oneSidedSettled": 14,
+      "settledLegs": 29,
+      "earlyExitLegs": 16,
+      "wins": 28,
+      "losses": 1,
+      "wr": 96.6,
+      "invested": 280115,
+      "pnl": 174508,
+      "roi": 62.3,
+      "holdToResolvePct": 64.4,
+      "bothSidesPct": 50,
+      "earlyExitPct": 35.6,
+      "bySport": {
+        "MLB": {
+          "n": 12,
+          "invested": 75579,
+          "pnl": 52116,
+          "both": 2,
+          "settled": 9,
+          "roi": 69
+        },
+        "SOC": {
+          "n": 7,
+          "invested": 165876,
+          "pnl": 99377,
+          "both": 3,
+          "settled": 4,
+          "roi": 59.9
+        },
+        "WNBA": {
+          "n": 19,
+          "invested": 32670,
+          "pnl": 20806,
+          "both": 9,
+          "settled": 10,
+          "roi": 63.7
+        },
+        "NBA": {
+          "n": 7,
+          "invested": 5990,
+          "pnl": 2210,
+          "both": 1,
+          "settled": 6,
+          "roi": 36.9
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "50% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x661daf6af6d884012dd6db73c09d72e8be224dc6",
+      "name": "DOLLAR-PRINTER",
+      "currentTag": "MM",
+      "mmScore": 50,
+      "catalogSportPnl": 435766,
+      "catalogSportROI": 2.2,
+      "catalogWnba": {
+        "bets": 178,
+        "invested": 268152,
+        "pnl": 151636,
+        "avgBet": 1506,
+        "roi": 56.5
+      },
+      "closedFetched": 400,
+      "sportsLegs": 197,
+      "markets": 140,
+      "bothSidesMarkets": 57,
+      "oneSidedSettled": 76,
+      "settledLegs": 133,
+      "earlyExitLegs": 64,
+      "wins": 133,
+      "losses": 0,
+      "wr": 100,
+      "invested": 215558,
+      "pnl": 55910,
+      "roi": 25.9,
+      "holdToResolvePct": 67.5,
+      "bothSidesPct": 40.7,
+      "earlyExitPct": 32.5,
+      "bySport": {
+        "SOC": {
+          "n": 110,
+          "invested": 129080,
+          "pnl": 45686,
+          "both": 24,
+          "settled": 80,
+          "roi": 35.4
+        },
+        "WNBA": {
+          "n": 41,
+          "invested": 32003,
+          "pnl": -1136,
+          "both": 18,
+          "settled": 23,
+          "roi": -3.5
+        },
+        "TENNIS": {
+          "n": 32,
+          "invested": 41780,
+          "pnl": 10332,
+          "both": 11,
+          "settled": 21,
+          "roi": 24.7
+        },
+        "UFC": {
+          "n": 10,
+          "invested": 10214,
+          "pnl": 57,
+          "both": 4,
+          "settled": 6,
+          "roi": 0.6
+        },
+        "NBA": {
+          "n": 2,
+          "invested": 1712,
+          "pnl": 483,
+          "both": 0,
+          "settled": 1,
+          "roi": 28.2
+        },
+        "MLB": {
+          "n": 2,
+          "invested": 769,
+          "pnl": 489,
+          "both": 0,
+          "settled": 2,
+          "roi": 63.6
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "41% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x8c0b024c17831a0dde038547b7e791ae6a0d7aa5",
+      "name": "TIMETOMAKEIT",
+      "currentTag": "MM",
+      "mmScore": 51,
+      "catalogSportPnl": 244631,
+      "catalogSportROI": 1.5,
+      "catalogWnba": {
+        "bets": 212,
+        "invested": 1210038,
+        "pnl": 685739,
+        "avgBet": 5708,
+        "roi": 56.7
+      },
+      "closedFetched": 400,
+      "sportsLegs": 51,
+      "markets": 49,
+      "bothSidesMarkets": 2,
+      "oneSidedSettled": 25,
+      "settledLegs": 27,
+      "earlyExitLegs": 24,
+      "wins": 27,
+      "losses": 0,
+      "wr": 100,
+      "invested": 318677,
+      "pnl": -10669,
+      "roi": -3.3,
+      "holdToResolvePct": 52.9,
+      "bothSidesPct": 4.1,
+      "earlyExitPct": 47.1,
+      "bySport": {
+        "SOC": {
+          "n": 39,
+          "invested": 255009,
+          "pnl": -31461,
+          "both": 1,
+          "settled": 19,
+          "roi": -12.3
+        },
+        "TENNIS": {
+          "n": 7,
+          "invested": 34483,
+          "pnl": 10027,
+          "both": 1,
+          "settled": 4,
+          "roi": 29.1
+        },
+        "WNBA": {
+          "n": 3,
+          "invested": 18923,
+          "pnl": 4552,
+          "both": 0,
+          "settled": 2,
+          "roi": 24.1
+        },
+        "NBA": {
+          "n": 1,
+          "invested": 4262,
+          "pnl": 4542,
+          "both": 0,
+          "settled": 1,
+          "roi": 106.6
+        },
+        "MLB": {
+          "n": 1,
+          "invested": 6000,
+          "pnl": 1672,
+          "both": 0,
+          "settled": 1,
+          "roi": 27.9
+        }
+      },
+      "verdict": "MIXED",
+      "why": "hold 53% / both-sides 4% / early 47% / ROI -3.3%",
+      "recommendation": "REVIEW"
+    },
+    {
+      "addr": "0x507e52ef684ca2dd91f90a9d26d149dd3288beae",
+      "name": "GamblingIsAllYouNeed",
+      "currentTag": "MM+TRADER",
+      "mmScore": 50,
+      "catalogSportPnl": 3573053,
+      "catalogSportROI": 0.9,
+      "catalogWnba": {
+        "bets": 127,
+        "invested": 3151143,
+        "pnl": 2295313,
+        "avgBet": 24812,
+        "roi": 72.8
+      },
+      "closedFetched": 400,
+      "sportsLegs": 292,
+      "markets": 219,
+      "bothSidesMarkets": 73,
+      "oneSidedSettled": 92,
+      "settledLegs": 165,
+      "earlyExitLegs": 127,
+      "wins": 165,
+      "losses": 0,
+      "wr": 100,
+      "invested": 2387133,
+      "pnl": -312529,
+      "roi": -13.1,
+      "holdToResolvePct": 56.5,
+      "bothSidesPct": 33.3,
+      "earlyExitPct": 43.5,
+      "bySport": {
+        "SOC": {
+          "n": 284,
+          "invested": 2352904,
+          "pnl": -327974,
+          "both": 72,
+          "settled": 160,
+          "roi": -13.9
+        },
+        "WNBA": {
+          "n": 8,
+          "invested": 34229,
+          "pnl": 15445,
+          "both": 1,
+          "settled": 5,
+          "roi": 45.1
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "33% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+      "name": "swisstony",
+      "currentTag": "MM+TRADER",
+      "mmScore": 50,
+      "catalogSportPnl": 19384929,
+      "catalogSportROI": 1.2,
+      "catalogWnba": {
+        "bets": 104,
+        "invested": 7238847,
+        "pnl": 6144297,
+        "avgBet": 69604,
+        "roi": 84.9
+      },
+      "closedFetched": 400,
+      "sportsLegs": 0,
+      "markets": 0,
+      "bothSidesMarkets": 0,
+      "oneSidedSettled": 0,
+      "settledLegs": 0,
+      "earlyExitLegs": 0,
+      "wins": 0,
+      "losses": 0,
+      "wr": null,
+      "invested": 0,
+      "pnl": 0,
+      "roi": null,
+      "holdToResolvePct": null,
+      "bothSidesPct": null,
+      "earlyExitPct": null,
+      "bySport": {},
+      "verdict": "THIN",
+      "why": "only 0 sports markets in sample",
+      "recommendation": "REVIEW"
+    },
+    {
+      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563",
+      "name": "0x2c335066FE58fe9237c3d3Dc7b275C2a034a0563-1759935795465",
+      "currentTag": "MM+TRADER",
+      "mmScore": 43,
+      "catalogSportPnl": 4873297,
+      "catalogSportROI": 0.7,
+      "catalogWnba": {
+        "bets": 92,
+        "invested": 7363544,
+        "pnl": 3874288,
+        "avgBet": 80039,
+        "roi": 52.6
+      },
+      "closedFetched": 400,
+      "sportsLegs": 113,
+      "markets": 74,
+      "bothSidesMarkets": 39,
+      "oneSidedSettled": 33,
+      "settledLegs": 71,
+      "earlyExitLegs": 42,
+      "wins": 71,
+      "losses": 0,
+      "wr": 100,
+      "invested": 19231976,
+      "pnl": 539092,
+      "roi": 2.8,
+      "holdToResolvePct": 62.8,
+      "bothSidesPct": 52.7,
+      "earlyExitPct": 37.2,
+      "bySport": {
+        "SOC": {
+          "n": 49,
+          "invested": 16565529,
+          "pnl": 155081,
+          "both": 19,
+          "settled": 27,
+          "roi": 0.9
+        },
+        "MLB": {
+          "n": 26,
+          "invested": 318276,
+          "pnl": 48111,
+          "both": 7,
+          "settled": 19,
+          "roi": 15.1
+        },
+        "NBA": {
+          "n": 12,
+          "invested": 236686,
+          "pnl": 325069,
+          "both": 3,
+          "settled": 9,
+          "roi": 137.3
+        },
+        "WNBA": {
+          "n": 19,
+          "invested": 554678,
+          "pnl": -126502,
+          "both": 7,
+          "settled": 12,
+          "roi": -22.8
+        },
+        "TENNIS": {
+          "n": 4,
+          "invested": 52999,
+          "pnl": -21967,
+          "both": 2,
+          "settled": 2,
+          "roi": -41.4
+        },
+        "UFC": {
+          "n": 3,
+          "invested": 1503808,
+          "pnl": 159299,
+          "both": 1,
+          "settled": 2,
+          "roi": 10.6
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "53% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x2005d16a84ceefa912d4e380cd32e7ff827875ea",
+      "name": "RN1",
+      "currentTag": "MM+TRADER",
+      "mmScore": 50,
+      "catalogSportPnl": 10609247,
+      "catalogSportROI": 1.3,
+      "catalogWnba": {
+        "bets": 51,
+        "invested": 1466496,
+        "pnl": 1095880,
+        "avgBet": 28755,
+        "roi": 74.7
+      },
+      "closedFetched": 400,
+      "sportsLegs": 2,
+      "markets": 1,
+      "bothSidesMarkets": 1,
+      "oneSidedSettled": 0,
+      "settledLegs": 1,
+      "earlyExitLegs": 1,
+      "wins": 1,
+      "losses": 0,
+      "wr": 100,
+      "invested": 18855,
+      "pnl": 4383,
+      "roi": 23.2,
+      "holdToResolvePct": 50,
+      "bothSidesPct": 100,
+      "earlyExitPct": 50,
+      "bySport": {
+        "WNBA": {
+          "n": 2,
+          "invested": 18855,
+          "pnl": 4383,
+          "both": 1,
+          "settled": 1,
+          "roi": 23.2
+        }
+      },
+      "verdict": "THIN",
+      "why": "only 1 sports markets in sample",
+      "recommendation": "REVIEW"
+    },
+    {
+      "addr": "0xd1ed12197b7dc22dede923727e9b714024dbd7cb",
+      "name": "curie",
+      "currentTag": "MM",
+      "mmScore": 42,
+      "catalogSportPnl": 1323533,
+      "catalogSportROI": 2.3,
+      "catalogWnba": {
+        "bets": 102,
+        "invested": 398817,
+        "pnl": 195298,
+        "avgBet": 3910,
+        "roi": 49
+      },
+      "closedFetched": 400,
+      "sportsLegs": 207,
+      "markets": 148,
+      "bothSidesMarkets": 59,
+      "oneSidedSettled": 89,
+      "settledLegs": 148,
+      "earlyExitLegs": 59,
+      "wins": 148,
+      "losses": 0,
+      "wr": 100,
+      "invested": 416638,
+      "pnl": 39151,
+      "roi": 9.4,
+      "holdToResolvePct": 71.5,
+      "bothSidesPct": 39.9,
+      "earlyExitPct": 28.5,
+      "bySport": {
+        "NBA": {
+          "n": 33,
+          "invested": 70890,
+          "pnl": 3169,
+          "both": 11,
+          "settled": 22,
+          "roi": 4.5
+        },
+        "WNBA": {
+          "n": 61,
+          "invested": 46175,
+          "pnl": 11933,
+          "both": 21,
+          "settled": 40,
+          "roi": 25.8
+        },
+        "MLB": {
+          "n": 99,
+          "invested": 137222,
+          "pnl": 8581,
+          "both": 23,
+          "settled": 76,
+          "roi": 6.3
+        },
+        "SOC": {
+          "n": 14,
+          "invested": 162351,
+          "pnl": 15468,
+          "both": 4,
+          "settled": 10,
+          "roi": 9.5
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "40% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x01c78f8873c0c86d6b6b92ff627e3802237ee995",
+      "name": "Lilybaeum",
+      "currentTag": "MM",
+      "mmScore": 58,
+      "catalogSportPnl": 961164,
+      "catalogSportROI": 1.3,
+      "catalogWnba": {
+        "bets": 122,
+        "invested": 981017,
+        "pnl": 629535,
+        "avgBet": 8041,
+        "roi": 64.2
+      },
+      "closedFetched": 400,
+      "sportsLegs": 82,
+      "markets": 57,
+      "bothSidesMarkets": 25,
+      "oneSidedSettled": 30,
+      "settledLegs": 55,
+      "earlyExitLegs": 27,
+      "wins": 55,
+      "losses": 0,
+      "wr": 100,
+      "invested": 119926,
+      "pnl": 10478,
+      "roi": 8.7,
+      "holdToResolvePct": 67.1,
+      "bothSidesPct": 43.9,
+      "earlyExitPct": 32.9,
+      "bySport": {
+        "TENNIS": {
+          "n": 32,
+          "invested": 19570,
+          "pnl": 9479,
+          "both": 1,
+          "settled": 29,
+          "roi": 48.4
+        },
+        "SOC": {
+          "n": 48,
+          "invested": 98127,
+          "pnl": 866,
+          "both": 23,
+          "settled": 25,
+          "roi": 0.9
+        },
+        "WNBA": {
+          "n": 2,
+          "invested": 2229,
+          "pnl": 133,
+          "both": 1,
+          "settled": 1,
+          "roi": 6
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "44% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x7fb7ad0d194d7123e711e7db6c9d418fac14e33d",
+      "name": "0x7fB7Ad0d194D7123e711e7db6C9D418fAc14E33d-1750343282446",
+      "currentTag": "MM",
+      "mmScore": 58,
+      "catalogSportPnl": 2282135,
+      "catalogSportROI": 1.9,
+      "catalogWnba": {
+        "bets": 104,
+        "invested": 133242,
+        "pnl": 106090,
+        "avgBet": 1281,
+        "roi": 79.6
+      },
+      "closedFetched": 400,
+      "sportsLegs": 21,
+      "markets": 12,
+      "bothSidesMarkets": 9,
+      "oneSidedSettled": 3,
+      "settledLegs": 12,
+      "earlyExitLegs": 9,
+      "wins": 12,
+      "losses": 0,
+      "wr": 100,
+      "invested": 84054,
+      "pnl": 68877,
+      "roi": 81.9,
+      "holdToResolvePct": 57.1,
+      "bothSidesPct": 75,
+      "earlyExitPct": 42.9,
+      "bySport": {
+        "CBB": {
+          "n": 4,
+          "invested": 55,
+          "pnl": 0,
+          "both": 2,
+          "settled": 2,
+          "roi": 0
+        },
+        "NBA": {
+          "n": 1,
+          "invested": 5,
+          "pnl": 4,
+          "both": 0,
+          "settled": 1,
+          "roi": 80
+        },
+        "WNBA": {
+          "n": 4,
+          "invested": 11660,
+          "pnl": 11639,
+          "both": 2,
+          "settled": 2,
+          "roi": 99.8
+        },
+        "MLB": {
+          "n": 12,
+          "invested": 72335,
+          "pnl": 57235,
+          "both": 5,
+          "settled": 7,
+          "roi": 79.1
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "75% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xe90bec87d9ef430f27f9dcfe72c34b76967d5da2",
+      "name": "gmanas",
+      "currentTag": "MM+TRADER",
+      "mmScore": 58,
+      "catalogSportPnl": 4745632,
+      "catalogSportROI": 1,
+      "catalogWnba": {
+        "bets": 73,
+        "invested": 4155538,
+        "pnl": 2988936,
+        "avgBet": 56925,
+        "roi": 71.9
+      },
+      "closedFetched": 400,
+      "sportsLegs": 47,
+      "markets": 32,
+      "bothSidesMarkets": 15,
+      "oneSidedSettled": 10,
+      "settledLegs": 25,
+      "earlyExitLegs": 22,
+      "wins": 25,
+      "losses": 0,
+      "wr": 100,
+      "invested": 1489759,
+      "pnl": 141688,
+      "roi": 9.5,
+      "holdToResolvePct": 53.2,
+      "bothSidesPct": 46.9,
+      "earlyExitPct": 46.8,
+      "bySport": {
+        "NBA": {
+          "n": 41,
+          "invested": 1429811,
+          "pnl": 133335,
+          "both": 14,
+          "settled": 22,
+          "roi": 9.3
+        },
+        "WNBA": {
+          "n": 1,
+          "invested": 293,
+          "pnl": 144,
+          "both": 0,
+          "settled": 1,
+          "roi": 49.1
+        },
+        "UFC": {
+          "n": 2,
+          "invested": 51089,
+          "pnl": 16587,
+          "both": 1,
+          "settled": 1,
+          "roi": 32.5
+        },
+        "TENNIS": {
+          "n": 1,
+          "invested": 187,
+          "pnl": 2,
+          "both": 0,
+          "settled": 1,
+          "roi": 1.1
+        },
+        "MLB": {
+          "n": 1,
+          "invested": 6091,
+          "pnl": -6091,
+          "both": 0,
+          "settled": 0,
+          "roi": -100
+        },
+        "SOC": {
+          "n": 1,
+          "invested": 2289,
+          "pnl": -2289,
+          "both": 0,
+          "settled": 0,
+          "roi": -100
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "47% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x6832c74809f5b0ace45acacfed7ffa9195b0831f",
+      "name": "0x6832c74809F5b0aCe45acAcFeD7Ffa9195b0831F-1773664958328",
+      "currentTag": "MM",
+      "mmScore": 42,
+      "catalogSportPnl": 243435,
+      "catalogSportROI": 3.4,
+      "catalogWnba": {
+        "bets": 165,
+        "invested": 212393,
+        "pnl": 68227,
+        "avgBet": 1287,
+        "roi": 32.1
+      },
+      "closedFetched": 400,
+      "sportsLegs": 115,
+      "markets": 69,
+      "bothSidesMarkets": 46,
+      "oneSidedSettled": 8,
+      "settledLegs": 54,
+      "earlyExitLegs": 61,
+      "wins": 54,
+      "losses": 0,
+      "wr": 100,
+      "invested": 111225,
+      "pnl": 3574,
+      "roi": 3.2,
+      "holdToResolvePct": 47,
+      "bothSidesPct": 66.7,
+      "earlyExitPct": 53,
+      "bySport": {
+        "SOC": {
+          "n": 68,
+          "invested": 91506,
+          "pnl": 5855,
+          "both": 24,
+          "settled": 32,
+          "roi": 6.4
+        },
+        "MLB": {
+          "n": 36,
+          "invested": 15009,
+          "pnl": 820,
+          "both": 17,
+          "settled": 17,
+          "roi": 5.5
+        },
+        "WNBA": {
+          "n": 11,
+          "invested": 4710,
+          "pnl": -3100,
+          "both": 5,
+          "settled": 5,
+          "roi": -65.8
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "67% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xb2304a93c928e05c13e3b96b07be1f2ea8374193",
+      "name": "AlexanderTheBait",
+      "currentTag": "MM",
+      "mmScore": 50,
+      "catalogSportPnl": 498690,
+      "catalogSportROI": 1.8,
+      "catalogWnba": {
+        "bets": 154,
+        "invested": 616378,
+        "pnl": 79321,
+        "avgBet": 4002,
+        "roi": 12.9
+      },
+      "closedFetched": 400,
+      "sportsLegs": 35,
+      "markets": 34,
+      "bothSidesMarkets": 1,
+      "oneSidedSettled": 17,
+      "settledLegs": 18,
+      "earlyExitLegs": 17,
+      "wins": 18,
+      "losses": 0,
+      "wr": 100,
+      "invested": 288863,
+      "pnl": 41052,
+      "roi": 14.2,
+      "holdToResolvePct": 51.4,
+      "bothSidesPct": 2.9,
+      "earlyExitPct": 48.6,
+      "bySport": {
+        "NBA": {
+          "n": 26,
+          "invested": 218909,
+          "pnl": 9079,
+          "both": 1,
+          "settled": 13,
+          "roi": 4.1
+        },
+        "WNBA": {
+          "n": 1,
+          "invested": 4277,
+          "pnl": -4277,
+          "both": 0,
+          "settled": 0,
+          "roi": -100
+        },
+        "SOC": {
+          "n": 5,
+          "invested": 39335,
+          "pnl": 19472,
+          "both": 0,
+          "settled": 3,
+          "roi": 49.5
+        },
+        "TENNIS": {
+          "n": 1,
+          "invested": 5554,
+          "pnl": 7204,
+          "both": 0,
+          "settled": 1,
+          "roi": 129.7
+        },
+        "UFC": {
+          "n": 2,
+          "invested": 20788,
+          "pnl": 9574,
+          "both": 0,
+          "settled": 1,
+          "roi": 46.1
+        }
+      },
+      "verdict": "MIXED",
+      "why": "hold 51% / both-sides 3% / early 49% / ROI 14.2%",
+      "recommendation": "REVIEW"
+    },
+    {
+      "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
+      "name": "wapol",
+      "currentTag": "MM+TRADER",
+      "mmScore": 43,
+      "catalogSportPnl": 224879,
+      "catalogSportROI": 1.3,
+      "catalogWnba": {
+        "bets": 159,
+        "invested": 131396,
+        "pnl": 107727,
+        "avgBet": 826,
+        "roi": 82
+      },
+      "closedFetched": 400,
+      "sportsLegs": 91,
+      "markets": 65,
+      "bothSidesMarkets": 26,
+      "oneSidedSettled": 12,
+      "settledLegs": 37,
+      "earlyExitLegs": 54,
+      "wins": 37,
+      "losses": 0,
+      "wr": 100,
+      "invested": 48858,
+      "pnl": -7673,
+      "roi": -15.7,
+      "holdToResolvePct": 40.7,
+      "bothSidesPct": 40,
+      "earlyExitPct": 59.3,
+      "bySport": {
+        "MLB": {
+          "n": 8,
+          "invested": 5789,
+          "pnl": -2337,
+          "both": 1,
+          "settled": 2,
+          "roi": -40.4
+        },
+        "NBA": {
+          "n": 33,
+          "invested": 16763,
+          "pnl": -1835,
+          "both": 15,
+          "settled": 15,
+          "roi": -10.9
+        },
+        "WNBA": {
+          "n": 37,
+          "invested": 13670,
+          "pnl": -4111,
+          "both": 8,
+          "settled": 14,
+          "roi": -30.1
+        },
+        "SOC": {
+          "n": 13,
+          "invested": 12636,
+          "pnl": 609,
+          "both": 2,
+          "settled": 6,
+          "roi": 4.8
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "40% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xf5201f998333d228dafba270d01d8ff82b2c0637",
+      "name": "rbnoftg",
+      "currentTag": "MM",
+      "mmScore": 57,
+      "catalogSportPnl": 818173,
+      "catalogSportROI": 3.4,
+      "catalogWnba": {
+        "bets": 134,
+        "invested": 361140,
+        "pnl": 258389,
+        "avgBet": 2695,
+        "roi": 71.5
+      },
+      "closedFetched": 400,
+      "sportsLegs": 169,
+      "markets": 100,
+      "bothSidesMarkets": 69,
+      "oneSidedSettled": 9,
+      "settledLegs": 78,
+      "earlyExitLegs": 91,
+      "wins": 78,
+      "losses": 0,
+      "wr": 100,
+      "invested": 460084,
+      "pnl": 35645,
+      "roi": 7.7,
+      "holdToResolvePct": 46.2,
+      "bothSidesPct": 69,
+      "earlyExitPct": 53.8,
+      "bySport": {
+        "MLB": {
+          "n": 66,
+          "invested": 270566,
+          "pnl": 16323,
+          "both": 30,
+          "settled": 31,
+          "roi": 6
+        },
+        "WNBA": {
+          "n": 32,
+          "invested": 38415,
+          "pnl": 1764,
+          "both": 12,
+          "settled": 17,
+          "roi": 4.6
+        },
+        "TENNIS": {
+          "n": 59,
+          "invested": 144459,
+          "pnl": 19854,
+          "both": 25,
+          "settled": 26,
+          "roi": 13.7
+        },
+        "SOC": {
+          "n": 1,
+          "invested": 1917,
+          "pnl": -1915,
+          "both": 0,
+          "settled": 0,
+          "roi": -99.9
+        },
+        "UFC": {
+          "n": 11,
+          "invested": 4728,
+          "pnl": -382,
+          "both": 2,
+          "settled": 4,
+          "roi": -8.1
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "69% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x2a2c53bd278c04da9962fcf96490e17f3dfb9bc1",
+      "name": "0x2a2C53bD278c04DA9962Fcf96490E17F3DfB9Bc1-1772479215461",
+      "currentTag": "MM+TRADER",
+      "mmScore": 65,
+      "catalogSportPnl": 2550518,
+      "catalogSportROI": 0.6,
+      "catalogWnba": {
+        "bets": 93,
+        "invested": 6543663,
+        "pnl": 3239564,
+        "avgBet": 70362,
+        "roi": 49.5
+      },
+      "closedFetched": 400,
+      "sportsLegs": 81,
+      "markets": 60,
+      "bothSidesMarkets": 21,
+      "oneSidedSettled": 35,
+      "settledLegs": 56,
+      "earlyExitLegs": 25,
+      "wins": 56,
+      "losses": 0,
+      "wr": 100,
+      "invested": 8284796,
+      "pnl": 1796207,
+      "roi": 21.7,
+      "holdToResolvePct": 69.1,
+      "bothSidesPct": 35,
+      "earlyExitPct": 30.9,
+      "bySport": {
+        "NBA": {
+          "n": 37,
+          "invested": 6892703,
+          "pnl": 308845,
+          "both": 12,
+          "settled": 25,
+          "roi": 4.5
+        },
+        "SOC": {
+          "n": 4,
+          "invested": 30369,
+          "pnl": 362313,
+          "both": 0,
+          "settled": 0,
+          "roi": 1193
+        },
+        "MLB": {
+          "n": 22,
+          "invested": 86924,
+          "pnl": 28610,
+          "both": 4,
+          "settled": 18,
+          "roi": 32.9
+        },
+        "WNBA": {
+          "n": 10,
+          "invested": 103448,
+          "pnl": 43995,
+          "both": 3,
+          "settled": 7,
+          "roi": 42.5
+        },
+        "UFC": {
+          "n": 8,
+          "invested": 1171352,
+          "pnl": 1052443,
+          "both": 2,
+          "settled": 6,
+          "roi": 89.8
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "35% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xe40172522c7c64afa2d052ddae6c92cd0f417b88",
+      "name": "BoomLaLa",
+      "currentTag": "MM+TRADER",
+      "mmScore": 50,
+      "catalogSportPnl": 601388,
+      "catalogSportROI": 1,
+      "catalogWnba": {
+        "bets": 56,
+        "invested": 93046,
+        "pnl": 74784,
+        "avgBet": 1662,
+        "roi": 80.4
+      },
+      "closedFetched": 400,
+      "sportsLegs": 233,
+      "markets": 164,
+      "bothSidesMarkets": 69,
+      "oneSidedSettled": 95,
+      "settledLegs": 164,
+      "earlyExitLegs": 69,
+      "wins": 164,
+      "losses": 0,
+      "wr": 100,
+      "invested": 19707,
+      "pnl": 6549,
+      "roi": 33.2,
+      "holdToResolvePct": 70.4,
+      "bothSidesPct": 42.1,
+      "earlyExitPct": 29.6,
+      "bySport": {
+        "WNBA": {
+          "n": 40,
+          "invested": 4387,
+          "pnl": 1272,
+          "both": 14,
+          "settled": 26,
+          "roi": 29
+        },
+        "MLB": {
+          "n": 192,
+          "invested": 15248,
+          "pnl": 5199,
+          "both": 55,
+          "settled": 137,
+          "roi": 34.1
+        },
+        "SOC": {
+          "n": 1,
+          "invested": 72,
+          "pnl": 78,
+          "both": 0,
+          "settled": 1,
+          "roi": 108.3
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "42% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x37c1874a60d348903594a96703e0507c518fc53a",
+      "name": "CemeterySun",
+      "currentTag": "MM",
+      "mmScore": 43,
+      "catalogSportPnl": 1927133,
+      "catalogSportROI": 1.3,
+      "catalogWnba": {
+        "bets": 74,
+        "invested": 2327809,
+        "pnl": 1772112,
+        "avgBet": 31457,
+        "roi": 76.1
+      },
+      "closedFetched": 400,
+      "sportsLegs": 149,
+      "markets": 96,
+      "bothSidesMarkets": 53,
+      "oneSidedSettled": 43,
+      "settledLegs": 96,
+      "earlyExitLegs": 53,
+      "wins": 96,
+      "losses": 0,
+      "wr": 100,
+      "invested": 777117,
+      "pnl": 624447,
+      "roi": 80.4,
+      "holdToResolvePct": 64.4,
+      "bothSidesPct": 55.2,
+      "earlyExitPct": 35.6,
+      "bySport": {
+        "UFC": {
+          "n": 5,
+          "invested": 186,
+          "pnl": 61,
+          "both": 2,
+          "settled": 3,
+          "roi": 32.8
+        },
+        "MLB": {
+          "n": 58,
+          "invested": 85481,
+          "pnl": 70533,
+          "both": 17,
+          "settled": 41,
+          "roi": 82.5
+        },
+        "NBA": {
+          "n": 41,
+          "invested": 578031,
+          "pnl": 503115,
+          "both": 17,
+          "settled": 24,
+          "roi": 87
+        },
+        "WNBA": {
+          "n": 45,
+          "invested": 113419,
+          "pnl": 50738,
+          "both": 17,
+          "settled": 28,
+          "roi": 44.7
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "55% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xdbdd45150249e229eb4ca8aa48a30dca21faa5de",
+      "name": "0xdbdd45150249e229eB4cA8aa48A30Dca21Faa5de-1757094771846",
+      "currentTag": "TRADER",
+      "mmScore": 35,
+      "catalogSportPnl": 784066,
+      "catalogSportROI": 2.9,
+      "catalogWnba": {
+        "bets": 129,
+        "invested": 258187,
+        "pnl": 245572,
+        "avgBet": 2001,
+        "roi": 95.1
+      },
+      "closedFetched": 400,
+      "sportsLegs": 11,
+      "markets": 10,
+      "bothSidesMarkets": 1,
+      "oneSidedSettled": 9,
+      "settledLegs": 10,
+      "earlyExitLegs": 1,
+      "wins": 10,
+      "losses": 0,
+      "wr": 100,
+      "invested": 5783,
+      "pnl": 7533,
+      "roi": 130.2,
+      "holdToResolvePct": 90.9,
+      "bothSidesPct": 10,
+      "earlyExitPct": 9.1,
+      "bySport": {
+        "WNBA": {
+          "n": 11,
+          "invested": 5783,
+          "pnl": 7533,
+          "both": 1,
+          "settled": 10,
+          "roi": 130.3
+        }
+      },
+      "verdict": "MIXED",
+      "why": "hold 91% / both-sides 10% / early 9% / ROI 130.2%",
+      "recommendation": "REVIEW"
+    },
+    {
+      "addr": "0x5d1d9cfd66ee3068c2a8a57dedf1e1b006dcafd2",
+      "name": "Anonymous",
+      "currentTag": "MM+TRADER",
+      "mmScore": 65,
+      "catalogSportPnl": 245310,
+      "catalogSportROI": 1,
+      "catalogWnba": {
+        "bets": 145,
+        "invested": 448476,
+        "pnl": 333531,
+        "avgBet": 3093,
+        "roi": 74.4
+      },
+      "closedFetched": 400,
+      "sportsLegs": 55,
+      "markets": 52,
+      "bothSidesMarkets": 3,
+      "oneSidedSettled": 25,
+      "settledLegs": 28,
+      "earlyExitLegs": 27,
+      "wins": 28,
+      "losses": 0,
+      "wr": 100,
+      "invested": 55225,
+      "pnl": 3641,
+      "roi": 6.6,
+      "holdToResolvePct": 50.9,
+      "bothSidesPct": 5.8,
+      "earlyExitPct": 49.1,
+      "bySport": {
+        "SOC": {
+          "n": 45,
+          "invested": 34148,
+          "pnl": -12455,
+          "both": 1,
+          "settled": 22,
+          "roi": -36.5
+        },
+        "WNBA": {
+          "n": 1,
+          "invested": 25,
+          "pnl": 21,
+          "both": 0,
+          "settled": 1,
+          "roi": 84
+        },
+        "NBA": {
+          "n": 3,
+          "invested": 10122,
+          "pnl": 9862,
+          "both": 1,
+          "settled": 2,
+          "roi": 97.4
+        },
+        "MLB": {
+          "n": 6,
+          "invested": 10930,
+          "pnl": 6213,
+          "both": 1,
+          "settled": 3,
+          "roi": 56.8
+        }
+      },
+      "verdict": "MIXED",
+      "why": "hold 51% / both-sides 6% / early 49% / ROI 6.6%",
+      "recommendation": "REVIEW"
+    },
+    {
+      "addr": "0x4e948fa5d984c0077bb8f0d2f8d0f7779f656243",
+      "name": "nxyobrp",
+      "currentTag": "MM",
+      "mmScore": 50,
+      "catalogSportPnl": 519234,
+      "catalogSportROI": 3.4,
+      "catalogWnba": {
+        "bets": 139,
+        "invested": 238584,
+        "pnl": 146271,
+        "avgBet": 1716,
+        "roi": 61.3
+      },
+      "closedFetched": 400,
+      "sportsLegs": 56,
+      "markets": 37,
+      "bothSidesMarkets": 19,
+      "oneSidedSettled": 12,
+      "settledLegs": 31,
+      "earlyExitLegs": 25,
+      "wins": 31,
+      "losses": 0,
+      "wr": 100,
+      "invested": 69786,
+      "pnl": 25666,
+      "roi": 36.8,
+      "holdToResolvePct": 55.4,
+      "bothSidesPct": 51.4,
+      "earlyExitPct": 44.6,
+      "bySport": {
+        "MLB": {
+          "n": 45,
+          "invested": 63039,
+          "pnl": 26810,
+          "both": 16,
+          "settled": 25,
+          "roi": 42.5
+        },
+        "WNBA": {
+          "n": 11,
+          "invested": 6746,
+          "pnl": -1144,
+          "both": 3,
+          "settled": 6,
+          "roi": -17
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "51% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x5aa981521b4e94fee3b3bf18fe441f62e865febe",
+      "name": "apucimama",
+      "currentTag": "TRADER",
+      "mmScore": 35,
+      "catalogSportPnl": 362048,
+      "catalogSportROI": 0.9,
+      "catalogWnba": {
+        "bets": 143,
+        "invested": 471414,
+        "pnl": 228460,
+        "avgBet": 3297,
+        "roi": 48.5
+      },
+      "closedFetched": 400,
+      "sportsLegs": 70,
+      "markets": 43,
+      "bothSidesMarkets": 27,
+      "oneSidedSettled": 6,
+      "settledLegs": 33,
+      "earlyExitLegs": 37,
+      "wins": 33,
+      "losses": 0,
+      "wr": 100,
+      "invested": 174522,
+      "pnl": -5904,
+      "roi": -3.4,
+      "holdToResolvePct": 47.1,
+      "bothSidesPct": 62.8,
+      "earlyExitPct": 52.9,
+      "bySport": {
+        "MLB": {
+          "n": 1,
+          "invested": 2,
+          "pnl": -2,
+          "both": 0,
+          "settled": 0,
+          "roi": -100
+        },
+        "SOC": {
+          "n": 38,
+          "invested": 111765,
+          "pnl": 20163,
+          "both": 14,
+          "settled": 18,
+          "roi": 18
+        },
+        "UFC": {
+          "n": 26,
+          "invested": 53884,
+          "pnl": -22716,
+          "both": 11,
+          "settled": 13,
+          "roi": -42.2
+        },
+        "WNBA": {
+          "n": 5,
+          "invested": 8872,
+          "pnl": -3350,
+          "both": 2,
+          "settled": 2,
+          "roi": -37.8
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "63% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x9cb990f1862568a63d8601efeebe0304225c32f2",
+      "name": "jtwyslljy",
+      "currentTag": "MM",
+      "mmScore": 42,
+      "catalogSportPnl": 2407273,
+      "catalogSportROI": 3.2,
+      "catalogWnba": {
+        "bets": 99,
+        "invested": 852358,
+        "pnl": 821158,
+        "avgBet": 8610,
+        "roi": 96.3
+      },
+      "closedFetched": 400,
+      "sportsLegs": 151,
+      "markets": 133,
+      "bothSidesMarkets": 18,
+      "oneSidedSettled": 49,
+      "settledLegs": 67,
+      "earlyExitLegs": 84,
+      "wins": 67,
+      "losses": 0,
+      "wr": 100,
+      "invested": 2512956,
+      "pnl": 67960,
+      "roi": 2.7,
+      "holdToResolvePct": 44.4,
+      "bothSidesPct": 13.5,
+      "earlyExitPct": 55.6,
+      "bySport": {
+        "SOC": {
+          "n": 58,
+          "invested": 1336826,
+          "pnl": -347884,
+          "both": 9,
+          "settled": 21,
+          "roi": -26
+        },
+        "WNBA": {
+          "n": 7,
+          "invested": 51979,
+          "pnl": -18618,
+          "both": 1,
+          "settled": 2,
+          "roi": -35.8
+        },
+        "MLB": {
+          "n": 4,
+          "invested": 16279,
+          "pnl": -6270,
+          "both": 0,
+          "settled": 1,
+          "roi": -38.5
+        },
+        "TENNIS": {
+          "n": 79,
+          "invested": 1041594,
+          "pnl": 329359,
+          "both": 7,
+          "settled": 41,
+          "roi": 31.6
+        },
+        "UFC": {
+          "n": 3,
+          "invested": 66277,
+          "pnl": 111372,
+          "both": 1,
+          "settled": 2,
+          "roi": 168
+        }
+      },
+      "verdict": "MIXED",
+      "why": "hold 44% / both-sides 14% / early 56% / ROI 2.7%",
+      "recommendation": "REVIEW"
+    },
+    {
+      "addr": "0x9d94f602535e518ee1cb6aade0ca9569f1b1017d",
+      "name": "eanvanezygv",
+      "currentTag": "MM+TRADER",
+      "mmScore": 51,
+      "catalogSportPnl": 493457,
+      "catalogSportROI": 0.5,
+      "catalogWnba": {
+        "bets": 121,
+        "invested": 574775,
+        "pnl": 547283,
+        "avgBet": 4750,
+        "roi": 95.2
+      },
+      "closedFetched": 400,
+      "sportsLegs": 58,
+      "markets": 31,
+      "bothSidesMarkets": 27,
+      "oneSidedSettled": 4,
+      "settledLegs": 31,
+      "earlyExitLegs": 27,
+      "wins": 31,
+      "losses": 0,
+      "wr": 100,
+      "invested": 51174,
+      "pnl": -7145,
+      "roi": -14,
+      "holdToResolvePct": 53.4,
+      "bothSidesPct": 87.1,
+      "earlyExitPct": 46.6,
+      "bySport": {
+        "SOC": {
+          "n": 17,
+          "invested": 29638,
+          "pnl": -7171,
+          "both": 8,
+          "settled": 9,
+          "roi": -24.2
+        },
+        "NBA": {
+          "n": 21,
+          "invested": 5454,
+          "pnl": 66,
+          "both": 9,
+          "settled": 12,
+          "roi": 1.2
+        },
+        "WNBA": {
+          "n": 12,
+          "invested": 8661,
+          "pnl": 967,
+          "both": 6,
+          "settled": 6,
+          "roi": 11.2
+        },
+        "MLB": {
+          "n": 8,
+          "invested": 7420,
+          "pnl": -1007,
+          "both": 4,
+          "settled": 4,
+          "roi": -13.6
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "87% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xdc876e6873772d38716fda7f2452a78d426d7ab6",
+      "name": "432614799197",
+      "currentTag": "MM",
+      "mmScore": 42,
+      "catalogSportPnl": 4526176,
+      "catalogSportROI": 2.4,
+      "catalogWnba": {
+        "bets": 18,
+        "invested": 894165,
+        "pnl": 622218,
+        "avgBet": 49676,
+        "roi": 69.6
+      },
+      "closedFetched": 400,
+      "sportsLegs": 107,
+      "markets": 69,
+      "bothSidesMarkets": 38,
+      "oneSidedSettled": 31,
+      "settledLegs": 69,
+      "earlyExitLegs": 38,
+      "wins": 69,
+      "losses": 0,
+      "wr": 100,
+      "invested": 536153,
+      "pnl": 154430,
+      "roi": 28.8,
+      "holdToResolvePct": 64.5,
+      "bothSidesPct": 55.1,
+      "earlyExitPct": 35.5,
+      "bySport": {
+        "NBA": {
+          "n": 91,
+          "invested": 375346,
+          "pnl": 62915,
+          "both": 34,
+          "settled": 57,
+          "roi": 16.8
+        },
+        "WNBA": {
+          "n": 4,
+          "invested": 23537,
+          "pnl": 17398,
+          "both": 0,
+          "settled": 4,
+          "roi": 73.9
+        },
+        "UFC": {
+          "n": 12,
+          "invested": 137270,
+          "pnl": 74116,
+          "both": 4,
+          "settled": 8,
+          "roi": 54
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "55% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x212954857f5efc138748c33d032a93bf95974222",
+      "name": "3bpatgs",
+      "currentTag": "MM",
+      "mmScore": 57,
+      "catalogSportPnl": 1530949,
+      "catalogSportROI": 2.2,
+      "catalogWnba": {
+        "bets": 115,
+        "invested": 646582,
+        "pnl": 438300,
+        "avgBet": 5622,
+        "roi": 67.8
+      },
+      "closedFetched": 400,
+      "sportsLegs": 28,
+      "markets": 19,
+      "bothSidesMarkets": 9,
+      "oneSidedSettled": 6,
+      "settledLegs": 14,
+      "earlyExitLegs": 14,
+      "wins": 14,
+      "losses": 0,
+      "wr": 100,
+      "invested": 47887,
+      "pnl": -28685,
+      "roi": -59.9,
+      "holdToResolvePct": 50,
+      "bothSidesPct": 47.4,
+      "earlyExitPct": 50,
+      "bySport": {
+        "NBA": {
+          "n": 22,
+          "invested": 40300,
+          "pnl": -28275,
+          "both": 7,
+          "settled": 11,
+          "roi": -70.2
+        },
+        "TENNIS": {
+          "n": 6,
+          "invested": 7587,
+          "pnl": -410,
+          "both": 2,
+          "settled": 3,
+          "roi": -5.4
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "47% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xc29198ad764bd6adaf7bb971a3757a689ece5d74",
+      "name": "SnakeBall",
+      "currentTag": "TRADER",
+      "mmScore": 35,
+      "catalogSportPnl": 509764,
+      "catalogSportROI": 0.8,
+      "catalogWnba": {
+        "bets": 128,
+        "invested": 421892,
+        "pnl": 269641,
+        "avgBet": 3296,
+        "roi": 63.9
+      },
+      "closedFetched": 400,
+      "sportsLegs": 47,
+      "markets": 25,
+      "bothSidesMarkets": 22,
+      "oneSidedSettled": 3,
+      "settledLegs": 25,
+      "earlyExitLegs": 22,
+      "wins": 25,
+      "losses": 0,
+      "wr": 100,
+      "invested": 35445,
+      "pnl": 4539,
+      "roi": 12.8,
+      "holdToResolvePct": 53.2,
+      "bothSidesPct": 88,
+      "earlyExitPct": 46.8,
+      "bySport": {
+        "WNBA": {
+          "n": 43,
+          "invested": 32052,
+          "pnl": 4342,
+          "both": 20,
+          "settled": 23,
+          "roi": 13.5
+        },
+        "NBA": {
+          "n": 4,
+          "invested": 3393,
+          "pnl": 196,
+          "both": 2,
+          "settled": 2,
+          "roi": 5.8
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "88% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x781caf04d98a281712caf1677877c442789fdb68",
+      "name": "Avarice31",
+      "currentTag": "MM",
+      "mmScore": 50,
+      "catalogSportPnl": 687800,
+      "catalogSportROI": 2.1,
+      "catalogWnba": {
+        "bets": 95,
+        "invested": 193325,
+        "pnl": 89227,
+        "avgBet": 2035,
+        "roi": 46.2
+      },
+      "closedFetched": 400,
+      "sportsLegs": 92,
+      "markets": 59,
+      "bothSidesMarkets": 33,
+      "oneSidedSettled": 26,
+      "settledLegs": 58,
+      "earlyExitLegs": 34,
+      "wins": 58,
+      "losses": 0,
+      "wr": 100,
+      "invested": 38031,
+      "pnl": 3152,
+      "roi": 8.3,
+      "holdToResolvePct": 63,
+      "bothSidesPct": 55.9,
+      "earlyExitPct": 37,
+      "bySport": {
+        "NBA": {
+          "n": 37,
+          "invested": 16894,
+          "pnl": -671,
+          "both": 14,
+          "settled": 23,
+          "roi": -4
+        },
+        "MLB": {
+          "n": 23,
+          "invested": 7608,
+          "pnl": 1222,
+          "both": 10,
+          "settled": 13,
+          "roi": 16.1
+        },
+        "WNBA": {
+          "n": 17,
+          "invested": 6760,
+          "pnl": 1879,
+          "both": 2,
+          "settled": 15,
+          "roi": 27.8
+        },
+        "UFC": {
+          "n": 15,
+          "invested": 6769,
+          "pnl": 722,
+          "both": 7,
+          "settled": 7,
+          "roi": 10.7
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "56% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xd6a3f0ec6c4a8ad680d580610c82ca57ff139489",
+      "name": "knedloveprovelo",
+      "currentTag": "MM+TRADER",
+      "mmScore": 43,
+      "catalogSportPnl": 492802,
+      "catalogSportROI": 0.3,
+      "catalogWnba": {
+        "bets": 45,
+        "invested": 484773,
+        "pnl": 332364,
+        "avgBet": 10773,
+        "roi": 68.6
+      },
+      "closedFetched": 400,
+      "sportsLegs": 82,
+      "markets": 65,
+      "bothSidesMarkets": 17,
+      "oneSidedSettled": 48,
+      "settledLegs": 65,
+      "earlyExitLegs": 17,
+      "wins": 65,
+      "losses": 0,
+      "wr": 100,
+      "invested": 538600,
+      "pnl": 86973,
+      "roi": 16.1,
+      "holdToResolvePct": 79.3,
+      "bothSidesPct": 26.2,
+      "earlyExitPct": 20.7,
+      "bySport": {
+        "SOC": {
+          "n": 8,
+          "invested": 17698,
+          "pnl": 13645,
+          "both": 1,
+          "settled": 7,
+          "roi": 77.1
+        },
+        "WNBA": {
+          "n": 11,
+          "invested": 49667,
+          "pnl": 25481,
+          "both": 3,
+          "settled": 8,
+          "roi": 51.3
+        },
+        "MLB": {
+          "n": 27,
+          "invested": 85109,
+          "pnl": 49506,
+          "both": 6,
+          "settled": 21,
+          "roi": 58.2
+        },
+        "NBA": {
+          "n": 36,
+          "invested": 386125,
+          "pnl": -1659,
+          "both": 7,
+          "settled": 29,
+          "roi": -0.4
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "26% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x68146921df11eab44296dc4e58025ca84741a9e7",
+      "name": "LynxTitan",
+      "currentTag": "MM+TRADER",
+      "mmScore": 58,
+      "catalogSportPnl": 306839,
+      "catalogSportROI": 0.2,
+      "catalogWnba": {
+        "bets": 78,
+        "invested": 340244,
+        "pnl": 119218,
+        "avgBet": 4362,
+        "roi": 35
+      },
+      "closedFetched": 400,
+      "sportsLegs": 75,
+      "markets": 70,
+      "bothSidesMarkets": 5,
+      "oneSidedSettled": 14,
+      "settledLegs": 19,
+      "earlyExitLegs": 56,
+      "wins": 17,
+      "losses": 2,
+      "wr": 89.5,
+      "invested": 33723,
+      "pnl": 60802,
+      "roi": 180.3,
+      "holdToResolvePct": 25.3,
+      "bothSidesPct": 7.1,
+      "earlyExitPct": 74.7,
+      "bySport": {
+        "NHL": {
+          "n": 5,
+          "invested": 5718,
+          "pnl": 26755,
+          "both": 0,
+          "settled": 0,
+          "roi": 467.9
+        },
+        "NBA": {
+          "n": 10,
+          "invested": 23723,
+          "pnl": 15266,
+          "both": 2,
+          "settled": 2,
+          "roi": 64.4
+        },
+        "WNBA": {
+          "n": 9,
+          "invested": 697,
+          "pnl": 189,
+          "both": 3,
+          "settled": 6,
+          "roi": 27.1
+        },
+        "MLB": {
+          "n": 9,
+          "invested": 17,
+          "pnl": 13,
+          "both": 0,
+          "settled": 8,
+          "roi": 76.5
+        },
+        "NFL": {
+          "n": 2,
+          "invested": 2393,
+          "pnl": 865,
+          "both": 0,
+          "settled": 2,
+          "roi": 36.1
+        },
+        "SOC": {
+          "n": 40,
+          "invested": 1175,
+          "pnl": 17714,
+          "both": 0,
+          "settled": 1,
+          "roi": 1507.6
+        }
+      },
+      "verdict": "FLIPPER_MM",
+      "why": "75% early-exit legs, hold 25%",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xfc25f141ed27bb1787338d2c4e7f51e3a15e1f7f",
+      "name": ".Sisyphus.",
+      "currentTag": "MM+TRADER",
+      "mmScore": 43,
+      "catalogSportPnl": 516620,
+      "catalogSportROI": 0.2,
+      "catalogWnba": {
+        "bets": 122,
+        "invested": 11150931,
+        "pnl": 702398,
+        "avgBet": 91401,
+        "roi": 6.3
+      },
+      "closedFetched": 400,
+      "sportsLegs": 170,
+      "markets": 167,
+      "bothSidesMarkets": 3,
+      "oneSidedSettled": 150,
+      "settledLegs": 153,
+      "earlyExitLegs": 17,
+      "wins": 153,
+      "losses": 0,
+      "wr": 100,
+      "invested": 14046781,
+      "pnl": -8074,
+      "roi": -0.1,
+      "holdToResolvePct": 90,
+      "bothSidesPct": 1.8,
+      "earlyExitPct": 10,
+      "bySport": {
+        "SOC": {
+          "n": 66,
+          "invested": 11257360,
+          "pnl": -11608,
+          "both": 3,
+          "settled": 49,
+          "roi": -0.1
+        },
+        "NBA": {
+          "n": 16,
+          "invested": 413947,
+          "pnl": 507,
+          "both": 0,
+          "settled": 16,
+          "roi": 0.1
+        },
+        "WNBA": {
+          "n": 33,
+          "invested": 1691224,
+          "pnl": 1770,
+          "both": 0,
+          "settled": 33,
+          "roi": 0.1
+        },
+        "MLB": {
+          "n": 55,
+          "invested": 684251,
+          "pnl": 1257,
+          "both": 0,
+          "settled": 55,
+          "roi": 0.2
+        }
+      },
+      "verdict": "DIRECTIONAL_SHARP",
+      "why": "90% hold-to-resolve, 2% both-sides, negative ROI",
+      "recommendation": "CONSIDER_REINSTATE"
+    },
+    {
+      "addr": "0x6a72f61820b26b1fe4d956e17b6dc2a1ea3033ee",
+      "name": "kch123",
+      "currentTag": "MM",
+      "mmScore": 42,
+      "catalogSportPnl": 11485086,
+      "catalogSportROI": 3.9,
+      "catalogWnba": {
+        "bets": 18,
+        "invested": 858849,
+        "pnl": 797389,
+        "avgBet": 47714,
+        "roi": 92.8
+      },
+      "closedFetched": 400,
+      "sportsLegs": 24,
+      "markets": 23,
+      "bothSidesMarkets": 1,
+      "oneSidedSettled": 18,
+      "settledLegs": 19,
+      "earlyExitLegs": 5,
+      "wins": 19,
+      "losses": 0,
+      "wr": 100,
+      "invested": 1068621,
+      "pnl": 378802,
+      "roi": 35.4,
+      "holdToResolvePct": 79.2,
+      "bothSidesPct": 4.3,
+      "earlyExitPct": 20.8,
+      "bySport": {
+        "SOC": {
+          "n": 5,
+          "invested": 16,
+          "pnl": 10,
+          "both": 0,
+          "settled": 5,
+          "roi": 62.5
+        },
+        "MLB": {
+          "n": 3,
+          "invested": 10,
+          "pnl": 15,
+          "both": 0,
+          "settled": 3,
+          "roi": 150
+        },
+        "NHL": {
+          "n": 7,
+          "invested": 462386,
+          "pnl": 56408,
+          "both": 1,
+          "settled": 6,
+          "roi": 12.2
+        },
+        "NBA": {
+          "n": 9,
+          "invested": 606209,
+          "pnl": 322370,
+          "both": 0,
+          "settled": 5,
+          "roi": 53.2
+        }
+      },
+      "verdict": "DIRECTIONAL_SHARP",
+      "why": "79% hold-to-resolve, 4% both-sides, with edge",
+      "recommendation": "CONSIDER_REINSTATE"
+    },
+    {
+      "addr": "0x16b29c50f2439faf627209b2ac0c7bbddaa8a881",
+      "name": "SeriouslySirius",
+      "currentTag": "MM",
+      "mmScore": 58,
+      "catalogSportPnl": 3648172,
+      "catalogSportROI": 1.9,
+      "catalogWnba": {
+        "bets": 19,
+        "invested": 512528,
+        "pnl": 460891,
+        "avgBet": 26975,
+        "roi": 89.9
+      },
+      "closedFetched": 400,
+      "sportsLegs": 46,
+      "markets": 31,
+      "bothSidesMarkets": 15,
+      "oneSidedSettled": 16,
+      "settledLegs": 31,
+      "earlyExitLegs": 15,
+      "wins": 31,
+      "losses": 0,
+      "wr": 100,
+      "invested": 572809,
+      "pnl": -20420,
+      "roi": -3.6,
+      "holdToResolvePct": 67.4,
+      "bothSidesPct": 48.4,
+      "earlyExitPct": 32.6,
+      "bySport": {
+        "NBA": {
+          "n": 46,
+          "invested": 572809,
+          "pnl": -20420,
+          "both": 15,
+          "settled": 31,
+          "roi": -3.6
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "48% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0xf68a281980f8c13828e84e147e3822381d6e5b1b",
+      "name": "WHYWHYWHYWHYWHYWHY",
+      "currentTag": "MM+TRADER",
+      "mmScore": 43,
+      "catalogSportPnl": 367965,
+      "catalogSportROI": 0.3,
+      "catalogWnba": {
+        "bets": 117,
+        "invested": 1274368,
+        "pnl": 1042425,
+        "avgBet": 10892,
+        "roi": 81.8
+      },
+      "closedFetched": 400,
+      "sportsLegs": 169,
+      "markets": 133,
+      "bothSidesMarkets": 36,
+      "oneSidedSettled": 70,
+      "settledLegs": 106,
+      "earlyExitLegs": 63,
+      "wins": 106,
+      "losses": 0,
+      "wr": 100,
+      "invested": 589652,
+      "pnl": 30233,
+      "roi": 5.1,
+      "holdToResolvePct": 62.7,
+      "bothSidesPct": 27.1,
+      "earlyExitPct": 37.3,
+      "bySport": {
+        "SOC": {
+          "n": 73,
+          "invested": 428624,
+          "pnl": 18084,
+          "both": 17,
+          "settled": 38,
+          "roi": 4.2
+        },
+        "NBA": {
+          "n": 6,
+          "invested": 20141,
+          "pnl": -13927,
+          "both": 2,
+          "settled": 4,
+          "roi": -69.1
+        },
+        "NFL": {
+          "n": 2,
+          "invested": 3293,
+          "pnl": 23,
+          "both": 0,
+          "settled": 0,
+          "roi": 0.7
+        },
+        "MLB": {
+          "n": 81,
+          "invested": 108836,
+          "pnl": 22427,
+          "both": 17,
+          "settled": 60,
+          "roi": 20.6
+        },
+        "WNBA": {
+          "n": 4,
+          "invested": 15855,
+          "pnl": 9364,
+          "both": 0,
+          "settled": 3,
+          "roi": 59.1
+        },
+        "UFC": {
+          "n": 3,
+          "invested": 12904,
+          "pnl": -5738,
+          "both": 0,
+          "settled": 1,
+          "roi": -44.5
+        }
+      },
+      "verdict": "HEDGE_TRADER",
+      "why": "27% of markets had both outcomes",
+      "recommendation": "KEEP_EXCLUDED"
+    },
+    {
+      "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926",
+      "name": "Bagwell306",
+      "currentTag": "MM",
+      "mmScore": 43,
+      "catalogSportPnl": 307103,
+      "catalogSportROI": 1.9,
+      "catalogWnba": {
+        "bets": 79,
+        "invested": 175031,
+        "pnl": 179206,
+        "avgBet": 2216,
+        "roi": 102.4
+      },
+      "closedFetched": 400,
+      "sportsLegs": 36,
+      "markets": 35,
+      "bothSidesMarkets": 1,
+      "oneSidedSettled": 33,
+      "settledLegs": 34,
+      "earlyExitLegs": 2,
+      "wins": 34,
+      "losses": 0,
+      "wr": 100,
+      "invested": 58300,
+      "pnl": 80629,
+      "roi": 138.3,
+      "holdToResolvePct": 94.4,
+      "bothSidesPct": 2.9,
+      "earlyExitPct": 5.6,
+      "bySport": {
+        "SOC": {
+          "n": 5,
+          "invested": 5199,
+          "pnl": 1350,
+          "both": 1,
+          "settled": 3,
+          "roi": 26
+        },
+        "WNBA": {
+          "n": 6,
+          "invested": 4518,
+          "pnl": 4861,
+          "both": 0,
+          "settled": 6,
+          "roi": 107.6
+        },
+        "NBA": {
+          "n": 2,
+          "invested": 479,
+          "pnl": 309,
+          "both": 0,
+          "settled": 2,
+          "roi": 64.5
+        },
+        "MLB": {
+          "n": 15,
+          "invested": 29486,
+          "pnl": 33573,
+          "both": 0,
+          "settled": 15,
+          "roi": 113.9
+        },
+        "TENNIS": {
+          "n": 8,
+          "invested": 18618,
+          "pnl": 40536,
+          "both": 0,
+          "settled": 8,
+          "roi": 217.7
+        }
+      },
+      "verdict": "DIRECTIONAL_SHARP",
+      "why": "94% hold-to-resolve, 3% both-sides, with edge",
+      "recommendation": "CONSIDER_REINSTATE"
+    }
+  ]
+}
