@@ -1,19 +1,26 @@
 name: Fetch Kalshi (15 min)
 
 # Native Kalshi board (kalshi_data.json) is UI overlay only — lock/scan/sync
-# never read it. Keep it off the 4-min Poly+scan loop.
+# never read it. Keep it off the 3-min Poly+scan loop.
 #
 # This job writes ONLY public/kalshi_data.json to main. It does not build or
 # deploy gh-pages. The next fetch-polymarket cycle picks the file up on
 # `reset --hard origin/main` and ships it with that cycle's dist.
 #
-# GitHub cron is reliable at 15 min (not below). Day window matches the
-# market-data chain so we are not polling all night.
+# GitHub cron is not reliable at 15 min (same reason the scan job self-chains).
+# Inner loop: 4 × 900s target ≈ 60 min/run, then self-dispatch the next run
+# while we are still inside 5am–11pm ET. Overnight the chain stops; morning
+# starter cron + daytime safety crons restart it if the chain died.
 on:
   schedule:
-    # GitHub cron is UTC. Split so the hour range does not wrap.
-    - cron: '*/15 10-23 * * *'  # 6:00 AM – 7:59 PM ET (EDT)
-    - cron: '*/15 0-2 * * *'    # 8:00 PM – 10:59 PM ET (EDT)
+    # 6:00 AM ET  (EDT=10:00 UTC · EST=11:00 UTC — pinned to EDT summer)
+    - cron: '0 10 * * *'
+    # Safety restarts if self-chain died. Same grid as fetch-polymarket.
+    - cron: '0 16 * * *'   # 12:00 PM ET
+    - cron: '0 20 * * *'   # 4:00 PM ET
+    - cron: '0 22 * * *'   # 6:00 PM ET
+    - cron: '0 0 * * *'    # 8:00 PM ET
+    - cron: '0 2 * * *'    # 10:00 PM ET
   workflow_dispatch:
 
 concurrency:
@@ -23,9 +30,11 @@ concurrency:
 jobs:
   fetch-kalshi:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # 80m clears 4× ~15m cycles + setup + a fat Kalshi fetch.
+    timeout-minutes: 80
     permissions:
       contents: write
+      actions: write   # required for end-of-run self-dispatch (gh workflow run)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,26 +55,128 @@ jobs:
           ODDS_API_KEY=${{ secrets.ODDS_API_KEY }}
           EOF
 
-      - name: Fetch Kalshi
-        run: node scripts/fetchKalshiData.js
-
-      - name: Commit kalshi_data.json only
+      - name: Configure git identity
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/kalshi_data.json
-          if git diff --staged --quiet; then
-            echo "--- no Kalshi changes ---"
+
+      - name: Fetch Kalshi cycle loop (4× at 15-min cadence)
+        run: |
+          set +e
+          cycles=4
+          target_interval=900
+          fail_count=0
+          for i in $(seq 1 $cycles); do
+            cycle_start=$(date +%s)
+            echo ""
+            echo "========================================="
+            echo "### Kalshi cycle $i / $cycles — $(date -u +%H:%M:%S) UTC"
+            echo "========================================="
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            if ! node scripts/fetchKalshiData.js; then
+              echo "::warning::Kalshi fetch failed on cycle $i — chain continues"
+              fail_count=$((fail_count + 1))
+            else
+              git add public/kalshi_data.json
+              if git diff --staged --quiet; then
+                echo "--- no Kalshi changes ---"
+              else
+                git commit -m "Auto-update: Kalshi board [$(date +'%Y-%m-%d %H:%M')]"
+                pushed=0
+                for attempt in 1 2 3; do
+                  if git pull --rebase --autostash -X theirs origin main && git push origin main; then
+                    echo "--- main push succeeded (attempt $attempt) ---"
+                    pushed=1
+                    break
+                  fi
+                  echo "--- main push attempt $attempt failed, retrying ---"
+                  sleep 2
+                done
+                if [ "$pushed" -ne 1 ]; then
+                  echo "::warning::Kalshi push failed after 3 attempts — next cycle will retry"
+                fi
+              fi
+            fi
+
+            if [ "$i" -lt "$cycles" ]; then
+              elapsed=$(( $(date +%s) - cycle_start ))
+              remain=$(( target_interval - elapsed ))
+              if [ "$remain" -gt 0 ]; then
+                echo "--- Kalshi cycle $i done in ${elapsed}s; sleeping ${remain}s to 15-min mark ---"
+                sleep "$remain"
+              else
+                echo "--- Kalshi cycle overran target (${elapsed}s); running next cycle immediately ---"
+              fi
+            fi
+          done
+          echo ""
+          echo "### All ${cycles} Kalshi cycles complete — $(date -u +%H:%M:%S) UTC"
+          echo "### fetch failure count: ${fail_count}/${cycles}"
+          if [ "$fail_count" -ge 3 ]; then
+            echo "::error::${fail_count} Kalshi fetch failures this job — investigate API, but chain continues"
+          fi
+          set -e
+
+      # Self-chain: keep Kalshi refreshing 5am–11pm ET. Must run even if the
+      # loop warned — a failed chain step leaves a multi-hour hole.
+      - name: Chain next Kalshi (5am–11pm ET)
+        if: ${{ always() && !cancelled() }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -e
+          hour=$(TZ=America/New_York date +%H)
+          hour=$((10#$hour))
+          et_now=$(TZ=America/New_York date '+%Y-%m-%d %H:%M:%S %Z')
+          echo "### ET now: ${et_now} (hour=${hour})"
+
+          if [ "$hour" -lt 5 ] || [ "$hour" -ge 23 ]; then
+            echo "### Outside 5am–11pm ET window — chain stops until morning starter cron"
             exit 0
           fi
-          git commit -m "Auto-update: Kalshi board [$(date +'%Y-%m-%d %H:%M')]"
-          for attempt in 1 2 3; do
-            if git pull --rebase --autostash -X theirs origin main && git push origin main; then
-              echo "--- main push succeeded (attempt $attempt) ---"
-              exit 0
+
+          queued=$(gh run list \
+            --workflow fetch-kalshi.yml \
+            --repo "$GH_REPO" \
+            --status queued \
+            --limit 10 \
+            --json databaseId \
+            --jq 'length' 2>/dev/null || echo 0)
+          queued=$((10#${queued:-0}))
+          if [ "$queued" -gt 0 ]; then
+            echo "### Chain skipped — ${queued} run(s) already queued (concurrency will drain)"
+            exit 0
+          fi
+
+          inprog=$(gh run list \
+            --workflow fetch-kalshi.yml \
+            --repo "$GH_REPO" \
+            --status in_progress \
+            --limit 10 \
+            --json databaseId \
+            --jq 'length' 2>/dev/null || echo 0)
+          inprog=$((10#${inprog:-0}))
+          if [ "$inprog" -gt 1 ]; then
+            echo "### Chain skipped — ${inprog} in_progress runs (sibling still working)"
+            exit 0
+          fi
+
+          echo "### Dispatching next fetch-kalshi run…"
+          ok=0
+          for attempt in 1 2 3 4 5; do
+            if gh workflow run fetch-kalshi.yml --repo "$GH_REPO"; then
+              echo "### Chained OK (attempt $attempt)"
+              ok=1
+              break
             fi
-            echo "--- main push attempt $attempt failed, retrying ---"
-            sleep 2
+            echo "::warning::gh workflow run failed (attempt $attempt) — retrying in $((attempt * 5))s"
+            sleep $((attempt * 5))
           done
-          echo "::warning::Kalshi push failed after 3 attempts — next 15-min run will retry"
-          exit 0
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Chain dispatch failed after 5 attempts — safety crons must restart the loop"
+            exit 1
+          fi
