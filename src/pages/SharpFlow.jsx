@@ -66,6 +66,7 @@ import { compareLockedPicks } from '../lib/lockedPickSort.js';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
 import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
+import { walletPriorStatsPreferB } from '../lib/actionLockPin.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -80,22 +81,7 @@ function buildWalletPriorStatsFnForUI(walletProfiles) {
     const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
     const sportRec = profile?.bySport?.[sport];
     if (!sportRec) return null;
-    // Mirror cron walletPriorStatsFromSportRec: Source A primary, Source-B
-    // (on-chain) flat-ROI mirror fallback for B-only qualified wallets so their
-    // v12 quality isn't zeroed (matters for SOC + any B-only CONFIRMED wallet).
-    const picksN = Number(sportRec.picks?.n) || 0;
-    if (picksN >= 2) {
-      return {
-        tier: sportRec.whitelistTier || null,
-        priorN: picksN,
-        priorRoi: Number(sportRec.picks?.flatRoi) || 0,
-      };
-    }
-    return {
-      tier: sportRec.whitelistTier || null,
-      priorN: Number(sportRec.positions?.n) || 0,
-      priorRoi: Number(sportRec.positions?.positionFlatRoi) || 0,
-    };
+    return walletPriorStatsPreferB(sportRec);
   };
 }
 

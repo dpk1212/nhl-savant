@@ -634,7 +634,8 @@ function ActionExpandPanel({ row, isMobile }) {
   );
   const spark = sparkPointsForTab(tab, row, sparkMode);
   const curveDays = Number.isFinite(row.flatCurveDays) ? row.flatCurveDays : 30;
-  // Featured list prefers Source A; fall back to Action only when featured is empty.
+  // Featured list is stamped ⊆ the 30d Action book at profile export.
+  // Fall back to Action only when featured is empty.
   const formLegs = featured.length ? featured : action;
   const legs = tab === 'form' ? formLegs : action;
   const formListIsActionFallback = tab === 'form' && !featured.length && action.length > 0;
