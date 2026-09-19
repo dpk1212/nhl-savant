@@ -57,6 +57,34 @@ function assert(cond, msg) {
   assert(form.recentActionWindow.settledPnl === 10937, 'L30 window on form');
 }
 
+// Featured shipped lock missing from Action must land on Their Action list.
+{
+  const prof = {
+    bySport: {
+      MLB: {
+        recentActionWindow: { days: 30, n: 139, settledPnl: 39400 },
+        form: {
+          recentAction: [
+            { date: '2026-09-18', marketType: 'TOTAL', side: 'under', gameKey: 'wsh_stl', dollarPnl: -912, won: 0 },
+          ],
+          recentFeatured: [
+            {
+              date: '2026-09-18', marketType: 'TOTAL', side: 'over', gameKey: 'bos_tbr',
+              line: 7.5, invested: 1130, dollarPnl: -1130, won: 0,
+            },
+          ],
+          recentActionTotalN: 139,
+          flatCurveDays: 30,
+        },
+      },
+    },
+  };
+  const form = formFromProfile(prof, 'MLB');
+  assert(form.recentAction.length === 2, `merged action ${form.recentAction.length}`);
+  assert(form.recentAction.some((l) => l.gameKey === 'bos_tbr' && l.side === 'over'), 'BOS@TBR Over on Action');
+  assert(form.recentActionTotalN === 140, `totalN ${form.recentActionTotalN}`);
+}
+
 // Truncated 40-leg list must NOT paint -$135K when L30 stamp is +$11K
 {
   const row = {

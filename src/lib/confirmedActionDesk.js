@@ -17,6 +17,7 @@ import {
 import { steamForGame } from './steamMove.js';
 import { signedSpreadEntryLine } from './spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
+import { mergeFeaturedIntoAction } from './actionLockPin.js';
 import { rejectNonFullGameBoardPosition } from '../../scripts/lib/totalMarketFilter.js';
 import { BOARD_SPORT_SLUG, slugLeague, SOC_SLUG_LEAGUES } from './sportSlug.js';
 
@@ -265,11 +266,14 @@ function formFromProfile(prof, sport) {
   const rec = prof?.bySport?.[sport];
   const form = rec?.form;
   const recentFeatured = Array.isArray(form?.recentFeatured) ? form.recentFeatured : [];
-  const recentAction = Array.isArray(form?.recentAction) ? form.recentAction : [];
+  const recentActionRaw = Array.isArray(form?.recentAction) ? form.recentAction : [];
+  const recentAction = mergeFeaturedIntoAction(recentFeatured, recentActionRaw);
   const recentWindow = rec?.recentActionWindow || null;
-  const recentActionTotalN = Number.isFinite(form?.recentActionTotalN)
+  const stampedN = Number.isFinite(form?.recentActionTotalN)
     ? form.recentActionTotalN
-    : (Number.isFinite(recentWindow?.n) ? recentWindow.n : recentAction.length);
+    : (Number.isFinite(recentWindow?.n) ? recentWindow.n : recentActionRaw.length);
+  const featuredOnlyN = Math.max(0, recentAction.length - recentActionRaw.length);
+  const recentActionTotalN = stampedN + featuredOnlyN;
   const actionFlatCurve = Array.isArray(form?.actionFlatCurve) ? form.actionFlatCurve : null;
   const actionDollarCurve = Array.isArray(form?.actionDollarCurve) ? form.actionDollarCurve : null;
   if (form && (form.l10 || form.flatCurve || form.dollarCurve || actionFlatCurve?.length
@@ -277,7 +281,7 @@ function formFromProfile(prof, sport) {
     return {
       l5: form.l5 || null,
       l10: form.l10 || null,
-      // Featured curves — list is export-clipped to Action (Source B).
+      // Featured curves — shipped locks are also merged onto Their Action.
       flatCurve: Array.isArray(form.flatCurve) ? form.flatCurve : null,
       flatEnd: Number.isFinite(form.flatEnd) ? form.flatEnd : null,
       dollarCurve: Array.isArray(form.dollarCurve) ? form.dollarCurve : null,

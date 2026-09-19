@@ -106,7 +106,7 @@ import {
   WALLET_PROFILES_META_DOC_ID,
 } from './lib/loadWalletProfiles.js';
 import { buildSizeRatioBands } from '../src/lib/sizeRatioBands.js';
-import { restrictFeaturedToAction } from '../src/lib/actionLockPin.js';
+import { mergeFeaturedIntoAction } from '../src/lib/actionLockPin.js';
 import {
   SIZE_SKILL_RESCUE,
   SIZE_SKILL_LIVE_MIN,
@@ -512,7 +512,7 @@ function americanFromProb(p) {
  * Featured tracked picks (Source A) in the last RECENT_LEGS_DAYS for expand Tab 1.
  * Capped at RECENT_LEGS_MAX so profile JSON stays small.
  * UI-only: shipped locks (units > 0, not muted/tracked) — does not affect whitelist.
- * Caller clips this list to the 30d Action book (Featured ⊆ Source B).
+ * Featured shipped locks that Source B missed are merged onto Their Action.
  */
 function recentFeaturedLegs(pickBets, sportUsualBet = null, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
   const cutoff = etDateMinusDays(days);
@@ -874,12 +874,10 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     const sportUsual = (positionsInSport.n > 0 && positionsInSport.invested > 0)
       ? positionsInSport.invested / positionsInSport.n
       : null;
-    const recentAction = recentActionLegs(ps, sportUsual);
-    // Featured ⊆ Action book (full 30d window, not the 40-leg display cap).
-    const recentFeatured = restrictFeaturedToAction(
-      recentFeaturedLegs(pp, sportUsual),
-      recentActionLegs(ps, sportUsual, { maxLegs: Number.POSITIVE_INFINITY }),
-    );
+    const recentFeatured = recentFeaturedLegs(pp, sportUsual);
+    const actionRaw = recentActionLegs(ps, sportUsual);
+    // Featured shipped locks belong on Their Action — union, do not hide Featured.
+    const recentAction = mergeFeaturedIntoAction(recentFeatured, actionRaw);
     // Featured form (Source A when present) — row chips / "Their featured".
     let form = sportForm(pp.length ? pp : ps);
     // Action form always from Source B positions — Action tab spark = true L30 $.
@@ -895,7 +893,8 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     if (form) {
       form.recentFeatured = recentFeatured;
       form.recentAction = recentAction;
-      form.recentActionTotalN = recentWindow.n;
+      form.recentActionTotalN = (Number(recentWindow.n) || actionRaw.length)
+        + Math.max(0, recentAction.length - actionRaw.length);
       if (actionForm) {
         form.actionFlatCurve = actionForm.flatCurve || [];
         form.actionFlatEnd = actionForm.flatEnd;
