@@ -2,9 +2,10 @@ name: Fetch Market Data (Polymarket + scan)
 
 # ─── Scheduling (Option A — self-chain, 2026-07-11) ────────────────────────
 # GitHub Actions cron is unreliable at sub-15-min cadence (silently dropped).
-# We keep ~4-min scans via an inner loop (12 × 240s target ≈ 48 min/run;
-# daytime slates can run ~5.5–7 min/cycle ≈ 70–85 min). Job timeout must
-# clear that wall so all 12 cycles finish and the chain step can dispatch.
+# We keep ~3-min scans via an inner loop (12 × 180s target ≈ 36 min/run).
+# Daytime slates can still overrun if scan+whitelist is fat — next cycle
+# starts immediately (no pile-up). Job timeout must clear that wall so
+# all 12 cycles finish and the chain step can dispatch.
 # Self-dispatch the next run so coverage is continuous without babysitting.
 #
 # Day window (America/New_York):
@@ -15,16 +16,19 @@ name: Fetch Market Data (Polymarket + scan)
 #   • After 11pm ET the chain stops until the next morning starter
 #
 # concurrency cancel-in-progress:false → queued safety/cron waits; no kill.
-# Inner loop: 12 × ~4 min target; work was ~150–180s/cycle (2026-07-09),
-# but heavy daytime books regularly overrun (2026-07-29: 324–425s/cycle).
+# Inner loop: 12 × ~3 min target. Vite rebuild is the 60s+ tax that blew
+# the old 4-min budget; most cycles JSON-patch gh-pages (same files the
+# site already serves). Cycle 1 and every 4th still full-build so UI
+# commits on main still land. Scan / write / sync are unchanged.
 # Kalshi native board lives in fetch-kalshi.yml (every 15 min). Wallet/odds
 # scan does not read kalshi_data.json. This loop never fetches or overwrites
 # that file — reset --hard origin/main carries the last 15-min Kalshi write
 # into the next gh-pages deploy. Odds API `kalshi` in snapshotPinnacle still
 # runs every cycle (same HTTP call as Pin/retail — rail chip only).
 #
-# Odds API budget: ~12 cycles × ~17 waking hours ≈ ~200 cycles/day × ~1–2
-# calls — still well under the 50K/mo quota.
+# Odds API budget: ~20 cycles/hour × ~17 waking hours ≈ ~340/day × ~32
+# credits — well under this key (millions remaining). Pinnapi REST is
+# unlimited volume at 10 req/s.
 on:
   schedule:
     # 6:00 AM ET  (EDT=10:00 UTC · EST=11:00 UTC — pinned to EDT summer)
@@ -106,28 +110,34 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      # ─── Fast-cycle loop: 12 iterations × ~4 min apart ───────────────────
+      # ─── Fast-cycle loop: 12 iterations × ~3 min apart ───────────────────
       # Each iteration:
-      #   1. fetch + snapshot + scanSharpPositions + updateClosingOdds
+      #   1. fetch + snapshot + scanSharpPositions + write + sync (unchanged)
       #   2. commit public/*.json to main (if changed)
-      #   3. npm run build
-      #   4. force-push ./dist to the gh-pages branch
+      #   3. JSON-patch gh-pages (most cycles) or full Vite build (1, 4, 8, 12)
       #
-      # Each cycle targets 240s start-to-start. Measured work is ~150–180s
-      # (2026-07-09 logs: "Cycle 2 took 152s"); we sleep the remainder.
-      # If a cycle overruns 240s, the next starts immediately (no pile-up).
-      #
-      # The shell-based gh-pages push mirrors what peaceiris/actions-gh-pages
-      # does internally — we can't call that action inside a shell loop.
-      - name: Fetch + deploy cycle loop (12× at 4-min cadence)
+      # Each cycle targets 180s start-to-start. If a cycle overruns, the
+      # next starts immediately (no pile-up).
+      - name: Fetch + deploy cycle loop (12× at 3-min cadence)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
           set +e
-          target_interval=240
+          target_interval=180
           cycles=12
           scan_fail_count=0
+          GHP=/tmp/gh-pages-live
+          DATA_JSON="polymarket_data.json pinnacle_history.json sharp_positions.json sharp_spread_positions.json sharp_total_positions.json sharp_intel_excluded_wallets.json whitelist_scan_diagnostics.json scan_heartbeat.json sharp_scan_supplement.json sharp-flow-pnl.json kalshi_data.json"
+          echo "--- clone gh-pages for JSON-only data deploys ---"
+          rm -rf "$GHP"
+          if git clone --depth 1 --branch gh-pages \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$GHP"; then
+            echo "--- gh-pages clone ok ---"
+          else
+            echo "::warning::gh-pages clone failed — every cycle will full-build"
+            GHP=""
+          fi
           for i in $(seq 1 "$cycles"); do
             cycle_start=$(date +%s)
             echo ""
@@ -303,51 +313,112 @@ jobs:
                 > public/pinnacle_history.json
             fi
 
-            # Build the site (~1 min). Wipe dist so a leftover dist/.git from
-            # a prior cycle can't make `git checkout -b gh-pages` no-op and
-            # falsely report a successful deploy of stale assets.
-            echo "--- npm run build ---"
-            rm -rf dist
-            if npm run build; then
-              # Force-push ./dist to gh-pages. This is the same thing
-              # peaceiris/actions-gh-pages does — we just inline it so it
-              # can run inside the loop.
-              echo "--- deploying dist → gh-pages ---"
-              deploy_ok=0
-              (
-                cd dist
-                # CNAME is already copied by Vite from public/.
-                rm -rf .git
-                git init -q
-                git checkout -b gh-pages
-                git add -A
-                git -c user.email=actions@github.com -c user.name="GitHub Actions" \
-                    commit -q -m "Deploy cycle $i [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
-                git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" \
-                    HEAD:gh-pages
-              ) && { echo "--- gh-pages push succeeded ---"; deploy_ok=1; } \
-                || echo "--- gh-pages push failed (cycle $i) ---"
+            # Most cycles: copy the same public JSON the site already serves
+            # onto gh-pages (no Vite). Cycle 1 and every 4th: full build so
+            # UI commits on main still ship. Lock/scan path is unchanged.
+            do_full_build=0
+            if [ "$i" -eq 1 ] || [ $((i % 4)) -eq 0 ]; then
+              do_full_build=1
+            fi
+            if [ -z "$GHP" ] || [ ! -d "$GHP/.git" ]; then
+              do_full_build=1
+            fi
 
-              # POST-DEPLOY SYNC SAFETY NET — re-run syncPickStateAuthoritative
-              # right after the deploy lands. The inline run earlier in this
-              # cycle is the primary; this catches the case where it failed
-              # (Firestore hiccup, transient throttle) so the dashboard the
-              # user loads against the just-published JSON sees Firestore
-              # state from the SAME cycle, not the previous one.
-              # Idempotent — if the primary run already wrote the canonical
-              # state, this run sees no changes and exits clean.
-              if [ "$deploy_ok" -eq 1 ]; then
-                echo "--- syncPickStateAuthoritative (post-deploy safety net) ---"
-                if ! node scripts/syncPickStateAuthoritative.js; then
-                  echo "::warning::syncPickStateAuthoritative POST-DEPLOY also failed (cycle $i) — Firestore may be stale relative to deployed JSON until next cycle"
+            deploy_ok=0
+            if [ "$do_full_build" -eq 1 ]; then
+              echo "--- npm run build (cycle $i) ---"
+              rm -rf dist
+              if npm run build; then
+                echo "--- deploying dist → gh-pages ---"
+                (
+                  cd dist
+                  rm -rf .git
+                  git init -q
+                  git checkout -b gh-pages
+                  git add -A
+                  git -c user.email=actions@github.com -c user.name="GitHub Actions" \
+                      commit -q -m "Deploy cycle $i [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
+                  git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" \
+                      HEAD:gh-pages
+                ) && { echo "--- gh-pages push succeeded ---"; deploy_ok=1; } \
+                  || echo "--- gh-pages push failed (cycle $i) ---"
+                if [ "$deploy_ok" -eq 1 ]; then
+                  rm -rf "$GHP"
+                  if git clone --depth 1 --branch gh-pages \
+                      "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$GHP"; then
+                    echo "--- gh-pages clone refreshed after full deploy ---"
+                  else
+                    GHP=""
+                  fi
                 fi
-                echo "--- sendLockAlerts (post-deploy) ---"
-                if [ -n "${ONESIGNAL_REST_API_KEY:-}" ]; then
-                  node scripts/sendLockAlerts.mjs || echo "::warning::sendLockAlerts post-deploy failed (cycle $i)"
-                fi
+              else
+                echo "--- build failed (cycle $i), skipping deploy ---"
               fi
             else
-              echo "--- build failed (cycle $i), skipping deploy ---"
+              echo "--- gh-pages JSON-only data push (cycle $i) ---"
+              if (
+                cd "$GHP" && git fetch origin gh-pages && git reset --hard origin/gh-pages
+              ); then
+                for f in $DATA_JSON; do
+                  if [ -f "public/$f" ]; then
+                    cp -f "public/$f" "$GHP/$f"
+                  fi
+                done
+                if (
+                  cd "$GHP"
+                  add_list=""
+                  for f in $DATA_JSON; do
+                    if [ -f "$f" ]; then
+                      add_list="$add_list $f"
+                    fi
+                  done
+                  # shellcheck disable=SC2086
+                  git add $add_list
+                  if git diff --staged --quiet; then
+                    echo "--- gh-pages data unchanged ---"
+                    exit 0
+                  fi
+                  git -c user.email=actions@github.com -c user.name="GitHub Actions" \
+                    commit -m "Data cycle $i [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
+                  git push origin HEAD
+                ); then
+                  echo "--- gh-pages data push succeeded ---"
+                  deploy_ok=1
+                else
+                  echo "--- gh-pages data push failed (cycle $i) ---"
+                fi
+              else
+                echo "::warning::gh-pages refresh failed — falling back to full build"
+                GHP=""
+                echo "--- npm run build (fallback cycle $i) ---"
+                rm -rf dist
+                if npm run build; then
+                  (
+                    cd dist
+                    rm -rf .git
+                    git init -q
+                    git checkout -b gh-pages
+                    git add -A
+                    git -c user.email=actions@github.com -c user.name="GitHub Actions" \
+                        commit -q -m "Deploy cycle $i fallback [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
+                    git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" \
+                        HEAD:gh-pages
+                  ) && deploy_ok=1
+                fi
+              fi
+            fi
+
+            # POST-DEPLOY SYNC SAFETY NET — re-run sync after JSON or full
+            # deploy lands. Inline sync earlier in the cycle is primary.
+            if [ "$deploy_ok" -eq 1 ]; then
+              echo "--- syncPickStateAuthoritative (post-deploy safety net) ---"
+              if ! node scripts/syncPickStateAuthoritative.js; then
+                echo "::warning::syncPickStateAuthoritative POST-DEPLOY also failed (cycle $i) — Firestore may be stale relative to deployed JSON until next cycle"
+              fi
+              echo "--- sendLockAlerts (post-deploy) ---"
+              if [ -n "${ONESIGNAL_REST_API_KEY:-}" ]; then
+                node scripts/sendLockAlerts.mjs || echo "::warning::sendLockAlerts post-deploy failed (cycle $i)"
+              fi
             fi
 
             cycle_elapsed=$(( $(date +%s) - cycle_start ))
