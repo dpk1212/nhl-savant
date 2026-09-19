@@ -15,6 +15,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
+import { lookupPinnGame } from './lib/ufcFighters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -99,7 +100,7 @@ async function run() {
     const { sport, gameKey, sides, commenceTime } = data;
     if (!sides || !sport || !gameKey) { skipped++; continue; }
     if (commenceTime && now >= commenceTime) { skipped++; continue; }
-    const pinnGame = pinnacle?.[sport]?.[gameKey];
+    const pinnGame = lookupPinnGame(pinnacle, sport, gameKey);
     if (!pinnGame?.current) { skipped++; continue; }
     const updates = {};
     let hasUpdate = false;
@@ -125,7 +126,7 @@ async function run() {
     const { sport, gameKey, sides, commenceTime } = data;
     if (!sides || !sport || !gameKey) { skipped++; continue; }
     if (commenceTime && now >= commenceTime) { skipped++; continue; }
-    const pinnGame = pinnacle?.[sport]?.[gameKey];
+    const pinnGame = lookupPinnGame(pinnacle, sport, gameKey);
     const sc = pinnGame?.spreadCurrent;
     if (!sc) { skipped++; continue; }
     const updates = {};
@@ -154,7 +155,7 @@ async function run() {
     const { sport, gameKey, sides, commenceTime } = data;
     if (!sides || !sport || !gameKey) { skipped++; continue; }
     if (commenceTime && now >= commenceTime) { skipped++; continue; }
-    const pinnGame = pinnacle?.[sport]?.[gameKey];
+    const pinnGame = lookupPinnGame(pinnacle, sport, gameKey);
     if (!pinnGame) { skipped++; continue; }
     const updates = {};
     let hasUpdate = false;

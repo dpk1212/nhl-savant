@@ -24,6 +24,7 @@ import {
   pickMainSpreadFromBoard,
   pickMainTotalFromBoard,
 } from './pinnacleMain.js';
+import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
 
 export const STEAM_WATCH_PCT = 2;
 export const STEAM_EVENT_PCT = 3;
@@ -601,6 +602,6 @@ export function steamForGame(pinnacleHistory, sport, gameKey, {
   nowSec = Math.floor(Date.now() / 1000),
   freezeAtMs = null,
 } = {}) {
-  const g = pinnacleHistory?.[sport]?.[gameKey] || null;
+  const g = lookupPinnGame(pinnacleHistory, sport, gameKey);
   return summarizeSteam(g, { marketType, sideNorm, line, nowSec, freezeAtMs });
 }

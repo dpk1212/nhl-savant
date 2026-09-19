@@ -54,6 +54,7 @@ import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../src/lib/sizeRatioBands.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { positionMatchesPolyEvent, WRONG_GAME_EXIT_REASONS } from './lib/positionEventMatch.js';
+import { lookupPinnGame } from './lib/ufcFighters.js';
 import {
   acceptFullGameSidePosition,
   acceptFullGameTotalPosition,
@@ -255,7 +256,7 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
       : (Number.isFinite(Number(pos.spreadLine)) ? Number(pos.spreadLine)
         : (Number.isFinite(Number(pos.totalLine)) ? Number(pos.totalLine) : null));
     const tape = captureTicketTape({
-      pinnGame: pinnacleHistory?.[pos.sport]?.[pos.gameKey] || null,
+      pinnGame: lookupPinnGame(pinnacleHistory, pos.sport, pos.gameKey),
       marketType: steamMkt,
       sideNorm: pos.side,
       line: steamLine,
@@ -813,7 +814,7 @@ async function main() {
           const displayRoi = Math.min(pos.sportROI || 0, 999.9);
 
           // Pinnacle odds + retail EV
-          const pinnGame = pinnacleHistory?.[sport]?.[gameKey];
+          const pinnGame = lookupPinnGame(pinnacleHistory, sport, gameKey);
           let pinnOdds = null, bestRetail = null, bestBook = null, evEdge = null;
           const signedSpread = mkt === 'SPREAD'
             ? signedSpreadEntryLine(pos, { awayName: gd.away, homeName: gd.home })

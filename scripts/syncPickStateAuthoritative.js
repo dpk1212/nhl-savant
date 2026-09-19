@@ -184,6 +184,7 @@ import {
 } from '../src/lib/expectedWin.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameSidePosition, acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
+import { flipUFCGameKey, remapUFCPinnSides } from './lib/ufcFighters.js';
 import { slugDatesAreBoardLeftovers } from './lib/positionEventMatch.js';
 import {
   collectScanBoardProvenPositions,
@@ -1458,8 +1459,14 @@ function applySkillFeatureStamps(target, bundle, now, {
 
 function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
   const gm = gameMeta?.get?.(`${pick.sport}|${pick.gameKey}`) || extra.meta || null;
+  let pinnGame = extra.pinnGame ?? gm?.pinnGame ?? null;
+  if (!pinnGame && String(pick.sport || '').toUpperCase() === 'UFC' && pick.gameKey) {
+    const flip = flipUFCGameKey(pick.gameKey);
+    const alt = flip ? gameMeta?.get?.(`${pick.sport}|${flip}`) : null;
+    if (alt?.pinnGame) pinnGame = remapUFCPinnSides(alt.pinnGame);
+  }
   return {
-    pinnGame: extra.pinnGame ?? gm?.pinnGame ?? null,
+    pinnGame,
     marketType: extra.marketType ?? mkt ?? pick.marketType ?? 'ml',
     sideNorm: extra.sideNorm ?? side,
     ticketLine: extra.ticketLine ?? sd?.peak?.line ?? sd?.lock?.line ?? null,
@@ -2315,6 +2322,26 @@ function loadGameMetadata() {
     }
   } catch (e) {
     console.warn('[meta] pinnacle_history.json unreadable:', e.message);
+  }
+  // UFC: Poly title-order keys miss Odds API away_home tape. Attach the
+  // remapped row onto the Poly key so lock/steam see Pin fair + movement.
+  for (const [key, cur] of [...meta.entries()]) {
+    if (!key.startsWith('UFC|') || cur.pinnGame) continue;
+    const flip = flipUFCGameKey(key.slice(4));
+    if (!flip) continue;
+    const alt = meta.get(`UFC|${flip}`);
+    if (!alt?.pinnGame && !alt?.mlOdds) continue;
+    if (alt.mlOdds) {
+      cur.mlOdds = {
+        away: alt.mlOdds.home,
+        home: alt.mlOdds.away,
+        draw: alt.mlOdds.draw ?? null,
+      };
+    }
+    if (alt.fairBook && !cur.fairBook) cur.fairBook = alt.fairBook;
+    if (alt.pinnGame) cur.pinnGame = remapUFCPinnSides(alt.pinnGame);
+    if (!cur.commenceTime && alt.commenceTime) cur.commenceTime = alt.commenceTime;
+    meta.set(key, cur);
   }
   return meta;
 }

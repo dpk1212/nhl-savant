@@ -65,6 +65,7 @@ import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
 import { compareLockedPicks } from '../lib/lockedPickSort.js';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
+import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
 import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
 import { walletPriorStatsPreferB } from '../lib/actionLockPin.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
@@ -3588,7 +3589,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const ss = sportStyle(game.sport);
   const awayShort = shortTeamNick(game.away, game.home);
   const homeShort = shortTeamNick(game.home, game.away);
-  const pinnGame = pinnacleHistory?.[game.sport]?.[game.key];
+  const pinnGame = lookupPinnGame(pinnacleHistory, game.sport, game.key);
   const fairBookKey = pinnGame?.fairBook || 'pinnacle';
   const FAIR_BOOK_LABELS = {
     pinnacle: 'Pinnacle', circa: 'Circa', bookmaker: 'Bookmaker',
@@ -6592,7 +6593,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const oppShort = consensusSide === 'draw' ? 'Teams' : shortTeamNick(oppTeam, consensusTeam);
   const awayShort = shortTeamNick(gd.away, gd.home);
   const homeShort = shortTeamNick(gd.home, gd.away);
-  let pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
+  let pinnGame = lookupPinnGame(pinnacleHistory, gd.sport, gd.key);
   // SOC neutral-site fallback: try the reversed key and flip away/home so the
   // odds line up with this card's orientation (see flipPinnGame).
   if (!pinnGame && gd.sport === 'SOC' && gd.key) {
@@ -8902,8 +8903,8 @@ export default function SharpFlow() {
     const g = [...filteredGames];
     if (gameSort === 'time') {
       g.sort((a, b) => {
-        const aT = pinnacleHistory?.[a.sport]?.[a.key]?.commence;
-        const bT = pinnacleHistory?.[b.sport]?.[b.key]?.commence;
+        const aT = lookupPinnGame(pinnacleHistory, a.sport, a.key)?.commence;
+        const bT = lookupPinnGame(pinnacleHistory, b.sport, b.key)?.commence;
         return (aT ? new Date(aT).getTime() : Infinity) - (bT ? new Date(bT).getTime() : Infinity);
       });
     }
@@ -9151,8 +9152,8 @@ export default function SharpFlow() {
           if (!gd.positions) continue;
           const gameCommence = polyData?.[sport]?.[gameKey]?.commence
             ? new Date(polyData[sport][gameKey].commence).getTime()
-            : pinnacleHistory?.[sport]?.[gameKey]?.commence
-              ? new Date(pinnacleHistory[sport][gameKey].commence).getTime()
+            : lookupPinnGame(pinnacleHistory, sport, gameKey)?.commence
+              ? new Date(lookupPinnGame(pinnacleHistory, sport, gameKey).commence).getTime()
               : null;
           for (const pos of gd.positions) {
             const wLower = pos.wallet?.toLowerCase();
@@ -9343,7 +9344,7 @@ export default function SharpFlow() {
           const gid = `${sport}|${gameKey}`;
           if (!battleGameMap.has(gid)) {
             const commence = polyData?.[sport]?.[gameKey]?.commence
-              || pinnacleHistory?.[sport]?.[gameKey]?.commence
+              || lookupPinnGame(pinnacleHistory, sport, gameKey)?.commence
               || null;
             battleGameMap.set(gid, {
               id: gid, sport, gameKey,
@@ -11001,7 +11002,7 @@ export default function SharpFlow() {
                   if (!gd.positions || gd.positions.length === 0) continue;
                   // Display floor for Live Positions cards (qualified sharp $).
                   if ((gd.summary?.totalInvested || 0) < 750) continue;
-                  const pg = pinnacleHistory?.[sport]?.[key];
+                  const pg = lookupPinnGame(pinnacleHistory, sport, key);
                   const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
                   const isLive = ct && nowMs >= ct;
 
@@ -11227,8 +11228,8 @@ export default function SharpFlow() {
                       .map(p => {
                       const ct = polyData?.[p.sport]?.[p.gameKey]?.commence
                         ? new Date(polyData[p.sport][p.gameKey].commence).getTime()
-                        : pinnacleHistory?.[p.sport]?.[p.gameKey]?.commence
-                          ? new Date(pinnacleHistory[p.sport][p.gameKey].commence).getTime()
+                        : lookupPinnGame(pinnacleHistory, p.sport, p.gameKey)?.commence
+                          ? new Date(lookupPinnGame(pinnacleHistory, p.sport, p.gameKey).commence).getTime()
                           : null;
                       const isLive = ct && now >= ct && (now - ct) < MAX_GAME_MS;
                       return { ...p, _commenceTime: ct, _isLive: !!isLive };
@@ -11414,7 +11415,7 @@ export default function SharpFlow() {
                                   : `${Math.round(timeDiff / 86400000)}d ago`
                                 : '';
       
-                              const pinnGame = pinnacleHistory?.[p.sport]?.[p.gameKey];
+                              const pinnGame = lookupPinnGame(pinnacleHistory, p.sport, p.gameKey);
                               const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
                               const isLocked = commenceTime && now >= commenceTime;
       
@@ -13492,7 +13493,7 @@ export default function SharpFlow() {
         }}>
           {sortedGames
             .filter(g => {
-              const pg = pinnacleHistory?.[g.sport]?.[g.key];
+              const pg = lookupPinnGame(pinnacleHistory, g.sport, g.key);
               const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
               const live = ct && Date.now() >= ct;
               if (signalType === 'upcoming') return !live;
