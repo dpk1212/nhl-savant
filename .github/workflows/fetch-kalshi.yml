@@ -1,0 +1,71 @@
+name: Fetch Kalshi (15 min)
+
+# Native Kalshi board (kalshi_data.json) is UI overlay only — lock/scan/sync
+# never read it. Keep it off the 4-min Poly+scan loop.
+#
+# This job writes ONLY public/kalshi_data.json to main. It does not build or
+# deploy gh-pages. The next fetch-polymarket cycle picks the file up on
+# `reset --hard origin/main` and ships it with that cycle's dist.
+#
+# GitHub cron is reliable at 15 min (not below). Day window matches the
+# market-data chain so we are not polling all night.
+on:
+  schedule:
+    # GitHub cron is UTC. Split so the hour range does not wrap.
+    - cron: '*/15 10-23 * * *'  # 6:00 AM – 7:59 PM ET (EDT)
+    - cron: '*/15 0-2 * * *'    # 8:00 PM – 10:59 PM ET (EDT)
+  workflow_dispatch:
+
+concurrency:
+  group: fetch-kalshi
+  cancel-in-progress: false
+
+jobs:
+  fetch-kalshi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write env
+        run: |
+          cat > .env <<EOF
+          ODDS_API_KEY=${{ secrets.ODDS_API_KEY }}
+          EOF
+
+      - name: Fetch Kalshi
+        run: node scripts/fetchKalshiData.js
+
+      - name: Commit kalshi_data.json only
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add public/kalshi_data.json
+          if git diff --staged --quiet; then
+            echo "--- no Kalshi changes ---"
+            exit 0
+          fi
+          git commit -m "Auto-update: Kalshi board [$(date +'%Y-%m-%d %H:%M')]"
+          for attempt in 1 2 3; do
+            if git pull --rebase --autostash -X theirs origin main && git push origin main; then
+              echo "--- main push succeeded (attempt $attempt) ---"
+              exit 0
+            fi
+            echo "--- main push attempt $attempt failed, retrying ---"
+            sleep 2
+          done
+          echo "::warning::Kalshi push failed after 3 attempts — next 15-min run will retry"
+          exit 0
