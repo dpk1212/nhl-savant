@@ -12534,9 +12534,8 @@ export default function SharpFlow() {
                           && peakOddsRaw !== -110;
                         const lockOddsValid = !spreadLockIsMlBleed
                           && lockOddsRaw && Math.abs(lockOddsRaw) <= 400;
-                        // Post T-15: ticket = last pre-freeze stamp (peak), not
-                        // morning create-time lock — lock.odds can be hours old
-                        // while peak was updated until the freeze gate.
+                        // Post T-15: ticket = sealed lock (best available at
+                        // T-15 from 2026-09-19). Peak / flagged stay the vault.
                         const commenceForOdds = (() => {
                           const raw = doc.commenceTime;
                           if (raw == null) return null;
@@ -12562,9 +12561,9 @@ export default function SharpFlow() {
                           .toLowerCase().includes('poly');
                         const cardOddsRaw = pastT15Odds
                           ? (
-                            (stampIsPoly && Number.isFinite(pinnPayOdds) ? pinnPayOdds : null)
+                            (lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
+                            || (stampIsPoly && Number.isFinite(pinnPayOdds) ? pinnPayOdds : null)
                             || pickFiniteOdds(peakOddsRaw)
-                            || (lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
                             || pickFiniteOdds(sd.closingOdds)
                             || null)
                           : ((lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
@@ -12775,9 +12774,16 @@ export default function SharpFlow() {
                           lockTier: resolvedTier,
                           odds: cardOdds,
                           polyReceipt: pickFiniteOdds(vaultPolyOdds)
+                            || pickFiniteOdds(sd.flagged?.odds)
                             || (stampIsPoly
                               ? (pickFiniteOdds(peakOddsRaw) || pickFiniteOdds(lockOddsRaw))
                               : null)
+                            || null,
+                          flaggedLine: Number.isFinite(Number(sd.flagged?.line))
+                            ? Number(sd.flagged.line)
+                            : (Number.isFinite(Number(peak.line)) ? Number(peak.line) : null),
+                          flaggedOdds: pickFiniteOdds(sd.flagged?.odds)
+                            || (stampIsPoly ? pickFiniteOdds(peakOddsRaw) : null)
                             || null,
                           // Default to 'Pinnacle' when neither peak nor lock
                           // book is set — closingOdds is from Pinnacle, so
@@ -12837,7 +12843,7 @@ export default function SharpFlow() {
                             : (peak.pinnacleOdds || lock.pinnacleOdds))
                             || sd.closingOdds || null,
                           marketType: marketTypeKey,
-                          // line fallback: peak.line → lock.line → closingLine.
+                          // line fallback: lock.line (T-15 best) → peak.line → closingLine.
                           // Past T-15: never chase live closingLine — ticket is sealed.
                           // Do NOT flip when lock.line === -closingLine. That used to
                           // "fix" bad Poly stamps, but alt home -1.5 vs main +1.5 is
@@ -12845,7 +12851,7 @@ export default function SharpFlow() {
                           // "Spread: Cardinals (-1.5)" stamped -1.5; Pinnacle close
                           // +1.5). Preferring close painted Cardinals +1.5.
                           line: (() => {
-                            const locked = peak.line ?? lock.line;
+                            const locked = lock.line ?? peak.line;
                             const close = sd.closingLine;
                             // Pre-T-15 TOTAL: prefer live vault entryLine so Locked
                             // matches Engine Open Positions (not live book MAIN).
