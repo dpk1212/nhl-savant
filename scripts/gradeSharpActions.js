@@ -2,8 +2,9 @@
  * gradeSharpActions.js — Grade Today's Action positions with game results
  *
  * Queries PENDING positions from `sharp_action_positions`, plus EXITED
- * tickets that were still on after first pitch (asset dropped from the
- * scan once the market resolved). Pre-game exits stay ungraded.
+ * tickets that were still on at T−15 lock (asset dropped from the scan
+ * once the market resolved, or sold inside the freeze window). Exits
+ * before T−15 stay ungraded.
  * Fetches finals from NHL API / ESPN / NCAA, then grades WIN / LOSS / PUSH.
  *
  * Also captures closing Pinnacle odds from pinnacle_history.json for CLV.
@@ -28,6 +29,7 @@ import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
 import { resolveCFBTeam, cfbTeamsMatch } from './lib/cfbTeams.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
+import { shouldGradeExited } from '../src/lib/actionLockPin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -936,67 +938,10 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
 }
 
 const EXITED_GRADE_LOOKBACK_DAYS = 30;
-/** Never grade these — UTC siblings or a real other-game leftover. */
-const EXITED_SKIP_REASONS = new Set([
-  'date_calendar_retag',
-  'slug_date_vs_board',
-  'slug_date_mismatch',
-  'slug_teams_mismatch',
-  'slug_teams_mismatch_wnba',
-]);
 
 function etDateMinusDays(days) {
   return new Date(Date.now() - days * 86400000)
     .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-}
-
-function exitedAtMs(pos) {
-  const x = pos?.exitedAt;
-  if (x == null) return null;
-  if (typeof x.toMillis === 'function') return x.toMillis();
-  if (Number.isFinite(x.seconds)) return x.seconds * 1000;
-  if (typeof x === 'string') {
-    const t = Date.parse(x);
-    return Number.isFinite(t) ? t : null;
-  }
-  if (Number.isFinite(x)) return x > 1e12 ? x : x * 1000;
-  return null;
-}
-
-/**
- * EXITED after first pitch still counts — the scan dropped a resolved
- * (or in-game sold) market. Pre-game exits and calendar/wrong-game retags
- * do not.
- *
- * minutesToCommence is stamped at exit: negative = held through commence.
- * Legacy eventId_mismatch after commence is cache churn, not a sell — grade it.
- *
- * Also hold recent asset_absent / soft_key exits even when commenceTime was
- * never stamped (NFL/preseason poly rows sometimes lack commence) — otherwise
- * resolved Action tickets never enter the grader and L30/v12 freeze.
- */
-function shouldGradeExited(pos) {
-  if (!pos || pos.status !== 'EXITED') return false;
-  if (EXITED_SKIP_REASONS.has(String(pos.exitReason || ''))) return false;
-
-  // Explicit exit-vs-tip stamp wins when present (incl. pre-game sells → false).
-  const mtc = Number(pos.minutesToCommence);
-  if (Number.isFinite(mtc)) return mtc < 0;
-
-  const ct = Number(pos.commenceTime);
-  const exited = exitedAtMs(pos);
-  if (Number.isFinite(ct) && ct > 1e11 && Number.isFinite(exited)) {
-    return exited >= ct;
-  }
-
-  // No commence signal — NFL/preseason poly rows often lack it. Hold recent
-  // asset_absent / soft_key exits so Action L30 + v12 staking can settle.
-  const reason = String(pos.exitReason || '');
-  if (reason === 'asset_absent' || reason === 'soft_key_absent_legacy') {
-    const floor = etDateMinusDays(5);
-    if (pos.date && String(pos.date) >= floor) return true;
-  }
-  return false;
 }
 
 function isLaterAssetClone(pos, earliestDateByAsset) {

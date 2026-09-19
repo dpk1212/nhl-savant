@@ -277,7 +277,7 @@ function formFromProfile(prof, sport) {
     return {
       l5: form.l5 || null,
       l10: form.l10 || null,
-      // Featured (Source A) curves — "Their featured" tab / legacy chips.
+      // Featured curves — list is export-clipped to Action (Source B).
       flatCurve: Array.isArray(form.flatCurve) ? form.flatCurve : null,
       flatEnd: Number.isFinite(form.flatEnd) ? form.flatEnd : null,
       dollarCurve: Array.isArray(form.dollarCurve) ? form.dollarCurve : null,

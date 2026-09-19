@@ -40,6 +40,7 @@ import {
   aggregateSideV12,
   agsV12ScoreFromQualities,
 } from '../src/lib/ags.js';
+import { walletPriorStatsPreferB } from '../src/lib/actionLockPin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -86,22 +87,8 @@ async function loadWalletData() {
     const priorMap = {};
     for (const [sport, rec] of Object.entries(p.bySport)) {
       if (rec?.whitelistTier) tierMap[sport] = rec.whitelistTier;
-      // Match syncPickStateAuthoritative.walletPriorStatsFromSportRec: Source A
-      // (featured-pick history) primary, Source-B (on-chain) flat-ROI mirror
-      // fallback for B-only qualified wallets. Keeps the quintile cuts derived
-      // from the same score distribution the live scorer produces.
-      const picksN = Number(rec?.picks?.n) || 0;
-      priorMap[sport] = picksN >= 2
-        ? {
-            tier: rec?.whitelistTier || null,
-            priorN: picksN,
-            priorRoi: Number(rec?.picks?.flatRoi) || 0,
-          }
-        : {
-            tier: rec?.whitelistTier || null,
-            priorN: Number(rec?.positions?.n) || 0,
-            priorRoi: Number(rec?.positions?.positionFlatRoi) || 0,
-          };
+      // Same B-primary prior as live sync / SharpFlow UI.
+      priorMap[sport] = walletPriorStatsPreferB(rec);
     }
     tiers.set(d.id, tierMap);
     walletPriorBySport.set(d.id, priorMap);
@@ -140,8 +127,8 @@ function buildWalletStatsFn(walletPicksAgg) {
 }
 
 // v12 — wallet's per-sport prior stats { tier, priorN, priorRoi } at scoring
-// time. Drives the agsV12 quality formula. Uses profile.bySport[sport].picks
-// (n + flatRoi) which is refreshed every cron cycle by exportWalletProfiles.
+// time. Drives the agsV12 quality formula. Source B Action first; featured
+// fallback when B is thin. Refreshed every exportWalletProfiles cycle.
 // Near-causal in production; for calibration we use the current profile
 // snapshot (slight forward bias, same simplification as v11 calibration —
 // the distribution shape we need for quintile cuts is preserved).

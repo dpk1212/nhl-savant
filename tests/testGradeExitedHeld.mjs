@@ -1,5 +1,5 @@
 /**
- * EXITED after first pitch still grades. Pre-game exits and retags do not.
+ * EXITED at/after T−15 still grades. Pre-lock exits and retags do not.
  * Usage: node tests/testGradeExitedHeld.mjs
  */
 import assert from 'node:assert/strict';
@@ -17,10 +17,18 @@ assert.equal(shouldGradeExited(sdp), true, 'SDP Over exited 95m after pitch');
 assert.equal(shouldGradeExited({
   status: 'EXITED',
   exitReason: 'asset_absent',
+  minutesToCommence: 10,
+  commenceTime: 1786749060000,
+  exitedAt: '2026-08-14T22:50:00.000Z',
+}), true, 'exit inside T−15 still grades');
+
+assert.equal(shouldGradeExited({
+  status: 'EXITED',
+  exitReason: 'asset_absent',
   minutesToCommence: 40,
   commenceTime: 1786749060000,
   exitedAt: '2026-08-14T22:00:00.000Z',
-}), false, 'pre-game exit stays ungraded');
+}), false, 'pre-lock exit stays ungraded');
 
 assert.equal(shouldGradeExited({
   status: 'EXITED',

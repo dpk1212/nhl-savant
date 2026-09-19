@@ -9,6 +9,9 @@
  * on PENDING docs whose wallet was successfully scanned this cycle and whose
  * Polymarket `asset` (or soft key, for legacy docs) is no longer open.
  * Scanner silence (wallet not in scanHeartbeat.okWallets) does NOT exit.
+ * After T−15, scan-drop (asset_absent / soft_key) does NOT exit — the
+ * lock-held row stays PENDING for Their Action + the grader. Wrong-game
+ * / period leftovers still exit.
  *
  * Action-tab stamps (going forward — no backfill):
  *   commenceTime          — ms from polymarket_data / pinnacle_history
@@ -56,6 +59,7 @@ import {
   acceptFullGameTotalPosition,
   rejectNonFullGameBoardPosition,
 } from './lib/totalMarketFilter.js';
+import { minutesToCommence, shouldSkipScanDropExit } from '../src/lib/actionLockPin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -1464,6 +1468,20 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
       }
       if (!shouldExit) continue;
 
+      // T−15 pin: scan-drop EXITED would take them off Action after v12
+      // already froze the ticket. Keep PENDING so Their Action + grader
+      // still see the lock-held Source B row. Wrong-game exits still fire.
+      const pinCt = typeof data.commenceTime === 'number' && Number.isFinite(data.commenceTime)
+        ? data.commenceTime
+        : parseCommenceMs(polyData?.[data.sport]?.[data.gameKey]?.commence
+          || polyData?.[data.sport]?.[data.gameKey]?.polyGameTime
+          || polyData?.[data.sport]?.[data.gameKey]?.commenceTime);
+      if (shouldSkipScanDropExit({
+        commenceTime: pinCt,
+        exitReason,
+        nowMs: Date.now(),
+      })) continue;
+
       const exitPayload = {
         status: 'EXITED',
         exitedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1481,7 +1499,7 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
         if (ct != null) exitPayload.commenceTime = ct;
       }
       if (ct != null) {
-        exitPayload.minutesToCommence = +((ct - Date.now()) / 60000).toFixed(1);
+        exitPayload.minutesToCommence = minutesToCommence(ct, Date.now());
       }
       batch.update(doc.ref, exitPayload);
       batchOps++;

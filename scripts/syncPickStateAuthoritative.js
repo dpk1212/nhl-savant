@@ -245,6 +245,10 @@ import {
   isSteamTailPolicyLive,
   resolveSteamLifecycle,
 } from '../src/lib/steamTailPolicy.js';
+import {
+  walletPriorStatsPreferB,
+  isRankEligibleOnSourceB,
+} from '../src/lib/actionLockPin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -604,67 +608,21 @@ function buildWalletPriorStatsFn(walletProfiles) {
   };
 }
 
-// v12 prior stats — Source A (featured-pick history) is the primary ROI/N signal,
-// but wallets that qualify on Source B alone (on-chain positions) have no Source A
-// data, which would zero out their v12 quality (roi=0, nReliab=0) even though they
-// are CONFIRMED. Fall back to the Source-B flat-ROI mirror + position count so the
-// quality formula reflects their actual tracked edge. Threshold mirrors
-// exportWalletProfiles WHITELIST_MIN_BETS (2): use Source A only when it is non-thin.
-//
-// Also: a wallet can print on real $ / on-chain flat while running cold on *our*
-// featured grades (agsV12 quality uses max(0, priorRoi) — negative Source A
-// zeroes them and blocks Locked create). When Source A flat ≤ 0, prefer a
-// positive Source B flat/dollar ROI so Action winners still score.
-const V12_SOURCE_A_MIN = 2;
+// v12 prior stats — Source B (on-chain Action) is the book. Source A
+// (featured-pick history) is fallback only when B is thin. Shared with
+// SharpFlow UI + calibration via walletPriorStatsPreferB.
 function walletPriorStatsFromSportRec(sportRec) {
-  if (!sportRec) return null;
-  const picksN = Number(sportRec.picks?.n) || 0;
-  const posN = Number(sportRec.positions?.n) || 0;
-  const picksFlat = Number(sportRec.picks?.flatRoi);
-  const posFlat = Number(sportRec.positions?.positionFlatRoi);
-  const dollarRoi = Number(sportRec.positions?.dollarRoi);
-  const positiveSourceB = [posFlat, dollarRoi]
-    .filter((x) => Number.isFinite(x) && x > 0);
-
-  if (picksN >= V12_SOURCE_A_MIN) {
-    let priorRoi = Number.isFinite(picksFlat) ? picksFlat : 0;
-    if (!(priorRoi > 0) && positiveSourceB.length > 0) {
-      priorRoi = Math.max(...positiveSourceB);
-    }
-    return {
-      tier: sportRec.whitelistTier || null,
-      priorN: picksN,
-      priorRoi,
-    };
-  }
-  // Source-A thin → fall back to Source-B (on-chain) flat-ROI mirror.
-  let priorRoi = Number.isFinite(posFlat) ? posFlat : 0;
-  if (!(priorRoi > 0) && Number.isFinite(dollarRoi) && dollarRoi > 0) {
-    priorRoi = dollarRoi;
-  }
-  return {
-    tier: sportRec.whitelistTier || null,
-    priorN: posN,
-    priorRoi,
-  };
+  return walletPriorStatsPreferB(sportRec);
 }
 
 // ── RANK-RESCUE (2-for-0 wallet slice) ──────────────────────────────────────
 // A side "qualifies" when ≥2 ELIGIBLE whitelist wallets back it and 0 back the
-// other side. Eligible = whitelistTier ∈ {CONFIRMED,FLAT,WR50} AND ≥ RANK_RESCUE
-// _MIN_PICKS settled featured picks in-sport (profile.bySport[sport].picks.n).
-// For a LIVE pick this current count is leak-free (today's games aren't settled).
-// Backtest (v12 era, 20d): muted-&-qualifying picks went 62% / +17% flat, ~1.45/day,
-// ROI-neutral to the HC book. Used ONLY to rescue HC-muted picks — NOT to up-size
-// already-staked picks (the slice adds no edge inside the HC book).
-const RANK_RESCUE_MIN_PICKS = 8;
+// other side. Eligible = whitelistTier ∈ {CONFIRMED,FLAT,WR50} AND ≥8 settled
+// Action (Source B) bets in-sport; featured n only if the Action book is empty.
+// Used ONLY to rescue HC-muted picks — NOT to up-size already-staked picks.
 const RANK_RESCUE_UNITS = 4;
 function isRankEligible(profile, sport) {
-  const rec = profile?.bySport?.[sport];
-  if (!rec) return false;
-  const tier = rec.whitelistTier;
-  if (tier !== 'CONFIRMED' && tier !== 'FLAT' && tier !== 'WR50') return false;
-  return (Number(rec.picks?.n) || 0) >= RANK_RESCUE_MIN_PICKS;
+  return isRankEligibleOnSourceB(profile, sport);
 }
 function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
   if (!Array.isArray(walletDetails) || !mySide || !sport) return { backing: 0, against: 0, qualifies: false };
@@ -1157,7 +1115,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 20; // v20: fade proven-$ hold (SHARP-LEAN ML proven ≥50 skips fadeTop)
+const SKILL_FEATURE_VERSION = 21; // v21: Source B lock — Action priors + RANK n, Featured ⊆ Action, T-15 hold
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.

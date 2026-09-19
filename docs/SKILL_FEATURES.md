@@ -1,6 +1,6 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 20` from **2026-09-18**_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 21` from **2026-09-19**_  
 _Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
@@ -233,6 +233,7 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **16** | **2026-08-19** | `v8_ticketTapeLog` lifecycle (first / hourly / t60 / t15 / grade) |
 | **19** | **2026-09-17** | `v8_stFatAction` / `v8_unitsPreStFat` — S/T leftover BOTH + arriving ≥4u mute |
 | **20** | **2026-09-18** | `v8_fadeProvenHoldAction` / `v8_fadeProvenShare` — SHARP-LEAN ML proven ≥50 skip fade |
+| **21** | **2026-09-19** | Source B lock — v12 quality + RANK n read Action first; Featured ⊆ Action book; T−15 scan-drop hold |
 
 ---
 
