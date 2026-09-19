@@ -1021,8 +1021,8 @@ function pickSideNorm(side) {
 
 function pickLine(sideData) {
   for (const v of [
-    sideData?.peak?.line,
     sideData?.lock?.line,
+    sideData?.peak?.line,
     sideData?.line,
     sideData?.spread,
     sideData?.total,
@@ -1107,7 +1107,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
           ?? sideData.peak?.units
           ?? sideData.lock?.units
           ?? 0;
-        const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
+        const odds = sideData.lock?.odds || sideData.peak?.odds || 0;
         const isTracked = !units;
         const profit = isTracked ? 0 : calculateProfit(outcome, odds, units);
         updates[`sides.${side}.status`] = 'COMPLETED';

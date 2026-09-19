@@ -1473,10 +1473,19 @@ export function mapLockedPickToCardFixture(pick, {
   // Hero = grade line + book pay odds. Poly is a PM receipt underneath —
   // never the American glued to "+2.5" when same-line tape disagrees.
   const heroOdds = lockOdds;
-  const flaggedAtLabel = sharpOffTicket
+  const flaggedLine = Number.isFinite(Number(pick.flaggedLine)) ? Number(pick.flaggedLine) : null;
+  const flaggedOddsStored = Number.isFinite(Number(pick.flaggedOdds)) && Number(pick.flaggedOdds) !== 0
+    ? Number(pick.flaggedOdds)
+    : null;
+  const flaggedOffHero = Number.isFinite(flaggedLine) && Number.isFinite(ticketHeroLine)
+    && !linesClose(flaggedLine, ticketHeroLine);
+  const flaggedAtLabel = (flaggedOffHero || sharpOffTicket)
     ? fmtFlaggedAtLabel(
-      Number.isFinite(sharpOdds) ? sharpOdds : polyEntryOdds,
-      fmtLineLabel(sharpLine) || sharpLine,
+      Number.isFinite(flaggedOddsStored) ? flaggedOddsStored
+        : (Number.isFinite(sharpOdds) ? sharpOdds : polyEntryOdds),
+      fmtLineLabel(Number.isFinite(flaggedLine) ? flaggedLine : sharpLine)
+        || flaggedLine
+        || sharpLine,
     )
     : null;
   let mainNowLabel = flaggedAtLabel;
