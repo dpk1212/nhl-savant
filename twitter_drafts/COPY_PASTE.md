@@ -1,89 +1,69 @@
-# Twitter Loop — 2026-07-12 wipe to ride
-**7/12/2026, 12:32:40 PM ET** · 3 drafts
+# Twitter — 2026-09-19 · HERO GIVE · Miss State +3.5 / Pinnacle limit + one hot wallet
+**Pathway:** `hormozi_tweet_process.md` (Hormozi only)
+**CSV:** Sep 8–14. Overlay: give (last staged post was an ask). Juice/limit *caption* died at 44/0R — this is the walk + pudding, not that death.
 
-> wipe-to-ride Dale spine. Single hero (Dale override + Coach single-hero recommendation) — confront 0-5/-18u cold, one named detail (Nats), hard pivot to Brewers continuity receipt, forced sizing/timing take. Full 5-loss ledger lives in a 2-part self-reply thread (plain English, no jargon tiers) since it cannot fit one 280-char tweet without becoming a ✅/❌ table. Outbound (angle_4/iq_wtr06) intentionally skipped this run — no live high-velocity parent post pulled via MCP this cycle; distribution hunt still owed. Never auto-publish.
+| | |
+|--|--|
+| WHO | Someone looking at State +3.5 who thinks “if Pinnacle is taking more, the number has to get worse.” |
+| PURPOSE | **Give / educate.** Varied condition: limits-up + price-still-ours + one red-hot wallet. Not a `$XK at Y×` clone. Not +118u restage. |
+| ONE | Pinnacle keeps raising how much they’ll take on this spread — and we’re still getting a better number than they are. One wallet on it is 8-1 this month. |
+| SPCL | **S + C.** Limit we can see + 8-1 / $2K / −104 vs their −109. Power is the 8-1 trail under the hook. |
+| Timeline | Last ask spent 9/15. Next was a starved-condition give. This is new tape. Do not open on “odds are dropping.” |
+| Ask | **None.** Desire plant only. Overlay fork stays off. |
 
-**Live receipts:** Jul 11: 0-5 · -18.00u · -100% ROI on 18u stake. Losses (self-reply only, no ✅/❌ table): Mets ML 4u -137 · Rangers ML 3u -117 · Nats ML 4u +178 (blew a lead) · Argentina ML 4u -145 · Over 8.5 3u -108. Brewers TODAY LOCKED: ML +106 (stamp-preferred over export +110) · 2.5u · $6,449 · 1.72x this wallet's average · 1 against (honestly omitted from hero rather than faked to zero) · wallet crown same profile ~64% WR / +20% ROI cited only if needed in a short beat (not used in hero — kept single-tension).
-
----
-
-## 1 · HERO — hero a wipe to ride
-**When:** NOW — Jul 12, day after the Jul 11 wipe. Brewers locked pre-game tonight.
-**Attach:** Brewers lock card — $6,449 / +106 / 1.72x sizeRatio readable
-**Bet:** OVER vs hero baseline ~1235.5 impr, target ~1400-2200; >=3 replies to clear the ATG reply-bar floor (2075936032676053436, 3r) — because a real, disclosed -18u carries more trust-testing weight than any confession we've shipped, and this is a Coach-named gap (zero prior 'real loss -> forward trust' example in our timeline); untested high-stakes moments over-index on curiosity and reply currency.
-**Arsenal:** #confront #costly_signal #forced_take #clock
-**Improves on:** Weekend menu death 2076035931661046149 (1201v/0r — confession without a forced take, dual-play menu, triple vibe-ask) + scoreboard QT 2075762415539527896 (1376v/0r — reach without replies, W/L ledger). Budgets the pain to ONE aggregate (0-5/-18u) + ONE named detail (Nats), keeps the full 5-loss ledger to self-reply, and closes on a genuine sizing/timing take instead of a soft statement or a fake fade/ride binary on one-sided proof.
-**Felt:** A real, no-excuses bad day landed the morning before a lock I trust exactly as much as I did before it happened.
-**Spine:** Yesterday wrecked the board and I'm not going to dress it up. Nats blowing a lead is the one that actually stings — at least we weren't the ones on McGregor. Tonight the same process is still running, sizing up like nothing happened. Too much conviction the morning after, or exactly the point?
-**Scroll-stop:** Opens by naming a real wipeout cold — no hedge, no ledger, no softened number — which is a confession this account has never had to post before, so a stranger has to see what's coming next.
-**Job A · Engage:** Forces a take on Brewers' size/timing the morning after a real loss — a sizing/conviction question a stranger can actually argue ('too much conviction, or exactly the point?'), never a fade/ride binary on proof that's already one-sided.
-**Job B · Convert:** Plants the desire (the same process sizing up live, unprompted by yesterday) with zero CTA language in the hero — conversion completes only in the self-reply.
-**Why / context:** The why-sized block: $6,449 at 1.72x this wallet's average is the observable reason tonight's play matters — not just that it's locked, but how much more than usual this wallet is trusting it, the day after it got run over.
-**Convert job:** Desire = watch tonight's process live after a real loss -> soft trial completed in self-reply only
-**Convert plant:** Hero — Brewers continuity receipt ($6,449 at 1.72x this wallet's average) IS the desire beat, zero CTA verbs, no link
-**Convert ask:** Self-reply — first week free + nhlsavant.com/?ref=wipe0711
-**Strategist:** passed
-**Product frame:** We track hundreds of sharp bettors for months and post where their money moves before the games start
-**Editor:** passed
-**Length:** 271/280 · long-band ✓
-
-### Copy this ↓
-
-```
-Yesterday wrecked the board. 0-5. -18 units.
-
-Nats blew a lead we should've banked. At least we weren't on McGregor.
-
-Same process: Brewers +106 · $6,449 at 1.72× this wallet's average.
-
-Too much conviction, morning after. Or exactly the point? We'll know by first pitch.
-```
-
-[Open in X →](https://x.com/intent/tweet?text=Yesterday+wrecked+the+board.+0-5.+-18+units.%0A%0ANats+blew+a+lead+we+should%27ve+banked.+At+least+we+weren%27t+on+McGregor.%0A%0ASame+process%3A+Brewers+%2B106+%C2%B7+%246%2C449+at+1.72%C3%97+this+wallet%27s+average.%0A%0AToo+much+conviction%2C+morning+after.+Or+exactly+the+point%3F+We%27ll+know+by+first+pitch.)
+**Attach (walk order):** 1) pick card (limit / odds path / 4u) · 2) wallet (8-1 · $6.8K · $2K at 1.3×).
 
 ---
 
-## 2 · SELF-REPLY — self reply a ledger
-**When:** Reply 1 under hero_a_wipe_to_ride — full plain-English Jul 11 ledger, no jargon tiers, no ✅/❌ table.
-**Attach:** none
-**Bet:** Proof-of-work for repliers who want the full board; supports the hero's reply floor rather than competing with it.
-**Arsenal:** #costly_signal #proof
-**Improves on:** Keeps the five-loss body count entirely out of the hero (Coach hard law: recap -> self-reply only, prose, never a checklist) while still giving anyone who scrolls into replies the receipts.
+### 0 · Spine (Dale — law)
+- First setup he’s excited for today
+- Pinnacle limits are rising
+- Odds are moving in our favor
+- Following 1 sharp off to a red-hot start
 
-### Copy this ↓
+**Shape, don’t replace.** Excitement is the close, not line 1. Limits + better number is the spear. The 8-1 is the pudding.
 
-```
-No dressing it up, here's the full board: Mets moneyline lost 4u. Rangers moneyline lost 3u. Nationals moneyline lost 4u — the blown lead is the one that actually stings. Argentina moneyline lost 4u. Over 8.5 lost 3u. Five for five. Minus 18 units.
-```
+### Receipts (this run)
+- Kickoff 4:15 PM ET (20:15Z). Now past T−15 — clock only, lock is not the identity.
+- UI: Mississippi State +3.5 · **−104** · **4.00u** · Kalshi
+- Pinnacle +3.5 **−109** · DK −112 · BetOnline −120 · FanDuel −114 (`pinnacle_history.json` this run)
+- Pinnacle **spread max:** $1,000 (Sep 13) → $15,000 (today 12:00 ET) → **$20,000** (today 2:08 PM ET)
+- One proven: `2c5fde` · **$2,000** · **1.3×** usual · unopposed · CFB **8-1** · 89% · L30 **+$6,800** (Dale card)
+- Do not use: ForMyFamily1 · V12/LOCK/HC · $36K/$70K OCR · fade/ride · `$5.35` · convert paragraph
 
-[Open in X →](https://x.com/intent/tweet?text=No+dressing+it+up%2C+here%27s+the+full+board%3A+Mets+moneyline+lost+4u.+Rangers+moneyline+lost+3u.+Nationals+moneyline+lost+4u+%E2%80%94+the+blown+lead+is+the+one+that+actually+stings.+Argentina+moneyline+lost+4u.+Over+8.5+lost+3u.+Five+for+five.+Minus+18+units.)
+### 6 · HOOK QA
 
----
+| | Kill | This |
+|--|------|------|
+| Line 1 | I’m excited / odds are dropping / Locked. State +3.5 | **PINNACLE'S LIMIT ON THIS SPREAD IS $20,000** |
+| Line 2 | juice caption with no pudding | **This afternoon $15,000. A week ago $1,000.** |
+| Next | restage `$XK at Y×` | **And the number still moved our way.** then 4u + 8-1 |
 
-## 3 · SELF-REPLY — self reply b convert
-**When:** Reply 2 under self_reply_a_ledger — Brewers echo (closes the loop for reply-only scrollers) + soft trial ask + link.
-**Attach:** none
-**Bet:** profile -> trial; soft ask carries zero $ / promo-price language
-**Arsenal:** #soft_ask #convert
-**Improves on:** Convert ask stays entirely in self-reply per convert law; echoes the hero's Brewers receipt so a reader who only sees the recap still gets the forward pivot before the ask.
-
-### Copy this ↓
-
-```
-Brewers is the same process, running like nothing happened: +106, $6,449 at 1.72× this wallet's average.
-
-First week's free if you want to watch it grade itself instead of taking my word for it.
-
-nhlsavant.com/?ref=wipe0711
-```
-
-[Open in X →](https://x.com/intent/tweet?text=Brewers+is+the+same+process%2C+running+like+nothing+happened%3A+%2B106%2C+%246%2C449+at+1.72%C3%97+this+wallet%27s+average.%0A%0AFirst+week%27s+free+if+you+want+to+watch+it+grade+itself+instead+of+taking+my+word+for+it.%0A%0Anhlsavant.com%2F%3Fref%3Dwipe0711)
+What: Pinnacle limit $20k and climbing.  
+How: we’re −104 vs their −109 / shops −120 + one 8-1 wallet at $2K.  
+So what: first setup today. 4:15 ET.
 
 ---
 
-## Order of operations
-1. **HERO** hero_a_wipe_to_ride — NOW — Jul 12, day after the Jul 11 wipe. Brewers locked pre-game tonight.
-2. **SELF-REPLY** self_reply_a_ledger — Reply 1 under hero_a_wipe_to_ride — full plain-English Jul 11 ledger, no jargon tiers, no ✅/❌ table.
-3. **SELF-REPLY** self_reply_b_convert — Reply 2 under self_reply_a_ledger — Brewers echo (closes the loop for reply-only scrollers) + soft trial ask + link.
+## COPY THIS
 
-**Never auto-publish.** No site link in outbound replies. PRE-LOCK language until T−15.
+**Type:** Hero  
+**Media:** pick card, then the wallet 8-1 tape
+
+```
+PINNACLE'S LIMIT ON THIS SPREAD IS $20,000
+This afternoon it was $15,000. A week ago it was $1,000.
+
+And the number still moved our way.
+
+Mississippi State +3.5. Four units.
+We're -104. They're -109. Some shops -120.
+
+One wallet we track is 8-1 this month. Up $6,800.
+$2,000 on the points. 1.3× what he usually puts down.
+Nothing proven against him.
+
+4:15 ET. First one today that looks like a setup.
+```
+
+**Do not post from here.** Stage only. Never auto-publish.

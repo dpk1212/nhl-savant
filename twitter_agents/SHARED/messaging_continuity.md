@@ -7,71 +7,72 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-19 · **INGEST** · Hormozi Qual / Algorithm / Trust video (Dale paste) |
+| Last updated | 2026-09-19 · HERO **GIVE** · Miss State +3.5 / Pinnacle $20k limit / 8-1 wallet |
 | CSV window | Content Sep 8–14. Overlay ask-shape binds. |
-| Ask temperature | **Give.** Last staged post was an ask (+118u / Sharp Flow in-hero). This teaching does not flip us to ask. |
-| Account arc | Ticket list vs wallets we track. Qual law now: next give = a **starved condition**, not a +118u restage. |
+| Ask temperature | **Give (staged).** Last ask was 9/15 +118u. This post has no fork. |
+| Account arc | Limits-up + price-still-ours. One CFB wallet 8-1 on State +3.5. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 9/19 4:07 ET | Hero **GIVE** | `PINNACLE'S LIMIT ON THIS SPREAD IS $20,000` / number still moved our way / 8-1 | **S + C** | none | **Staged** |
 | 9/19 | **INGEST** | Qual video: varied conditions · whole-truth origin · comprehension cost | — | none | Locked into canon |
 | 9/15 night | QT **ASK** | `+118U ON MLB` / four tonight vs BetMGM | **S + C** | Sharp Flow in-hero | **Staged** |
-| 9/15 | Reply GIVE | `$2.3K UNOPPOSED ON THE GUARDIANS` / Griffin | S + C | none | Staged — **$ stale** (now $8.1k / $5.6k) |
+| 9/15 | Reply GIVE | `$2.3K UNOPPOSED ON THE GUARDIANS` / Griffin | S + C | none | Staged — **$ stale** |
 | 9/15 | Hero GIVE | `LAST NIGHT WE DIDN'T MAKE A MILLION DOLLARS` | L + C | none | Staged |
-| 9/14 eve r5 | QT EDUCATE | `$138K ON THE METS` / Baltimore made the list | S + C | none | Staged |
-| 9/14 eve | QT ASK | HE MISSED THE BEST DAY / still +32u | C + P | trial | Staged |
 
 ---
 
 ## Angle lock
-**ONE:** +118u on MLB in 30 days is this process. Tonight four more. That’s how you stop guessing tickets vs wallets we track.  
-**Yum:** you see the four next to their ticket list and can watch them grade.  
-**Hook:** `+118U ON MLB` / `Last 30 days.`  
-**Body:** CLE -1.5 $8.1k/$5.6k · Rays Over proven $810 · PIT +1.5 $25k at 5.5× (Brewers on the ML list) · MIL/PIT Over $1.4k nothing against (this one IS on their totals list — not named as a fade)  
-**Ask:** Sharp Flow on NHL Savant. Watch these four grade tonight.  
-**Killed:** unopposed · recap most-bet hook · all-four fade · scold open · Vault · locked · $138k clone
+**ONE:** Pinnacle keeps raising how much they’ll take on this spread — and we’re still getting a better number than they are. One wallet on it is 8-1 this month.  
+**Yum:** you get put on the printer’s ticket without becoming the market-maker.  
+**Hook:** `PINNACLE'S LIMIT ON THIS SPREAD IS $20,000` / this afternoon $15k / a week ago $1k.  
+**Body:** State +3.5 · 4u · −104 vs Pin −109 / shops −120 · 8-1 · +$6,800 · $2,000 at 1.3× · nothing proven against.  
+**Ask:** none.  
+**Killed:** “odds are dropping” caption · I’m-excited open · Locked. as identity · `$XK at Y×` clone · +118u restage · fade/ride · ForMyFamily1 · system labels
 
 ---
 
 ## Themes spent / open
-**Spent this beat:** no tweet — Qual canon locked.
+**Spent this beat (once posted):** Miss State +3.5 · Pinnacle $20k limit open · this 8-1 wallet on this ticket
 
-**Still spent:** BetMGM Tuesday / +118u · Griffin unopposed $2.3k · million-dollar miss · Mets $138k · Jim · +29u · Don · Jul/Aug · Vault · grind-EV · MVP25 · +100u / +99u
+**Still spent:** +118u · Griffin unopposed $2.3k · million-dollar miss · Mets $138k · Jim · Don · Jul/Aug · Vault · grind-EV · MVP25 · +100u / +99u
 
-**Still open:** grade those four **only with a new scar** · next weekly report · origin/whole-truth give (starved condition) · leftover · fence-sitter DMs
+**Still open:** grade State +3.5 (scar or cash) · next weekly report · origin/whole-truth give · fence-sitter DMs
 
-**Don't:** restage +118u · restage Griffin as unopposed · claim all four fade the list · recap their graphic · convert-paragraph open · price as punchline · clone last week’s `$XK` silhouette just because it won
+**Don't:** restage this limit hook · restage +118u · juice-only caption · convert-paragraph · price as punchline
 
 ---
 
 ## Unfinished
-- Grade the four only with a new scar
-- Next weekly report (Power on the mid-month promise)
-- Origin / whole-truth give (Qual 9/19 — starved condition)
+- Grade Miss State +3.5 after 4:15 ET
+- Next weekly report (Power)
+- Origin / whole-truth give still a legal next give
 - Fence-sitter DMs
 
 ---
 
-## FORWARD LOOK — after this ingest
-1. **Give — starved condition.** Prefer: grade/scar if Dale has tape · leftover · **origin/whole-truth** (“I don’t handicap. I track wallets.”) · ticket-vs-wallet on *new* tape. Do not restage +118u.
-2. Next weekly report (Power).
-3. Ask only if Dale spines it — hard number + fork in-hero. Overlay still wins.
+## FORWARD LOOK — after this posts
+1. **Grade only** with a new scar or cash. Do not restage the $20k limit open.
+2. Origin / whole-truth give if the week still needs a different condition.
+3. Weekly report (Power). Ask only if Dale spines it.
 
-**NOT:** +118u restage · Mets restage · Griffin $2.3k unopposed · Vault · grind-EV · BetMGM list recap · buried MVP25 · his “less than 1%” CTA · capper cosplay
+**NOT:** this limit hook again · +118u restage · Griffin $2.3k · Vault · grind-EV · “odds are dropping” · buried MVP25
 
-**Avatar:** they already got a printer + four + a fork. They are missing a *different* show-me (scar, leftover, or origin).  
-**Balance:** S+C printer + ask is overfed. Next = Power trail or Likeness/origin.  
-**Varied condition starved:** origin/whole-truth · honest L on new tape · leftover. Printer-ask is spent.  
-**Hormozi economics:** last staged post was an ask. This teaching = give. Proof is the pudding.  
-**Distribution:** wait for Dale spine. No tweet until he asks.
+**Avatar:** they just got an instruction (limits up + better number + one hot wallet). Next they need the grade.  
+**Balance:** S+C market-structure give. Next = Power say–do (grade) or Likeness/origin.  
+**Varied condition just shown:** limits-up / price-still-ours (new). Still starved: origin/whole-truth · honest L on new tape.  
+**Hormozi economics:** two gives after an ask is fine. Do not ask on the grade unless he spines it.  
+**Distribution:** hero. No QT parent.
 
 ---
 
 ## Agent close-out
-- [x] 9/19 Qual video ingested (notes + canon + pathway + leverage card)
-- [x] Overlay ask still wins — did not steal his YouTube CTA
-- [x] Next slot = give / starved condition — no tweet until Dale spines
+- [x] Dale spine shaped (limits + odds our way + 1 hot sharp) — not replaced
+- [x] Line 1 is $20k limit, not “I’m excited”
+- [x] Stuff: 4u · −104 vs −109/−120 · 8-1 · $6.8K · $2K at 1.3×
+- [x] No ask · no lock-as-identity · no system labels
+- [x] Staged COPY_PASTE only
 - [x] Continuity written
