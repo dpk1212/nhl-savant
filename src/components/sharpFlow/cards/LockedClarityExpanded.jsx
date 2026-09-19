@@ -1719,6 +1719,7 @@ export default function LockedClarityExpanded({
                 now={f.currentFairOdds ?? f.nowOdds}
                 fair={f.fairLine ?? fairOdds}
                 evPct={f.evFlagged}
+                consensus={f.consensusOdds}
                 sma={f.marketAgreement}
                 maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
                 movePp={f.pinnMovePp}

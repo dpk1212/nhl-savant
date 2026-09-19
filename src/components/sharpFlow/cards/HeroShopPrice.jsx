@@ -1,6 +1,6 @@
 /**
  * Locked hero juice: best available book + logo + implied %, then green
- * EV vs Pinnacle posted when that book beats Pin.
+ * EV vs Pinnacle-heavy sharp consensus when that book beats it.
  */
 import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
 import { resolveHeroShop } from '../../../lib/shopTicketLine.js';
@@ -31,7 +31,7 @@ export default function HeroShopPrice({
   const evLabel = Number.isFinite(evPct) ? `+${evPct.toFixed(1)}%` : null;
   const tip = [
     book ? `Best available · ${book}` : 'Best available',
-    evLabel ? `${evLabel} vs Pinnacle posted` : null,
+    evLabel ? `${evLabel} vs sharp consensus` : null,
   ].filter(Boolean).join(' · ');
 
   return (

@@ -4,7 +4,9 @@
  * workflow.
  *
  * Fair book = most reputable quote available per game (not Pinnacle-only):
- *   pinnacle → circa → bookmaker → lowvig → betonlineag
+ *   pinnacle → lowvig → betonlineag
+ * Circa / Bookmaker are not in The Odds API. Betfair / Matchbook are pulled
+ * for sharp consensus (not used as the tape fair).
  * Prices still land in opener/current/history so CLV/lock/close plumbing
  * stays compatible. Each game stamps `fairBook` with the source key.
  *
@@ -63,10 +65,13 @@ const SPORTS = [
 ];
 
 // Reputation order for fair line (highest → lowest). First with both sides wins.
-const FAIR_BOOKS = ['pinnacle', 'circa', 'bookmaker', 'lowvig', 'betonlineag'];
-const RETAIL_BOOKS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
+const FAIR_BOOKS = ['pinnacle', 'lowvig', 'betonlineag'];
+const RETAIL_BOOKS = ['draftkings', 'fanduel', 'betmgm'];
 // Same HTTP call as fair+retail — extra bookmakers, not an extra round-trip.
-const EXCHANGE_BOOKS = ['novig', 'polymarket', 'kalshi'];
+const EXCHANGE_BOOKS = [
+  'novig', 'polymarket', 'kalshi',
+  'betfair_ex_eu', 'betfair_ex_uk', 'matchbook',
+];
 const BOOKMAKERS = [...FAIR_BOOKS, ...RETAIL_BOOKS, ...EXCHANGE_BOOKS].join(',');
 const ODDS_REGIONS = 'us,uk,eu,us_ex';
 // Tape retention lives in scripts/lib/pinnacleTape.js (7-day dense tape for
@@ -135,6 +140,9 @@ const BOOK_DISPLAY = {
   novig: 'Novig',
   polymarket: 'Polymarket',
   kalshi: 'Kalshi',
+  betfair_ex_eu: 'Betfair',
+  betfair_ex_uk: 'Betfair UK',
+  matchbook: 'Matchbook',
 };
 
 function fairBookDisplayName(key) {

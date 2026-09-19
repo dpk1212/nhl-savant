@@ -28,6 +28,8 @@ export const BOOK_LOGO_BRANDS = [
   'Polymarket',
   'Kalshi',
   'Novig',
+  'Betfair',
+  'Matchbook',
 ];
 
 const FILES = {
@@ -50,6 +52,11 @@ const FILES = {
   polymarket: '/books/polymarket.png',
   kalshi: '/books/kalshi.png',
   novig: '/books/novig.png',
+  betfair: '/books/betfair.svg',
+  betfairexeu: '/books/betfair.svg',
+  betfairexuk: '/books/betfair.svg',
+  betfairexchange: '/books/betfair.svg',
+  matchbook: '/books/matchbook.svg',
 };
 
 function resolveId(name) {
@@ -71,6 +78,8 @@ function resolveId(name) {
   if (k.includes('poly')) return 'polymarket';
   if (k.includes('kalshi')) return 'kalshi';
   if (k.includes('novig')) return 'novig';
+  if (k.includes('betfair')) return 'betfair';
+  if (k.includes('matchbook')) return 'matchbook';
   if (k.includes('lowvig') || k === 'lv') return null;
   return null;
 }
