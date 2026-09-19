@@ -1,4 +1,4 @@
-name: Fetch Market Data (Polymarket + Kalshi)
+name: Fetch Market Data (Polymarket + scan)
 
 # ─── Scheduling (Option A — self-chain, 2026-07-11) ────────────────────────
 # GitHub Actions cron is unreliable at sub-15-min cadence (silently dropped).
@@ -17,9 +17,11 @@ name: Fetch Market Data (Polymarket + Kalshi)
 # concurrency cancel-in-progress:false → queued safety/cron waits; no kill.
 # Inner loop: 12 × ~4 min target; work was ~150–180s/cycle (2026-07-09),
 # but heavy daytime books regularly overrun (2026-07-29: 324–425s/cycle).
-# Kalshi is supplemental (board flow overlay). Wallet/odds scan does not
-# read it. Run fetchKalshiData only every 5th cycle so 4/5 cycles stay on
-# the Poly+scan cadence; skip cycles keep the last kalshi_data.json.
+# Kalshi native board lives in fetch-kalshi.yml (every 15 min). Wallet/odds
+# scan does not read kalshi_data.json. This loop never fetches or overwrites
+# that file — reset --hard origin/main carries the last 15-min Kalshi write
+# into the next gh-pages deploy. Odds API `kalshi` in snapshotPinnacle still
+# runs every cycle (same HTTP call as Pin/retail — rail chip only).
 #
 # Odds API budget: ~12 cycles × ~17 waking hours ≈ ~200 cycles/day × ~1–2
 # calls — still well under the 50K/mo quota.
@@ -136,20 +138,6 @@ jobs:
             echo "--- fetchPolymarketData ---"
             node scripts/fetchPolymarketData.js || echo "polymarket failed (cycle $i)"
 
-            # Every 5th cycle (5, 10, …): full Kalshi. Other cycles leave
-            # public/kalshi_data.json as-is (stashed across git reset below).
-            if [ $((i % 5)) -eq 0 ]; then
-              echo "--- fetchKalshiData (cycle $i — every 5th) ---"
-              node scripts/fetchKalshiData.js || echo "kalshi failed (cycle $i)"
-            else
-              next_k=$(( ((i + 4) / 5) * 5 ))
-              if [ "$next_k" -gt "$cycles" ]; then
-                echo "--- fetchKalshiData skipped (cycle $i; next full Kalshi is cycle 5 of the next job) ---"
-              else
-                echo "--- fetchKalshiData skipped (cycle $i; next full Kalshi on cycle ${next_k}) ---"
-              fi
-            fi
-
             echo "--- snapshotPinnacle ---"
             node scripts/snapshotPinnacle.js || echo "pinnacle failed (cycle $i)"
 
@@ -251,7 +239,7 @@ jobs:
               git checkout HEAD -- public/pinnacle_history.json 2>/dev/null || true
             fi
 
-            git add public/polymarket_data.json public/kalshi_data.json \
+            git add public/polymarket_data.json \
                     public/pinnacle_history.json public/sharp_positions.json \
                     public/sharp_spread_positions.json public/sharp_total_positions.json \
                     public/sharp_intel_excluded_wallets.json \
@@ -278,7 +266,7 @@ jobs:
             # failed, origin/main is still stale and reset would otherwise
             # drop the fresh scan before we build/deploy to gh-pages.
             json_stash=$(mktemp -d)
-            cp -f public/polymarket_data.json public/kalshi_data.json \
+            cp -f public/polymarket_data.json \
                   public/pinnacle_history.json public/sharp_positions.json \
                   public/sharp_spread_positions.json public/sharp_total_positions.json \
                   public/sharp_intel_excluded_wallets.json \
