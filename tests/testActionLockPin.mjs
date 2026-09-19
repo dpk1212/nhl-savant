@@ -1,5 +1,5 @@
 /**
- * Action lock pin — T−15 hold, Featured ⊆ Action, B-primary priors.
+ * Action lock pin — T−15 hold, featured→Action union, B-primary priors.
  * Usage: node tests/testActionLockPin.mjs
  */
 import assert from 'node:assert/strict';
@@ -13,6 +13,7 @@ import {
   isRankEligibleOnSourceB,
   minutesToCommence,
   parseActionTimeMs,
+  mergeFeaturedIntoAction,
   restrictFeaturedToAction,
   shouldGradeExited,
   shouldSkipScanDropExit,
@@ -122,6 +123,33 @@ assert.equal(RANK_RESCUE_MIN_BETS, 8);
   assert.equal(
     actionLegKey(featured[0]),
     actionLegKey({ date: '2026-09-18', market: 'ML', side: 'away', gameKey: 'cle_min' }),
+  );
+}
+
+{
+  // brendoncarson / 9214c2: featured Over 7.5 BOS@TBR was missing from Their Action.
+  const action = [
+    { date: '2026-09-18', marketType: 'TOTAL', side: 'under', gameKey: 'wsh_stl', dollarPnl: -912, won: 0 },
+    { date: '2026-09-18', marketType: 'TOTAL', side: 'under', gameKey: 'sea_col', dollarPnl: 1617, won: 1 },
+  ];
+  const featured = [
+    {
+      date: '2026-09-18', marketType: 'TOTAL', side: 'over', gameKey: 'bos_tbr',
+      line: 7.5, invested: 1130, dollarPnl: -1130, won: 0, odds: 126,
+    },
+    { date: '2026-09-18', marketType: 'TOTAL', side: 'under', gameKey: 'sea_col', dollarPnl: 1617, won: 1 },
+  ];
+  const merged = mergeFeaturedIntoAction(featured, action);
+  assert.equal(merged.length, 3, 'featured Over lands on Action');
+  const over = merged.find((l) => l.gameKey === 'bos_tbr');
+  assert.equal(over?.side, 'over');
+  assert.equal(over?.fromFeatured, true);
+  assert.equal(over?.dollarPnl, -1130);
+  assert.equal(over?.settledPnl, -1130);
+  assert.equal(
+    merged.filter((l) => actionLegKey(l).includes('sea_col')).length,
+    1,
+    'already-on-Action featured ticket is not doubled',
   );
 }
 

@@ -3,8 +3,9 @@
  *
  * Law:
  *   1. Census / skill / status read Source B (on-chain Action).
- *   2. Featured is a mirror of B. A ticket cannot appear on Featured
- *      unless Action has the same leg.
+ *   2. A featured lock belongs on Their Action. If we shipped the
+ *      wallet on a card, that ticket must show on Their Action so
+ *      the result counts. Do not hide Featured to paper over a miss.
  *   3. T−15 is the hold line. Still PENDING at lock → stay on Action
  *      through grade, even if the scanner later drops the asset.
  *
@@ -132,6 +133,30 @@ export function restrictFeaturedToAction(featured, action) {
     const k = actionLegKey(leg);
     return k && keys.has(k);
   });
+}
+
+/**
+ * Put shipped featured locks onto Their Action when Source B missed them.
+ * Same date/market/side/game is one ticket — do not double-count.
+ */
+export function mergeFeaturedIntoAction(featured, action) {
+  const base = Array.isArray(action) ? action.slice() : [];
+  const keys = new Set(base.map(actionLegKey).filter(Boolean));
+  for (const leg of Array.isArray(featured) ? featured : []) {
+    const k = actionLegKey(leg);
+    if (!k || keys.has(k)) continue;
+    keys.add(k);
+    const dollar = Number.isFinite(Number(leg.dollarPnl))
+      ? Math.round(Number(leg.dollarPnl))
+      : (Number.isFinite(Number(leg.settledPnl)) ? Math.round(Number(leg.settledPnl)) : null);
+    base.push({
+      ...leg,
+      settledPnl: Number.isFinite(Number(leg.settledPnl)) ? Math.round(Number(leg.settledPnl)) : dollar,
+      dollarPnl: dollar,
+      fromFeatured: true,
+    });
+  }
+  return base.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
 }
 
 /**

@@ -119,7 +119,8 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-09-09** | **Leftover A/B arriving HOLD** — leftover mute skips when Source A/B CONFIRMED and steam arrived (off→on). No-steam / already-on leftover still 0u. Later mutes (maxSR, ev-drift, T) still run. **Policy T native 2–3u A/B arriving → 4u.** 1u arriving stays floor 2u. Climate/unlock shrink not restacked. |
 | **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
 | **2026-09-18** | **Fade proven-$ hold** — SHARP-LEAN ML with proven $ share ≥50% skips fadeTop mute and continues to the next filter. Missing proven still fades. SPREAD/TOTAL and SUPER/TOP/MINI/RANK/SHARP still fade. |
-| **2026-09-19** | **Source B lock** — v12 quality + RANK n read Action first (featured n only if Action is empty). Featured expand list ⊆ 30d Action book. T−15 scan-drop stays PENDING for grade. |
+| **2026-09-19** | **Source B lock** — v12 quality + RANK n read Action first (featured n only if Action is empty). T−15 scan-drop stays PENDING for grade. |
+| **2026-09-19** | **Featured → Action union** — a shipped featured lock that Source B missed is merged onto Their Action so the result counts. Do not hide Featured to paper over the miss. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |
 | **2026-08-08** | **CONFIRMED-UNOPP promote** — CONFIRMED × size≥0.5× × unopposed → 1u (after SHARP / before DISSENT) · FOOLS back to hard 0u cancel |
