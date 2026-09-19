@@ -236,20 +236,22 @@ function MetricStrip({
   consensus = null,
 }) {
   // Collapsed desk: Ticket/Best/Pin/Now already live on the hero + gold chip.
-  // EV · Fair · actual win (unit×market×similar juice) · this ticket's best implied · hit edge.
+  // Sharp consensus · Fair · actual win · this ticket's best implied · hit edge.
   if (curated && compact) {
     const cells = [];
     const bestImplied = impliedPct1(bestNow);
+    const sharpImplied = impliedPct1(consensus);
 
-    if (Number.isFinite(evPct)) {
+    if (Number.isFinite(consensus)) {
       cells.push({
-        key: 'ev',
-        label: 'EV',
-        value: `${evPct >= 0 ? '+' : ''}${evPct.toFixed(1)}%`,
-        color: evPct >= 0.3 ? GREEN : evPct <= -0.3 ? VS : C.textSec,
-        title: Number.isFinite(consensus)
-          ? `Ticket EV vs sharp consensus ${fmtOdds(consensus)}.`
-          : 'Ticket EV vs fair.',
+        key: 'sharp',
+        label: 'Sharp',
+        value: Number.isFinite(sharpImplied)
+          ? `${fmtOdds(consensus)} (${sharpImplied.toFixed(1)}%)`
+          : fmtOdds(consensus),
+        color: C.textSec,
+        keepLabel: true,
+        title: `Pinnacle-heavy sharp consensus on this line. ${fmtOdds(consensus)}${Number.isFinite(sharpImplied) ? ` → ${sharpImplied.toFixed(1)}% implied` : ''}.`,
       });
     }
     if (Number.isFinite(fair)) {
@@ -296,7 +298,7 @@ function MetricStrip({
 
     const shown = cells.slice(0, 6);
     if (premium) {
-      const caseLabel = (c) => (c.keepLabel || c.label === 'EV'
+      const caseLabel = (c) => (c.keepLabel
         ? c.label
         : c.label.charAt(0) + c.label.slice(1).toLowerCase());
       return (
@@ -372,12 +374,17 @@ function MetricStrip({
     );
   }
 
+  const sharpImplied = impliedPct1(consensus);
   const cells = [
     {
-      key: 'ev',
-      label: 'EV',
-      value: Number.isFinite(evPct) ? `${evPct >= 0 ? '+' : ''}${evPct.toFixed(1)}%` : '—',
-      color: Number.isFinite(evPct) ? (evPct >= 0 ? GREEN : VS) : C.textSec,
+      key: 'sharp',
+      label: 'SHARP',
+      value: Number.isFinite(consensus)
+        ? (Number.isFinite(sharpImplied)
+          ? `${fmtOdds(consensus)} (${sharpImplied.toFixed(1)}%)`
+          : fmtOdds(consensus))
+        : '—',
+      color: C.textSec,
     },
     {
       key: 'fair',
