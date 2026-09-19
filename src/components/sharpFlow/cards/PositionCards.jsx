@@ -11,8 +11,8 @@ import OddsLimitSpark from './OddsLimitSpark';
 import LockedCollapsedStrength from './LockedCollapsedStrength';
 import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
-import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
 import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
+import HeroShopPrice from './HeroShopPrice.jsx';
 import { pinPostedOdds, bookBeatsPin, shopRailHidden } from '../../../lib/shopTicketLine.js';
 import { unitMarketHit } from '../../../lib/unitMarketHit.js';
 
@@ -2690,9 +2690,6 @@ function CollapsedHeader({ live, inClassName }) {
  */
 function CollapsedHero({ live, pickClass, americanOnly = false }) {
   const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip, contextLine } = live;
-  const priceLabel = Number.isFinite(heroPx)
-    ? (americanOnly ? fmtAmericanPrice(heroPx) : fmtAmericanWithPm(heroPx))
-    : null;
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
@@ -2700,7 +2697,7 @@ function CollapsedHero({ live, pickClass, americanOnly = false }) {
     }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{
-          display: 'flex', alignItems: 'baseline', gap: 11, flexWrap: 'wrap',
+          display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap',
           fontFeatureSettings: "'tnum'",
         }}>
           <div
@@ -2712,14 +2709,15 @@ function CollapsedHero({ live, pickClass, americanOnly = false }) {
           >
             {f.pickLabel}
           </div>
-          {priceLabel && (
-            <div style={{
-              fontSize: '1.12rem', fontWeight: 550, letterSpacing: '-0.02em',
-              color: C.textSec, lineHeight: 1.05,
-            }}>
-              {priceLabel}
-            </div>
-          )}
+          <HeroShopPrice
+            bestOdds={f.bestOdds}
+            bestBook={f.bestBook}
+            books={f.books}
+            fallbackOdds={heroPx}
+            americanOnly={americanOnly}
+            logoSize={18}
+            fontSize="1.12rem"
+          />
         </div>
         {contextLine && (
           <div

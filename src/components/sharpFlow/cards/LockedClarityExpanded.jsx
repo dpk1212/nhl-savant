@@ -16,7 +16,7 @@ import {
 import OddsLimitSpark from './OddsLimitSpark';
 import LockedSignalsRow from './LockedSignalsRow';
 import SteamTag from './SteamTag';
-import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
+import HeroShopPrice from './HeroShopPrice.jsx';
 
 const B = {
   gold: '#D4AF37',
@@ -1207,7 +1207,7 @@ export default function LockedClarityExpanded({
         </div>
 
         <div style={{
-          display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
           fontFeatureSettings: "'tnum'",
         }}>
           <span style={{
@@ -1215,11 +1215,14 @@ export default function LockedClarityExpanded({
           }}>
             {f.pickLabel}
           </span>
-          {Number.isFinite(heroPx) && (
-            <span style={{ fontSize: 15, fontWeight: 600, color: C.textSec }}>
-              {fmtAmericanWithPm(heroPx)}
-            </span>
-          )}
+          <HeroShopPrice
+            bestOdds={f.bestOdds}
+            bestBook={f.bestBook}
+            books={f.books}
+            fallbackOdds={heroPx}
+            logoSize={16}
+            fontSize={15}
+          />
           <SteamTag steam={f.steam} compact />
           {f.mainNowLabel && (
             <span

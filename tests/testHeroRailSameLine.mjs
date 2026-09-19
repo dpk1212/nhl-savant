@@ -10,6 +10,8 @@ import {
   shopRailHidden,
   pinPostedOdds,
   bookBeatsPin,
+  evPctVsPinPosted,
+  resolveHeroShop,
 } from '../src/lib/shopTicketLine.js';
 
 assert.equal(bookOnTicketLine(7.5, 7.5), true);
@@ -79,4 +81,31 @@ assert.equal(tied[0].best, true);
 assert.equal(tied[1].best, true);
 assert.equal(tied[2].best, false);
 
-console.log('testHeroRailSameLine: ok', gold, gold2);
+// LSU ML: Pin −152, FanDuel −141 → hero is best book, green EV vs Pin posted.
+assert.equal(evPctVsPinPosted(-141, -152), 1.8);
+assert.equal(evPctVsPinPosted(-152, -152), null);
+assert.equal(evPctVsPinPosted(-155, -152), null);
+const lsu = resolveHeroShop({
+  bestOdds: -141,
+  bestBook: 'FanDuel',
+  books: [
+    { name: 'Pinnacle', odds: -152 },
+    { name: 'FanDuel', odds: -141 },
+    { name: 'Kalshi', odds: -144 },
+  ],
+  fallbackOdds: -152,
+});
+assert.equal(lsu.odds, -141);
+assert.equal(lsu.book, 'FanDuel');
+assert.equal(lsu.evPct, 1.8);
+
+const pinBest = resolveHeroShop({
+  bestOdds: -152,
+  bestBook: 'Pinnacle',
+  books: [{ name: 'Pinnacle', odds: -152 }, { name: 'DraftKings', odds: -154 }],
+  fallbackOdds: -152,
+});
+assert.equal(pinBest.odds, -152);
+assert.equal(pinBest.evPct, null);
+
+console.log('testHeroRailSameLine: ok', gold, gold2, lsu);

@@ -2,6 +2,7 @@
  * Shop rail / gold chip stay on the ticket line.
  * Missing line is a miss — never paint 8.5 onto Over 7.5.
  */
+import { evPctVsFairProb, impliedFromAmerican } from './oddsEv.js';
 
 function shopBookKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -48,6 +49,29 @@ export function bookBeatsPin(book, pinOdds) {
   if (!book || !Number.isFinite(book.odds) || !Number.isFinite(pinOdds)) return false;
   if (shopRailHidden(book.name) || isPinnacleBook(book.name)) return false;
   return book.odds > pinOdds;
+}
+
+/**
+ * EV% of an offer vs Pinnacle’s posted implied (same (p_pin − p_offer)×100
+ * as Fair EV). Only when the offer is strictly better American than Pin.
+ */
+export function evPctVsPinPosted(bookOdds, pinOdds) {
+  if (!Number.isFinite(bookOdds) || !Number.isFinite(pinOdds)) return null;
+  if (!(bookOdds > pinOdds)) return null;
+  const pinP = impliedFromAmerican(pinOdds);
+  if (pinP == null) return null;
+  const ev = evPctVsFairProb(bookOdds, pinP);
+  return Number.isFinite(ev) && ev > 0 ? ev : null;
+}
+
+/** Hero shop chip: best American on the rail, else the pay/fallback juice. */
+export function resolveHeroShop({ bestOdds, bestBook, books, fallbackOdds } = {}) {
+  const odds = Number.isFinite(bestOdds) ? bestOdds
+    : (Number.isFinite(fallbackOdds) ? fallbackOdds : null);
+  const book = bestBook || null;
+  const pinOdds = pinPostedOdds(books);
+  const evPct = evPctVsPinPosted(odds, pinOdds);
+  return { odds, book, pinOdds, evPct };
 }
 
 /** Gold / Best implied = best American on this ticket’s line. Ties all gold. */
