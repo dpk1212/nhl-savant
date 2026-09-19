@@ -250,11 +250,11 @@ function resolveCFBTeam(raw) {
   const n = normalizeCFBName(cleaned);
   if (!n) return null;
   if (CFB_NAME_TO_CODE[n]) return CFB_NAME_TO_CODE[n];
-  const OTHER_SCHOOL = /^(state|st|central|southern|northern|eastern|western|christian|tech|am|aandm|ia|ohio|martin|permian|international|baptist|college|famu|poly|mines)/;
+  const OTHER_SCHOOL = /^(state|st|central|southern|northern|eastern|western|christian|tech|am|aandm|ia|ohio|martin|monroe|lynchburg|permian|international|baptist|college|famu|poly|mines|commerce)/;
   let best = null;
   let bestLen = 0;
   for (const [alias, code] of Object.entries(CFB_NAME_TO_CODE)) {
-    if (alias.length < 4) continue;
+    if (alias.length <= 4) continue;
     if (!n.startsWith(alias)) continue;
     const rest = n.slice(alias.length);
     if (rest && OTHER_SCHOOL.test(rest)) continue;
