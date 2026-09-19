@@ -2,9 +2,19 @@
 
 _Status: **LIVE** · stack `v12abcde` + **tape** (2026-07-15) + **EDGE/net Path C** (2026-07-19) + **EDGE band size on A/C** (2026-07-20; **mute&lt;7 / ×0.75** from 2026-07-22)_  
 _Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js`_  
-_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
+_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md) · [`UNIT_TIER_STEAM_SCOREBOARD.md`](./UNIT_TIER_STEAM_SCOREBOARD.md) (re-run `node scripts/analyzeUnitTierSteamBook.mjs`)_
 
 ---
+
+## Steam-era last steps (2026-08-31+)
+
+The July table below is the pre-steam stack. After sport-unlock CAP, production now runs:
+
+1. **Policy T** (`src/lib/steamTailPolicy.js`, Aug 31) — cut ≤1u junk; floor A/B arriving ≤1u → 2u; native 2–3u A/B arriving → 4u; keep 4u / 5.4u+ iff Source A/B CONFIRMED and steam on at lock; always keep 5u; fail-open if steam unobservable.
+2. **−375 mute** (Sep 5) — favorites juicier than −375 → 0u.
+3. **Unit-tier overlay** (`src/lib/unitTierEvSteamOverlay.js`, Sep 11 mute / Sep 12 timing promote) — mute live EV &lt; −2 with no steam; promote 2–&lt;4u → 4u only on arriving or last-hour ≥ 3%, not LEAN/FADE, lock-EV &lt; −1 veto.
+
+Unit-tile W/L/PnL and each cut/promote still-working: [`UNIT_TIER_STEAM_SCOREBOARD.md`](./UNIT_TIER_STEAM_SCOREBOARD.md) — re-run `node scripts/analyzeUnitTierSteamBook.mjs` as the tape log grows. WATCH ≠ revert. Why 3u is beating 4–5.4u: [`TOP_VS_STRONG_INVERSION.md`](./TOP_VS_STRONG_INVERSION.md).
 
 ## Where we are (2026-07-22)
 
