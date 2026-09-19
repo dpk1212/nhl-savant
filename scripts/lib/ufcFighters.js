@@ -180,6 +180,35 @@ export function remapUFCPinnSides(game) {
 }
 
 /**
+ * One UFC fight can exist under both title order and Odds API away_home.
+ * Prefer scan/live keys, then Poly, so leftover flip docs collapse.
+ */
+export function canonicalUFCKey(gameKey, { preferred = null, also = null } = {}) {
+  if (!gameKey) return null;
+  const flip = flipUFCGameKey(gameKey);
+  const prefHas = (k) => !!k && preferred?.has?.(k);
+  const alsoHas = (k) => !!k && also?.has?.(k);
+  if (prefHas(gameKey) && prefHas(flip)) {
+    if (alsoHas(gameKey) && !alsoHas(flip)) return gameKey;
+    if (!alsoHas(gameKey) && alsoHas(flip)) return flip;
+    return gameKey < flip ? gameKey : flip;
+  }
+  if (prefHas(gameKey)) return gameKey;
+  if (prefHas(flip)) return flip;
+  if (alsoHas(gameKey) && alsoHas(flip)) {
+    return gameKey < flip ? gameKey : flip;
+  }
+  if (alsoHas(gameKey)) return gameKey;
+  if (alsoHas(flip)) return flip;
+  return gameKey;
+}
+
+export function isUFCFlipAlias(gameKey, opts = {}) {
+  const canon = canonicalUFCKey(gameKey, opts);
+  return !!(canon && gameKey && canon !== gameKey);
+}
+
+/**
  * Exact pinnacle_history lookup, then UFC key-flip with sides remapped.
  * Poly `Pitbull vs Choi` is `patriciopitbull_doohochoi`; Odds API stores
  * `doohochoi_patriciopitbull`. Without the flip, fair/steam/lock miss the tape.

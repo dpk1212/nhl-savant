@@ -9,6 +9,8 @@ import {
   flipUFCGameKey,
   lookupPinnGame,
   remapUFCPinnSides,
+  canonicalUFCKey,
+  isUFCFlipAlias,
 } from '../scripts/lib/ufcFighters.js';
 import { steamForGame } from '../src/lib/steamMove.js';
 
@@ -70,5 +72,22 @@ assert.ok(steamHome.tip, 'observed tape emits a steam tip even when juice is fad
 const miss = steamForGame({ UFC: {} }, 'UFC', polyKey, { marketType: 'ml', sideNorm: 'home' });
 assert.equal(miss.show, false);
 assert.equal(miss.tip, null);
+
+const live = new Set(['charlesjourdain_marlonvera']);
+assert.equal(
+  canonicalUFCKey('marlonvera_charlesjourdain', { preferred: live }),
+  'charlesjourdain_marlonvera',
+);
+assert.equal(isUFCFlipAlias('marlonvera_charlesjourdain', { preferred: live }), true);
+assert.equal(isUFCFlipAlias('charlesjourdain_marlonvera', { preferred: live }), false);
+assert.equal(isUFCFlipAlias('charlesjourdain_marlonvera', { also: live }), false);
+{
+  const both = new Set(['charlesjourdain_marlonvera', 'marlonvera_charlesjourdain']);
+  const poly = new Set(['charlesjourdain_marlonvera']);
+  assert.equal(
+    canonicalUFCKey('marlonvera_charlesjourdain', { preferred: both, also: poly }),
+    'charlesjourdain_marlonvera',
+  );
+}
 
 console.log('testUfcTapeFlip: all passed');
