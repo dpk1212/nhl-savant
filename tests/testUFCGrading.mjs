@@ -9,6 +9,8 @@ import {
   isGradableUFCMainML,
   resolveUFCFighter,
   makeUFCGameKey,
+  flipUFCGameKey,
+  resolveUFCScheduleKey,
   extractUFCFightersFromTitle,
   stripUFCEventPrefix,
   isUFCBrandedTitle,
@@ -167,6 +169,17 @@ check('DWCS tonight is inside poly-only window',
   isUfcPolyOnlyWindow('2026-09-15T23:00:00Z', nowTue) === true);
 check('UFC 331 stays outside 72h poly-only window on Tue',
   isUfcPolyOnlyWindow('2026-09-19T21:00:00Z', nowTue) === false);
+
+check('flip Pitbull/Choi key',
+  flipUFCGameKey('patriciopitbull_doohochoi') === 'doohochoi_patriciopitbull');
+check('flip rejects 3-part keys', flipUFCGameKey('a_b_c') === null);
+{
+  const odds = new Set(['doohochoi_patriciopitbull']);
+  check('schedule key prefers Odds API order',
+    resolveUFCScheduleKey(odds, 'Patricio Pitbull', 'Dooho Choi') === 'doohochoi_patriciopitbull');
+  check('schedule key falls back to title order',
+    resolveUFCScheduleKey(new Set(), 'Patricio Pitbull', 'Dooho Choi') === 'patriciopitbull_doohochoi');
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);

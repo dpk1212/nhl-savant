@@ -51,6 +51,7 @@ import {
   shopRailHidden,
 } from '../../../lib/shopTicketLine.js';
 import { SHOP_BOOK_PREFER, sharpConsensusFromBooks } from '../../../lib/sharpConsensus.js';
+import { lookupPinnGame } from '../../../../scripts/lib/ufcFighters.js';
 
 export { americanFromPolyPrice };
 export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb, mlFairOddsList };
@@ -662,7 +663,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       gk = rest || null;
     }
   }
-  const pinnGame = sport && gk ? pinnacleHistory?.[sport]?.[gk] : null;
+  const pinnGame = sport && gk ? lookupPinnGame(pinnacleHistory, sport, gk) : null;
   if (!pinnGame) return empty;
 
   const mt = String(pick.marketType || 'ml').toLowerCase();
@@ -1302,7 +1303,7 @@ export function mapLockedPickToCardFixture(pick, {
   // Peek Pinnacle for PLAYABLE main line (recommendation instrument).
   // Use *Current (or last main print when frozen) — never the last alt dump.
   const pinnGamePeek = (pinnacleHistory && pick.sport && pick.gameKey)
-    ? pinnacleHistory[pick.sport]?.[pick.gameKey]
+    ? lookupPinnGame(pinnacleHistory, pick.sport, pick.gameKey)
     : null;
   const instSide = isTotal
     ? (sideIsUnderEarly ? 'under' : 'over')
@@ -1726,7 +1727,7 @@ export function mapLockedPickToCardFixture(pick, {
         gk = parts.slice(2).join('_').replace(/_(spread|total)$/i, '') || null;
       }
     }
-    pinnGameForSma = gk ? pinnacleHistory[pick.sport]?.[gk] : null;
+    pinnGameForSma = gk ? lookupPinnGame(pinnacleHistory, pick.sport, gk) : null;
   }
   const sma = sharpMarketAgreementFromPinnGame(pinnGameForSma, {
     marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',

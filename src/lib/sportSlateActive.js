@@ -1,3 +1,5 @@
+import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
+
 /** How long after commence a sport's board still counts as "live" for the rail. */
 export const DEFAULT_SLATE_ACTIVE_AFTER_COMMENCE_MS = 4.5 * 60 * 60 * 1000;
 export const SPORT_SLATE_ACTIVE_AFTER_COMMENCE_MS = {
@@ -27,7 +29,7 @@ export function isSportSlateActive(sport, {
 
   for (const g of allGames) {
     if (String(g?.sport || '').toUpperCase() !== sp) continue;
-    const raw = pinnacleHistory?.[sp]?.[g.key]?.commence
+    const raw = lookupPinnGame(pinnacleHistory, sp, g.key)?.commence
       || g.commence
       || g.commenceTime
       || null;

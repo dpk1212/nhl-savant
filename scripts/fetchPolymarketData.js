@@ -19,6 +19,7 @@ import {
   resolveUFCFighter,
   makeUFCGameKey,
   extractUFCFightersFromTitle,
+  resolveUFCScheduleKey,
   isMainUFCFightSlug,
   isUfcPolyOnlyWindow,
 } from './lib/ufcFighters.js';
@@ -697,13 +698,16 @@ async function loadTodaysSchedule(cbbMap) {
           const title = ev.title || ev.question || '';
           const pair = extractUFCFightersFromTitle(title);
           if (!pair) continue;
-          const gk = makeUFCGameKey(pair[0], pair[1]) || makeUFCGameKey(pair[1], pair[0]);
+          const gk = resolveUFCScheduleKey(validUFC, pair[0], pair[1]);
           if (!gk) {
             console.warn(`UFC Poly seed miss: "${title}" (${ev.slug})`);
             continue;
           }
+          // Odds API already has this fight under away_home — do not also
+          // seed title order or Poly/tape keys diverge (Pitbull vs Choi).
+          if (validUFC.has(gk)) continue;
           if (!isUfcPolyOnlyWindow(ev.startTime, nowMsSeed)) continue;
-          if (!validUFC.has(gk)) seeded++;
+          seeded++;
           validUFC.add(gk);
           if (ev.startTime && !commenceTimes[`UFC:${gk}`]) {
             commenceTimes[`UFC:${gk}`] = ev.startTime;

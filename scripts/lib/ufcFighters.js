@@ -95,6 +95,107 @@ export function makeUFCGameKey(a, b) {
 }
 
 /**
+ * Reverse a two-part UFC key (`patriciopitbull_doohochoi` → `doohochoi_patriciopitbull`).
+ * Poly titles use card order; Odds API / Pinnacle use away_home. Exactly one `_`.
+ */
+export function flipUFCGameKey(key) {
+  if (!key || typeof key !== 'string') return null;
+  const i = key.indexOf('_');
+  if (i <= 0 || i === key.length - 1) return null;
+  if (key.indexOf('_', i + 1) !== -1) return null;
+  const a = key.slice(0, i);
+  const b = key.slice(i + 1);
+  if (!a || !b || a === b) return null;
+  return `${b}_${a}`;
+}
+
+/**
+ * Prefer an Odds API / already-seeded UFC key when either order is present.
+ * Falls back to title order so DWCS/Apex poly-only fights still ingest.
+ */
+export function resolveUFCScheduleKey(validSet, fighterA, fighterB) {
+  const titleKey = makeUFCGameKey(fighterA, fighterB);
+  const flipKey = makeUFCGameKey(fighterB, fighterA);
+  if (titleKey && validSet?.has?.(titleKey)) return titleKey;
+  if (flipKey && validSet?.has?.(flipKey)) return flipKey;
+  return titleKey || flipKey || null;
+}
+
+function swapAwayHome(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const out = { ...obj };
+  if ('away' in obj || 'home' in obj) {
+    out.away = obj.home;
+    out.home = obj.away;
+  }
+  if ('awayLine' in obj || 'homeLine' in obj) {
+    out.awayLine = obj.homeLine;
+    out.homeLine = obj.awayLine;
+  }
+  if ('awayOdds' in obj || 'homeOdds' in obj) {
+    out.awayOdds = obj.homeOdds;
+    out.homeOdds = obj.awayOdds;
+  }
+  return out;
+}
+
+/** Remap a tape row so away/home match the caller's gameKey orientation. */
+export function remapUFCPinnSides(game) {
+  if (!game || typeof game !== 'object') return game;
+  const allBooks = {};
+  for (const [k, v] of Object.entries(game.allBooks || {})) {
+    allBooks[k] = swapAwayHome(v);
+  }
+  const allSpreadBooks = {};
+  if (game.allSpreadBooks && typeof game.allSpreadBooks === 'object') {
+    for (const [k, v] of Object.entries(game.allSpreadBooks)) {
+      allSpreadBooks[k] = swapAwayHome(v);
+    }
+  }
+  const dir = game.movement?.direction;
+  return {
+    ...game,
+    current: swapAwayHome(game.current),
+    opener: swapAwayHome(game.opener),
+    bestAway: game.bestHome,
+    bestHome: game.bestAway,
+    bestAwayBook: game.bestHomeBook,
+    bestHomeBook: game.bestAwayBook,
+    movement: game.movement ? {
+      ...game.movement,
+      away: game.movement.home,
+      home: game.movement.away,
+      direction: dir === 'away' ? 'home' : dir === 'home' ? 'away' : dir,
+    } : game.movement,
+    ev: game.ev ? { ...game.ev, away: game.ev.home, home: game.ev.away } : game.ev,
+    history: Array.isArray(game.history) ? game.history.map(swapAwayHome) : game.history,
+    spreadHistory: Array.isArray(game.spreadHistory) ? game.spreadHistory.map(swapAwayHome) : game.spreadHistory,
+    spreadCurrent: swapAwayHome(game.spreadCurrent),
+    spreadOpener: swapAwayHome(game.spreadOpener),
+    allBooks,
+    ...(game.allSpreadBooks ? { allSpreadBooks } : {}),
+    awayTeam: game.homeTeam,
+    homeTeam: game.awayTeam,
+  };
+}
+
+/**
+ * Exact pinnacle_history lookup, then UFC key-flip with sides remapped.
+ * Poly `Pitbull vs Choi` is `patriciopitbull_doohochoi`; Odds API stores
+ * `doohochoi_patriciopitbull`. Without the flip, fair/steam/lock miss the tape.
+ */
+export function lookupPinnGame(pinnacleHistory, sport, gameKey) {
+  if (!pinnacleHistory || !sport || !gameKey) return null;
+  const bucket = pinnacleHistory[sport];
+  if (!bucket || typeof bucket !== 'object') return null;
+  if (bucket[gameKey]) return bucket[gameKey];
+  if (String(sport).toUpperCase() !== 'UFC') return null;
+  const flip = flipUFCGameKey(gameKey);
+  if (!flip || !bucket[flip]) return null;
+  return remapUFCPinnSides(bucket[flip]);
+}
+
+/**
  * Parse fighters from a Polymarket / Odds-style UFC title.
  *   "UFC 329: Max Holloway vs. Conor McGregor (Welterweight, Main Card)"
  *   "Max Holloway vs. Conor McGregor"

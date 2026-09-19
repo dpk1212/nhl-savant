@@ -24,6 +24,7 @@ import {
   resolveUFCFighter,
   fightersMatch,
   isGradableUFCMainML,
+  lookupPinnGame,
 } from './lib/ufcFighters.js';
 import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
@@ -1351,7 +1352,7 @@ async function main() {
 
       // Fallback: look up line from pinnacle_history when stored line is null
       if (line == null && (pos.marketType === 'SPREAD' || pos.marketType === 'TOTAL')) {
-        const pinnFallback = pinnacleHistory?.[pos.sport]?.[pos.gameKey];
+        const pinnFallback = lookupPinnGame(pinnacleHistory, pos.sport, pos.gameKey);
         if (pinnFallback) {
           if (pos.marketType === 'SPREAD') {
             const sc = pinnFallback.spreadCurrent || pinnFallback.spreadOpener;
@@ -1376,7 +1377,7 @@ async function main() {
 
       // CLV: compare entry odds to closing pinnacle
       let clv = null, closingPinnacleOdds = null;
-      const pinnGame = pinnacleHistory?.[pos.sport]?.[pos.gameKey];
+      const pinnGame = lookupPinnGame(pinnacleHistory, pos.sport, pos.gameKey);
       if (pinnGame) {
         if (pos.marketType === 'ML') {
           closingPinnacleOdds = pos.side === 'away'

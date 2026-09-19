@@ -19,6 +19,7 @@ import { signedSpreadEntryLine } from './spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
 import { mergeFeaturedIntoAction } from './actionLockPin.js';
 import { rejectNonFullGameBoardPosition } from '../../scripts/lib/totalMarketFilter.js';
+import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
 import { BOARD_SPORT_SLUG, slugLeague, SOC_SLUG_LEAGUES } from './sportSlug.js';
 
 const SLUG_TO_SPORT = Object.fromEntries(
@@ -230,7 +231,7 @@ export function formatMarketLabel(marketType, entryLine) {
 }
 
 export function pinMoveFor(pinnacleHistory, sport, gameKey, side, steam = null) {
-  const g = pinnacleHistory?.[sport]?.[gameKey];
+  const g = lookupPinnGame(pinnacleHistory, sport, gameKey);
   const dir = g?.movement?.direction;
   if (dir && side) {
     if (dir === side) return 'with';
@@ -694,7 +695,7 @@ export function buildConfirmedActionRows({
     const sport = resolveActionSport(feedSport, pos);
     if (!actionSportMatches(sport, sportFilter)) continue;
     const polyGame = polyData?.[sport]?.[gameKey];
-    const pinnGame = pinnacleHistory?.[sport]?.[gameKey];
+    const pinnGame = lookupPinnGame(pinnacleHistory, sport, gameKey);
     const commenceMs = parseActionCommenceMs(
       pos.commenceTime,
       pos.commence,
