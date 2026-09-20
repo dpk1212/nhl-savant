@@ -12569,6 +12569,11 @@ export default function SharpFlow() {
                         })();
                         const pastT15Odds = commenceForOdds != null
                           && Date.now() >= commenceForOdds - (15 * 60 * 1000);
+                        // After first pitch/puck, live tape is in-play. Do not
+                        // recompute shop-best — leftover +1.5 Matchbook +430
+                        // is not the T-15 ticket.
+                        const gameStarted = commenceForOdds != null
+                          && Date.now() >= commenceForOdds;
                         // Never coerce missing odds to 0 — that rendered “Sox ML 0”.
                         const pickFiniteOdds = (v) => (
                           Number.isFinite(v) && v !== 0 ? v : null
@@ -12584,7 +12589,7 @@ export default function SharpFlow() {
                         // At T-15 the cron seal can lag a cycle. Paint shop-best
                         // immediately so the hero does not sit on vault 47.5
                         // then jump to lock 47 when v8_lockBestAtT15 lands.
-                        const t15LiveBest = (pastT15Odds && isT15BestLockLive(doc.date))
+                        const t15LiveBest = (pastT15Odds && !gameStarted && isT15BestLockLive(doc.date))
                           ? bestAvailableTicket({
                             pinnGame: lookupPinnGame(pinnacleHistory, docSport, doc.gameKey),
                             marketType: marketTypeKey,

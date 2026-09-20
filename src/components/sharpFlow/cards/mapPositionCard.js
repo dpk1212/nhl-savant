@@ -854,8 +854,9 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         line: stakedLine,
       });
     }
-    // Retail strip on the ticket line (allTotalBooks from snapshot; fallback best*).
-    {
+    // Past T-15: freeze snapshot only — live leftovers on the old main
+    // (Matchbook +430 after the board moved) must not become gold.
+    if (!sealed) {
       const allT = pinnGame.allTotalBooks || {};
       const prefer = SHOP_BOOK_PREFER;
       const keys = [
@@ -1022,7 +1023,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         line: stakedLine,
       });
     }
-    if (bestBook && Number.isFinite(bestOdds)
+    if (!sealed && bestBook && Number.isFinite(bestOdds)
         && (stakedLine == null || linesClose(best?.line, stakedLine))
         && !shopRailHidden(bestBook)) {
       books.push({
@@ -1032,7 +1033,9 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         line: best?.line ?? stakedLine,
       });
     }
-    {
+    // Past T-15: no live retail. In-play Matchbook still quoting +1.5 at
+    // +430 after the main moved to +4.5 was painting as gold (phi_nym).
+    if (!sealed) {
       const allS = pinnGame.allSpreadBooks || {};
       const prefer = SHOP_BOOK_PREFER;
       const keys = [
@@ -1163,10 +1166,29 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     books.length = 0;
     books.push(...shown);
   }
-  const gold = markGoldFromTicketBooks(books);
-  if (gold.bestOdds != null) {
-    bestOdds = gold.bestOdds;
-    bestBook = gold.bestBook;
+  if (!sealed) {
+    const gold = markGoldFromTicketBooks(books);
+    if (gold.bestOdds != null) {
+      bestOdds = gold.bestOdds;
+      bestBook = gold.bestBook;
+    }
+  } else {
+    // Locked hero = T-15 shop ticket, not live gold / leftover exchange.
+    const lockOdds = Number.isFinite(pick.odds) && pick.odds !== 0 ? Number(pick.odds) : null;
+    const lockBook = pick.book || null;
+    if (lockOdds != null) {
+      bestOdds = lockOdds;
+      bestBook = lockBook || bestBook;
+      const seen = new Set(books.map((b) => String(b.name || '').toLowerCase()));
+      if (lockBook && !seen.has(String(lockBook).toLowerCase())) {
+        books.push({
+          name: lockBook,
+          odds: lockOdds,
+          best: true,
+          line: stakedLine,
+        });
+      }
+    }
   }
 
   let updatedAgoSec = null;

@@ -63,4 +63,72 @@ assert.equal(chiFixture.pickLabel, 'Under 47');
 assert.equal(chiFixture.heroOdds, -114, 'hero stays on sealed T-15 juice');
 assert.ok(String(chiFixture.flaggedAtLabel || '').includes('47.5'), `vault 47.5 under hero, got ${chiFixture.flaggedAtLabel}`);
 
+{
+  // phi_nym 2026-09-20: in-play main moved to +4.5; Matchbook leftover
+  // +1.5 @ +430 was painting as locked gold. Hero must stay on T-15 FD.
+  const commence = Date.now() - (80 * 60 * 1000);
+  const freeze = commence - (15 * 60 * 1000);
+  const f = mapLockedPickToCardFixture({
+    key: '2026-09-20_MLB_phi_nym_spread:home',
+    sport: 'MLB',
+    gameKey: 'phi_nym',
+    marketType: 'spread',
+    side: 'home',
+    pickSide: 'home',
+    team: 'Mets',
+    line: 1.5,
+    odds: -122,
+    flaggedOdds: -117,
+    book: 'FanDuel',
+    oddsSource: 't15_best_available',
+    fairBook: 't15_best_available',
+    t15Sealed: true,
+    units: 3,
+    commenceMs: commence,
+    gameTime: commence,
+    status: 'PENDING',
+    away: 'Philadelphia Phillies',
+    home: 'New York Mets',
+  }, {
+    pinnacleHistory: {
+      MLB: {
+        phi_nym: {
+          commence: new Date(commence).toISOString(),
+          spreadCurrent: {
+            homeLine: 4.5, awayLine: -4.5, homeOdds: -125, awayOdds: 103, isMain: true,
+          },
+          fairSpreadBook: 'Pinnacle',
+          bestHomeSpread: { line: 4.5, odds: -135, book: 'DraftKings' },
+          allSpreadBooks: {
+            matchbook: {
+              away: -909, home: 430, awayLine: -1.5, homeLine: 1.5, name: 'Matchbook',
+            },
+            fanduel: {
+              away: 108, home: -144, awayLine: -4.5, homeLine: 4.5, name: 'FanDuel',
+            },
+            pinnacle: {
+              away: 103, home: -125, awayLine: -4.5, homeLine: 4.5, name: 'Pinnacle',
+            },
+          },
+          spreadHistory: [
+            {
+              t: Math.floor(freeze / 1000),
+              homeLine: 1.5, awayLine: -1.5, homeOdds: -121, awayOdds: 108, isMain: true,
+            },
+          ],
+        },
+      },
+    },
+  });
+  assert.equal(f.pickLabel, 'Mets +1.5');
+  assert.equal(f.heroOdds, -122, `pay ticket stays −122, got ${f.heroOdds}`);
+  assert.equal(f.bestOdds, -122, `gold chip stays −122, got ${f.bestOdds}`);
+  assert.ok(f.bestOdds !== 430, 'Matchbook leftover +430 must not be gold');
+  assert.notEqual(String(f.bestBook || '').toLowerCase(), 'matchbook');
+  assert.ok(
+    !((f.books || []).some((b) => Number(b.odds) === 430)),
+    'live leftover +430 must not sit on the frozen rail',
+  );
+}
+
 console.log('testT15SealedHero: ok');
