@@ -24,7 +24,6 @@ import { useSubscription } from '../../hooks/useSubscription';
 import { useMySharps } from '../../hooks/useMySharps';
 import MySharpsDesk from './MySharpsDesk.jsx';
 import {
-  buildMySharpsBoard,
   buildMySharpsRoster,
   collectRecentLegs,
   filterRowsToMySharps,
@@ -1620,6 +1619,14 @@ export default function ConfirmedActionDesk({
     [dated, mySharps.shorts],
   );
 
+  const allMineAnyDay = useMemo(
+    () => filterRowsToMySharps(
+      (rows || []).filter((r) => rowMatchesActionSport(r, sportFilter)),
+      mySharps.shorts,
+    ),
+    [rows, sportFilter, mySharps.shorts],
+  );
+
   const roster = useMemo(
     () => buildMySharpsRoster({ members: Object.fromEntries(mySharps.members.map((m) => [m.walletShort, m])) }, {
       walletProfiles,
@@ -1629,15 +1636,13 @@ export default function ConfirmedActionDesk({
     [mySharps.members, walletProfiles, dated, sportFilter],
   );
 
-  const board = useMemo(() => buildMySharpsBoard(allMine), [allMine]);
-
   const visible = useMemo(
     () => (deskMode === 'mine' ? [] : sortActionRows(dated, sortMode)),
     [deskMode, dated, sortMode],
   );
 
   const recentLegs = useMemo(
-    () => collectRecentLegs(walletProfiles, [...mySharps.shorts], { sportFilter }),
+    () => collectRecentLegs(walletProfiles, [...mySharps.shorts], { sportFilter, limit: 400 }),
     [walletProfiles, mySharps.shorts, sportFilter],
   );
 
@@ -1694,13 +1699,14 @@ export default function ConfirmedActionDesk({
         <MySharpsDesk
           ready={mySharps.ready}
           signedIn={!!user}
-          focusShort={focusShort}
-          onFocus={setFocusShort}
           roster={roster}
-          board={board}
+          walletProfiles={walletProfiles}
+          shorts={[...mySharps.shorts]}
           actionRows={allMine}
+          weekRows={allMineAnyDay}
           recentLegs={recentLegs}
-          onRemove={mySharps.remove}
+          dateKey={selectedDate}
+          todayKey={todayKey}
           isMobile={isMobile}
         />
       ) : (
