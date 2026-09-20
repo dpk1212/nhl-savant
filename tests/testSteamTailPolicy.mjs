@@ -10,6 +10,7 @@ import {
   isSteamTailPolicyLive,
   resolveSteamLifecycle,
   steamTailBand,
+  tapeHasSteamPct,
   STEAM_TAIL_POLICY_FROM,
   STEAM_TAIL_MUTED_BY,
   STEAM_TAIL_ARRIVING_FLOOR,
@@ -153,6 +154,41 @@ function T(args) {
 }
 {
   const r = applySteamTailPolicy({
+    units: 4, pickDate: '2026-08-31', steamObservable: true, steamPctObserved: false,
+    steamOnLock: false, sharpAB: true,
+  });
+  ok(r.action === 'FAIL_OPEN' && r.units === 4 && r.reason === 'steam_unmeasured', '4u unmeasured fail-open');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 5.4, pickDate: '2026-08-31', steamObservable: true, steamPctObserved: false,
+    steamOnLock: false, sharpAB: false,
+  });
+  ok(r.action === 'FAIL_OPEN' && r.units === 5.4 && r.reason === 'steam_unmeasured', 'fat unmeasured fail-open');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 4, pickDate: '2026-08-31', steamObservable: true, steamPctObserved: true,
+    steamOnLock: false, sharpAB: true,
+  });
+  ok(r.action === 'MUTE' && r.reason === 'unconfirmed_4u', '4u measured steam-off still mute');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 1, pickDate: '2026-08-31', steamObservable: true, steamPctObserved: false,
+    steamArriving: false, sharpAB: false,
+  });
+  ok(r.action === 'MUTE' && r.units === 0, '1u still cut when steam unmeasured');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 2, bandUnits: 4, pickDate: '2026-08-31',
+    steamObservable: true, steamPctObserved: false, steamOnLock: false, sharpAB: true,
+  });
+  ok(r.action === 'FAIL_OPEN' && r.units === 2 && r.reason === 'steam_unmeasured', 'halved 4u unmeasured fail-open');
+}
+{
+  const r = applySteamTailPolicy({
     units: 5.4, pickDate: '2026-08-30', steamObservable: true,
     steamOnLock: false, sharpAB: false,
   });
@@ -263,7 +299,34 @@ function T(args) {
     liveSnap: null,
     hasPinnGame: false,
   });
-  ok(r.action === 'FAIL_OPEN' && r.units === 5.4, 'from-ticket no pinn and no log fail-open fat');
+  ok(r.action === 'FAIL_OPEN' && r.units === 5.4 && r.reason === 'steam_unobserved', 'from-ticket no pinn and no log fail-open fat');
+}
+{
+  const r = applySteamTailPolicyFromTicket({
+    units: 5.4,
+    pickDate: '2026-08-31',
+    walletDetails: [],
+    existingLog: [{ gate: 'first', tier: null, fair: -110, evPct: 0 }],
+    liveSnap: { steam: { tier: null } },
+    hasPinnGame: true,
+  });
+  ok(r.action === 'FAIL_OPEN' && r.reason === 'steam_unmeasured', 'from-ticket pinn+log but no % fail-open fat');
+}
+{
+  const r = applySteamTailPolicyFromTicket({
+    units: 4,
+    pickDate: '2026-08-31',
+    walletDetails: [],
+    existingLog: [{ gate: 'first', tier: null, fair: -110, evPct: 0, sinceOpenPct: 0 }],
+    liveSnap: { steam: { tier: null, sinceOpenPct: 0 } },
+    hasPinnGame: true,
+  });
+  ok(r.action === 'MUTE' && r.reason === 'unconfirmed_4u', 'from-ticket 0% is measured steam-off mute');
+}
+{
+  ok(tapeHasSteamPct({ liveSnap: { steam: { lastHourPct: 1.2 } } }), 'live last-hour % is measured');
+  ok(tapeHasSteamPct({ existingLog: [{ sinceOpenPct: 0 }] }), 'log 0% is measured');
+  ok(!tapeHasSteamPct({ liveSnap: { steam: { tier: 'gold' } }, existingLog: [{}] }), 'tier alone is not a %');
 }
 
 console.log(`ok — ${n} assertions (steam-tail policy T)`);
