@@ -12,8 +12,10 @@
  *   5.4u+               → keep iff A/B steam on at lock
  *
  * Steam rules fail-open when we cannot observe steam (no tape log AND no
- * Pinnacle game this cycle). 1u cut does not need steam. Live Ev-drift mute
- * stays upstream. Manual stake exempt at the call site.
+ * Pinnacle game this cycle). 4u/fat also fail-open when the game is on the
+ * tape but this line never produced a since-open or last-hour % (unmeasured
+ * ≠ steam-off). 1u cut does not need steam. Live Ev-drift mute stays
+ * upstream. Manual stake exempt at the call site.
  */
 
 import { analyzeTicketTapeLog } from './ticketTapeCapture.js';
@@ -137,16 +139,33 @@ function pack({
   };
 }
 
+/** Finite since-open or last-hour % on the live snap or any tape-log row. 0 is a real reading (flat). */
+export function tapeHasSteamPct({ liveSnap = null, existingLog = null } = {}) {
+  const finitePct = (v) => {
+    if (v == null || v === '') return false;
+    return Number.isFinite(Number(v));
+  };
+  const steam = liveSnap?.steam || {};
+  if (finitePct(steam.sinceOpenPct) || finitePct(steam.lastHourPct)) return true;
+  if (finitePct(liveSnap?.sinceOpenPct) || finitePct(liveSnap?.lastHourPct)) return true;
+  for (const row of Array.isArray(existingLog) ? existingLog : []) {
+    if (finitePct(row?.sinceOpenPct) || finitePct(row?.lastHourPct)) return true;
+  }
+  return false;
+}
+
 /**
  * @param {object} args
  * @param {number} args.units current (post-climate) units
  * @param {number} [args.bandUnits] pre-shrink units for 4u/fat mute (climate/unlock)
  * @param {boolean} args.steamObservable tape log exists OR Pinnacle game this cycle
+ * @param {boolean} [args.steamPctObserved=true] this line produced a Pin % (0 = flat, still observed)
  */
 export function applySteamTailPolicy({
   units,
   pickDate = null,
   steamObservable = false,
+  steamPctObserved = true,
   steamOnLock = false,
   steamArriving = false,
   sharpAB = false,
@@ -209,6 +228,7 @@ export function applySteamTailPolicy({
   // Unconfirmed 4u / 5.4u+ — including climate-halved fat that now looks mid.
   if (muteBand === 'u4' || muteBand === 'fat') {
     if (!steamObservable) return hold('FAIL_OPEN', 'steam_unobserved');
+    if (!steamPctObserved) return hold('FAIL_OPEN', 'steam_unmeasured');
     if (abSteam) return hold('HOLD', 'steam_confirmed');
     return pack({
       units: 0,
@@ -271,6 +291,7 @@ export function applySteamTailPolicyFromTicket({
     units: pre,
     pickDate,
     steamObservable: logN > 0 || !!hasPinnGame,
+    steamPctObserved: tapeHasSteamPct({ liveSnap, existingLog }),
     steamOnLock: life.steamOnLock,
     steamArriving: life.steamArriving,
     sharpAB: ab.sharpAB,
