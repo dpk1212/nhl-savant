@@ -1582,6 +1582,14 @@ export default function ConfirmedActionDesk({
     setExpandedId(null);
   }, [sortMode, highMidOnly, sizedOnly, clearOnly, pinWithOnly, dateKey]);
 
+  useEffect(() => {
+    if (!focusShort) return;
+    if (!mySharps.shorts.has(focusShort)) {
+      setFocusShort(null);
+      setDeskScope('agg');
+    }
+  }, [focusShort, mySharps.shorts]);
+
   const { rows } = useMemo(
     () => buildConfirmedActionRows({
       sharpPositions,

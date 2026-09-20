@@ -358,18 +358,25 @@ function SkillCard({ r, on, isMobile, onSelect, onRemove }) {
         <button
           type="button"
           title="Remove from My Sharps"
-          onClick={onRemove}
+          aria-label={`Remove ${r.tag} from My Sharps`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove();
+          }}
           style={{
             border: 'none',
             background: 'transparent',
-            color: hover || on ? B.textMuted : B.textSubtle,
-            padding: isMobile ? '0.9rem 0.75rem 0' : '0 1rem',
+            color: hover || on ? B.textSec : B.textMuted,
+            padding: isMobile ? '0.85rem 0.85rem 0' : '0 1.05rem',
             cursor: 'pointer',
             display: 'grid',
             placeItems: 'center',
+            minWidth: 44,
+            minHeight: 44,
           }}
         >
-          <Trash2 size={14} />
+          <Trash2 size={15} />
         </button>
       </div>
       {isMobile && (books.length || (r.bookHonest?.text && r.bookHonest.text !== '—')) ? (
@@ -473,7 +480,13 @@ export default function MySharpsDesk({
                   onScope(same ? 'agg' : 'single');
                   onFocus(same ? null : r.walletShort);
                 }}
-                onRemove={() => onRemove(r.walletShort)}
+                onRemove={() => {
+                  if (focusShort === r.walletShort) {
+                    onScope('agg');
+                    onFocus(null);
+                  }
+                  onRemove?.(r.walletShort);
+                }}
               />
             ))}
           </div>
