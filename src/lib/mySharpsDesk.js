@@ -838,3 +838,14 @@ export function pickDeskMovers({ cards = [], tickets = [] } = {}) {
     list: [hot, book, live].filter(Boolean),
   };
 }
+
+/** Pick first: "Colts −6.5", not "SPREAD −6.5". */
+export function ticketPickLabel(t) {
+  const team = t?.team || '';
+  const raw = String(t?.marketLabel || '');
+  const num = raw.replace(/^(SPREAD|TOTAL|ML|O|U)\s*/i, '').trim();
+  if (team === 'Over' || team === 'Under') return num ? `${team} ${num}` : team;
+  if (String(t?.marketType || '').toUpperCase() === 'ML') return team || 'ML';
+  if (team && num) return `${team} ${num}`;
+  return team || raw || '—';
+}

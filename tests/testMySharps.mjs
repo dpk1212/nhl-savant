@@ -27,6 +27,7 @@ import {
   sortMySharpsRoster,
   sortRowsByRelativeSize,
   tailLean,
+  ticketPickLabel,
 } from '../src/lib/mySharpsDesk.js';
 
 assert.equal(fmtWalletTag('0xABC162937'), '··162937');
@@ -324,5 +325,9 @@ assert.equal(oneHot.hot.walletShort, 'e4ec62');
 assert.ok(!oneHot.book || oneHot.book.walletShort !== oneHot.hot.walletShort);
 assert.ok(!oneHot.live || !oneHot.list.filter((m) => m.role !== 'live').some((m) => m.walletShort === oneHot.live.walletShort));
 assert.equal(new Set(oneHot.list.map((m) => m.walletShort)).size, oneHot.list.length);
+
+assert.equal(ticketPickLabel({ team: 'Colts', marketType: 'SPREAD', marketLabel: 'SPREAD -6.5' }), 'Colts -6.5');
+assert.equal(ticketPickLabel({ team: 'Seahawks', marketType: 'ML', marketLabel: 'ML' }), 'Seahawks');
+assert.equal(ticketPickLabel({ team: 'Over', marketType: 'TOTAL', marketLabel: 'O 47.5' }), 'Over 47.5');
 
 console.log('testMySharps: ok');
