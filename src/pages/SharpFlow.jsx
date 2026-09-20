@@ -9739,6 +9739,8 @@ export default function SharpFlow() {
           polyData={polyData}
           sportFilter={sportFilter}
           isMobile={isMobile}
+          user={user}
+          isPremium={isPremium}
         />
       )}
 

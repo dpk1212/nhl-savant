@@ -3,7 +3,7 @@
  * Sparse header. Dense, scannable rows. No product lectures.
  */
 import React, { useEffect, useMemo, useState, memo } from 'react';
-import { Activity, ChevronDown } from 'lucide-react';
+import { Activity, ChevronDown, Star } from 'lucide-react';
 import {
   buildConfirmedActionRows,
   buildConfirmedActionMarquee,
@@ -19,6 +19,17 @@ import {
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import SteamTag from './cards/SteamTag';
 import { shortTeamNick } from '../../utils/teamIdentity.js';
+import { useAuth } from '../../hooks/useAuth';
+import { useSubscription } from '../../hooks/useSubscription';
+import { useMySharps } from '../../hooks/useMySharps';
+import MySharpsDesk from './MySharpsDesk.jsx';
+import {
+  buildMySharpsDashboard,
+  buildMySharpsRoster,
+  collectRecentLegs,
+  filterRowsToMySharps,
+  sortRowsByRelativeSize,
+} from '../../lib/mySharpsDesk.js';
 
 const B = {
   gold: '#D4AF37',
@@ -121,6 +132,7 @@ const deskUi = {
   clearOnly: false,
   pinWithOnly: false,
   dateKey: null,
+  deskMode: 'all',
 };
 
 const FlatSpark = memo(function FlatSpark({ points, width = 64, height = 20 }) {
@@ -1023,6 +1035,45 @@ function DateRail({ keys, selected, todayKey, onChange, isMobile }) {
   );
 }
 
+function DeskModeBar({ mode, onChange, mineCount = 0 }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'center', margin: '0.15rem 0 0.75rem',
+    }}>
+      <div style={{
+        display: 'inline-flex', padding: 3, borderRadius: 999,
+        border: `1px solid ${B.goldBorder}`, background: 'rgba(8,10,16,0.5)',
+      }}>
+        {[
+          { id: 'all', label: 'All Sharps' },
+          { id: 'mine', label: mineCount ? `My Sharps · ${mineCount}` : 'My Sharps' },
+        ].map((o) => {
+          const on = mode === o.id;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => onChange(o.id)}
+              style={{
+                ...T.tiny,
+                border: 'none',
+                background: on ? B.goldDim : 'transparent',
+                color: on ? B.gold : B.textMuted,
+                padding: '0.42rem 1.05rem',
+                borderRadius: 999,
+                cursor: 'pointer',
+                letterSpacing: '0.12em',
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const ActionTape = memo(function ActionTape({ items }) {
   if (!items?.length) return null;
   const renderRun = (prefix) => items.map((it, i) => (
@@ -1213,7 +1264,36 @@ function CellHistLine({ text }) {
   );
 }
 
-function ActionRow({ row, sportFilter = 'All', isMobile, expanded, onToggle }) {
+function SaveStar({ saved, onToggle, disabled }) {
+  return (
+    <button
+      type="button"
+      title={saved ? 'Remove from My Sharps' : 'Add to My Sharps'}
+      aria-pressed={saved}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!disabled) onToggle();
+      }}
+      style={{
+        border: 'none',
+        background: 'transparent',
+        padding: 0,
+        cursor: disabled ? 'default' : 'pointer',
+        display: 'grid',
+        placeItems: 'center',
+        color: saved ? B.gold : B.textSubtle,
+      }}
+    >
+      <Star size={14} fill={saved ? B.gold : 'none'} color={saved ? B.gold : B.textSubtle} />
+    </button>
+  );
+}
+
+function ActionRow({
+  row, sportFilter = 'All', isMobile, expanded, onToggle,
+  saved = false, onToggleSave, canSave = false,
+}) {
   const [hover, setHover] = useState(false);
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
   if (!rowMatchesActionSport(row, sportFilter)) return null;
@@ -1280,6 +1360,7 @@ function ActionRow({ row, sportFilter = 'All', isMobile, expanded, onToggle }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginBottom: '0.3rem' }}>
+                  <SaveStar saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
                   <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
                   <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
                 </div>
@@ -1343,6 +1424,7 @@ function ActionRow({ row, sportFilter = 'All', isMobile, expanded, onToggle }) {
         }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <SaveStar saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
               <span style={{
                 ...T.tiny, color: sportColor(row.sport),
                 padding: '0.12rem 0.38rem', borderRadius: '4px',
@@ -1413,6 +1495,8 @@ export default function ConfirmedActionDesk({
   polyData = null,
   sportFilter = 'All',
   isMobile = false,
+  user: userProp = null,
+  isPremium: premiumProp = null,
 }) {
   const [sortMode, setSortModeState] = useState(deskUi.sortMode);
   const [highMidOnly, setHighMidOnlyState] = useState(deskUi.highMidOnly);
@@ -1420,8 +1504,18 @@ export default function ConfirmedActionDesk({
   const [clearOnly, setClearOnlyState] = useState(deskUi.clearOnly);
   const [pinWithOnly, setPinWithOnlyState] = useState(deskUi.pinWithOnly);
   const [dateKey, setDateKeyState] = useState(deskUi.dateKey);
+  const [deskMode, setDeskModeState] = useState(deskUi.deskMode);
   const [cellStatsTable, setCellStatsTable] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [deskCollapsed, setDeskCollapsed] = useState(false);
+  const [deskScope, setDeskScope] = useState('agg');
+  const [deskSection, setDeskSection] = useState('action');
+  const [focusShort, setFocusShort] = useState(null);
+  const auth = useAuth();
+  const user = userProp ?? auth.user;
+  const sub = useSubscription(premiumProp == null ? user : null);
+  const isPremium = premiumProp == null ? sub.isPremium : premiumProp;
+  const mySharps = useMySharps({ user, isPremium });
 
   const setSortMode = (next) => {
     const value = typeof next === 'function' ? next(deskUi.sortMode) : next;
@@ -1452,6 +1546,11 @@ export default function ConfirmedActionDesk({
     const value = typeof next === 'function' ? next(deskUi.dateKey) : next;
     deskUi.dateKey = value;
     setDateKeyState(value);
+  };
+  const setDeskMode = (next) => {
+    const value = typeof next === 'function' ? next(deskUi.deskMode) : next;
+    deskUi.deskMode = value;
+    setDeskModeState(value);
   };
 
   useEffect(() => {
@@ -1486,18 +1585,60 @@ export default function ConfirmedActionDesk({
   const dateKeys = actionDateKeys(nowMs);
   const selectedDate = dateKeys.includes(dateKey) ? dateKey : todayKey;
 
-  const visible = useMemo(() => {
+  const dated = useMemo(() => {
     const filtered = filterActionRows(rows, {
       sport: sportFilter,
-      highMidOnly,
-      sizedOnly,
-      clearOnly,
-      pinWithOnly,
+      highMidOnly: deskMode === 'mine' ? false : highMidOnly,
+      sizedOnly: deskMode === 'mine' ? false : sizedOnly,
+      clearOnly: deskMode === 'mine' ? false : clearOnly,
+      pinWithOnly: deskMode === 'mine' ? false : pinWithOnly,
       dateKey: selectedDate,
       nowMs: Date.now(),
     }).filter((r) => rowMatchesActionSport(r, sportFilter));
-    return sortActionRows(filtered, sortMode);
-  }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, sortMode, selectedDate]);
+    return filtered;
+  }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, selectedDate, deskMode]);
+
+  const mineDated = useMemo(
+    () => filterRowsToMySharps(dated, mySharps.shorts, deskScope === 'single' ? focusShort : null),
+    [dated, mySharps.shorts, deskScope, focusShort],
+  );
+
+  const visible = useMemo(() => {
+    if (deskMode === 'mine') {
+      const list = deskSection === 'sized'
+        ? mineDated.filter((r) => (Number(r.displaySizeRatio ?? r.sizeRatio) || 0) >= 1.5)
+        : mineDated;
+      return sortRowsByRelativeSize(list);
+    }
+    return sortActionRows(dated, sortMode);
+  }, [deskMode, mineDated, dated, sortMode, deskSection]);
+
+  const roster = useMemo(
+    () => buildMySharpsRoster( { members: Object.fromEntries(mySharps.members.map((m) => [m.walletShort, m])) }, {
+      walletProfiles,
+      actionRows: dated,
+      sportFilter,
+    }),
+    [mySharps.members, walletProfiles, dated, sportFilter],
+  );
+
+  const recentLegs = useMemo(
+    () => collectRecentLegs(walletProfiles, [...mySharps.shorts], {
+      sportFilter,
+      focusShort: deskScope === 'single' ? focusShort : null,
+    }),
+    [walletProfiles, mySharps.shorts, sportFilter, deskScope, focusShort],
+  );
+
+  const dash = useMemo(
+    () => buildMySharpsDashboard({
+      roster,
+      actionRows: mineDated,
+      recentLegs,
+      focusShort: deskScope === 'single' ? focusShort : null,
+    }),
+    [roster, mineDated, recentLegs, deskScope, focusShort],
+  );
 
   const marquee = useMemo(() => buildConfirmedActionMarquee(visible), [visible]);
 
@@ -1510,7 +1651,7 @@ export default function ConfirmedActionDesk({
   }
 
   const browsingAll = !sportFilter || sportFilter === 'All' || sportFilter === 'ALL';
-  if (rows.length === 0 && browsingAll) {
+  if (rows.length === 0 && browsingAll && deskMode !== 'mine') {
     return (
       <div style={{
         textAlign: 'center', padding: '3rem 1.5rem', borderRadius: '12px',
@@ -1538,9 +1679,35 @@ export default function ConfirmedActionDesk({
           isMobile={isMobile}
         />
       )}
+      <DeskModeBar
+        mode={deskMode}
+        onChange={setDeskMode}
+        mineCount={mySharps.count}
+      />
       <ActionTape items={marquee} />
 
-      {/* Compact toolbar only — no manifesto, no filler stats */}
+      {deskMode === 'mine' ? (
+        <MySharpsDesk
+          ready={mySharps.ready}
+          signedIn={!!user}
+          collapsed={deskCollapsed}
+          onToggleCollapse={() => setDeskCollapsed((v) => !v)}
+          scope={deskScope}
+          onScope={(id) => {
+            setDeskScope(id);
+            if (id === 'agg') setFocusShort(null);
+          }}
+          focusShort={focusShort}
+          onFocus={setFocusShort}
+          section={deskSection}
+          onSection={setDeskSection}
+          roster={roster}
+          dash={dash}
+          onRemove={mySharps.remove}
+          cap={mySharps.cap}
+          isMobile={isMobile}
+        />
+      ) : (
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center',
         marginBottom: '0.85rem',
@@ -1563,18 +1730,23 @@ export default function ConfirmedActionDesk({
           {sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL' ? ` · ${sportFilter}` : ''}
         </span>
       </div>
+      )}
 
-      {visible.length === 0 ? (
+      {visible.length === 0 && !(deskMode === 'mine' && !mySharps.ready) ? (
         <div style={{ ...T.body, color: B.textMuted, padding: '1.5rem', textAlign: 'center' }}>
-          {selectedDate !== todayKey
-            ? `No tickets ${formatActionDateChip(selectedDate, todayKey)}.`
-            : (sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
-              ? `No ${sportFilter} tickets match these filters.`
-              : 'Nothing matches these filters.')}
+          {deskMode === 'mine'
+            ? (mySharps.count
+              ? `None of your sharps are on ${formatActionDateChip(selectedDate, todayKey)}.`
+              : 'Star wallets on All Sharps to fill this board.')
+            : (selectedDate !== todayKey
+              ? `No tickets ${formatActionDateChip(selectedDate, todayKey)}.`
+              : (sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
+                ? `No ${sportFilter} tickets match these filters.`
+                : 'Nothing matches these filters.'))}
         </div>
-      ) : (
+      ) : visible.length === 0 ? null : (
         <div
-          key={`${sportFilter || 'All'}:${selectedDate}`}
+          key={`${sportFilter || 'All'}:${selectedDate}:${deskMode}`}
           data-action-list={sportFilter || 'All'}
           style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
         >
@@ -1586,6 +1758,9 @@ export default function ConfirmedActionDesk({
               isMobile={isMobile}
               expanded={expandedId === r.id}
               onToggle={() => setExpandedId((cur) => (cur === r.id ? null : r.id))}
+              saved={mySharps.isSaved(r.walletShort)}
+              canSave={mySharps.ready}
+              onToggleSave={() => mySharps.toggleRow(r)}
             />
           ))}
         </div>
