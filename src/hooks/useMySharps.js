@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import {
@@ -39,6 +39,8 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
   const uid = user?.uid || null;
   const [state, setState] = useState(() => readCache(uid));
   const [loading, setLoading] = useState(!!uid);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   useEffect(() => {
     if (!uid) {
@@ -72,27 +74,31 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     if (!uid || !isPremium) return { ok: false, reason: 'auth' };
     const member = memberFromActionRow(row);
     if (!member) return { ok: false, reason: 'id' };
-    if (state.members[member.walletShort]) return { ok: true, already: true };
-    if (!canAddMySharp(state)) return { ok: false, reason: 'cap' };
-    await persist(toggleMySharpMember(state, member));
+    const cur = stateRef.current;
+    if (cur.members[member.walletShort]) return { ok: true, already: true };
+    if (!canAddMySharp(cur)) return { ok: false, reason: 'cap' };
+    await persist(toggleMySharpMember(cur, member));
     return { ok: true };
-  }, [uid, isPremium, persist, state]);
+  }, [uid, isPremium, persist]);
 
   const remove = useCallback(async (short) => {
     const id = normalizeWalletShort(short);
-    if (!id || !state.members[id]) return;
-    await persist(toggleMySharpMember(state, { walletShort: id }, { remove: true }));
-  }, [persist, state]);
+    if (!id) return { ok: false, reason: 'id' };
+    const cur = stateRef.current;
+    if (!cur.members[id]) return { ok: true, already: true };
+    await persist(toggleMySharpMember(cur, { walletShort: id }, { remove: true }));
+    return { ok: true, removed: true };
+  }, [persist]);
 
   const toggleRow = useCallback(async (row) => {
     const id = normalizeWalletShort(row?.walletShort);
     if (!id) return { ok: false, reason: 'id' };
-    if (state.members[id]) {
+    if (stateRef.current.members[id]) {
       await remove(id);
       return { ok: true, removed: true };
     }
     return addFromRow(row);
-  }, [addFromRow, remove, state.members]);
+  }, [addFromRow, remove]);
 
   const members = useMemo(() => listMySharps(state), [state]);
   const shorts = useMemo(() => mySharpsShortSet(state), [state]);

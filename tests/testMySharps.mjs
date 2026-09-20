@@ -48,6 +48,15 @@ assert.equal(mySharpsShortSet(state).has('162937'), true);
 state = toggleMySharpMember(state, member);
 assert.equal(mySharpsShortSet(state).has('162937'), false);
 
+state = toggleMySharpMember(state, member);
+state = toggleMySharpMember(state, { walletShort: 'e4ec62', addedAt: 2 });
+assert.equal(mySharpsShortSet(state).size, 2);
+state = toggleMySharpMember(state, { walletShort: '162937' }, { remove: true });
+assert.equal(mySharpsShortSet(state).has('162937'), false);
+assert.equal(mySharpsShortSet(state).has('e4ec62'), true);
+state = toggleMySharpMember(state, { walletShort: 'e4ec62' }, { remove: true });
+assert.equal(mySharpsShortSet(state).size, 0);
+
 const parsed = parseMySharpsDoc({
   mySharps: {
     updatedAt: 1,
