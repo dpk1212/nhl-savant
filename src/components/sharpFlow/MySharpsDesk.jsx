@@ -1,6 +1,6 @@
 /**
- * My Sharps — one number, the live book, then the people.
- * Fey / Monarch: no label farm, no twin KPIs, gold only on live $.
+ * My Sharps control dashboard.
+ * WSJ quote + Apple Fitness metric panel + MacroFactor person cards + the live book.
  */
 import React, { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
@@ -16,7 +16,9 @@ const B = {
   goldSoft: '#E8D28A',
   green: '#10B981',
   red: '#EF4444',
-  line: 'rgba(255,255,255,0.06)',
+  panel: '#151923',
+  line: '#252B3B',
+  hair: 'rgba(255,255,255,0.06)',
   text: '#F8FAFC',
   textSec: '#94A3B8',
   textMuted: '#64748B',
@@ -25,15 +27,23 @@ const B = {
 
 const T = {
   display: {
-    fontSize: '2.6rem',
+    fontSize: '2.55rem',
     fontWeight: 700,
     lineHeight: 0.95,
     letterSpacing: '-0.05em',
     fontFeatureSettings: "'tnum'",
     fontVariantNumeric: 'tabular-nums',
   },
+  metric: {
+    fontSize: '1.45rem',
+    fontWeight: 700,
+    lineHeight: 1.05,
+    letterSpacing: '-0.03em',
+    fontFeatureSettings: "'tnum'",
+    fontVariantNumeric: 'tabular-nums',
+  },
   pick: {
-    fontSize: '1.02rem',
+    fontSize: '1rem',
     fontWeight: 650,
     lineHeight: 1.2,
     letterSpacing: '-0.02em',
@@ -42,11 +52,18 @@ const T = {
     fontSize: '0.92rem',
     fontWeight: 650,
     lineHeight: 1.2,
-    letterSpacing: '-0.02em',
+    letterSpacing: '-0.015em',
     fontFeatureSettings: "'tnum'",
   },
-  body: { fontSize: '0.86rem', fontWeight: 500, lineHeight: 1.45 },
-  meta: { fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.4 },
+  label: {
+    fontSize: '0.68rem',
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: B.textMuted,
+  },
+  body: { fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.4 },
+  meta: { fontSize: '0.74rem', fontWeight: 500, lineHeight: 1.35 },
 };
 
 function fmtVol(v, { signed = true } = {}) {
@@ -80,14 +97,49 @@ function recentText(r) {
   return null;
 }
 
-function sportLine(sports) {
-  return (sports || []).filter((s) => s.pct >= 8).map((s) => s.sport);
+function Spark({ points, width = 220, height = 48, up, color }) {
+  if (!points || points.length < 3) return null;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+  const pad = 2;
+  const xStep = (width - pad * 2) / (points.length - 1);
+  const yH = height - pad * 2;
+  const pts = points.map((v, i) => ({
+    x: pad + i * xStep,
+    y: pad + yH - ((v - min) / range) * yH,
+  }));
+  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) d += ` L${pts[i].x.toFixed(1)},${pts[i].y.toFixed(1)}`;
+  const stroke = color || (up ? B.green : B.red);
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden style={{ display: 'block' }}>
+      <path d={d} fill="none" stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AllocBar({ sports }) {
+  const list = (sports || []).filter((s) => s.pct >= 4);
+  if (!list.length) return null;
+  return (
+    <div>
+      <div style={{ display: 'flex', height: 4, gap: 3, marginBottom: 8 }}>
+        {list.map((s) => (
+          <div key={s.sport} style={{ flex: Math.max(s.pct, 6), background: B.gold, opacity: 0.35 + (s.pct / 150) }} />
+        ))}
+      </div>
+      <div style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+        {list.map((s) => `${s.sport} ${s.pct}%`).join('   ')}
+      </div>
+    </div>
+  );
 }
 
 function LockedState({ signedIn }) {
   return (
-    <div style={{ padding: '3.4rem 0 2.6rem' }}>
-      <div style={{ ...T.display, fontSize: '1.45rem', color: B.text, marginBottom: 10 }}>
+    <div style={{ padding: '3rem 0 2.4rem' }}>
+      <div style={{ ...T.display, fontSize: '1.4rem', color: B.text, marginBottom: 10 }}>
         {signedIn ? 'Star the wallets you trust.' : 'Sign in to keep a desk.'}
       </div>
       <div style={{ ...T.body, color: B.textMuted }}>
@@ -99,118 +151,154 @@ function LockedState({ signedIn }) {
 
 function EmptyState() {
   return (
-    <div style={{ padding: '3.4rem 0 2.6rem' }}>
-      <div style={{ ...T.display, fontSize: '1.45rem', color: B.text, marginBottom: 10 }}>
-        Nobody on the desk
-      </div>
+    <div style={{ padding: '3rem 0 2.4rem' }}>
+      <div style={{ ...T.display, fontSize: '1.4rem', color: B.text, marginBottom: 10 }}>Nobody on the desk</div>
       <div style={{ ...T.body, color: B.textMuted }}>Switch to All Sharps and star a wallet.</div>
     </div>
   );
 }
 
-function Hero({ pulse, focused, window, onWindow, onClear, onFilter, filter, isMobile }) {
-  const hero = pulse.hero || {};
-  const pnl = hero.hasPnl ? hero.pnl : null;
-  const num = hero.hasPnl
-    ? fmtVol(pnl)
-    : (hero.honest?.record && hero.honest.record !== '—' ? hero.honest.record : '—');
-  const tone = hero.hasPnl
-    ? (pnl > 0 ? B.green : pnl < 0 ? B.red : B.text)
-    : B.text;
-  const rec = hero.hasPnl && hero.honest?.text && hero.honest.text !== '—'
-    ? hero.honest.text
-    : null;
-  const sports = sportLine(pulse.sports);
-  const liveBits = [];
-  if (pulse.open?.n) liveBits.push(`${pulse.open.n} live · ${fmtVol(pulse.open.invested, { signed: false })}`);
-  else liveBits.push('Quiet slate');
-  if (pulse.canOverlap && pulse.fightN > 0) liveBits.push(`${pulse.fightN} vs field`);
-  else if (pulse.canOverlap && pulse.agreeN > 0) liveBits.push(`${pulse.agreeN} together`);
-  if (sports.length > 1) liveBits.push(sports.join(' · '));
-
+function Cell({ label, value, tone, sub, onClick, active }) {
   return (
-    <div style={{ padding: isMobile ? '0.15rem 0 1.8rem' : '0.2rem 0 2.1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 18, marginBottom: 18 }}>
-        {focused ? (
-          <button
-            type="button"
-            onClick={onClear}
-            style={{
-              border: 'none', background: 'transparent', padding: 0,
-              color: B.textMuted, cursor: 'pointer', ...T.meta,
-            }}
-          >
-            All
-          </button>
-        ) : null}
-        {['recent', 'l30'].map((id) => {
-          const on = window === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onWindow(id)}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                padding: 0,
-                cursor: 'pointer',
-                color: on ? B.text : B.textFaint,
-                ...T.meta,
-                fontWeight: on ? 650 : 500,
-              }}
-            >
-              {id === 'l30' ? 'L30' : 'Recent'}
-            </button>
-          );
-        })}
-      </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      style={{
+        border: 'none',
+        background: 'transparent',
+        padding: '0.85rem 0.2rem',
+        textAlign: 'left',
+        cursor: onClick ? 'pointer' : 'default',
+        minWidth: 0,
+        opacity: active === false ? 0.55 : 1,
+      }}
+    >
+      <div style={T.label}>{label}</div>
+      <div style={{ ...T.metric, color: tone || B.text, marginTop: 8 }}>{value}</div>
+      {sub ? (
+        <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'" }}>{sub}</div>
+      ) : null}
+    </button>
+  );
+}
 
-      <div style={{ ...T.display, color: tone, fontSize: isMobile ? '2.1rem' : '2.7rem' }}>
-        {focused ? <span style={{ ...T.name, color: B.textSec, display: 'block', marginBottom: 10 }}>{focused.tag}</span> : null}
-        {num}
-      </div>
-      <div style={{ ...T.body, color: B.textMuted, marginTop: 10, fontFeatureSettings: "'tnum'" }}>
-        {rec || (window === 'recent' ? 'Recent book' : 'Last 30')}
-      </div>
-      <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
-        <button
-          type="button"
+function DeskPanel({ pulse, filter, onFilter, isMobile }) {
+  const l30 = pulse.l30;
+  const recent = pulse.recent;
+  const open = pulse.open || {};
+  const l30Tone = Number.isFinite(l30?.pnl) ? (l30.pnl >= 0 ? B.green : B.red) : B.text;
+  return (
+    <div style={{
+      background: B.panel,
+      border: `1px solid ${B.line}`,
+      borderRadius: 16,
+      padding: isMobile ? '0.85rem 1rem 0.55rem' : '0.95rem 1.25rem 0.65rem',
+    }}>
+      <div style={{ ...T.label, marginBottom: 4 }}>Desk</div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        columnGap: isMobile ? 12 : 28,
+      }}>
+        <Cell
+          label="L30"
+          value={Number.isFinite(l30?.pnl) ? fmtVol(l30.pnl) : (l30?.honest?.record || '—')}
+          tone={l30Tone}
+          sub={l30?.honest?.text && Number.isFinite(l30?.pnl) ? l30.honest.text : null}
+        />
+        <Cell
+          label="Open"
+          value={open.n ? fmtVol(open.invested, { signed: false }) : 'Quiet'}
+          tone={open.n ? B.goldSoft : B.textFaint}
+          sub={open.n ? `${open.n} tickets` : null}
           onClick={() => onFilter(null)}
-          style={{
-            border: 'none', background: 'transparent', padding: 0, cursor: 'pointer',
-            color: !filter ? B.goldSoft : B.textSec, font: 'inherit', fontFeatureSettings: "'tnum'",
-          }}
-        >
-          {liveBits[0]}
-        </button>
-        {liveBits.slice(1).map((bit, i) => {
-          const fight = bit.includes('vs field');
-          const together = bit.includes('together');
-          return (
-            <span key={bit}>
-              <span style={{ color: B.textFaint }}>  ·  </span>
-              <button
-                type="button"
-                onClick={() => {
-                  if (fight) onFilter(filter === 'fight' ? null : 'fight');
-                  else if (together) onFilter(filter === 'agree' ? null : 'agree');
-                }}
-                style={{
-                  border: 'none', background: 'transparent', padding: 0,
-                  cursor: (fight || together) ? 'pointer' : 'default',
-                  color: (fight && filter === 'fight') || (together && filter === 'agree')
-                    ? B.goldSoft
-                    : B.textSec,
-                  font: 'inherit',
-                  fontFeatureSettings: "'tnum'",
-                }}
-              >
-                {bit}
-              </button>
-            </span>
-          );
-        })}
+          active={!filter}
+        />
+        <Cell
+          label="Recent"
+          value={recent?.honest?.record && recent.honest.record !== '—' ? recent.honest.record : '—'}
+          sub={Number.isFinite(recent?.pnl) ? fmtVol(recent.pnl) : null}
+        />
+        <Cell
+          label="Field"
+          value={pulse.canOverlap ? `${pulse.fightN || 0} vs` : '—'}
+          tone={pulse.fightN ? B.red : B.textSec}
+          sub={pulse.canOverlap ? `${pulse.agreeN || 0} together` : 'Need 2+ wallets'}
+          onClick={pulse.canOverlap ? () => onFilter(filter === 'fight' ? null : 'fight') : null}
+          active={filter === 'fight'}
+        />
+      </div>
+      {pulse.sports?.length ? (
+        <div style={{ padding: '0.35rem 0.2rem 0.85rem', borderTop: `1px solid ${B.hair}` }}>
+          <div style={{ ...T.label, marginBottom: 10 }}>Sports</div>
+          <AllocBar sports={pulse.sports} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PersonCard({ r, on, onFocus, onRemove, isMobile }) {
+  const spark = r.spark || r.form?.spark;
+  const up = Number.isFinite(r.l30?.pnl) ? r.l30.pnl >= 0 : (spark ? spark[spark.length - 1] >= 0 : true);
+  const rec = recentText(r);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onFocus(r.walletShort)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onFocus(r.walletShort);
+        }
+      }}
+      style={{
+        position: 'relative',
+        background: B.panel,
+        border: `1px solid ${on ? 'rgba(212,175,55,0.45)' : B.line}`,
+        borderRadius: 16,
+        padding: isMobile ? '1rem 1.05rem 1rem' : '1.1rem 1.2rem 1.05rem',
+        cursor: 'pointer',
+      }}
+    >
+      <button
+        type="button"
+        aria-label={`Remove ${r.tag}`}
+        onClick={(e) => { e.stopPropagation(); onRemove(r.walletShort); }}
+        style={{
+          position: 'absolute', top: 10, right: 10,
+          border: 'none', background: 'transparent', color: B.textFaint,
+          cursor: 'pointer', width: 26, height: 26, display: 'grid', placeItems: 'center',
+        }}
+      >
+        <X size={13} />
+      </button>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, paddingRight: 22 }}>
+        <div style={{ ...T.name, color: B.text }}>{r.tag}</div>
+        <div style={{ ...T.meta, color: B.textMuted }}>{r.lean?.label || 'Watch'}</div>
+        <div style={{ ...T.meta, color: B.textFaint }}>{r.focusSport || r.sports?.[0] || ''}</div>
+      </div>
+      {spark ? (
+        <div style={{ margin: '14px 0 12px' }}>
+          <Spark points={spark} width={260} height={44} up={up} />
+        </div>
+      ) : (
+        <div style={{ height: 20 }} />
+      )}
+      <div style={{
+        ...T.metric,
+        fontSize: '1.35rem',
+        color: Number.isFinite(r.l30?.pnl) ? (r.l30.pnl >= 0 ? B.green : B.red) : B.textFaint,
+      }}
+      >
+        {Number.isFinite(r.l30?.pnl) ? fmtVol(r.l30.pnl) : (r.l30Honest?.text || '—')}
+      </div>
+      <div style={{ ...T.meta, color: B.textMuted, marginTop: 7, fontFeatureSettings: "'tnum'" }}>
+        {r.l30Honest?.text && r.l30Honest.text !== '—' ? r.l30Honest.text : 'Thin book'}
+        {rec ? `  ·  ${rec} recent` : ''}
+        {r.openN ? `  ·  ${r.openN} live` : ''}
       </div>
     </div>
   );
@@ -222,14 +310,14 @@ function Ticket({ t, onFocus, isMobile }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : 'minmax(0, 1.5fr) minmax(0, 1fr) auto',
-      gap: isMobile ? 10 : 20,
+      gap: 14,
       alignItems: 'baseline',
-      padding: '0.95rem 0',
-      borderBottom: `1px solid ${B.line}`,
+      padding: '0.85rem 0.15rem',
+      borderBottom: `1px solid ${B.hair}`,
     }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ ...T.pick, color: B.text }}>{ticketPickLabel(t)}</div>
-        <div style={{ ...T.meta, color: B.textFaint, marginTop: 5 }}>
+        <div style={{ ...T.meta, color: B.textFaint, marginTop: 4 }}>
           {t.sport ? `${t.sport} · ` : ''}{matchup(t)}
         </div>
       </div>
@@ -252,90 +340,10 @@ function Ticket({ t, onFocus, isMobile }) {
       )}
       <div style={{ textAlign: 'right' }}>
         <div style={{ ...T.name, color: B.goldSoft }}>{fmtVol(t.invested, { signed: false })}</div>
-        <div style={{ ...T.meta, color: note?.tone || B.textFaint, marginTop: 5 }}>
-          {isMobile ? t.tags.join('  ') : null}
-          {isMobile && note ? '  ·  ' : ''}
+        <div style={{ ...T.meta, color: note?.tone || B.textFaint, marginTop: 4 }}>
           {note?.text || ''}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Person({ r, on, onFocus, onRemove }) {
-  const rec = recentText(r);
-  const [hover, setHover] = useState(false);
-  const meta = [
-    r.focusSport || r.sports?.[0],
-    r.lean?.label,
-    rec,
-    r.openN ? `${r.openN} live` : null,
-  ].filter(Boolean).join('  ·  ');
-
-  return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'baseline',
-        justifyContent: 'space-between',
-        gap: 16,
-        padding: '0.9rem 1.6rem 0.9rem 0',
-        borderBottom: `1px solid ${B.line}`,
-        background: on ? 'rgba(212,175,55,0.05)' : 'transparent',
-      }}
-    >
-      <button
-        type="button"
-        onClick={() => onFocus(r.walletShort)}
-        style={{
-          border: 'none', background: 'transparent', padding: 0,
-          textAlign: 'left', cursor: 'pointer', minWidth: 0, flex: 1,
-        }}
-      >
-        <div style={{ ...T.name, color: B.text }}>{r.tag}</div>
-        <div style={{ ...T.meta, color: B.textFaint, marginTop: 5, fontFeatureSettings: "'tnum'" }}>{meta}</div>
-      </button>
-      <button
-        type="button"
-        onClick={() => onFocus(r.walletShort)}
-        style={{
-          border: 'none', background: 'transparent', padding: 0,
-          textAlign: 'right', cursor: 'pointer',
-        }}
-      >
-        <div style={{
-          ...T.name,
-          color: Number.isFinite(r.l30?.pnl)
-            ? (r.l30.pnl >= 0 ? B.green : B.red)
-            : B.textFaint,
-        }}
-        >
-          {Number.isFinite(r.l30?.pnl) ? fmtVol(r.l30.pnl) : (r.l30Honest?.text || '—')}
-        </div>
-      </button>
-      <button
-        type="button"
-        aria-label={`Remove ${r.tag}`}
-        onClick={(e) => { e.stopPropagation(); onRemove(r.walletShort); }}
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: -4,
-          border: 'none',
-          background: 'transparent',
-          color: hover || on ? B.textMuted : 'transparent',
-          cursor: 'pointer',
-          width: 24,
-          height: 24,
-          display: 'grid',
-          placeItems: 'center',
-        }}
-      >
-        <X size={13} />
-      </button>
     </div>
   );
 }
@@ -381,6 +389,17 @@ export default function MySharpsDesk({
   if (!roster.length) return <EmptyState />;
 
   const focused = focusShort ? roster.find((r) => r.walletShort === focusShort) : null;
+  const hero = pulse.hero || {};
+  const pnl = hero.hasPnl ? hero.pnl : null;
+  const heroNum = hero.hasPnl
+    ? fmtVol(pnl)
+    : (hero.honest?.record && hero.honest.record !== '—' ? hero.honest.record : '—');
+  const heroTone = hero.hasPnl ? (pnl > 0 ? B.green : pnl < 0 ? B.red : B.text) : B.text;
+  const heroSpark = focused?.spark || focused?.form?.spark;
+  const sparkUp = Number.isFinite(focused?.l30?.pnl)
+    ? focused.l30.pnl >= 0
+    : (heroSpark ? heroSpark[heroSpark.length - 1] >= 0 : true);
+
   const setFocus = (short) => {
     if (!short) {
       onFocus?.(null);
@@ -390,31 +409,68 @@ export default function MySharpsDesk({
   };
 
   return (
-    <div style={{ margin: '0.15rem 0 2.8rem' }}>
-      <Hero
-        pulse={pulse}
-        focused={focused}
-        window={pulseWindow}
-        onWindow={setPulseWindow}
-        onClear={() => onFocus?.(null)}
-        onFilter={setFilter}
-        filter={filter}
-        isMobile={isMobile}
-      />
-
-      <div>
-        {tickets.length ? tickets.map((t) => (
-          <Ticket key={t.id} t={t} onFocus={setFocus} isMobile={isMobile} />
-        )) : (
-          <div style={{ ...T.body, color: B.textMuted, padding: '0.4rem 0 0.2rem' }}>
-            None of yours are on this slate.
-          </div>
-        )}
+    <div style={{ margin: '0.2rem 0 2.8rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginBottom: 14 }}>
+        {focused ? (
+          <button
+            type="button"
+            onClick={() => onFocus?.(null)}
+            style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', ...T.meta, color: B.textMuted }}
+          >
+            Desk
+          </button>
+        ) : null}
+        {['recent', 'l30'].map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setPulseWindow(id)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              padding: 0,
+              cursor: 'pointer',
+              ...T.meta,
+              color: pulseWindow === id ? B.text : B.textFaint,
+              fontWeight: pulseWindow === id ? 650 : 500,
+            }}
+          >
+            {id === 'l30' ? 'L30' : 'Recent'}
+          </button>
+        ))}
       </div>
 
-      <div style={{ marginTop: tickets.length ? 36 : 28 }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: (heroSpark && !isMobile) ? 'minmax(0, 1fr) minmax(160px, 280px)' : '1fr',
+        gap: 20,
+        alignItems: 'end',
+        marginBottom: 22,
+      }}>
+        <div>
+          {focused ? (
+            <div style={{ ...T.meta, color: B.textMuted, marginBottom: 8 }}>{focused.tag}</div>
+          ) : null}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
+            <span style={{ ...T.display, color: heroTone, fontSize: isMobile ? '2.1rem' : '2.55rem' }}>{heroNum}</span>
+            {hero.hasPnl && hero.honest?.text && hero.honest.text !== '—' ? (
+              <span style={{ ...T.body, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{hero.honest.text}</span>
+            ) : null}
+          </div>
+        </div>
+        {heroSpark ? <Spark points={heroSpark} width={280} height={56} up={sparkUp} /> : null}
+      </div>
+
+      <DeskPanel pulse={pulse} filter={filter} onFilter={setFilter} isMobile={isMobile} />
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile || people.length === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+        gap: 10,
+        marginTop: 10,
+      }}>
         {people.map((r) => (
-          <Person
+          <PersonCard
             key={r.walletShort}
             r={r}
             on={focusShort === r.walletShort}
@@ -423,8 +479,26 @@ export default function MySharpsDesk({
               if (focusShort === short) onFocus?.(null);
               onRemove?.(short);
             }}
+            isMobile={isMobile}
           />
         ))}
+      </div>
+
+      <div style={{
+        background: B.panel,
+        border: `1px solid ${B.line}`,
+        borderRadius: 16,
+        padding: isMobile ? '0.95rem 1rem 0.55rem' : '1.05rem 1.25rem 0.7rem',
+        marginTop: 10,
+      }}>
+        <div style={{ ...T.label, marginBottom: 6 }}>Now</div>
+        {tickets.length ? tickets.map((t) => (
+          <Ticket key={t.id} t={t} onFocus={setFocus} isMobile={isMobile} />
+        )) : (
+          <div style={{ ...T.body, color: B.textMuted, padding: '0.7rem 0 0.5rem' }}>
+            None of yours are on this slate.
+          </div>
+        )}
       </div>
     </div>
   );
