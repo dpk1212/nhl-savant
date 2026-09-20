@@ -2,12 +2,9 @@
  * Populated My Sharps desk — #/my-sharps-lab
  * Fixture only. No auth, no live wallets.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { parseMySharpsDoc } from '../../lib/mySharps.js';
-import {
-  buildMySharpsBoard,
-  buildMySharpsRoster,
-} from '../../lib/mySharpsDesk.js';
+import { buildMySharpsRoster } from '../../lib/mySharpsDesk.js';
 import MySharpsDesk from '../sharpFlow/MySharpsDesk.jsx';
 
 const state = parseMySharpsDoc({
@@ -82,76 +79,67 @@ const profiles = new Map([
 const actionRows = [
   {
     walletShort: 'e4ec62', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over',
-    team: 'Over', marketLabel: 'O 47.5', away: 'SEA', home: 'ARI',
+    team: 'Over', marketLabel: 'O 47.5', away: 'SEA', home: 'ARI', americanLabel: '-110',
     invested: 162500, displaySizeRatio: 2.1, opposed: 'clear',
+    commenceMs: Date.parse('2026-09-20T16:00:00-04:00'), commenceDateKey: '2026-09-20',
   },
   {
     walletShort: '162937', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over',
-    team: 'Over', marketLabel: 'O 47.5', away: 'SEA', home: 'ARI',
+    team: 'Over', marketLabel: 'O 47.5', away: 'SEA', home: 'ARI', americanLabel: '-108',
     invested: 122100, displaySizeRatio: 1.4, opposed: 'clear',
+    commenceMs: Date.parse('2026-09-20T16:00:00-04:00'), commenceDateKey: '2026-09-20',
   },
   {
     walletShort: 'abcdef', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'under',
     team: 'Under', marketLabel: 'U 47.5', away: 'SEA', home: 'ARI',
     invested: 11000, displaySizeRatio: 0.6, opposed: 'contested',
+    commenceMs: Date.parse('2026-09-20T16:00:00-04:00'), commenceDateKey: '2026-09-20',
   },
   {
     walletShort: 'aaaaaa', sport: 'CFB', gameKey: 'lsu_ala', marketType: 'ML', side: 'home',
-    team: 'Bama', marketLabel: 'ML', away: 'LSU', home: 'Bama',
+    team: 'Bama', marketLabel: 'ML', away: 'LSU', home: 'Bama', americanLabel: '-142',
     invested: 88000, displaySizeRatio: 1.8, opposed: 'clear',
+    commenceMs: Date.parse('2026-09-21T20:00:00-04:00'), commenceDateKey: '2026-09-21',
   },
 ];
 
 const recentLegs = [
-  { walletShort: 'e4ec62', won: 1, dollarPnl: 14000 },
-  { walletShort: 'e4ec62', won: 1, dollarPnl: 8200 },
-  { walletShort: '162937', won: 0, dollarPnl: -4100 },
-  { walletShort: 'aaaaaa', won: 0, dollarPnl: -6200 },
+  { walletShort: 'e4ec62', won: 1, dollarPnl: 14000, date: '2026-09-19', sport: 'NFL', marketType: 'ML', side: 'away', team: 'Seahawks', gameKey: 'sea_ari' },
+  { walletShort: 'e4ec62', won: 1, dollarPnl: 8200, date: '2026-09-19', sport: 'NFL', marketType: 'SPREAD', side: 'home', team: 'Chiefs', line: -3.5, gameKey: 'den_kc' },
+  { walletShort: '162937', won: 0, dollarPnl: -4100, date: '2026-09-18', sport: 'MLB', marketType: 'TOTAL', side: 'under', line: 7.5, gameKey: 'wsh_stl' },
+  { walletShort: 'aaaaaa', won: 0, dollarPnl: -6200, date: '2026-09-18', sport: 'CFB', marketType: 'ML', side: 'home', team: 'Bama', gameKey: 'lsu_ala' },
 ];
 
 export default function MySharpsDeskLab() {
-  const [focusShort, setFocusShort] = useState(null);
-  const [gone, setGone] = useState(() => new Set());
-
-  const liveState = useMemo(() => {
-    const members = { ...state.members };
-    for (const s of gone) delete members[s];
-    return { ...state, members };
-  }, [gone]);
-
   const roster = useMemo(
-    () => buildMySharpsRoster(liveState, {
+    () => buildMySharpsRoster(state, {
       walletProfiles: profiles,
       actionRows,
       sportFilter: 'All',
     }),
-    [liveState],
+    [],
   );
-  const board = useMemo(() => buildMySharpsBoard(
-    actionRows.filter((r) => !gone.has(r.walletShort)),
-  ), [gone]);
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0B0D12',
-      color: '#F3F1EA',
+      background: '#0B0F1F',
+      color: '#F8FAFC',
       padding: '2.2rem 1.6rem 4rem',
-    }}>
+    }}
+    >
       <div style={{ maxWidth: 920, margin: '0 auto' }}>
         <MySharpsDesk
           ready
           signedIn
-          focusShort={focusShort}
-          onFocus={setFocusShort}
           roster={roster}
-          board={board}
-          actionRows={actionRows.filter((r) => !gone.has(r.walletShort))}
-          recentLegs={recentLegs.filter((l) => !gone.has(l.walletShort))}
-          onRemove={(short) => {
-            setGone((cur) => new Set([...cur, short]));
-            if (focusShort === short) setFocusShort(null);
-          }}
+          walletProfiles={profiles}
+          shorts={['e4ec62', '162937', 'abcdef', 'aaaaaa']}
+          actionRows={actionRows.filter((r) => r.commenceDateKey === '2026-09-20')}
+          weekRows={actionRows}
+          recentLegs={recentLegs}
+          dateKey="2026-09-20"
+          todayKey="2026-09-20"
           isMobile={false}
         />
       </div>
