@@ -600,6 +600,14 @@ export function buildMySharpsBoard(rows = []) {
       marketLabel: first.marketLabel || null,
       away: first.away || null,
       home: first.home || null,
+      commenceMs: list.reduce((best, r) => {
+        const n = Number(r.commenceMs);
+        if (!Number.isFinite(n)) return best;
+        return best == null ? n : Math.min(best, n);
+      }, null),
+      commenceDateKey: first.commenceDateKey || null,
+      americanLabel: first.americanLabel || null,
+      americanOdds: first.americanOdds ?? first.odds ?? null,
       invested,
       maxRatio,
       shorts,
@@ -1010,4 +1018,193 @@ export function ticketPickLabel(t) {
   if (String(t?.marketType || '').toUpperCase() === 'ML') return team || 'ML';
   if (team && num) return `${team} ${num}`;
   return team || raw || '—';
+}
+
+export function ticketMatchup(t) {
+  if (t?.away && t?.home) return `${t.away} @ ${t.home}`;
+  if (t?.matchup) return t.matchup;
+  const gk = String(t?.gameKey || '');
+  const m = gk.match(/([a-z]{2,5})_([a-z]{2,5})(?:__2)?(?:_(?:total|spread|ml))?$/i);
+  if (m) return `${m[1].toUpperCase()} @ ${m[2].toUpperCase()}`;
+  return null;
+}
+
+export function closedPickLabel(leg) {
+  const side = String(leg?.side || '').toLowerCase();
+  const line = Number(leg?.line);
+  const mkt = String(leg?.marketType || '').toUpperCase();
+  if (side === 'over' || side === 'under') {
+    const word = side === 'over' ? 'Over' : 'Under';
+    return Number.isFinite(line) ? `${word} ${line}` : word;
+  }
+  const team = leg?.team
+    || (leg?.label && !/^(away|home|over|under)$/i.test(String(leg.label)) ? leg.label : null)
+    || (side === 'away' ? leg?.away : side === 'home' ? leg?.home : null)
+    || '';
+  if (mkt === 'ML') return team || 'ML';
+  if (team && Number.isFinite(line)) {
+    const signed = line > 0 ? `+${line}` : `${line}`;
+    return `${team} ${signed}`;
+  }
+  return ticketPickLabel({
+    team,
+    marketType: mkt,
+    marketLabel: leg?.marketLabel,
+  });
+}
+
+function formatDayLabel(key, todayKey) {
+  if (!key || key === '—') return '';
+  if (todayKey && key === todayKey) return 'Today';
+  if (todayKey && key === shiftDateKey(todayKey, -1)) return 'Yesterday';
+  if (todayKey && key === shiftDateKey(todayKey, 1)) return 'Tomorrow';
+  const parts = String(key).split('-').map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return key;
+  const [y, m, d] = parts;
+  const dt = new Date(Date.UTC(y, m - 1, d, 17));
+  return dt.toLocaleDateString('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function formatClock(ms) {
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms).toLocaleTimeString('en-US', {
+    timeZone: 'America/New_York',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function ticketBucket(t, nowMs, todayKey) {
+  const k = t?.commenceDateKey
+    || (Number.isFinite(Number(t?.commenceMs)) ? etDateKey(Number(t.commenceMs)) : null);
+  if (k && todayKey && k > todayKey) return 'upcoming';
+  return 'open';
+}
+
+function packLiveTicket(t, nowMs, todayKey) {
+  const bucket = ticketBucket(t, nowMs, todayKey);
+  const dateKey = t.commenceDateKey || (Number.isFinite(Number(t.commenceMs)) ? etDateKey(Number(t.commenceMs)) : null);
+  const clock = formatClock(Number(t.commenceMs));
+  const live = bucket === 'open' && Number.isFinite(Number(t.commenceMs)) && Number(t.commenceMs) <= nowMs;
+  return {
+    id: t.id,
+    bucket,
+    pick: ticketPickLabel(t),
+    matchup: ticketMatchup(t),
+    sport: t.sport || null,
+    market: MARKET_LABEL[String(t.marketType || '').toUpperCase()] || t.marketType || null,
+    invested: Number(t.invested) || 0,
+    walletN: (t.shorts || []).length,
+    tags: t.tags || [],
+    american: t.americanLabel || null,
+    dateKey,
+    dateLabel: formatDayLabel(dateKey, todayKey),
+    when: live ? 'Live' : (clock && dateKey && dateKey !== todayKey ? `${formatDayLabel(dateKey, todayKey)} ${clock}` : (clock || formatDayLabel(dateKey, todayKey) || 'Open')),
+    live,
+    commenceMs: Number.isFinite(Number(t.commenceMs)) ? Number(t.commenceMs) : null,
+    sized: !!t.sized,
+  };
+}
+
+function packClosedLeg(leg, todayKey) {
+  const pnl = legDollar(leg);
+  const dateKey = legDateKey(leg);
+  return {
+    id: `${leg.walletShort || ''}|${dateKey || ''}|${leg.gameKey || ''}|${leg.marketType || ''}|${leg.side || ''}|${leg.won}`,
+    bucket: 'closed',
+    pick: closedPickLabel(leg),
+    matchup: ticketMatchup(leg),
+    sport: leg.sport || null,
+    market: MARKET_LABEL[String(leg.marketType || '').toUpperCase()] || leg.marketType || null,
+    invested: Number(leg.invested) || 0,
+    pnl: Number.isFinite(pnl) ? Math.round(pnl) : null,
+    won: leg.won === 1,
+    lost: leg.won === 0,
+    tag: fmtWalletTag(leg.walletShort),
+    walletShort: shortWalletId(leg.walletShort),
+    dateKey,
+    dateLabel: formatDayLabel(dateKey, todayKey),
+    when: formatDayLabel(dateKey, todayKey) || 'Closed',
+  };
+}
+
+function groupLedgerItems(items, todayKey) {
+  const map = new Map();
+  for (const item of items || []) {
+    const key = item.dateKey || '—';
+    if (!map.has(key)) {
+      map.set(key, { dateKey: key, label: item.dateLabel || formatDayLabel(key, todayKey), items: [] });
+    }
+    map.get(key).items.push(item);
+  }
+  return [...map.values()];
+}
+
+/**
+ * Open / upcoming / closed blotter for the whole list.
+ * Open = pending money already commenced. Upcoming = later commence. Closed = graded legs.
+ */
+export function buildDeskLedger({
+  actionRows = [],
+  recentLegs = [],
+  todayKey = null,
+  nowMs = Date.now(),
+  limitClosed = 40,
+} = {}) {
+  const today = todayKey || etDateKey(nowMs);
+  const board = buildMySharpsBoard(actionRows);
+  const open = [];
+  const upcoming = [];
+  for (const t of board.tickets || []) {
+    const item = packLiveTicket(t, nowMs, today);
+    if (item.bucket === 'upcoming') upcoming.push(item);
+    else open.push(item);
+  }
+  open.sort((a, b) => (b.invested - a.invested) || ((a.commenceMs || 0) - (b.commenceMs || 0)));
+  upcoming.sort((a, b) => ((a.commenceMs || 0) - (b.commenceMs || 0)) || (b.invested - a.invested));
+
+  const closed = (recentLegs || [])
+    .filter((leg) => leg?.won === 0 || leg?.won === 1)
+    .map((leg) => packClosedLeg(leg, today))
+    .sort((a, b) => String(b.dateKey || '').localeCompare(String(a.dateKey || '')))
+    .slice(0, limitClosed);
+
+  const sumInv = (list) => list.reduce((s, x) => s + (Number(x.invested) || 0), 0);
+  let closedPnl = 0;
+  let closedHave = false;
+  let closedW = 0;
+  let closedL = 0;
+  for (const row of closed) {
+    if (row.won) closedW += 1;
+    if (row.lost) closedL += 1;
+    if (Number.isFinite(row.pnl)) {
+      closedHave = true;
+      closedPnl += row.pnl;
+    }
+  }
+
+  return {
+    open,
+    upcoming,
+    closed,
+    openN: open.length,
+    openInvested: sumInv(open),
+    upcomingN: upcoming.length,
+    upcomingInvested: sumInv(upcoming),
+    closedN: closed.length,
+    closedW,
+    closedL,
+    closedPnl: closedHave ? Math.round(closedPnl) : null,
+    closedHonest: honestRecord(closedW, closedL),
+    groups: {
+      open: groupLedgerItems(open, today),
+      upcoming: groupLedgerItems(upcoming, today),
+      closed: groupLedgerItems(closed, today),
+    },
+  };
 }

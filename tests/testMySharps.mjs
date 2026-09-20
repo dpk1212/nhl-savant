@@ -13,9 +13,11 @@ import {
   toggleMySharpMember,
 } from '../src/lib/mySharps.js';
 import {
+  buildDeskLedger,
   buildDeskPulse,
   buildDeskReport,
   buildMySharpsBoard,
+  closedPickLabel,
   buildMySharpsDashboard,
   buildMySharpsRoster,
   filterBoardTickets,
@@ -376,5 +378,52 @@ assert.equal(report.l30.pnl, 129000);
 assert.equal(report.weekGradedN, 2);
 assert.equal(report.bestSport.sport, 'NFL');
 assert.ok(report.sports.some((s) => s.sport === 'CFB' && s.openN === 1));
+
+assert.equal(closedPickLabel({ side: 'under', line: 47.5, marketType: 'TOTAL' }), 'Under 47.5');
+assert.equal(closedPickLabel({ side: 'away', team: 'Seahawks', marketType: 'ML' }), 'Seahawks');
+
+const ledger = buildDeskLedger({
+  actionRows: [
+    {
+      walletShort: 'e4ec62', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over',
+      team: 'Over', marketLabel: 'O 47.5', away: 'SEA', home: 'ARI', invested: 162500,
+      commenceMs: Date.parse('2026-09-20T16:00:00-04:00'), commenceDateKey: '2026-09-20',
+    },
+    {
+      walletShort: '162937', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over',
+      team: 'Over', marketLabel: 'O 47.5', away: 'SEA', home: 'ARI', invested: 11000,
+      commenceMs: Date.parse('2026-09-20T16:00:00-04:00'), commenceDateKey: '2026-09-20',
+    },
+    {
+      walletShort: 'abcdef', sport: 'CFB', gameKey: 'lsu_ala', marketType: 'ML', side: 'home',
+      team: 'Bama', marketLabel: 'ML', away: 'LSU', home: 'Bama', invested: 88000,
+      commenceMs: Date.parse('2026-09-21T20:00:00-04:00'), commenceDateKey: '2026-09-21',
+    },
+  ],
+  recentLegs: [
+    {
+      walletShort: 'e4ec62', won: 1, dollarPnl: 4000, date: '2026-09-18',
+      marketType: 'ML', side: 'away', team: 'Seahawks', gameKey: 'sea_ari', sport: 'NFL',
+    },
+    {
+      walletShort: '162937', won: 0, dollarPnl: -1200, date: '2026-09-19',
+      marketType: 'TOTAL', side: 'under', line: 7.5, gameKey: 'wsh_stl', sport: 'MLB',
+    },
+  ],
+  todayKey: '2026-09-20',
+  nowMs: Date.parse('2026-09-20T18:00:00-04:00'),
+});
+assert.equal(ledger.open.length, 1);
+assert.equal(ledger.open[0].pick, 'Over 47.5');
+assert.equal(ledger.open[0].walletN, 2);
+assert.equal(ledger.open[0].invested, 173500);
+assert.equal(ledger.open[0].live, true);
+assert.equal(ledger.upcoming.length, 1);
+assert.equal(ledger.upcoming[0].pick, 'Bama');
+assert.equal(ledger.upcoming[0].matchup, 'LSU @ Bama');
+assert.equal(ledger.closed.length, 2);
+assert.equal(ledger.closed[0].pick, 'Under 7.5');
+assert.equal(ledger.closed[1].pick, 'Seahawks');
+assert.equal(ledger.closedPnl, 2800);
 
 console.log('testMySharps: ok');
