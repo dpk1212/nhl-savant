@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { deleteField, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import {
   MY_SHARPS_CAP,
@@ -41,9 +41,18 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
   const [loading, setLoading] = useState(!!uid);
   const stateRef = useRef(state);
   stateRef.current = state;
+  const pendingRemove = useRef(new Set());
+
+  const commit = useCallback((next) => {
+    setState(next);
+    stateRef.current = next;
+    if (uid) writeCache(uid, next);
+    return next;
+  }, [uid]);
 
   useEffect(() => {
     if (!uid) {
+      pendingRemove.current.clear();
       setState(emptyMySharps());
       setLoading(false);
       return undefined;
@@ -53,22 +62,24 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     const ref = doc(db, 'users', uid);
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
-        const next = parseMySharpsDoc(snap.data());
-        setState(next);
-        writeCache(uid, next);
+        const parsed = parseMySharpsDoc(snap.data());
+        for (const id of [...pendingRemove.current]) {
+          if (parsed.members[id]) delete parsed.members[id];
+          else pendingRemove.current.delete(id);
+        }
+        commit(parsed);
       }
       setLoading(false);
     }, () => setLoading(false));
     return () => unsub();
-  }, [uid]);
+  }, [uid, commit]);
 
   const persist = useCallback(async (next) => {
-    setState(next);
-    if (uid) writeCache(uid, next);
+    commit(next);
     if (!uid) return;
     const ref = doc(db, 'users', uid);
     await setDoc(ref, { mySharps: next }, { merge: true });
-  }, [uid]);
+  }, [uid, commit]);
 
   const addFromRow = useCallback(async (row) => {
     if (!uid || !isPremium) return { ok: false, reason: 'auth' };
@@ -86,9 +97,20 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     if (!id) return { ok: false, reason: 'id' };
     const cur = stateRef.current;
     if (!cur.members[id]) return { ok: true, already: true };
-    await persist(toggleMySharpMember(cur, { walletShort: id }, { remove: true }));
+    pendingRemove.current.add(id);
+    const next = commit(toggleMySharpMember(cur, { walletShort: id }, { remove: true }));
+    if (!uid) return { ok: true, removed: true };
+    const ref = doc(db, 'users', uid);
+    try {
+      await updateDoc(ref, {
+        [`mySharps.members.${id}`]: deleteField(),
+        'mySharps.updatedAt': next.updatedAt,
+      });
+    } catch {
+      await setDoc(ref, { mySharps: next }, { merge: true });
+    }
     return { ok: true, removed: true };
-  }, [persist]);
+  }, [uid, commit]);
 
   const toggleRow = useCallback(async (row) => {
     const id = normalizeWalletShort(row?.walletShort);
