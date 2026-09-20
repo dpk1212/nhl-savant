@@ -7,73 +7,72 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-20 · HERO **EDUCATE/GIVE** · origin + wipeout vs fight (Hormozi in the words) |
+| Last updated | 2026-09-20 · QT **GIVE** · ProphetX / $209K at 25× fading Jones |
 | CSV window | Content Sep 8–14. Overlay ask-shape binds. |
-| Ask temperature | **Give.** Takes, not polls. No trial. |
-| Account arc | Dollar-stack and caption both died. This beat: I don’t pick games · Under wipeout · Pittsburgh fight · same wallet · 1.5→4. |
+| Ask temperature | **Give.** No fork. |
+| Account arc | Under 47.5 cashed 9–3. Steelers ML smashed 20–3. Live: Chiefs -6.5 3u, printer $209K at 25.3×. Flagged, 8:05 lock. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / $219K vs $1.7K / wipeout vs fight | **C + S** | none | **Staged** |
-| 9/20 ~12:43 ET | Hero | `Two proven wrote $1,700` + receipt stack | C → S | none | **KILLED** — not human / not Hormozi |
-| 9/20 ~12:41 ET | Hero | `$247K ON THE STEELERS` walk | S + C | none | **KILLED** — format 3× |
-| 9/20 ~12:37 ET | Hero | caption + naked tags | — | none | **KILLED** — starved |
+| 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones / good day + Steelers hole | **S + C** | none | **Staged** |
+| 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / wipeout vs fight | **C + S** | none | **Staged** |
 | 9/20 ~11:20 ET | QT **GIVE** | `$131,000 ON THE VIKINGS` / `$178,000 ON THE STEELERS` | **S + C** | none | **Staged** |
+| 9/20 10:36 ET | Hero **GIVE** | `$215,000 ON THE STEELERS` / Pats upset alert | **S + C** | none | **Staged** — **play lost 20–3** |
+| 9/19 4:07 ET | Hero **GIVE** | `PINNACLE'S LIMIT ON THIS SPREAD IS $20,000` / Miss State +3.5 | **S + C** | none | **Posted/cashed** (41-34) |
 
 ---
 
 ## Angle lock
-**ONE:** I don’t handicap. The Under is a wipeout. Pittsburgh is a fight. Same 3-0 wallet — we sized with him.  
-**Yum:** you stop betting “good game / fade plus-money” with your gut.  
-**Hook:** `I don't pick games.` / `$219,000 on the Under. $1,700 on the Over.`  
-**Body:** 4u · 3-0 wallet $125K + $178K · not the same play · wipeout $1.7K · fight $178K NE · 1.5→4 · +205 · SKOR stays pretty · SteelC real money on Pats, still Pittsburgh · 1:00.  
+**ONE:** They’re fading Jones because a 9-2 wallet bet 25× his normal on Kansas City — not because of a graphic.  
+**Yum:** you stop betting a screenshot and start looking at size.  
+**Hook:** `$209,000 AT 25×` / `His normal is $8,300.`  
+**Body:** 9 more proven · 3 proven Indy (real $) · -6.5 +113 · 3u · Under 9-3 · Pittsburgh 20-3 · good day anyway · fading Jones · they sized up so did we · 8:05.  
 **Ask:** none.  
-**Killed:** `$N ON THE TEAM` · $1,700-as-terminal-open · you taking 205? · slog or shootout poll · caption tags · Pin limit · 1-4 fade · locked · gold · capper cosplay
+**Killed:** 1-15 restage · `$307K ON THE CHIEFS` · origin restage · majority of all $ · HC · 1-4 fade · locked · invented day units · “you fading Jones?”
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** origin “I don’t pick games” · wipeout vs fight · 1.5u→4u inside this post · @SKOR / @SteelC takes
+**Spent this beat (once posted):** $209K at 25× · Jones fade QT · Under 9-3 grade · Steelers 20-3 hole inside this post
 
-**Still spent:** `$215K` / `$131K` / `$247K` dollar-stack · Pin $5k→$30k · Miss State $20k · yesterday card · +118u · Vault · grind-EV · MVP25 · caption last-look · $1,700 stat-open
+**Still spent:** `$N ON THE TEAM` stack · origin “I don’t pick games” · Pin MIN $5k→$30k · $215K / $131K opens · Miss State $20k · +118u · Vault · grind-EV · MVP25 · caption last-look
 
-**Still open:** grade 1pm · weekly report · fence-sitter DMs  
-**Origin/whole-truth:** just used. Don’t restage the sentence tomorrow.
+**Still open:** grade Chiefs -6.5 after 8:20 · weekly report · fence-sitter DMs
 
-**Don't:** `$N ON THE TEAM` again today · another origin restage · polls as engagement · caption + tags · lock-alert identity
+**Don't:** restate 1-15 · restage 25× after it posts · `$N ON THE TEAM` · origin clone · lock-alert identity · pretend the Colts side is dead
 
 ---
 
 ## Unfinished
-- Grade Steelers ML, Under 47.5, leftover Vikes spread after 1:00
+- Grade Chiefs -6.5 after 8:20 ET
 - Weekly report (Power)
 - Fence-sitter DMs
 
 ---
 
 ## FORWARD LOOK — after this posts
-1. **Grade the 1pm card.** Whole truth. Do not restage $.
+1. **Grade SNF.** Cash or scar. Do not restage 25×.
 2. Weekly report. Ask only if Dale spines it.
-3. Fence-sitter DMs if the thread is alive.
+3. Fence-sitter DMs if the QT thread is alive (parent already has reach).
 
-**NOT:** origin clone · dollar-stack · caption · $20k / $215K / $131K restage · Vault · grind-EV · “you taking X?”
+**NOT:** 1-15 restage · $209K restage · origin clone · dollar-stack · Vault · grind-EV
 
-**Avatar:** they got the instruction + two different conditions on one slate. Next = the grade (say–do).  
-**Balance:** C+S + starved origin just shown. Next = Power.  
-**Varied condition:** origin + loud-pile Under + honest fight on PIT — not a printer-$ clone.  
-**Hormozi economics:** educate give. Mentions are value for those rooms.  
-**Desk scar:** Dale 12:40–12:45 — receipt stack ≠ Hormozi. Idea first. Human. Whole truth. People have to want to answer.
+**Avatar:** they saw a graphic, then a 25× size-up, plus today’s cash and hole. Next = the grade.  
+**Balance:** S+C live + Power trail (Under hit / Steelers smashed). Next = SNF grade.  
+**Varied condition:** ticket-vs-wallet QT (public record vs our size-up).  
+**Hormozi economics:** give. Parent supplies reach.  
+**Desk scar:** Steelers 4u ML lost 20–3 — keep saying it when we talk about the day.
 
 ---
 
 ## Agent close-out
-- [x] PURPOSE restarted (educate), not a tighter caption
-- [x] Origin + wipeout-vs-fight live in the words
-- [x] Whole truth: $178K on NE
-- [x] Mentions are takes, not polls
-- [x] Hook is not `$N ON THE TEAM`
+- [x] QT law: do not restate 1-15
+- [x] Hook is 25× size-up, not `$N ON THE TEAM`
+- [x] Whole truth: 3 proven on Colts · Colts have more tape $ · Steelers 20–3
+- [x] Good day shaped, not line 1, no fake unit total
+- [x] Not locked (8:05)
 - [x] Staged COPY_PASTE only
 - [x] Continuity written
