@@ -17,6 +17,7 @@ import {
   actionDateParts,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
+import { shortWalletId } from '../../lib/walletClvSkill.js';
 import SteamTag from './cards/SteamTag';
 import { shortTeamNick } from '../../utils/teamIdentity.js';
 import { useAuth } from '../../hooks/useAuth';
@@ -28,6 +29,7 @@ import {
   buildMySharpsRoster,
   collectRecentLegs,
   filterRowsToMySharps,
+  shortsForDeskSection,
   sortRowsByRelativeSize,
 } from '../../lib/mySharpsDesk.js';
 
@@ -1290,9 +1292,21 @@ function SaveStar({ saved, onToggle, disabled }) {
   );
 }
 
+function LeanMark({ lean }) {
+  if (!lean?.key || lean.key === 'watch') return null;
+  const fg = lean.key === 'tail' ? B.green : B.red;
+  return (
+    <span style={{
+      ...T.tiny, color: fg, letterSpacing: '0.1em',
+    }}>
+      {lean.label}
+    </span>
+  );
+}
+
 function ActionRow({
   row, sportFilter = 'All', isMobile, expanded, onToggle,
-  saved = false, onToggleSave, canSave = false,
+  saved = false, onToggleSave, canSave = false, lean = null,
 }) {
   const [hover, setHover] = useState(false);
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
@@ -1361,6 +1375,7 @@ function ActionRow({
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginBottom: '0.3rem' }}>
                   <SaveStar saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
+                  <LeanMark lean={lean} />
                   <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
                   <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
                 </div>
@@ -1425,6 +1440,7 @@ function ActionRow({
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
               <SaveStar saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
+              <LeanMark lean={lean} />
               <span style={{
                 ...T.tiny, color: sportColor(row.sport),
                 padding: '0.12rem 0.38rem', borderRadius: '4px',
@@ -1603,16 +1619,6 @@ export default function ConfirmedActionDesk({
     [dated, mySharps.shorts, deskScope, focusShort],
   );
 
-  const visible = useMemo(() => {
-    if (deskMode === 'mine') {
-      const list = deskSection === 'sized'
-        ? mineDated.filter((r) => (Number(r.displaySizeRatio ?? r.sizeRatio) || 0) >= 1.5)
-        : mineDated;
-      return sortRowsByRelativeSize(list);
-    }
-    return sortActionRows(dated, sortMode);
-  }, [deskMode, mineDated, dated, sortMode, deskSection]);
-
   const roster = useMemo(
     () => buildMySharpsRoster( { members: Object.fromEntries(mySharps.members.map((m) => [m.walletShort, m])) }, {
       walletProfiles,
@@ -1621,6 +1627,26 @@ export default function ConfirmedActionDesk({
     }),
     [mySharps.members, walletProfiles, dated, sportFilter],
   );
+
+  const leanByShort = useMemo(() => {
+    const m = new Map();
+    for (const c of roster) m.set(c.walletShort, c.lean);
+    return m;
+  }, [roster]);
+
+  const visible = useMemo(() => {
+    if (deskMode === 'mine') {
+      let list = mineDated;
+      if (deskSection === 'sized') {
+        list = list.filter((r) => (Number(r.displaySizeRatio ?? r.sizeRatio) || 0) >= 1.5);
+      } else {
+        const cut = shortsForDeskSection(roster, deskSection);
+        if (cut) list = list.filter((r) => cut.has(shortWalletId(r.walletShort)));
+      }
+      return sortRowsByRelativeSize(list);
+    }
+    return sortActionRows(dated, sortMode);
+  }, [deskMode, mineDated, dated, sortMode, deskSection, roster]);
 
   const recentLegs = useMemo(
     () => collectRecentLegs(walletProfiles, [...mySharps.shorts], {
@@ -1736,7 +1762,9 @@ export default function ConfirmedActionDesk({
         <div style={{ ...T.body, color: B.textMuted, padding: '1.5rem', textAlign: 'center' }}>
           {deskMode === 'mine'
             ? (mySharps.count
-              ? `None of your sharps are on ${formatActionDateChip(selectedDate, todayKey)}.`
+              ? (deskSection === 'tail' || deskSection === 'sit' || deskSection === 'hot' || deskSection === 'cold'
+                ? `No ${deskSection} tickets ${formatActionDateChip(selectedDate, todayKey)}.`
+                : `None of your sharps are on ${formatActionDateChip(selectedDate, todayKey)}.`)
               : 'Star wallets on All Sharps to fill this board.')
             : (selectedDate !== todayKey
               ? `No tickets ${formatActionDateChip(selectedDate, todayKey)}.`
@@ -1761,6 +1789,7 @@ export default function ConfirmedActionDesk({
               saved={mySharps.isSaved(r.walletShort)}
               canSave={mySharps.ready}
               onToggleSave={() => mySharps.toggleRow(r)}
+              lean={deskMode === 'mine' ? leanByShort.get(shortWalletId(r.walletShort)) : null}
             />
           ))}
         </div>
