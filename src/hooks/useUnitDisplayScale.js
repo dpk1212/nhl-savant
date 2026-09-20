@@ -7,6 +7,7 @@ import {
   readStoredUnitDisplayScale,
   writeStoredUnitDisplayScale,
 } from '../lib/unitDisplayScale.js';
+import { onesignalApplyUnitDisplayScale } from '../lib/onesignal';
 
 /**
  * Full vs Conservative unit book.
@@ -39,6 +40,11 @@ export function useUnitDisplayScale(user) {
       await setDoc(doc(db, 'users', user.uid), {
         unitDisplayScale: normalized,
       }, { merge: true });
+      try {
+        await onesignalApplyUnitDisplayScale(normalized);
+      } catch (err) {
+        console.warn('OneSignal unit-scale tag sync failed:', err?.message || err);
+      }
     } catch (err) {
       console.error('Failed to save unit display scale:', err);
       throw err;

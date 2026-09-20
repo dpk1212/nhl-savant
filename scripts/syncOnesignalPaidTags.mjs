@@ -138,7 +138,7 @@ async function main() {
           current = fetched.paid;
           if (current === 'edge11') stats.preserved_edge11++;
           if (current === 'true') stats.migrated_true++;
-          next = paidTagForEntitlement(current);
+          next = paidTagForEntitlement(current, doc.data()?.unitDisplayScale);
         } catch (err) {
           console.warn(`  ${uid} GET tag failed — skip write (do not default all): ${err.message || err}`);
           stats.errors++;

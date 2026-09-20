@@ -19,7 +19,9 @@ const APP_ID = process.env.ONESIGNAL_APP_ID || 'd8fcb504-8d29-4354-a9e4-8b612d3e
 const REST_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
 
 function paidTagForEntitlement(current) {
+  if (current === 'edge11_c') return 'edge11_c';
   if (current === 'edge11') return 'edge11';
+  if (current === 'all_c') return 'all_c';
   if (current === 'all' || current === 'true') return 'all';
   return 'all';
 }

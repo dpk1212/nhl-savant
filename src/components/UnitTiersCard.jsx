@@ -36,9 +36,9 @@ export default function UnitTiersCard({ user }) {
       </div>
 
       <p style={{ fontSize: '0.938rem', color: 'rgba(241, 245, 249, 0.8)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
-        How locked plays are sized on your board. The engine still locks the full book —
-        Conservative halves every ticket so you play a 1–3u ladder instead of 1–6u.
-        Saved to your account.
+        How locked plays are sized on your board — and in lock-alert pushes.
+        The engine still locks the full book. Conservative halves every ticket
+        so you play a 1–3u ladder instead of 1–6u. Saved to your account.
       </p>
 
       <div

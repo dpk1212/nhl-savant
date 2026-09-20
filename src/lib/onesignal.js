@@ -16,7 +16,8 @@
  *   stay in the send filter.
  *
  * Tag plan limit: only use the single tag `paid`. Values:
- *   all | edge11 | false  (legacy `true` = all)
+ *   all | all_c | edge11 | edge11_c | false  (legacy `true` = all)
+ *   `_c` = Conservative unit book (half size on lock alerts).
  * Extra tags (tier/email/lock_alerts) hit OneSignal entitlements-tag-limit (409).
  *
  * App ID: d8fcb504-8d29-4354-a9e4-8b612d3eafeb
@@ -25,12 +26,14 @@
 
 import {
   LOCK_ALERT_MODE,
+  composePaidTag,
   normalizeLockAlertMode,
   paidTagIsExplicitMode,
   paidTagToWriteOnPaidVisit,
   readStoredLockAlertMode,
   writeStoredLockAlertMode,
 } from './lockAlertMode.js';
+import { readStoredUnitDisplayScale } from './unitDisplayScale.js';
 
 export {
   LOCK_ALERT_MODE,
@@ -102,7 +105,7 @@ export async function onesignalSyncPaidIdentity({ uid }) {
     await OneSignal.login(String(uid));
     const stored = readStoredLockAlertMode();
     const current = await readPaidTag(OneSignal);
-    const next = paidTagToWriteOnPaidVisit(current, stored);
+    const next = paidTagToWriteOnPaidVisit(current, stored, readStoredUnitDisplayScale());
     if (!next) return;
     await OneSignal.User.addTags({ paid: next });
   });
@@ -154,12 +157,12 @@ export const ONESIGNAL_LOCK_TEMPLATE_ID = '451e41a3-2bdf-4758-a779-ec59a8fecf36'
  * Explicit opt-in from Account: login → paid=all|edge11 → request permission → opt in.
  * @param {{ uid: string, mode?: 'all'|'edge11' }} opts
  */
-export async function onesignalEnableForPaidUser({ uid, mode = LOCK_ALERT_MODE.ALL }) {
+export async function onesignalEnableForPaidUser({ uid, mode = LOCK_ALERT_MODE.ALL, scale } = {}) {
   if (!uid) return { ok: false, reason: 'no_uid' };
-  const paidValue =
-    mode === LOCK_ALERT_MODE.EDGE11 ? LOCK_ALERT_MODE.EDGE11 : LOCK_ALERT_MODE.ALL;
+  const lockMode = mode === LOCK_ALERT_MODE.EDGE11 ? LOCK_ALERT_MODE.EDGE11 : LOCK_ALERT_MODE.ALL;
+  const paidValue = composePaidTag(lockMode, scale ?? readStoredUnitDisplayScale());
   let outcome = { ok: false, reason: 'unknown' };
-  writeStoredLockAlertMode(paidValue);
+  writeStoredLockAlertMode(lockMode);
   await withOneSignal(async (OneSignal) => {
     await OneSignal.login(String(uid));
     await OneSignal.User.addTags({ paid: paidValue });
@@ -181,7 +184,7 @@ export async function onesignalEnableForPaidUser({ uid, mode = LOCK_ALERT_MODE.A
       optedIn,
       permission,
       subscriptionId: OneSignal.User?.PushSubscription?.id || null,
-      lockMode: paidValue,
+      lockMode: lockMode,
     };
   });
   return outcome;
@@ -191,14 +194,20 @@ export async function onesignalEnableForPaidUser({ uid, mode = LOCK_ALERT_MODE.A
  * Change lock alert mode while already subscribed (no permission prompt).
  * @param {'all'|'edge11'} mode
  */
-export async function onesignalSetLockAlertMode(mode) {
-  const paidValue =
-    mode === LOCK_ALERT_MODE.EDGE11 ? LOCK_ALERT_MODE.EDGE11 : LOCK_ALERT_MODE.ALL;
-  writeStoredLockAlertMode(paidValue);
+export async function onesignalSetLockAlertMode(mode, scale) {
+  const lockMode = mode === LOCK_ALERT_MODE.EDGE11 ? LOCK_ALERT_MODE.EDGE11 : LOCK_ALERT_MODE.ALL;
+  const paidValue = composePaidTag(lockMode, scale ?? readStoredUnitDisplayScale());
+  writeStoredLockAlertMode(lockMode);
   await withOneSignal(async (OneSignal) => {
     await OneSignal.User.addTags({ paid: paidValue });
   });
   return paidValue;
+}
+
+/** Rewrite `paid` so lock alerts use the user's Full vs Conservative book. */
+export async function onesignalApplyUnitDisplayScale(scale) {
+  const mode = readStoredLockAlertMode() || LOCK_ALERT_MODE.ALL;
+  return onesignalSetLockAlertMode(mode, scale);
 }
 
 /** Paid user turns off lock alerts on this browser (keeps paid preference tag). */
