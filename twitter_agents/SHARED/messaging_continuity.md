@@ -7,72 +7,72 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-19 · HERO **GIVE** · Miss State +3.5 / Pinnacle $20k limit / 8-1 wallet |
+| Last updated | 2026-09-20 · HERO **GIVE** · Steelers +212 / yesterday green with holes |
 | CSV window | Content Sep 8–14. Overlay ask-shape binds. |
-| Ask temperature | **Give (staged).** Last ask was 9/15 +118u. This post has no fork. |
-| Account arc | Limits-up + price-still-ours. One CFB wallet 8-1 on State +3.5. |
+| Ask temperature | **Give.** No fork. Feature (unit tiers) is optional SR only. |
+| Account arc | Miss State +3.5 cashed. Day finished up. Live: Steelers +212, 1.5u, flagged. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/19 4:07 ET | Hero **GIVE** | `PINNACLE'S LIMIT ON THIS SPREAD IS $20,000` / number still moved our way / 8-1 | **S + C** | none | **Staged** |
-| 9/19 | **INGEST** | Qual video: varied conditions · whole-truth origin · comprehension cost | — | none | Locked into canon |
-| 9/15 night | QT **ASK** | `+118U ON MLB` / four tonight vs BetMGM | **S + C** | Sharp Flow in-hero | **Staged** |
-| 9/15 | Reply GIVE | `$2.3K UNOPPOSED ON THE GUARDIANS` / Griffin | S + C | none | Staged — **$ stale** |
-| 9/15 | Hero GIVE | `LAST NIGHT WE DIDN'T MAKE A MILLION DOLLARS` | L + C | none | Staged |
+| 9/20 10:36 ET | Hero **GIVE** | `$215,000 ON THE STEELERS` / Pats upset alert / yesterday holes | **S + C** | none | **Staged** |
+| 9/19 4:07 ET | Hero **GIVE** | `PINNACLE'S LIMIT ON THIS SPREAD IS $20,000` / Miss State +3.5 | **S + C** | none | **Posted/cashed** (41-34) |
+| 9/19 | **INGEST** | Qual video: varied conditions · whole-truth origin · comprehension cost | — | none | Locked |
+| 9/15 night | QT **ASK** | `+118U ON MLB` / four tonight vs BetMGM | **S + C** | Sharp Flow in-hero | Staged |
+| 9/15 | Reply GIVE | `$2.3K UNOPPOSED ON THE GUARDIANS` / Griffin | S + C | none | Staged — $ stale |
 
 ---
 
 ## Angle lock
-**ONE:** Pinnacle keeps raising how much they’ll take on this spread — and we’re still getting a better number than they are. One wallet on it is 8-1 this month.  
-**Yum:** you get put on the printer’s ticket without becoming the market-maker.  
-**Hook:** `PINNACLE'S LIMIT ON THIS SPREAD IS $20,000` / this afternoon $15k / a week ago $1k.  
-**Body:** State +3.5 · 4u · −104 vs Pin −109 / shops −120 · 8-1 · +$6,800 · $2,000 at 1.3× · nothing proven against.  
+**ONE:** Proven money is on the Steelers at +212 — after a green day that still had ugly losses.  
+**Yum:** you see the holes and the next dog on the same card.  
+**Hook:** `$215,000 ON THE STEELERS` / +212 / two proven / one proven the other way.  
+**Body:** finished up · NW · State +3.5 · Rockies · SIU half-point beat · Orioles blanked · Ole Miss/LSU · 1.5u · 12:45 lock.  
 **Ask:** none.  
-**Killed:** “odds are dropping” caption · I’m-excited open · Locked. as identity · `$XK at Y×` clone · +118u restage · fade/ride · ForMyFamily1 · system labels
+**Killed:** “very happy” open · recap furniture as line 1 · unit-tier hero · locked · unopposed · HC · invented day units · Under 58.5 as the LSU hole
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** Miss State +3.5 · Pinnacle $20k limit open · this 8-1 wallet on this ticket
+**Spent this beat (once posted):** Steelers +212 $215K open · yesterday named card · SIU half-point beat · Miss State grade (inside this post)
 
-**Still spent:** +118u · Griffin unopposed $2.3k · million-dollar miss · Mets $138k · Jim · Don · Jul/Aug · Vault · grind-EV · MVP25 · +100u / +99u
+**Still spent:** Pinnacle $20k limit hook · +118u · Griffin $2.3k · million-dollar miss · Mets $138k · Vault · grind-EV · MVP25
 
-**Still open:** grade State +3.5 (scar or cash) · next weekly report · origin/whole-truth give · fence-sitter DMs
+**Still open:** grade Steelers after 1:00 · origin/whole-truth give · weekly report · fence-sitter DMs
 
-**Don't:** restage this limit hook · restage +118u · juice-only caption · convert-paragraph · price as punchline
+**Don't:** restage $20k limit · restage this $215K open after it posts · unit tiers as a hero · convert-paragraph · price as punchline
 
 ---
 
 ## Unfinished
-- Grade Miss State +3.5 after 4:15 ET
+- Grade Steelers ML after 1:00 ET
 - Next weekly report (Power)
-- Origin / whole-truth give still a legal next give
+- Origin / whole-truth give still legal
 - Fence-sitter DMs
 
 ---
 
 ## FORWARD LOOK — after this posts
-1. **Grade only** with a new scar or cash. Do not restage the $20k limit open.
-2. Origin / whole-truth give if the week still needs a different condition.
-3. Weekly report (Power). Ask only if Dale spines it.
+1. **Grade Steelers only** with a scar or cash. Do not restage $215K.
+2. Origin / whole-truth if the week still needs a different condition.
+3. Weekly report. Ask only if Dale spines it.
 
-**NOT:** this limit hook again · +118u restage · Griffin $2.3k · Vault · grind-EV · “odds are dropping” · buried MVP25
+**NOT:** $20k limit restage · unit-tier hero · +118u · Griffin · Vault · grind-EV
 
-**Avatar:** they just got an instruction (limits up + better number + one hot wallet). Next they need the grade.  
-**Balance:** S+C market-structure give. Next = Power say–do (grade) or Likeness/origin.  
-**Varied condition just shown:** limits-up / price-still-ours (new). Still starved: origin/whole-truth · honest L on new tape.  
-**Hormozi economics:** two gives after an ask is fine. Do not ask on the grade unless he spines it.  
-**Distribution:** hero. No QT parent.
+**Avatar:** they have yesterday’s whole truth + a live plus-money dog. Next they need the grade.  
+**Balance:** S+C live + Power trail. Next = say–do grade.  
+**Varied condition just shown:** honest-L-inside-a-green-day + new NFL tape.  
+**Hormozi economics:** still a give.  
+**Distribution:** hero. Card is the stuff.
 
 ---
 
 ## Agent close-out
-- [x] Dale spine shaped (limits + odds our way + 1 hot sharp) — not replaced
-- [x] Line 1 is $20k limit, not “I’m excited”
-- [x] Stuff: 4u · −104 vs −109/−120 · 8-1 · $6.8K · $2K at 1.3×
-- [x] No ask · no lock-as-identity · no system labels
+- [x] Dale spine shaped — Pats question is the close, not a recap open
+- [x] Whole truth: 1 proven on NE · SIU half-point · no fake day total
+- [x] Feature off the hero
+- [x] Not locked (12:45)
 - [x] Staged COPY_PASTE only
 - [x] Continuity written
