@@ -54,7 +54,7 @@ TodayYesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLSat 09/19
+NHLSun 09/20
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -71,23 +71,26 @@ NHLSat 09/19
 |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- |
 
-| SAT 09/197:00 PM<br>![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>52-36<br>-<br>+112Heritage | +115 | +110 | +110 | -110 | +112 | +100 |
-| ![](https://logos.oddstrader.com/logos-original/c1442ea3-f57e-4147-87c3-d0b03c05f2dc-original.PNG?d=100x100)<br>St. Louis<br>37-45<br>-<br>-110Bovada | -135 | -130 | -130 | -110 | -124 | -120 |
+| LIVE2nd 9:58<br>![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>43-39<br>1<br>-109Heritage | -135 | -110 | -110 | -115 | -109 | -115 |
+| ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>42-40<br>1<br>+104Bet105 | +115 | -110 | -110 | -105 | -101 | -105 |
 
-| SAT 09/197:00 PM<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>57-44<br>-<br>+155Bovada | - | - | - | +155 | - | - |
-| ![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>32-50<br>-<br>-185Bovada | - | - | - | -185 | - | - |
+| STARTS IN 01:37:13 <br>![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>39-43<br>-<br>+250Bovada | +241 | +241 | +240 | +250 | +236 | +227 |
+| ![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>49-45<br>-<br>-277Bookmaker | -295 | -295 | -290 | -310 | -288 | -277 |
 
-| SAT 09/198:00 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>29-53<br>-<br>+125BetOnline | +125 | +125 | +125 | +120 | +124 | +123 |
-| ![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>51-42<br>-<br>-138Heritage | -145 | -145 | -145 | -145 | -138 | -143 |
+| SUN 09/205:00 PM<br>![](https://logos.oddstrader.com/logos-original/e83b8824-4198-4a1c-8edb-ff6a63acaeb1-original.PNG?d=100x100)<br>Washington<br>43-39<br>-<br>-136Heritage | -135 | -140 | -140 | -145 | -136 | -138 |
+| ![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>47-41<br>-<br>+122Heritage | +115 | +120 | +120 | +120 | +122 | +118 |
 
-| SAT 09/198:00 PM<br>![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>35-47<br>-<br>+256BetOnline | +263 | +256 | +250 | +240 | +238 | +230 |
-| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>43-45<br>-<br>-280Bookmaker | -325 | -315 | -315 | -300 | -288 | -280 |
+| SUN 09/205:00 PM<br>![](https://logos.oddstrader.com/logos-original/5e8d35d8-0bed-4ae7-a56f-519fdfc050f0-original.PNG?d=100x100)<br>Nashville<br>38-44<br>-<br>+243Bet105 | +230 | +230 | +230 | +240 | +241 | +227 |
+| ![](https://logos.oddstrader.com/logos-original/c8d52a39-5aa1-4997-8c81-7618dfbd5e22-original.PNG?d=100x100)<br>Tampa Bay<br>53-36<br>-<br>-271Heritage | -280 | -280 | -280 | -300 | -271 | -277 |
 
-| SAT 09/199:00 PM<br>![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>53-51<br>-<br>+118Bookmaker | +115 | +115 | +115 | +115 | +115 | +118 |
-| ![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>35-51<br>-<br>-135BetOnline | -135 | -135 | -135 | -140 | -135 | -138 |
+| SUN 09/207:00 PM<br>![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>45-43<br>-<br>+148Bookmaker | - | - | - | +130 | +143 | +148 |
+| ![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>63-32<br>-<br>-155Bovada | - | - | - | -155 | -169 | -170 |
 
-| SAT 09/199:00 PM<br>![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>25-57<br>-<br>-105BetAnything | - | - | -105 | - | - | - |
-| ![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>34-48<br>-<br>-115BetAnything | - | - | -115 | - | - | - |
+| SUN 09/207:00 PM<br>![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>69-32<br>-<br>+296BetOnline | +241 | +296 | +275 | +275 | +279 | +263 |
+| ![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>40-42<br>-<br>-317Heritage | -295 | -370 | -365 | -350 | -317 | -325 |
+
+| SUN 09/208:00 PM<br>![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>34-48<br>-<br>+118Heritage | +120 | +115 | +115 | +110 | +118 | +111 |
+| ![](https://logos.oddstrader.com/logos-original/3e689bd8-9b9d-4d02-ac49-cd5942e18007-original.png?d=100x100)<br>Calgary<br>34-48<br>-<br>-130Bovada | -140 | -135 | -135 | -130 | -130 | -132 |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
@@ -211,6 +214,28 @@ Sports Betting & Fantasy Analyst
 
 Sports Betting Writer
 
+[![Mitch Marner #93 and Jack Eichel #9 of the Vegas Golden Knights chase after the puck against the Los Angeles Kings.](https://www.oddstrader.com/wp-content/uploads/2025/10/mitch-marner-and-jack-eichel-vegas-golden-knights-768x512.jpg)](https://www.oddstrader.com/betting/nhl-stanley-cup-contenders-hurricanes-oilers-vegas/)
+
+NHL
+
+### [NHL Stanley Cup Contenders: Hurricanes, Oilers & Vegas](https://www.oddstrader.com/betting/nhl-stanley-cup-contenders-hurricanes-oilers-vegas/)
+
+[Read More »](https://www.oddstrader.com/betting/nhl-stanley-cup-contenders-hurricanes-oilers-vegas/)
+
+[Garrett Chorpenning](https://www.oddstrader.com/betting/author/garrettchorpenning/)
+September 20, 2026
+
+[![NHL logo Navy Federal Credit Union Stadium Series New Jersey](https://www.oddstrader.com/wp-content/uploads/2024/03/NHL-logo-768x530.jpg)](https://www.oddstrader.com/betting/nhl-injury-report-2026-barzal-guhle-gourde/)
+
+NHL
+
+### [NHL Injury Report 2026: Barzal, Guhle & Gourde Impact](https://www.oddstrader.com/betting/nhl-injury-report-2026-barzal-guhle-gourde/)
+
+[Read More »](https://www.oddstrader.com/betting/nhl-injury-report-2026-barzal-guhle-gourde/)
+
+[Charlie Boudreau](https://www.oddstrader.com/betting/author/charlieboudreau/)
+September 20, 2026
+
 [![Shayne Gostisbehere #4 of the Carolina Hurricanes shoots the puck against the Los Angeles Kings.](https://www.oddstrader.com/wp-content/uploads/2025/10/shayne-gostisbehere-carolina-hurricanes-v-angeles-kings-768x512.jpg)](https://www.oddstrader.com/betting/hurricanes-panthers-odds-preseason-picks/)
 
 NHL
@@ -222,29 +247,7 @@ NHL
 [Garrett Chorpenning](https://www.oddstrader.com/betting/author/garrettchorpenning/)
 September 19, 2026
 
-[![Seattle Kraken v Chicago Blackhawks](https://www.oddstrader.com/wp-content/uploads/2025/03/Connor-Bedard-768x512.jpg)](https://www.oddstrader.com/betting/connor-bedard-injury-update/)
-
-NHL
-
-### [Connor Bedard Injury Update: Chicago’s New Captain Starts the Season on the Sideline](https://www.oddstrader.com/betting/connor-bedard-injury-update/)
-
-[Read More »](https://www.oddstrader.com/betting/connor-bedard-injury-update/)
-
-[Garrett Chorpenning](https://www.oddstrader.com/betting/author/garrettchorpenning/)
-September 19, 2026
-
-[![Adrian Kempe Los Angeles Kings v Vegas Golden Knight](https://www.oddstrader.com/wp-content/uploads/2023/11/adrian-kempe-los-angeles-kings-v-vegas-golden-knight-768x572.jpg)](https://www.oddstrader.com/betting/golden-knights-kings-preseason-odds/)
-
-NHL
-
-### [Golden Knights vs. Kings Preseason: New-Look Los Angeles Gets an Early Vegas Test](https://www.oddstrader.com/betting/golden-knights-kings-preseason-odds/)
-
-[Read More »](https://www.oddstrader.com/betting/golden-knights-kings-preseason-odds/)
-
-[Charlie Boudreau](https://www.oddstrader.com/betting/author/charlieboudreau/)
-September 18, 2026
-
-[Load More](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1789841829174#)
+[Load More](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1789928560953#)
 
 ![oddstraderLogo](https://otcdn.virginia.us-east-1.oddstrader.com/OT-LogoWhiteGreen.svg)
 
