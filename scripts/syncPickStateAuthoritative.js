@@ -5338,7 +5338,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     && stFatPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
   // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift + steam-tail + fav-juice + share + st-fat run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = operatorKilled || stFatMuted || boardShareMuted || unitTierMuted || favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive)
+  const sizeMuted = operatorKilled || stFatMuted || boardShareMuted || unitTierMuted || favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
