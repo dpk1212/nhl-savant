@@ -17,7 +17,6 @@ import {
   actionDateParts,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
-import { shortWalletId } from '../../lib/walletClvSkill.js';
 import SteamTag from './cards/SteamTag';
 import { shortTeamNick } from '../../utils/teamIdentity.js';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,12 +24,10 @@ import { useSubscription } from '../../hooks/useSubscription';
 import { useMySharps } from '../../hooks/useMySharps';
 import MySharpsDesk from './MySharpsDesk.jsx';
 import {
-  buildMySharpsDashboard,
+  buildMySharpsBoard,
   buildMySharpsRoster,
   collectRecentLegs,
   filterRowsToMySharps,
-  shortsForDeskSection,
-  sortRowsByRelativeSize,
 } from '../../lib/mySharpsDesk.js';
 
 const B = {
@@ -1523,9 +1520,6 @@ export default function ConfirmedActionDesk({
   const [deskMode, setDeskModeState] = useState(deskUi.deskMode);
   const [cellStatsTable, setCellStatsTable] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
-  const [deskCollapsed, setDeskCollapsed] = useState(false);
-  const [deskScope, setDeskScope] = useState('agg');
-  const [deskSection, setDeskSection] = useState('action');
   const [focusShort, setFocusShort] = useState(null);
   const auth = useAuth();
   const user = userProp ?? auth.user;
@@ -1586,7 +1580,6 @@ export default function ConfirmedActionDesk({
     if (!focusShort) return;
     if (!mySharps.shorts.has(focusShort)) {
       setFocusShort(null);
-      setDeskScope('agg');
     }
   }, [focusShort, mySharps.shorts]);
 
@@ -1622,13 +1615,13 @@ export default function ConfirmedActionDesk({
     return filtered;
   }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, selectedDate, deskMode]);
 
-  const mineDated = useMemo(
-    () => filterRowsToMySharps(dated, mySharps.shorts, deskScope === 'single' ? focusShort : null),
-    [dated, mySharps.shorts, deskScope, focusShort],
+  const allMine = useMemo(
+    () => filterRowsToMySharps(dated, mySharps.shorts),
+    [dated, mySharps.shorts],
   );
 
   const roster = useMemo(
-    () => buildMySharpsRoster( { members: Object.fromEntries(mySharps.members.map((m) => [m.walletShort, m])) }, {
+    () => buildMySharpsRoster({ members: Object.fromEntries(mySharps.members.map((m) => [m.walletShort, m])) }, {
       walletProfiles,
       actionRows: dated,
       sportFilter,
@@ -1636,45 +1629,22 @@ export default function ConfirmedActionDesk({
     [mySharps.members, walletProfiles, dated, sportFilter],
   );
 
-  const leanByShort = useMemo(() => {
-    const m = new Map();
-    for (const c of roster) m.set(c.walletShort, c.lean);
-    return m;
-  }, [roster]);
+  const board = useMemo(() => buildMySharpsBoard(allMine), [allMine]);
 
-  const visible = useMemo(() => {
-    if (deskMode === 'mine') {
-      let list = mineDated;
-      if (deskSection === 'sized') {
-        list = list.filter((r) => (Number(r.displaySizeRatio ?? r.sizeRatio) || 0) >= 1.5);
-      } else {
-        const cut = shortsForDeskSection(roster, deskSection);
-        if (cut) list = list.filter((r) => cut.has(shortWalletId(r.walletShort)));
-      }
-      return sortRowsByRelativeSize(list);
-    }
-    return sortActionRows(dated, sortMode);
-  }, [deskMode, mineDated, dated, sortMode, deskSection, roster]);
+  const visible = useMemo(
+    () => (deskMode === 'mine' ? [] : sortActionRows(dated, sortMode)),
+    [deskMode, dated, sortMode],
+  );
 
   const recentLegs = useMemo(
-    () => collectRecentLegs(walletProfiles, [...mySharps.shorts], {
-      sportFilter,
-      focusShort: deskScope === 'single' ? focusShort : null,
-    }),
-    [walletProfiles, mySharps.shorts, sportFilter, deskScope, focusShort],
+    () => collectRecentLegs(walletProfiles, [...mySharps.shorts], { sportFilter }),
+    [walletProfiles, mySharps.shorts, sportFilter],
   );
 
-  const dash = useMemo(
-    () => buildMySharpsDashboard({
-      roster,
-      actionRows: mineDated,
-      recentLegs,
-      focusShort: deskScope === 'single' ? focusShort : null,
-    }),
-    [roster, mineDated, recentLegs, deskScope, focusShort],
+  const marquee = useMemo(
+    () => (deskMode === 'mine' ? [] : buildConfirmedActionMarquee(visible)),
+    [deskMode, visible],
   );
-
-  const marquee = useMemo(() => buildConfirmedActionMarquee(visible), [visible]);
 
   if (!walletProfiles) {
     return (
@@ -1718,27 +1688,19 @@ export default function ConfirmedActionDesk({
         onChange={setDeskMode}
         mineCount={mySharps.count}
       />
-      <ActionTape items={marquee} />
+      {deskMode === 'mine' ? null : <ActionTape items={marquee} />}
 
       {deskMode === 'mine' ? (
         <MySharpsDesk
           ready={mySharps.ready}
           signedIn={!!user}
-          collapsed={deskCollapsed}
-          onToggleCollapse={() => setDeskCollapsed((v) => !v)}
-          scope={deskScope}
-          onScope={(id) => {
-            setDeskScope(id);
-            if (id === 'agg') setFocusShort(null);
-          }}
           focusShort={focusShort}
           onFocus={setFocusShort}
-          section={deskSection}
-          onSection={setDeskSection}
           roster={roster}
-          dash={dash}
+          board={board}
+          actionRows={allMine}
+          recentLegs={recentLegs}
           onRemove={mySharps.remove}
-          cap={mySharps.cap}
           isMobile={isMobile}
         />
       ) : (

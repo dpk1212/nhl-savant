@@ -53,12 +53,15 @@ const LockedCardStates = lazy(() => import('./components/preview/LockedCardState
 const LockedStoryLab = lazy(() => import('./components/preview/LockedStoryLab'));
 
 /** Design sandboxes — no auth, no paywall, no splash, no data bootstrap. */
+const MySharpsDeskLab = lazy(() => import('./components/preview/MySharpsDeskLab'));
+
 const DESIGN_LAB_PATHS = [
   '/card-lab',
   '/position-lab',
   '/sharp-map-lab',
   '/locked-card-states',
   '/locked-story-lab',
+  '/my-sharps-lab',
 ];
 
 function hashPath() {
@@ -103,6 +106,7 @@ function DesignLabApp() {
             <Route path="/sharp-map-lab" element={<SharpMapLab />} />
             <Route path="/locked-card-states" element={<LockedCardStates />} />
             <Route path="/locked-story-lab" element={<LockedStoryLab />} />
+            <Route path="/my-sharps-lab" element={<MySharpsDeskLab />} />
           </Routes>
         </Suspense>
       </Router>

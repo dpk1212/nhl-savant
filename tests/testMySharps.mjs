@@ -13,13 +13,18 @@ import {
   toggleMySharpMember,
 } from '../src/lib/mySharps.js';
 import {
+  buildDeskPulse,
+  buildMySharpsBoard,
   buildMySharpsDashboard,
   buildMySharpsRoster,
+  filterBoardTickets,
   filterRowsToMySharps,
   heatFromForm,
   honestRecord,
   marketBooksFromProfile,
+  pickDeskMovers,
   shortsForDeskSection,
+  sortMySharpsRoster,
   sortRowsByRelativeSize,
   tailLean,
 } from '../src/lib/mySharpsDesk.js';
@@ -207,5 +212,117 @@ const books = marketBooksFromProfile({
 }, 'NFL');
 assert.equal(books.length, 1);
 assert.equal(books[0].market, 'ML');
+
+const boardRows = [
+  { walletShort: '162937', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over', team: 'Over', marketLabel: 'O 47.5', invested: 122100, displaySizeRatio: 2.1, opposed: 'clear' },
+  { walletShort: 'e4ec62', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over', team: 'Over', marketLabel: 'O 47.5', invested: 80000, displaySizeRatio: 1.2, opposed: 'clear' },
+  { walletShort: 'abcdef', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'under', team: 'Under', marketLabel: 'U 47.5', invested: 11000, displaySizeRatio: 0.6, opposed: 'contested' },
+  { walletShort: 'aaaaaa', sport: 'CFB', gameKey: 'lsu_ala', marketType: 'ML', side: 'home', team: 'Bama', marketLabel: 'ML', invested: 50000, displaySizeRatio: 1.8, opposed: 'clear' },
+];
+const board = buildMySharpsBoard(boardRows);
+assert.equal(board.sharedN, 1);
+assert.equal(board.splitN, 2);
+assert.equal(board.opposedN, 1);
+assert.equal(board.standoutN, 1);
+const shared = board.tickets.find((t) => t.shared);
+assert.equal(shared.shorts.length, 2);
+assert.equal(shared.kind, 'shared');
+const standout = board.tickets.find((t) => t.kind === 'standout');
+assert.equal(standout.sport, 'CFB');
+assert.equal(filterBoardTickets(board, { filter: 'agree' }).length, 1);
+assert.equal(filterBoardTickets(board, { filter: 'fight' }).length, 2);
+assert.equal(filterBoardTickets(board, { filter: 'NFL' }).every((t) => t.sport === 'NFL'), true);
+assert.equal(filterBoardTickets(board, { focusShort: 'aaaaaa' }).length, 1);
+
+const twoState = parseMySharpsDoc({
+  mySharps: {
+    members: {
+      e4ec62: { walletShort: 'e4ec62', addedAt: 1 },
+      abcdef: { walletShort: 'abcdef', addedAt: 2 },
+    },
+  },
+});
+const twoRoster = buildMySharpsRoster(twoState, {
+  walletProfiles: new Map([
+    ['e4ec62', {
+      clvSkill: { n: 18, pctPos: 62 },
+      bySport: {
+        NFL: {
+          whitelistTier: 'CONFIRMED',
+          recentActionWindow: { n: 10, wins: 7, losses: 3, wr: 70, settledPnl: 120000, dollarRoi: 14 },
+          positions: { n: 20, wins: 12, losses: 8, wr: 60, positionFlatRoi: 8, dollarRoi: 11 },
+          form: { actionL5: { w: 4, l: 1 }, actionL10: { w: 7, l: 3 } },
+        },
+      },
+    }],
+    ['abcdef', {
+      bySport: {
+        NFL: {
+          whitelistTier: 'CONFIRMED',
+          recentActionWindow: { n: 3, wins: 3, losses: 0, wr: 100, settledPnl: 9000, dollarRoi: 40 },
+          form: { actionL5: { w: 3, l: 0 } },
+        },
+      },
+    }],
+  ]),
+  actionRows: [
+    { walletShort: 'e4ec62', sport: 'NFL', invested: 162500, displaySizeRatio: 2 },
+    { walletShort: 'abcdef', sport: 'CFB', invested: 11000, displaySizeRatio: 0.6 },
+  ],
+});
+const mineBoard = buildMySharpsBoard([
+  { walletShort: 'e4ec62', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over', invested: 162500, displaySizeRatio: 2, opposed: 'clear' },
+  { walletShort: 'abcdef', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'under', invested: 11000, displaySizeRatio: 0.6, opposed: 'contested' },
+]);
+assert.equal(mineBoard.splitN, 2);
+assert.equal(mineBoard.sharedN, 0);
+
+const pulse = buildDeskPulse({
+  roster: twoRoster,
+  board: mineBoard,
+  actionRows: [
+    { walletShort: 'e4ec62', sport: 'NFL', invested: 162500 },
+    { walletShort: 'abcdef', sport: 'CFB', invested: 11000 },
+  ],
+  recentLegs: [
+    { walletShort: 'e4ec62', won: 1, dollarPnl: 4000 },
+    { walletShort: 'e4ec62', won: 0, dollarPnl: -2000 },
+  ],
+  window: 'l30',
+});
+assert.equal(pulse.hero.window, 'l30');
+assert.equal(pulse.l30.pnl, 129000);
+assert.equal(pulse.open.n, 2);
+assert.equal(pulse.sports[0].sport, 'NFL');
+assert.ok(pulse.sports[0].pct >= 90);
+assert.equal(pulse.movers.hot.walletShort, 'e4ec62');
+assert.notEqual(pulse.movers.book?.walletShort, 'e4ec62');
+assert.equal(pulse.canOverlap, true);
+assert.equal(pulse.agreeN, 0);
+assert.equal(pulse.fightN, 2);
+assert.equal(new Set(pulse.movers.list.map((m) => m.walletShort)).size, pulse.movers.list.length);
+const recentPulse = buildDeskPulse({
+  roster: twoRoster,
+  board,
+  actionRows: [{ walletShort: 'e4ec62', sport: 'NFL', invested: 162500 }],
+  recentLegs: [
+    { walletShort: 'e4ec62', won: 1, dollarPnl: 4000 },
+    { walletShort: 'e4ec62', won: 0, dollarPnl: -2000 },
+  ],
+  window: 'recent',
+});
+assert.equal(recentPulse.hero.window, 'recent');
+assert.equal(recentPulse.hero.pnl, 2000);
+assert.equal(recentPulse.recent.wins, 1);
+assert.equal(sortMySharpsRoster(twoRoster, 'l30')[0].walletShort, 'e4ec62');
+
+const oneHot = pickDeskMovers({
+  cards: twoRoster,
+  tickets: mineBoard.tickets,
+});
+assert.equal(oneHot.hot.walletShort, 'e4ec62');
+assert.ok(!oneHot.book || oneHot.book.walletShort !== oneHot.hot.walletShort);
+assert.ok(!oneHot.live || !oneHot.list.filter((m) => m.role !== 'live').some((m) => m.walletShort === oneHot.live.walletShort));
+assert.equal(new Set(oneHot.list.map((m) => m.walletShort)).size, oneHot.list.length);
 
 console.log('testMySharps: ok');

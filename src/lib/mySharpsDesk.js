@@ -468,3 +468,373 @@ export function buildMySharpsDashboard({
     liveByLean,
   };
 }
+
+const SIDE_OPP = {
+  away: 'home', home: 'away', over: 'under', under: 'over', draw: null,
+};
+
+function ticketKey(r) {
+  return `${r.sport}|${r.gameKey}|${r.marketType}|${r.side}`;
+}
+
+function clusterKey(r) {
+  return `${r.sport}|${r.gameKey}|${r.marketType}`;
+}
+
+function uniqueShorts(list) {
+  const out = [];
+  const seen = new Set();
+  for (const r of list || []) {
+    const w = shortWalletId(r.walletShort);
+    if (!w || seen.has(w)) continue;
+    seen.add(w);
+    out.push(w);
+  }
+  return out;
+}
+
+function ticketRank(t) {
+  if (t.shared) return 0;
+  if (t.split) return 1;
+  if (t.opposed) return 2;
+  if (t.standout) return 3;
+  return 4;
+}
+
+function legDollar(leg) {
+  if (Number.isFinite(leg?.dollarPnl)) return Number(leg.dollarPnl);
+  if (Number.isFinite(leg?.settledPnl)) return Number(leg.settledPnl);
+  if (Number.isFinite(leg?.flat) && Number.isFinite(leg?.invested) && Number(leg.invested) > 0) {
+    return Number(leg.invested) * Number(leg.flat);
+  }
+  return null;
+}
+
+function recentFromCards(cards) {
+  let w = 0;
+  let l = 0;
+  for (const c of cards) {
+    const block = wl(c.form?.actionL10) || wl(c.form?.l10) || wl(c.form?.actionL5) || wl(c.form?.l5);
+    if (!block) continue;
+    w += block.w;
+    l += block.l;
+  }
+  return { w, l };
+}
+
+export function sortMySharpsRoster(roster, key = 'lean', dir = 'asc') {
+  const mul = dir === 'desc' ? -1 : 1;
+  return [...(roster || [])].sort((a, b) => {
+    let cmp = 0;
+    if (key === 'wallet') {
+      cmp = String(a.walletShort || '').localeCompare(String(b.walletShort || ''));
+    } else if (key === 'sport') {
+      cmp = String(a.focusSport || a.sports?.[0] || '').localeCompare(String(b.focusSport || b.sports?.[0] || ''));
+    } else if (key === 'recent') {
+      const ar = wl(a.form?.actionL10) || wl(a.form?.l10) || wl(a.form?.actionL5) || wl(a.form?.l5);
+      const br = wl(b.form?.actionL10) || wl(b.form?.l10) || wl(b.form?.actionL5) || wl(b.form?.l5);
+      cmp = ((br?.wr || 0) - (ar?.wr || 0)) || ((br?.n || 0) - (ar?.n || 0));
+    } else if (key === 'l30') {
+      const ap = Number.isFinite(a.l30?.pnl) ? a.l30.pnl : -Infinity;
+      const bp = Number.isFinite(b.l30?.pnl) ? b.l30.pnl : -Infinity;
+      cmp = bp - ap;
+      if (!cmp) cmp = (b.l30Honest?.n || 0) - (a.l30Honest?.n || 0);
+    } else if (key === 'open') {
+      cmp = (b.openInvested || 0) - (a.openInvested || 0);
+      if (!cmp) cmp = (b.openN || 0) - (a.openN || 0);
+    } else if (key === 'market') {
+      const am = a.books?.[0];
+      const bm = b.books?.[0];
+      cmp = (Number(bm?.wr) || 0) - (Number(am?.wr) || 0);
+    } else {
+      cmp = (LEAN_RANK[a.lean?.key] ?? 9) - (LEAN_RANK[b.lean?.key] ?? 9);
+      if (!cmp) cmp = (HEAT_RANK[a.heat?.key] ?? 9) - (HEAT_RANK[b.heat?.key] ?? 9);
+      if (!cmp) cmp = (b.openInvested || 0) - (a.openInvested || 0);
+    }
+    return cmp * mul;
+  });
+}
+
+/**
+ * Open tickets from the list, grouped by game × market × side.
+ * Shared / split use only wallets on this desk.
+ */
+export function buildMySharpsBoard(rows = []) {
+  const byTicket = new Map();
+  const byCluster = new Map();
+  for (const r of rows || []) {
+    const tk = ticketKey(r);
+    if (!byTicket.has(tk)) byTicket.set(tk, []);
+    byTicket.get(tk).push(r);
+    const ck = clusterKey(r);
+    if (!byCluster.has(ck)) byCluster.set(ck, []);
+    byCluster.get(ck).push(r);
+  }
+
+  const tickets = [];
+  for (const [id, list] of byTicket) {
+    const first = list[0];
+    const shorts = uniqueShorts(list);
+    const invested = list.reduce((s, r) => s + (Number(r.invested) || 0), 0);
+    const maxRatio = list.reduce((m, r) => Math.max(m, Number(r.displaySizeRatio ?? r.sizeRatio) || 0), 0);
+    const opp = SIDE_OPP[String(first.side || '').toLowerCase()] ?? null;
+    const cluster = byCluster.get(clusterKey(first)) || [];
+    const oppShorts = opp
+      ? uniqueShorts(cluster.filter((r) => String(r.side).toLowerCase() === opp))
+      : [];
+    const shared = shorts.length >= 2;
+    const split = oppShorts.length > 0;
+    const opposed = list.some((r) => r.opposed === 'contested');
+    const clear = !opposed && list.some((r) => r.opposed === 'clear');
+    const sized = maxRatio >= SIZED_UP_RATIO;
+    const standout = !shared && !split && (sized || clear);
+    const kind = shared ? 'shared' : split ? 'split' : opposed ? 'opposed' : standout ? 'standout' : 'open';
+    tickets.push({
+      id,
+      sport: first.sport || null,
+      gameKey: first.gameKey || null,
+      marketType: first.marketType || null,
+      side: first.side || null,
+      team: first.team || null,
+      marketLabel: first.marketLabel || null,
+      away: first.away || null,
+      home: first.home || null,
+      invested,
+      maxRatio,
+      shorts,
+      oppShorts,
+      tags: shorts.map((s) => fmtWalletTag(s)),
+      rows: list,
+      shared,
+      split,
+      opposed,
+      standout,
+      clear,
+      sized,
+      kind,
+    });
+  }
+
+  tickets.sort((a, b) => {
+    const rk = ticketRank(a) - ticketRank(b);
+    if (rk) return rk;
+    if (b.maxRatio !== a.maxRatio) return b.maxRatio - a.maxRatio;
+    return (b.invested || 0) - (a.invested || 0);
+  });
+
+  return {
+    tickets,
+    sharedN: tickets.filter((t) => t.shared).length,
+    splitN: tickets.filter((t) => t.split).length,
+    opposedN: tickets.filter((t) => t.opposed).length,
+    standoutN: tickets.filter((t) => t.standout).length,
+  };
+}
+
+export function filterBoardTickets(board, {
+  focusShort = null,
+  filter = null,
+} = {}) {
+  let list = board?.tickets || [];
+  const focus = focusShort ? String(focusShort).toLowerCase() : null;
+  if (focus) list = list.filter((t) => t.shorts.includes(focus));
+  if (!filter || filter === 'open') return list;
+  if (filter === 'agree' || filter === 'shared') return list.filter((t) => t.shared);
+  if (filter === 'fight') return list.filter((t) => t.split || t.opposed);
+  if (filter === 'split') return list.filter((t) => t.split);
+  if (filter === 'opposed') return list.filter((t) => t.opposed);
+  if (filter === 'standout') return list.filter((t) => t.standout);
+  return list.filter((t) => t.sport === filter);
+}
+
+/**
+ * Portfolio control KPIs for the list (or one focused wallet).
+ * window: 'l30' | 'recent'
+ */
+export function buildDeskPulse({
+  roster = [],
+  board = { tickets: [] },
+  actionRows = [],
+  recentLegs = [],
+  focusShort = null,
+  window = 'l30',
+} = {}) {
+  const focus = focusShort ? String(focusShort).toLowerCase() : null;
+  const cards = focus
+    ? (roster || []).filter((r) => r.walletShort === focus)
+    : (roster || []);
+  const plays = focus
+    ? (actionRows || []).filter((r) => shortWalletId(r.walletShort) === focus)
+    : (actionRows || []);
+
+  let l30n = 0;
+  let l30w = 0;
+  let l30l = 0;
+  let l30pnl = 0;
+  let l30have = false;
+  for (const c of cards) {
+    if (!c.l30) continue;
+    l30have = true;
+    l30n += c.l30.n || 0;
+    if (Number.isFinite(c.l30.wins)) l30w += c.l30.wins;
+    if (Number.isFinite(c.l30.losses)) l30l += c.l30.losses;
+    if (Number.isFinite(c.l30.pnl)) l30pnl += c.l30.pnl;
+  }
+  const l30Honest = honestRecord(l30w, l30l, (l30w + l30l) > 0 ? Math.round((l30w / (l30w + l30l)) * 100) : null);
+
+  const legs = focus
+    ? (recentLegs || []).filter((l) => shortWalletId(l.walletShort) === focus)
+    : (recentLegs || []);
+  let recentW = legs.filter((l) => l.won === 1).length;
+  let recentL = legs.filter((l) => l.won === 0).length;
+  let recentPnl = 0;
+  let recentHavePnl = false;
+  for (const leg of legs) {
+    const d = legDollar(leg);
+    if (!Number.isFinite(d)) continue;
+    recentHavePnl = true;
+    recentPnl += d;
+  }
+  if (recentW + recentL === 0) {
+    const fb = recentFromCards(cards);
+    recentW = fb.w;
+    recentL = fb.l;
+  }
+  const recentHonest = honestRecord(recentW, recentL);
+
+  const win = window === 'recent' ? 'recent' : 'l30';
+  const heroPnl = win === 'recent'
+    ? (recentHavePnl ? Math.round(recentPnl) : null)
+    : (l30have ? l30pnl : null);
+  const heroHonest = win === 'recent' ? recentHonest : l30Honest;
+
+  const lean = { tail: 0, sit: 0, watch: 0 };
+  const heat = { hot: 0, cold: 0, even: 0, quiet: 0 };
+  for (const c of cards) {
+    if (lean[c.lean?.key] != null) lean[c.lean.key] += 1;
+    if (heat[c.heat?.key] != null) heat[c.heat.key] += 1;
+  }
+
+  const sportMap = new Map();
+  for (const r of plays) {
+    const sport = r.sport || '—';
+    const cur = sportMap.get(sport) || { sport, n: 0, invested: 0 };
+    cur.n += 1;
+    cur.invested += Number(r.invested) || 0;
+    sportMap.set(sport, cur);
+  }
+  const sportTotal = [...sportMap.values()].reduce((s, x) => s + x.invested, 0);
+  const sports = [...sportMap.values()]
+    .sort((a, b) => b.invested - a.invested)
+    .map((x) => ({
+      ...x,
+      pct: sportTotal > 0 ? Math.round((x.invested / sportTotal) * 100) : 0,
+    }));
+
+  const tickets = filterBoardTickets(board, { focusShort: focus });
+  const agreeN = tickets.filter((t) => t.shared).length;
+  const splitN = tickets.filter((t) => t.split).length;
+  const opposedN = tickets.filter((t) => t.opposed).length;
+  const fightN = tickets.filter((t) => t.split || t.opposed).length;
+
+  const movers = pickDeskMovers({ cards, tickets });
+
+  return {
+    walletN: cards.length,
+    window: win,
+    hero: {
+      window: win,
+      pnl: heroPnl,
+      honest: heroHonest,
+      hasPnl: heroPnl != null,
+    },
+    l30: l30have ? {
+      n: l30n,
+      wins: l30w,
+      losses: l30l,
+      pnl: l30pnl,
+      wr: (l30w + l30l) > 0 ? Math.round((l30w / (l30w + l30l)) * 100) : null,
+      honest: l30Honest,
+    } : null,
+    recent: {
+      n: recentW + recentL,
+      wins: recentW,
+      losses: recentL,
+      pnl: recentHavePnl ? Math.round(recentPnl) : null,
+      honest: recentHonest,
+    },
+    open: {
+      n: plays.length,
+      invested: plays.reduce((s, r) => s + (Number(r.invested) || 0), 0),
+    },
+    lean,
+    heat,
+    sports,
+    agreeN,
+    splitN,
+    opposedN,
+    fightN,
+    canOverlap: (roster || []).length >= 2,
+    overlapEmpty: (roster || []).length >= 2 && agreeN === 0 && fightN === 0,
+    movers,
+  };
+}
+
+/** Distinct names only. Same wallet is not Hot, Book, and Live. */
+export function pickDeskMovers({ cards = [], tickets = [] } = {}) {
+  const hotCard = [...cards]
+    .filter((c) => c.heat?.key === 'hot')
+    .sort((a, b) => (Number(b.heat?.wr) || 0) - (Number(a.heat?.wr) || 0))[0]
+    || [...cards].sort((a, b) => (HEAT_RANK[a.heat?.key] ?? 9) - (HEAT_RANK[b.heat?.key] ?? 9))[0]
+    || null;
+
+  const bookCard = [...cards].sort((a, b) => {
+    const ap = Number.isFinite(a.l30?.pnl) ? a.l30.pnl : -Infinity;
+    const bp = Number.isFinite(b.l30?.pnl) ? b.l30.pnl : -Infinity;
+    if (bp !== ap) return bp - ap;
+    return (b.l30Honest?.n || 0) - (a.l30Honest?.n || 0);
+  }).find((c) => !hotCard || c.walletShort !== hotCard.walletShort) || null;
+
+  const used = new Set([hotCard?.walletShort, bookCard?.walletShort].filter(Boolean));
+  const liveTicket = [...(tickets || [])].sort((a, b) => {
+    if (a.shared !== b.shared) return a.shared ? -1 : 1;
+    if (a.sized !== b.sized) return a.sized ? -1 : 1;
+    return (b.invested || 0) - (a.invested || 0);
+  })[0] || null;
+
+  let live = null;
+  if (liveTicket) {
+    const pick = liveTicket.shorts.find((s) => !used.has(s)) || null;
+    if (pick) {
+      const card = cards.find((c) => c.walletShort === pick);
+      live = {
+        role: 'live',
+        walletShort: pick,
+        tag: card?.tag || liveTicket.tags[liveTicket.shorts.indexOf(pick)] || null,
+        ticket: liveTicket,
+      };
+    }
+  }
+
+  const hot = hotCard ? {
+    role: 'hot',
+    walletShort: hotCard.walletShort,
+    tag: hotCard.tag,
+    heat: hotCard.heat,
+    lean: hotCard.lean,
+  } : null;
+  const book = bookCard ? {
+    role: 'book',
+    walletShort: bookCard.walletShort,
+    tag: bookCard.tag,
+    pnl: bookCard.l30?.pnl ?? null,
+    honest: bookCard.l30Honest,
+  } : null;
+
+  return {
+    hot,
+    book,
+    live,
+    list: [hot, book, live].filter(Boolean),
+  };
+}
