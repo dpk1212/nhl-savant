@@ -12814,7 +12814,7 @@ export default function SharpFlow() {
                           // Past T-15: sealed ticket label from peak (last pre-freeze),
                           // not a morning create-time team string that can drift.
                           team: pastT15Odds
-                            ? (peak.team || lock.team || sd.team || sideKey)
+                            ? (lock.team || peak.team || sd.team || sideKey)
                             : (sd.team || lock.team || peak.team || sideKey),
                           away: doc.away || '', home: doc.home || '',
                           commenceMs: commenceForOdds,

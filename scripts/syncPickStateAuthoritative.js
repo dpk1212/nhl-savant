@@ -199,6 +199,7 @@ import {
   bestAvailableTicket,
   flaggedSnapshotFromPeakLock,
   isT15BestLockLive,
+  lockTicketTeamLabel,
 } from '../src/lib/t15BestLock.js';
 import {
   inheritSpreadMarketHints,
@@ -7243,7 +7244,14 @@ async function main() {
                   pinnacleOdds: useBest
                     ? (best.pinnacleOdds ?? lock.pinnacleOdds ?? peak.pinnacleOdds ?? null)
                     : (peak.pinnacleOdds ?? lock.pinnacleOdds ?? null),
-                  team: peak.team ?? lock.team ?? null,
+                  team: useBest
+                    ? (lockTicketTeamLabel({
+                      marketType: mkt,
+                      side: sideKey,
+                      line: best.line,
+                      fallbackTeam: peak.team || lock.team || null,
+                    }) || peak.team || lock.team || null)
+                    : (peak.team ?? lock.team ?? null),
                   book: useBest ? (best.book ?? lock.book ?? null)
                     : (peak.book ?? lock.book ?? null),
                   oddsSource: useBest ? (best.oddsSource ?? 't15_best_available')
