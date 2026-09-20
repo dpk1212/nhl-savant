@@ -314,6 +314,14 @@ const TARGET_DATE = dateArg
   ? dateArg.split('=')[1]
   : new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
+const OPERATOR_MUTED_BY = 'manual';
+/** Operator pull — last writer after all sizing. Survives steam-tail / RANK-rescue republish. */
+function isOperatorKilled(pick, side, sd) {
+  if (sd && sd.manualMute === true) return true;
+  const id = pick?._id || pick?.id || '';
+  return id === '2026-09-20_WNBA_sea_lva' && String(side) === 'home';
+}
+
 // ── AGS-Unified v9 helpers ─────────────────────────────────────────────────
 // Every helper here reads ONLY the AGS-U composite + calibration. Δw,
 // HC margin, and Δq are computed for diagnostic stamping (so the v6
@@ -3518,6 +3526,9 @@ async function createMissingLockedPicks({
         });
         peakUnitsApplied = stFatPolicyCreate.units;
       }
+      if (isOperatorKilled({ _id: docId }, side, null)) {
+        peakUnitsApplied = 0;
+      }
 
       // Determine team label for the side.
       //
@@ -3829,7 +3840,10 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (stFatPolicyCreate?.mutedBy) {
+      if (isOperatorKilled({ _id: docId }, side, null)) {
+        v8Stamps.mutedBy = OPERATOR_MUTED_BY;
+        v8Stamps.manualMute = true;
+      } else if (stFatPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = stFatPolicyCreate.mutedBy;
       } else if (boardSharePolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = boardSharePolicyCreate.mutedBy;
@@ -5205,6 +5219,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = stFatPolicy.units;
   }
 
+  const operatorKilled = isOperatorKilled(pick, side, sd);
+  if (operatorKilled) finalUnitsApplied = 0;
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP rescue that forced through an AGS mute.
@@ -5321,7 +5338,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     && stFatPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
   // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift + steam-tail + fav-juice + share + st-fat run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = stFatMuted || boardShareMuted || unitTierMuted || favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  const sizeMuted = operatorKilled || stFatMuted || boardShareMuted || unitTierMuted || favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive)
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -5367,7 +5384,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const UNIT_TIER_MUTE_VALUES = new Set([UNIT_TIER_EV_MUTED_BY]);
   const BOARD_SHARE_MUTE_VALUES = new Set([BOARD_SHARE_MUTED_BY]);
   const ST_FAT_MUTE_VALUES = new Set([ST_FAT_MUTED_BY]);
-  if (stFatPolicy?.mutedBy) {
+  if (operatorKilled) {
+    patch.mutedBy = OPERATOR_MUTED_BY;
+    patch.manualMute = true;
+  } else if (stFatPolicy?.mutedBy) {
     patch.mutedBy = stFatPolicy.mutedBy;
   } else if (boardSharePolicy?.mutedBy) {
     patch.mutedBy = boardSharePolicy.mutedBy;
