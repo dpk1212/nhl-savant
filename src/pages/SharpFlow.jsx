@@ -71,6 +71,7 @@ import { lookupPinnGame, flipUFCGameKey, isUFCFlipAlias } from '../../scripts/li
 import { bestAvailableTicket, isT15BestLockLive } from '../lib/t15BestLock.js';
 import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
 import { walletPriorStatsPreferB } from '../lib/actionLockPin.js';
+import { oddsCap } from '../lib/oddsCap.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -1239,11 +1240,7 @@ function walletStatsForAgs(walletShort) {
 const AGSU_BASE_UNITS_ML = 2.50;
 const AGSU_BASE_UNITS_SPREAD_TOTAL = 1.50;
 function agsuOddsCap(units, odds) {
-  if (!Number.isFinite(odds)) return units;
-  if (odds >= 200) return Math.min(units, 1.0);
-  if (odds >= 151) return Math.min(units, 1.5);
-  if (odds > 120) return Math.min(units, 2.5); // +121 .. +150
-  return units; // ≤ +120 — full path size (mirror sync oddsCap)
+  return oddsCap(units, odds);
 }
 function agsuStarsFromAgs(ags, calibration) {
   if (ags == null || !Number.isFinite(ags)) return 1.0;

@@ -256,6 +256,7 @@ import {
   walletPriorStatsPreferB,
   isRankEligibleOnSourceB,
 } from '../src/lib/actionLockPin.js';
+import { oddsCap } from '../src/lib/oddsCap.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -287,17 +288,7 @@ const WHITELIST_CONSENSUS_VERSION = 9;
 const BASE_UNITS_ML            = 2.50;
 const BASE_UNITS_SPREAD_TOTAL  = 1.50;
 
-// Odds caps — never bet too much on a *long* underdog (size relative to
-// expected drawdown matters more than EV alone). Applied after AGS sizing.
-// +120 or shorter (favorites through small dogs) → uncapped by odds
-// (still ≤ GLOBAL_UNIT_CAP). Longer dogs keep the stepped clamp.
-function oddsCap(units, odds) {
-  if (!Number.isFinite(odds)) return units;
-  if (odds >= 200) return Math.min(units, 1.0);
-  if (odds >= 151) return Math.min(units, 1.5);
-  if (odds > 120) return Math.min(units, 2.5); // +121 .. +150
-  return units; // ≤ +120 — full path size
-}
+// Odds caps — src/lib/oddsCap.js. Long dogs clamp; +120 or shorter is uncapped.
 
 // T-15 freeze window (matches browser).
 const T_MINUS_15_MIN_MS = 15 * 60 * 1000;
@@ -4476,7 +4467,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       && finalUnitsApplied === 0
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
     if (rankSlice.qualifies) {
-      finalUnitsApplied = RANK_RESCUE_UNITS;
+      finalUnitsApplied = Math.round(oddsCap(RANK_RESCUE_UNITS, sideOdds) * 100) / 100;
       hcStakeTier = 'RANK';
       rankRescued = true;
     }
@@ -5220,6 +5211,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = stFatPolicy.units;
   }
 
+  // Last choke — RANK / EDGE floors cannot publish past the dog cap.
+  let oddsCapClamped = false;
+  if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
+    const capped = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
+    if (capped + 0.001 < finalUnitsApplied) {
+      oddsCapClamped = true;
+      finalUnitsApplied = capped;
+    }
+  }
+
   const operatorKilled = isOperatorKilled(pick, side, sd);
   if (operatorKilled) finalUnitsApplied = 0;
 
@@ -5745,7 +5746,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     );
   }
   if (rankRescued) {
-    changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
+    changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${finalUnitsApplied}u`);
+  }
+  if (oddsCapClamped) {
+    changes.push(`ODDS-CAP: long dog clamped to ${finalUnitsApplied}u @ ${sideOdds}`);
   }
   if (confirmedQ1Rescued) {
     changes.push(
