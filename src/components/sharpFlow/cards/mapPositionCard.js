@@ -1779,6 +1779,10 @@ export function mapLockedPickToCardFixture(pick, {
     bookLabel: pick.book,
     oddsSource: pick.oddsSource,
     fairBook: pick.fairBook,
+    sealed: ticketFrozen && (
+      pick.t15Sealed === true
+      || String(pick.oddsSource || pick.fairBook || '').toLowerCase().includes('t15_best')
+    ),
   });
   if (Number.isFinite(pay.polyReceipt)) polyEntryOdds = pay.polyReceipt;
   const payOdds = Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds;

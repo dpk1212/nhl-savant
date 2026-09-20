@@ -68,6 +68,7 @@ import { compareLockedPicks } from '../lib/lockedPickSort.js';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
 import { lookupPinnGame, flipUFCGameKey, isUFCFlipAlias } from '../../scripts/lib/ufcFighters.js';
+import { bestAvailableTicket, isT15BestLockLive } from '../lib/t15BestLock.js';
 import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
 import { walletPriorStatsPreferB } from '../lib/actionLockPin.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
@@ -12580,9 +12581,36 @@ export default function SharpFlow() {
                           || null;
                         const stampIsPoly = String(peak.oddsSource || lock.oddsSource || peak.book || lock.book || '')
                           .toLowerCase().includes('poly');
+                        // At T-15 the cron seal can lag a cycle. Paint shop-best
+                        // immediately so the hero does not sit on vault 47.5
+                        // then jump to lock 47 when v8_lockBestAtT15 lands.
+                        const t15LiveBest = (pastT15Odds && isT15BestLockLive(doc.date))
+                          ? bestAvailableTicket({
+                            pinnGame: lookupPinnGame(pinnacleHistory, docSport, doc.gameKey),
+                            marketType: marketTypeKey,
+                            side: sideKey,
+                            flagged: {
+                              line: Number.isFinite(Number(sd.flagged?.line)) ? Number(sd.flagged.line)
+                                : (Number.isFinite(Number(peak.line)) ? Number(peak.line) : null),
+                              odds: pickFiniteOdds(sd.flagged?.odds) || pickFiniteOdds(peakOddsRaw),
+                              book: sd.flagged?.book || peak.book || null,
+                              pinnacleOdds: pinnPayOdds,
+                              oddsSource: sd.flagged?.oddsSource || peak.oddsSource || null,
+                            },
+                          })
+                          : null;
+                        const t15Sealed = sd.v8_lockBestAtT15 === true
+                          || String(lock.oddsSource || '').includes('t15_best');
+                        const t15Line = t15Sealed && Number.isFinite(Number(lock.line))
+                          ? Number(lock.line)
+                          : (Number.isFinite(Number(t15LiveBest?.line)) ? Number(t15LiveBest.line) : null);
+                        const t15Odds = t15Sealed
+                          ? pickFiniteOdds(lockOddsRaw)
+                          : pickFiniteOdds(t15LiveBest?.odds);
                         const cardOddsRaw = pastT15Odds
                           ? (
-                            (lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
+                            pickFiniteOdds(t15Odds)
+                            || (lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
                             || (stampIsPoly && Number.isFinite(pinnPayOdds) ? pinnPayOdds : null)
                             || pickFiniteOdds(peakOddsRaw)
                             || pickFiniteOdds(sd.closingOdds)
@@ -12811,11 +12839,18 @@ export default function SharpFlow() {
                           // when we fell back to closingOdds the book label
                           // should reflect that source instead of rendering
                           // "0 · " (empty book).
-                          book: lockOddsValid
-                            ? (lock.book || peak.book || 'Fair')
-                            : (peak.book || lock.book || (sd.closingOdds ? (lock.book || peak.book || 'Fair') : '')),
-                          fairBook: lock.oddsSource || peak.oddsSource || lock.book || peak.book || null,
-                          oddsSource: peak.oddsSource || lock.oddsSource || null,
+                          book: (pastT15Odds && (t15Sealed || t15LiveBest?.book))
+                            ? (lock.book || t15LiveBest?.book || peak.book || 'Fair')
+                            : (lockOddsValid
+                              ? (lock.book || peak.book || 'Fair')
+                              : (peak.book || lock.book || (sd.closingOdds ? (lock.book || peak.book || 'Fair') : ''))),
+                          fairBook: (pastT15Odds && (t15Sealed || t15LiveBest))
+                            ? (lock.oddsSource || t15LiveBest?.oddsSource || lock.book || peak.book || null)
+                            : (lock.oddsSource || peak.oddsSource || lock.book || peak.book || null),
+                          oddsSource: (pastT15Odds && (t15Sealed || t15LiveBest))
+                            ? (lock.oddsSource || t15LiveBest?.oddsSource || 't15_best_available')
+                            : (peak.oddsSource || lock.oddsSource || null),
+                          t15Sealed: pastT15Odds && (t15Sealed || !!t15LiveBest),
                           peakAt: peak.updatedAt || lock.lockedAt,
                           lockedAt: lock.lockedAt || null,
                           gameTime: doc.commenceTime,
@@ -12891,6 +12926,7 @@ export default function SharpFlow() {
                               }
                               if (Number.isFinite(vaultLine)) return vaultLine;
                             }
+                            if (pastT15Odds && Number.isFinite(t15Line)) return t15Line;
                             if (pastT15Odds) return locked ?? close ?? null;
                             return locked ?? close ?? null;
                           })(),

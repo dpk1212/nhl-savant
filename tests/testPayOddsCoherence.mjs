@@ -32,6 +32,20 @@ import { mapLockedPickToCardFixture } from '../src/components/sharpFlow/cards/ma
   assert.equal(r.demotedPoly, false);
 }
 
+// T-15 seal: peak can still say poly — do not chase live tape.
+{
+  const r = resolvePayOdds({
+    stampedOdds: -114,
+    bookOnLine: -116,
+    polyReceipt: -111,
+    bookLabel: 'Pinnacle',
+    oddsSource: 't15_best_available',
+    fairBook: 'poly_avgPrice',
+  });
+  assert.equal(r.payOdds, -114, 'sealed T-15 juice does not follow live Pin');
+  assert.equal(r.demotedPoly, false);
+}
+
 // chi_ten 2026-08-29: Bears +2.5 must not hero as +110 when tape is −108.
 const t = Math.floor(Date.parse('2026-08-29T21:00:00Z') / 1000);
 const commence = Date.parse('2026-08-29T22:00:00Z'); // past T-15 relative to "now" in fixture via gameTime
