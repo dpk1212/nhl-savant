@@ -215,6 +215,106 @@ export function bestAvailableTicket({
   };
 }
 
+export function isSealedT15Lock(sd = {}) {
+  return sd?.v8_lockBestAtT15 === true
+    || String(sd?.lock?.oddsSource || '').includes('t15_best');
+}
+
+/**
+ * Same ticket the locked card paints: sealed T-15 shop line, else live
+ * shop-best, else lock/peak. Alerts must not prefer peak (flagged 10.5)
+ * when the hero is already Under 11.
+ */
+export function resolveLockDisplayTicket({
+  sd = {},
+  pinnGame = null,
+  marketType = 'ml',
+  side = 'home',
+  pickDate = null,
+} = {}) {
+  const peak = sd.peak || {};
+  const lock = sd.lock || {};
+  const flagged = (sd.flagged && typeof sd.flagged === 'object')
+    ? sd.flagged
+    : flaggedSnapshotFromPeakLock(peak, lock);
+
+  if (isSealedT15Lock(sd)
+      && (Number.isFinite(Number(lock.line)) || finiteOdds(Number(lock.odds)))) {
+    return {
+      line: Number.isFinite(Number(lock.line)) ? Number(lock.line) : null,
+      odds: finiteOdds(Number(lock.odds)) ? Number(lock.odds) : null,
+      book: lock.book || null,
+      source: 'sealed',
+    };
+  }
+
+  if (isT15BestLockLive(pickDate)) {
+    const best = bestAvailableTicket({
+      pinnGame,
+      marketType,
+      side,
+      flagged,
+    });
+    if (best && (Number.isFinite(best.line) || finiteOdds(best.odds))) {
+      return {
+        line: Number.isFinite(best.line) ? best.line : null,
+        odds: finiteOdds(best.odds) ? best.odds : null,
+        book: best.book || null,
+        source: best.source || 't15_best_available',
+      };
+    }
+  }
+
+  const line = Number.isFinite(Number(lock.line)) ? Number(lock.line)
+    : (Number.isFinite(Number(peak.line)) ? Number(peak.line) : null);
+  const odds = finiteOdds(Number(lock.odds)) ? Number(lock.odds)
+    : (finiteOdds(Number(peak.odds)) ? Number(peak.odds) : null);
+  return {
+    line,
+    odds,
+    book: lock.book || peak.book || null,
+    source: 'peak_or_lock',
+  };
+}
+
+export function lockTicketTeamLabel({
+  marketType = 'ml',
+  side = 'home',
+  line = null,
+  fallbackTeam = null,
+} = {}) {
+  const mt = String(marketType || '').toLowerCase();
+  const s = String(side || '').toLowerCase();
+  if (mt === 'total' || mt === 'tot') {
+    const mkt = s === 'over' ? 'Over' : 'Under';
+    return Number.isFinite(Number(line)) ? `${mkt} ${line}` : (fallbackTeam || mkt);
+  }
+  return fallbackTeam || null;
+}
+
+/** OneSignal / lock-alert heading body — same number as the locked hero. */
+export function formatLockAlertPickText({
+  market = 'ML',
+  sideKey = 'home',
+  line = null,
+  team = null,
+  away = '',
+  home = '',
+} = {}) {
+  const mkt = String(market || 'ML').toUpperCase();
+  if (mkt === 'TOTAL' && (sideKey === 'over' || sideKey === 'under')) {
+    const side = sideKey === 'over' ? 'Over' : 'Under';
+    const lineStr = line != null && line !== '' ? ` ${line}` : '';
+    return `${away || ''} @ ${home || ''} ${side}${lineStr}`.replace(/\s+/g, ' ').trim();
+  }
+  if (mkt === 'SPREAD') {
+    const n = Number(line);
+    const lineStr = Number.isFinite(n) ? ` ${n > 0 ? '+' : ''}${n}` : '';
+    return `${team || sideKey}${lineStr}`.replace(/\s+/g, ' ').trim();
+  }
+  return `${team || sideKey} ML`.trim();
+}
+
 export function flaggedSnapshotFromPeakLock(peak = {}, lock = {}) {
   const line = Number.isFinite(Number(peak.line)) ? Number(peak.line)
     : (Number.isFinite(Number(lock.line)) ? Number(lock.line) : null);

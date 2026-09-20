@@ -6,7 +6,10 @@ import assert from 'node:assert/strict';
 import {
   bestAvailableTicket,
   flaggedSnapshotFromPeakLock,
+  formatLockAlertPickText,
   isT15BestLockLive,
+  lockTicketTeamLabel,
+  resolveLockDisplayTicket,
 } from '../src/lib/t15BestLock.js';
 
 assert.equal(isT15BestLockLive('2026-09-19'), true);
@@ -89,5 +92,51 @@ const flagged = flaggedSnapshotFromPeakLock(
 );
 assert.equal(flagged.line, 37.5);
 assert.equal(flagged.odds, 156);
+
+{
+  // sea_col 2026-09-20: alert used peak 10.5 while UI sealed Under 11.
+  const sd = {
+    v8_lockBestAtT15: true,
+    peak: { line: 10.5, odds: -115, team: 'Under 10.5' },
+    lock: { line: 11, odds: -110, book: 'FanDuel', oddsSource: 't15_best_available', team: 'Under 11' },
+  };
+  const ticket = resolveLockDisplayTicket({
+    sd, marketType: 'TOTAL', side: 'under', pickDate: '2026-09-20',
+  });
+  assert.equal(ticket.line, 11);
+  assert.equal(ticket.source, 'sealed');
+  assert.equal(
+    formatLockAlertPickText({
+      market: 'TOTAL',
+      sideKey: 'under',
+      line: ticket.line,
+      away: 'Seattle Mariners',
+      home: 'Colorado Rockies',
+    }),
+    'Seattle Mariners @ Colorado Rockies Under 11',
+  );
+}
+
+{
+  const tape = {
+    allTotalBooks: {
+      draftkings: { line: 10.5, over: -110, under: -110, name: 'DraftKings' },
+      fanduel: { line: 11, over: -115, under: -105, name: 'FanDuel' },
+    },
+  };
+  const ticket = resolveLockDisplayTicket({
+    sd: { peak: { line: 10.5, odds: -115, team: 'Under 10.5' } },
+    pinnGame: tape,
+    marketType: 'TOTAL',
+    side: 'under',
+    pickDate: '2026-09-20',
+  });
+  assert.equal(ticket.line, 11, 'unsealed alert still uses shop-best, not flagged 10.5');
+}
+
+assert.equal(
+  lockTicketTeamLabel({ marketType: 'total', side: 'under', line: 11, fallbackTeam: 'Under 10.5' }),
+  'Under 11',
+);
 
 console.log('testT15BestLock: all passed');

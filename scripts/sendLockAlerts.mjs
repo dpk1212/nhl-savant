@@ -40,6 +40,11 @@ import {
   sideLockAlertEdge,
 } from '../src/lib/lockAlertMode.js';
 import { UNIT_DISPLAY_SCALE, scaleUnits } from '../src/lib/unitDisplayScale.js';
+import {
+  formatLockAlertPickText,
+  resolveLockDisplayTicket,
+} from '../src/lib/t15BestLock.js';
+import { lookupPinnGame } from './lib/ufcFighters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -121,23 +126,33 @@ function initFirebase() {
   return db;
 }
 
-function pickLabel(pick, sideKey, market) {
+function loadPinnHistory() {
+  const p = join(REPO_ROOT, 'public', 'pinnacle_history.json');
+  if (!existsSync(p)) return null;
+  try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; }
+}
+
+function pickLabel(pick, sideKey, market, pinnHistory = null) {
   const sd = pick.sides?.[sideKey] || {};
+  const ticket = resolveLockDisplayTicket({
+    sd,
+    pinnGame: lookupPinnGame(pinnHistory, pick.sport, pick.gameKey),
+    marketType: market,
+    side: sideKey,
+    pickDate: pick.date || TARGET_DATE,
+  });
   const team =
-    sd.peak?.team ||
     sd.lock?.team ||
+    sd.peak?.team ||
     (sideKey === 'away' ? pick.away : sideKey === 'home' ? pick.home : sideKey);
-  const line = sd.peak?.line ?? sd.lock?.line;
-  if (market === 'TOTAL' && (sideKey === 'over' || sideKey === 'under')) {
-    const mkt = sideKey === 'over' ? 'Over' : 'Under';
-    const lineStr = line != null ? ` ${line}` : '';
-    return `${pick.away || ''} @ ${pick.home || ''} ${mkt}${lineStr}`.replace(/\s+/g, ' ').trim();
-  }
-  if (market === 'SPREAD') {
-    const lineStr = line != null ? ` ${line > 0 ? '+' : ''}${line}` : '';
-    return `${team || sideKey}${lineStr}`.replace(/\s+/g, ' ').trim();
-  }
-  return `${team || sideKey} ML`.trim();
+  return formatLockAlertPickText({
+    market,
+    sideKey,
+    line: ticket.line,
+    team,
+    away: pick.away,
+    home: pick.home,
+  });
 }
 
 /** Units actually at risk on the Locked Picks board (v12 stake). */
@@ -420,6 +435,7 @@ async function main() {
   );
 
   const db = initFirebase();
+  const pinnHistory = loadPinnHistory();
   const stats = {
     examined: 0,
     candidates: 0,
@@ -493,7 +509,7 @@ async function main() {
         }
 
         stats.candidates++;
-        const pickText = pickLabel(pick, sideKey, market);
+        const pickText = pickLabel(pick, sideKey, market, pinnHistory);
         const edge = sideLockAlertEdge(sd);
         const fullTier = tierLineForSide(sd, tierStats, UNIT_DISPLAY_SCALE.FULL);
         const consTier = tierLineForSide(sd, tierStats, UNIT_DISPLAY_SCALE.CONSERVATIVE);
