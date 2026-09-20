@@ -1,83 +1,90 @@
-# Twitter — 2026-09-20 · QT GIVE · Invisible Insider road dogs / same printer on MIN + PIT
+# Twitter — 2026-09-20 · HERO GIVE · last look 1pm · Steelers 4u + MIN/CHI Under · @SKORNorth @SteelCNetwork
 **Pathway:** `hormozi_tweet_process.md` (Hormozi only)
-**CSV:** Sep 8–14. Overlay: give. Quote @invisiblestats **list tweet** (MIN/PIT named) — not the “easiest week” tweet.
+**CSV:** Sep 8–14. Overlay: give. Dale spine = engage those two accounts for reach.
 
 | | |
 |--|--|
-| WHO | Sunday NFL room reading a Week-2 road-dog list — and anyone who thinks we only have the Steelers card. |
-| PURPOSE | **Give.** One idea: the same printer is huge on two of the dogs he’s listing, and the board still moved our way. |
-| ONE | One wallet put $131K on Minnesota and $178K on Pittsburgh — and we still have the number. |
-| SPCL | **S + C** in the open (printer $ / same wallet). Power = Pin MIN $5k→$30k + juice still ours. |
-| Timeline | Last staged: `$215,000 ON THE STEELERS`. This is the QT, not a restage of that open. |
-| Ask | **None.** Feeling (“he could be onto something”) sits after the pudding. |
+| WHO | Vikings room + Steelers room, 8 minutes from lock — and anyone who only saw the dog QT. |
+| PURPOSE | **Give + buzz.** One idea: last look is 4u on Pittsburgh and 4u on the Vikings-Bears under. Mentions earn a seat, they are not the hook. |
+| ONE | $247K on the Steelers and $219K to $1.7K on the Under — four units on both, 12:45 lock. |
+| SPCL | **S + C** in the open (board $). Mentions = distribution, not the spear. |
+| Timeline | QT used $131K/$178K printer. Hero used $215K Steelers. This is the **size-up + new total**, not those opens. |
+| Ask | **None.** |
 
-**Quote:** @invisiblestats — the **list** tweet (`MIN +4.5, PIT +5.5…`). Do **not** quote the “easiest week” parent (QT law: don’t restate his hook).
-**Attach (walk order):** two-up money cards — Vikings +4.5 then Steelers ML. Wallet scatter is optional SR if you want the $131K / $178K dots.
+**Type:** Original hero (not a QT).  
+**Attach (walk order):** Steelers ML card → Under 47.5 card. Wallet scatters optional SR.
+
+**Mentions (Dale asked):** `@SteelCNetwork` + `@SKORNorth` sit **after** the $. Each gets their game’s receipt. Playbook says cold tags look needy — these are earned, not “hey look.” For real reach, also drop the outbound replies under **their** latest game-day posts.
 
 ---
 
 ### 0 · Spine (Dale — law)
-- Quote this tweet · Invisible Insider could be onto something
-- Odds moving our way · Pinnacle limits up
-- Majority of **tracked sharp** money on both dogs
-- BIG TIME money from 1 sharp on each
-- Fading sizable known-loser action
+- Final sharp-action tweet before 1pm kickoffs
+- Engage @SKORNorth and @SteelCNetwork to increase reach
+- New cards: Steelers ML **4.00u** · Under 47.5 **4.00u** GOLD
 
-**Shape, don’t replace.** His “onto something” is the close, not line 1.  
-**Stronger than “1 sharp on each”:** it’s the **same** wallet on both.
+**Shape, don’t replace.** Tags serve their rooms. $ still opens.
 
-### Receipts (this run — Dale cards + Pin file)
-- Time: ~11:20 ET · both **flagged** · locks **12:45 ET** · kickoff 1:00 ET. Do **not** say locked.
-- **Vikings +4.5** · **3.00u** · **−102** (Dale card) · Pin **−107** · DK **−102**
-- Card: **$133K** Vikes / **$162K** Bears · **$145K** tracked · **3 proven / 2 proven against**
-- Lead printer `…28658ee` · **$130.9K** · 3-0 · +99% ROI · 1.1× usual ~$122K
-- Fade `…a24815` · **$17.1K** Bears · 1-4 · 20% · −61% ROI
-- **Do not** say majority of *all* Minnesota money (Bears $162K > Vikes $133K). Majority = tracked / proven / the printer.
-- Pin MIN **spread max $5,000** (9/16–18) → **$30,000** (9/19 14:54Z). Main walked +5.5 −119 → **+4.5 −107**. ML max $5k → $20k.
-- **Steelers ML +212** (Kalshi/Poly) · **1.50u** · Pin **+203** · DK +185
-- Card: **$215K** PIT / ~$196K NE · **2 proven / 1 proven the other way**
-- Same printer `…28658ee` · **$178.2K** · 3-0 · +99% · **1.5×**
-- Same loser `…a24815` · **$25K** on the Pats · 1-4
-- Pin PIT ML/spread already **$20k / $30k** on 9/17 — do **not** invent a fresh Pittsburgh limit raise. Price +212 vs +203 is the PIT juice.
+### Receipts (this run — Dale cards ~12:36 ET)
+- Now **~12:37 ET** · both **flagged** · locks **12:45 ET** · kickoff 1:00. Do **not** say locked.
+- **Steelers ML** · **4.00u** (was 1.5u) · **+205** (B/MGM) · flagged **+213** · Pin **+203** · Kalshi card **+203**
+- Board: **$247K** PIT / **$178K** NE · **$184K** tracked · **2 proven / 1 proven the other way**
+- Printer `…28658e` · **$178.2K** · 3-0 · +99% · 1.5× usual $122K
+- Other side **$177.9K** · 46% WR · +2% ROI · 1 proven + 1 secondary — **not** the old 1-4 fade. Do not recycle that.
+- **Under 47.5** MIN/CHI · **4.00u** · Pin **−123** · flagged **−111** · GOLD (don’t say gold)
+- Board: **$219K** Under / **$1.7K** Over · **99%** · proven $125K at 1.0× + 1 proven alongside · **2 proven on the Over** ($1.7K)
+- Same printer `…28658e` · **$125K** on the Under · 3-0 · +96% ROI
+- Scatter also shows a smaller proven `…06c80c` $8.8K 6-2 — not the spear
+- Pin **main** total is **48.5** −120 (file). His number is **47.5 −123**. Don’t call 47.5 the Pin main.
+- Pin total max $3k → $10k — **spent family** (don’t restage limits). Juice now worse (−111 → −123). Don’t pretend we still have the flag price.
 
 ### 6 · HOOK QA
 
 | | Kill | This |
 |--|------|------|
-| Line 1 | Week 2 is the easiest / $215K ON THE STEELERS / he could be onto something | **$131,000 ON THE VIKINGS** |
-| Line 2 | Locked. Road dogs +3 to +7.5 | **$178,000 ON THE STEELERS** |
-| Next | 1 sharp on each (weaker) / majority of all $ | **Same wallet. 3-0.** then Pin + juice + fade |
+| Line 1 | @SKORNorth / $215K ON THE STEELERS / $131K ON THE VIKINGS / easiest week | **$247,000 ON THE STEELERS** |
+| Line 2 | Locked. Same wallet 3-0. Hey check this | **$219,000 ON THE VIKINGS UNDER** |
+| Next | 1-4 fade / Pin $5k→$30k / +212 | **$219K to $1,700** + earned mentions |
 
-What: one printer, two of his listed dogs.  
-How: $131K + $178K · Pin MIN $5k→$30k · still −102 / +212.  
-So what: 3u and 1.5u, 12:45 lock — he might be onto something.
+What: last look, two 4u plays.  
+How: $247K PIT · $219K vs $1.7K Under · 2 proven / 1 proven NE.  
+So what: 12:45 lock — Steelers room and Vikings room both have a stake.
 
 ---
 
 ## COPY THIS
 
-**Type:** Quote tweet  
-**Parent:** @invisiblestats list tweet (MIN +4.5 / PIT +5.5)  
-**Media:** Vikings card + Steelers card (two-up)
+**Type:** Hero  
+**Media:** Steelers ML + Under 47.5 (two-up)
 
 ```
-$131,000 ON THE VIKINGS
-$178,000 ON THE STEELERS
-Same wallet. 3-0.
+$247,000 ON THE STEELERS
+$219,000 ON THE VIKINGS UNDER
 
-He's listing road dogs. We've got two of them.
+Last look. Four units on both.
 
-Pinnacle took Minnesota from a $5,000 limit to $30,000.
-We're still -102. They're -107.
+@SteelCNetwork plus-205. Two proven. One proven took New England.
 
-Steelers we're +212. They're +203.
+@SKORNorth Under 47.5. $219,000 to $1,700.
 
-Three proven on the Vikings. Two on Pittsburgh.
-A 1-4 wallet is on both favorites. $17K and $25K.
+Locks 12:45 ET.
+```
 
-He might be onto something.
+### Optional — outbound replies (better reach than the tags alone)
+Paste under **their** latest kickoff/preview posts. Attach the matching card.
 
-3u and 1.5u. Locks 12:45 ET.
+**@SteelCNetwork**
+```
+$247,000 on Pittsburgh plus-205.
+Two proven. One proven took New England.
+Four units. Locks 12:45.
+```
+
+**@SKORNorth**
+```
+$219,000 on the Vikings-Bears Under 47.5.
+$1,700 on the Over.
+Locks 12:45.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
