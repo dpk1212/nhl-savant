@@ -14,6 +14,7 @@ import {
 } from '../src/lib/mySharps.js';
 import {
   buildDeskPulse,
+  buildDeskReport,
   buildMySharpsBoard,
   buildMySharpsDashboard,
   buildMySharpsRoster,
@@ -329,5 +330,51 @@ assert.equal(new Set(oneHot.list.map((m) => m.walletShort)).size, oneHot.list.le
 assert.equal(ticketPickLabel({ team: 'Colts', marketType: 'SPREAD', marketLabel: 'SPREAD -6.5' }), 'Colts -6.5');
 assert.equal(ticketPickLabel({ team: 'Seahawks', marketType: 'ML', marketLabel: 'ML' }), 'Seahawks');
 assert.equal(ticketPickLabel({ team: 'Over', marketType: 'TOTAL', marketLabel: 'O 47.5' }), 'Over 47.5');
+
+const report = buildDeskReport({
+  roster: twoRoster,
+  walletProfiles: new Map([
+    ['e4ec62', {
+      bySport: {
+        NFL: {
+          whitelistTier: 'CONFIRMED',
+          recentActionWindow: { n: 10, wins: 7, losses: 3, wr: 70, settledPnl: 120000 },
+          byMarket: {
+            ML: { positions: { n: 10, wins: 7, losses: 3, wr: 70 }, recentActionWindow: { settledPnl: 80000 } },
+          },
+        },
+      },
+    }],
+    ['abcdef', {
+      bySport: {
+        NFL: {
+          whitelistTier: 'CONFIRMED',
+          recentActionWindow: { n: 3, wins: 3, losses: 0, wr: 100, settledPnl: 9000 },
+        },
+      },
+    }],
+  ]),
+  shorts: ['e4ec62', 'abcdef'],
+  actionRows: [
+    { walletShort: 'e4ec62', sport: 'NFL', invested: 162500 },
+    { walletShort: 'abcdef', sport: 'CFB', invested: 11000 },
+  ],
+  weekRows: [
+    { walletShort: 'e4ec62', sport: 'NFL', invested: 162500, commenceDateKey: '2026-09-20' },
+  ],
+  recentLegs: [
+    { walletShort: 'e4ec62', won: 1, dollarPnl: 4000, date: '2026-09-18' },
+    { walletShort: 'e4ec62', won: 0, dollarPnl: -1200, date: '2026-09-19' },
+  ],
+  dateKey: '2026-09-20',
+  todayKey: '2026-09-20',
+  nowMs: Date.parse('2026-09-20T18:00:00-04:00'),
+});
+assert.equal(report.todayN, 2);
+assert.equal(report.openInvested, 173500);
+assert.equal(report.l30.pnl, 129000);
+assert.equal(report.weekGradedN, 2);
+assert.equal(report.bestSport.sport, 'NFL');
+assert.ok(report.sports.some((s) => s.sport === 'CFB' && s.openN === 1));
 
 console.log('testMySharps: ok');

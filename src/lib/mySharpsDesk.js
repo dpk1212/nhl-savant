@@ -5,6 +5,7 @@
 import { CLV_SKILL_MIN_N, shortWalletId } from './walletClvSkill.js';
 import { sportBookForDisplay } from './walletSportBook.js';
 import { SIZED_UP_RATIO, fmtWalletTag, listMySharps } from './mySharps.js';
+import { etDateKey } from './confirmedActionDesk.js';
 
 /** Last-N needed before Hot / Cold is a claim, not noise. */
 export const HEAT_CLAIM_N = 5;
@@ -840,6 +841,167 @@ export function pickDeskMovers({ cards = [], tickets = [] } = {}) {
 }
 
 /** Pick first: "Colts −6.5", not "SPREAD −6.5". */
+function shiftDateKey(key, days) {
+  if (!key || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return null;
+  const [y, m, d] = key.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+function legDateKey(leg) {
+  const raw = String(leg?.date || '').slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+}
+
+function addSport(map, sport, extra = {}) {
+  const key = sport || '—';
+  const cur = map.get(key) || {
+    sport: key, openN: 0, openInvested: 0, l30Pnl: 0, l30w: 0, l30l: 0, l30n: 0,
+  };
+  map.set(key, { ...cur, ...extra });
+  return map.get(key);
+}
+
+/**
+ * Portfolio report for the whole list. Never narrows to one wallet.
+ */
+export function buildDeskReport({
+  roster = [],
+  walletProfiles = null,
+  shorts = [],
+  actionRows = [],
+  weekRows = [],
+  recentLegs = [],
+  dateKey = null,
+  todayKey = null,
+  nowMs = Date.now(),
+} = {}) {
+  const today = todayKey || etDateKey(nowMs);
+  const day = dateKey || today;
+  const weekStart = shiftDateKey(today, -6);
+  const cards = roster || [];
+  const plays = actionRows || [];
+  const weekOpen = (weekRows || []).filter((r) => {
+    const k = r.commenceDateKey || (Number.isFinite(Number(r.commenceMs)) ? etDateKey(Number(r.commenceMs)) : null);
+    return k && weekStart && k >= weekStart && k <= today;
+  });
+
+  const weekLegs = (recentLegs || []).filter((leg) => {
+    const k = legDateKey(leg);
+    return k && weekStart && k >= weekStart && k <= today;
+  });
+  const weekW = weekLegs.filter((l) => l.won === 1).length;
+  const weekL = weekLegs.filter((l) => l.won === 0).length;
+  let weekPnl = 0;
+  let weekHavePnl = false;
+  for (const leg of weekLegs) {
+    const d = legDollar(leg);
+    if (!Number.isFinite(d)) continue;
+    weekHavePnl = true;
+    weekPnl += d;
+  }
+
+  const sportMap = new Map();
+  for (const r of plays) {
+    const row = addSport(sportMap, r.sport);
+    row.openN += 1;
+    row.openInvested += Number(r.invested) || 0;
+  }
+
+  let l30pnl = 0;
+  let l30w = 0;
+  let l30l = 0;
+  let l30have = false;
+  const marketMap = new Map();
+  const ids = (shorts && shorts.length) ? shorts : cards.map((c) => c.walletShort);
+
+  for (const short of ids) {
+    const prof = profileFor(walletProfiles, short);
+    const sports = confirmedSports(prof);
+    for (const sport of sports) {
+      const rec = prof?.bySport?.[sport];
+      const l30 = l30FromRec(rec);
+      const row = addSport(sportMap, sport);
+      if (l30) {
+        l30have = true;
+        if (Number.isFinite(l30.pnl)) {
+          l30pnl += l30.pnl;
+          row.l30Pnl += l30.pnl;
+        }
+        if (Number.isFinite(l30.wins)) {
+          l30w += l30.wins;
+          row.l30w += l30.wins;
+        }
+        if (Number.isFinite(l30.losses)) {
+          l30l += l30.losses;
+          row.l30l += l30.losses;
+        }
+        row.l30n += l30.n || 0;
+      }
+      for (const book of marketBooksFromProfile(prof, sport)) {
+        const cur = marketMap.get(book.market) || {
+          market: book.market,
+          label: book.label,
+          n: 0,
+          wins: 0,
+          losses: 0,
+          pnl: 0,
+        };
+        cur.n += book.n || 0;
+        cur.wins += book.wins || 0;
+        cur.losses += book.losses || 0;
+        if (Number.isFinite(book.l30?.pnl)) cur.pnl += book.l30.pnl;
+        marketMap.set(book.market, cur);
+      }
+    }
+  }
+
+  const openInvested = plays.reduce((s, r) => s + (Number(r.invested) || 0), 0);
+  const sports = [...sportMap.values()]
+    .map((s) => ({
+      ...s,
+      openPct: openInvested > 0 ? Math.round((s.openInvested / openInvested) * 100) : 0,
+      honest: honestRecord(s.l30w, s.l30l),
+    }))
+    .sort((a, b) => (b.l30Pnl - a.l30Pnl) || (b.openInvested - a.openInvested));
+
+  const markets = [...marketMap.values()]
+    .map((m) => ({ ...m, honest: honestRecord(m.wins, m.losses) }))
+    .sort((a, b) => (b.pnl - a.pnl) || (b.n - a.n));
+
+  const l30Honest = honestRecord(l30w, l30l);
+  const dayLabel = day && today && day !== today ? 'Slate' : 'Today';
+
+  return {
+    walletN: cards.length || ids.length,
+    dayKey: day,
+    dayLabel,
+    todayN: plays.length,
+    todayInvested: openInvested,
+    weekN: weekLegs.length || weekOpen.length,
+    weekGradedN: weekLegs.length,
+    weekOpenN: weekOpen.length,
+    weekW,
+    weekL,
+    weekPnl: weekHavePnl ? Math.round(weekPnl) : null,
+    weekHonest: honestRecord(weekW, weekL),
+    openN: plays.length,
+    openInvested,
+    l30: l30have ? {
+      pnl: l30pnl,
+      wins: l30w,
+      losses: l30l,
+      n: l30w + l30l,
+      honest: l30Honest,
+    } : null,
+    sports,
+    markets,
+    bestSport: sports.find((s) => Number.isFinite(s.l30Pnl) && (s.l30Pnl !== 0 || s.l30n > 0)) || sports[0] || null,
+    bestMarket: markets[0] || null,
+  };
+}
+
 export function ticketPickLabel(t) {
   const team = t?.team || '';
   const raw = String(t?.marketLabel || '');
