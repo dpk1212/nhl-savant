@@ -1766,21 +1766,15 @@ export default function ConfirmedActionDesk({
       </div>
       )}
 
-      {visible.length === 0 && !(deskMode === 'mine' && !mySharps.ready) ? (
+      {deskMode === 'mine' ? null : visible.length === 0 ? (
         <div style={{ ...T.body, color: B.textMuted, padding: '1.5rem', textAlign: 'center' }}>
-          {deskMode === 'mine'
-            ? (mySharps.count
-              ? (deskSection === 'tail' || deskSection === 'sit' || deskSection === 'hot' || deskSection === 'cold'
-                ? `No ${deskSection} tickets ${formatActionDateChip(selectedDate, todayKey)}.`
-                : `None of your sharps are on ${formatActionDateChip(selectedDate, todayKey)}.`)
-              : 'Star wallets on All Sharps to fill this board.')
-            : (selectedDate !== todayKey
-              ? `No tickets ${formatActionDateChip(selectedDate, todayKey)}.`
-              : (sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
-                ? `No ${sportFilter} tickets match these filters.`
-                : 'Nothing matches these filters.'))}
+          {selectedDate !== todayKey
+            ? `No tickets ${formatActionDateChip(selectedDate, todayKey)}.`
+            : (sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
+              ? `No ${sportFilter} tickets match these filters.`
+              : 'Nothing matches these filters.')}
         </div>
-      ) : visible.length === 0 ? null : (
+      ) : (
         <div
           key={`${sportFilter || 'All'}:${selectedDate}:${deskMode}`}
           data-action-list={sportFilter || 'All'}
@@ -1797,7 +1791,6 @@ export default function ConfirmedActionDesk({
               saved={mySharps.isSaved(r.walletShort)}
               canSave={mySharps.ready}
               onToggleSave={() => mySharps.toggleRow(r)}
-              lean={deskMode === 'mine' ? leanByShort.get(shortWalletId(r.walletShort)) : null}
             />
           ))}
         </div>

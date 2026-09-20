@@ -200,14 +200,26 @@ function packBook(agg, extra = {}) {
   };
 }
 
+function sparkFromForm(form) {
+  const raw = form?.actionDollarCurve || form?.dollarCurve;
+  if (!Array.isArray(raw) || raw.length < 5) return null;
+  const pts = raw.map((v) => Number(v)).filter((n) => Number.isFinite(n));
+  return pts.length >= 5 ? pts : null;
+}
+
 function formFromRec(rec) {
   const form = rec?.form;
-  if (!form) return { actionL5: null, actionL10: null, l5: null, l10: null };
+  if (!form) {
+    return {
+      actionL5: null, actionL10: null, l5: null, l10: null, spark: null,
+    };
+  }
   return {
     actionL5: form.actionL5 || null,
     actionL10: form.actionL10 || null,
     l5: form.l5 || null,
     l10: form.l10 || null,
+    spark: sparkFromForm(form),
   };
 }
 
@@ -353,6 +365,7 @@ export function buildMySharpsRoster(state, {
       heat,
       lean,
       books,
+      spark: form.spark,
       openN: open.length,
       openInvested,
       sizedUpN: open.filter((r) => (Number(r.displaySizeRatio ?? r.sizeRatio) || 0) >= SIZED_UP_RATIO).length,
