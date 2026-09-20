@@ -229,6 +229,7 @@ function SkillCard({ r, on, isMobile, onSelect, onRemove }) {
   const sport = r.focusSport || r.sports[0] || '';
 
   const shell = {
+    position: 'relative',
     borderRadius: 12,
     border: `1px solid ${on || hover ? B.goldBorder : B.border}`,
     borderLeft: `3px solid ${on ? B.gold : paint.bar}`,
@@ -237,7 +238,6 @@ function SkillCard({ r, on, isMobile, onSelect, onRemove }) {
       : B.card,
     boxShadow: on || hover ? '0 10px 32px rgba(0,0,0,0.35)' : 'none',
     transition: 'border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
-    overflow: 'hidden',
   };
 
   const identity = (
@@ -327,70 +327,79 @@ function SkillCard({ r, on, isMobile, onSelect, onRemove }) {
     </div>
   );
 
+  const kill = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={shell}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'stretch' }}>
-        <button
-          type="button"
-          onClick={onSelect}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr auto' : 'minmax(168px, 0.9fr) minmax(210px, 1.4fr) auto',
-            gap: isMobile ? 12 : '1.25rem',
-            alignItems: 'center',
-            padding: isMobile ? '1rem 0.85rem 0.95rem 1rem' : '1.1rem 1.1rem 1.1rem 1.25rem',
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            textAlign: 'left',
-            color: 'inherit',
-            minWidth: 0,
-          }}
-        >
-          {identity}
-          {isMobile ? money : bookRow}
-          {isMobile ? null : money}
-        </button>
-        <button
-          type="button"
-          title="Remove from My Sharps"
-          aria-label={`Remove ${r.tag} from My Sharps`}
-          onClick={(e) => {
+      <button
+        type="button"
+        data-my-sharps-remove={r.walletShort}
+        title="Remove from My Sharps"
+        aria-label={`Remove ${r.tag} from My Sharps`}
+        onMouseDown={kill}
+        onPointerDown={kill}
+        onClick={(e) => {
+          kill(e);
+          onRemove();
+        }}
+        style={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          zIndex: 8,
+          width: 36,
+          height: 36,
+          border: `1px solid ${B.border}`,
+          borderRadius: 8,
+          background: B.cardAlt,
+          color: B.textSec,
+          cursor: 'pointer',
+          display: 'grid',
+          placeItems: 'center',
+        }}
+      >
+        <Trash2 size={14} />
+      </button>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            e.stopPropagation();
-            onRemove();
-          }}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            color: hover || on ? B.textSec : B.textMuted,
-            padding: isMobile ? '0.85rem 0.85rem 0' : '0 1.05rem',
-            cursor: 'pointer',
-            display: 'grid',
-            placeItems: 'center',
-            minWidth: 44,
-            minHeight: 44,
-          }}
-        >
-          <Trash2 size={15} />
-        </button>
+            onSelect();
+          }
+        }}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr auto' : 'minmax(168px, 0.9fr) minmax(210px, 1.4fr) auto',
+          gap: isMobile ? 12 : '1.25rem',
+          alignItems: 'center',
+          padding: isMobile ? '1rem 3.1rem 0.95rem 1rem' : '1.1rem 3.2rem 1.1rem 1.25rem',
+          cursor: 'pointer',
+          minWidth: 0,
+        }}
+      >
+        {identity}
+        {isMobile ? money : bookRow}
+        {isMobile ? null : money}
       </div>
       {isMobile && (books.length || (r.bookHonest?.text && r.bookHonest.text !== '—')) ? (
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={-1}
           onClick={onSelect}
-          style={{
-            display: 'block', width: '100%', textAlign: 'left',
-            border: 'none', background: 'transparent', cursor: 'pointer',
-            padding: '0 1rem 1rem', color: 'inherit',
-          }}
+          style={{ padding: '0 1rem 1rem', cursor: 'pointer' }}
         >
           {bookRow}
-        </button>
+        </div>
       ) : null}
     </div>
   );
