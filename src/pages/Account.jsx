@@ -7,6 +7,7 @@ import { functions, db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import LockAlertsCard from '../components/LockAlertsCard';
+import UnitTiersCard from '../components/UnitTiersCard';
 
 // CSS keyframes for spin animation
 const spinKeyframes = `
@@ -656,6 +657,8 @@ const Account = () => {
             </>
           )}
         </div>
+
+        <UnitTiersCard user={user} />
 
         {/* Lock Alerts (OneSignal) — paid opt-in + mobile directions */}
         <LockAlertsCard

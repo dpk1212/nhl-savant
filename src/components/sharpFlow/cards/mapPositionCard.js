@@ -3,6 +3,7 @@
  * Display-only. Never changes stake formulas or stamps.
  */
 import { AGS_V12_STAKE_TIER_META, HC_RATIO } from '../../../lib/ags.js';
+import { scaleUnits } from '../../../lib/unitDisplayScale.js';
 import { CLV_SKILL_MIN_N, EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG } from '../../../lib/walletClvSkill.js';
 import {
   matchSizeRatioBand,
@@ -1244,6 +1245,7 @@ export function mapLockedPickToCardFixture(pick, {
   intelExcludedSet = null,
   polyData = null,
   kalshiData = null,
+  unitDisplayScale = null,
 } = {}) {
   const confirmedClvQ1 = computeConfirmedBeatCloseQ1(walletProfiles);
   const enrichOpts = { confirmedClvQ1 };
@@ -1863,7 +1865,7 @@ export function mapLockedPickToCardFixture(pick, {
     tapeScore,
     edgeBandAction,
     edgeNetAction,
-    pathBaseUnits: base || units,
+    pathBaseUnits: scaleUnits(base, unitDisplayScale) || units,
     hcMargin: Number.isFinite(pick.hcMargin) ? pick.hcMargin : 0,
     confMargin: Number.isFinite(confMargin) ? confMargin : null,
     provenMargin: Number.isFinite(provenMargin) ? provenMargin : null,

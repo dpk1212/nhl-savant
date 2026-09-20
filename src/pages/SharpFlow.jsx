@@ -17,6 +17,8 @@ import { db } from '../firebase/config';
 import { trackEvent } from '../utils/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
+import { useUnitDisplayScale } from '../hooks/useUnitDisplayScale';
+import { scaleUnits } from '../lib/unitDisplayScale.js';
 import { redirectToCheckout } from '../utils/stripe';
 import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
@@ -5072,6 +5074,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({
   totalPositions = null, spreadPositions = null, mlPositions = null,
   rawMlPositions = null, rawSpreadPositions = null, rawTotalPositions = null,
   intelExcludedSet = null, polyData = null, kalshiData = null,
+  unitDisplayScale = null,
 }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
@@ -5328,6 +5331,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({
     intelExcludedSet,
     polyData,
     kalshiData,
+    unitDisplayScale,
   });
   return <LockedPositionCardView f={lockedFixture} />;
 });
@@ -8557,6 +8561,7 @@ export default function SharpFlow() {
   const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, rawSharpPositions, rawSpreadPositions, rawTotalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
+  const { scale: unitDisplayScale } = useUnitDisplayScale(user);
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
   const [actionSortMode, setActionSortMode] = useState('size');
@@ -12784,8 +12789,8 @@ export default function SharpFlow() {
                           stars: displayStars,
                           peakStars,
                           lockStars,
-                          units: displayUnits,
-                          peakUnits,
+                          units: scaleUnits(displayUnits, unitDisplayScale),
+                          peakUnits: scaleUnits(peakUnits, unitDisplayScale),
                           isDownsized: sizing.isDownsized,
                           lockTier: resolvedTier,
                           odds: cardOdds,
@@ -12816,7 +12821,7 @@ export default function SharpFlow() {
                           gameTime: doc.commenceTime,
                           status: sd.status || doc.status || 'PENDING',
                           outcome: sd.result?.outcome || null,
-                          profit,
+                          profit: scaleUnits(profit, unitDisplayScale),
                           // Prefer peak pinnacleOdds when lock was ML-bleed (-110).
                           lockPinnOdds: (spreadLockIsMlBleed
                             ? (peak.pinnacleOdds || lock.pinnacleOdds)
@@ -13305,7 +13310,7 @@ export default function SharpFlow() {
                                   gap: '0.75rem',
                                 }}>
                                   {stakedCards.map(p => (
-                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} />
+                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} />
                                   ))}
                                 </div>
                               )}
@@ -13331,7 +13336,7 @@ export default function SharpFlow() {
                                     opacity: 0.78,
                                   }}>
                                     {monitoringCards.map(p => (
-                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} />
+                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} />
                                     ))}
                                   </div>
                                 </div>
