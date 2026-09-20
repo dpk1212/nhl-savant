@@ -1,0 +1,160 @@
+/**
+ * Populated My Sharps desk — #/my-sharps-lab
+ * Fixture only. No auth, no live wallets.
+ */
+import React, { useMemo, useState } from 'react';
+import { parseMySharpsDoc } from '../../lib/mySharps.js';
+import {
+  buildMySharpsBoard,
+  buildMySharpsRoster,
+} from '../../lib/mySharpsDesk.js';
+import MySharpsDesk from '../sharpFlow/MySharpsDesk.jsx';
+
+const state = parseMySharpsDoc({
+  mySharps: {
+    members: {
+      e4ec62: { walletShort: 'e4ec62', addedAt: 1 },
+      162937: { walletShort: '162937', addedAt: 2 },
+      abcdef: { walletShort: 'abcdef', addedAt: 3 },
+      aaaaaa: { walletShort: 'aaaaaa', addedAt: 4 },
+    },
+  },
+});
+
+const profiles = new Map([
+  ['e4ec62', {
+    clvSkill: { n: 18, pctPos: 62 },
+    bySport: {
+      NFL: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 10, wins: 7, losses: 3, wr: 70, settledPnl: 439000, dollarRoi: 18 },
+        positions: { n: 20, wins: 12, losses: 8, wr: 60, positionFlatRoi: 8, dollarRoi: 11 },
+        form: {
+          actionL5: { w: 4, l: 1 },
+          actionL10: { w: 7, l: 3 },
+          actionDollarCurve: [0, 40000, 90000, 70000, 120000, 180000, 250000, 310000, 380000, 439000],
+        },
+        byMarket: {
+          ML: { positions: { n: 10, wins: 7, losses: 3, wr: 70, dollarRoi: 16 } },
+          TOTAL: { positions: { n: 6, wins: 4, losses: 2, wr: 67, dollarRoi: 11 } },
+        },
+      },
+    },
+  }],
+  ['162937', {
+    clvSkill: { n: 12, pctPos: 58 },
+    bySport: {
+      NFL: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 12, wins: 7, losses: 5, wr: 58, settledPnl: 162000, dollarRoi: 9 },
+        positions: { n: 16, wins: 9, losses: 7, wr: 56, positionFlatRoi: 6, dollarRoi: 8 },
+        form: { actionL5: { w: 3, l: 2 }, actionL10: { w: 6, l: 4 } },
+        byMarket: {
+          TOTAL: { positions: { n: 8, wins: 5, losses: 3, wr: 62, dollarRoi: 10 } },
+        },
+      },
+    },
+  }],
+  ['abcdef', {
+    bySport: {
+      NFL: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 3, wins: 3, losses: 0, wr: 100, settledPnl: 9000, dollarRoi: 40 },
+        form: { actionL5: { w: 3, l: 0 } },
+      },
+    },
+  }],
+  ['aaaaaa', {
+    bySport: {
+      CFB: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 10, wins: 3, losses: 7, wr: 30, settledPnl: -84000, dollarRoi: -12 },
+        positions: { n: 14, wins: 5, losses: 9, wr: 36, positionFlatRoi: -8, dollarRoi: -10 },
+        form: { actionL5: { w: 1, l: 4 }, actionL10: { w: 3, l: 7 } },
+        byMarket: {
+          ML: { positions: { n: 9, wins: 3, losses: 6, wr: 33, dollarRoi: -14 } },
+        },
+      },
+    },
+  }],
+]);
+
+const actionRows = [
+  {
+    walletShort: 'e4ec62', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over',
+    team: 'Over', marketLabel: 'O 47.5', away: 'SEA', home: 'ARI',
+    invested: 162500, displaySizeRatio: 2.1, opposed: 'clear',
+  },
+  {
+    walletShort: '162937', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over',
+    team: 'Over', marketLabel: 'O 47.5', away: 'SEA', home: 'ARI',
+    invested: 122100, displaySizeRatio: 1.4, opposed: 'clear',
+  },
+  {
+    walletShort: 'abcdef', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'under',
+    team: 'Under', marketLabel: 'U 47.5', away: 'SEA', home: 'ARI',
+    invested: 11000, displaySizeRatio: 0.6, opposed: 'contested',
+  },
+  {
+    walletShort: 'aaaaaa', sport: 'CFB', gameKey: 'lsu_ala', marketType: 'ML', side: 'home',
+    team: 'Bama', marketLabel: 'ML', away: 'LSU', home: 'Bama',
+    invested: 88000, displaySizeRatio: 1.8, opposed: 'clear',
+  },
+];
+
+const recentLegs = [
+  { walletShort: 'e4ec62', won: 1, dollarPnl: 14000 },
+  { walletShort: 'e4ec62', won: 1, dollarPnl: 8200 },
+  { walletShort: '162937', won: 0, dollarPnl: -4100 },
+  { walletShort: 'aaaaaa', won: 0, dollarPnl: -6200 },
+];
+
+export default function MySharpsDeskLab() {
+  const [focusShort, setFocusShort] = useState(null);
+  const [gone, setGone] = useState(() => new Set());
+
+  const liveState = useMemo(() => {
+    const members = { ...state.members };
+    for (const s of gone) delete members[s];
+    return { ...state, members };
+  }, [gone]);
+
+  const roster = useMemo(
+    () => buildMySharpsRoster(liveState, {
+      walletProfiles: profiles,
+      actionRows,
+      sportFilter: 'All',
+    }),
+    [liveState],
+  );
+  const board = useMemo(() => buildMySharpsBoard(
+    actionRows.filter((r) => !gone.has(r.walletShort)),
+  ), [gone]);
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: '#0B0D12',
+      color: '#F3F1EA',
+      padding: '2.2rem 1.6rem 4rem',
+    }}>
+      <div style={{ maxWidth: 920, margin: '0 auto' }}>
+        <MySharpsDesk
+          ready
+          signedIn
+          focusShort={focusShort}
+          onFocus={setFocusShort}
+          roster={roster}
+          board={board}
+          actionRows={actionRows.filter((r) => !gone.has(r.walletShort))}
+          recentLegs={recentLegs.filter((l) => !gone.has(l.walletShort))}
+          onRemove={(short) => {
+            setGone((cur) => new Set([...cur, short]));
+            if (focusShort === short) setFocusShort(null);
+          }}
+          isMobile={false}
+        />
+      </div>
+    </div>
+  );
+}

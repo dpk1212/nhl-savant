@@ -1,12 +1,14 @@
 /**
- * My Sharps desk — who to tail.
- * Copy-trader grid (Binance / Fey): person first, one number, quiet book.
- * Plays stay off this page.
+ * My Sharps desk — portfolio control room.
+ * Pulse first. Roster ranks the book. Board is what they have open.
  */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { fmtWalletTag } from '../../lib/mySharps.js';
-import { rosterMatchesSection } from '../../lib/mySharpsDesk.js';
+import {
+  buildDeskPulse,
+  filterBoardTickets,
+  sortMySharpsRoster,
+} from '../../lib/mySharpsDesk.js';
 
 const B = {
   gold: '#D4AF37',
@@ -26,15 +28,15 @@ const B = {
 
 const T = {
   display: {
-    fontSize: '1.65rem',
+    fontSize: '2.35rem',
     fontWeight: 700,
-    lineHeight: 1,
-    letterSpacing: '-0.04em',
+    lineHeight: 0.95,
+    letterSpacing: '-0.045em',
     fontFeatureSettings: "'tnum'",
     fontVariantNumeric: 'tabular-nums',
   },
   name: {
-    fontSize: '0.95rem',
+    fontSize: '0.92rem',
     fontWeight: 700,
     lineHeight: 1.2,
     letterSpacing: '-0.02em',
@@ -69,46 +71,55 @@ function leanColor(key) {
   return B.goldSoft;
 }
 
-function fmtVol(v) {
+function fmtVol(v, { signed = true } = {}) {
   const n = Number(v);
-  if (!Number.isFinite(n)) return null;
+  if (!Number.isFinite(n)) return '—';
   const abs = Math.abs(n);
-  const sign = n < 0 ? '−' : '+';
+  const sign = !signed ? '' : (n < 0 ? '−' : (n > 0 ? '+' : ''));
   if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
   if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}K`;
   return `${sign}$${Math.round(abs)}`;
 }
 
-function heroFor(r) {
-  if (Number.isFinite(r.l30?.pnl)) {
-    return { value: fmtVol(r.l30.pnl), tone: r.l30.pnl >= 0 ? B.green : B.red, label: 'L30' };
-  }
-  if (r.bookHonest?.text && r.bookHonest.text !== '—') {
-    return { value: r.bookHonest.text, tone: B.text, label: 'Book' };
-  }
-  if (r.l30Honest?.text && r.l30Honest.text !== '—') {
-    return { value: r.l30Honest.text, tone: B.text, label: 'L30' };
-  }
-  return { value: '—', tone: B.textFaint, label: '' };
-}
-
-function formBits(r) {
-  const bits = [];
-  if (r.heat?.key === 'hot' || r.heat?.key === 'cold') bits.push(r.heat.label);
+function recentText(r) {
   const l10 = r.form?.actionL10 || r.form?.l10;
   const l5 = r.form?.actionL5 || r.form?.l5;
-  if (l10 && Number(l10.w) + Number(l10.l) > 0) bits.push(`L10 ${l10.w}–${l10.l}`);
-  else if (l5 && Number(l5.w) + Number(l5.l) > 0) bits.push(`L5 ${l5.w}–${l5.l}`);
-  if (r.clv?.priorClvPct != null) bits.push(`Close ${r.clv.priorClvPct}%`);
-  return bits;
+  if (l10 && Number(l10.w) + Number(l10.l) > 0) return `${l10.w}–${l10.l}`;
+  if (l5 && Number(l5.w) + Number(l5.l) > 0) return `${l5.w}–${l5.l}`;
+  return '—';
 }
 
-function Spark({ points, width = 88, height = 28, up }) {
+function matchup(t) {
+  if (t.away && t.home) return `${t.away} @ ${t.home}`;
+  return t.team || t.gameKey || '—';
+}
+
+function ticketTitle(t) {
+  const pick = t.marketLabel || t.team || t.side;
+  return pick || '—';
+}
+
+function kindTone(kind) {
+  if (kind === 'shared') return B.goldSoft;
+  if (kind === 'split' || kind === 'opposed') return B.red;
+  if (kind === 'standout') return B.green;
+  return B.textMuted;
+}
+
+function kindLabel(t) {
+  if (t.shared) return 'Shared';
+  if (t.split) return 'Split';
+  if (t.opposed) return 'Opposed';
+  if (t.standout) return 'Standout';
+  return null;
+}
+
+function Spark({ points, width = 220, height = 52, up }) {
   if (!points || points.length < 5) return null;
   const min = Math.min(...points);
   const max = Math.max(...points);
   const range = max - min || 1;
-  const pad = 1;
+  const pad = 2;
   const xStep = (width - pad * 2) / (points.length - 1);
   const yH = height - pad * 2;
   const pts = points.map((v, i) => ({
@@ -123,21 +134,21 @@ function Spark({ points, width = 88, height = 28, up }) {
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden style={{ display: 'block' }}>
       <path d={fill} fill={stroke} opacity="0.12" />
-      <path d={d} fill="none" stroke={stroke} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function LockedState({ signedIn }) {
   return (
-    <div style={{ padding: '3.2rem 0 2.4rem', textAlign: 'left' }}>
+    <div style={{ padding: '3.2rem 0 2.4rem' }}>
       <div style={{ ...T.kicker, color: B.gold, marginBottom: 12 }}>My Sharps</div>
       <div style={{ ...T.display, color: B.text, fontSize: '1.35rem', marginBottom: 10 }}>
         {signedIn ? 'Star the wallets you trust.' : 'Sign in to keep a desk.'}
       </div>
-      <div style={{ ...T.body, color: B.textMuted, maxWidth: 360 }}>
+      <div style={{ ...T.body, color: B.textMuted, maxWidth: 380 }}>
         {signedIn
-          ? 'Their book, heat, and whether to tail. Premium keeps the list across days.'
+          ? 'Then watch their book like a portfolio.'
           : 'Then star wallets on All Sharps.'}
       </div>
     </div>
@@ -158,42 +169,32 @@ function EmptyState() {
   );
 }
 
-function CutTabs({ section, onSection, counts }) {
-  const tabs = [
-    { id: 'action', label: 'All', n: counts.all },
-    { id: 'tail', label: 'Tail', n: counts.tail },
-    { id: 'sit', label: 'Sit', n: counts.sit },
-    { id: 'hot', label: 'Hot', n: counts.hot },
-  ];
+function WindowCut({ window, onChange }) {
   return (
-    <div role="tablist" aria-label="Desk cut" style={{ display: 'flex', gap: 22, borderBottom: `1px solid ${B.line}` }}>
-      {tabs.map((t) => {
-        const on = section === t.id || (t.id === 'action' && (section === 'action' || !section));
+    <div role="tablist" aria-label="Desk window" style={{ display: 'flex', gap: 18 }}>
+      {['recent', 'l30'].map((id) => {
+        const on = window === id;
         return (
           <button
-            key={t.id}
+            key={id}
             type="button"
             role="tab"
             aria-selected={on}
-            onClick={() => onSection(t.id)}
+            onClick={() => onChange(id)}
             style={{
               ...T.kicker,
               border: 'none',
               background: 'transparent',
-              padding: '0 0 0.85rem',
+              padding: '0 0 0.55rem',
               cursor: 'pointer',
               color: on ? B.goldSoft : B.textFaint,
               position: 'relative',
             }}
           >
-            {t.label}
-            <span style={{ marginLeft: 8, fontFeatureSettings: "'tnum'", letterSpacing: 0, textTransform: 'none', fontWeight: 600 }}>
-              {t.n}
-            </span>
+            {id === 'l30' ? 'L30' : 'Recent'}
             {on ? (
               <span style={{
-                position: 'absolute', left: 0, right: 0, bottom: -1, height: 1,
-                background: B.gold,
+                position: 'absolute', left: 0, right: 0, bottom: 0, height: 1, background: B.gold,
               }}
               />
             ) : null}
@@ -204,221 +205,518 @@ function CutTabs({ section, onSection, counts }) {
   );
 }
 
-function Stat({ label, children }) {
+function Word({ active, onClick, children, tone }) {
   return (
-    <div>
-      <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 8 }}>{label}</div>
-      <div style={{ ...T.body, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{children}</div>
-    </div>
-  );
-}
-
-function TraderCard({ r, on, isMobile, onSelect, onRemove }) {
-  const [hover, setHover] = useState(false);
-  const hero = heroFor(r);
-  const bits = formBits(r);
-  const sport = r.focusSport || r.sports[0] || '';
-  const spark = r.spark || r.form?.spark;
-  const up = Number.isFinite(r.l30?.pnl) ? r.l30.pnl >= 0 : (spark ? spark[spark.length - 1] >= spark[0] : true);
-  const kill = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+    <button
+      type="button"
+      onClick={onClick}
       style={{
-        position: 'relative',
-        background: on ? 'rgba(212,175,55,0.06)' : B.panel,
-        outline: on ? `1px solid ${B.goldLine}` : `1px solid ${B.line}`,
-        padding: isMobile ? '1.15rem 1.1rem 1.05rem' : '1.25rem 1.2rem 1.1rem',
-        minHeight: 196,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-        transition: 'outline-color 160ms ease, background 160ms ease',
+        border: 'none',
+        background: 'transparent',
+        padding: 0,
+        cursor: onClick ? 'pointer' : 'default',
+        color: tone || (active ? B.goldSoft : B.textSec),
+        font: 'inherit',
+        fontFeatureSettings: "'tnum'",
       }}
     >
-      <button
-        type="button"
-        data-my-sharps-remove={r.walletShort}
-        aria-label={`Remove ${r.tag}`}
-        title="Remove"
-        onMouseDown={kill}
-        onPointerDown={kill}
-        onClick={(e) => { kill(e); onRemove(); }}
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: 12,
-          zIndex: 4,
-          width: 28,
-          height: 28,
-          border: 'none',
-          background: 'transparent',
-          color: hover || on ? B.textMuted : B.textFaint,
-          cursor: 'pointer',
-          display: 'grid',
-          placeItems: 'center',
-        }}
-      >
-        <X size={14} />
-      </button>
+      {children}
+    </button>
+  );
+}
 
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onSelect}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onSelect();
-          }
-        }}
-        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 14, flex: 1, paddingRight: 18 }}
-      >
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
-          <span style={{ ...T.name, color: B.text }}>{r.tag}</span>
-          {sport ? (
-            <span style={{ ...T.kicker, color: sportColor(sport), letterSpacing: '0.12em' }}>{sport}</span>
-          ) : null}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 6 }}>{hero.label}</div>
-            <div style={{ ...T.display, color: hero.tone, fontSize: isMobile ? '1.45rem' : '1.7rem' }}>
-              {hero.value}
-            </div>
-          </div>
-          <Spark points={spark} up={up} />
-        </div>
-
-        <div style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-          {bits.length ? bits.join('   ') : 'Thin book'}
-        </div>
-
-        {r.books?.length ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${Math.min(r.books.length, 3)}, minmax(0, 1fr))`,
-            gap: 12,
-          }}>
-            {r.books.slice(0, 3).map((b) => (
-              <div key={`${b.sport}-${b.market}`}>
-                <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 4 }}>{b.label}</div>
-                <div style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'", fontWeight: 650 }}>
-                  {b.honest?.text || `${b.wins}–${b.losses}`}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingTop: 4 }}>
-          <span style={{
-            ...T.kicker,
-            color: leanColor(r.lean?.key),
-            letterSpacing: '0.16em',
-          }}>
-            {r.lean?.label || 'Watch'}
-          </span>
-          <span style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>
-            {r.openN ? `${r.openN} live` : 'Quiet'}
-          </span>
-        </div>
+function AllocBar({ sports, filter, onFilter }) {
+  if (!sports?.length) return null;
+  return (
+    <div>
+      <div style={{ display: 'flex', height: 3, gap: 2, width: 140, marginBottom: 8 }}>
+        {sports.map((s) => (
+          <div
+            key={s.sport}
+            style={{
+              flex: Math.max(s.pct, 2),
+              background: sportColor(s.sport),
+              opacity: filter === s.sport ? 1 : 0.8,
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ ...T.meta, fontFeatureSettings: "'tnum'" }}>
+        {sports.slice(0, 3).map((s, i) => (
+          <Word
+            key={s.sport}
+            active={filter === s.sport}
+            tone={filter === s.sport ? B.goldSoft : sportColor(s.sport)}
+            onClick={() => onFilter(filter === s.sport ? null : s.sport)}
+          >
+            {i ? '   ' : ''}{s.sport} {s.pct}%
+          </Word>
+        ))}
       </div>
     </div>
   );
 }
 
-function Focused({ r, isMobile, onClear }) {
-  const hero = heroFor(r);
-  const spark = r.spark || r.form?.spark;
-  const up = Number.isFinite(r.l30?.pnl) ? r.l30.pnl >= 0 : true;
-  const sport = r.focusSport || r.sports[0] || '';
-  const l10 = r.form?.actionL10 || r.form?.l10;
-  const l5 = r.form?.actionL5 || r.form?.l5;
+function moverDetail(m) {
+  if (m.role === 'hot') {
+    if (m.heat?.record) return `${m.heat.label} ${m.heat.window || ''} ${m.heat.record}`.replace(/\s+/g, ' ').trim();
+    return m.heat?.label || null;
+  }
+  if (m.role === 'book') {
+    if (Number.isFinite(m.pnl)) return fmtVol(m.pnl);
+    return m.honest?.text && m.honest.text !== '—' ? m.honest.text : null;
+  }
+  if (m.ticket) {
+    return `${ticketTitle(m.ticket)}  ${fmtVol(m.ticket.invested, { signed: false })}${m.ticket.shared ? '  ·  Shared' : ''}`;
+  }
+  if (m.openN) return `${m.openN} live  ${fmtVol(m.openInvested, { signed: false })}`;
+  return null;
+}
+
+function moverLabel(role) {
+  if (role === 'hot') return 'Hot';
+  if (role === 'book') return 'Book';
+  return 'Live';
+}
+
+function DeskPulse({
+  pulse,
+  focused,
+  window,
+  onWindow,
+  filter,
+  onFilter,
+  onClearFocus,
+  onFocus,
+  onHeat,
+  isMobile,
+}) {
+  const hero = pulse.hero || {};
+  const pnl = hero.hasPnl ? hero.pnl : null;
+  const heroNum = hero.hasPnl
+    ? fmtVol(pnl)
+    : (hero.honest?.record && hero.honest.record !== '—' ? hero.honest.record : '—');
+  const heroTone = hero.hasPnl
+    ? (pnl > 0 ? B.green : pnl < 0 ? B.red : B.text)
+    : B.text;
+  const spark = focused?.spark || focused?.form?.spark;
+  const sparkUp = Number.isFinite(focused?.l30?.pnl)
+    ? focused.l30.pnl >= 0
+    : (spark ? spark[spark.length - 1] >= 0 : true);
+  const movers = pulse.movers?.list || [];
+  const heatBits = [
+    pulse.lean?.tail ? `${pulse.lean.tail} tail` : null,
+    pulse.lean?.sit ? `${pulse.lean.sit} sit` : null,
+    pulse.lean?.watch ? `${pulse.lean.watch} watch` : null,
+  ].filter(Boolean).join('  ·  ');
+
   return (
-    <div style={{
-      padding: isMobile ? '1.4rem 0 1.6rem' : '1.7rem 0 1.9rem',
-      borderBottom: `1px solid ${B.line}`,
-      marginBottom: 22,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, marginBottom: 22 }}>
+    <div style={{ padding: isMobile ? '0.4rem 0 1.7rem' : '0.55rem 0 2rem' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: 16,
+        marginBottom: isMobile ? 22 : 28,
+        flexWrap: 'wrap',
+      }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
-            <span style={{ ...T.display, fontSize: isMobile ? '1.35rem' : '1.55rem', color: B.text }}>{r.tag}</span>
-            {sport ? <span style={{ ...T.kicker, color: sportColor(sport) }}>{sport}</span> : null}
-            <span style={{ ...T.kicker, color: leanColor(r.lean?.key) }}>{r.lean?.label}</span>
+          <div style={{ ...T.kicker, color: B.gold, marginBottom: 10 }}>
+            {focused ? focused.tag : 'Desk'}
           </div>
-          {r.sports.length > 1 ? (
-            <div style={{ ...T.meta, color: B.textFaint, marginTop: 8 }}>{r.sports.join('  ·  ')}</div>
-          ) : null}
+          <div style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+            {pulse.walletN} {pulse.walletN === 1 ? 'wallet' : 'wallets'}
+            {focused?.lean?.label ? `  ·  ${focused.lean.label}` : ''}
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={onClear}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          {focused ? (
+            <button
+              type="button"
+              onClick={onClearFocus}
+              style={{
+                ...T.kicker, border: 'none', background: 'transparent',
+                color: B.textMuted, cursor: 'pointer', padding: 0,
+              }}
+            >
+              Desk
+            </button>
+          ) : null}
+          <WindowCut window={window} onChange={onWindow} />
+        </div>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: (focused && spark && !isMobile) ? 'minmax(0, 1fr) auto' : '1fr',
+        gap: isMobile ? 16 : 36,
+        alignItems: 'end',
+        marginBottom: isMobile ? 26 : 32,
+      }}>
+        <div>
+          <div style={{ ...T.display, color: heroTone, fontSize: isMobile ? '2rem' : '2.55rem' }}>
+            {heroNum}
+          </div>
+          <div style={{ ...T.meta, color: B.textMuted, marginTop: 10, fontFeatureSettings: "'tnum'" }}>
+            {hero.hasPnl && hero.honest?.text && hero.honest.text !== '—'
+              ? hero.honest.text
+              : (window === 'recent' ? 'Recent book' : 'Last 30')}
+          </div>
+        </div>
+        {focused && spark ? (
+          <Spark points={spark} width={isMobile ? 180 : 260} height={isMobile ? 40 : 56} up={sparkUp} />
+        ) : null}
+      </div>
+
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'flex-end',
+        gap: isMobile ? '1.15rem 1.6rem' : '1.25rem 2.4rem',
+        paddingBottom: isMobile ? 20 : 24,
+        borderBottom: `1px solid ${B.line}`,
+      }}>
+        <div>
+          <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 7 }}>Open</div>
+          <Word
+            active={!filter}
+            tone={pulse.open?.n ? B.goldSoft : B.textFaint}
+            onClick={() => onFilter(null)}
+          >
+            <span style={{ ...T.name, color: pulse.open?.n ? B.goldSoft : B.textFaint }}>
+              {pulse.open?.n
+                ? `${pulse.open.n}  ·  ${fmtVol(pulse.open.invested, { signed: false })}`
+                : 'Quiet'}
+            </span>
+          </Word>
+        </div>
+        {heatBits ? (
+          <div>
+            <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 7 }}>Heat</div>
+            <Word onClick={onHeat}>
+              <span style={{ ...T.body, color: B.textSec }}>{heatBits}</span>
+            </Word>
+          </div>
+        ) : null}
+        {pulse.sports?.length ? (
+          <div>
+            <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 7 }}>Sports</div>
+            <AllocBar sports={pulse.sports} filter={filter} onFilter={onFilter} />
+          </div>
+        ) : null}
+        {pulse.canOverlap ? (
+          <div>
+            <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 7 }}>Overlap</div>
+            {pulse.overlapEmpty ? (
+              <div style={{ ...T.body, color: B.textFaint }}>None on this slate</div>
+            ) : (
+              <div style={{ ...T.body }}>
+                <Word
+                  active={filter === 'agree'}
+                  onClick={() => onFilter(filter === 'agree' ? null : 'agree')}
+                >
+                  {pulse.agreeN} agree
+                </Word>
+                <span style={{ color: B.textFaint }}>  ·  </span>
+                <Word
+                  active={filter === 'fight'}
+                  tone={filter === 'fight' ? B.goldSoft : (pulse.fightN ? B.red : B.textSec)}
+                  onClick={() => onFilter(filter === 'fight' ? null : 'fight')}
+                >
+                  {pulse.fightN} fight
+                </Word>
+              </div>
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      {movers.length ? (
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: isMobile ? 18 : 36,
+          paddingTop: isMobile ? 20 : 24,
+        }}>
+          {movers.map((m) => (
+            <button
+              key={`${m.role}-${m.walletShort}`}
+              type="button"
+              onClick={() => onFocus(m.walletShort)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                textAlign: 'left',
+                cursor: 'pointer',
+                minWidth: 0,
+              }}
+            >
+              <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 7 }}>{moverLabel(m.role)}</div>
+              <div style={{ ...T.name, color: B.text }}>{m.tag}</div>
+              {moverDetail(m) ? (
+                <div style={{ ...T.meta, color: B.textMuted, marginTop: 5, fontFeatureSettings: "'tnum'" }}>
+                  {moverDetail(m)}
+                </div>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SortTh({ id, label, sortKey, dir, onSort, right }) {
+  const on = sortKey === id;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(id)}
+      style={{
+        ...T.kicker,
+        border: 'none',
+        background: 'transparent',
+        padding: 0,
+        cursor: 'pointer',
+        color: on ? B.goldSoft : B.textFaint,
+        textAlign: right ? 'right' : 'left',
+        width: '100%',
+      }}
+    >
+      {label}{on ? (dir === 'desc' ? ' ↓' : ' ↑') : ''}
+    </button>
+  );
+}
+
+function RosterTable({
+  roster,
+  focusShort,
+  sortKey,
+  dir,
+  onSort,
+  onFocus,
+  onRemove,
+  isMobile,
+}) {
+  if (!roster.length) {
+    return <div style={{ ...T.body, color: B.textMuted, padding: '1.2rem 0' }}>Nobody in this cut.</div>;
+  }
+
+  if (isMobile) {
+    return (
+      <div>
+        {roster.map((r) => {
+          const on = focusShort === r.walletShort;
+          return (
+            <div
+              key={r.walletShort}
+              style={{
+                position: 'relative',
+                padding: '0.95rem 1.8rem 0.95rem 0',
+                borderBottom: `1px solid ${B.line}`,
+                background: on ? 'rgba(212,175,55,0.05)' : 'transparent',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => onFocus(r.walletShort)}
+                style={{
+                  border: 'none', background: 'transparent', padding: 0,
+                  width: '100%', textAlign: 'left', cursor: 'pointer',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ ...T.name, color: B.text }}>
+                    {r.tag}
+                    {r.focusSport || r.sports[0] ? (
+                      <span style={{ ...T.kicker, color: sportColor(r.focusSport || r.sports[0]), marginLeft: 8 }}>
+                        {r.focusSport || r.sports[0]}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span style={{ ...T.name, color: Number.isFinite(r.l30?.pnl) ? (r.l30.pnl >= 0 ? B.green : B.red) : B.textFaint }}>
+                    {Number.isFinite(r.l30?.pnl) ? fmtVol(r.l30.pnl) : (r.l30Honest?.text || '—')}
+                  </span>
+                </div>
+                <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
+                  <span style={{ color: leanColor(r.lean?.key) }}>{r.lean?.label}</span>
+                  {'  ·  '}{recentText(r)}
+                  {r.openN ? `  ·  ${r.openN} open` : ''}
+                </div>
+              </button>
+              <button
+                type="button"
+                aria-label={`Remove ${r.tag}`}
+                onClick={(e) => { e.stopPropagation(); onRemove(r.walletShort); }}
+                style={{
+                  position: 'absolute', top: 12, right: 0, border: 'none',
+                  background: 'transparent', color: B.textFaint, cursor: 'pointer',
+                  width: 24, height: 24, display: 'grid', placeItems: 'center',
+                }}
+              >
+                <X size={13} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1.3fr 0.7fr 0.7fr 1.4fr 1fr 1.1fr 28px',
+        gap: 12,
+        padding: '0 0 0.7rem',
+        borderBottom: `1px solid ${B.line}`,
+      }}>
+        <SortTh id="wallet" label="Wallet" sortKey={sortKey} dir={dir} onSort={onSort} />
+        <SortTh id="lean" label="Lean" sortKey={sortKey} dir={dir} onSort={onSort} />
+        <SortTh id="recent" label="Recent" sortKey={sortKey} dir={dir} onSort={onSort} />
+        <SortTh id="l30" label="L30" sortKey={sortKey} dir={dir} onSort={onSort} />
+        <SortTh id="open" label="Open" sortKey={sortKey} dir={dir} onSort={onSort} />
+        <SortTh id="market" label="Market" sortKey={sortKey} dir={dir} onSort={onSort} />
+        <span />
+      </div>
+      {roster.map((r) => {
+        const on = focusShort === r.walletShort;
+        const book = r.books?.[0];
+        return (
+          <div
+            key={r.walletShort}
+            role="button"
+            tabIndex={0}
+            onClick={() => onFocus(r.walletShort)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onFocus(r.walletShort);
+              }
+            }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1.3fr 0.7fr 0.7fr 1.4fr 1fr 1.1fr 28px',
+              gap: 12,
+              alignItems: 'center',
+              padding: '0.85rem 0',
+              borderBottom: `1px solid ${B.line}`,
+              background: on ? 'rgba(212,175,55,0.05)' : 'transparent',
+              cursor: 'pointer',
+            }}
+          >
+            <div>
+              <div style={{ ...T.name, color: B.text }}>{r.tag}</div>
+              {r.focusSport || r.sports[0] ? (
+                <div style={{ ...T.kicker, color: sportColor(r.focusSport || r.sports[0]), marginTop: 4 }}>
+                  {r.focusSport || r.sports[0]}
+                </div>
+              ) : null}
+            </div>
+            <div style={{ ...T.kicker, color: leanColor(r.lean?.key), letterSpacing: '0.12em' }}>
+              {r.lean?.label || 'Watch'}
+            </div>
+            <div style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{recentText(r)}</div>
+            <div style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+              {r.l30Honest?.text && r.l30Honest.text !== '—' ? r.l30Honest.text : '—'}
+              {Number.isFinite(r.l30?.pnl) ? (
+                <span style={{ color: r.l30.pnl >= 0 ? B.green : B.red }}>
+                  {'  '}{fmtVol(r.l30.pnl)}
+                </span>
+              ) : null}
+            </div>
+            <div style={{ ...T.meta, color: r.openN ? B.goldSoft : B.textFaint, fontFeatureSettings: "'tnum'" }}>
+              {r.openN ? `${r.openN}  ·  ${fmtVol(r.openInvested, { signed: false })}` : '—'}
+            </div>
+            <div style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+              {book ? `${book.label}  ${book.honest?.text || `${book.wins}–${book.losses}`}` : '—'}
+            </div>
+            <button
+              type="button"
+              aria-label={`Remove ${r.tag}`}
+              onClick={(e) => { e.stopPropagation(); onRemove(r.walletShort); }}
+              style={{
+                border: 'none', background: 'transparent', color: B.textFaint,
+                cursor: 'pointer', width: 28, height: 28, display: 'grid', placeItems: 'center',
+              }}
+            >
+              <X size={13} />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function OpenBoard({ tickets, onFocus, isMobile }) {
+  if (!tickets.length) {
+    return (
+      <div style={{ ...T.body, color: B.textMuted, padding: '1.15rem 0 0.4rem' }}>
+        None of yours are on this slate.
+      </div>
+    );
+  }
+  return (
+    <div>
+      {tickets.map((t) => (
+        <div
+          key={t.id}
           style={{
-            ...T.kicker, border: 'none', background: 'transparent',
-            color: B.textMuted, cursor: 'pointer', padding: 0,
+            display: 'grid',
+            gridTemplateColumns: isMobile
+              ? 'minmax(0, 1fr) auto'
+              : 'minmax(0, 1.4fr) auto minmax(0, 1fr) auto',
+            gap: isMobile ? 10 : 14,
+            alignItems: 'baseline',
+            padding: '0.9rem 0',
+            borderBottom: `1px solid ${B.line}`,
           }}
         >
-          All
-        </button>
-      </div>
-
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'auto 1fr',
-        gap: isMobile ? 22 : 48,
-        alignItems: 'end',
-        marginBottom: 28,
-      }}>
-        <div>
-          <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 8 }}>{hero.label}</div>
-          <div style={{ ...T.display, color: hero.tone, fontSize: isMobile ? '2rem' : '2.4rem' }}>{hero.value}</div>
-        </div>
-        <Spark points={spark} width={isMobile ? 220 : 320} height={56} up={up} />
-      </div>
-
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, minmax(0, 1fr))',
-        gap: isMobile ? 22 : 36,
-      }}>
-        <Stat label="Book">
-          {r.bookHonest?.text && r.bookHonest.text !== '—' ? r.bookHonest.text : '—'}
-          {r.book?.roi != null && r.bookHonest?.showPct ? (
-            <div style={{ color: r.book.roi >= 0 ? B.green : B.red, marginTop: 6 }}>
-              {r.book.roi >= 0 ? '+' : ''}{r.book.roi}% ROI
+          <div style={{ minWidth: 0 }}>
+            <div style={{ ...T.name, color: B.text }}>{ticketTitle(t)}</div>
+            <div style={{ ...T.meta, color: B.textFaint, marginTop: 4 }}>
+              <span style={{ color: sportColor(t.sport) }}>{t.sport}</span>
+              {'  ·  '}{matchup(t)}
             </div>
-          ) : null}
-        </Stat>
-        <Stat label="Form">
-          {l10 && Number(l10.w) + Number(l10.l) > 0 ? `L10  ${l10.w}–${l10.l}` : '—'}
-          {l5 && Number(l5.w) + Number(l5.l) > 0 ? (
-            <div style={{ marginTop: 6, color: B.textMuted }}>L5  {l5.w}–{l5.l}</div>
-          ) : null}
-          {r.heat?.key === 'hot' || r.heat?.key === 'cold' ? (
-            <div style={{ marginTop: 6, color: r.heat.key === 'hot' ? B.green : B.red }}>{r.heat.label}</div>
-          ) : null}
-        </Stat>
-        <Stat label="Markets">
-          {r.books?.length
-            ? r.books.map((b) => (
-              <div key={`${b.sport}-${b.market}`} style={{ marginBottom: 6 }}>
-                {b.label}  {b.honest?.text || `${b.wins}–${b.losses}`}
-              </div>
-            ))
-            : '—'}
-          {r.clv?.priorClvPct != null ? (
-            <div style={{ marginTop: 6, color: B.goldSoft }}>Beat close {r.clv.priorClvPct}%</div>
-          ) : null}
-        </Stat>
-      </div>
+          </div>
+          <div style={{ ...T.name, color: B.goldSoft, fontFeatureSettings: "'tnum'" }}>
+            {fmtVol(t.invested, { signed: false })}
+          </div>
+          <div style={{
+            ...T.meta,
+            color: B.textSec,
+            fontFeatureSettings: "'tnum'",
+            gridColumn: isMobile ? '1 / -1' : 'auto',
+          }}>
+            {t.tags.map((tag, i) => (
+              <button
+                key={t.shorts[i] || tag}
+                type="button"
+                onClick={() => onFocus(t.shorts[i])}
+                style={{
+                  border: 'none', background: 'transparent', padding: 0,
+                  color: B.textSec, cursor: 'pointer', marginRight: 10,
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+            {isMobile && kindLabel(t) ? (
+              <span style={{ ...T.kicker, color: kindTone(t.kind) }}>
+                {kindLabel(t)}
+              </span>
+            ) : null}
+          </div>
+          {isMobile ? null : (
+            <div style={{ ...T.kicker, color: kindTone(t.kind) }}>
+              {kindLabel(t) || ''}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -426,94 +724,102 @@ function Focused({ r, isMobile, onClear }) {
 export default function MySharpsDesk({
   ready = false,
   signedIn = false,
-  scope = 'agg',
-  onScope,
   focusShort = null,
   onFocus,
-  section = 'action',
-  onSection,
   roster = [],
-  dash = null,
+  board = null,
+  actionRows = [],
+  recentLegs = [],
   onRemove,
   isMobile = false,
 }) {
+  const [pulseWindow, setPulseWindow] = useState('l30');
+  const [filter, setFilter] = useState(null);
+  const [sortKey, setSortKey] = useState('lean');
+  const [sortDir, setSortDir] = useState('asc');
+
+  const pulse = useMemo(
+    () => buildDeskPulse({
+      roster,
+      board: board || { tickets: [] },
+      actionRows,
+      recentLegs,
+      focusShort,
+      window: pulseWindow,
+    }),
+    [roster, board, actionRows, recentLegs, focusShort, pulseWindow],
+  );
+
+  const sorted = useMemo(
+    () => sortMySharpsRoster(roster, sortKey, sortDir),
+    [roster, sortKey, sortDir],
+  );
+
+  const tickets = useMemo(
+    () => filterBoardTickets(board || { tickets: [] }, { focusShort, filter }),
+    [board, focusShort, filter],
+  );
+
   if (!ready) return <LockedState signedIn={signedIn} />;
   if (!roster.length) return <EmptyState />;
 
-  const d = dash || {};
-  const shown = roster.filter((r) => rosterMatchesSection(r, section));
   const focused = focusShort ? roster.find((r) => r.walletShort === focusShort) : null;
-  const grid = focused ? shown.filter((r) => r.walletShort !== focused.walletShort) : shown;
+
+  const setFocus = (short) => {
+    if (!short) {
+      onFocus?.(null);
+      return;
+    }
+    onFocus?.(focusShort === short ? null : short);
+  };
+
+  const onSort = (id) => {
+    if (sortKey === id) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(id);
+      setSortDir(id === 'wallet' || id === 'sport' || id === 'lean' ? 'asc' : 'desc');
+    }
+  };
 
   return (
-    <div style={{ margin: '0.35rem 0 2.4rem' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
-        <div>
-          <div style={{ ...T.kicker, color: B.gold, marginBottom: 8 }}>My Sharps</div>
-          <div style={{ ...T.body, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-            {d.walletN} {d.walletN === 1 ? 'wallet' : 'wallets'}
-            {d.lean?.tail ? `  ·  ${d.lean.tail} to tail` : ''}
-            {d.lean?.sit ? `  ·  ${d.lean.sit} to sit` : ''}
-          </div>
-        </div>
-      </div>
+    <div style={{ margin: '0.2rem 0 2.6rem' }}>
+      <DeskPulse
+        pulse={pulse}
+        focused={focused}
+        window={pulseWindow}
+        onWindow={setPulseWindow}
+        filter={filter}
+        onFilter={setFilter}
+        onClearFocus={() => onFocus?.(null)}
+        onFocus={setFocus}
+        onHeat={() => {
+          setSortKey('lean');
+          setSortDir('asc');
+        }}
+        isMobile={isMobile}
+      />
 
-      <div style={{ marginBottom: 22 }}>
-        <CutTabs
-          section={section}
-          onSection={onSection}
-          counts={{
-            all: roster.length,
-            tail: d.lean?.tail || 0,
-            sit: d.lean?.sit || 0,
-            hot: d.heat?.hot || 0,
+      <div style={{ marginTop: isMobile ? 8 : 10, paddingTop: 8 }}>
+        <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 14 }}>Roster</div>
+        <RosterTable
+          roster={sorted}
+          focusShort={focusShort}
+          sortKey={sortKey}
+          dir={sortDir}
+          onSort={onSort}
+          onFocus={setFocus}
+          onRemove={(short) => {
+            if (focusShort === short) onFocus?.(null);
+            onRemove?.(short);
           }}
-        />
-      </div>
-
-      {focused ? (
-        <Focused
-          r={focused}
           isMobile={isMobile}
-          onClear={() => {
-            onScope('agg');
-            onFocus(null);
-          }}
         />
-      ) : null}
+      </div>
 
-      {shown.length === 0 ? (
-        <div style={{ ...T.body, color: B.textMuted, padding: '1.6rem 0' }}>Nobody in this cut.</div>
-      ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: 1,
-          background: B.line,
-          outline: `1px solid ${B.line}`,
-        }}>
-          {(focused ? grid : shown).map((r) => (
-            <TraderCard
-              key={r.walletShort}
-              r={r}
-              on={scope === 'single' && focusShort === r.walletShort}
-              isMobile={isMobile}
-              onSelect={() => {
-                const same = focusShort === r.walletShort && scope === 'single';
-                onScope(same ? 'agg' : 'single');
-                onFocus(same ? null : r.walletShort);
-              }}
-              onRemove={() => {
-                if (focusShort === r.walletShort) {
-                  onScope('agg');
-                  onFocus(null);
-                }
-                onRemove?.(r.walletShort);
-              }}
-            />
-          ))}
-        </div>
-      )}
+      <div style={{ marginTop: isMobile ? 28 : 36 }}>
+        <div style={{ ...T.kicker, color: B.textFaint, marginBottom: 14 }}>Open</div>
+        <OpenBoard tickets={tickets} onFocus={setFocus} isMobile={isMobile} />
+      </div>
     </div>
   );
 }
