@@ -39,6 +39,7 @@ import {
   onesignalFiltersForEdge,
   sideLockAlertEdge,
 } from '../src/lib/lockAlertMode.js';
+import { UNIT_DISPLAY_SCALE, scaleUnits } from '../src/lib/unitDisplayScale.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -183,10 +184,10 @@ function hasFreshClaim(sd, now) {
 }
 
 /** Deterministic UUID v5 so two overlapping crons share one OneSignal idempotency key. */
-function lockAlertIdempotencyKey(col, docId, sideKey, date) {
+function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = UNIT_DISPLAY_SCALE.FULL) {
   const hash = createHash('sha1')
     .update('lock-alert.nhlsavant.com')
-    .update(`${date}|${col}|${docId}|${sideKey}`)
+    .update(`${date}|${col}|${docId}|${sideKey}|${scale}`)
     .digest();
   hash[6] = (hash[6] & 0x0f) | 0x50;
   hash[8] = (hash[8] & 0x3f) | 0x80;
@@ -292,14 +293,14 @@ function formatUnits(u) {
   return `${s}u`;
 }
 
-function tierLineForSide(sd, tierStats) {
+function tierLineForSide(sd, tierStats, scale = UNIT_DISPLAY_SCALE.FULL) {
   const path = typeof sd?.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : null;
   if (!path) return null;
   const displayKey = AGS_V12_PATH_TO_DISPLAY[path];
   if (!displayKey) return null;
   const meta = AGS_V12_STAKE_TIER_META[path];
   const label = meta?.label || displayKey;
-  const units = sideStakeUnits(sd);
+  const units = scaleUnits(sideStakeUnits(sd), scale);
   const unitsText = formatUnits(units);
   const stats = tierStats.get(displayKey);
   const parts = [stats?.label || label];
@@ -332,7 +333,7 @@ function buildContents({ pickText, tier }) {
   return `${pickText} just locked — ~15 min to gametime. Tap for the card.`;
 }
 
-async function sendOneSignal({ pickText, detail, tier, edge, idempotencyKey, topic }) {
+async function sendOneSignal({ pickText, detail, tier, edge, idempotencyKey, topic, scale = UNIT_DISPLAY_SCALE.FULL }) {
   if (!REST_KEY) {
     throw new Error('ONESIGNAL_REST_API_KEY is not set');
   }
@@ -354,6 +355,7 @@ async function sendOneSignal({ pickText, detail, tier, edge, idempotencyKey, top
       tierRecord: tier?.record || '',
       edge: Number.isFinite(edge) ? String(edge) : '',
       lockMode: isTop ? 'edge11+' : 'all',
+      unitScale: scale,
       templateId: TEMPLATE_ID, // reference only — not applied
     },
     contents: { en: contentsEn },
@@ -369,7 +371,7 @@ async function sendOneSignal({ pickText, detail, tier, edge, idempotencyKey, top
     // Owner-only — never use paid audience filter for tests.
     body.include_aliases = { external_id: [OWNER_UID] };
   } else {
-    body.filters = onesignalFiltersForEdge(edge);
+    body.filters = onesignalFiltersForEdge(edge, { scale });
   }
 
   const headers = {
@@ -492,19 +494,19 @@ async function main() {
 
         stats.candidates++;
         const pickText = pickLabel(pick, sideKey, market);
-        const tier = tierLineForSide(sd, tierStats);
         const edge = sideLockAlertEdge(sd);
-        const detail = tier?.text ? ` ${tier.text}.` : ' Open Sharp Flow.';
-        const preview = buildContents({ pickText, tier });
+        const fullTier = tierLineForSide(sd, tierStats, UNIT_DISPLAY_SCALE.FULL);
+        const consTier = tierLineForSide(sd, tierStats, UNIT_DISPLAY_SCALE.CONSERVATIVE);
         const audience =
           Number.isFinite(edge) && edge >= LOCK_ALERT_EDGE_MIN
             ? `all+edge11 (EDGE ${edge.toFixed(1)})`
             : `all only${Number.isFinite(edge) ? ` (EDGE ${edge.toFixed(1)})` : ' (EDGE n/a)'}`;
         console.log(`  → ${DRY_RUN ? 'WOULD SEND' : 'SEND'} ${col}/${pick._id} ${sideKey}`);
         console.log(
-          `     path=${sd.v8_hcStakeTier || '—'} · units=${tier?.unitsText || formatUnits(sideStakeUnits(sd)) || '0u'} · audience=${audience}`,
+          `     path=${sd.v8_hcStakeTier || '—'} · full=${fullTier?.unitsText || formatUnits(sideStakeUnits(sd)) || '0u'} · cons=${consTier?.unitsText || '—'} · audience=${audience}`,
         );
-        console.log(`     ${preview}`);
+        console.log(`     full: ${buildContents({ pickText, tier: fullTier })}`);
+        console.log(`     cons: ${buildContents({ pickText, tier: consTier })}`);
 
         if (DRY_RUN) continue;
 
@@ -518,17 +520,38 @@ async function main() {
         }
 
         try {
-          const idempotencyKey = lockAlertIdempotencyKey(col, pick._id, sideKey, TARGET_DATE);
           const topic = `lock-${TARGET_DATE}-${pick._id}-${sideKey}`.slice(0, 64);
-          const result = await sendOneSignal({
-            pickText,
-            detail,
-            tier,
-            edge,
-            idempotencyKey,
-            topic,
-          });
-          const messageId = result.id || null;
+          let ownerScale = UNIT_DISPLAY_SCALE.FULL;
+          if (TEST_OWNER) {
+            try {
+              const ownerSnap = await db.collection('users').doc(OWNER_UID).get();
+              ownerScale = ownerSnap.exists
+                ? (ownerSnap.data()?.unitDisplayScale === UNIT_DISPLAY_SCALE.CONSERVATIVE
+                  ? UNIT_DISPLAY_SCALE.CONSERVATIVE
+                  : UNIT_DISPLAY_SCALE.FULL)
+                : UNIT_DISPLAY_SCALE.FULL;
+            } catch (_) { /* default full */ }
+          }
+          const scales = TEST_OWNER
+            ? [ownerScale]
+            : [UNIT_DISPLAY_SCALE.FULL, UNIT_DISPLAY_SCALE.CONSERVATIVE];
+          let result = null;
+          for (const scale of scales) {
+            const tier = scale === UNIT_DISPLAY_SCALE.CONSERVATIVE ? consTier : fullTier;
+            const detail = tier?.text ? ` ${tier.text}.` : ' Open Sharp Flow.';
+            result = await sendOneSignal({
+              pickText,
+              detail,
+              tier,
+              edge,
+              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, TARGET_DATE, scale),
+              topic: `${topic}-${scale === UNIT_DISPLAY_SCALE.CONSERVATIVE ? 'c' : 'f'}`.slice(0, 64),
+              scale,
+            });
+            console.log(`    · ${scale} message ${result?.id || '(no id)'} recipients=${result?.recipients ?? '?'}`);
+            if (scales.length > 1) await new Promise((r) => setTimeout(r, SEND_STAGGER_MS));
+          }
+          const messageId = result?.id || null;
           // Never stamp Firestore on owner-only tests — production cron still owns idempotency.
           if (!TEST_OWNER) {
             await db

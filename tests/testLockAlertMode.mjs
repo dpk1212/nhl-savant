@@ -10,6 +10,7 @@ import {
   paidTagIsExplicitMode,
   paidTagToWriteOnPaidVisit,
   isLockAlertMode,
+  onesignalFiltersForEdge,
 } from '../src/lib/lockAlertMode.js';
 
 let n = 0;
@@ -46,5 +47,21 @@ ok(paidTagToWriteOnPaidVisit('edge11', 'all') === null, 'do not clobber live Top
 ok(paidTagToWriteOnPaidVisit(null, 'all') === null, 'empty getTags: do not invent all');
 ok(paidTagToWriteOnPaidVisit('all', null) === 'all', 'normalize live all');
 ok(paidTagToWriteOnPaidVisit('true', null) === 'all', 'migrate legacy true');
+
+ok(normalizeLockAlertMode('all_c') === LOCK_ALERT_MODE.ALL, 'all_c is All');
+ok(normalizeLockAlertMode('edge11_c') === LOCK_ALERT_MODE.EDGE11, 'edge11_c is Top');
+ok(paidTagIsExplicitMode('all_c') && paidTagIsExplicitMode('edge11_c'), 'conservative tags explicit');
+ok(paidTagForEntitlement('edge11_c') === 'edge11_c', 'entitlement keeps conservative Top');
+ok(paidTagForEntitlement('all', 'conservative') === 'all_c', 'entitlement applies conservative');
+ok(paidTagForEntitlement('edge11', 'conservative') === 'edge11_c', 'Top + conservative');
+ok(paidTagToWriteOnPaidVisit('all', null, 'conservative') === 'all_c', 'paid visit heals scale');
+ok(paidTagToWriteOnPaidVisit('edge11', 'all', 'conservative') === 'edge11_c', 'heal scale without clobbering Top');
+
+ok(onesignalFiltersForEdge(5).some((f) => f.value === 'all'), 'full all-lock audience');
+ok(!onesignalFiltersForEdge(5).some((f) => f.value === 'edge11'), 'full non-top excludes edge11');
+ok(onesignalFiltersForEdge(12).some((f) => f.value === 'edge11'), 'full top includes edge11');
+ok(onesignalFiltersForEdge(5, { scale: 'conservative' }).every((f) => f.value !== 'all'), 'cons does not hit full all');
+ok(onesignalFiltersForEdge(5, { scale: 'conservative' }).some((f) => f.value === 'all_c'), 'cons all-lock audience');
+ok(onesignalFiltersForEdge(12, { scale: 'conservative' }).some((f) => f.value === 'edge11_c'), 'cons top includes edge11_c');
 
 console.log(`ok ${n}`);

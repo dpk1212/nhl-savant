@@ -88,7 +88,24 @@ function sideLockAlertEdge(sd, priorAg = 50) {
   return null;
 }
 
-function onesignalFiltersForEdge(edge) {
+function scaleUnits(units, scale) {
+  const u = Number(units);
+  if (!Number.isFinite(u) || u === 0) return Number.isFinite(u) ? u : 0;
+  if (scale !== 'conservative') return u;
+  return Math.round(u * 50) / 100;
+}
+
+function onesignalFiltersForEdge(edge, scale = 'full') {
+  if (scale === 'conservative') {
+    const filters = [
+      { field: 'tag', key: 'paid', relation: '=', value: 'all_c' },
+    ];
+    if (Number.isFinite(edge) && edge >= LOCK_ALERT_EDGE_MIN) {
+      filters.push({ operator: 'OR' });
+      filters.push({ field: 'tag', key: 'paid', relation: '=', value: 'edge11_c' });
+    }
+    return filters;
+  }
   const filters = [
     { field: 'tag', key: 'paid', relation: '=', value: 'all' },
     { operator: 'OR' },
@@ -126,10 +143,10 @@ function formatUnits(u) {
   return Number.isInteger(n) ? `${n}u` : `${n}u`;
 }
 
-function lockAlertIdempotencyKey(col, docId, sideKey, date) {
+function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = 'full') {
   const hash = createHash('sha1')
     .update('lock-alert.nhlsavant.com')
-    .update(`${date}|${col}|${docId}|${sideKey}`)
+    .update(`${date}|${col}|${docId}|${sideKey}|${scale}`)
     .digest();
   hash[6] = (hash[6] & 0x0f) | 0x50;
   hash[8] = (hash[8] & 0x3f) | 0x80;
@@ -174,7 +191,7 @@ async function releaseLockAlertClaim(db, col, docId, sideKey) {
     );
 }
 
-async function sendOneSignal({ pickText, tierText, unitsText, edge, idempotencyKey, topic }) {
+async function sendOneSignal({ pickText, tierText, unitsText, edge, idempotencyKey, topic, scale = 'full' }) {
   const key = restKey();
   if (!key) throw new Error('ONESIGNAL_REST_API_KEY is not set');
   const isTop = Number.isFinite(edge) && edge >= LOCK_ALERT_EDGE_MIN;
@@ -189,6 +206,7 @@ async function sendOneSignal({ pickText, tierText, unitsText, edge, idempotencyK
       units: unitsText || '',
       edge: Number.isFinite(edge) ? String(edge) : '',
       lockMode: isTop ? 'edge11+' : 'all',
+      unitScale: scale,
     },
     contents: { en: contentsEn },
     headings: { en: isTop ? 'Sharp Flow · Top lock' : 'Sharp Flow · Locked' },
@@ -197,7 +215,7 @@ async function sendOneSignal({ pickText, tierText, unitsText, edge, idempotencyK
     priority: 10,
     web_push_topic: topic,
     name: `Lock: ${pickText}`.slice(0, 128),
-    filters: onesignalFiltersForEdge(edge),
+    filters: onesignalFiltersForEdge(edge, scale),
   };
 
   const res = await fetch('https://api.onesignal.com/notifications', {
@@ -305,23 +323,27 @@ async function runLockAlerts({ forceWindow = false } = {}) {
 
         const pickText = pickLabel(pick, sideKey, market);
         const units = sideStakeUnits(sd);
-        const unitsText = formatUnits(units);
         const tier = typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : '';
-        const tierText = [tier || null, unitsText].filter(Boolean).join(' · ');
         const edge = sideLockAlertEdge(sd);
-        const idempotencyKey = lockAlertIdempotencyKey(col, pick._id, sideKey, date);
         const topic = `lock-${date}-${pick._id}-${sideKey}`.slice(0, 64);
 
         try {
-          const result = await sendOneSignal({
-            pickText,
-            tierText,
-            unitsText,
-            edge,
-            idempotencyKey,
-            topic,
-          });
-          const messageId = result.id || null;
+          let result = null;
+          for (const scale of ['full', 'conservative']) {
+            const unitsText = formatUnits(scaleUnits(units, scale));
+            const tierText = [tier || null, unitsText].filter(Boolean).join(' · ');
+            result = await sendOneSignal({
+              pickText,
+              tierText,
+              unitsText,
+              edge,
+              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, scale),
+              topic: `${topic}-${scale === 'conservative' ? 'c' : 'f'}`.slice(0, 64),
+              scale,
+            });
+            logger.info(`sent ${scale} ${col}/${pick._id} ${sideKey} message=${result?.id} recipients=${result?.recipients ?? '?'}`);
+          }
+          const messageId = result?.id || null;
           await db
             .collection(col)
             .doc(pick._id)

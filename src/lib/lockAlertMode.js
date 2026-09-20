@@ -3,17 +3,29 @@
  * (org plan allows only one custom tag — see ONESIGNAL.md).
  *
  * Values:
- *   all     — every staked lock (default / migrates legacy `true`)
- *   edge11  — only locks with EDGE ≥ LOCK_ALERT_EDGE_MIN
- *   false   — not entitled / lapsed (no sends)
- *   true    — legacy; treated as `all` by send filters + normalizers
+ *   all      — full book, every staked lock
+ *   all_c    — conservative book, every staked lock
+ *   edge11   — full book, EDGE ≥ LOCK_ALERT_EDGE_MIN only
+ *   edge11_c — conservative book, EDGE ≥ min only
+ *   false    — not entitled / lapsed (no sends)
+ *   true     — legacy; treated as `all`
  */
+
+import { UNIT_DISPLAY_SCALE, normalizeUnitDisplayScale } from './unitDisplayScale.js';
 
 export const LOCK_ALERT_EDGE_MIN = 11;
 
 export const LOCK_ALERT_MODE = Object.freeze({
   ALL: 'all',
   EDGE11: 'edge11',
+  OFF: 'false',
+});
+
+export const PAID_TAG = Object.freeze({
+  ALL: 'all',
+  ALL_CONSERVATIVE: 'all_c',
+  EDGE11: 'edge11',
+  EDGE11_CONSERVATIVE: 'edge11_c',
   OFF: 'false',
 });
 
@@ -24,17 +36,45 @@ export function isLockAlertMode(value) {
   return value === LOCK_ALERT_MODE.ALL || value === LOCK_ALERT_MODE.EDGE11;
 }
 
+export function paidTagScale(paidTag) {
+  return paidTag === PAID_TAG.ALL_CONSERVATIVE || paidTag === PAID_TAG.EDGE11_CONSERVATIVE
+    ? UNIT_DISPLAY_SCALE.CONSERVATIVE
+    : UNIT_DISPLAY_SCALE.FULL;
+}
+
+/** Compose the single `paid` tag from All/Top + Full/Conservative. */
+export function composePaidTag(mode, scale = UNIT_DISPLAY_SCALE.FULL) {
+  const conservative = normalizeUnitDisplayScale(scale) === UNIT_DISPLAY_SCALE.CONSERVATIVE;
+  if (mode === LOCK_ALERT_MODE.EDGE11) {
+    return conservative ? PAID_TAG.EDGE11_CONSERVATIVE : PAID_TAG.EDGE11;
+  }
+  if (mode === LOCK_ALERT_MODE.ALL) {
+    return conservative ? PAID_TAG.ALL_CONSERVATIVE : PAID_TAG.ALL;
+  }
+  return PAID_TAG.OFF;
+}
+
 /** @param {unknown} paidTag */
 export function normalizeLockAlertMode(paidTag) {
-  if (paidTag === LOCK_ALERT_MODE.EDGE11) return LOCK_ALERT_MODE.EDGE11;
-  if (paidTag === LOCK_ALERT_MODE.ALL || paidTag === 'true') return LOCK_ALERT_MODE.ALL;
+  if (paidTag === LOCK_ALERT_MODE.EDGE11 || paidTag === PAID_TAG.EDGE11_CONSERVATIVE) {
+    return LOCK_ALERT_MODE.EDGE11;
+  }
+  if (
+    paidTag === LOCK_ALERT_MODE.ALL
+    || paidTag === PAID_TAG.ALL_CONSERVATIVE
+    || paidTag === 'true'
+  ) {
+    return LOCK_ALERT_MODE.ALL;
+  }
   return LOCK_ALERT_MODE.OFF;
 }
 
 /** True when the tag is an explicit mode (not missing / false). */
 export function paidTagIsExplicitMode(paidTag) {
   return paidTag === LOCK_ALERT_MODE.EDGE11
+    || paidTag === PAID_TAG.EDGE11_CONSERVATIVE
     || paidTag === LOCK_ALERT_MODE.ALL
+    || paidTag === PAID_TAG.ALL_CONSERVATIVE
     || paidTag === 'true';
 }
 
@@ -59,45 +99,68 @@ export function writeStoredLockAlertMode(mode) {
 }
 
 /**
- * When confirming paid entitlement, keep an explicit preference.
- * Legacy `true` and missing/false → `all`.
+ * When confirming paid entitlement, keep All vs Top and Full vs Conservative.
+ * Legacy `true` and missing/false → `all` (or `all_c` when scale is conservative).
  * @param {unknown} currentPaidTag
+ * @param {unknown} [scale]
  */
-export function paidTagForEntitlement(currentPaidTag) {
+export function paidTagForEntitlement(currentPaidTag, scale) {
   const mode = normalizeLockAlertMode(currentPaidTag);
-  if (mode === LOCK_ALERT_MODE.EDGE11) return LOCK_ALERT_MODE.EDGE11;
-  return LOCK_ALERT_MODE.ALL;
+  const resolvedScale = scale != null
+    ? normalizeUnitDisplayScale(scale)
+    : paidTagScale(currentPaidTag);
+  if (mode === LOCK_ALERT_MODE.EDGE11) return composePaidTag(LOCK_ALERT_MODE.EDGE11, resolvedScale);
+  return composePaidTag(LOCK_ALERT_MODE.ALL, resolvedScale);
 }
 
 /**
  * Tag to write on a confirmed-paid visit. `null` = do not write.
  *
- * Account "Lock alerts on" is optedIn. Sends require paid ∈ {all,true,edge11}.
- * A Stripe/Firestore flicker used to set paid=false, then this path refused
- * to restore because false is not an "explicit mode" — paid users stayed
- * subscribed and selected, but dropped out of every lock blast.
- *
  * Restore false → stored preference or all. Still do not invent all when
  * getTags is empty: that can overwrite a live edge11 on another device.
+ * Scale suffix (`_c`) is applied from the stored unit book.
  *
  * @param {unknown} current
  * @param {unknown} stored
- * @returns {'all'|'edge11'|null}
+ * @param {unknown} [storedScale]
+ * @returns {string|null}
  */
-export function paidTagToWriteOnPaidVisit(current, stored) {
-  if (stored === LOCK_ALERT_MODE.EDGE11) return LOCK_ALERT_MODE.EDGE11;
-  if (current === LOCK_ALERT_MODE.EDGE11) return null;
-  if (current === LOCK_ALERT_MODE.OFF) return LOCK_ALERT_MODE.ALL;
-  if (paidTagIsExplicitMode(current)) return paidTagForEntitlement(current);
+export function paidTagToWriteOnPaidVisit(current, stored, storedScale) {
+  const scale = normalizeUnitDisplayScale(storedScale);
+  if (stored === LOCK_ALERT_MODE.EDGE11) return composePaidTag(LOCK_ALERT_MODE.EDGE11, scale);
+  if (current === LOCK_ALERT_MODE.EDGE11 || current === PAID_TAG.EDGE11_CONSERVATIVE) {
+    const composed = composePaidTag(LOCK_ALERT_MODE.EDGE11, scale);
+    return composed === current ? null : composed;
+  }
+  if (current === LOCK_ALERT_MODE.OFF) return composePaidTag(LOCK_ALERT_MODE.ALL, scale);
+  if (paidTagIsExplicitMode(current)) return paidTagForEntitlement(current, storedScale);
   return null;
 }
 
 /**
- * OneSignal notification filters for a lock at the given EDGE.
- * Always includes `all` + legacy `true`. Adds `edge11` when EDGE ≥ min.
+ * OneSignal notification filters for a lock at the given EDGE + unit book.
+ * Full: `all` + legacy `true` (+ `edge11` when EDGE ≥ min).
+ * Conservative: `all_c` (+ `edge11_c` when EDGE ≥ min).
  * @param {number|null|undefined} edge
+ * @param {{ scale?: string }} [opts]
  */
-export function onesignalFiltersForEdge(edge) {
+export function onesignalFiltersForEdge(edge, { scale = UNIT_DISPLAY_SCALE.FULL } = {}) {
+  const conservative = normalizeUnitDisplayScale(scale) === UNIT_DISPLAY_SCALE.CONSERVATIVE;
+  if (conservative) {
+    const filters = [
+      { field: 'tag', key: 'paid', relation: '=', value: PAID_TAG.ALL_CONSERVATIVE },
+    ];
+    if (Number.isFinite(edge) && edge >= LOCK_ALERT_EDGE_MIN) {
+      filters.push({ operator: 'OR' });
+      filters.push({
+        field: 'tag',
+        key: 'paid',
+        relation: '=',
+        value: PAID_TAG.EDGE11_CONSERVATIVE,
+      });
+    }
+    return filters;
+  }
   const filters = [
     { field: 'tag', key: 'paid', relation: '=', value: LOCK_ALERT_MODE.ALL },
     { operator: 'OR' },
