@@ -1,94 +1,108 @@
-# Twitter — 2026-09-20 · HERO GIVE · last look 1pm (HOOK REWRITE — $N ON THE TEAM burned)
-**Pathway:** `hormozi_tweet_process.md` (Hormozi only)
-**CSV:** Sep 8–14. Overlay: give.
+# Twitter — 2026-09-20 · HERO GIVE · last look (Hormozi rewrite — idea first)
+**Pathway:** `hormozi_tweet_process.md` · Qual / Algorithm / Trust in the **words**, not the header.
 
 | | |
 |--|--|
-| WHO | Vikings talk-radio room + Steelers room, two minutes from lock. |
-| PURPOSE | **Give + buzz.** Same walk. **New hook.** $N ON THE TEAM is spent 3× today. |
-| ONE | Same 3-0 printer is on both 4u plays — and the other side of the Under wrote $1,700. |
-| SPCL | **C then S** — two proven / $1,700 first (pain). $ walk after. Not another CAPS `$N ON THE X`. |
-| Timeline | `$215K ON THE STEELERS` · `$131K ON THE VIKINGS` · `$247K ON THE STEELERS` = same silhouette. Kill it. |
-| Ask | **None.** |
+| WHO | Someone about to bet “this should be a good game” or fade plus-money because it *feels* wrong. SKOR room + Steelers room. |
+| PURPOSE | **Educate / give.** Teach one instruction: I don’t pick games. Two 4u plays can be a wipeout and a fight. Mentions carry a take, not a poll. |
+| ONE | I don’t handicap. The Under is a wipeout. Pittsburgh is a fight. Same 3-0 wallet is on both — we sized with him. |
+| SPCL | **C + S** by line 2 (`$219,000` / `$1,700`). Power = 1.5u→4u. Likeness = voice, not the pillar. |
+| Timeline | `$N ON THE TEAM` ×3 burned. Caption burned. `$1,700` stat-open burned. Origin/whole-truth was **starved**. This is that condition. |
+| Ask | **None.** No “you taking 205?” No trial. |
 
-**Attach:** Steelers ML → Under 47.5.
-**RT line:** `Two proven wrote $1,700 on the Over.`
+**Attach:** Under 47.5 first (wipeout) → Steelers ML (fight). Walk order = the idea.
+**RT line:** `The Under is a wipeout. Pittsburgh is a fight.`
 
 ---
 
 ### 0 · Spine (Dale — law)
-- Final 1pm tweet · engage @SKORNorth + @SteelCNetwork
+- Final 1pm · engage @SKORNorth + @SteelCNetwork
 - Showcase data + narrative + engagement
-- **12:43: DIFFERENT HOOK. Same $N ON THE TEAM format 3× in a row.**
+- Different hook (no `$N ON THE TEAM`)
+- **12:45: WAY better. Full Hormozi. Meaningful. Human. Value. People want to engage.**
 
-### Receipts (unchanged · ~12:43 ET · locks 12:45 · flagged)
-- Steelers ML **4.00u** (was 1.5) · **+205** · $247K / $178K · 2 proven / 1 proven NE
-- Printer `…28658e` **$178.2K** · 3-0 · +99% · 1.5×
-- Other side **$177.9K** real proven — say it
-- Under 47.5 **4.00u** · −123 · **$219K / $1.7K** · 99% tracked
-- Same printer **$125K** on the Under · 2 proven wrote **$1.7K**
-- Kill: `$N ON THE TEAM` stack · $215K · $131K · Pin $5k→$30k · 1-4 fade · +212 · locked · gold · USUAL in L1–2
+Shape: tags stay. Polls die. The idea is the post.
+
+### 1–5 · Pathway (this is the post)
+**Masterson:** easy to understand (I don’t pick / look at the $) · easy to believe (the $ is on the cards) · unique (wipeout vs fight on the same slate).
+
+**Levers that earned a seat (deleted the rest):**
+- Origin / whole truth (starved) — we don’t handicap
+- Proof machine — pain first: “good game” Over has $1,700
+- Instruction — size when the printer sizes; don’t sit with $1,700
+- Whole truth — $178K proven on NE; we sized up anyway
+- Diagnostic — feel-bet vs wallet-bet
+- Mentions = a take each room can argue
+
+**Stuff (receipts only):**
+- Under 47.5 · 4u · −123 · $219K vs $1.7K · printer $125K · 3-0 +99% · 2 proven wrote $1.7K
+- Steelers ML · 4u (was 1.5) · +205 · $247K vs $178K · printer $178K 1.5× · 1 proven NE $178K
+- Same wallet `…28658e` · flagged · 1:00 ET
+- Do not say locked / gold / 99% of all money / +212 / Pin $5k→$30k / 1-4 fade
 
 ### 6 · HOOK QA
-
 | | Kill | This |
 |--|------|------|
-| Line 1 | `$247,000 ON THE STEELERS` / `$219,000 ON THE VIKINGS UNDER` / `$131,000 ON THE VIKINGS` | **Two proven wrote $1,700 on the Over.** |
-| Line 2 | `$1,700 on the Over.` (as the third CAPS line) | **We've got $219,000 on the Under.** |
-| Next | Same wallet. 3-0. (QT echo as open) | **Same guy is $178K on Pittsburgh at 1.5×.** then the walk |
+| Line 1 | `$247,000 ON THE STEELERS` / Two proven wrote $1,700 / Last look. Four units. | **I don't pick games.** |
+| Line 2 | `$219,000 ON THE VIKINGS UNDER` | **$219,000 on the Under. $1,700 on the Over.** |
+| Line 3 | Same wallet. 3-0. / You taking 205? | **That's Vikings at Chicago.** then the idea |
 
-What: the Over side is a joke; the same 3-0 printer is on both our 4u plays.  
-How: $1.7K vs $219K · $125K + $178K · 1.5u→4u · honest $178K NE.  
-So what: slog or shootout / you taking 205. 12:45.
+What: I don’t handicap these.  
+How: $219K vs $1.7K · same 3-0 wallet on Pittsburgh $178K.  
+So what: Under = wipeout. Pittsburgh = fight. We still 4u both. Here’s why each room should care.
 
 ---
 
 ## COPY THIS
 
 **Type:** Hero  
-**Media:** Steelers ML + Under 47.5 (two-up)
+**Media:** Under 47.5 card, then Steelers ML
 
 ```
-Two proven wrote $1,700 on the Over.
-We've got $219,000 on the Under.
+I don't pick games.
+$219,000 on the Under. $1,700 on the Over.
 
-That's the Vikings-Bears total. 99% of the money we track.
-One wallet: $125,000. 3-0. +99%.
-Four units.
+That's Vikings at Chicago. Four units.
 
-That same wallet is $178,000 on the Steelers at 1.5×.
-Same 3-0.
+The wallet on this is 3-0.
+$125,000 on the Under — a normal bet for him.
+He's also $178,000 on the Steelers.
+He bet more than he usually does on Pittsburgh.
 
-We're plus-205.
-Two proven. One proven took New England at $178,000.
-We were 1.5 units this morning. We're 4 now.
+Those are not the same play.
 
-@SteelCNetwork plus-money Steelers on the road in New England.
-You taking 205?
+The Under is a wipeout.
+Two proven took the Over. They wrote $1,700.
 
-@SKORNorth Under 47.5. $219,000 to $1,700.
-Slog or shootout?
+Pittsburgh is a fight.
+One proven took New England for $178,000.
+We're on the Steelers anyway. Plus-205. Four units.
+1.5 this morning. 4 now.
 
-Locks 12:45 ET.
+I follow wallets that already win, and I size up when they do.
+
+@SKORNorth I don't think Soldier Field stays pretty.
+
+@SteelCNetwork plus-money on the road. Real money took the Pats. We're still on Pittsburgh.
+
+1:00 ET.
 ```
 
-### Outbound replies — under THEIR latest posts (hooks match the new open)
-
-**@SteelCNetwork**
-```
-We had Pittsburgh at 1.5 units this morning. It's 4 now.
-Plus-205. One wallet: $178,000. 3-0. 1.5× his normal.
-Two proven. One proven took New England at $178,000.
-Plus-money on the road. You taking 205?
-```
+### Outbound replies — under THEIR latest posts (same idea, their room)
 
 **@SKORNorth**
 ```
-Two proven wrote $1,700 on the Vikings-Bears Over.
-We've got $219,000 on the Under 47.5.
-One wallet: $125,000. 3-0. +99%.
-Same guy who's $178,000 on the Steelers.
-Slog or shootout?
+I'm not going to sit here and tell you the Bears D is elite.
+I can tell you the Under 47.5 has $219,000 on it and the Over has $1,700.
+I don't think Soldier Field stays pretty.
+```
+
+**@SteelCNetwork**
+```
+Plus-money on the road is supposed to feel wrong.
+We went 1.5 units to 4 on Pittsburgh anyway.
+$178,000 from a 3-0 wallet — and $178,000 of real money on the Pats.
+We're still on the Steelers. Plus-205.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
