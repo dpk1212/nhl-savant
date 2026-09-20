@@ -14,12 +14,20 @@ export function resolvePayOdds({
   bookLabel = null,
   oddsSource = null,
   fairBook = null,
+  sealed = false,
 } = {}) {
   const stamp = Number.isFinite(stampedOdds) && stampedOdds !== 0 ? stampedOdds : null;
   const bookPx = Number.isFinite(bookOnLine) && bookOnLine !== 0 ? bookOnLine : null;
   const poly = Number.isFinite(polyReceipt) && polyReceipt !== 0 ? polyReceipt : null;
 
   const src = `${oddsSource || ''} ${fairBook || ''} ${bookLabel || ''}`.toLowerCase();
+  // T-15 shop seal is the grade ticket. Peak can still say poly_avgPrice —
+  // do not demote a sealed −114 onto live tape −116.
+  if (sealed || src.includes('t15_best')) {
+    if (stamp != null) return { payOdds: stamp, polyReceipt: poly, demotedPoly: false };
+    if (bookPx != null) return { payOdds: bookPx, polyReceipt: poly, demotedPoly: false };
+    return { payOdds: null, polyReceipt: poly, demotedPoly: false };
+  }
   const stampLooksPoly = src.includes('poly')
     || (poly != null && stamp != null && Math.abs(Math.round(stamp) - Math.round(poly)) <= 2);
 
