@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-09-21T11:48:28.353Z",
-  "elapsedSec": 59.7,
+  "scannedAt": "2026-09-21T11:53:53.887Z",
+  "elapsedSec": 118.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 51,
   "summary": {
     "total": 404,
-    "coveredByMain": 5,
+    "coveredByMain": 7,
     "recovered": 9,
-    "recoveredPositions": 34,
-    "noPositions": 390,
+    "recoveredPositions": 35,
+    "noPositions": 388,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 4,
+      "ml": 5,
       "spread": 0,
       "total": 2,
       "dropped_shadow_gate": 25,
@@ -395,8 +395,7 @@
       "tier": "WR50",
       "name": "roltonmeow",
       "sports": "",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x21f107e4dec0006c79d660f88ebae943631fa9c7"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "20286a",
@@ -1005,8 +1004,7 @@
       "tier": "CONFIRMED",
       "name": "forecastication4",
       "sports": "CFB,MLB,NFL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x885ffdf360e5b0b6e6acb963fb3f8ba2344c8ed9"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "4c9ada",
@@ -1358,12 +1356,21 @@
       "sports": "MLB,UFC,SOC,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "profile.bySport.positions",
-      "avgSportBet": 508,
-      "willPassShadowGate": 0,
+      "avgSportBet": 1034,
+      "willPassShadowGate": 1,
       "willDropAtShadowGate": 3,
       "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_nyl",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 6023,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "UFC",
           "gameKey": "vanessademopoulos_yazminjauregui",
