@@ -1708,6 +1708,8 @@ export default function ConfirmedActionDesk({
           dateKey={selectedDate}
           todayKey={todayKey}
           isMobile={isMobile}
+          onRename={(short, name) => mySharps.rename(short, name)}
+          onRemove={(short) => mySharps.remove(short)}
         />
       ) : (
       <div style={{

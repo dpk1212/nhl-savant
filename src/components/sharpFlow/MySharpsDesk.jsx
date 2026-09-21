@@ -1,20 +1,21 @@
 /**
- * My Sharps — portfolio book, then the blotter.
- * Hero is always the list. Positions are open / upcoming / closed.
+ * My Sharps — the list is the portfolio.
+ * One line for the book. People in a table. Tonight's tickets under them.
+ * A row opens that sharp. The book number stays the list.
  */
-import React, { useMemo, useState } from 'react';
-import { buildDeskLedger, buildDeskReport } from '../../lib/mySharpsDesk.js';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  buildConsiderRows,
+  buildDeskHoldings,
+  buildDeskLedger,
+  buildDeskReport,
+  gainsSplit,
+} from '../../lib/mySharpsDesk.js';
 
 const B = {
-  gold: '#D4AF37',
   goldSoft: '#E8D28A',
-  goldDim: 'rgba(212, 175, 55, 0.10)',
-  goldLine: 'rgba(212, 175, 55, 0.28)',
   green: '#10B981',
-  greenDim: 'rgba(16, 185, 129, 0.10)',
   red: '#EF4444',
-  redDim: 'rgba(239, 68, 68, 0.10)',
-  panel: '#151923',
   panelHover: '#1A1F2E',
   line: '#252B3B',
   hair: 'rgba(255,255,255,0.06)',
@@ -26,36 +27,38 @@ const B = {
 
 const T = {
   display: {
-    fontSize: '3rem',
-    fontWeight: 800,
-    lineHeight: 0.92,
-    letterSpacing: '-0.055em',
+    fontSize: '2.85rem',
+    fontWeight: 650,
+    lineHeight: 0.95,
+    letterSpacing: '-0.048em',
     fontFeatureSettings: "'tnum'",
     fontVariantNumeric: 'tabular-nums',
   },
-  metric: {
-    fontSize: '1.28rem',
-    fontWeight: 700,
-    lineHeight: 1.05,
-    letterSpacing: '-0.03em',
+  figure: {
+    fontSize: '0.92rem',
+    fontWeight: 650,
+    letterSpacing: '-0.02em',
     fontFeatureSettings: "'tnum'",
     fontVariantNumeric: 'tabular-nums',
   },
   name: {
-    fontSize: '0.95rem',
+    fontSize: '0.92rem',
     fontWeight: 650,
     letterSpacing: '-0.02em',
   },
-  label: {
+  head: {
     fontSize: '0.68rem',
     fontWeight: 600,
-    letterSpacing: '0.08em',
+    letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    color: B.textMuted,
+    color: '#475569',
   },
+  meta: { fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.35 },
   body: { fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.4 },
-  meta: { fontSize: '0.74rem', fontWeight: 500, lineHeight: 1.35 },
 };
+
+const HOLD_GRID = 'minmax(150px, 1.7fr) 112px 88px minmax(96px, 1fr) 92px';
+const TAPE_GRID = '72px minmax(120px, 1.3fr) minmax(108px, 1.1fr) minmax(96px, 0.95fr) 80px 62px 52px';
 
 function fmtVol(v, { signed = true } = {}) {
   const n = Number(v);
@@ -72,14 +75,33 @@ function pnlColor(n, fallback = B.textMuted) {
   return n > 0 ? B.green : B.red;
 }
 
+function heatColor(heat) {
+  if (!heat || heat.n < 5) return B.textFaint;
+  if (heat.key === 'hot') return B.green;
+  if (heat.key === 'cold') return B.red;
+  return B.textMuted;
+}
+
+function bookSentence(report, openN) {
+  const rec = report.l30?.honest;
+  const bits = [];
+  if (rec?.record) bits.push(rec.showPct ? `${rec.record} · ${rec.wr}%` : rec.record);
+  if (report.l30) bits.push('30d');
+  if (openN) bits.push(`${openN} open`);
+  const lead = report.openLead;
+  if (lead?.sport) {
+    bits.push(lead.pct >= 85
+      ? `${lead.sport} is the money up`
+      : `${lead.sport} is ${lead.pct}% of the money up`);
+  }
+  return bits.join('   ·   ');
+}
+
 function LockedState({ signedIn }) {
   return (
-    <div style={{ padding: '3.2rem 0 2.6rem' }}>
-      <div style={{ ...T.display, fontSize: '1.55rem', color: B.text, marginBottom: 10 }}>
-        {signedIn ? 'Star the wallets you trust.' : 'Sign in to keep a desk.'}
-      </div>
-      <div style={{ ...T.body, color: B.textMuted }}>
-        {signedIn ? 'Then this page is the report on their book.' : 'Then star wallets on All Sharps.'}
+    <div style={{ padding: '2.8rem 0 2rem' }}>
+      <div style={{ ...T.display, fontSize: '1.7rem', color: B.text }}>
+        {signedIn ? 'Star the wallets you trust.' : 'Sign in to keep a list.'}
       </div>
     </div>
   );
@@ -87,260 +109,325 @@ function LockedState({ signedIn }) {
 
 function EmptyState() {
   return (
-    <div style={{ padding: '3.2rem 0 2.6rem' }}>
-      <div style={{ ...T.display, fontSize: '1.55rem', color: B.text, marginBottom: 10 }}>Nobody on the desk</div>
-      <div style={{ ...T.body, color: B.textMuted }}>Switch to All Sharps and star a wallet.</div>
+    <div style={{ padding: '2.8rem 0 2rem' }}>
+      <div style={{ ...T.display, fontSize: '1.7rem', color: B.text }}>Nobody on the list</div>
+      <div style={{ ...T.body, color: B.textMuted, marginTop: 8 }}>Star a wallet on All Sharps.</div>
     </div>
   );
 }
 
-function Panel({ children, pad = '1.2rem 1.25rem 1.15rem' }) {
+function Head({ children, align = 'left' }) {
   return (
-    <div style={{
-      background: B.panel,
-      border: `1px solid ${B.line}`,
-      borderRadius: 16,
-      padding: pad,
-    }}
+    <div style={{ ...T.head, textAlign: align }}>{children}</div>
+  );
+}
+
+function NameField({ name, tag, selected, onRename, onOpen }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name || '');
+  useEffect(() => { setDraft(name || ''); }, [name]);
+  const commit = () => {
+    setEditing(false);
+    if ((draft || '') !== (name || '')) onRename?.(draft);
+  };
+  const tone = selected ? B.goldSoft : B.text;
+  if (!editing) {
+    return (
+      <div
+        style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => { setEditing(true); onOpen?.(); }}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'text',
+            color: tone,
+            ...T.name,
+            fontFamily: 'inherit',
+            textAlign: 'left',
+          }}
+        >
+          {name || tag}
+        </button>
+        {name ? (
+          <span style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'", flexShrink: 0 }}>
+            {tag}
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+  const width = `${Math.min(18, Math.max((draft || tag || '').length, 4))}ch`;
+  return (
+    <div
+      style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}
+      onClick={(e) => e.stopPropagation()}
     >
-      {children}
+      <input
+        className="ms-name"
+        autoFocus
+        value={draft}
+        placeholder={tag}
+        aria-label={`Name ${tag}`}
+        onChange={(e) => setDraft(e.target.value.slice(0, 22))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+          if (e.key === 'Escape') {
+            setDraft(name || '');
+            setEditing(false);
+          }
+        }}
+        style={{
+          width,
+          maxWidth: '100%',
+          background: 'transparent',
+          border: 'none',
+          outline: 'none',
+          padding: 0,
+          margin: 0,
+          color: tone,
+          caretColor: B.goldSoft,
+          ...T.name,
+          fontFamily: 'inherit',
+        }}
+      />
+      <span style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'", flexShrink: 0 }}>
+        {tag}
+      </span>
     </div>
   );
 }
 
-function Kpi({ label, value, tone, sub }) {
+function SplitBar({ gains, losses }) {
+  const g = Number(gains) || 0;
+  const l = Number(losses) || 0;
+  const total = g + l;
+  if (!total) return null;
   return (
-    <div style={{ minWidth: 0 }}>
-      <div style={T.label}>{label}</div>
-      <div style={{ ...T.metric, color: tone || B.text, marginTop: 8 }}>{value}</div>
-      {sub ? (
-        <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'" }}>{sub}</div>
+    <div style={{ margin: '14px 0 6px', maxWidth: 420 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', ...T.meta, fontFeatureSettings: "'tnum'" }}>
+        {g ? <span style={{ color: B.green }}>{fmtVol(g)}</span> : <span />}
+        {l ? <span style={{ color: B.red }}>{fmtVol(-l)}</span> : null}
+      </div>
+      <div style={{ display: 'flex', height: 3, borderRadius: 99, overflow: 'hidden', marginTop: 7, background: B.hair }}>
+        <div style={{ width: `${(g / total) * 100}%`, background: B.green }} />
+        <div style={{ width: `${(l / total) * 100}%`, background: B.red }} />
+      </div>
+    </div>
+  );
+}
+
+function HoldingRow({ row, selected, isMobile, onToggle, onOpen, onRename }) {
+  const form = row.heat?.record && row.heat?.window
+    ? `${row.heat.window} ${row.heat.record}`
+    : null;
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto auto' : HOLD_GRID,
+        gap: isMobile ? '2px 12px' : '0 16px',
+        alignItems: 'center',
+        padding: '0.82rem 0.2rem',
+        borderBottom: `1px solid ${B.hair}`,
+        background: 'transparent',
+        cursor: 'pointer',
+      }}
+    >
+      <NameField
+        name={row.name}
+        tag={row.tag}
+        selected={selected}
+        onRename={onRename}
+        onOpen={onOpen}
+      />
+      <div style={{ display: isMobile ? 'none' : 'block' }}>
+        <div style={{ ...T.figure, color: B.textSec }}>
+          {row.honest?.record || '—'}
+          {row.honest?.showPct ? <span style={{ color: B.textFaint }}> · {row.honest.wr}%</span> : null}
+        </div>
+        {form ? (
+          <div style={{ ...T.meta, color: heatColor(row.heat), marginTop: 3, fontFeatureSettings: "'tnum'" }}>
+            {form}
+          </div>
+        ) : null}
+      </div>
+      <div style={{ ...T.figure, color: pnlColor(row.l30Pnl), textAlign: 'right' }}>
+        {Number.isFinite(row.l30Pnl) ? fmtVol(row.l30Pnl) : '—'}
+      </div>
+      {!isMobile ? (
+        <div style={{ ...T.body, color: B.textSec, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {row.where || '—'}
+        </div>
+      ) : null}
+      <div style={{ ...T.figure, color: row.openInvested ? B.goldSoft : B.textFaint, textAlign: 'right' }}>
+        {row.openInvested ? fmtVol(row.openInvested, { signed: false }) : '—'}
+        {row.openN > 1 ? (
+          <span style={{ ...T.meta, color: B.textFaint, marginLeft: 6 }}>{row.openN}</span>
+        ) : null}
+      </div>
+      {isMobile ? (
+        <div style={{ ...T.meta, color: B.textMuted, gridColumn: '1 / -1', fontFeatureSettings: "'tnum'" }}>
+          {[row.honest?.text, form, row.where].filter((x) => x && x !== '—').join('   ·   ') || '—'}
+        </div>
       ) : null}
     </div>
   );
 }
 
-function Allocation({ sports }) {
-  const parts = (sports || []).filter((s) => s.openInvested > 0);
-  const total = parts.reduce((s, x) => s + x.openInvested, 0);
-  if (!parts.length || !(total > 0)) return null;
+function TapeRow({ item, isMobile }) {
+  const closed = item.bucket === 'closed';
+  const money = closed
+    ? (Number.isFinite(item.pnl) ? fmtVol(item.pnl) : '—')
+    : fmtVol(item.invested, { signed: false });
+  const moneyTone = closed ? pnlColor(item.pnl, B.textMuted) : B.goldSoft;
+  const betGold = item.shared && !item.split && !closed;
+  const result = closed
+    ? (item.won ? 'W' : 'L')
+    : (item.live ? 'Live' : '');
+  const resultTone = closed ? (item.won ? B.green : B.red) : B.goldSoft;
+  const when = item.clock || item.when || '';
   return (
-    <div style={{ display: 'flex', height: 5, borderRadius: 99, overflow: 'hidden', background: B.hair, margin: '0 0 18px' }}>
-      {parts.map((s, i) => (
-        <div
-          key={s.sport}
-          title={`${s.sport} ${fmtVol(s.openInvested, { signed: false })}`}
-          style={{
-            width: `${Math.max(3, (s.openInvested / total) * 100)}%`,
-            background: B.gold,
-            opacity: 1 - (i * 0.22),
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function SportRow({ s }) {
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr auto',
-      gap: 12,
-      padding: '0.78rem 0',
-      borderBottom: `1px solid ${B.hair}`,
-      alignItems: 'baseline',
-    }}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto auto' : TAPE_GRID,
+        gap: isMobile ? '3px 14px' : '0 14px',
+        alignItems: 'center',
+        padding: '0.72rem 0.2rem',
+        borderBottom: `1px solid ${B.hair}`,
+      }}
     >
-      <div>
-        <div style={{ ...T.name, color: B.text }}>{s.sport}</div>
-        <div style={{ ...T.meta, color: B.textMuted, marginTop: 4, fontFeatureSettings: "'tnum'" }}>
-          {s.honest?.text && s.honest.text !== '—' ? s.honest.text : '—'}
-          {s.openN ? `  ·  ${s.openN} open` : ''}
+      {!isMobile ? (
+        <div style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{when}</div>
+      ) : null}
+      {!isMobile ? (
+        <div style={{ ...T.meta, color: B.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {item.matchup || '—'}
         </div>
-      </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ ...T.name, color: pnlColor(s.l30Pnl), fontFeatureSettings: "'tnum'" }}>
-          {fmtVol(s.l30Pnl)}
+      ) : null}
+      <div style={{ minWidth: 0 }}>
+        <div style={{
+          ...T.name,
+          color: betGold ? B.goldSoft : B.text,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+        >
+          {item.pick}
         </div>
-        {s.openInvested ? (
-          <div style={{ ...T.meta, color: B.goldSoft, marginTop: 4, fontFeatureSettings: "'tnum'" }}>
-            {fmtVol(s.openInvested, { signed: false })} in
+        {isMobile ? (
+          <div style={{ ...T.meta, color: B.textFaint, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {[item.matchup, item.who, item.american, when].filter(Boolean).join('   ·   ')}
           </div>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-function PositionRow({ item, mode, isMobile }) {
-  const [hot, setHot] = useState(false);
-  const result = mode === 'closed'
-    ? (item.won ? 'W' : 'L')
-    : (item.live ? 'Live' : item.when);
-  const resultTone = mode === 'closed'
-    ? (item.won ? B.green : B.red)
-    : (item.live ? B.gold : B.textMuted);
-  const money = mode === 'closed'
-    ? (Number.isFinite(item.pnl) ? fmtVol(item.pnl) : '—')
-    : fmtVol(item.invested, { signed: false });
-  const moneyTone = mode === 'closed' ? pnlColor(item.pnl, B.textMuted) : B.goldSoft;
-  const who = mode === 'closed'
-    ? item.tag
-    : (item.walletN > 1 ? `${item.walletN} on the list` : (item.tags?.[0] || ''));
-
-  return (
-    <div
-      onMouseEnter={() => setHot(true)}
-      onMouseLeave={() => setHot(false)}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr auto' : 'minmax(0, 1.4fr) minmax(0, 1fr) auto auto',
-        gap: isMobile ? 12 : '12px 20px',
-        alignItems: 'center',
-        padding: isMobile ? '0.85rem 0.15rem' : '0.92rem 0.35rem',
-        borderBottom: `1px solid ${B.hair}`,
-        background: hot ? B.panelHover : 'transparent',
-        margin: '0 -0.35rem',
-        borderRadius: 8,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div style={{ ...T.name, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {item.pick}
-        </div>
-        <div style={{ ...T.meta, color: B.textMuted, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {[item.matchup, item.sport, item.market].filter(Boolean).join('  ·  ')}
-        </div>
-      </div>
       {!isMobile ? (
-        <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>
-          {who}
-          {item.american ? `  ·  ${item.american}` : ''}
+        <div style={{
+          ...T.meta,
+          color: item.whoOpposed ? B.red : B.textSec,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+        >
+          {item.who}
+        </div>
+      ) : null}
+      <div style={{ ...T.figure, color: moneyTone, textAlign: 'right' }}>{money}</div>
+      {!isMobile ? (
+        <div style={{ ...T.figure, color: B.textSec, textAlign: 'right', fontWeight: 550 }}>
+          {item.american || '—'}
         </div>
       ) : null}
       <div style={{
-        ...T.name,
-        color: moneyTone,
-        fontFeatureSettings: "'tnum'",
+        ...T.meta,
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+        color: result ? resultTone : 'transparent',
         textAlign: 'right',
-        justifySelf: 'end',
       }}
       >
-        {money}
-      </div>
-      <div style={{ justifySelf: 'end' }}>
-        <span style={{
-          ...T.meta,
-          fontWeight: 700,
-          letterSpacing: mode === 'closed' ? '0.04em' : 0,
-          color: resultTone,
-          background: mode === 'closed'
-            ? (item.won ? B.greenDim : B.redDim)
-            : (item.live ? B.goldDim : 'transparent'),
-          border: item.live || mode === 'closed' ? `1px solid ${item.live ? B.goldLine : (item.won ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)')}` : '1px solid transparent',
-          padding: '0.18rem 0.45rem',
-          borderRadius: 6,
-          fontFeatureSettings: "'tnum'",
-        }}
-        >
-          {result}
-        </span>
+        {result || '·'}
       </div>
     </div>
   );
 }
 
-function Ledger({ ledger, isMobile }) {
-  const fallback = ledger.openN ? 'open' : ledger.upcomingN ? 'upcoming' : 'closed';
-  const [tab, setTab] = useState(null);
-  const active = tab || fallback;
-  const groups = ledger.groups?.[active] || [];
-  const empty = {
-    open: 'Nothing live.',
-    upcoming: 'Nothing later on the book.',
-    closed: 'No graded tickets yet.',
-  };
-
-  const tabs = [
-    { id: 'open', label: 'Open', n: ledger.openN, extra: ledger.openN ? fmtVol(ledger.openInvested, { signed: false }) : null },
-    { id: 'upcoming', label: 'Upcoming', n: ledger.upcomingN, extra: ledger.upcomingN ? fmtVol(ledger.upcomingInvested, { signed: false }) : null },
-    { id: 'closed', label: 'Closed', n: ledger.closedN, extra: ledger.closedHonest?.text && ledger.closedHonest.text !== '—' ? ledger.closedHonest.text : null },
-  ];
-
+function Dossier({ holding, gains, onRemove }) {
+  const label = holding.name || holding.tag;
   return (
-    <div style={{ marginTop: 22 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-        <div style={T.label}>Positions</div>
-        {active === 'closed' && Number.isFinite(ledger.closedPnl) ? (
-          <div style={{ ...T.meta, color: pnlColor(ledger.closedPnl), fontFeatureSettings: "'tnum'" }}>
-            {fmtVol(ledger.closedPnl)} on this tape
-          </div>
-        ) : null}
-      </div>
-
-      <Panel pad="0.85rem 1.1rem 0.55rem">
-        <div
-          role="tablist"
-          aria-label="Position status"
+    <div style={{ padding: '1.15rem 0.2rem 0.4rem', borderBottom: `1px solid ${B.line}` }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ ...T.body, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+          {holding.honest?.record ? (
+            <>
+              {holding.honest.record}
+              {holding.honest.showPct ? ` · ${holding.honest.wr}%` : ''}
+              {holding.where ? ` · ${holding.where}` : ''}
+            </>
+          ) : (holding.where || 'Thin sample')}
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
           style={{
-            display: 'flex',
-            gap: 4,
-            padding: 3,
-            borderRadius: 10,
-            background: 'rgba(255,255,255,0.03)',
-            border: `1px solid ${B.line}`,
-            marginBottom: 6,
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            ...T.meta,
+            color: B.textFaint,
+            fontFamily: 'inherit',
           }}
         >
-          {tabs.map((t) => {
-            const on = active === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => setTab(t.id)}
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  padding: '0.48rem 0.4rem',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  background: on ? B.goldDim : 'transparent',
-                  color: on ? B.goldSoft : B.textMuted,
-                  boxShadow: on ? `inset 0 0 0 1px ${B.goldLine}` : 'none',
-                }}
-              >
-                <div style={{ ...T.meta, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  {t.label}
-                  <span style={{ fontFeatureSettings: "'tnum'", marginLeft: 6, fontWeight: 650 }}>{t.n || 0}</span>
-                </div>
-                {!isMobile && t.extra ? (
-                  <div style={{ ...T.meta, color: on ? B.goldSoft : B.textFaint, marginTop: 2, fontFeatureSettings: "'tnum'" }}>
-                    {t.extra}
-                  </div>
-                ) : null}
-              </button>
-            );
-          })}
+          Remove {label}
+        </button>
+      </div>
+      <SplitBar gains={gains.gains} losses={gains.losses} />
+      {holding.lines?.length ? (
+        <div style={{ marginTop: 8 }}>
+          {holding.lines.map((line) => (
+            <div
+              key={line.sport}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '72px minmax(0, 1fr) 88px 72px',
+                gap: '0 14px',
+                alignItems: 'baseline',
+                padding: '0.55rem 0',
+                borderTop: `1px solid ${B.hair}`,
+              }}
+            >
+              <div style={{ ...T.name, color: B.text }}>{line.sport}</div>
+              <div style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                {line.honest?.text && line.honest.text !== '—' ? line.honest.text : '—'}
+              </div>
+              <div style={{ ...T.figure, color: pnlColor(line.pnl), textAlign: 'right' }}>
+                {Number.isFinite(line.pnl) ? fmtVol(line.pnl) : '—'}
+              </div>
+              <div style={{ ...T.meta, color: B.textSec, textAlign: 'right' }}>{line.market || ''}</div>
+            </div>
+          ))}
         </div>
-
-        {groups.length ? groups.map((g) => (
-          <div key={`${active}:${g.dateKey}`} style={{ paddingTop: 8 }}>
-            {g.label ? (
-              <div style={{ ...T.label, color: B.textFaint, padding: '0.7rem 0.15rem 0.15rem' }}>{g.label}</div>
-            ) : null}
-            {g.items.map((item) => (
-              <PositionRow key={item.id} item={item} mode={active} isMobile={isMobile} />
-            ))}
-          </div>
-        )) : (
-          <div style={{ ...T.body, color: B.textFaint, padding: '1.4rem 0.2rem 1.2rem' }}>{empty[active]}</div>
-        )}
-      </Panel>
+      ) : null}
     </div>
   );
 }
@@ -357,7 +444,12 @@ export default function MySharpsDesk({
   dateKey = null,
   todayKey = null,
   isMobile = false,
+  onRename = null,
+  onRemove = null,
 }) {
+  const [selected, setSelected] = useState(null);
+  const [bookOpen, setBookOpen] = useState(false);
+
   const report = useMemo(
     () => buildDeskReport({
       roster,
@@ -381,130 +473,162 @@ export default function MySharpsDesk({
     [weekRows, actionRows, recentLegs, todayKey],
   );
 
+  const holdings = useMemo(
+    () => buildDeskHoldings({ roster, walletProfiles }),
+    [roster, walletProfiles],
+  );
+
+  const names = useMemo(() => {
+    const map = {};
+    for (const h of holdings) if (h.name) map[h.walletShort] = h.name;
+    return map;
+  }, [holdings]);
+
+  const focus = holdings.some((h) => h.walletShort === selected) ? selected : null;
+  const tape = useMemo(
+    () => buildConsiderRows(ledger, { names, focusShort: focus }),
+    [ledger, names, focus],
+  );
+  const holding = holdings.find((h) => h.walletShort === focus) || null;
+  const gains = useMemo(
+    () => (focus ? gainsSplit(recentLegs, focus) : { gains: null, losses: null }),
+    [recentLegs, focus],
+  );
+
   if (!ready) return <LockedState signedIn={signedIn} />;
   if (!roster.length) return <EmptyState />;
 
   const pnl = report.l30?.pnl;
   const heroTone = Number.isFinite(pnl) ? (pnl > 0 ? B.green : pnl < 0 ? B.red : B.text) : B.text;
-  const rec = report.l30?.honest;
-  const weekSub = [
-    report.weekHonest?.text && report.weekHonest.text !== '—' ? report.weekHonest.text : null,
-    Number.isFinite(report.weekPnl) ? fmtVol(report.weekPnl) : null,
-  ].filter(Boolean).join('  ·  ') || 'No graded week yet';
+  const sentence = bookSentence(report, ledger.openN);
+  const restN = tape.later.length + tape.closed.length;
+  const tapeTitle = holding ? (holding.name || holding.tag) : 'Tonight';
 
   return (
-    <div style={{ margin: '0.15rem 0 2.8rem' }}>
-      <div style={{ ...T.label, color: B.textFaint, marginBottom: 14 }}>
-        Portfolio
-        <span style={{ letterSpacing: 0, textTransform: 'none', fontWeight: 500, marginLeft: 10 }}>
-          {report.walletN} {report.walletN === 1 ? 'sharp' : 'sharps'}
-        </span>
-      </div>
+    <div style={{ margin: '0.35rem 0 2.8rem' }}>
+      <style>{`.ms-name::placeholder{color:${B.textFaint};}`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
-        <span style={{ ...T.display, color: heroTone, fontSize: isMobile ? '2.35rem' : '3.05rem' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 18, flexWrap: 'wrap' }}>
+        <span style={{ ...T.display, color: heroTone, fontSize: isMobile ? '2.25rem' : T.display.fontSize }}>
           {Number.isFinite(pnl) ? fmtVol(pnl) : '—'}
         </span>
-        {rec?.record ? (
-          <span style={{ ...T.body, color: B.textSec, fontFeatureSettings: "'tnum'", fontSize: '1.02rem' }}>
-            {rec.record}
-            {rec.showPct ? <span style={{ color: B.textMuted }}>  ·  {rec.wr}%</span> : null}
+        {sentence ? (
+          <span style={{ ...T.body, color: B.textSec, fontFeatureSettings: "'tnum'", fontSize: '0.98rem' }}>
+            {sentence}
           </span>
         ) : null}
       </div>
-      <div style={{ ...T.meta, color: B.textFaint, marginTop: 8, marginBottom: 22 }}>Last 30 days across the list</div>
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0, 1fr))',
-        gap: isMobile ? '18px 16px' : 0,
-        padding: isMobile ? '0 0 8px' : '18px 0',
-        borderTop: `1px solid ${B.line}`,
+        gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto auto' : HOLD_GRID,
+        gap: '0 16px',
+        padding: '1.35rem 0.2rem 0.45rem',
         borderBottom: `1px solid ${B.line}`,
-        marginBottom: 22,
+        marginTop: 18,
       }}
       >
-        <div style={!isMobile ? { paddingRight: 22 } : null}>
-          <Kpi
-            label={report.dayLabel}
-            value={report.todayN || 0}
-            tone={report.todayN ? B.text : B.textFaint}
-            sub={report.todayN ? `${fmtVol(report.todayInvested, { signed: false })} on the slate` : 'No tickets this day'}
-          />
-        </div>
-        <div style={!isMobile ? { padding: '0 22px', borderLeft: `1px solid ${B.hair}` } : null}>
-          <Kpi
-            label="This week"
-            value={report.weekGradedN || report.weekN || 0}
-            sub={weekSub}
-          />
-        </div>
-        <div style={!isMobile ? { padding: '0 22px', borderLeft: `1px solid ${B.hair}` } : null}>
-          <Kpi
-            label="Open"
-            value={ledger.openN ? fmtVol(ledger.openInvested, { signed: false }) : 'Quiet'}
-            tone={ledger.openN ? B.goldSoft : B.textFaint}
-            sub={ledger.openN
-              ? `${ledger.openN} ${ledger.openN === 1 ? 'position' : 'positions'}`
-              : 'Nothing live'}
-          />
-        </div>
-        <div style={!isMobile ? { paddingLeft: 22, borderLeft: `1px solid ${B.hair}` } : null}>
-          <Kpi
-            label="Best sport"
-            value={report.bestSport?.sport || '—'}
-            sub={report.bestSport ? `${fmtVol(report.bestSport.l30Pnl)} L30` : 'Need a book'}
-          />
+        <Head>Sharp</Head>
+        {isMobile ? null : <Head>Record</Head>}
+        <Head align="right">30d</Head>
+        {isMobile ? null : <Head>Where</Head>}
+        <Head align="right">Open</Head>
+      </div>
+
+      {holdings.map((row) => (
+        <HoldingRow
+          key={row.walletShort}
+          row={row}
+          selected={focus === row.walletShort}
+          isMobile={isMobile}
+          onToggle={() => setSelected((cur) => (cur === row.walletShort ? null : row.walletShort))}
+          onOpen={() => setSelected(row.walletShort)}
+          onRename={(name) => onRename?.(row.walletShort, name)}
+        />
+      ))}
+
+      {holding ? (
+        <Dossier
+          holding={holding}
+          gains={gains}
+          onRemove={() => {
+            const id = holding.walletShort;
+            setSelected(null);
+            onRemove?.(id);
+          }}
+        />
+      ) : null}
+
+      <div style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginTop: 28,
+        padding: '0 0.2rem 0.45rem',
+        borderBottom: `1px solid ${B.line}`,
+      }}
+      >
+        <div style={{ ...T.head, color: B.textMuted }}>{tapeTitle}</div>
+        <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>
+          {tape.slate.length ? `${tape.slate.length} open` : 'Quiet'}
         </div>
       </div>
 
-      <Panel>
-        <div style={{ ...T.label, marginBottom: 12 }}>Book</div>
-        <Allocation sports={report.sports} />
+      {!isMobile ? (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1.15fr 0.85fr',
-          gap: isMobile ? 8 : 28,
+          gridTemplateColumns: TAPE_GRID,
+          gap: '0 14px',
+          padding: '0.55rem 0.2rem 0.15rem',
         }}
         >
-          <div>
-            {report.sports.length ? report.sports.map((s) => (
-              <SportRow key={s.sport} s={s} />
-            )) : (
-              <div style={{ ...T.body, color: B.textFaint, padding: '0.5rem 0' }}>No sport book yet.</div>
-            )}
-          </div>
-          <div>
-            {report.markets.length ? report.markets.map((m) => (
-              <div
-                key={m.market}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  padding: '0.78rem 0',
-                  borderBottom: `1px solid ${B.hair}`,
-                  alignItems: 'baseline',
-                }}
-              >
-                <div>
-                  <div style={{ ...T.name, color: B.text }}>{m.label}</div>
-                  <div style={{ ...T.meta, color: B.textMuted, marginTop: 4, fontFeatureSettings: "'tnum'" }}>
-                    {m.honest?.text || '—'}
-                  </div>
-                </div>
-                <div style={{ ...T.name, color: pnlColor(m.pnl), fontFeatureSettings: "'tnum'" }}>
-                  {m.pnl ? fmtVol(m.pnl) : '—'}
-                </div>
-              </div>
-            )) : (
-              <div style={{ ...T.body, color: B.textFaint, padding: '0.5rem 0' }}>No market book yet.</div>
-            )}
-          </div>
+          <Head>When</Head>
+          <Head>Game</Head>
+          <Head>Bet</Head>
+          <Head>Who</Head>
+          <Head align="right">$</Head>
+          <Head align="right">Price</Head>
+          <Head align="right">W/L</Head>
         </div>
-      </Panel>
+      ) : null}
 
-      <Ledger ledger={ledger} isMobile={isMobile} />
+      {tape.slate.length ? tape.slate.map((item) => (
+        <TapeRow key={item.id} item={item} isMobile={isMobile} />
+      )) : (
+        <div style={{ ...T.body, color: B.textFaint, padding: '1rem 0.2rem' }}>Nothing up tonight.</div>
+      )}
+
+      {restN ? (
+        <button
+          type="button"
+          onClick={() => setBookOpen((v) => !v)}
+          style={{
+            marginTop: 14,
+            background: 'none',
+            border: 'none',
+            padding: '0.35rem 0.2rem',
+            cursor: 'pointer',
+            ...T.meta,
+            color: B.textMuted,
+            fontFamily: 'inherit',
+            fontFeatureSettings: "'tnum'",
+          }}
+        >
+          {bookOpen ? 'Tonight only' : `Full book · ${restN}`}
+        </button>
+      ) : null}
+
+      {bookOpen ? (
+        <div style={{ marginTop: 4 }}>
+          {tape.later.map((item) => (
+            <TapeRow key={`later:${item.id}`} item={item} isMobile={isMobile} />
+          ))}
+          {tape.closed.map((item) => (
+            <TapeRow key={`closed:${item.id}`} item={item} isMobile={isMobile} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
