@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-21T14:18:40.165Z",
-  "elapsedSec": 51.5,
+  "scannedAt": "2026-09-21T14:22:15.858Z",
+  "elapsedSec": 50.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 51,
   "summary": {
     "total": 404,
     "coveredByMain": 12,
     "recovered": 10,
-    "recoveredPositions": 41,
+    "recoveredPositions": 42,
     "noPositions": 382,
     "apiError": 0,
     "addressNotFound": 0,
@@ -15,7 +15,7 @@
     "merge": {
       "ml": 5,
       "spread": 0,
-      "total": 3,
+      "total": 4,
       "dropped_shadow_gate": 22,
       "dropped_excluded": 11,
       "dropped_duplicate": 0
@@ -2231,10 +2231,10 @@
       "sports": "NBA,UFC,NFL,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 4,
+      "positionsCount": 5,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 400,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 2,
       "positions": [
         {
@@ -2249,6 +2249,15 @@
         {
           "sport": "MLB",
           "gameKey": "min_sfg",
+          "marketType": "total",
+          "side": "under",
+          "invested": 95,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "tor_bal",
           "marketType": "total",
           "side": "under",
           "invested": 95,
