@@ -30,6 +30,7 @@ import {
 import {
   makeNFLGameKey,
   isMainNFLGameSlug,
+  NFL_CODE_TO_NAME,
 } from './lib/nflTeams.js';
 import {
   makeCFBGameKey,
@@ -98,6 +99,54 @@ async function listEvents(tagSlug, maxResults = 200) {
   }
   all.sort((a, b) => (b.volume_24hr ?? b.volume ?? 0) - (a.volume_24hr ?? a.volume ?? 0));
   return all;
+}
+
+/** Page the nfl tag until empty. Keep only dated game slugs — futures drown page 1. */
+const NFL_TAG_PAGE = 100;
+const NFL_TAG_PAGE_CAP = 1500;
+
+async function listMainNflGameEvents() {
+  const mains = [];
+  let pages = 0;
+  let raw = 0;
+  for (let offset = 0; offset < NFL_TAG_PAGE_CAP; offset += NFL_TAG_PAGE) {
+    const params = new URLSearchParams({
+      active: 'true',
+      closed: 'false',
+      limit: String(NFL_TAG_PAGE),
+      offset: String(offset),
+      tag_slug: 'nfl',
+    });
+    let arr = [];
+    try {
+      const events = await get(`/events?${params}`);
+      arr = Array.isArray(events) ? events : [];
+    } catch {
+      break;
+    }
+    pages += 1;
+    raw += arr.length;
+    for (const ev of arr) {
+      if (isMainNFLGameSlug(ev.slug)) mains.push(ev);
+    }
+    if (arr.length < NFL_TAG_PAGE) break;
+  }
+  console.log(`  📡 nfl main games: ${mains.length} from ${raw} tagged events (${pages} pages)`);
+  return mains;
+}
+
+async function searchNflEvents(query) {
+  try {
+    const data = await get(`/public-search?q=${encodeURIComponent(query)}`);
+    return Array.isArray(data?.events) ? data.events : [];
+  } catch {
+    return [];
+  }
+}
+
+function nflEventGameKey(ev) {
+  const teams = extractTeamsFromTitle(ev?.title || '');
+  return teams ? makeNFLGameKey(teams[0], teams[1]) : null;
 }
 
 async function getLiveVolume(eventId) {
@@ -895,6 +944,11 @@ async function run() {
 
   for (const { slug, sport } of tags) {
     try {
+      if (slug === 'nfl') {
+        const list = await listMainNflGameEvents();
+        for (const ev of list) events.push({ ...ev, _tag: 'nfl', _sport: 'NFL' });
+        continue;
+      }
       const list = await listEvents(slug, 300);
       console.log(`  📡 ${slug}: ${list.length} events`);
       for (const ev of list) {
@@ -903,6 +957,29 @@ async function run() {
     } catch (e) {
       console.warn(`Failed to fetch ${slug}:`, e.message);
     }
+  }
+
+  const haveNflKey = new Set();
+  for (const ev of events) {
+    const k = nflEventGameKey(ev);
+    if (k) haveNflKey.add(k);
+  }
+  for (const gk of validNFL) {
+    if (haveNflKey.has(gk)) continue;
+    const [aw, hm] = String(gk).split('_');
+    const away = NFL_CODE_TO_NAME[String(aw || '').toUpperCase()] || aw;
+    const home = NFL_CODE_TO_NAME[String(hm || '').toUpperCase()] || hm;
+    const q = `${away} ${home}`;
+    const found = await searchNflEvents(q);
+    let added = 0;
+    for (const ev of found) {
+      if (!isMainNFLGameSlug(ev.slug)) continue;
+      events.push({ ...ev, _tag: 'nfl-search', _sport: 'NFL' });
+      const k = nflEventGameKey(ev);
+      if (k) haveNflKey.add(k);
+      added += 1;
+    }
+    console.warn(`NFL backfill ${gk} ("${q}"): ${added} main event(s)`);
   }
 
   // Dedupe by event id
@@ -1515,6 +1592,10 @@ async function run() {
   const nflCount = Object.keys(out.NFL).length;
   const cfbCount = Object.keys(out.CFB).length;
   console.log(`Wrote ${outPath} — CBB: ${cbbCount}, CFB: ${cfbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}, NBA: ${nbaCount}, SOC: ${socCount}, UFC: ${ufcCount}, WNBA: ${wnbaCount}, NFL: ${nflCount}`);
+  const missingNfl = [...validNFL].filter((k) => !out.NFL[k]);
+  if (missingNfl.length) {
+    console.warn(`NFL Odds API in window but not written: ${missingNfl.join(', ')}`);
+  }
   if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0 && nbaCount === 0 && socCount === 0 && wnbaCount === 0 && nflCount === 0 && cfbCount === 0) {
     console.log('(No Polymarket markets matched today\'s schedule)');
   }

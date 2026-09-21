@@ -627,7 +627,7 @@ async function run() {
   const cbbMap = loadCBBTeamMap();
   const todaysGames = buildTodaysGames(polyData);
   const gameKeys = Object.keys(todaysGames);
-  console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB, ${gameKeys.filter(k => todaysGames[k].sport === 'MLB').length} MLB, ${gameKeys.filter(k => todaysGames[k].sport === 'NBA').length} NBA, ${gameKeys.filter(k => todaysGames[k].sport === 'SOC').length} SOC, ${gameKeys.filter(k => todaysGames[k].sport === 'UFC').length} UFC)\n`);
+  console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB, ${gameKeys.filter(k => todaysGames[k].sport === 'MLB').length} MLB, ${gameKeys.filter(k => todaysGames[k].sport === 'NBA').length} NBA, ${gameKeys.filter(k => todaysGames[k].sport === 'SOC').length} SOC, ${gameKeys.filter(k => todaysGames[k].sport === 'UFC').length} UFC, ${gameKeys.filter(k => todaysGames[k].sport === 'WNBA').length} WNBA, ${gameKeys.filter(k => todaysGames[k].sport === 'NFL').length} NFL, ${gameKeys.filter(k => todaysGames[k].sport === 'CFB').length} CFB)\n`);
 
   // Existing pipeline: tier + mmScore + sport PnL floor (needed before no-games exit for Vault exclusions)
   const MM_THRESHOLD = 40;
