@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-09-21T11:53:53.887Z",
-  "elapsedSec": 118.6,
+  "scannedAt": "2026-09-21T11:58:08.399Z",
+  "elapsedSec": 55.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 51,
   "summary": {
     "total": 404,
     "coveredByMain": 7,
-    "recovered": 9,
-    "recoveredPositions": 35,
-    "noPositions": 388,
+    "recovered": 10,
+    "recoveredPositions": 36,
+    "noPositions": 387,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 5,
       "spread": 0,
       "total": 2,
-      "dropped_shadow_gate": 25,
+      "dropped_shadow_gate": 26,
       "dropped_excluded": 3,
       "dropped_duplicate": 0
     }
@@ -757,8 +757,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "UFC,NHL,MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x1b47e9b128e6b671edebfb2cac23dd3efc40d814"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x1b47e9b128e6b671edebfb2cac23dd3efc40d814",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1805,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "wsh_det",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 138,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "411018",
@@ -1367,7 +1383,7 @@
           "gameKey": "atl_nyl",
           "marketType": "ml",
           "side": "away",
-          "invested": 6023,
+          "invested": 7927,
           "entryLine": null,
           "passesShadow": true
         },
