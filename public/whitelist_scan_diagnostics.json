@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-21T08:14:22.288Z",
-  "elapsedSec": 48.7,
+  "scannedAt": "2026-09-21T08:17:43.882Z",
+  "elapsedSec": 50.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 51,
   "summary": {
     "total": 397,
     "coveredByMain": 7,
     "recovered": 7,
-    "recoveredPositions": 25,
+    "recoveredPositions": 26,
     "noPositions": 383,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 1,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 19,
+      "dropped_shadow_gate": 20,
       "dropped_excluded": 5,
       "dropped_duplicate": 0
     }
@@ -878,11 +878,11 @@
       "sports": "MLB,WNBA,UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x7e5972bfc25819775ee5a9d4f191919375487b8b",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 492,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "WNBA",
@@ -892,6 +892,15 @@
           "invested": 53,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "tor_bal",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 3,
+          "entryLine": null,
+          "passesShadow": false
         }
       ]
     },
