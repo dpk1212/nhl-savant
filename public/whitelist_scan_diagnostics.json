@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-09-21T18:39:12.777Z",
-  "elapsedSec": 60,
+  "scannedAt": "2026-09-21T18:44:36.664Z",
+  "elapsedSec": 62.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 68,
   "summary": {
     "total": 404,
-    "coveredByMain": 22,
+    "coveredByMain": 21,
     "recovered": 14,
-    "recoveredPositions": 85,
-    "noPositions": 368,
+    "recoveredPositions": 86,
+    "noPositions": 369,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 8,
+      "ml": 9,
       "spread": 0,
       "total": 5,
       "dropped_shadow_gate": 40,
@@ -665,7 +665,8 @@
       "tier": "CONFIRMED",
       "name": "JustADonk",
       "sports": "NFL",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x01e6e3c5cfe50943e7721398054cb1e22032e7e0"
     },
     {
       "walletShort": "33aa70",
@@ -753,7 +754,7 @@
           "gameKey": "dal_pho",
           "marketType": "spread",
           "side": "home",
-          "invested": 563,
+          "invested": 566,
           "entryLine": 5.5,
           "passesShadow": false
         },
@@ -813,20 +814,20 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "tbr_nyy",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 6,
+          "entryLine": -1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
           "gameKey": "wsh_det",
           "marketType": "total",
           "side": "under",
           "invested": 5,
           "entryLine": 8.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "tbr_nyy",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 2,
-          "entryLine": -1.5,
           "passesShadow": false
         }
       ]
@@ -1029,10 +1030,10 @@
       "sports": "MLB,WNBA,UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x7e5972bfc25819775ee5a9d4f191919375487b8b",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 464,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 2,
       "positions": [
         {
@@ -1052,6 +1053,15 @@
           "invested": 82,
           "entryLine": null,
           "passesShadow": false
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "theohaig_norbertnovenyi",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 83,
+          "entryLine": null,
+          "passesShadow": true
         },
         {
           "sport": "MLB",
