@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-09-21T17:08:54.672Z",
-  "elapsedSec": 58,
+  "scannedAt": "2026-09-21T17:13:35.956Z",
+  "elapsedSec": 56.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 54,
   "summary": {
     "total": 404,
     "coveredByMain": 21,
-    "recovered": 13,
-    "recoveredPositions": 64,
-    "noPositions": 370,
+    "recovered": 14,
+    "recoveredPositions": 68,
+    "noPositions": 369,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 6,
+      "ml": 7,
       "spread": 0,
       "total": 5,
-      "dropped_shadow_gate": 29,
+      "dropped_shadow_gate": 32,
       "dropped_excluded": 24,
       "dropped_duplicate": 0
     }
@@ -481,8 +481,24 @@
       "tier": "CONFIRMED",
       "name": "monkeymashingkeyboard",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x684baa57c338c2549aec0aa3f034f695d72a8409"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x684baa57c338c2549aec0aa3f034f695d72a8409",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 14601,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "dal_pho",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 23,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "2b2b38",
@@ -701,7 +717,7 @@
           "gameKey": "tbr_nyy",
           "marketType": "ml",
           "side": "away",
-          "invested": 963,
+          "invested": 987,
           "entryLine": null,
           "passesShadow": true
         },
@@ -719,7 +735,7 @@
           "gameKey": "dal_pho",
           "marketType": "spread",
           "side": "home",
-          "invested": 433,
+          "invested": 487,
           "entryLine": 5.5,
           "passesShadow": false
         },
@@ -2385,11 +2401,11 @@
       "sports": "NBA,UFC,NFL,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 7,
+      "positionsCount": 10,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 400,
-      "willPassShadowGate": 5,
-      "willDropAtShadowGate": 2,
+      "willPassShadowGate": 6,
+      "willDropAtShadowGate": 4,
       "positions": [
         {
           "sport": "MLB",
@@ -2446,6 +2462,24 @@
           "passesShadow": true
         },
         {
+          "sport": "WNBA",
+          "gameKey": "dal_pho",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 97,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_nyl",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 56,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
           "sport": "UFC",
           "gameKey": "bradyhiestand_rinyanakamura",
           "marketType": "ml",
@@ -2453,6 +2487,15 @@
           "invested": 29,
           "entryLine": null,
           "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "min_sfg",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 48,
+          "entryLine": null,
+          "passesShadow": true
         }
       ]
     },
