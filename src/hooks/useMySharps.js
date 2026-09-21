@@ -9,6 +9,7 @@ import {
   listMySharps,
   memberFromActionRow,
   mySharpsShortSet,
+  cleanSharpName,
   normalizeWalletShort,
   parseMySharpsDoc,
   toggleMySharpMember,
@@ -112,6 +113,22 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     return { ok: true, removed: true };
   }, [uid, commit]);
 
+  const rename = useCallback(async (short, name) => {
+    const id = normalizeWalletShort(short);
+    if (!id) return { ok: false, reason: 'id' };
+    const cur = stateRef.current;
+    if (!cur.members[id]) return { ok: false, reason: 'missing' };
+    const next = {
+      updatedAt: Date.now(),
+      members: {
+        ...cur.members,
+        [id]: { ...cur.members[id], name: cleanSharpName(name) },
+      },
+    };
+    await persist(next);
+    return { ok: true };
+  }, [persist]);
+
   const toggleRow = useCallback(async (row) => {
     const id = normalizeWalletShort(row?.walletShort);
     if (!id) return { ok: false, reason: 'id' };
@@ -136,5 +153,6 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     addFromRow,
     toggleRow,
     remove,
+    rename,
   };
 }

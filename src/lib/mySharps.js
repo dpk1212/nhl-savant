@@ -13,6 +13,13 @@ export function normalizeWalletShort(raw) {
   return s && s.length >= 4 ? s : null;
 }
 
+/** Display name the customer types. Hex stays the id. */
+export function cleanSharpName(raw) {
+  if (typeof raw !== 'string') return null;
+  const s = raw.replace(/\s+/g, ' ').trim().slice(0, 22);
+  return s || null;
+}
+
 export function emptyMySharps() {
   return { updatedAt: null, members: {} };
 }
@@ -33,6 +40,7 @@ export function parseMySharpsDoc(data) {
       addedFrom: v?.addedFrom && typeof v.addedFrom === 'object' ? v.addedFrom : null,
       sort: Number.isFinite(Number(v?.sort)) ? Number(v.sort) : 0,
       note: typeof v?.note === 'string' ? v.note : null,
+      name: cleanSharpName(v?.name),
       muted: v?.muted === true,
     };
   }
@@ -72,6 +80,7 @@ export function memberFromActionRow(row, now = Date.now()) {
     },
     sort: now,
     note: null,
+    name: null,
     muted: false,
   };
 }

@@ -2,7 +2,7 @@
  * Populated My Sharps desk — #/my-sharps-lab
  * Fixture only. No auth, no live wallets.
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { parseMySharpsDoc } from '../../lib/mySharps.js';
 import { buildMySharpsRoster } from '../../lib/mySharpsDesk.js';
 import MySharpsDesk from '../sharpFlow/MySharpsDesk.jsx';
@@ -10,7 +10,7 @@ import MySharpsDesk from '../sharpFlow/MySharpsDesk.jsx';
 const state = parseMySharpsDoc({
   mySharps: {
     members: {
-      e4ec62: { walletShort: 'e4ec62', addedAt: 1 },
+      e4ec62: { walletShort: 'e4ec62', addedAt: 1, name: 'Bands' },
       162937: { walletShort: '162937', addedAt: 2 },
       abcdef: { walletShort: 'abcdef', addedAt: 3 },
       aaaaaa: { walletShort: 'aaaaaa', addedAt: 4 },
@@ -111,13 +111,19 @@ const recentLegs = [
 ];
 
 export default function MySharpsDeskLab() {
+  const [overrides, setOverrides] = useState({});
+  const [gone, setGone] = useState({});
   const roster = useMemo(
     () => buildMySharpsRoster(state, {
       walletProfiles: profiles,
       actionRows,
       sportFilter: 'All',
-    }),
-    [],
+    }).filter((r) => !gone[r.walletShort]).map((r) => (
+      Object.prototype.hasOwnProperty.call(overrides, r.walletShort)
+        ? { ...r, name: overrides[r.walletShort] }
+        : r
+    )),
+    [overrides, gone],
   );
 
   return (
@@ -141,6 +147,8 @@ export default function MySharpsDeskLab() {
           dateKey="2026-09-20"
           todayKey="2026-09-20"
           isMobile={false}
+          onRename={(short, name) => setOverrides((cur) => ({ ...cur, [short]: name || null }))}
+          onRemove={(short) => setGone((cur) => ({ ...cur, [short]: true }))}
         />
       </div>
     </div>

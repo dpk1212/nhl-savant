@@ -1007,6 +1007,12 @@ export function buildDeskReport({
     markets,
     bestSport: sports.find((s) => Number.isFinite(s.l30Pnl) && (s.l30Pnl !== 0 || s.l30n > 0)) || sports[0] || null,
     bestMarket: markets[0] || null,
+    openLead: (() => {
+      const withMoney = sports.filter((s) => s.openInvested > 0);
+      if (!withMoney.length) return null;
+      const top = [...withMoney].sort((a, b) => b.openInvested - a.openInvested)[0];
+      return { sport: top.sport, pct: top.openPct, invested: top.openInvested };
+    })(),
   };
 }
 
@@ -1100,8 +1106,13 @@ function packLiveTicket(t, nowMs, todayKey) {
     market: MARKET_LABEL[String(t.marketType || '').toUpperCase()] || t.marketType || null,
     invested: Number(t.invested) || 0,
     walletN: (t.shorts || []).length,
+    shorts: t.shorts || [],
     tags: t.tags || [],
+    shared: !!t.shared,
+    split: !!t.split,
+    opposed: !!t.opposed,
     american: t.americanLabel || null,
+    clock,
     dateKey,
     dateLabel: formatDayLabel(dateKey, todayKey),
     when: live ? 'Live' : (clock && dateKey && dateKey !== todayKey ? `${formatDayLabel(dateKey, todayKey)} ${clock}` : (clock || formatDayLabel(dateKey, todayKey) || 'Open')),
@@ -1206,5 +1217,145 @@ export function buildDeskLedger({
       upcoming: groupLedgerItems(upcoming, today),
       closed: groupLedgerItems(closed, today),
     },
+  };
+}
+
+function sharpBook(prof) {
+  const sports = confirmedSports(prof);
+  let pnl = 0;
+  let w = 0;
+  let l = 0;
+  let have = false;
+  let best = null;
+  const lines = [];
+  for (const sport of sports) {
+    const rec = prof?.bySport?.[sport];
+    const l30 = l30FromRec(rec);
+    const books = marketBooksFromProfile(prof, sport);
+    let market = null;
+    let marketScore = -Infinity;
+    for (const b of books) {
+      const score = Number.isFinite(b.l30?.pnl) ? b.l30.pnl : ((b.wins || 0) - (b.losses || 0));
+      if (score > marketScore) {
+        marketScore = score;
+        market = b.label;
+      }
+    }
+    const heat = heatFromForm(formFromRec(rec));
+    const sp = Number.isFinite(l30?.pnl) ? l30.pnl : null;
+    if (l30) {
+      have = true;
+      if (sp != null) pnl += sp;
+      if (Number.isFinite(l30.wins)) w += l30.wins;
+      if (Number.isFinite(l30.losses)) l += l30.losses;
+    }
+    const line = {
+      sport,
+      pnl: sp,
+      honest: l30 ? honestRecord(l30.wins, l30.losses, l30.wr) : honestRecord(null, null, null),
+      market,
+      heat,
+    };
+    lines.push(line);
+    const rank = sp != null ? sp : -Infinity;
+    if (!best || rank > best.rank) best = { ...line, rank };
+  }
+  lines.sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0));
+  return {
+    l30Pnl: have ? pnl : null,
+    honest: honestRecord(w, l),
+    whereSport: best?.sport || null,
+    whereMarket: best?.market || null,
+    heat: best?.heat || heatFromForm(null),
+    lines,
+  };
+}
+
+/**
+ * One row per sharp. Last 30 days is every confirmed sport, not the first.
+ * Sorted by that dollar, so the table reads like the hero.
+ */
+export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
+  const rows = (roster || []).map((m) => {
+    const book = sharpBook(profileFor(walletProfiles, m.walletShort));
+    const where = [book.whereSport, book.whereMarket].filter(Boolean).join(' · ');
+    return {
+      walletShort: m.walletShort,
+      name: m.name || null,
+      tag: m.tag || fmtWalletTag(m.walletShort),
+      l30Pnl: book.l30Pnl,
+      honest: book.honest,
+      where: where || null,
+      whereSport: book.whereSport,
+      whereMarket: book.whereMarket,
+      heat: book.heat,
+      openN: m.openN || 0,
+      openInvested: m.openInvested || 0,
+      lines: book.lines,
+    };
+  });
+  rows.sort((a, b) => {
+    const ap = Number.isFinite(a.l30Pnl) ? a.l30Pnl : -Infinity;
+    const bp = Number.isFinite(b.l30Pnl) ? b.l30Pnl : -Infinity;
+    if (bp !== ap) return bp - ap;
+    return (b.openInvested || 0) - (a.openInvested || 0);
+  });
+  return rows;
+}
+
+function considerWho(item, names) {
+  if (item.split) return { text: 'Opposed', opposed: true };
+  if (item.walletN > 1) return { text: `${item.walletN} on the list`, opposed: false };
+  const id = item.shorts?.[0] || item.walletShort;
+  const named = id && names?.[id];
+  return { text: named || item.tag || fmtWalletTag(id), opposed: false };
+}
+
+/**
+ * Tonight's slate first (shared tickets, then kick, then size).
+ * The rest is later slates, then graded. One blotter, two depths.
+ */
+export function buildConsiderRows(ledger, { names = {}, focusShort = null } = {}) {
+  const focus = focusShort ? String(focusShort).toLowerCase() : null;
+  const belongs = (item) => {
+    if (!focus) return true;
+    if (item.walletShort && String(item.walletShort).toLowerCase() === focus) return true;
+    return (item.shorts || []).some((s) => String(s).toLowerCase() === focus);
+  };
+  const mapItem = (item) => {
+    const who = considerWho(item, names);
+    return { ...item, who: who.text, whoOpposed: who.opposed };
+  };
+  const slate = (ledger?.open || []).filter(belongs).map(mapItem);
+  slate.sort((a, b) => {
+    const as = a.shared && !a.split ? 0 : 1;
+    const bs = b.shared && !b.split ? 0 : 1;
+    if (as !== bs) return as - bs;
+    const at = Number.isFinite(a.commenceMs) ? a.commenceMs : Infinity;
+    const bt = Number.isFinite(b.commenceMs) ? b.commenceMs : Infinity;
+    if (at !== bt) return at - bt;
+    return (b.invested || 0) - (a.invested || 0);
+  });
+  const later = (ledger?.upcoming || []).filter(belongs).map(mapItem);
+  const closed = (ledger?.closed || []).filter(belongs).map(mapItem);
+  return { slate, later, closed };
+}
+
+export function gainsSplit(legs, short) {
+  const id = short ? String(short).toLowerCase() : null;
+  let gains = 0;
+  let losses = 0;
+  let have = false;
+  for (const leg of legs || []) {
+    if (id && String(leg?.walletShort || '').toLowerCase() !== id) continue;
+    const d = legDollar(leg);
+    if (!Number.isFinite(d) || d === 0) continue;
+    have = true;
+    if (d > 0) gains += d;
+    else losses += Math.abs(d);
+  }
+  return {
+    gains: have ? Math.round(gains) : null,
+    losses: have ? Math.round(losses) : null,
   };
 }

@@ -9,13 +9,17 @@ import {
   fmtWalletTag,
   memberFromActionRow,
   mySharpsShortSet,
+  cleanSharpName,
   parseMySharpsDoc,
   toggleMySharpMember,
 } from '../src/lib/mySharps.js';
 import {
+  buildConsiderRows,
+  buildDeskHoldings,
   buildDeskLedger,
   buildDeskPulse,
   buildDeskReport,
+  gainsSplit,
   buildMySharpsBoard,
   closedPickLabel,
   buildMySharpsDashboard,
@@ -74,6 +78,12 @@ const parsed = parseMySharpsDoc({
 });
 assert.equal(parsed.members['162937'].walletShort, '162937');
 assert.equal(canAddMySharp(parsed), true);
+assert.equal(cleanSharpName('  Bands  '), 'Bands');
+assert.equal(cleanSharpName('   '), null);
+const named = parseMySharpsDoc({
+  mySharps: { members: { e4ec62: { walletShort: 'e4ec62', name: '  Bands  ' } } },
+});
+assert.equal(named.members.e4ec62.name, 'Bands');
 
 const rows = [
   { ...row, walletShort: '162937' },
@@ -425,5 +435,72 @@ assert.equal(ledger.closed.length, 2);
 assert.equal(ledger.closed[0].pick, 'Under 7.5');
 assert.equal(ledger.closed[1].pick, 'Seahawks');
 assert.equal(ledger.closedPnl, 2800);
+assert.equal(ledger.open[0].shared, true);
+assert.equal(ledger.open[0].walletN, 2);
+
+const holdings = buildDeskHoldings({
+  roster: [
+    { walletShort: 'e4ec62', name: 'Bands', openN: 1, openInvested: 2000 },
+    { walletShort: 'aaaaaa', name: null, openN: 0, openInvested: 0 },
+  ],
+  walletProfiles: new Map([
+    ['e4ec62', {
+      bySport: {
+        MLB: {
+          whitelistTier: 'CONFIRMED',
+          recentActionWindow: { n: 20, wins: 14, losses: 6, wr: 70, settledPnl: 30000 },
+          byMarket: { ML: { positions: { n: 12, wins: 9, losses: 3, wr: 75 } } },
+        },
+        NFL: {
+          whitelistTier: 'CONFIRMED',
+          recentActionWindow: { n: 8, wins: 5, losses: 3, wr: 62, settledPnl: 8000 },
+        },
+      },
+    }],
+    ['aaaaaa', {
+      bySport: {
+        CFB: {
+          whitelistTier: 'CONFIRMED',
+          recentActionWindow: { n: 10, wins: 3, losses: 7, wr: 30, settledPnl: -5000 },
+          form: { actionL10: { w: 2, l: 8 } },
+        },
+      },
+    }],
+  ]),
+});
+assert.equal(holdings[0].walletShort, 'e4ec62');
+assert.equal(holdings[0].name, 'Bands');
+assert.equal(holdings[0].l30Pnl, 38000);
+assert.equal(holdings[0].whereSport, 'MLB');
+assert.equal(holdings[0].whereMarket, 'ML');
+assert.equal(holdings[1].l30Pnl, -5000);
+assert.equal(holdings[1].heat.key, 'cold');
+
+const tape = buildConsiderRows(ledger, { names: { abcdef: 'Ace' } });
+assert.equal(tape.slate[0].pick, 'Over 47.5');
+assert.equal(tape.slate[0].who, '2 on the list');
+assert.equal(tape.later[0].pick, 'Bama');
+assert.equal(tape.later[0].who, 'Ace');
+assert.equal(tape.closed.length, 2);
+
+const ordered = buildConsiderRows({
+  open: [
+    { id: 'solo', pick: 'Solo', shared: false, split: false, walletN: 1, shorts: ['aaa'], invested: 9000, commenceMs: 1 },
+    { id: 'share', pick: 'Shared', shared: true, split: false, walletN: 2, shorts: ['a', 'b'], invested: 1000, commenceMs: 5 },
+    { id: 'fight', pick: 'Fight', shared: true, split: true, walletN: 2, shorts: ['a', 'b'], invested: 8000, commenceMs: 2 },
+  ],
+  upcoming: [],
+  closed: [],
+});
+assert.equal(ordered.slate[0].pick, 'Shared');
+assert.equal(ordered.slate.find((r) => r.pick === 'Fight').who, 'Opposed');
+
+const split = gainsSplit([
+  { walletShort: 'e4ec62', dollarPnl: 4000 },
+  { walletShort: 'e4ec62', dollarPnl: -1500 },
+  { walletShort: 'other', dollarPnl: 9000 },
+], 'e4ec62');
+assert.equal(split.gains, 4000);
+assert.equal(split.losses, 1500);
 
 console.log('testMySharps: ok');
