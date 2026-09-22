@@ -1233,6 +1233,7 @@ function sharpBook(prof) {
   let have = false;
   let best = null;
   const lines = [];
+  const sparks = [];
   const roiParts = [];
   for (const sport of sports) {
     const rec = prof?.bySport?.[sport];
@@ -1264,6 +1265,8 @@ function sharpBook(prof) {
       heat,
     };
     lines.push(line);
+    const spark = sparkFromForm(rec?.form);
+    if (spark) sparks.push(spark);
     if (l30 && Number.isFinite(l30.pnl) && Number.isFinite(l30.roi)) {
       roiParts.push({ pnl: l30.pnl, roi: l30.roi });
     }
@@ -1283,6 +1286,97 @@ function sharpBook(prof) {
     clv: skillFromProfile(prof, null).clv,
     markets: marketBooksFromProfile(prof),
     lines,
+    sparks,
+  };
+}
+
+/** Resample cumulative dollar curves onto one index and add them. */
+export function blendDollarCurves(curves, points = 24) {
+  const usable = (curves || []).filter((c) => Array.isArray(c) && c.filter((n) => Number.isFinite(Number(n))).length >= 2);
+  if (!usable.length || points < 2) return [];
+  const out = Array.from({ length: points }, () => 0);
+  for (const curve of usable) {
+    const pts = curve.map((v) => Number(v)).filter((n) => Number.isFinite(n));
+    const last = pts.length - 1;
+    for (let i = 0; i < points; i++) {
+      const x = (i / (points - 1)) * last;
+      const lo = Math.floor(x);
+      const hi = Math.min(last, lo + 1);
+      const w = x - lo;
+      out[i] += pts[lo] * (1 - w) + pts[hi] * w;
+    }
+  }
+  return out.map((n) => Math.round(n));
+}
+
+function scopedProfile(prof, sport) {
+  if (!sport || sport === 'All' || sport === 'ALL') return prof;
+  const rec = prof?.bySport?.[sport];
+  if (!rec) return { ...prof, bySport: {} };
+  return { ...prof, bySport: { [sport]: rec } };
+}
+
+function resultFromLeg(leg, sport) {
+  const pnl = legDollar(leg);
+  const date = leg?.date || null;
+  return {
+    id: [sport, date, leg?.gameKey, leg?.marketType, leg?.side, leg?.team].filter(Boolean).join('|'),
+    date,
+    pick: closedPickLabel({ ...leg, sport: leg?.sport || sport }),
+    matchup: ticketMatchup(leg),
+    sport: leg?.sport || sport || null,
+    market: MARKET_LABEL[String(leg?.marketType || '').toUpperCase()] || leg?.marketType || null,
+    won: leg?.won === 1,
+    lost: leg?.won === 0,
+    pnl: Number.isFinite(pnl) ? Math.round(pnl) : null,
+  };
+}
+
+/**
+ * One sharp, opened. Book numbers plus the newest graded Action tickets.
+ * `sport` limits the book and the tape to that sport.
+ */
+export function buildSharpDossier(walletProfiles, walletShort, { sport = 'All', limit = 30 } = {}) {
+  const short = normalizeWalletShort(walletShort);
+  const prof = scopedProfile(profileFor(walletProfiles, short), sport);
+  const book = sharpBook(prof);
+  const sports = confirmedSports(prof);
+  const results = [];
+  for (const sp of sports) {
+    const legs = prof?.bySport?.[sp]?.form?.recentAction;
+    if (!Array.isArray(legs)) continue;
+    for (const leg of legs) {
+      if (leg?.won !== 0 && leg?.won !== 1) continue;
+      results.push(resultFromLeg(leg, sp));
+    }
+  }
+  results.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.id).localeCompare(String(a.id)));
+  const shown = results.slice(0, limit);
+  const spark = blendDollarCurves(book.sparks);
+  let resultSpark = [];
+  if (!spark.length && shown.some((r) => Number.isFinite(r.pnl))) {
+    const chrono = [...shown].reverse();
+    let run = 0;
+    resultSpark = chrono.map((r) => {
+      run += Number(r.pnl) || 0;
+      return Math.round(run);
+    });
+  }
+  return {
+    walletShort: short,
+    tag: fmtWalletTag(short),
+    sport: sport && sport !== 'All' ? sport : null,
+    l30Pnl: book.l30Pnl,
+    roi: book.roi,
+    honest: book.honest,
+    clv: book.clv,
+    heat: book.heat,
+    markets: book.markets || [],
+    lines: book.lines || [],
+    spark: spark.length ? spark : resultSpark,
+    sparkFrom: spark.length ? 'book' : (resultSpark.length ? 'results' : null),
+    results: shown,
+    resultN: results.length,
   };
 }
 
@@ -1423,6 +1517,7 @@ export function groupPortfolioBets(tickets, { names = {}, tails = {} } = {}) {
       whoOpposed: who.opposed,
       sizeText: Number.isFinite(ratio) && ratio >= SIZED_UP_RATIO ? `${ratio.toFixed(1)}×` : null,
       tail: tails[t.id] || null,
+      walletLines: walletLinesFor(t, names),
     };
     if (t.split) split.push(item);
     else if (t.shared) together.push(item);
@@ -1600,6 +1695,7 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
       openInvested: m.openInvested || 0,
       lines: book.lines,
       markets: book.markets || [],
+      spark: blendDollarCurves(book.sparks),
     };
   });
   rows.sort((a, b) => {
@@ -1609,6 +1705,21 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
     return (b.openInvested || 0) - (a.openInvested || 0);
   });
   return rows;
+}
+
+function walletLinesFor(ticket, names) {
+  return [...(ticket?.rows || [])].map((r) => {
+    const short = shortWalletId(r?.walletShort) || normalizeWalletShort(r?.walletShort);
+    const named = short && names?.[short];
+    const ratio = Number(r?.displaySizeRatio ?? r?.sizeRatio);
+    return {
+      walletShort: short,
+      tag: named || fmtWalletTag(short),
+      invested: Number(r?.invested) || 0,
+      ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null,
+      price: r?.americanLabel || null,
+    };
+  }).sort((a, b) => (b.invested || 0) - (a.invested || 0));
 }
 
 function considerWho(item, names) {

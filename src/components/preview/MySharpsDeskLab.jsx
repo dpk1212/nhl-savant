@@ -41,7 +41,16 @@ const profiles = new Map([
         whitelistTier: 'CONFIRMED',
         recentActionWindow: { n: 40, wins: 26, losses: 14, wr: 65, settledPnl: 51000, dollarRoi: 14 },
         positions: { n: 90, wins: 54, losses: 36, wr: 60, positionFlatRoi: 8, dollarRoi: 11, invested: 420000 },
-        form: { actionL5: { w: 4, l: 1 }, actionL10: { w: 7, l: 3 } },
+        form: {
+          actionL5: { w: 4, l: 1 },
+          actionL10: { w: 7, l: 3 },
+          actionDollarCurve: [0, 12000, 18000, 31000, 51000],
+          recentAction: [
+            { date: '2026-09-20', marketType: 'TOTAL', side: 'under', line: 8.5, gameKey: 'tor_bal', away: 'TOR', home: 'BAL', dollarPnl: 2100, won: 1 },
+            { date: '2026-09-19', marketType: 'ML', side: 'home', team: 'Yankees', gameKey: 'bos_nyy', away: 'BOS', home: 'NYY', dollarPnl: -1400, won: 0 },
+            { date: '2026-09-18', marketType: 'TOTAL', side: 'over', line: 9, gameKey: 'laa_oak', away: 'LAA', home: 'OAK', dollarPnl: 900, won: 1 },
+          ],
+        },
         byMarket: {
           ML: { positions: { n: 28, wins: 15, losses: 13, wr: 54, dollarRoi: 2 } },
           TOTAL: { positions: { n: 48, wins: 31, losses: 17, wr: 65, dollarRoi: 19 }, recentActionWindow: { n: 16, wins: 11, losses: 5, wr: 69, settledPnl: 28000, dollarRoi: 22 } },
@@ -57,7 +66,14 @@ const profiles = new Map([
         whitelistTier: 'CONFIRMED',
         recentActionWindow: { n: 30, wins: 20, losses: 10, wr: 67, settledPnl: 39300, dollarRoi: 16 },
         positions: { n: 73, wins: 48, losses: 25, wr: 66, positionFlatRoi: 9, dollarRoi: 12, invested: 310000 },
-        form: { actionL10: { w: 4, l: 6 } },
+        form: {
+          actionL10: { w: 4, l: 6 },
+          actionDollarCurve: [8000, 4000, 15000, 28000, 39300],
+          recentAction: [
+            { date: '2026-09-21', marketType: 'ML', side: 'away', team: 'Mets', gameKey: 'nym_tex', away: 'NYM', home: 'TEX', dollarPnl: 1600, won: 1 },
+            { date: '2026-09-18', marketType: 'SPREAD', side: 'home', team: 'Orioles', line: -1.5, gameKey: 'tor_bal', away: 'TOR', home: 'BAL', dollarPnl: -900, won: 0 },
+          ],
+        },
         byMarket: {
           ML: { positions: { n: 40, wins: 28, losses: 12, wr: 70, dollarRoi: 18 }, recentActionWindow: { n: 12, wins: 9, losses: 3, wr: 75, settledPnl: 22000, dollarRoi: 17 } },
           SPREAD: { positions: { n: 18, wins: 9, losses: 9, wr: 50, dollarRoi: 1 } },
@@ -73,7 +89,21 @@ const profiles = new Map([
         whitelistTier: 'CONFIRMED',
         recentActionWindow: { n: 120, wins: 72, losses: 48, wr: 60, settledPnl: 88000, dollarRoi: 22 },
         positions: { n: 210, wins: 124, losses: 86, wr: 59, dollarRoi: 22, invested: 900000 },
-        form: { actionL10: { w: 7, l: 3 } },
+        form: {
+          actionL10: { w: 7, l: 3 },
+          actionDollarCurve: [0, 20000, 44000, 61000, 88000],
+          recentAction: Array.from({ length: 12 }, (_, i) => ({
+            date: `2026-09-${String(20 - (i % 18)).padStart(2, '0')}`,
+            marketType: 'TOTAL',
+            side: i % 3 === 0 ? 'over' : 'under',
+            line: 8 + (i % 3),
+            gameKey: `nyy_bos_${i}`,
+            away: 'NYY',
+            home: 'BOS',
+            dollarPnl: i % 3 === 0 ? -800 : 1400,
+            won: i % 3 === 0 ? 0 : 1,
+          })),
+        },
         byMarket: {
           TOTAL: { positions: { n: 140, wins: 86, losses: 54, wr: 61, dollarRoi: 21 } },
         },
@@ -100,6 +130,12 @@ const profiles = new Map([
       NFL: {
         whitelistTier: 'CONFIRMED',
         positions: { n: 3, wins: 3, losses: 0, wr: 100, dollarRoi: 140, invested: 6000 },
+        form: {
+          recentAction: [
+            { date: '2026-09-14', marketType: 'SPREAD', side: 'home', team: 'Bills', line: -3.5, gameKey: 'mia_buf', away: 'MIA', home: 'BUF', dollarPnl: 900, won: 1 },
+            { date: '2026-09-07', marketType: 'SPREAD', side: 'away', team: 'Ravens', line: -2.5, gameKey: 'bal_kc', away: 'BAL', home: 'KC', dollarPnl: 700, won: 1 },
+          ],
+        },
         byMarket: {
           SPREAD: { positions: { n: 3, wins: 3, losses: 0, wr: 100, dollarRoi: 140 } },
         },

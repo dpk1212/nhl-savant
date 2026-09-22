@@ -10,6 +10,7 @@ import {
   buildFindCandidates,
   buildMySharpsBoard,
   buildPortfolioSnapshot,
+  buildSharpDossier,
   groupPortfolioBets,
   suggestTailStake,
   summarizeTails,
@@ -565,7 +566,7 @@ function betWash(item) {
   return B.card;
 }
 
-function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedStake }) {
+function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedStake, expanded, onToggle }) {
   const tailed = item.tail;
   const edge = item.split ? B.red : item.shared ? B.gold : (item.sizeText ? '#F59E0B' : B.line);
   const open = draft?.id === item.id;
@@ -581,6 +582,11 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
       borderLeft: `3px solid ${edge}`,
       background: betWash(item),
       padding: isMobile ? '0.9rem 0.85rem' : '1rem 1.05rem 0.95rem',
+      cursor: 'pointer',
+    }}
+    onClick={(e) => {
+      if (e.target.closest('button, input, label')) return;
+      onToggle?.();
     }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start' }}>
@@ -614,6 +620,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           )}
         </div>
       </div>
+      {expanded ? <TicketContext item={item} /> : null}
       {open ? (
         <TailForm
           item={item}
@@ -695,7 +702,7 @@ const fieldStyle = {
   fontFeatureSettings: "'tnum'",
 };
 
-function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, onUntail, walletProfiles }) {
+function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, onUntail, walletProfiles, expandedId, onToggle }) {
   if (!items.length) return null;
   const money = sumInvested(items);
   return (
@@ -719,6 +726,8 @@ function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, on
             onDraft={onDraft}
             onTail={onTail}
             onUntail={onUntail}
+            expanded={expandedId === item.id}
+            onToggle={() => onToggle?.(item.id)}
           />
         ))}
       </div>
@@ -820,13 +829,311 @@ function findKicker(row, sort) {
 
 const FIND_GRID = 'minmax(0, 1.7fr) minmax(108px, 1fr) 72px 68px 84px 76px';
 
+function LineChart({ points, height = 108 }) {
+  const pts = (points || []).map((n) => Number(n)).filter((n) => Number.isFinite(n));
+  if (pts.length < 2) return null;
+  const w = 640;
+  const h = height;
+  const min = Math.min(0, ...pts);
+  const max = Math.max(0, ...pts);
+  const span = (max - min) || 1;
+  const x = (i) => (i / (pts.length - 1)) * (w - 12) + 6;
+  const y = (v) => 10 + (1 - (v - min) / span) * (h - 20);
+  const d = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const end = pts[pts.length - 1];
+  const color = end >= 0 ? B.green : B.red;
+  const zero = y(0);
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={height} role="img" aria-label="Dollar path">
+      <line x1="6" x2={w - 6} y1={zero} y2={zero} stroke="rgba(255,255,255,0.08)" />
+      <path d={d} fill="none" stroke={color} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function DivergingBar({ value, maxAbs }) {
+  const n = Number(value) || 0;
+  const pct = maxAbs > 0 ? Math.min(50, (Math.abs(n) / maxAbs) * 50) : 0;
+  const pos = n >= 0;
+  return (
+    <div style={{ position: 'relative', height: 8, borderRadius: 99, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.16)' }} />
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: pos ? '50%' : `${50 - pct}%`,
+        width: `${pct}%`,
+        background: pos ? B.green : B.red,
+      }}
+      />
+    </div>
+  );
+}
+
+function BookVisual({ holdings, isMobile }) {
+  const curves = (holdings || []).map((h) => h.spark).filter((c) => Array.isArray(c) && c.length >= 2);
+  const path = [];
+  if (curves.length) {
+    const n = curves[0].length;
+    for (let i = 0; i < n; i += 1) {
+      path.push(curves.reduce((s, c) => s + (Number(c[i]) || 0), 0));
+    }
+  }
+  const sharps = (holdings || []).filter((h) => Number.isFinite(h.l30Pnl) && h.l30Pnl !== 0);
+  const sports = new Map();
+  for (const h of holdings || []) {
+    for (const line of h.lines || []) {
+      if (!Number.isFinite(line.pnl) || !line.sport) continue;
+      sports.set(line.sport, (sports.get(line.sport) || 0) + line.pnl);
+    }
+  }
+  const sportRows = [...sports.entries()].map(([sport, pnl]) => ({ sport, pnl })).sort((a, b) => b.pnl - a.pnl);
+  const maxAbs = Math.max(
+    1,
+    ...sharps.map((h) => Math.abs(h.l30Pnl)),
+    ...sportRows.map((r) => Math.abs(r.pnl)),
+  );
+  if (!path.length && !sharps.length) return null;
+  return (
+    <div style={{
+      margin: '10px 0 14px',
+      borderRadius: 16,
+      border: `1px solid ${B.line}`,
+      background: '#10141c',
+      padding: isMobile ? '0.9rem 0.85rem 1rem' : '1rem 1.1rem 1.05rem',
+    }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        <div style={{ ...T.kicker, color: B.gold }}>30-day path</div>
+        {path.length ? (
+          <div style={{ ...T.figure, color: pnlColor(path[path.length - 1]), fontSize: '0.95rem' }}>
+            {fmtVol(path[path.length - 1])}
+          </div>
+        ) : null}
+      </div>
+      {path.length ? <div style={{ marginTop: 6 }}><LineChart points={path} /></div> : null}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1.2fr 0.8fr',
+        gap: isMobile ? 16 : 28,
+        marginTop: 8,
+      }}
+      >
+        <div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginBottom: 8 }}>By sharp</div>
+          {sharps.map((h) => (
+            <div key={h.walletShort} style={{ display: 'grid', gridTemplateColumns: 'minmax(72px, 0.7fr) 1fr 72px', gap: 10, alignItems: 'center', marginBottom: 7 }}>
+              <div style={{ ...T.meta, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.name || h.tag}</div>
+              <DivergingBar value={h.l30Pnl} maxAbs={maxAbs} />
+              <div style={{ ...T.figure, color: pnlColor(h.l30Pnl), textAlign: 'right', fontSize: '0.82rem' }}>{fmtVol(h.l30Pnl)}</div>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginBottom: 8 }}>By sport</div>
+          {sportRows.length ? sportRows.map((row) => (
+            <div key={row.sport} style={{ display: 'grid', gridTemplateColumns: '42px 1fr 72px', gap: 10, alignItems: 'center', marginBottom: 7 }}>
+              <div style={{ ...T.meta, color: B.textSec }}>{row.sport}</div>
+              <DivergingBar value={row.pnl} maxAbs={maxAbs} />
+              <div style={{ ...T.figure, color: pnlColor(row.pnl), textAlign: 'right', fontSize: '0.82rem' }}>{fmtVol(row.pnl)}</div>
+            </div>
+          )) : (
+            <div style={{ ...T.meta, color: B.textFaint }}>No sport split yet.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scale({ label, min, max, step, value, text, onChange }) {
+  return (
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, minWidth: 240 }}>
+      <span style={{ ...T.kicker, color: B.textMuted, letterSpacing: '0.08em' }}>{label}</span>
+      <input
+        className="ms-scale"
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        aria-label={label}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+      <span style={{ ...T.figure, color: value ? B.goldSoft : B.textFaint, fontSize: '0.82rem', minWidth: 52 }}>{text}</span>
+    </label>
+  );
+}
+
+function SharpProfile({ dossier, isMobile }) {
+  if (!dossier) return null;
+  const heat = dossier.heat?.key === 'hot' || dossier.heat?.key === 'cold'
+    ? `${dossier.heat.label} ${dossier.heat.window} ${dossier.heat.record}`
+    : null;
+  const close = Number.isFinite(dossier.clv?.pctPos) ? `${dossier.clv.pctPos}% close` : null;
+  const lead = [...(dossier.markets || [])].sort((a, b) => (b.n || 0) - (a.n || 0))[0];
+  const haveL30 = Number.isFinite(dossier.l30Pnl);
+  const thinBook = (lead?.n || 0) < HONEST_PCT_N;
+  const heroText = haveL30 ? fmtVol(dossier.l30Pnl) : (Number.isFinite(lead?.roi) ? `${lead.roi}%` : '—');
+  const heroColor = haveL30
+    ? pnlColor(dossier.l30Pnl, B.text)
+    : (thinBook ? B.goldSoft : pnlColor(lead?.roi, B.text));
+  const side = haveL30
+    ? [dossier.honest?.text, Number.isFinite(dossier.roi) ? `${dossier.roi}% ROI` : null, close].filter(Boolean).join(' · ')
+    : [lead?.honest?.text, Number.isFinite(lead?.roi) ? `${lead.roi}% book` : null, lead?.n ? `${lead.n} bets` : null].filter(Boolean).join(' · ');
+  return (
+    <div style={{
+      margin: '0 0 8px',
+      borderRadius: 14,
+      border: `1px solid ${B.goldBorder}`,
+      background: 'linear-gradient(180deg, rgba(212,175,55,0.08), #10141c 28%)',
+      padding: isMobile ? '0.9rem 0.8rem 0.7rem' : '1rem 1.05rem 0.75rem',
+    }}
+    >
+      <div style={{ ...T.kicker, color: B.gold }}>
+        {dossier.sport ? `${dossier.sport} profile` : 'Full profile'}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', marginTop: 6 }}>
+        <div style={{ ...T.hero, fontSize: isMobile ? '1.8rem' : '2.15rem', color: heroColor }}>
+          {heroText}
+        </div>
+        <div style={{ ...T.body, color: B.textSec, textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+          {side || '—'}
+          {heat ? <div style={{ ...T.meta, color: heatColor(dossier.heat), marginTop: 3 }}>{heat}</div> : null}
+        </div>
+      </div>
+      {dossier.spark?.length >= 2 ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>
+            {dossier.sparkFrom === 'book' ? '30-day path' : 'These results'}
+          </div>
+          <LineChart points={dossier.spark} height={88} />
+        </div>
+      ) : null}
+      {dossier.markets?.length ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginBottom: 4 }}>Market book</div>
+          {dossier.markets.slice(0, 8).map((m) => (
+            <div
+              key={`${m.sport}:${m.market}`}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr auto' : '72px 64px minmax(0, 1fr) 64px 76px',
+                gap: '0 12px',
+                alignItems: 'baseline',
+                padding: '0.38rem 0',
+                borderTop: `1px solid ${B.hair}`,
+              }}
+            >
+              {isMobile ? null : <div style={{ ...T.meta, color: B.textMuted }}>{m.sport}</div>}
+              <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{m.label}</div>
+              {isMobile ? null : (
+                <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>
+                  {m.honest?.text && m.honest.text !== '—' ? m.honest.text : '—'}
+                  {m.n ? ` · ${m.n} bets` : ''}
+                </div>
+              )}
+              <div style={{ ...T.figure, color: pnlColor(m.roi, B.textFaint), textAlign: 'right', fontSize: '0.82rem' }}>
+                {Number.isFinite(m.roi) ? `${m.roi}%` : '—'}
+              </div>
+              <div style={{ ...T.figure, color: pnlColor(m.l30?.pnl, B.textFaint), textAlign: 'right', fontSize: '0.82rem' }}>
+                {Number.isFinite(m.l30?.pnl) ? fmtVol(m.l30.pnl) : ''}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', margin: '12px 0 4px' }}>
+        Last {dossier.results.length || 0} graded
+        {dossier.resultN > dossier.results.length ? ` of ${dossier.resultN}` : ''}
+      </div>
+      {dossier.results.length ? dossier.results.map((leg) => (
+        <div
+          key={leg.id}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '64px minmax(0, 1fr) auto' : '78px minmax(0, 1.3fr) 52px 72px',
+            gap: '0 12px',
+            alignItems: 'baseline',
+            padding: '0.42rem 0',
+            borderTop: `1px solid ${B.hair}`,
+          }}
+        >
+          <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>{leg.date ? leg.date.slice(5) : '—'}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ ...T.name, color: B.text, fontSize: '0.86rem' }}>{leg.pick}</div>
+            <div style={{ ...T.meta, color: B.textMuted }}>{[leg.matchup, leg.sport, leg.market].filter(Boolean).join(' · ')}</div>
+          </div>
+          {isMobile ? null : (
+            <div style={{ ...T.kicker, letterSpacing: '0.08em', color: leg.won ? B.green : B.red }}>{leg.won ? 'W' : 'L'}</div>
+          )}
+          <div style={{ ...T.figure, color: pnlColor(leg.pnl, B.textFaint), textAlign: 'right', fontSize: '0.84rem' }}>
+            {Number.isFinite(leg.pnl) ? fmtVol(leg.pnl) : (leg.won ? 'W' : 'L')}
+          </div>
+        </div>
+      )) : (
+        <div style={{ ...T.meta, color: B.textFaint, padding: '0.4rem 0 0.2rem' }}>No graded tickets in this window.</div>
+      )}
+    </div>
+  );
+}
+
+function TicketContext({ item }) {
+  const lines = item.walletLines || [];
+  const note = item.split
+    ? 'Someone on your list is on the other side of this number.'
+    : item.shared
+      ? 'More than one sharp on your list took this side.'
+      : item.sizeText
+        ? 'Sized up against their usual bet in this sport.'
+        : 'One sharp, around their usual size.';
+  const maxRatio = Math.max(1.5, ...lines.map((l) => l.ratio || 0));
+  return (
+    <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${B.hair}` }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ ...T.body, color: B.textSec }}>{note}</div>
+      {Number.isFinite(Number(item.entryLine)) ? (
+        <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>Entered {item.entryLine}</div>
+      ) : null}
+      <div style={{ marginTop: 8 }}>
+        {lines.map((line) => (
+          <div key={line.walletShort || line.tag} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 88px 72px', gap: 10, alignItems: 'center', padding: '0.4rem 0', borderTop: `1px solid ${B.hair}` }}>
+            <div>
+              <div style={{ ...T.name, color: B.text, fontSize: '0.88rem' }}>{line.tag}</div>
+              {line.ratio ? (
+                <div style={{ marginTop: 5, height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${Math.min(100, (line.ratio / maxRatio) * 100)}%`,
+                    height: '100%',
+                    background: line.ratio >= 1.5 ? '#F59E0B' : B.gold,
+                  }}
+                  />
+                </div>
+              ) : null}
+            </div>
+            <div style={{ ...T.figure, color: B.goldSoft, textAlign: 'right', fontSize: '0.84rem' }}>{fmtVol(line.invested, { signed: false })}</div>
+            <div style={{ ...T.meta, color: B.textMuted, textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+              {line.ratio ? `${line.ratio.toFixed(1)}×` : ''}
+              {line.price ? `${line.ratio ? ' · ' : ''}${line.price}` : ''}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FindRoom({
-  rows, total, savedCount, cap, filters, setFilters, onAdd, notice, isMobile,
+  rows, total, savedCount, cap, filters, setFilters, onAdd, notice, isMobile, walletProfiles,
 }) {
   const lead = rows[0] || null;
   const hero = findHeroNumber(lead, filters.sort || 'roi');
   const thinN = rows.filter((r) => (r.n || 0) < HONEST_PCT_N).length;
   const full = savedCount >= cap;
+  const [openId, setOpenId] = useState(null);
+  const dossier = openId
+    ? buildSharpDossier(walletProfiles, openId, { sport: filters.sport })
+    : null;
   const heat = lead?.heat?.key === 'hot' || lead?.heat?.key === 'cold'
     ? `${lead.heat.label} ${lead.heat.window} ${lead.heat.record}`
     : null;
@@ -852,8 +1159,26 @@ function FindRoom({
         ))}
         <FilterBtn on={filters.window === 'l30'} onClick={() => setFilters((f) => ({ ...f, window: 'l30' }))}>30d</FilterBtn>
         <FilterBtn on={filters.window === 'book'} onClick={() => setFilters((f) => ({ ...f, window: 'book' }))}>Book</FilterBtn>
-        <FilterBtn on={filters.minBets === 100} onClick={() => setFilters((f) => ({ ...f, minBets: f.minBets === 100 ? 0 : 100 }))}>100+ bets</FilterBtn>
-        <FilterBtn on={filters.minRoi === 20} onClick={() => setFilters((f) => ({ ...f, minRoi: f.minRoi === 20 ? null : 20 }))}>20%+ ROI</FilterBtn>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', marginBottom: 12 }}>
+        <Scale
+          label="Min bets"
+          min={0}
+          max={200}
+          step={10}
+          value={Number(filters.minBets) || 0}
+          text={(Number(filters.minBets) || 0) ? `${filters.minBets}+` : 'Any'}
+          onChange={(n) => setFilters((f) => ({ ...f, minBets: n }))}
+        />
+        <Scale
+          label="Min ROI"
+          min={0}
+          max={100}
+          step={5}
+          value={Number(filters.minRoi) || 0}
+          text={Number(filters.minRoi) ? `${filters.minRoi}%+` : 'Any'}
+          onChange={(n) => setFilters((f) => ({ ...f, minRoi: n || null }))}
+        />
       </div>
       <div style={{
         borderRadius: 16,
@@ -962,16 +1287,27 @@ function FindRoom({
           : null;
         const close = Number.isFinite(row.clv?.pctPos) ? `${row.clv.pctPos}%` : '—';
         const closeTone = Number.isFinite(row.clv?.pctPos) && row.clv.pctPos >= 55 ? B.goldSoft : B.textFaint;
+        const open = openId === row.walletShort;
         return (
+          <div key={row.walletShort}>
           <div
-            key={row.walletShort}
+            role="button"
+            tabIndex={0}
+            onClick={() => setOpenId(open ? null : row.walletShort)}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget) return;
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenId(open ? null : row.walletShort); }
+            }}
             style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto auto' : FIND_GRID,
               gap: isMobile ? '2px 12px' : '0 12px',
               alignItems: 'center',
-              padding: '0.85rem 0.15rem',
-              borderBottom: `1px solid ${B.hair}`,
+              padding: '0.85rem 0.15rem 0.85rem 0.55rem',
+              borderBottom: open ? 'none' : `1px solid ${B.hair}`,
+              cursor: 'pointer',
+              boxShadow: open ? `inset 3px 0 0 ${B.gold}` : 'none',
+              background: open ? 'rgba(212,175,55,0.05)' : 'transparent',
             }}
           >
             <div style={{ minWidth: 0 }}>
@@ -1008,12 +1344,14 @@ function FindRoom({
               <button
                 type="button"
                 aria-label={`Add ${row.tag}`}
-                onClick={() => onAdd(row)}
+                onClick={(e) => { e.stopPropagation(); onAdd(row); }}
                 style={{ ...goldBtn, padding: '0.28rem 0.62rem' }}
               >
                 Add
               </button>
             </div>
+          </div>
+          {open && dossier ? <SharpProfile dossier={dossier} isMobile={isMobile} /> : null}
           </div>
         );
       })}
@@ -1046,6 +1384,7 @@ export default function MySharpsDesk({
   const [draft, setDraft] = useState(null);
   const [notice, setNotice] = useState('');
   const [betLens, setBetLens] = useState(null);
+  const [openBet, setOpenBet] = useState(null);
   const [filters, setFilters] = useState({
     sport: 'All', market: 'All', window: 'book', minBets: 0, minRoi: null, sort: 'roi',
   });
@@ -1132,12 +1471,13 @@ export default function MySharpsDesk({
 
   return (
     <div style={{ margin: '0.2rem 0 2.6rem' }} data-room={room}>
-      <style>{`.ms-name::placeholder{color:${B.textFaint};}`}</style>
+      <style>{`.ms-name::placeholder{color:${B.textFaint};}.ms-scale{accent-color:#D4AF37;width:148px;}`}</style>
       <RoomBar room={room} onChange={setRoom} betCount={betCount} />
 
       {room === 'book' ? (
         <>
           <Hero snapshot={snapshot} isMobile={isMobile} onOpenBets={() => setRoom('bets')} />
+          {holdings.length ? <BookVisual holdings={holdings} isMobile={isMobile} /> : null}
           {!holdings.length ? (
             <div style={{ padding: '1.6rem 0 0.4rem' }}>
               <div style={{ ...T.hero, fontSize: '1.45rem', color: B.text }}>Nobody on the list</div>
@@ -1195,10 +1535,10 @@ export default function MySharpsDesk({
         <>
           <BetsHero groups={groups} tails={snapshot.tails} isMobile={isMobile} lens={betLens} onLens={setBetLens} />
           <TailStrip cards={tailCards} onUntail={(id) => onUntail?.(id)} />
-          {(!betLens || betLens === 'together') ? <BetGroup id="bets-together" title="Together" tone={B.goldSoft} items={groups.together} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} /> : null}
-          {(!betLens || betLens === 'pressing') ? <BetGroup id="bets-pressing" title="Pressing" tone="#F59E0B" items={groups.pressing} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} /> : null}
-          {(!betLens || betLens === 'split') ? <BetGroup id="bets-split" title="Split" tone={B.red} items={groups.split} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} /> : null}
-          {(!betLens || betLens === 'rest') ? <BetGroup id="bets-rest" title="The rest" tone={B.textSec} items={groups.rest} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} /> : null}
+          {(!betLens || betLens === 'together') ? <BetGroup id="bets-together" title="Together" tone={B.goldSoft} items={groups.together} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} /> : null}
+          {(!betLens || betLens === 'pressing') ? <BetGroup id="bets-pressing" title="Pressing" tone="#F59E0B" items={groups.pressing} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} /> : null}
+          {(!betLens || betLens === 'split') ? <BetGroup id="bets-split" title="Split" tone={B.red} items={groups.split} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} /> : null}
+          {(!betLens || betLens === 'rest') ? <BetGroup id="bets-rest" title="The rest" tone={B.textSec} items={groups.rest} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} /> : null}
         </>
       ) : null}
 
@@ -1213,6 +1553,7 @@ export default function MySharpsDesk({
           onAdd={addWallet}
           notice={notice}
           isMobile={isMobile}
+          walletProfiles={walletProfiles}
         />
       ) : null}
     </div>

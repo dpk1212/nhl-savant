@@ -22,8 +22,10 @@ import {
   buildDeskLedger,
   buildDeskPulse,
   buildDeskReport,
+  blendDollarCurves,
   buildFindCandidates,
   buildPortfolioSnapshot,
+  buildSharpDossier,
   gainsSplit,
   gradeTail,
   groupPortfolioBets,
@@ -611,5 +613,45 @@ assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book' }).row
 assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort: 'bets' }).rows[0].walletShort, 'deep');
 assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort: 'close' }).rows[0].walletShort, 'deep');
 assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort: 'size' }).rows[0].walletShort, 'deep');
+
+const blended = blendDollarCurves([[0, 100], [0, 50, 100]], 3);
+assert.equal(blended.length, 3);
+assert.equal(blended[0], 0);
+assert.equal(blended[2], 200);
+
+const legs = Array.from({ length: 35 }, (_, i) => ({
+  date: `2026-08-${String((i % 28) + 1).padStart(2, '0')}`,
+  marketType: 'ML',
+  side: 'home',
+  team: 'Yankees',
+  gameKey: `g${i}`,
+  won: i % 2,
+  dollarPnl: i % 2 ? 100 : -80,
+}));
+const dossier = buildSharpDossier(new Map([['c0ffee', {
+  clvSkill: { n: 10, pctPos: 60 },
+  bySport: {
+    MLB: {
+      whitelistTier: 'CONFIRMED',
+      recentActionWindow: { n: 40, wins: 22, losses: 18, wr: 55, settledPnl: 4000, dollarRoi: 8 },
+      positions: { n: 40, wins: 22, losses: 18, wr: 55, dollarRoi: 8, invested: 80000 },
+      form: { actionDollarCurve: [0, 800, 1600, 2500, 4000], recentAction: legs },
+    },
+  },
+}]]), 'c0ffee', { sport: 'MLB' });
+assert.equal(dossier.results.length, 30);
+assert.equal(dossier.resultN, 35);
+assert.ok(String(dossier.results[0].date) >= String(dossier.results[29].date));
+assert.equal(dossier.results[0].pick, 'Yankees');
+assert.equal(dossier.sparkFrom, 'book');
+assert.ok(dossier.spark.length >= 5);
+
+const lines = groupPortfolioBets([{
+  id: 't1', split: false, shared: false, maxRatio: 2.1, invested: 6400,
+  shorts: ['e4ec62'], marketType: 'ML', team: 'Pirates', side: 'home',
+  rows: [{ walletShort: 'e4ec62', invested: 6400, displaySizeRatio: 2.1, americanLabel: '-149' }],
+}], { names: { e4ec62: 'Bands' } });
+assert.equal(lines.pressing[0].walletLines[0].tag, 'Bands');
+assert.equal(lines.pressing[0].walletLines[0].invested, 6400);
 
 console.log('testMySharps: ok');
