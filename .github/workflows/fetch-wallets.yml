@@ -1,7 +1,9 @@
 name: Fetch Wallet Positions (90s)
 
 # Fresh sharp positions for the open tab. Publishes the position files to
-# gh-pages. Does not open Firestore and does not push main.
+# the live-data branch. Does not open Firestore, does not push main, and
+# does not push gh-pages. publish-live-board.yml copies live-data onto
+# the site.
 #
 # 20 × 90s ≈ 30 min/run, then self-dispatch while 5am–11pm ET.
 # Polymarket allows 150 /positions reads per 10 seconds. 895 wallets at
@@ -52,59 +54,19 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set +e
+          # shellcheck disable=SC1091
+          source scripts/lib/gitLiveData.sh
           target_interval=90
           cycles=20
           discover_every=900
           last_discover=0
-          GHP=/tmp/gh-pages-live
+          LIVE=/tmp/live-data
           FILES="sharp_positions.json sharp_spread_positions.json sharp_total_positions.json scan_heartbeat.json sharp_intel_excluded_wallets.json sharp_scan_supplement.json whitelist_scan_diagnostics.json"
-          echo "--- clone gh-pages ---"
-          rm -rf "$GHP"
-          if ! git clone --depth 1 --branch gh-pages \
-              "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$GHP"; then
-            echo "::error::gh-pages clone failed"
+          echo "--- clone live-data ---"
+          if ! clone_branch "$LIVE" live-data 1; then
+            echo "::error::live-data clone failed"
             exit 1
           fi
-          push_files() {
-            local attempt f add_list
-            for attempt in 1 2 3 4 5; do
-              if ! git -C "$GHP" fetch origin gh-pages || ! git -C "$GHP" reset --hard origin/gh-pages; then
-                echo "gh-pages refresh failed (attempt $attempt)"
-                sleep $((attempt * 2))
-                continue
-              fi
-              add_list=""
-              for f in $FILES; do
-                if [ -f "public/$f" ]; then
-                  cp -f "public/$f" "$GHP/$f"
-                  add_list="$add_list $f"
-                fi
-              done
-              if [ -z "$add_list" ]; then
-                echo "no position files to publish"
-                return 1
-              fi
-              if (
-                cd "$GHP"
-                # shellcheck disable=SC2086
-                git add $add_list
-                if git diff --staged --quiet; then
-                  echo "--- positions unchanged ---"
-                  exit 0
-                fi
-                git -c user.email=actions@github.com -c user.name="GitHub Actions" \
-                  commit -m "Wallet cycle [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
-                git push origin HEAD
-              ); then
-                echo "--- wallet push ok (attempt $attempt) ---"
-                return 0
-              fi
-              echo "wallet push failed (attempt $attempt)"
-              sleep $((attempt * 2))
-            done
-            echo "::warning::wallet gh-pages push failed"
-            return 1
-          }
           for i in $(seq 1 "$cycles"); do
             cycle_start=$(date +%s)
             now=$(date +%s)
@@ -133,7 +95,8 @@ jobs:
                 echo "--- scanWhitelistedWallets ---"
                 node scripts/scanWhitelistedWallets.js || echo "whitelist failed (non-fatal)"
               fi
-              push_files || echo "publish failed (cycle $i)"
+              push_files_to_branch "$LIVE" live-data "$FILES" "Wallet cycle" \
+                || echo "publish failed (cycle $i)"
             fi
             if [ "$i" -lt "$cycles" ]; then
               remain=$(( target_interval - ($(date +%s) - cycle_start) ))

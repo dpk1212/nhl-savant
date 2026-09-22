@@ -4,8 +4,8 @@ name: Fetch Kalshi (15 min)
 # never read it. Keep it off the 3-min Poly+scan loop.
 #
 # This job writes ONLY public/kalshi_data.json to main. It does not build or
-# deploy gh-pages. The next fetch-polymarket cycle picks the file up on
-# `reset --hard origin/main` and ships it with that cycle's dist.
+# deploy gh-pages. publish-live-board.yml copies the file from main onto
+# the site. A ledger full build also ships whatever is on main.
 #
 # GitHub cron is not reliable at 15 min (same reason the scan job self-chains).
 # Inner loop: 4 × 900s target ≈ 60 min/run, then self-dispatch the next run
