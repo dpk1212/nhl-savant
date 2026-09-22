@@ -16,12 +16,13 @@ name: Fetch Market Data (Polymarket + scan)
 #   • After 11pm ET the chain stops until the next morning starter
 #
 # concurrency cancel-in-progress:false → queued safety/cron waits; no kill.
-# Most cycles JSON-patch gh-pages and do not touch the files the fast jobs
-# own. Cycle 1 and every 4th still full-build so UI commits on main land;
-# those builds re-copy the fast files from gh-pages first so a full build
-# cannot roll odds or positions backward.
-# Kalshi native board lives in fetch-kalshi.yml. reset --hard origin/main
-# carries the last Kalshi write into the next gh-pages deploy.
+# Routine gh-pages writes belong to publish-live-board.yml (one commit
+# every 90s). This job does not JSON-patch gh-pages — that raced the fast
+# jobs and GitHub cancelled the Pages build. Cycle 1 and every 4th still
+# full-build so UI commits on main land. Those builds copy odds and
+# positions from live-data first so a force-push cannot roll them backward.
+# Kalshi native board lives in fetch-kalshi.yml (main only). The publisher
+# copies kalshi_data.json from main; a full build here also ships it.
 # Firestore: syncPickStateAuthoritative runs once per cycle. The old
 # post-deploy second sync is gone. Wallet profiles reuse a 30-min cache
 # when the checkout JSON is behind Firestore.
@@ -116,36 +117,43 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set +e
+          # shellcheck disable=SC1091
+          source scripts/lib/gitLiveData.sh
           target_interval=360
           cycles=10
           scan_fail_count=0
+          LIVE=/tmp/live-data
           GHP=/tmp/gh-pages-live
           ODDS_FILES="pinnacle_history.json pinnacle_steam.json odds_heartbeat.json"
           SCAN_FILES="sharp_positions.json sharp_spread_positions.json sharp_total_positions.json scan_heartbeat.json sharp_intel_excluded_wallets.json sharp_scan_supplement.json whitelist_scan_diagnostics.json"
-          DATA_JSON="polymarket_data.json sharp-flow-pnl.json kalshi_data.json"
-          refresh_ghp() {
-            if [ -z "$GHP" ] || [ ! -d "$GHP/.git" ]; then
-              return 1
-            fi
-            git -C "$GHP" fetch origin gh-pages && git -C "$GHP" reset --hard origin/gh-pages
-          }
-          copy_named() {
-            local f
-            for f in "$@"; do
-              if [ -n "$GHP" ] && [ -f "$GHP/$f" ]; then
-                cp -f "$GHP/$f" "public/$f"
-              fi
-            done
-          }
-          echo "--- clone gh-pages for JSON-only data deploys ---"
-          rm -rf "$GHP"
-          if git clone --depth 1 --branch gh-pages \
-              "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$GHP"; then
+          FAST_FILES="$ODDS_FILES $SCAN_FILES"
+          echo "--- clone live-data (freshness) ---"
+          if clone_branch "$LIVE" live-data 0; then
+            echo "--- live-data clone ok ---"
+          else
+            echo "::warning::live-data clone failed — freshness check uses gh-pages, then the checkout"
+            LIVE=""
+          fi
+          echo "--- clone gh-pages (full-build fallback copy) ---"
+          if clone_branch "$GHP" gh-pages 0; then
             echo "--- gh-pages clone ok ---"
           else
-            echo "::warning::gh-pages clone failed — every cycle will full-build"
+            echo "::warning::gh-pages clone failed — full build uses live-data or the checkout"
             GHP=""
           fi
+          # Fast-job health lives on live-data. gh-pages lags by one publisher
+          # cycle, which is enough to look "stale" and trigger a duplicate scan.
+          refresh_fast_files() {
+            if [ -n "$LIVE" ] && refresh_branch "$LIVE" live-data; then
+              copy_files_from "$LIVE" "$FAST_FILES"
+              return 0
+            fi
+            if [ -n "$GHP" ] && refresh_branch "$GHP" gh-pages; then
+              copy_files_from "$GHP" "$FAST_FILES"
+              return 0
+            fi
+            return 1
+          }
           for i in $(seq 1 "$cycles"); do
             cycle_start=$(date +%s)
             ran_snapshot=0
@@ -155,11 +163,9 @@ jobs:
             echo "### Cycle $i/${cycles} — $(date -u +%H:%M:%S) UTC"
             echo "════════════════════════════════════════════════════════════"
 
-            echo "--- refresh fast files from gh-pages ---"
-            if refresh_ghp; then
-              copy_named $ODDS_FILES $SCAN_FILES
-            else
-              echo "::warning::gh-pages refresh failed — freshness check uses the checkout"
+            echo "--- refresh fast files from live-data ---"
+            if ! refresh_fast_files; then
+              echo "::warning::fast-file refresh failed — freshness check uses the checkout"
             fi
 
             echo "--- fetchPolymarketData ---"
@@ -223,6 +229,33 @@ jobs:
               fi
               echo "--- scanWhitelistedWallets (fallback) ---"
               node scripts/scanWhitelistedWallets.js || echo "whitelist scan failed (cycle $i — non-fatal, main scan unaffected)"
+            fi
+
+            # Fallback odds/positions have to land on live-data. The publisher
+            # copies that branch, and it would otherwise keep shipping the
+            # stale fast-job files over this cycle's snapshot.
+            if [ "$ran_snapshot" -eq 1 ] || [ "$ran_scan" -eq 1 ]; then
+              if [ -z "$LIVE" ] || [ ! -d "$LIVE/.git" ]; then
+                LIVE=/tmp/live-data
+                if clone_branch "$LIVE" live-data 1; then
+                  echo "--- live-data created for fallback publish ---"
+                else
+                  LIVE=""
+                fi
+              fi
+              fb_files=""
+              if [ "$ran_snapshot" -eq 1 ]; then
+                fb_files="$fb_files $ODDS_FILES"
+              fi
+              if [ "$ran_scan" -eq 1 ]; then
+                fb_files="$fb_files $SCAN_FILES"
+              fi
+              if [ -n "$LIVE" ] && [ -d "$LIVE/.git" ]; then
+                push_files_to_branch "$LIVE" live-data "$fb_files" "Ledger fallback" \
+                  || echo "::warning::fallback live-data push failed (cycle $i)"
+              else
+                echo "::warning::no live-data checkout — fallback stays on main until the next full build"
+              fi
             fi
 
             # ── Firestore-side pipeline ─────────────────────────────────────
@@ -328,23 +361,33 @@ jobs:
             rm -rf "$json_stash"
 
             # Full builds ship every public file. Re-copy odds and positions
-            # from gh-pages when this cycle did not regenerate them, so the
+            # from live-data when this cycle did not regenerate them, so the
             # force-push cannot roll a 60s tape back to the cycle-start copy.
             # A fallback snapshot still prunes before the push (GitHub rejects
             # blobs over 100 MB — 2026-08-14).
             if [ "$ran_snapshot" -eq 0 ] || [ "$ran_scan" -eq 0 ]; then
-              refresh_ghp || echo "::warning::pre-build gh-pages refresh failed"
+              fast_src=""
+              if [ -n "$LIVE" ] && refresh_branch "$LIVE" live-data; then
+                fast_src="$LIVE"
+              elif [ -n "$GHP" ] && refresh_branch "$GHP" gh-pages; then
+                fast_src="$GHP"
+              else
+                echo "::warning::pre-build fast-file refresh failed"
+              fi
+              if [ -n "$fast_src" ]; then
+                if [ "$ran_snapshot" -eq 0 ]; then
+                  copy_files_from "$fast_src" "$ODDS_FILES"
+                fi
+                if [ "$ran_scan" -eq 0 ]; then
+                  copy_files_from "$fast_src" "$SCAN_FILES"
+                fi
+              fi
             fi
             if [ "$ran_snapshot" -eq 1 ]; then
               if [ -f scripts/prunePinnacleHistory.js ]; then
                 echo "--- prunePinnacleHistory (pre-build) ---"
                 node scripts/prunePinnacleHistory.js || true
               fi
-            else
-              copy_named $ODDS_FILES
-            fi
-            if [ "$ran_scan" -eq 0 ]; then
-              copy_named $SCAN_FILES
             fi
             pinn_bytes=$(wc -c < public/pinnacle_history.json 2>/dev/null | tr -d ' ')
             if [ "${pinn_bytes:-0}" -gt 90000000 ]; then
@@ -353,21 +396,10 @@ jobs:
                 > public/pinnacle_history.json
             fi
 
-            # JSON-only cycles ship the ledger files. Odds and position files
-            # are included only when this cycle regenerated them (fallback).
-            # Otherwise the fast jobs own those paths on gh-pages.
-            DATA_JSON="polymarket_data.json sharp-flow-pnl.json kalshi_data.json"
-            if [ "$ran_snapshot" -eq 1 ]; then
-              DATA_JSON="$DATA_JSON $ODDS_FILES"
-            fi
-            if [ "$ran_scan" -eq 1 ]; then
-              DATA_JSON="$DATA_JSON $SCAN_FILES"
-            fi
+            # Only cycle 1 and every 4th touch gh-pages (full Vite build).
+            # Every other cycle leaves the branch to publish-live-board.yml.
             do_full_build=0
             if [ "$i" -eq 1 ] || [ $((i % 4)) -eq 0 ]; then
-              do_full_build=1
-            fi
-            if [ -z "$GHP" ] || [ ! -d "$GHP/.git" ]; then
               do_full_build=1
             fi
 
@@ -390,6 +422,7 @@ jobs:
                 ) && { echo "--- gh-pages push succeeded ---"; deploy_ok=1; } \
                   || echo "--- gh-pages push failed (cycle $i) ---"
                 if [ "$deploy_ok" -eq 1 ]; then
+                  GHP=/tmp/gh-pages-live
                   rm -rf "$GHP"
                   if git clone --depth 1 --branch gh-pages \
                       "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$GHP"; then
@@ -402,57 +435,7 @@ jobs:
                 echo "--- build failed (cycle $i), skipping deploy ---"
               fi
             else
-              echo "--- gh-pages JSON-only data push (cycle $i) ---"
-              if (
-                cd "$GHP" && git fetch origin gh-pages && git reset --hard origin/gh-pages
-              ); then
-                for f in $DATA_JSON; do
-                  if [ -f "public/$f" ]; then
-                    cp -f "public/$f" "$GHP/$f"
-                  fi
-                done
-                if (
-                  cd "$GHP"
-                  add_list=""
-                  for f in $DATA_JSON; do
-                    if [ -f "$f" ]; then
-                      add_list="$add_list $f"
-                    fi
-                  done
-                  # shellcheck disable=SC2086
-                  git add $add_list
-                  if git diff --staged --quiet; then
-                    echo "--- gh-pages data unchanged ---"
-                    exit 0
-                  fi
-                  git -c user.email=actions@github.com -c user.name="GitHub Actions" \
-                    commit -m "Data cycle $i [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
-                  git push origin HEAD
-                ); then
-                  echo "--- gh-pages data push succeeded ---"
-                  deploy_ok=1
-                else
-                  echo "--- gh-pages data push failed (cycle $i) ---"
-                fi
-              else
-                echo "::warning::gh-pages refresh failed — falling back to full build"
-                GHP=""
-                echo "--- npm run build (fallback cycle $i) ---"
-                rm -rf dist
-                if npm run build; then
-                  (
-                    cd dist
-                    rm -rf .git
-                    git init -q
-                    git checkout -b gh-pages
-                    git add -A
-                    git -c user.email=actions@github.com -c user.name="GitHub Actions" \
-                        commit -q -m "Deploy cycle $i fallback [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
-                    git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" \
-                        HEAD:gh-pages
-                  ) && deploy_ok=1
-                fi
-              fi
+              echo "--- publisher owns gh-pages; skipping JSON push (cycle $i) ---"
             fi
 
             cycle_elapsed=$(( $(date +%s) - cycle_start ))

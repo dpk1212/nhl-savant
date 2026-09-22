@@ -1,7 +1,9 @@
 name: Fetch Odds (1 min)
 
 # Fresh book + Pinnacle tape for the open tab. Publishes only the odds
-# files to gh-pages. Does not open Firestore and does not push main.
+# files to the live-data branch. Does not open Firestore, does not push
+# main, and does not push gh-pages (that Pages build was cancelling the
+# wallet deploy). publish-live-board.yml copies live-data onto the site.
 #
 # 40 × 60s ≈ 40 min/run, then self-dispatch while 5am–11pm ET.
 # Measured cost is ~50 Odds API credits per snapshot on the current slate
@@ -52,75 +54,48 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set +e
+          # shellcheck disable=SC1091
+          source scripts/lib/gitLiveData.sh
           target_interval=60
           cycles=40
-          GHP=/tmp/gh-pages-live
+          LIVE=/tmp/live-data
           FILES="pinnacle_history.json pinnacle_steam.json odds_heartbeat.json"
-          echo "--- clone gh-pages ---"
-          rm -rf "$GHP"
-          if ! git clone --depth 1 --branch gh-pages \
-              "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$GHP"; then
-            echo "::error::gh-pages clone failed"
+          echo "--- clone live-data ---"
+          if ! clone_branch "$LIVE" live-data 1; then
+            echo "::error::live-data clone failed"
             exit 1
           fi
-          push_files() {
-            local attempt f add_list
-            for attempt in 1 2 3 4 5; do
-              if ! git -C "$GHP" fetch origin gh-pages || ! git -C "$GHP" reset --hard origin/gh-pages; then
-                echo "gh-pages refresh failed (attempt $attempt)"
-                sleep $((attempt * 2))
-                continue
-              fi
-              add_list=""
-              for f in $FILES; do
-                if [ -f "public/$f" ]; then
-                  cp -f "public/$f" "$GHP/$f"
-                  add_list="$add_list $f"
-                fi
-              done
-              if [ -z "$add_list" ]; then
-                echo "no odds files to publish"
-                return 1
-              fi
-              if (
-                cd "$GHP"
-                # shellcheck disable=SC2086
-                git add $add_list
-                if git diff --staged --quiet; then
-                  echo "--- odds unchanged ---"
-                  exit 0
-                fi
-                git -c user.email=actions@github.com -c user.name="GitHub Actions" \
-                  commit -m "Odds cycle [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
-                git push origin HEAD
-              ); then
-                echo "--- odds push ok (attempt $attempt) ---"
-                return 0
-              fi
-              echo "odds push failed (attempt $attempt)"
-              sleep $((attempt * 2))
-            done
-            echo "::warning::odds gh-pages push failed"
-            return 1
-          }
+          # A brand-new branch has no tape. Seed it from gh-pages once so the
+          # first snapshot appends to the minutes already on the site. After
+          # that, live-data is the source of truth — a full-build force-push
+          # can orphan gh-pages and drop those minutes.
+          if [ ! -f "$LIVE/pinnacle_history.json" ]; then
+            echo "--- seed tape from gh-pages ---"
+            SEED=/tmp/gh-pages-seed
+            if clone_branch "$SEED" gh-pages 0; then
+              copy_files_from "$SEED" "$FILES"
+              push_files_to_branch "$LIVE" live-data "$FILES" "Odds seed" \
+                || echo "::warning::tape seed push failed"
+            else
+              echo "::warning::gh-pages seed clone failed — snapshot uses the checkout"
+            fi
+            rm -rf "$SEED"
+          fi
           for i in $(seq 1 "$cycles"); do
             cycle_start=$(date +%s)
             echo ""
             echo "### Odds cycle $i/${cycles} — $(date -u +%H:%M:%S) UTC"
-            # Append to the tape that is live on the site. A new job's main
-            # checkout can be a few minutes behind gh-pages.
-            if git -C "$GHP" fetch origin gh-pages && git -C "$GHP" reset --hard origin/gh-pages; then
-              for f in $FILES; do
-                if [ -f "$GHP/$f" ]; then
-                  cp -f "$GHP/$f" "public/$f"
-                fi
-              done
+            # Append to the live-data tape. A new job's main checkout can be
+            # a few minutes behind the last odds cycle.
+            if refresh_branch "$LIVE" live-data; then
+              copy_files_from "$LIVE" "$FILES"
             else
-              echo "::warning::could not refresh tape from gh-pages — snapshot uses the checkout"
+              echo "::warning::could not refresh tape from live-data — snapshot uses the checkout"
             fi
             if node scripts/snapshotPinnacle.js; then
               if node scripts/prunePinnacleHistory.js; then
-                push_files || echo "publish failed (cycle $i)"
+                push_files_to_branch "$LIVE" live-data "$FILES" "Odds cycle" \
+                  || echo "publish failed (cycle $i)"
               else
                 echo "::error::prunePinnacleHistory failed (cycle $i) — not publishing"
               fi
