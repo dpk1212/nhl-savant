@@ -1533,6 +1533,7 @@ export function buildFindCandidates(walletProfiles, {
   minBets = 0,
   minRoi = null,
   limit = 60,
+  sort = 'roi',
 } = {}) {
   const skip = new Set((exclude || []).map((s) => String(s || '').toLowerCase()));
   const seen = new Set();
@@ -1562,7 +1563,14 @@ export function buildFindCandidates(walletProfiles, {
       heat: heatFromForm(formFromRec(prof?.bySport?.[slice.sport])),
     });
   }
-  rows.sort((a, b) => (Number(b.roi) || -9999) - (Number(a.roi) || -9999) || ((b.n || 0) - (a.n || 0)));
+  const byRoi = (a, b) => (Number(b.roi) || -9999) - (Number(a.roi) || -9999) || ((b.n || 0) - (a.n || 0));
+  const rankers = {
+    roi: byRoi,
+    close: (a, b) => (Number(b.clv?.pctPos) || -1) - (Number(a.clv?.pctPos) || -1) || byRoi(a, b),
+    bets: (a, b) => (b.n || 0) - (a.n || 0) || byRoi(a, b),
+    size: (a, b) => (Number(b.usual) || 0) - (Number(a.usual) || 0) || byRoi(a, b),
+  };
+  rows.sort(rankers[sort] || byRoi);
   return { total: rows.length, rows: rows.slice(0, limit) };
 }
 
@@ -1605,7 +1613,8 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
 
 function considerWho(item, names) {
   if (item.split) return { text: 'Opposed', opposed: true };
-  if (item.walletN > 1) return { text: `${item.walletN} on the list`, opposed: false };
+  const walletN = item.walletN || (item.shorts || []).length;
+  if (walletN > 1) return { text: `${walletN} on the list`, opposed: false };
   const id = item.shorts?.[0] || item.walletShort;
   const named = id && names?.[id];
   return { text: named || item.tag || fmtWalletTag(id), opposed: false };

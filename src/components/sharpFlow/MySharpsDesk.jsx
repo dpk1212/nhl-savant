@@ -5,6 +5,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
 import {
+  HONEST_PCT_N,
   buildDeskHoldings,
   buildFindCandidates,
   buildMySharpsBoard,
@@ -58,7 +59,14 @@ const T = {
 };
 
 const HOLD_GRID = 'minmax(148px, 1.6fr) minmax(108px, 1fr) 96px 72px 78px 92px';
+const MARKET_LABEL = { ML: 'ML', SPREAD: 'Spread', TOTAL: 'Total' };
 const FIND_SPORTS = ['All', 'MLB', 'NFL', 'NBA', 'NHL', 'CFB', 'CBB', 'SOC', 'UFC', 'WNBA'];
+const FIND_SORTS = [
+  { id: 'roi', kicker: 'Return' },
+  { id: 'close', kicker: 'Close' },
+  { id: 'bets', kicker: 'Sample' },
+  { id: 'size', kicker: 'Size' },
+];
 const FIND_MARKETS = [
   { id: 'All', label: 'All markets' },
   { id: 'ML', label: 'ML' },
@@ -434,56 +442,177 @@ function MarketBook({ holding, onRemove }) {
   );
 }
 
+function sumInvested(items) {
+  return (items || []).reduce((s, t) => s + (Number(t.invested) || 0), 0);
+}
+
+function Pill({ children, color }) {
+  if (!children) return null;
+  return (
+    <span style={{
+      ...T.kicker,
+      letterSpacing: '0.08em',
+      color,
+      border: `1px solid ${color}55`,
+      borderRadius: 999,
+      padding: '0.16rem 0.48rem',
+      lineHeight: 1.3,
+      whiteSpace: 'nowrap',
+    }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function BetsHero({ groups, tails, isMobile, lens, onLens }) {
+  const order = ['together', 'pressing', 'split', 'rest'];
+  const n = order.reduce((s, key) => s + groups[key].length, 0);
+  const money = order.reduce((s, key) => s + sumInvested(groups[key]), 0);
+  const tailLine = (tails.wins + tails.losses) > 0
+    ? `${tails.honest.record}${tails.honest.showPct ? ` · ${tails.honest.wr}%` : ''}${tails.openN ? ` · ${tails.openN} open` : ''}`
+    : (tails.openN ? `${tails.openN} open` : 'Mark a bet');
+  const cells = [
+    { id: 'together', kicker: 'Together', n: groups.together.length, money: sumInvested(groups.together), color: B.goldSoft },
+    { id: 'pressing', kicker: 'Pressing', n: groups.pressing.length, money: sumInvested(groups.pressing), color: groups.pressing.length ? '#F59E0B' : B.textFaint },
+    { id: 'split', kicker: 'Split', n: groups.split.length, money: sumInvested(groups.split), color: groups.split.length ? B.red : B.textFaint },
+    { id: 'rest', kicker: 'Rest', n: groups.rest.length, money: sumInvested(groups.rest), color: B.textSec },
+  ];
+  const lensLabel = cells.find((c) => c.id === lens)?.kicker;
+  const mix = [
+    groups.together.length ? `${groups.together.length} together` : null,
+    groups.pressing.length ? `${groups.pressing.length} pressing` : null,
+    groups.split.length ? `${groups.split.length} split` : null,
+  ].filter(Boolean).join(' · ');
+  return (
+    <div style={{
+      borderRadius: 16,
+      border: `1px solid ${B.goldBorder}`,
+      background: 'linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(20,24,33,0.2) 38%, #10141c 100%)',
+      overflow: 'hidden',
+      marginBottom: 8,
+    }}
+    >
+      <div style={{ height: 3, background: 'linear-gradient(90deg, transparent, #D4AF37 40%, #E8D28A, transparent)' }} />
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1.35fr 1fr',
+        gap: isMobile ? 16 : 24,
+        padding: isMobile ? '1.05rem 1rem 0.85rem' : '1.2rem 1.25rem 0.95rem',
+      }}
+      >
+        <div>
+          <div style={{ ...T.kicker, color: B.gold }}>{lensLabel ? `Showing ${lensLabel}` : 'On this slate'}</div>
+          <div data-hero="slate" style={{ ...T.hero, color: n ? B.goldSoft : B.text, fontSize: isMobile ? '2.2rem' : T.hero.fontSize, marginTop: 8 }}>
+            {n ? fmtVol(money, { signed: false }) : '—'}
+          </div>
+          <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
+            {n ? `${n} bet${n === 1 ? '' : 's'}${mix ? ` · ${mix}` : ''}` : 'Nothing up on this slate'}
+          </div>
+        </div>
+        <div>
+          <div style={{ ...T.kicker, color: B.textMuted }}>My tails</div>
+          <div data-hero="tails" style={{ ...T.hero, color: pnlColor(tails.pnl, B.text), fontSize: isMobile ? '2.2rem' : T.hero.fontSize, marginTop: 8 }}>
+            {Number.isFinite(tails.pnl) ? fmtVol(tails.pnl) : '—'}
+          </div>
+          <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
+            {tailLine}
+          </div>
+        </div>
+      </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        borderTop: `1px solid ${B.line}`,
+      }}
+      >
+        {cells.map((cell) => {
+          const on = lens === cell.id;
+          return (
+            <button
+              key={cell.id}
+              type="button"
+              onClick={() => { if (cell.n) onLens(on ? null : cell.id); }}
+              style={{
+                background: on ? B.goldDim : 'transparent',
+                border: 'none',
+                borderRight: cell.id === 'rest' ? 'none' : `1px solid ${B.hair}`,
+                textAlign: 'left',
+                padding: isMobile ? '0.7rem 0.55rem 0.8rem' : '0.85rem 1rem 0.95rem',
+                cursor: cell.n ? 'pointer' : 'default',
+                fontFamily: 'inherit',
+              }}
+            >
+              <div style={{ ...T.kicker, letterSpacing: '0.08em', color: on ? B.gold : B.textFaint }}>{cell.kicker}</div>
+              <div style={{ ...T.figure, color: cell.color, marginTop: 4, fontSize: isMobile ? '0.92rem' : '1.05rem' }}>
+                {cell.n || 0}
+                <span style={{ color: B.textMuted, fontWeight: 550, marginLeft: 8 }}>
+                  {cell.money ? fmtVol(cell.money, { signed: false }) : ''}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function betWash(item) {
+  if (item.split) return 'linear-gradient(180deg, rgba(239,68,68,0.10), #141821 46%)';
+  if (item.shared) return 'linear-gradient(180deg, rgba(212,175,55,0.12), #141821 46%)';
+  if (item.sizeText) return 'linear-gradient(180deg, rgba(245,158,11,0.10), #141821 46%)';
+  return B.card;
+}
+
 function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedStake }) {
   const tailed = item.tail;
   const edge = item.split ? B.red : item.shared ? B.gold : (item.sizeText ? '#F59E0B' : B.line);
   const open = draft?.id === item.id;
   const clock = fmtClock(item.commenceMs);
+  const market = MARKET_LABEL[String(item.marketType || '').toUpperCase()] || null;
+  const price = item.americanLabel || fmtPrice(item.americanOdds);
   return (
     <div style={{
-      borderRadius: 12,
-      borderTop: `1px solid ${open ? B.goldBorder : B.line}`,
-      borderRight: `1px solid ${open ? B.goldBorder : B.line}`,
-      borderBottom: `1px solid ${open ? B.goldBorder : B.line}`,
+      borderRadius: 14,
+      borderTop: `1px solid ${open || tailed ? B.goldBorder : B.line}`,
+      borderRight: `1px solid ${open || tailed ? B.goldBorder : B.line}`,
+      borderBottom: `1px solid ${open || tailed ? B.goldBorder : B.line}`,
       borderLeft: `3px solid ${edge}`,
-      background: B.card,
-      padding: isMobile ? '0.85rem 0.85rem' : '0.9rem 1rem',
+      background: betWash(item),
+      padding: isMobile ? '0.9rem 0.85rem' : '1rem 1.05rem 0.95rem',
     }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: '1.02rem' }}>
+          <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.05rem' : '1.2rem' }}>
             {item.pick}
           </div>
-          <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>
+          <div style={{ ...T.meta, color: B.textMuted, marginTop: 5 }}>
             {[item.matchup, clock, item.sport].filter(Boolean).join('   ·   ')}
           </div>
-          <div style={{ ...T.meta, color: item.whoOpposed ? B.red : B.textSec, marginTop: 4, fontFeatureSettings: "'tnum'" }}>
-            {item.who}
-            {item.sizeText ? `   ·   ${item.sizeText}` : ''}
-            {item.pinMove === 'with' ? '   ·   With the line' : ''}
-            {item.pinMove === 'against' ? '   ·   Against the line' : ''}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+            {item.sizeText ? <Pill color="#F59E0B">{item.sizeText}</Pill> : null}
+            {item.shared && !item.split ? <Pill color={B.goldSoft}>{(item.shorts || []).length > 1 ? `${item.shorts.length} on it` : 'Together'}</Pill> : null}
+            {item.split ? <Pill color={B.red}>Opposed</Pill> : null}
+            {item.pinMove === 'with' ? <Pill color={B.goldSoft}>With the line</Pill> : null}
+            {item.pinMove === 'against' ? <Pill color={B.red}>Against the line</Pill> : null}
+            {market ? <Pill color={B.textSec}>{market}</Pill> : null}
+            {item.who && !item.split && !item.shared ? <Pill color={B.textMuted}>{item.who}</Pill> : null}
+            {tailed ? <Pill color={B.gold}>Tailed {fmtPrice(tailed.myAmerican)}</Pill> : null}
           </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ ...T.figure, color: B.goldSoft }}>{fmtVol(item.invested, { signed: false })}</div>
-          <div style={{ ...T.figure, color: B.text, marginTop: 2, fontSize: '0.88rem' }}>{item.americanLabel || fmtPrice(item.americanOdds)}</div>
+        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+          <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.05rem' }}>{fmtVol(item.invested, { signed: false })}</div>
+          <div style={{ ...T.figure, color: B.text, fontSize: '0.92rem' }}>{price}</div>
+          {tailed && !open ? (
+            <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
+          ) : (
+            <button type="button" onClick={() => onDraft(item, suggestedStake)} style={goldBtn}>
+              {open ? 'Close' : 'Tail'}
+            </button>
+          )}
         </div>
-      </div>
-      <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-        {tailed && !open ? (
-          <div style={{ ...T.meta, color: B.goldSoft, fontFeatureSettings: "'tnum'" }}>
-            Tailed {fmtPrice(tailed.myAmerican)}
-            {tailed.stake ? ` · ${fmtVol(tailed.stake, { signed: false })}` : ''}
-          </div>
-        ) : <span />}
-        {tailed && !open ? (
-          <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
-        ) : (
-          <button type="button" onClick={() => onDraft(item, suggestedStake)} style={goldBtn}>
-            {open ? 'Close' : 'Tail'}
-          </button>
-        )}
       </div>
       {open ? (
         <TailForm
@@ -566,12 +695,15 @@ const fieldStyle = {
   fontFeatureSettings: "'tnum'",
 };
 
-function BetGroup({ title, tone, items, money, isMobile, draft, onDraft, onTail, onUntail, walletProfiles }) {
+function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, onUntail, walletProfiles }) {
   if (!items.length) return null;
+  const money = sumInvested(items);
   return (
-    <section style={{ marginTop: 18 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+    <section id={id} style={{ marginTop: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div style={{ width: 18, height: 2, borderRadius: 2, background: tone, flexShrink: 0 }} />
         <div style={{ ...T.kicker, color: tone }}>{title}</div>
+        <div style={{ flex: 1 }} />
         <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>
           {items.length}{money ? ` · ${fmtVol(money, { signed: false })}` : ''}
         </div>
@@ -597,35 +729,36 @@ function BetGroup({ title, tone, items, money, isMobile, draft, onDraft, onTail,
 function TailStrip({ cards, onUntail }) {
   if (!cards.length) return null;
   return (
-    <section style={{ marginTop: 4 }}>
-      <div style={{ ...T.kicker, color: B.goldSoft, marginBottom: 8 }}>My tails</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <section style={{ marginTop: 12 }}>
+      <div style={{ ...T.kicker, color: B.gold, marginBottom: 8 }}>Marked</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {cards.map((card) => {
-          const result = card.status === 'won' ? 'W' : card.status === 'lost' ? 'L' : 'Open';
+          const result = card.status === 'won' ? 'Won' : card.status === 'lost' ? 'Lost' : 'Open';
           const tone = card.status === 'won' ? B.green : card.status === 'lost' ? B.red : B.goldSoft;
+          const figure = Number.isFinite(card.pnl) && card.status !== 'open'
+            ? fmtVol(card.pnl)
+            : (card.stake ? fmtVol(card.stake, { signed: false }) : '—');
           return (
             <div
               key={card.id}
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) auto auto auto',
-                gap: '0 14px',
-                alignItems: 'center',
-                padding: '0.55rem 0.2rem',
-                borderBottom: `1px solid ${B.hair}`,
+                flex: '1 1 210px',
+                maxWidth: 340,
+                borderRadius: 12,
+                border: `1px solid ${B.goldBorder}`,
+                background: 'rgba(212,175,55,0.05)',
+                padding: '0.75rem 0.85rem 0.7rem',
               }}
             >
-              <div style={{ minWidth: 0 }}>
-                <div style={{ ...T.name, color: B.text, fontSize: '0.9rem' }}>{card.pick || 'Tailed'}</div>
-                <div style={{ ...T.meta, color: B.textFaint, marginTop: 2 }}>{card.matchup || ''}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                <div style={{ ...T.kicker, color: tone, letterSpacing: '0.1em' }}>{result}</div>
+                <button type="button" aria-label={`Untail ${card.pick || 'bet'}`} onClick={() => onUntail(card.id)} style={{ ...quietBtn, padding: '0.12rem 0.4rem' }}>×</button>
               </div>
-              <div style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtPrice(card.myAmerican)}</div>
-              <div style={{ ...T.figure, color: pnlColor(card.pnl, B.textMuted), fontSize: '0.88rem' }}>
-                {Number.isFinite(card.pnl) && card.status !== 'open' ? fmtVol(card.pnl) : (card.stake ? fmtVol(card.stake, { signed: false }) : '—')}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ ...T.kicker, color: tone, letterSpacing: '0.08em' }}>{result}</span>
-                <button type="button" onClick={() => onUntail(card.id)} style={{ ...quietBtn, padding: '0.2rem 0.45rem' }}>×</button>
+              <div style={{ ...T.name, color: B.text, marginTop: 6 }}>{card.pick || 'Tailed'}</div>
+              {card.matchup ? <div style={{ ...T.meta, color: B.textFaint, marginTop: 3 }}>{card.matchup}</div> : null}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, gap: 8 }}>
+                <div style={{ ...T.meta, color: B.goldSoft, fontFeatureSettings: "'tnum'" }}>{fmtPrice(card.myAmerican)}</div>
+                <div style={{ ...T.figure, color: card.status === 'open' ? B.textSec : pnlColor(card.pnl, B.textMuted), fontSize: '0.95rem' }}>{figure}</div>
               </div>
             </div>
           );
@@ -657,9 +790,55 @@ function FilterBtn({ on, children, onClick }) {
   );
 }
 
+function findHeroNumber(row, sort) {
+  if (!row) return { text: '—', color: B.text };
+  const thin = (row.n || 0) < HONEST_PCT_N;
+  if (sort === 'close') {
+    return Number.isFinite(row.clv?.pctPos)
+      ? { text: `${row.clv.pctPos}%`, color: row.clv.pctPos >= 55 ? B.goldSoft : B.textSec }
+      : { text: '—', color: B.text };
+  }
+  if (sort === 'bets') return { text: String(row.n || 0), color: B.goldSoft };
+  if (sort === 'size') {
+    return row.usual
+      ? { text: fmtVol(row.usual, { signed: false }), color: B.goldSoft }
+      : { text: '—', color: B.text };
+  }
+  return {
+    text: Number.isFinite(row.roi) ? `${row.roi}%` : '—',
+    color: thin ? B.goldSoft : pnlColor(row.roi, B.textFaint),
+  };
+}
+
+function findKicker(row, sort) {
+  if (sort === 'roi' && row && (row.n || 0) < HONEST_PCT_N) return 'Thin sample';
+  if (sort === 'close') return 'Best close';
+  if (sort === 'bets') return 'Deepest book';
+  if (sort === 'size') return 'Biggest bets';
+  return 'Best return';
+}
+
+const FIND_GRID = 'minmax(0, 1.7fr) minmax(108px, 1fr) 72px 68px 84px 76px';
+
 function FindRoom({
-  rows, total, savedCount, cap, filters, setFilters, onAdd, notice,
+  rows, total, savedCount, cap, filters, setFilters, onAdd, notice, isMobile,
 }) {
+  const lead = rows[0] || null;
+  const hero = findHeroNumber(lead, filters.sort || 'roi');
+  const thinN = rows.filter((r) => (r.n || 0) < HONEST_PCT_N).length;
+  const full = savedCount >= cap;
+  const heat = lead?.heat?.key === 'hot' || lead?.heat?.key === 'cold'
+    ? `${lead.heat.label} ${lead.heat.window} ${lead.heat.record}`
+    : null;
+  const identity = lead
+    ? [
+      lead.tag,
+      lead.sport,
+      lead.marketLabel,
+      lead.honest?.text,
+      lead.n ? `${lead.n} bets` : null,
+    ].filter(Boolean).join(' · ')
+    : 'No wallets clear these filters.';
   return (
     <div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
@@ -676,53 +855,168 @@ function FindRoom({
         <FilterBtn on={filters.minBets === 100} onClick={() => setFilters((f) => ({ ...f, minBets: f.minBets === 100 ? 0 : 100 }))}>100+ bets</FilterBtn>
         <FilterBtn on={filters.minRoi === 20} onClick={() => setFilters((f) => ({ ...f, minRoi: f.minRoi === 20 ? null : 20 }))}>20%+ ROI</FilterBtn>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', ...T.meta, color: B.textFaint, marginBottom: 6, fontFeatureSettings: "'tnum'" }}>
-        <span>{total} match{total === 1 ? '' : 'es'} · {filters.window === 'l30' ? '30d' : 'book'}</span>
-        <span>{savedCount}/{cap}</span>
-      </div>
-      {notice ? <div style={{ ...T.meta, color: B.goldSoft, marginBottom: 8 }}>{notice}</div> : null}
-      {!rows.length ? (
-        <div style={{ ...T.body, color: B.textFaint, padding: '1.2rem 0' }}>No wallets clear these filters.</div>
-      ) : rows.map((row) => (
-        <div
-          key={row.walletShort}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '28px minmax(0, 1.3fr) auto auto',
-            gap: '4px 12px',
-            alignItems: 'center',
-            padding: '0.78rem 0.15rem',
-            borderBottom: `1px solid ${B.hair}`,
-          }}
+      <div style={{
+        borderRadius: 16,
+        border: `1px solid ${B.goldBorder}`,
+        background: 'linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(20,24,33,0.2) 38%, #10141c 100%)',
+        overflow: 'hidden',
+        marginBottom: 8,
+      }}
+      >
+        <div style={{ height: 3, background: 'linear-gradient(90deg, transparent, #D4AF37 40%, #E8D28A, transparent)' }} />
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1.35fr 1fr',
+          gap: isMobile ? 16 : 24,
+          padding: isMobile ? '1.05rem 1rem 0.85rem' : '1.2rem 1.25rem 0.95rem',
+        }}
         >
-          <button
-            type="button"
-            aria-label={`Add ${row.tag}`}
-            onClick={() => onAdd(row)}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: B.textFaint }}
-          >
-            <Star size={15} />
-          </button>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ ...T.name, color: B.text }}>{row.tag}</div>
-            <div style={{ ...T.meta, color: B.textMuted, marginTop: 3, fontFeatureSettings: "'tnum'" }}>
-              {[row.sport, row.marketLabel, row.honest?.text, row.n ? `${row.n} bets` : null].filter(Boolean).join('   ·   ')}
+          <div>
+            <div style={{ ...T.kicker, color: B.gold }}>{findKicker(lead, filters.sort || 'roi')}</div>
+            <div data-hero="find" style={{ ...T.hero, color: hero.color, fontSize: isMobile ? '2.2rem' : T.hero.fontSize, marginTop: 8 }}>
+              {hero.text}
             </div>
+            <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>{identity}</div>
+            {heat ? <div style={{ ...T.meta, color: heatColor(lead.heat), marginTop: 4 }}>{heat}</div> : null}
+            {lead ? (
+              <button
+                type="button"
+                onClick={() => onAdd(lead)}
+                style={{ ...goldBtn, marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Star size={13} fill={full ? 'transparent' : B.goldSoft} color={B.goldSoft} />
+                {full ? 'List full' : `Add ${lead.tag}`}
+              </button>
+            ) : null}
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ ...T.figure, color: pnlColor(row.roi, B.textFaint) }}>
-              {Number.isFinite(row.roi) ? `${row.roi}%` : '—'}
+          <div>
+            <div style={{ ...T.kicker, color: B.textMuted }}>Your list</div>
+            <div style={{ ...T.hero, color: full ? B.gold : B.text, fontSize: isMobile ? '2.2rem' : T.hero.fontSize, marginTop: 8 }}>
+              {savedCount}
             </div>
-            <div style={{ ...T.meta, color: B.textFaint, marginTop: 2 }}>
-              {Number.isFinite(row.clv?.pctPos) ? `close ${row.clv.pctPos}%` : row.window}
+            <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
+              of {cap}{full ? ' · full' : ''}
             </div>
-          </div>
-          <div style={{ ...T.figure, color: B.textSec, textAlign: 'right', fontSize: '0.82rem' }}>
-            {row.usual ? fmtVol(row.usual, { signed: false }) : '—'}
-            <div style={{ ...T.meta, color: B.textFaint, fontWeight: 500, marginTop: 2 }}>avg</div>
           </div>
         </div>
-      ))}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          borderTop: `1px solid ${B.line}`,
+        }}
+        >
+          {FIND_SORTS.map((cell) => {
+            const on = (filters.sort || 'roi') === cell.id;
+            return (
+              <button
+                key={cell.id}
+                type="button"
+                onClick={() => setFilters((f) => ({ ...f, sort: cell.id }))}
+                style={{
+                  background: on ? B.goldDim : 'transparent',
+                  border: 'none',
+                  borderRight: cell.id === 'size' ? 'none' : `1px solid ${B.hair}`,
+                  textAlign: 'left',
+                  padding: isMobile ? '0.7rem 0.55rem 0.8rem' : '0.85rem 1rem 0.95rem',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <div style={{ ...T.kicker, letterSpacing: '0.08em', color: on ? B.gold : B.textFaint }}>{cell.kicker}</div>
+                <div style={{ ...T.figure, color: on ? B.goldSoft : B.textSec, marginTop: 4, fontSize: isMobile ? '0.82rem' : '0.92rem' }}>
+                  {cell.id === 'roi' ? 'ROI' : cell.id === 'close' ? 'CLV' : cell.id === 'bets' ? 'Bets' : 'Avg'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {notice ? <div style={{ ...T.meta, color: B.goldSoft, margin: '8px 0' }}>{notice}</div> : null}
+      <div style={{ display: 'flex', justifyContent: 'space-between', ...T.meta, color: B.textFaint, margin: '12px 0 4px', fontFeatureSettings: "'tnum'" }}>
+        <span>{total} match{total === 1 ? '' : 'es'} · {filters.window === 'l30' ? '30d' : 'book'}</span>
+        <span>{thinN ? `${thinN} thin` : ''}</span>
+      </div>
+      {rows.length ? (
+        <div style={{
+          display: isMobile ? 'none' : 'grid',
+          gridTemplateColumns: FIND_GRID,
+          gap: '0 12px',
+          padding: '0.85rem 0.15rem 0.35rem',
+          borderBottom: `1px solid ${B.line}`,
+        }}
+        >
+          <Head>Sharp</Head>
+          <Head>Record</Head>
+          <Head align="right">ROI</Head>
+          <Head align="right">Close</Head>
+          <Head align="right">Avg</Head>
+          <Head align="right"> </Head>
+        </div>
+      ) : (
+        <div style={{ ...T.body, color: B.textFaint, padding: '1.2rem 0' }}>Widen the cut, or drop the 100-bet floor.</div>
+      )}
+      {rows.map((row) => {
+        const thin = (row.n || 0) < HONEST_PCT_N;
+        const form = row.heat?.key === 'hot' || row.heat?.key === 'cold'
+          ? `${row.heat.label} ${row.heat.window} ${row.heat.record}`
+          : null;
+        const close = Number.isFinite(row.clv?.pctPos) ? `${row.clv.pctPos}%` : '—';
+        const closeTone = Number.isFinite(row.clv?.pctPos) && row.clv.pctPos >= 55 ? B.goldSoft : B.textFaint;
+        return (
+          <div
+            key={row.walletShort}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto auto' : FIND_GRID,
+              gap: isMobile ? '2px 12px' : '0 12px',
+              alignItems: 'center',
+              padding: '0.85rem 0.15rem',
+              borderBottom: `1px solid ${B.hair}`,
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div style={{ ...T.name, color: B.text }}>{row.tag}</div>
+              <div style={{ ...T.meta, color: B.textMuted, marginTop: 3, fontFeatureSettings: "'tnum'" }}>
+                {[row.sport, row.marketLabel, thin ? 'Thin' : null].filter(Boolean).join('   ·   ')}
+              </div>
+              {isMobile && form ? <div style={{ ...T.meta, color: heatColor(row.heat), marginTop: 2 }}>{form}</div> : null}
+            </div>
+            {isMobile ? null : (
+              <div>
+                <div style={{ ...T.figure, color: B.textSec, fontSize: '0.88rem' }}>
+                  {row.honest?.record || '—'}
+                  {row.honest?.showPct ? <span style={{ color: B.textFaint }}> · {row.honest.wr}%</span> : null}
+                </div>
+                {form ? <div style={{ ...T.meta, color: heatColor(row.heat), marginTop: 3 }}>{form}</div> : (
+                  <div style={{ ...T.meta, color: B.textFaint, marginTop: 3 }}>{row.n ? `${row.n} bets` : ''}</div>
+                )}
+              </div>
+            )}
+            <div style={{ ...T.figure, color: thin ? B.goldSoft : pnlColor(row.roi, B.textFaint), textAlign: 'right' }}>
+              {Number.isFinite(row.roi) ? `${row.roi}%` : '—'}
+              {isMobile ? <div style={{ ...T.meta, color: B.textFaint, fontWeight: 500, marginTop: 2 }}>{row.n ? `${row.n} bets` : ''}</div> : null}
+            </div>
+            {isMobile ? null : (
+              <div style={{ ...T.figure, color: closeTone, textAlign: 'right', fontSize: '0.88rem' }}>{close}</div>
+            )}
+            {isMobile ? null : (
+              <div style={{ ...T.figure, color: B.textSec, textAlign: 'right', fontSize: '0.88rem' }}>
+                {row.usual ? fmtVol(row.usual, { signed: false }) : '—'}
+              </div>
+            )}
+            <div style={{ textAlign: 'right' }}>
+              <button
+                type="button"
+                aria-label={`Add ${row.tag}`}
+                onClick={() => onAdd(row)}
+                style={{ ...goldBtn, padding: '0.28rem 0.62rem' }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -751,8 +1045,9 @@ export default function MySharpsDesk({
   const [nameFocus, setNameFocus] = useState(null);
   const [draft, setDraft] = useState(null);
   const [notice, setNotice] = useState('');
+  const [betLens, setBetLens] = useState(null);
   const [filters, setFilters] = useState({
-    sport: 'All', market: 'All', window: 'book', minBets: 0, minRoi: null,
+    sport: 'All', market: 'All', window: 'book', minBets: 0, minRoi: null, sort: 'roi',
   });
 
   const setRoom = (next) => {
@@ -898,14 +1193,12 @@ export default function MySharpsDesk({
 
       {room === 'bets' ? (
         <>
+          <BetsHero groups={groups} tails={snapshot.tails} isMobile={isMobile} lens={betLens} onLens={setBetLens} />
           <TailStrip cards={tailCards} onUntail={(id) => onUntail?.(id)} />
-          <BetGroup title="Together" tone={B.goldSoft} items={groups.together} money={groups.together.reduce((s, t) => s + (t.invested || 0), 0)} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} />
-          <BetGroup title="Pressing" tone="#F59E0B" items={groups.pressing} money={groups.pressing.reduce((s, t) => s + (t.invested || 0), 0)} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} />
-          <BetGroup title="Split" tone={B.red} items={groups.split} money={groups.split.reduce((s, t) => s + (t.invested || 0), 0)} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} />
-          <BetGroup title="The rest" tone={B.textMuted} items={groups.rest} money={groups.rest.reduce((s, t) => s + (t.invested || 0), 0)} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} />
-          {!betCount && !tailCards.length ? (
-            <div style={{ ...T.body, color: B.textFaint, padding: '1.2rem 0' }}>Nothing up on this slate.</div>
-          ) : null}
+          {(!betLens || betLens === 'together') ? <BetGroup id="bets-together" title="Together" tone={B.goldSoft} items={groups.together} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} /> : null}
+          {(!betLens || betLens === 'pressing') ? <BetGroup id="bets-pressing" title="Pressing" tone="#F59E0B" items={groups.pressing} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} /> : null}
+          {(!betLens || betLens === 'split') ? <BetGroup id="bets-split" title="Split" tone={B.red} items={groups.split} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} /> : null}
+          {(!betLens || betLens === 'rest') ? <BetGroup id="bets-rest" title="The rest" tone={B.textSec} items={groups.rest} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} /> : null}
         </>
       ) : null}
 
@@ -919,6 +1212,7 @@ export default function MySharpsDesk({
           setFilters={setFilters}
           onAdd={addWallet}
           notice={notice}
+          isMobile={isMobile}
         />
       ) : null}
     </div>

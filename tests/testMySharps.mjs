@@ -597,4 +597,19 @@ assert.equal(found.rows[0].walletShort, 'c0ffee');
 assert.equal(found.rows[0].roi, 22);
 assert.ok(found.rows[0].usual > 0);
 
+const rankBook = new Map([
+  ['high', {
+    clvSkill: { n: 8, pctPos: 51 },
+    bySport: { MLB: { whitelistTier: 'CONFIRMED', positions: { n: 20, wins: 14, losses: 6, wr: 70, dollarRoi: 30, invested: 40000 } } },
+  }],
+  ['deep', {
+    clvSkill: { n: 40, pctPos: 64 },
+    bySport: { MLB: { whitelistTier: 'CONFIRMED', positions: { n: 200, wins: 110, losses: 90, wr: 55, dollarRoi: 9, invested: 900000 } } },
+  }],
+]);
+assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book' }).rows[0].walletShort, 'high');
+assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort: 'bets' }).rows[0].walletShort, 'deep');
+assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort: 'close' }).rows[0].walletShort, 'deep');
+assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort: 'size' }).rows[0].walletShort, 'deep');
+
 console.log('testMySharps: ok');

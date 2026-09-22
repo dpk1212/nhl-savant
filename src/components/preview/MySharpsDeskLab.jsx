@@ -94,6 +94,31 @@ const profiles = new Map([
       },
     },
   }],
+  ['thin22', {
+    clvSkill: { n: 3, pctPos: 66 },
+    bySport: {
+      NFL: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 3, wins: 3, losses: 0, wr: 100, dollarRoi: 140, invested: 6000 },
+        byMarket: {
+          SPREAD: { positions: { n: 3, wins: 3, losses: 0, wr: 100, dollarRoi: 140 } },
+        },
+      },
+    },
+  }],
+  ['deep22', {
+    clvSkill: { n: 30, pctPos: 62 },
+    bySport: {
+      NFL: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 160, wins: 96, losses: 64, wr: 60, dollarRoi: 18, invested: 720000 },
+        form: { actionL10: { w: 8, l: 2 } },
+        byMarket: {
+          SPREAD: { positions: { n: 90, wins: 54, losses: 36, wr: 60, dollarRoi: 16 } },
+        },
+      },
+    },
+  }],
 ]);
 
 const actionRows = [
