@@ -3017,78 +3017,101 @@ function useMarketData() {
   const [walletProfiles, setWalletProfiles] = useState(null); // Map<walletShort, profile>
   const [loading, setLoading] = useState(true);
 
-  // v6.3 live refresh — the fetch-polymarket.yml workflow ships a new
-  // scanSharpPositions snapshot every ~8 min. Without a poller, open
-  // tabs would sit on stale Sharp Intel until the user reloaded. We
-  // refetch all market-JSON sources every 8 min; the 5 position/market
-  // streams that actually drive Sharp Intel get a fresh snapshot, while
-  // slow-moving sources (whale_profiles, sports_sharps) ride along
-  // cheaply. Refresh pauses when the tab is hidden to save bandwidth.
+  // Odds and wallet positions publish on their own loops (fetch-odds.yml
+  // every 60s, fetch-wallets.yml every 90s). The Polymarket/Kalshi board
+  // still rides the ~6 min ledger. Cache-bust the hot files so the Pages
+  // CDN cannot keep a line or a position. Whale profiles and the sports
+  // book rebuild daily, so they fetch without a buster. Hidden tabs stop
+  // polling.
   useEffect(() => {
     let cancelled = false;
+    const timers = [];
+    const base = import.meta.env.BASE_URL;
 
-    const loadAll = async ({ initial = false } = {}) => {
-      // Hot files (positions / market snapshots) keep the cache-buster so the
-      // 4-min pipeline output is never masked by the GH Pages CDN — lock
-      // decisions must read the freshest scan. The two BIG wallet files
-      // (whale_profiles ~1MB, sports_sharps ~1MB after build-time slimming)
-      // rebuild ~daily, so they fetch WITHOUT a buster: browser + CDN can
-      // cache them, repeat visits revalidate to a 0-byte 304, and index.html
-      // can preload them in parallel with the JS bundle parse.
-      const cb = `?t=${Date.now()}`;
-      const hot = (name) => fetch(`${import.meta.env.BASE_URL}${name}${cb}`).then(r => r.ok ? r.json() : null).catch(() => null);
-      const slow = (name) => fetch(`${import.meta.env.BASE_URL}${name}`).then(r => r.ok ? r.json() : null).catch(() => null);
+    const hot = (name) => fetch(`${base}${name}?t=${Date.now()}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+    const slow = (name) => fetch(`${base}${name}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+
+    const loadOdds = async () => {
       try {
-        const [p, k, wp, ph, sp, ss, sprP, totP, excl] = await Promise.all([
-          hot('polymarket_data.json'),
-          hot('kalshi_data.json'),
-          slow('whale_profiles.json'),
-          hot('pinnacle_history.json'),
+        const ph = await hot('pinnacle_history.json');
+        if (!cancelled && ph) setPinnacleHistory(ph);
+      } catch (err) {
+        console.warn('[SharpFlow] odds refresh failed:', err?.message || err);
+      }
+    };
+
+    const loadPositions = async ({ log = false } = {}) => {
+      try {
+        const [sp, sprP, totP, excl] = await Promise.all([
           hot('sharp_positions.json'),
-          slow('sports_sharps.json'),
           hot('sharp_spread_positions.json'),
           hot('sharp_total_positions.json'),
           hot('sharp_intel_excluded_wallets.json'),
         ]);
         if (cancelled) return;
-        if (p)    setPolyData(p);
-        if (k)    setKalshiData(k);
-        if (wp)   setWhaleProfiles(wp);
-        if (ph)   setPinnacleHistory(ph);
-        if (sp)   setSharpPositions(sp);
-        if (ss)   setSportsSharps(ss);
+        if (sp) setSharpPositions(sp);
         if (sprP) setSpreadPositions(sprP);
         if (totP) setTotalPositions(totP);
         if (excl) setIntelExcludedWallets(excl);
-        if (initial) setLoading(false);
-        if (!initial && sp) {
-          const scannedAt = sp?.scannedAt ? new Date(sp.scannedAt).toISOString() : '—';
-          console.log(`[SharpFlow] live refresh @ ${new Date().toISOString()} (scan@${scannedAt})`);
+        if (log && sp?.scannedAt) {
+          console.log(`[SharpFlow] positions @ ${new Date().toISOString()} (scan@${sp.scannedAt})`);
         }
       } catch (err) {
-        if (initial) setLoading(false);
-        console.warn('[SharpFlow] live refresh failed:', err?.message || err);
+        console.warn('[SharpFlow] positions refresh failed:', err?.message || err);
       }
     };
 
-    loadAll({ initial: true });
+    const loadBoard = async () => {
+      try {
+        const [p, k, wp, ss] = await Promise.all([
+          hot('polymarket_data.json'),
+          hot('kalshi_data.json'),
+          slow('whale_profiles.json'),
+          slow('sports_sharps.json'),
+        ]);
+        if (cancelled) return;
+        if (p) setPolyData(p);
+        if (k) setKalshiData(k);
+        if (wp) setWhaleProfiles(wp);
+        if (ss) setSportsSharps(ss);
+      } catch (err) {
+        console.warn('[SharpFlow] board refresh failed:', err?.message || err);
+      }
+    };
 
-    const REFRESH_MS = 8 * 60 * 1000;
-    let timer = null;
+    const refreshAll = ({ log = false } = {}) => Promise.all([
+      loadOdds(),
+      loadPositions({ log }),
+      loadBoard(),
+    ]);
+
+    refreshAll().finally(() => { if (!cancelled) setLoading(false); });
+
+    const ODDS_MS = 60 * 1000;
+    const POSITIONS_MS = 90 * 1000;
+    const BOARD_MS = 8 * 60 * 1000;
     const start = () => {
-      if (timer) return;
-      timer = setInterval(() => {
-        if (document.visibilityState === 'visible') loadAll({ initial: false });
-      }, REFRESH_MS);
+      if (timers.length) return;
+      timers.push(setInterval(() => {
+        if (document.visibilityState === 'visible') loadOdds();
+      }, ODDS_MS));
+      timers.push(setInterval(() => {
+        if (document.visibilityState === 'visible') loadPositions({ log: true });
+      }, POSITIONS_MS));
+      timers.push(setInterval(() => {
+        if (document.visibilityState === 'visible') loadBoard();
+      }, BOARD_MS));
     };
     const stop = () => {
-      if (!timer) return;
-      clearInterval(timer);
-      timer = null;
+      while (timers.length) clearInterval(timers.pop());
     };
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
-        loadAll({ initial: false });
+        refreshAll({ log: true });
         start();
       } else {
         stop();
@@ -3152,7 +3175,10 @@ function useMarketData() {
       }
     };
     loadProfiles();
-    const REFRESH_MS = 8 * 60 * 1000;
+    // Profiles change when grade→export runs, a few times a day. An hourly
+    // refresh keeps a long-lived tab honest without a Firestore read of the
+    // whole collection every 8 minutes.
+    const REFRESH_MS = 60 * 60 * 1000;
     let timer = null;
     const start = () => {
       if (timer) return;
