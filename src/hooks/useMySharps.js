@@ -12,6 +12,7 @@ import {
   cleanSharpName,
   normalizeWalletShort,
   parseMySharpsDoc,
+  tailFromTicket,
   toggleMySharpMember,
 } from '../lib/mySharps.js';
 
@@ -32,6 +33,7 @@ function writeCache(uid, state) {
     localStorage.setItem(`${MY_SHARPS_STORAGE_KEY}:${uid}`, JSON.stringify({
       updatedAt: state.updatedAt,
       members: state.members,
+      tails: state.tails || {},
     }));
   } catch { /* ignore quota */ }
 }
@@ -43,6 +45,7 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
   const stateRef = useRef(state);
   stateRef.current = state;
   const pendingRemove = useRef(new Set());
+  const pendingTails = useRef(new Map());
 
   const commit = useCallback((next) => {
     setState(next);
@@ -52,8 +55,9 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
   }, [uid]);
 
   useEffect(() => {
-    if (!uid) {
+      if (!uid) {
       pendingRemove.current.clear();
+      pendingTails.current.clear();
       setState(emptyMySharps());
       setLoading(false);
       return undefined;
@@ -67,6 +71,16 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
         for (const id of [...pendingRemove.current]) {
           if (parsed.members[id]) delete parsed.members[id];
           else pendingRemove.current.delete(id);
+        }
+        for (const [id, op] of [...pendingTails.current]) {
+          if (op === 'delete') {
+            if (parsed.tails?.[id]) delete parsed.tails[id];
+            else pendingTails.current.delete(id);
+          } else if (parsed.tails?.[id] && Number(parsed.tails[id].tailedAt) >= Number(op.tailedAt)) {
+            pendingTails.current.delete(id);
+          } else if (op && op !== 'delete') {
+            parsed.tails[id] = op;
+          }
         }
         commit(parsed);
       }
@@ -124,6 +138,7 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
         ...cur.members,
         [id]: { ...cur.members[id], name: cleanSharpName(name) },
       },
+      tails: { ...(cur.tails || {}) },
     };
     await persist(next);
     return { ok: true };
@@ -139,6 +154,47 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     return addFromRow(row);
   }, [addFromRow, remove]);
 
+  const markTail = useCallback(async (ticket, patch = {}) => {
+    if (!uid || !isPremium) return { ok: false, reason: 'auth' };
+    const tail = tailFromTicket(ticket, patch);
+    if (!tail) return { ok: false, reason: 'id' };
+    const cur = stateRef.current;
+    const next = {
+      updatedAt: Date.now(),
+      members: { ...(cur.members || {}) },
+      tails: { ...(cur.tails || {}), [tail.id]: tail },
+    };
+    pendingTails.current.set(tail.id, tail);
+    await persist(next);
+    return { ok: true, tail };
+  }, [uid, isPremium, persist]);
+
+  const clearTail = useCallback(async (id) => {
+    if (!id) return { ok: false, reason: 'id' };
+    const cur = stateRef.current;
+    if (!cur.tails?.[id]) return { ok: true, already: true };
+    pendingTails.current.set(id, 'delete');
+    const tails = { ...(cur.tails || {}) };
+    delete tails[id];
+    const next = {
+      updatedAt: Date.now(),
+      members: { ...(cur.members || {}) },
+      tails,
+    };
+    commit(next);
+    if (!uid) return { ok: true };
+    const ref = doc(db, 'users', uid);
+    try {
+      await updateDoc(ref, {
+        [`mySharps.tails.${id}`]: deleteField(),
+        'mySharps.updatedAt': next.updatedAt,
+      });
+    } catch {
+      await setDoc(ref, { mySharps: next }, { merge: true });
+    }
+    return { ok: true };
+  }, [uid, commit]);
+
   const members = useMemo(() => listMySharps(state), [state]);
   const shorts = useMemo(() => mySharpsShortSet(state), [state]);
 
@@ -147,6 +203,7 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     ready: !!uid && isPremium,
     members,
     shorts,
+    tails: state.tails || {},
     count: members.length,
     cap: MY_SHARPS_CAP,
     isSaved: (short) => shorts.has(normalizeWalletShort(short)),
@@ -154,5 +211,7 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     toggleRow,
     remove,
     rename,
+    markTail,
+    clearTail,
   };
 }

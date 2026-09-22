@@ -21,7 +21,81 @@ export function cleanSharpName(raw) {
 }
 
 export function emptyMySharps() {
-  return { updatedAt: null, members: {} };
+  return { updatedAt: null, members: {}, tails: {} };
+}
+
+function parseAmericanOdds(raw) {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw !== 0) return Math.round(raw);
+  if (typeof raw !== 'string') return null;
+  const s = raw.trim().replace('−', '-');
+  if (!s) return null;
+  const n = Number(s.replace('+', ''));
+  if (!Number.isFinite(n) || n === 0) return null;
+  return s.startsWith('-') ? -Math.abs(Math.round(n)) : Math.round(Math.abs(n));
+}
+
+/** Stable id for a side. Pipes, no dots, so it can live under mySharps.tails. */
+export function tailKey(ticket) {
+  const sport = String(ticket?.sport || '').toUpperCase();
+  const gameKey = String(ticket?.gameKey || '').toLowerCase();
+  const market = String(ticket?.marketType || '').toUpperCase();
+  const side = String(ticket?.side || '').toLowerCase();
+  if (!sport || !gameKey || !market || !side) return null;
+  return `${sport}|${gameKey}|${market}|${side}`;
+}
+
+export function normalizeTail(id, raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const key = tailKey(raw) || (typeof id === 'string' && id.includes('|') ? id : null);
+  if (!key) return null;
+  const stake = Number(raw.stake);
+  const wallets = Array.isArray(raw.wallets)
+    ? raw.wallets.map((w) => normalizeWalletShort(w)).filter(Boolean)
+    : [];
+  const status = raw.status === 'won' || raw.status === 'lost' ? raw.status : 'open';
+  return {
+    id: key,
+    pick: typeof raw.pick === 'string' ? raw.pick : null,
+    matchup: typeof raw.matchup === 'string' ? raw.matchup : null,
+    sport: raw.sport || key.split('|')[0],
+    gameKey: raw.gameKey || key.split('|')[1],
+    marketType: raw.marketType || key.split('|')[2],
+    side: raw.side || key.split('|')[3],
+    theirAmerican: parseAmericanOdds(raw.theirAmerican),
+    myAmerican: parseAmericanOdds(raw.myAmerican),
+    stake: Number.isFinite(stake) && stake > 0 ? Math.round(stake) : null,
+    tailedAt: Number.isFinite(Number(raw.tailedAt)) ? Number(raw.tailedAt) : Date.now(),
+    wallets,
+    status,
+    pnl: Number.isFinite(Number(raw.pnl)) ? Math.round(Number(raw.pnl)) : null,
+  };
+}
+
+export function tailFromTicket(ticket, { myAmerican, stake, now = Date.now() } = {}) {
+  const id = tailKey(ticket);
+  if (!id) return null;
+  const their = parseAmericanOdds(ticket?.theirAmerican ?? ticket?.americanOdds ?? ticket?.odds ?? ticket?.americanLabel);
+  const mine = parseAmericanOdds(myAmerican);
+  const st = Number(stake);
+  const wallets = (ticket?.shorts || ticket?.wallets || [])
+    .map((w) => normalizeWalletShort(w))
+    .filter(Boolean);
+  return {
+    id,
+    pick: ticket?.pick || null,
+    matchup: ticket?.matchup || null,
+    sport: ticket?.sport || null,
+    gameKey: ticket?.gameKey || null,
+    marketType: ticket?.marketType || null,
+    side: ticket?.side || null,
+    theirAmerican: their,
+    myAmerican: mine != null ? mine : their,
+    stake: Number.isFinite(st) && st > 0 ? Math.round(st) : null,
+    tailedAt: now,
+    wallets,
+    status: 'open',
+    pnl: null,
+  };
 }
 
 export function parseMySharpsDoc(data) {
@@ -44,9 +118,16 @@ export function parseMySharpsDoc(data) {
       muted: v?.muted === true,
     };
   }
+  const tails = {};
+  const tailSrc = bag?.tails && typeof bag.tails === 'object' ? bag.tails : {};
+  for (const [k, v] of Object.entries(tailSrc)) {
+    const tail = normalizeTail(k, v);
+    if (tail) tails[tail.id] = tail;
+  }
   return {
     updatedAt: Number.isFinite(Number(bag?.updatedAt)) ? Number(bag.updatedAt) : null,
     members,
+    tails,
   };
 }
 
@@ -89,6 +170,7 @@ export function toggleMySharpMember(state, member, { remove = false } = {}) {
   const next = {
     updatedAt: Date.now(),
     members: { ...(state?.members || {}) },
+    tails: { ...(state?.tails || {}) },
   };
   const short = normalizeWalletShort(member?.walletShort || member);
   if (!short) return state || emptyMySharps();

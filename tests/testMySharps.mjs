@@ -11,15 +11,22 @@ import {
   mySharpsShortSet,
   cleanSharpName,
   parseMySharpsDoc,
+  tailFromTicket,
   toggleMySharpMember,
 } from '../src/lib/mySharps.js';
 import {
+  americanProfit,
+  blendRoi,
   buildConsiderRows,
   buildDeskHoldings,
   buildDeskLedger,
   buildDeskPulse,
   buildDeskReport,
+  buildFindCandidates,
+  buildPortfolioSnapshot,
   gainsSplit,
+  gradeTail,
+  groupPortfolioBets,
   buildMySharpsBoard,
   closedPickLabel,
   buildMySharpsDashboard,
@@ -33,6 +40,7 @@ import {
   shortsForDeskSection,
   sortMySharpsRoster,
   sortRowsByRelativeSize,
+  summarizeTails,
   tailLean,
   ticketPickLabel,
 } from '../src/lib/mySharpsDesk.js';
@@ -502,5 +510,91 @@ const split = gainsSplit([
 ], 'e4ec62');
 assert.equal(split.gains, 4000);
 assert.equal(split.losses, 1500);
+
+assert.deepEqual(emptyMySharps().tails, {});
+const tailedDoc = parseMySharpsDoc({
+  mySharps: {
+    members: { e4ec62: { walletShort: 'e4ec62', addedAt: 1 } },
+    tails: {
+      'MLB|nyy_tex|ML|away': {
+        pick: 'Mets', sport: 'MLB', gameKey: 'nyy_tex', marketType: 'ML', side: 'away',
+        myAmerican: '-110', stake: 500, wallets: ['e4ec62'],
+      },
+    },
+  },
+});
+assert.equal(tailedDoc.tails['MLB|nyy_tex|ML|away'].myAmerican, -110);
+assert.equal(tailedDoc.tails['MLB|nyy_tex|ML|away'].stake, 500);
+const keptTails = toggleMySharpMember(tailedDoc, { walletShort: '51176e', addedAt: 2 });
+assert.equal(keptTails.tails['MLB|nyy_tex|ML|away'].stake, 500);
+
+assert.equal(americanProfit(500, -110, true), 455);
+assert.equal(americanProfit(500, -110, false), -500);
+assert.equal(blendRoi([{ pnl: 1400, roi: 14 }, { pnl: 1600, roi: 16 }]), 15);
+
+const graded = gradeTail(tailedDoc.tails['MLB|nyy_tex|ML|away'], [
+  { walletShort: 'e4ec62', gameKey: 'nyy_tex', marketType: 'ML', side: 'away', won: 1 },
+]);
+assert.equal(graded.status, 'won');
+assert.equal(graded.pnl, 455);
+const summary = summarizeTails(tailedDoc.tails, [
+  { walletShort: 'e4ec62', gameKey: 'nyy_tex', marketType: 'ML', side: 'away', won: 1 },
+]);
+assert.equal(summary.wins, 1);
+assert.equal(summary.pnl, 455);
+
+const made = tailFromTicket({
+  sport: 'MLB', gameKey: 'tor_bal', marketType: 'TOTAL', side: 'under',
+  pick: 'Under 8.5', americanOdds: -154, shorts: ['e4ec62'],
+}, { myAmerican: '-150', stake: 2000, now: 9 });
+assert.equal(made.id, 'MLB|tor_bal|TOTAL|under');
+assert.equal(made.myAmerican, -150);
+assert.equal(made.theirAmerican, -154);
+
+const grouped = groupPortfolioBets(board.tickets, { names: {} });
+assert.equal(grouped.together.length, 0);
+assert.equal(grouped.split.length, 2);
+assert.equal(grouped.pressing.length, 1);
+assert.equal(grouped.split.some((t) => t.pick === 'Over 47.5'), true);
+assert.equal(grouped.split.every((t) => t.whoOpposed), true);
+
+const snap = buildPortfolioSnapshot({
+  holdings,
+  tickets: board.tickets,
+  tails: tailedDoc.tails,
+  legs: [{ walletShort: 'e4ec62', gameKey: 'nyy_tex', marketType: 'ML', side: 'away', won: 1 }],
+});
+assert.equal(snap.l30.pnl, 38000 + -5000);
+assert.equal(snap.tails.wins, 1);
+assert.ok(snap.open.n >= 1);
+
+const found = buildFindCandidates(new Map([
+  ['c0ffee', {
+    clvSkill: { n: 20, pctPos: 60 },
+    bySport: {
+      MLB: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 120, wins: 72, losses: 48, wr: 60, dollarRoi: 22, invested: 240000 },
+        recentActionWindow: { n: 40, wins: 26, losses: 14, wr: 65, settledPnl: 20000, dollarRoi: 22 },
+        byMarket: { TOTAL: { positions: { n: 80, wins: 50, losses: 30, wr: 62, dollarRoi: 19 } } },
+      },
+    },
+  }],
+  ['thin01', {
+    bySport: {
+      MLB: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 4, wins: 3, losses: 1, wr: 75, dollarRoi: 40, invested: 4000 },
+      },
+    },
+  }],
+  ['e4ec62', {
+    bySport: { MLB: { whitelistTier: 'CONFIRMED', positions: { n: 30, wins: 18, losses: 12, wr: 60, dollarRoi: 10, invested: 90000 } } },
+  }],
+]), { exclude: ['e4ec62'], sport: 'MLB', market: 'All', window: 'book', minBets: 100, minRoi: 20 });
+assert.equal(found.total, 1);
+assert.equal(found.rows[0].walletShort, 'c0ffee');
+assert.equal(found.rows[0].roi, 22);
+assert.ok(found.rows[0].usual > 0);
 
 console.log('testMySharps: ok');
