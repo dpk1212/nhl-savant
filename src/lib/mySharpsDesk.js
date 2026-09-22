@@ -4,7 +4,8 @@
  */
 import { CLV_SKILL_MIN_N, shortWalletId } from './walletClvSkill.js';
 import { sportBookForDisplay } from './walletSportBook.js';
-import { SIZED_UP_RATIO, fmtWalletTag, listMySharps } from './mySharps.js';
+import { sportUsualBetFromProfile } from './sizeRatioBands.js';
+import { SIZED_UP_RATIO, fmtWalletTag, listMySharps, normalizeWalletShort, tailKey } from './mySharps.js';
 import { etDateKey } from './confirmedActionDesk.js';
 
 /** Last-N needed before Hot / Cold is a claim, not noise. */
@@ -475,7 +476,7 @@ const SIDE_OPP = {
 };
 
 function ticketKey(r) {
-  return `${r.sport}|${r.gameKey}|${r.marketType}|${r.side}`;
+  return tailKey(r) || `${r.sport}|${r.gameKey}|${r.marketType}|${r.side}`;
 }
 
 function clusterKey(r) {
@@ -607,7 +608,11 @@ export function buildMySharpsBoard(rows = []) {
       }, null),
       commenceDateKey: first.commenceDateKey || null,
       americanLabel: first.americanLabel || null,
-      americanOdds: first.americanOdds ?? first.odds ?? null,
+      americanOdds: Number.isFinite(Number(first.americanOdds ?? first.odds))
+        ? Number(first.americanOdds ?? first.odds)
+        : null,
+      entryLine: Number.isFinite(Number(first.entryLine)) ? Number(first.entryLine) : null,
+      pinMove: first.pinMove === 'with' || first.pinMove === 'against' ? first.pinMove : null,
       invested,
       maxRatio,
       shorts,
@@ -1228,6 +1233,7 @@ function sharpBook(prof) {
   let have = false;
   let best = null;
   const lines = [];
+  const roiParts = [];
   for (const sport of sports) {
     const rec = prof?.bySport?.[sport];
     const l30 = l30FromRec(rec);
@@ -1252,23 +1258,312 @@ function sharpBook(prof) {
     const line = {
       sport,
       pnl: sp,
+      roi: Number.isFinite(l30?.roi) ? l30.roi : null,
       honest: l30 ? honestRecord(l30.wins, l30.losses, l30.wr) : honestRecord(null, null, null),
       market,
       heat,
     };
     lines.push(line);
+    if (l30 && Number.isFinite(l30.pnl) && Number.isFinite(l30.roi)) {
+      roiParts.push({ pnl: l30.pnl, roi: l30.roi });
+    }
     const rank = sp != null ? sp : -Infinity;
     if (!best || rank > best.rank) best = { ...line, rank };
   }
   lines.sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0));
   return {
     l30Pnl: have ? pnl : null,
+    roi: blendRoi(roiParts),
+    wins: w,
+    losses: l,
     honest: honestRecord(w, l),
     whereSport: best?.sport || null,
     whereMarket: best?.market || null,
     heat: best?.heat || heatFromForm(null),
+    clv: skillFromProfile(prof, null).clv,
+    markets: marketBooksFromProfile(prof),
     lines,
   };
+}
+
+/** Dollar-weighted ROI. Stake is inferred from pnl and roi on the same window. */
+export function blendRoi(parts) {
+  let stake = 0;
+  let pnl = 0;
+  for (const p of parts || []) {
+    const roi = Number(p?.roi);
+    const d = Number(p?.pnl);
+    if (!Number.isFinite(roi) || roi === 0 || !Number.isFinite(d)) continue;
+    const s = d / (roi / 100);
+    if (!Number.isFinite(s) || s === 0) continue;
+    stake += Math.abs(s);
+    pnl += d;
+  }
+  if (!(stake > 0)) return null;
+  return Math.round((pnl / stake) * 100);
+}
+
+export function americanProfit(stake, american, won) {
+  const s = Number(stake);
+  const o = Number(american);
+  if (!(s > 0) || !Number.isFinite(o) || o === 0) return null;
+  if (!won) return -Math.round(s);
+  const win = o > 0 ? s * (o / 100) : s * (100 / Math.abs(o));
+  return Math.round(win);
+}
+
+export function gradeTail(tail, legs) {
+  if (!tail) return { status: 'open', pnl: null };
+  const wallets = new Set((tail.wallets || []).map((w) => String(w).toLowerCase()));
+  const match = (legs || []).find((leg) => {
+    if (leg?.won !== 0 && leg?.won !== 1) return false;
+    if (String(leg.gameKey || '').toLowerCase() !== String(tail.gameKey || '').toLowerCase()) return false;
+    if (String(leg.marketType || '').toUpperCase() !== String(tail.marketType || '').toUpperCase()) return false;
+    if (String(leg.side || '').toLowerCase() !== String(tail.side || '').toLowerCase()) return false;
+    const w = String(leg.walletShort || '').toLowerCase();
+    return wallets.size === 0 || wallets.has(w);
+  });
+  if (!match) {
+    return {
+      status: tail.status === 'won' || tail.status === 'lost' ? tail.status : 'open',
+      pnl: Number.isFinite(tail.pnl) ? tail.pnl : null,
+    };
+  }
+  const won = match.won === 1;
+  const pnl = americanProfit(tail.stake, tail.myAmerican, won);
+  return { status: won ? 'won' : 'lost', pnl };
+}
+
+export function summarizeTails(tails, legs) {
+  const cards = Object.values(tails || {}).map((tail) => {
+    const grade = gradeTail(tail, legs);
+    return { ...tail, status: grade.status, pnl: grade.pnl };
+  }).sort((a, b) => (b.tailedAt || 0) - (a.tailedAt || 0));
+  let pnl = 0;
+  let have = false;
+  let wins = 0;
+  let losses = 0;
+  let openN = 0;
+  for (const c of cards) {
+    if (c.status === 'won') wins += 1;
+    else if (c.status === 'lost') losses += 1;
+    else openN += 1;
+    if ((c.status === 'won' || c.status === 'lost') && Number.isFinite(c.pnl)) {
+      have = true;
+      pnl += c.pnl;
+    }
+  }
+  return {
+    cards,
+    pnl: have ? pnl : null,
+    wins,
+    losses,
+    openN,
+    honest: honestRecord(wins, losses),
+  };
+}
+
+function sumInvested(list) {
+  return (list || []).reduce((s, t) => s + (Number(t.invested) || 0), 0);
+}
+
+function clusterCount(list) {
+  return new Set((list || []).map((t) => `${t.sport}|${t.gameKey}|${t.marketType}`)).size;
+}
+
+export function buildPortfolioSnapshot({ holdings = [], tickets = [], tails = {}, legs = [] } = {}) {
+  let pnl = 0;
+  let have = false;
+  let w = 0;
+  let l = 0;
+  const roiParts = [];
+  for (const h of holdings || []) {
+    if (Number.isFinite(h.l30Pnl)) {
+      have = true;
+      pnl += h.l30Pnl;
+    }
+    w += Number(h.wins) || 0;
+    l += Number(h.losses) || 0;
+    if (Number.isFinite(h.l30Pnl) && Number.isFinite(h.roi)) {
+      roiParts.push({ pnl: h.l30Pnl, roi: h.roi });
+    }
+  }
+  const together = (tickets || []).filter((t) => t.shared && !t.split);
+  const split = (tickets || []).filter((t) => t.split);
+  return {
+    l30: have ? { pnl, roi: blendRoi(roiParts), honest: honestRecord(w, l) } : { pnl: null, roi: null, honest: honestRecord(null, null) },
+    tails: summarizeTails(tails, legs),
+    together: { n: together.length, invested: sumInvested(together) },
+    split: { n: clusterCount(split), invested: sumInvested(split) },
+    open: { n: (tickets || []).length, invested: sumInvested(tickets) },
+  };
+}
+
+export function suggestTailStake(ticket, walletProfiles) {
+  const rows = [...(ticket?.rows || [])].sort((a, b) => (Number(b.invested) || 0) - (Number(a.invested) || 0));
+  const short = rows[0]?.walletShort || ticket?.shorts?.[0];
+  const usual = sportUsualBetFromProfile(profileFor(walletProfiles, short), ticket?.sport);
+  if (Number.isFinite(usual) && usual > 0) return Math.round(usual);
+  return null;
+}
+
+export function groupPortfolioBets(tickets, { names = {}, tails = {} } = {}) {
+  const together = [];
+  const pressing = [];
+  const split = [];
+  const rest = [];
+  for (const t of tickets || []) {
+    const who = considerWho(t, names);
+    const ratio = Number(t.maxRatio);
+    const item = {
+      ...t,
+      pick: ticketPickLabel(t),
+      matchup: ticketMatchup(t),
+      who: who.text,
+      whoOpposed: who.opposed,
+      sizeText: Number.isFinite(ratio) && ratio >= SIZED_UP_RATIO ? `${ratio.toFixed(1)}×` : null,
+      tail: tails[t.id] || null,
+    };
+    if (t.split) split.push(item);
+    else if (t.shared) together.push(item);
+    else if (item.sizeText) pressing.push(item);
+    else rest.push(item);
+  }
+  const bySize = (a, b) => (b.invested || 0) - (a.invested || 0);
+  together.sort(bySize);
+  pressing.sort(bySize);
+  split.sort(bySize);
+  rest.sort(bySize);
+  return { together, pressing, split, rest };
+}
+
+function findSlice(prof, { sport, market, window }) {
+  const confirmed = confirmedSports(prof);
+  const all = confirmed.length ? confirmed : Object.keys(prof?.bySport || {});
+  const pool = sport && sport !== 'All' ? all.filter((s) => s === sport) : all;
+  let best = null;
+  const rank = (card) => (Number.isFinite(card?.roi) ? card.roi : -9999);
+  for (const sp of pool) {
+    const rec = prof?.bySport?.[sp];
+    if (!rec) continue;
+    if (market && market !== 'All') {
+      const mRec = rec.byMarket?.[market];
+      const l30 = l30FromRec(mRec);
+      const packed = packBook(mRec?.positions) || packBook(mRec?.picks);
+      if (window === 'l30') {
+        if (!l30 || !(l30.n > 0)) continue;
+        const card = {
+          sport: sp,
+          market,
+          marketLabel: MARKET_LABEL[market] || market,
+          n: l30.n,
+          wins: l30.wins,
+          losses: l30.losses,
+          wr: l30.wr,
+          roi: l30.roi,
+          pnl: l30.pnl,
+          window: 'l30',
+        };
+        if (!best || rank(card) > rank(best)) best = card;
+      } else if (packed && packed.n >= 2) {
+        const card = {
+          sport: sp,
+          market,
+          marketLabel: MARKET_LABEL[market] || market,
+          n: packed.n,
+          wins: packed.wins,
+          losses: packed.losses,
+          wr: packed.wr,
+          roi: packed.roi,
+          pnl: null,
+          window: 'book',
+        };
+        if (!best || rank(card) > rank(best)) best = card;
+      }
+      continue;
+    }
+    const markets = marketBooksFromProfile(prof, sp);
+    const top = [...markets].sort((a, b) => (Number(b.roi) || -9999) - (Number(a.roi) || -9999))[0];
+    if (window === 'l30') {
+      const l30 = l30FromRec(rec);
+      if (!l30 || !(l30.n > 0)) continue;
+      const card = {
+        sport: sp,
+        market: top?.market || null,
+        marketLabel: top?.label || null,
+        n: l30.n,
+        wins: l30.wins,
+        losses: l30.losses,
+        wr: l30.wr,
+        roi: l30.roi,
+        pnl: l30.pnl,
+        window: 'l30',
+      };
+      if (!best || rank(card) > rank(best)) best = card;
+    } else {
+      const packed = packBook(rec.positions) || packBook(rec.picks);
+      if (!packed || packed.n < 2) continue;
+      const card = {
+        sport: sp,
+        market: top?.market || null,
+        marketLabel: top?.label || null,
+        n: packed.n,
+        wins: packed.wins,
+        losses: packed.losses,
+        wr: packed.wr,
+        roi: packed.roi,
+        pnl: null,
+        window: 'book',
+      };
+      if (!best || rank(card) > rank(best)) best = card;
+    }
+  }
+  return best;
+}
+
+/**
+ * Wallets the customer does not have yet, scored on one sport slice.
+ * Window `l30` only includes a 30-day book. `book` is the longer record.
+ */
+export function buildFindCandidates(walletProfiles, {
+  exclude = [],
+  sport = 'All',
+  market = 'All',
+  window = 'book',
+  minBets = 0,
+  minRoi = null,
+  limit = 60,
+} = {}) {
+  const skip = new Set((exclude || []).map((s) => String(s || '').toLowerCase()));
+  const seen = new Set();
+  const rows = [];
+  const entries = walletProfiles && typeof walletProfiles.entries === 'function'
+    ? walletProfiles.entries()
+    : Object.entries(walletProfiles || {});
+  for (const [key, prof] of entries) {
+    const short = normalizeWalletShort(prof?.walletShort || key);
+    if (!short || skip.has(short) || seen.has(short)) continue;
+    seen.add(short);
+    const slice = findSlice(prof, { sport, market, window });
+    if (!slice) continue;
+    if ((Number(slice.n) || 0) < (Number(minBets) || 0)) continue;
+    if (minRoi != null && minRoi !== '' && Number.isFinite(Number(minRoi))) {
+      if (!Number.isFinite(slice.roi) || slice.roi < Number(minRoi)) continue;
+    }
+    const { clv } = skillFromProfile(prof, prof?.bySport?.[slice.sport]);
+    const usual = sportUsualBetFromProfile(prof, slice.sport);
+    rows.push({
+      walletShort: short,
+      tag: fmtWalletTag(short),
+      ...slice,
+      honest: honestRecord(slice.wins, slice.losses, slice.wr),
+      clv,
+      usual: Number.isFinite(usual) && usual > 0 ? Math.round(usual) : null,
+      heat: heatFromForm(formFromRec(prof?.bySport?.[slice.sport])),
+    });
+  }
+  rows.sort((a, b) => (Number(b.roi) || -9999) - (Number(a.roi) || -9999) || ((b.n || 0) - (a.n || 0)));
+  return { total: rows.length, rows: rows.slice(0, limit) };
 }
 
 /**
@@ -1284,6 +1579,10 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
       name: m.name || null,
       tag: m.tag || fmtWalletTag(m.walletShort),
       l30Pnl: book.l30Pnl,
+      roi: book.roi,
+      wins: book.wins || 0,
+      losses: book.losses || 0,
+      clv: book.clv,
       honest: book.honest,
       where: where || null,
       whereSport: book.whereSport,
@@ -1292,6 +1591,7 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
       openN: m.openN || 0,
       openInvested: m.openInvested || 0,
       lines: book.lines,
+      markets: book.markets || [],
     };
   });
   rows.sort((a, b) => {

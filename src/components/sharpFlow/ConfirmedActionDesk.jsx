@@ -1520,6 +1520,7 @@ export default function ConfirmedActionDesk({
   const [cellStatsTable, setCellStatsTable] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [focusShort, setFocusShort] = useState(null);
+  const [mineRoom, setMineRoom] = useState('book');
   const auth = useAuth();
   const user = userProp ?? auth.user;
   const sub = useSubscription(premiumProp == null ? user : null);
@@ -1679,7 +1680,7 @@ export default function ConfirmedActionDesk({
 
   return (
     <div>
-      {dateKeys.length > 1 && (
+      {dateKeys.length > 1 && (deskMode !== 'mine' || mineRoom === 'bets') && (
         <DateRail
           keys={dateKeys}
           selected={selectedDate}
@@ -1708,8 +1709,14 @@ export default function ConfirmedActionDesk({
           dateKey={selectedDate}
           todayKey={todayKey}
           isMobile={isMobile}
+          tails={mySharps.tails}
+          cap={mySharps.cap}
+          onRoomChange={setMineRoom}
           onRename={(short, name) => mySharps.rename(short, name)}
           onRemove={(short) => mySharps.remove(short)}
+          onAdd={(row) => mySharps.addFromRow(row)}
+          onTail={(ticket, patch) => mySharps.markTail(ticket, patch)}
+          onUntail={(id) => mySharps.clearTail(id)}
         />
       ) : (
       <div style={{
