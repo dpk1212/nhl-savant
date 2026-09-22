@@ -1,12 +1,12 @@
 name: Fetch Market Data (Polymarket + scan)
 
-# ─── Scheduling (Option A — self-chain, 2026-07-11) ────────────────────────
+# ─── Scheduling (ledger, 2026-09-22) ────────────────────────────────────────
 # GitHub Actions cron is unreliable at sub-15-min cadence (silently dropped).
-# We keep ~3-min scans via an inner loop (12 × 180s target ≈ 36 min/run).
-# Daytime slates can still overrun if scan+whitelist is fat — next cycle
-# starts immediately (no pile-up). Job timeout must clear that wall so
-# all 12 cycles finish and the chain step can dispatch.
-# Self-dispatch the next run so coverage is continuous without babysitting.
+# Fresh odds live in fetch-odds.yml (60s). Fresh wallet positions live in
+# fetch-wallets.yml (90s). This job is the ledger: Polymarket board, Firestore
+# action tickets, lock sync, and T−15 alerts. Inner loop 10 × 360s.
+# If the fast jobs go stale (>3 min), this job still snapshots and scans so
+# the board does not freeze. Self-dispatch the next run while 5am–11pm ET.
 #
 # Day window (America/New_York):
 #   • Starter cron ~6am ET (10:00 UTC during EDT / 11:00 UTC during EST)
@@ -16,19 +16,15 @@ name: Fetch Market Data (Polymarket + scan)
 #   • After 11pm ET the chain stops until the next morning starter
 #
 # concurrency cancel-in-progress:false → queued safety/cron waits; no kill.
-# Inner loop: 12 × ~3 min target. Vite rebuild is the 60s+ tax that blew
-# the old 4-min budget; most cycles JSON-patch gh-pages (same files the
-# site already serves). Cycle 1 and every 4th still full-build so UI
-# commits on main still land. Scan / write / sync are unchanged.
-# Kalshi native board lives in fetch-kalshi.yml (every 15 min). Wallet/odds
-# scan does not read kalshi_data.json. This loop never fetches or overwrites
-# that file — reset --hard origin/main carries the last 15-min Kalshi write
-# into the next gh-pages deploy. Odds API `kalshi` in snapshotPinnacle still
-# runs every cycle (same HTTP call as Pin/retail — rail chip only).
-#
-# Odds API budget: ~20 cycles/hour × ~17 waking hours ≈ ~340/day × ~32
-# credits — well under this key (millions remaining). Pinnapi REST is
-# unlimited volume at 10 req/s.
+# Most cycles JSON-patch gh-pages and do not touch the files the fast jobs
+# own. Cycle 1 and every 4th still full-build so UI commits on main land;
+# those builds re-copy the fast files from gh-pages first so a full build
+# cannot roll odds or positions backward.
+# Kalshi native board lives in fetch-kalshi.yml. reset --hard origin/main
+# carries the last Kalshi write into the next gh-pages deploy.
+# Firestore: syncPickStateAuthoritative runs once per cycle. The old
+# post-deploy second sync is gone. Wallet profiles reuse a 30-min cache
+# when the checkout JSON is behind Firestore.
 on:
   schedule:
     # 6:00 AM ET  (EDT=10:00 UTC · EST=11:00 UTC — pinned to EDT summer)
@@ -50,8 +46,8 @@ concurrency:
 jobs:
   fetch-market-data:
     runs-on: ubuntu-latest
-    # 100m clears 12× ~7m daytime cycles + setup. 58m timed out mid-loop on
-    # 2026-07-29 (job cancelled → chain step skipped via !cancelled()).
+    # 100m clears 10× ~6m cycles plus a fallback scan if the wallet job is down.
+    # 58m timed out mid-loop on 2026-07-29 (job cancelled → chain skipped).
     timeout-minutes: 100
     permissions:
       contents: write
@@ -110,25 +106,37 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      # ─── Fast-cycle loop: 12 iterations × ~3 min apart ───────────────────
-      # Each iteration:
-      #   1. fetch + snapshot + scanSharpPositions + write + sync (unchanged)
-      #   2. commit public/*.json to main (if changed)
-      #   3. JSON-patch gh-pages (most cycles) or full Vite build (1, 4, 8, 12)
-      #
-      # Each cycle targets 180s start-to-start. If a cycle overruns, the
-      # next starts immediately (no pile-up).
-      - name: Fetch + deploy cycle loop (12× at 3-min cadence)
+      # Ledger loop: 10 × 6 min. Odds and wallet files are owned by the fast
+      # jobs. This loop writes the Polymarket board, Firestore, and alerts.
+      # Each cycle targets 360s start-to-start. Overruns start the next
+      # cycle immediately.
+      - name: Ledger cycle loop (10× at 6-min cadence)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
           set +e
-          target_interval=180
-          cycles=12
+          target_interval=360
+          cycles=10
           scan_fail_count=0
           GHP=/tmp/gh-pages-live
-          DATA_JSON="polymarket_data.json pinnacle_history.json sharp_positions.json sharp_spread_positions.json sharp_total_positions.json sharp_intel_excluded_wallets.json whitelist_scan_diagnostics.json scan_heartbeat.json sharp_scan_supplement.json sharp-flow-pnl.json kalshi_data.json"
+          ODDS_FILES="pinnacle_history.json pinnacle_steam.json odds_heartbeat.json"
+          SCAN_FILES="sharp_positions.json sharp_spread_positions.json sharp_total_positions.json scan_heartbeat.json sharp_intel_excluded_wallets.json sharp_scan_supplement.json whitelist_scan_diagnostics.json"
+          DATA_JSON="polymarket_data.json sharp-flow-pnl.json kalshi_data.json"
+          refresh_ghp() {
+            if [ -z "$GHP" ] || [ ! -d "$GHP/.git" ]; then
+              return 1
+            fi
+            git -C "$GHP" fetch origin gh-pages && git -C "$GHP" reset --hard origin/gh-pages
+          }
+          copy_named() {
+            local f
+            for f in "$@"; do
+              if [ -n "$GHP" ] && [ -f "$GHP/$f" ]; then
+                cp -f "$GHP/$f" "public/$f"
+              fi
+            done
+          }
           echo "--- clone gh-pages for JSON-only data deploys ---"
           rm -rf "$GHP"
           if git clone --depth 1 --branch gh-pages \
@@ -140,56 +148,82 @@ jobs:
           fi
           for i in $(seq 1 "$cycles"); do
             cycle_start=$(date +%s)
+            ran_snapshot=0
+            ran_scan=0
             echo ""
             echo "════════════════════════════════════════════════════════════"
             echo "### Cycle $i/${cycles} — $(date -u +%H:%M:%S) UTC"
             echo "════════════════════════════════════════════════════════════"
 
+            echo "--- refresh fast files from gh-pages ---"
+            if refresh_ghp; then
+              copy_named $ODDS_FILES $SCAN_FILES
+            else
+              echo "::warning::gh-pages refresh failed — freshness check uses the checkout"
+            fi
+
             echo "--- fetchPolymarketData ---"
             node scripts/fetchPolymarketData.js || echo "polymarket failed (cycle $i)"
 
-            echo "--- snapshotPinnacle ---"
-            node scripts/snapshotPinnacle.js || echo "pinnacle failed (cycle $i)"
-
-            # GitHub rejects blobs > 100 MB. A fat pretty-printed NFL tape
-            # (alts × every cycle × regular-season games months out) already
-            # failed main push. Always compact/clip before git add.
-            echo "--- prunePinnacleHistory ---"
-            if ! node scripts/prunePinnacleHistory.js; then
-              echo "::error::prunePinnacleHistory failed (cycle $i) — reverting tape file to HEAD so main can still push"
-              git checkout HEAD -- public/pinnacle_history.json 2>/dev/null || true
+            # Odds job owns the tape. Snapshot here only when that file is
+            # older than 3 minutes (job down, or first boot before it pushes).
+            echo "--- odds freshness ---"
+            odds_fresh=0
+            if [ -f public/odds_heartbeat.json ]; then
+              if node --input-type=module -e '
+                import { readFileSync } from "fs";
+                const j = JSON.parse(readFileSync("public/odds_heartbeat.json", "utf8"));
+                const age = (Date.now() - Date.parse(j.updatedAt)) / 1000;
+                console.log("odds heartbeat age " + (Number.isFinite(age) ? age.toFixed(0) : "?") + "s");
+                if (!Number.isFinite(age) || age > 180 || age < -60) process.exit(1);
+              '; then
+                odds_fresh=1
+              fi
             fi
-
-            echo "--- discoverScanSupplement ---"
-            node scripts/discoverScanSupplement.js || echo "discoverScanSupplement failed (cycle $i — non-fatal)"
-
-            echo "--- scanSharpPositions ---"
-            scan_rc=0
-            node scripts/scanSharpPositions.js || scan_rc=$?
-            if [ "$scan_rc" -ne 0 ]; then
-              echo "::error::scanSharpPositions failed (cycle $i, exit $scan_rc)"
-              scan_fail_count=$((scan_fail_count + 1))
+            if [ "$odds_fresh" -eq 1 ]; then
+              echo "--- snapshotPinnacle skipped (fetch-odds.yml is fresh) ---"
             else
-              # Cadence guard — fresh scannedAt must land or the board is lying.
-              if ! node scripts/checkScanHeartbeat.js; then
-                echo "::warning::scan heartbeat stale/missing after successful scan exit (cycle $i)"
-                scan_fail_count=$((scan_fail_count + 1))
+              echo "--- snapshotPinnacle (fallback) ---"
+              if node scripts/snapshotPinnacle.js; then
+                ran_snapshot=1
+                echo "--- prunePinnacleHistory ---"
+                if ! node scripts/prunePinnacleHistory.js; then
+                  echo "::error::prunePinnacleHistory failed (cycle $i) — reverting tape file to HEAD so main can still push"
+                  git checkout HEAD -- public/pinnacle_history.json 2>/dev/null || true
+                  ran_snapshot=0
+                fi
+              else
+                echo "pinnacle failed (cycle $i)"
               fi
             fi
 
-            # ── Whitelist coverage layer (Phase 2: recover + merge) ──────────
-            # scanWhitelistedWallets cross-references the live promotion
-            # whitelist (sharpWalletProfiles) against what the main scanner
-            # just produced, and supplementally polls Polymarket for every
-            # promoted wallet that the main path missed. Recovered positions
-            # are merged into sharp_positions*.json (atomic writes with
-            # JSON-parse verify) so the downstream writeSharpActions →
-            # sharp_action_positions pipeline picks them up unchanged. A
-            # per-cycle audit lands at public/whitelist_scan_diagnostics.json.
-            # Non-fatal: any failure here leaves the cycle exactly as the
-            # main scanner left it. Adds ~60s/cycle.
-            echo "--- scanWhitelistedWallets (Phase 2 recover + merge) ---"
-            node scripts/scanWhitelistedWallets.js || echo "whitelist scan failed (cycle $i — non-fatal, main scan unaffected)"
+            # Wallet job owns positions. Scan here only when the heartbeat
+            # is older than 3 minutes.
+            echo "--- scan freshness ---"
+            scan_fresh=0
+            if SCAN_HEARTBEAT_MAX_AGE_SEC=180 node scripts/checkScanHeartbeat.js; then
+              scan_fresh=1
+            fi
+            if [ "$scan_fresh" -eq 1 ]; then
+              echo "--- scanSharpPositions skipped (fetch-wallets.yml is fresh) ---"
+            else
+              echo "--- discoverScanSupplement (fallback) ---"
+              node scripts/discoverScanSupplement.js || echo "discoverScanSupplement failed (cycle $i — non-fatal)"
+              echo "--- scanSharpPositions (fallback) ---"
+              scan_rc=0
+              SCAN_CONCURRENCY=12 node scripts/scanSharpPositions.js || scan_rc=$?
+              if [ "$scan_rc" -ne 0 ]; then
+                echo "::error::scanSharpPositions failed (cycle $i, exit $scan_rc)"
+                scan_fail_count=$((scan_fail_count + 1))
+              elif ! node scripts/checkScanHeartbeat.js; then
+                echo "::warning::scan heartbeat stale/missing after successful scan exit (cycle $i)"
+                scan_fail_count=$((scan_fail_count + 1))
+              else
+                ran_scan=1
+              fi
+              echo "--- scanWhitelistedWallets (fallback) ---"
+              node scripts/scanWhitelistedWallets.js || echo "whitelist scan failed (cycle $i — non-fatal, main scan unaffected)"
+            fi
 
             # ── Firestore-side pipeline ─────────────────────────────────────
             # writeSharpActions persists the just-scanned positions (with
@@ -203,16 +237,12 @@ jobs:
             echo "--- writeSharpActions ---"
             node scripts/writeSharpActions.js || echo "writeSharpActions failed (cycle $i)"
 
-            # syncPickStateAuthoritative is the canonical Firestore writer
-            # for v7.4 lockStage / health / dw / dq / HC margin. Failure here
-            # leaves the dashboard rendering against stale Firestore (cards
-            # show old WEAKENING/MUTED state vs JSON's new ACTIVE state).
-            # If it fails inline, the sync-pick-state-on-deploy.yml workflow
-            # fires on the gh-pages push at the bottom of this cycle and
-            # re-runs it as a safety net within ~30s.
+            # One Firestore write per ledger cycle. The fast odds/wallet jobs
+            # never open Firestore. A failed sync retries on the next cycle
+            # (~6 min). send-lock-alerts.yml remains the T−15 backup.
             echo "--- syncPickStateAuthoritative ---"
             if ! node scripts/syncPickStateAuthoritative.js; then
-              echo "::warning::syncPickStateAuthoritative failed inline (cycle $i) — will retry via sync-pick-state-on-deploy workflow after gh-pages push"
+              echo "::warning::syncPickStateAuthoritative failed (cycle $i) — next ledger cycle retries"
             fi
 
             # Paid-only lock alerts: newly frozen LOCKED sides at T−15 →
@@ -287,7 +317,7 @@ jobs:
                   "$json_stash/" 2>/dev/null || true
 
             # Pull latest main BEFORE building. This loop checks out once at
-            # job start and runs ~12 cycles (~48 min). Without a mid-loop pull,
+            # job start and runs ~10 cycles (~60 min). Without a mid-loop pull,
             # every gh-pages deploy rebuilds that stale checkout and silently
             # overwrites any UI/code deploys that landed on main after the job
             # started (card redesigns, vault fixes, etc.).
@@ -297,14 +327,24 @@ jobs:
             cp -f "$json_stash"/* public/ 2>/dev/null || true
             rm -rf "$json_stash"
 
-            # Stash restore can put a 100MB tape back on top of a pruned
-            # checkout. GitHub rejects that on gh-pages the same as main
-            # (2026-08-14: main push failed, then dist deploy failed with
-            # the same 100.12 MB blob). Shrink again before Vite copies
-            # public/ → dist/.
-            if [ -f scripts/prunePinnacleHistory.js ]; then
-              echo "--- prunePinnacleHistory (pre-build) ---"
-              node scripts/prunePinnacleHistory.js || true
+            # Full builds ship every public file. Re-copy odds and positions
+            # from gh-pages when this cycle did not regenerate them, so the
+            # force-push cannot roll a 60s tape back to the cycle-start copy.
+            # A fallback snapshot still prunes before the push (GitHub rejects
+            # blobs over 100 MB — 2026-08-14).
+            if [ "$ran_snapshot" -eq 0 ] || [ "$ran_scan" -eq 0 ]; then
+              refresh_ghp || echo "::warning::pre-build gh-pages refresh failed"
+            fi
+            if [ "$ran_snapshot" -eq 1 ]; then
+              if [ -f scripts/prunePinnacleHistory.js ]; then
+                echo "--- prunePinnacleHistory (pre-build) ---"
+                node scripts/prunePinnacleHistory.js || true
+              fi
+            else
+              copy_named $ODDS_FILES
+            fi
+            if [ "$ran_scan" -eq 0 ]; then
+              copy_named $SCAN_FILES
             fi
             pinn_bytes=$(wc -c < public/pinnacle_history.json 2>/dev/null | tr -d ' ')
             if [ "${pinn_bytes:-0}" -gt 90000000 ]; then
@@ -313,9 +353,16 @@ jobs:
                 > public/pinnacle_history.json
             fi
 
-            # Most cycles: copy the same public JSON the site already serves
-            # onto gh-pages (no Vite). Cycle 1 and every 4th: full build so
-            # UI commits on main still ship. Lock/scan path is unchanged.
+            # JSON-only cycles ship the ledger files. Odds and position files
+            # are included only when this cycle regenerated them (fallback).
+            # Otherwise the fast jobs own those paths on gh-pages.
+            DATA_JSON="polymarket_data.json sharp-flow-pnl.json kalshi_data.json"
+            if [ "$ran_snapshot" -eq 1 ]; then
+              DATA_JSON="$DATA_JSON $ODDS_FILES"
+            fi
+            if [ "$ran_scan" -eq 1 ]; then
+              DATA_JSON="$DATA_JSON $SCAN_FILES"
+            fi
             do_full_build=0
             if [ "$i" -eq 1 ] || [ $((i % 4)) -eq 0 ]; then
               do_full_build=1
@@ -405,19 +452,6 @@ jobs:
                         HEAD:gh-pages
                   ) && deploy_ok=1
                 fi
-              fi
-            fi
-
-            # POST-DEPLOY SYNC SAFETY NET — re-run sync after JSON or full
-            # deploy lands. Inline sync earlier in the cycle is primary.
-            if [ "$deploy_ok" -eq 1 ]; then
-              echo "--- syncPickStateAuthoritative (post-deploy safety net) ---"
-              if ! node scripts/syncPickStateAuthoritative.js; then
-                echo "::warning::syncPickStateAuthoritative POST-DEPLOY also failed (cycle $i) — Firestore may be stale relative to deployed JSON until next cycle"
-              fi
-              echo "--- sendLockAlerts (post-deploy) ---"
-              if [ -n "${ONESIGNAL_REST_API_KEY:-}" ]; then
-                node scripts/sendLockAlerts.mjs || echo "::warning::sendLockAlerts post-deploy failed (cycle $i)"
               fi
             fi
 

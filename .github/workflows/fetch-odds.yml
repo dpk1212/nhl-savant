@@ -1,0 +1,180 @@
+name: Fetch Odds (1 min)
+
+# Fresh book + Pinnacle tape for the open tab. Publishes only the odds
+# files to gh-pages. Does not open Firestore and does not push main.
+#
+# 40 × 60s ≈ 40 min/run, then self-dispatch while 5am–11pm ET.
+# Measured cost is ~50 Odds API credits per snapshot on the current slate
+# (empty sports are free). A 60s loop through the waking window is about
+# 1.6M credits/month on the 5M plan. Pinnacle REST stays under 10 req/s.
+#
+# If this job dies, fetch-polymarket.yml snapshots as a fallback once the
+# heartbeat is older than 3 minutes.
+on:
+  schedule:
+    - cron: '0 10 * * *'   # 6:00 AM ET
+    - cron: '0 16 * * *'   # 12:00 PM ET
+    - cron: '0 20 * * *'   # 4:00 PM ET
+    - cron: '0 22 * * *'   # 6:00 PM ET
+    - cron: '0 0 * * *'    # 8:00 PM ET
+    - cron: '0 2 * * *'    # 10:00 PM ET
+  workflow_dispatch:
+
+concurrency:
+  group: fetch-odds
+  cancel-in-progress: false
+
+jobs:
+  fetch-odds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: write
+      actions: write
+    env:
+      ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+      PINNAPI_KEY: ${{ secrets.PINNAPI_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Odds cycle loop (40× at 60s)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set +e
+          target_interval=60
+          cycles=40
+          GHP=/tmp/gh-pages-live
+          FILES="pinnacle_history.json pinnacle_steam.json odds_heartbeat.json"
+          echo "--- clone gh-pages ---"
+          rm -rf "$GHP"
+          if ! git clone --depth 1 --branch gh-pages \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$GHP"; then
+            echo "::error::gh-pages clone failed"
+            exit 1
+          fi
+          push_files() {
+            local attempt f add_list
+            for attempt in 1 2 3 4 5; do
+              if ! git -C "$GHP" fetch origin gh-pages || ! git -C "$GHP" reset --hard origin/gh-pages; then
+                echo "gh-pages refresh failed (attempt $attempt)"
+                sleep $((attempt * 2))
+                continue
+              fi
+              add_list=""
+              for f in $FILES; do
+                if [ -f "public/$f" ]; then
+                  cp -f "public/$f" "$GHP/$f"
+                  add_list="$add_list $f"
+                fi
+              done
+              if [ -z "$add_list" ]; then
+                echo "no odds files to publish"
+                return 1
+              fi
+              if (
+                cd "$GHP"
+                # shellcheck disable=SC2086
+                git add $add_list
+                if git diff --staged --quiet; then
+                  echo "--- odds unchanged ---"
+                  exit 0
+                fi
+                git -c user.email=actions@github.com -c user.name="GitHub Actions" \
+                  commit -m "Odds cycle [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
+                git push origin HEAD
+              ); then
+                echo "--- odds push ok (attempt $attempt) ---"
+                return 0
+              fi
+              echo "odds push failed (attempt $attempt)"
+              sleep $((attempt * 2))
+            done
+            echo "::warning::odds gh-pages push failed"
+            return 1
+          }
+          for i in $(seq 1 "$cycles"); do
+            cycle_start=$(date +%s)
+            echo ""
+            echo "### Odds cycle $i/${cycles} — $(date -u +%H:%M:%S) UTC"
+            # Append to the tape that is live on the site. A new job's main
+            # checkout can be a few minutes behind gh-pages.
+            if git -C "$GHP" fetch origin gh-pages && git -C "$GHP" reset --hard origin/gh-pages; then
+              for f in $FILES; do
+                if [ -f "$GHP/$f" ]; then
+                  cp -f "$GHP/$f" "public/$f"
+                fi
+              done
+            else
+              echo "::warning::could not refresh tape from gh-pages — snapshot uses the checkout"
+            fi
+            if node scripts/snapshotPinnacle.js; then
+              if node scripts/prunePinnacleHistory.js; then
+                push_files || echo "publish failed (cycle $i)"
+              else
+                echo "::error::prunePinnacleHistory failed (cycle $i) — not publishing"
+              fi
+            else
+              echo "::error::snapshotPinnacle failed (cycle $i)"
+            fi
+            if [ "$i" -lt "$cycles" ]; then
+              remain=$(( target_interval - ($(date +%s) - cycle_start) ))
+              if [ "$remain" -gt 0 ]; then
+                echo "--- sleeping ${remain}s ---"
+                sleep "$remain"
+              else
+                echo "--- cycle overran ${target_interval}s ---"
+              fi
+            fi
+          done
+          echo "### Odds loop complete — $(date -u +%H:%M:%S) UTC"
+
+      - name: Chain next odds fetch (5am–11pm ET)
+        if: ${{ always() && !cancelled() }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -e
+          hour=$(TZ=America/New_York date +%H)
+          hour=$((10#$hour))
+          echo "### ET now: $(TZ=America/New_York date '+%Y-%m-%d %H:%M:%S %Z') (hour=${hour})"
+          if [ "$hour" -lt 5 ] || [ "$hour" -ge 23 ]; then
+            echo "### Outside 5am–11pm ET — chain stops"
+            exit 0
+          fi
+          queued=$(gh run list --workflow fetch-odds.yml --repo "$GH_REPO" --status queued --limit 10 --json databaseId --jq 'length' 2>/dev/null || echo 0)
+          queued=$((10#${queued:-0}))
+          if [ "$queued" -gt 0 ]; then
+            echo "### Chain skipped — ${queued} already queued"
+            exit 0
+          fi
+          inprog=$(gh run list --workflow fetch-odds.yml --repo "$GH_REPO" --status in_progress --limit 10 --json databaseId --jq 'length' 2>/dev/null || echo 0)
+          inprog=$((10#${inprog:-0}))
+          if [ "$inprog" -gt 1 ]; then
+            echo "### Chain skipped — ${inprog} in progress"
+            exit 0
+          fi
+          ok=0
+          for attempt in 1 2 3 4 5; do
+            if gh workflow run fetch-odds.yml --repo "$GH_REPO"; then
+              echo "### Chained OK (attempt $attempt)"
+              ok=1
+              break
+            fi
+            sleep $((attempt * 5))
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Odds chain failed after 5 attempts"
+            exit 1
+          fi

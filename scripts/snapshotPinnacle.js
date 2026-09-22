@@ -1,7 +1,7 @@
 /**
- * Sharp Odds Snapshot — captures fair-value + retail book prices every
- * ~4 minutes for all active sports. Piggybacked on the fetch-polymarket
- * workflow.
+ * Sharp Odds Snapshot — captures fair-value + retail book prices.
+ * fetch-odds.yml runs this every 60s and publishes the tape to gh-pages.
+ * The ledger (fetch-polymarket.yml) runs it only when that tape is stale.
  *
  * Fair book = most reputable quote available per game (not Pinnacle-only):
  *   pinnacle → lowvig → betonlineag
@@ -961,6 +961,11 @@ async function run() {
 
   const { json, bytes, emergencyClips } = enforceGitSafeSize(history, now);
   writeFileSync(OUT_PATH, json, 'utf8');
+  // fetch-odds.yml uses this stamp to decide whether the ledger must
+  // snapshot as a fallback. Content time, not file mtime (copies reset mtime).
+  writeFileSync(join(ROOT, 'public', 'odds_heartbeat.json'), JSON.stringify({
+    updatedAt: new Date().toISOString(),
+  }));
   const mb = (bytes / (1024 * 1024)).toFixed(2);
   const capMb = (GIT_SAFE_MAX_BYTES / (1024 * 1024)).toFixed(0);
   console.log(`   tape file: ${mb} MiB compact (cap ${capMb} MiB)${emergencyClips ? ` emergencyClips=${emergencyClips}` : ''}`);
