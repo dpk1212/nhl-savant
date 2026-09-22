@@ -19,8 +19,7 @@
  * already uses (toLowerCase doc ids).
  */
 
-import { readFileSync, existsSync, writeFileSync, renameSync } from 'fs';
-import { tmpdir } from 'os';
+import { readFileSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -36,14 +35,6 @@ const MAX_LOCAL_AGE_MS = 72 * 60 * 60 * 1000;
 const MIN_PROFILE_COUNT = 100;
 /** Meta newer than local by this much → trust Firestore (push lag / failed commit). */
 const META_NEWER_SLACK_MS = 60 * 1000;
-/**
- * A long ledger job checks out once. If meta is newer than that checkout,
- * every cycle would re-read the whole sharpWalletProfiles collection.
- * Reuse one Firestore read for half an hour inside the job (shared /tmp).
- * Grade runs a few times a day, so this does not freeze a whitelist change.
- */
-const DEFAULT_CACHE_PATH = join(tmpdir(), 'nhl-savant-wallet-profiles-cache.json');
-const DEFAULT_CACHE_MS = 30 * 60 * 1000;
 
 function parseGeneratedAt(raw) {
   if (!raw) return null;
@@ -107,46 +98,6 @@ export function tryLoadWalletProfilesFromJson(jsonPath = DEFAULT_JSON_PATH) {
   return { ok: true, map, generatedAtMs, path: jsonPath, walletCount: map.size };
 }
 
-/**
- * @returns {{ map: Map, ageMs: number } | null}
- */
-export function readProfileCache(cachePath = DEFAULT_CACHE_PATH, maxAgeMs = DEFAULT_CACHE_MS, now = Date.now()) {
-  if (!cachePath || !(maxAgeMs > 0) || !existsSync(cachePath)) return null;
-  let raw;
-  try {
-    raw = JSON.parse(readFileSync(cachePath, 'utf8'));
-  } catch {
-    return null;
-  }
-  const fetchedAtMs = parseGeneratedAt(raw?.fetchedAt);
-  if (fetchedAtMs == null) return null;
-  const ageMs = now - fetchedAtMs;
-  if (ageMs > maxAgeMs || ageMs < -META_NEWER_SLACK_MS) return null;
-  const profiles = raw?.profiles;
-  if (!profiles || typeof profiles !== 'object' || Array.isArray(profiles)) return null;
-  const map = new Map();
-  for (const [id, data] of Object.entries(profiles)) {
-    if (!id || !data || typeof data !== 'object') continue;
-    map.set(String(id).toLowerCase(), data);
-  }
-  if (map.size < MIN_PROFILE_COUNT) return null;
-  const sample = map.values().next().value;
-  if (!sample || sample.bySport == null) return null;
-  return { map, ageMs };
-}
-
-export function writeProfileCache(cachePath, map, now = Date.now()) {
-  const profiles = {};
-  for (const [id, data] of map) profiles[id] = data;
-  const body = JSON.stringify({
-    fetchedAt: new Date(now).toISOString(),
-    profiles,
-  });
-  const tmp = `${cachePath}.tmp`;
-  writeFileSync(tmp, body);
-  renameSync(tmp, cachePath);
-}
-
 async function loadWalletProfilesFromFirestore(db) {
   const map = new Map();
   const snap = await db.collection('sharpWalletProfiles').get();
@@ -168,61 +119,35 @@ async function readProfilesMeta(db) {
 /**
  * @param {FirebaseFirestore.Firestore} db
  * @param {{ jsonPath?: string }} [opts]
- * @returns {Promise<{ map: Map, source: 'local-json'|'firestore'|'cache', detail: string }>}
+ * @returns {Promise<{ map: Map, source: 'local-json'|'firestore', detail: string }>}
  */
-async function firestoreOrCache(db, reason, opts) {
-  const cachePath = opts.cachePath || DEFAULT_CACHE_PATH;
-  const maxAgeMs = opts.cacheMaxMs != null ? opts.cacheMaxMs : DEFAULT_CACHE_MS;
-  const now = opts.now || Date.now();
-  const cached = readProfileCache(cachePath, maxAgeMs, now);
-  if (cached) {
-    const ageMin = Math.max(0, Math.round(cached.ageMs / 60000));
-    console.log(
-      `[walletProfiles] source=cache · ${cached.map.size} profiles · age=${ageMin}m · ${reason}`,
-    );
-    return { map: cached.map, source: 'cache', detail: `${reason}; cache age=${ageMin}m` };
-  }
-  const map = await loadWalletProfilesFromFirestore(db);
-  if (maxAgeMs > 0) {
-    try {
-      writeProfileCache(cachePath, map, now);
-    } catch (err) {
-      console.warn(`[walletProfiles] cache write failed: ${err.message}`);
-    }
-  }
-  console.warn(`[walletProfiles] source=firestore · ${reason} · ${map.size} profiles`);
-  return { map, source: 'firestore', detail: reason };
-}
-
 export async function loadWalletProfilesMap(db, opts = {}) {
   const jsonPath = opts.jsonPath || DEFAULT_JSON_PATH;
   const forceFs = String(process.env.WALLET_PROFILES_SOURCE || '').toLowerCase() === 'firestore';
 
   if (forceFs) {
     const map = await loadWalletProfilesFromFirestore(db);
-    const cachePath = opts.cachePath || DEFAULT_CACHE_PATH;
-    const maxAgeMs = opts.cacheMaxMs != null ? opts.cacheMaxMs : DEFAULT_CACHE_MS;
-    if (maxAgeMs > 0) {
-      try { writeProfileCache(cachePath, map, opts.now || Date.now()); } catch { /* non-fatal */ }
-    }
     console.log(`[walletProfiles] source=firestore (WALLET_PROFILES_SOURCE=firestore) · ${map.size} profiles`);
     return { map, source: 'firestore', detail: 'env override' };
   }
 
   const local = tryLoadWalletProfilesFromJson(jsonPath);
   if (!local.ok) {
-    return firestoreOrCache(db, `local rejected: ${local.reason}`, opts);
+    const map = await loadWalletProfilesFromFirestore(db);
+    console.warn(`[walletProfiles] source=firestore · local rejected: ${local.reason} · ${map.size} profiles`);
+    return { map, source: 'firestore', detail: local.reason };
   }
 
   const meta = await readProfilesMeta(db);
   const metaAt = parseGeneratedAt(meta?.generatedAt);
   if (metaAt != null && local.generatedAtMs != null && metaAt > local.generatedAtMs + META_NEWER_SLACK_MS) {
+    const map = await loadWalletProfilesFromFirestore(db);
     const lagMin = Math.round((metaAt - local.generatedAtMs) / 60000);
-    return firestoreOrCache(
-      db,
-      `meta newer than checkout by ~${lagMin}m (git lag / failed profile commit)`,
-      opts,
+    console.warn(
+      `[walletProfiles] source=firestore · meta newer than checkout by ~${lagMin}m`
+      + ` (git lag / failed profile commit) · ${map.size} profiles`,
     );
+    return { map, source: 'firestore', detail: `meta newer by ${lagMin}m` };
   }
 
   const ageH = local.generatedAtMs != null
