@@ -33,6 +33,19 @@ const seed = parseMySharpsDoc({
   },
 });
 
+function bookPath(end, n = 24) {
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    const t = i / (n - 1);
+    const ease = t * t * (3 - 2 * t);
+    const wave = Math.sin(t * Math.PI * 3.2) * end * 0.08 * (1 - t * 0.4);
+    out.push(Math.round(ease * end + wave));
+  }
+  out[0] = Math.round(end * 0.04);
+  out[n - 1] = end;
+  return out;
+}
+
 const profiles = new Map([
   ['e4ec62', {
     clvSkill: { n: 22, pctPos: 61 },
@@ -44,7 +57,7 @@ const profiles = new Map([
         form: {
           actionL5: { w: 4, l: 1 },
           actionL10: { w: 7, l: 3 },
-          actionDollarCurve: [0, 12000, 18000, 31000, 51000],
+          actionDollarCurve: bookPath(51000),
           recentAction: [
             { date: '2026-09-20', marketType: 'TOTAL', side: 'under', line: 8.5, gameKey: 'tor_bal', away: 'TOR', home: 'BAL', dollarPnl: 2100, won: 1 },
             { date: '2026-09-19', marketType: 'ML', side: 'home', team: 'Yankees', gameKey: 'bos_nyy', away: 'BOS', home: 'NYY', dollarPnl: -1400, won: 0 },
@@ -68,7 +81,7 @@ const profiles = new Map([
         positions: { n: 73, wins: 48, losses: 25, wr: 66, positionFlatRoi: 9, dollarRoi: 12, invested: 310000 },
         form: {
           actionL10: { w: 4, l: 6 },
-          actionDollarCurve: [8000, 4000, 15000, 28000, 39300],
+          actionDollarCurve: bookPath(39300),
           recentAction: [
             { date: '2026-09-21', marketType: 'ML', side: 'away', team: 'Mets', gameKey: 'nym_tex', away: 'NYM', home: 'TEX', dollarPnl: 1600, won: 1 },
             { date: '2026-09-18', marketType: 'SPREAD', side: 'home', team: 'Orioles', line: -1.5, gameKey: 'tor_bal', away: 'TOR', home: 'BAL', dollarPnl: -900, won: 0 },
@@ -78,6 +91,15 @@ const profiles = new Map([
           ML: { positions: { n: 40, wins: 28, losses: 12, wr: 70, dollarRoi: 18 }, recentActionWindow: { n: 12, wins: 9, losses: 3, wr: 75, settledPnl: 22000, dollarRoi: 17 } },
           SPREAD: { positions: { n: 18, wins: 9, losses: 9, wr: 50, dollarRoi: 1 } },
           TOTAL: { positions: { n: 15, wins: 6, losses: 9, wr: 40, dollarRoi: -11 } },
+        },
+      },
+      NFL: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 4, wins: 3, losses: 1, wr: 75, settledPnl: 3800, dollarRoi: 18 },
+        positions: { n: 4, wins: 3, losses: 1, wr: 75, dollarRoi: 18, invested: 21000 },
+        form: { actionL5: { w: 3, l: 1 } },
+        byMarket: {
+          SPREAD: { positions: { n: 4, wins: 3, losses: 1, wr: 75, dollarRoi: 18 }, recentActionWindow: { n: 4, wins: 3, losses: 1, settledPnl: 3800, dollarRoi: 18 } },
         },
       },
     },
@@ -138,6 +160,61 @@ const profiles = new Map([
         },
         byMarket: {
           SPREAD: { positions: { n: 3, wins: 3, losses: 0, wr: 100, dollarRoi: 140 } },
+        },
+      },
+    },
+  }],
+  ['quiet9', {
+    clvSkill: { n: 40, pctPos: 57 },
+    bySport: {
+      MLB: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 0, wins: 0, losses: 0, settledPnl: 0, dollarRoi: null },
+        positions: { n: 45, wins: 32, losses: 13, wr: 71.1, dollarRoi: 45, invested: 1781035 },
+        form: {
+          actionL10: { w: 4, l: 6 },
+          actionDollarCurve: bookPath(485846),
+          actionDollarEnd: 485846,
+          flatCurveFrom: '2026-06-02',
+          actionCurveScope: 'recent',
+          actionCurveFrom: '2026-06-02',
+          recentAction: [],
+          recentActionTotalN: 0,
+          curveLegs: [
+            { date: '2026-06-20', marketType: 'TOTAL', side: 'over', line: 8.5, gameKey: 'nyy_bos', away: 'NYY', home: 'BOS', dollarPnl: 18400, won: 1 },
+            { date: '2026-06-18', marketType: 'ML', side: 'home', label: 'Dodgers', gameKey: 'sf_lad', away: 'SF', home: 'LAD', dollarPnl: -9200, won: 0 },
+            { date: '2026-06-16', marketType: 'TOTAL', side: 'under', line: 9, gameKey: 'chc_stl', away: 'CHC', home: 'STL', dollarPnl: 12100, won: 1 },
+            { date: '2026-06-14', marketType: 'SPREAD', side: 'away', label: 'Yankees', line: -1.5, gameKey: 'nyy_bos', away: 'NYY', home: 'BOS', dollarPnl: 6400, won: 1 },
+            { date: '2026-06-11', marketType: 'ML', side: 'away', label: 'Braves', gameKey: 'atl_nym', away: 'ATL', home: 'NYM', dollarPnl: -4800, won: 0 },
+            { date: '2026-06-08', marketType: 'TOTAL', side: 'over', line: 7.5, gameKey: 'hou_tex', away: 'HOU', home: 'TEX', dollarPnl: 22100, won: 1 },
+          ],
+        },
+        byMarket: {
+          ML: { positions: { n: 13, wins: 10, losses: 3, wr: 77, dollarRoi: 49 } },
+          SPREAD: { positions: { n: 6, wins: 1, losses: 5, wr: 17, dollarRoi: -77 } },
+          TOTAL: { positions: { n: 26, wins: 21, losses: 5, wr: 81, dollarRoi: 54 } },
+        },
+      },
+    },
+  }],
+  ['stale9', {
+    clvSkill: { n: 12, pctPos: 78 },
+    bySport: {
+      MLB: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 0, wins: 0, losses: 0, settledPnl: 0 },
+        positions: { n: 89, wins: 55, losses: 34, wr: 62, dollarRoi: 28, invested: 2400000 },
+        form: {
+          actionL10: { w: 4, l: 6 },
+          actionDollarCurve: bookPath(-262000),
+          actionDollarEnd: -262000,
+          flatCurveFrom: '2026-06-04',
+          recentAction: [],
+          recentActionTotalN: 0,
+        },
+        byMarket: {
+          ML: { positions: { n: 42, wins: 24, losses: 18, wr: 57, dollarRoi: 16 } },
+          TOTAL: { positions: { n: 47, wins: 31, losses: 16, wr: 66, dollarRoi: 47 } },
         },
       },
     },

@@ -429,17 +429,10 @@ function sportForm(bets) {
     cum += b.flat;
     return r2(cum);
   });
-  // Actual $ curve — settledPnl when present, else invested × flat unit return.
-  const dollarOf = (b) => {
-    if (Number.isFinite(b.settledPnl)) return b.settledPnl;
-    if (Number.isFinite(b.flat) && Number.isFinite(b.invested) && b.invested > 0) {
-      return b.invested * b.flat;
-    }
-    return null;
-  };
-  const dollarInWindow = inWindow.filter((b) => dollarOf(b) != null);
-  const dollarAll = ordered.filter((b) => dollarOf(b) != null);
-  const dollarSrc = dollarInWindow.length >= 5 ? dollarInWindow : dollarAll.slice(-20);
+  // Actual $ curve — same source as curveSource(), so the tape matches the path.
+  const curve = curveSource(ordered);
+  const dollarOf = curve.dollarOf;
+  const dollarSrc = curve.bets;
   let dCum = 0;
   const dollarCurve = dollarSrc.map((b) => {
     dCum += dollarOf(b);
@@ -561,6 +554,42 @@ function recentFeaturedLegs(pickBets, sportUsualBet = null, { days = RECENT_LEGS
 /**
  * Graded Action positions (Source B) in the last RECENT_LEGS_DAYS for expand Tab 2.
  */
+function viewActionLeg(b, sportUsualBet = null) {
+  let sr = null;
+  if (Number.isFinite(sportUsualBet) && sportUsualBet > 0 && Number.isFinite(b.invested) && b.invested > 0) {
+    sr = +(b.invested / sportUsualBet).toFixed(2);
+  } else if (Number.isFinite(b.sizeRatio)) {
+    sr = Number(b.sizeRatio);
+  }
+  const label = b.teamName || sideLabel(b.side);
+  const matchup = matchupAbbrev(b.away, b.home, b.gameKey);
+  let odds = cleanAmericanOdds(b.pinnacleOdds ?? b.bestRetailOdds ?? b.odds);
+  if (odds == null && Number.isFinite(b.avgPrice)) {
+    const p = Number(b.avgPrice);
+    const prob = p > 1 && p <= 100 ? p / 100 : p;
+    odds = americanFromProb(prob);
+  }
+  return {
+    date: b.date || null,
+    marketType: b.market || null,
+    side: b.side || null,
+    label: label || null,
+    line: Number.isFinite(Number(b.entryLine)) ? Number(b.entryLine) : null,
+    gameKey: b.gameKey || null,
+    matchup,
+    away: b.away || null,
+    home: b.home || null,
+    odds,
+    invested: Math.round(Number(b.invested) || 0),
+    sizeRatio: sr,
+    sizeBand: sizeBandKey(sr),
+    won: b.won,
+    settledPnl: Math.round(Number(b.settledPnl) || 0),
+    dollarPnl: Math.round(Number(b.settledPnl) || 0),
+    flat: Number.isFinite(b.flat) ? r2(b.flat) : null,
+  };
+}
+
 function recentActionLegs(posBets, sportUsualBet = null, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
   const cutoff = etDateMinusDays(days);
   const ordered = (posBets || [])
@@ -568,41 +597,37 @@ function recentActionLegs(posBets, sportUsualBet = null, { days = RECENT_LEGS_DA
     .slice()
     .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
     .slice(-maxLegs);
-  return ordered.map((b) => {
-    let sr = null;
-    if (Number.isFinite(sportUsualBet) && sportUsualBet > 0 && Number.isFinite(b.invested) && b.invested > 0) {
-      sr = +(b.invested / sportUsualBet).toFixed(2);
-    } else if (Number.isFinite(b.sizeRatio)) {
-      sr = Number(b.sizeRatio);
+  return ordered.map((b) => viewActionLeg(b, sportUsualBet));
+}
+
+/**
+ * Bets behind the dollar curve. A full month stays on recentAction.
+ * When the month has fewer than 5 priced bets, the curve falls back to the
+ * last 20 — those tickets must ship too, or the profile draws a path and
+ * then says the tape is empty.
+ */
+function curveSource(bets) {
+  const ordered = (bets || [])
+    .filter((b) => b && (b.won === 0 || b.won === 1))
+    .slice()
+    .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  const cutoff = etDateMinusDays(FORM_CURVE_DAYS);
+  const dollarOf = (b) => {
+    if (Number.isFinite(b.settledPnl)) return b.settledPnl;
+    if (Number.isFinite(b.flat) && Number.isFinite(b.invested) && b.invested > 0) {
+      return b.invested * b.flat;
     }
-    const label = b.teamName || sideLabel(b.side);
-    const matchup = matchupAbbrev(b.away, b.home, b.gameKey);
-    let odds = cleanAmericanOdds(b.pinnacleOdds ?? b.bestRetailOdds ?? b.odds);
-    if (odds == null && Number.isFinite(b.avgPrice)) {
-      const p = Number(b.avgPrice);
-      const prob = p > 1 && p <= 100 ? p / 100 : p;
-      odds = americanFromProb(prob);
-    }
-    return {
-      date: b.date || null,
-      marketType: b.market || null,
-      side: b.side || null,
-      label: label || null,
-      line: Number.isFinite(Number(b.entryLine)) ? Number(b.entryLine) : null,
-      gameKey: b.gameKey || null,
-      matchup,
-      away: b.away || null,
-      home: b.home || null,
-      odds,
-      invested: Math.round(Number(b.invested) || 0),
-      sizeRatio: sr,
-      sizeBand: sizeBandKey(sr),
-      won: b.won,
-      settledPnl: Math.round(Number(b.settledPnl) || 0),
-      dollarPnl: Math.round(Number(b.settledPnl) || 0),
-      flat: Number.isFinite(b.flat) ? r2(b.flat) : null,
-    };
-  });
+    return null;
+  };
+  const inWindow = ordered.filter((b) => b.date && String(b.date) >= cutoff && dollarOf(b) != null);
+  const dollarAll = ordered.filter((b) => dollarOf(b) != null);
+  const src = inWindow.length >= 5 ? inWindow : dollarAll.slice(-20);
+  return {
+    scope: inWindow.length >= 5 ? 'l30' : (src.length ? 'recent' : null),
+    from: src[0]?.date || null,
+    bets: src,
+    dollarOf,
+  };
 }
 function positionsAgg(bets) {
   const n = bets.length;
@@ -902,6 +927,17 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
         form.actionDollarEnd = actionForm.dollarEnd;
         form.actionL5 = actionForm.l5;
         form.actionL10 = actionForm.l10;
+      }
+      const curve = curveSource(ps);
+      if (curve.scope) {
+        form.actionCurveScope = curve.scope;
+        form.actionCurveFrom = curve.from;
+        // recentAction stays the last 30 days. The last-20 fallback that draws
+        // the path has to live on its own list, or a quiet month looks empty.
+        // Empty array (not omitted) so a later full month clears a stale tape.
+        form.curveLegs = curve.scope === 'recent'
+          ? curve.bets.slice(-RECENT_LEGS_MAX).map((b) => viewActionLeg(b, sportUsual))
+          : [];
       }
     }
     // Sport × market rollups for Action expand (MLB TOTAL, MLB ML, …).

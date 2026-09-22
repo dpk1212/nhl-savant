@@ -2,7 +2,7 @@
  * My Sharps — a book the customer runs.
  * Portfolio is the fund. Bets are the decisions. Find is how the list gets built.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
 import {
   HONEST_PCT_N,
@@ -10,6 +10,7 @@ import {
   buildFindCandidates,
   buildMySharpsBoard,
   buildPortfolioSnapshot,
+  buildPortfolioStage,
   buildSharpDossier,
   groupPortfolioBets,
   suggestTailStake,
@@ -829,121 +830,235 @@ function findKicker(row, sort) {
 
 const FIND_GRID = 'minmax(0, 1.7fr) minmax(108px, 1fr) 72px 68px 84px 76px';
 
-function LineChart({ points, height = 108 }) {
+function fmtSince(key) {
+  if (!key) return null;
+  const parts = String(key).split('-').map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [y, m, d] = parts;
+  return new Date(Date.UTC(y, m - 1, d, 17)).toLocaleDateString('en-US', {
+    timeZone: 'America/New_York',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function AreaChart({ points, height = 210 }) {
+  const uid = useId().replace(/:/g, '');
   const pts = (points || []).map((n) => Number(n)).filter((n) => Number.isFinite(n));
   if (pts.length < 2) return null;
-  const w = 640;
+  const w = 720;
   const h = height;
   const min = Math.min(0, ...pts);
   const max = Math.max(0, ...pts);
   const span = (max - min) || 1;
-  const x = (i) => (i / (pts.length - 1)) * (w - 12) + 6;
-  const y = (v) => 10 + (1 - (v - min) / span) * (h - 20);
+  const x = (i) => (i / (pts.length - 1)) * (w - 28) + 14;
+  const y = (v) => 16 + (1 - (v - min) / span) * (h - 32);
   const d = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
   const end = pts[pts.length - 1];
   const color = end >= 0 ? B.green : B.red;
   const zero = y(0);
+  const area = `${d} L${x(pts.length - 1).toFixed(1)},${zero.toFixed(1)} L${x(0).toFixed(1)},${zero.toFixed(1)} Z`;
+  const grids = [0.25, 0.5, 0.75].map((t) => y(min + span * t));
+  const ex = x(pts.length - 1);
+  const ey = y(end);
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={height} role="img" aria-label="Dollar path">
-      <line x1="6" x2={w - 6} y1={zero} y2={zero} stroke="rgba(255,255,255,0.08)" />
-      <path d={d} fill="none" stroke={color} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />
+      <defs>
+        <linearGradient id={`fill-${uid}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.38" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+        <filter id={`glow-${uid}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3.2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      {grids.map((gy) => (
+        <line key={gy} x1="14" x2={w - 14} y1={gy} y2={gy} stroke="rgba(255,255,255,0.04)" />
+      ))}
+      <line x1="14" x2={w - 14} y1={zero} y2={zero} stroke="rgba(212,175,55,0.35)" strokeDasharray="3 6" />
+      <path d={area} fill={`url(#fill-${uid})`} />
+      <path d={d} fill="none" stroke={color} strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" filter={`url(#glow-${uid})`} />
+      <circle cx={ex} cy={ey} r="7" fill={color} opacity="0.22" />
+      <circle cx={ex} cy={ey} r="3.4" fill={color} />
     </svg>
   );
 }
 
-function DivergingBar({ value, maxAbs }) {
+function WeightBar({ value, maxAbs, height = 10 }) {
   const n = Number(value) || 0;
-  const pct = maxAbs > 0 ? Math.min(50, (Math.abs(n) / maxAbs) * 50) : 0;
+  const pct = maxAbs > 0 ? Math.min(100, (Math.abs(n) / maxAbs) * 100) : 0;
   const pos = n >= 0;
+  const color = pos ? B.green : B.red;
   return (
-    <div style={{ position: 'relative', height: 8, borderRadius: 99, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.16)' }} />
+    <div style={{ height, borderRadius: 99, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
       <div style={{
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: pos ? '50%' : `${50 - pct}%`,
-        width: `${pct}%`,
-        background: pos ? B.green : B.red,
+        width: `${Math.max(pct, n === 0 ? 0 : 3)}%`,
+        height: '100%',
+        borderRadius: 99,
+        background: `linear-gradient(90deg, ${color}99, ${color})`,
+        boxShadow: `0 0 12px ${color}55`,
       }}
       />
     </div>
   );
 }
 
-function BookVisual({ holdings, isMobile }) {
-  const curves = (holdings || []).map((h) => h.spark).filter((c) => Array.isArray(c) && c.length >= 2);
-  const path = [];
-  if (curves.length) {
-    const n = curves[0].length;
-    for (let i = 0; i < n; i += 1) {
-      path.push(curves.reduce((s, c) => s + (Number(c[i]) || 0), 0));
-    }
-  }
-  const sharps = (holdings || []).filter((h) => Number.isFinite(h.l30Pnl) && h.l30Pnl !== 0);
-  const sports = new Map();
-  for (const h of holdings || []) {
-    for (const line of h.lines || []) {
-      if (!Number.isFinite(line.pnl) || !line.sport) continue;
-      sports.set(line.sport, (sports.get(line.sport) || 0) + line.pnl);
-    }
-  }
-  const sportRows = [...sports.entries()].map(([sport, pnl]) => ({ sport, pnl })).sort((a, b) => b.pnl - a.pnl);
-  const maxAbs = Math.max(
-    1,
-    ...sharps.map((h) => Math.abs(h.l30Pnl)),
-    ...sportRows.map((r) => Math.abs(r.pnl)),
-  );
-  if (!path.length && !sharps.length) return null;
+function PortfolioStage({ holdings, isMobile }) {
+  const stage = useMemo(() => buildPortfolioStage(holdings), [holdings]);
+  if (!stage.path.length && !stage.sharps.length && !stage.sports.length) return null;
+  const tone = pnlColor(stage.pathEnd ?? stage.bookPnl, B.text);
+  const maxSharp = Math.max(1, ...stage.sharps.map((h) => Math.abs(h.pnl) || 0));
+  const maxSport = Math.max(1, ...stage.sports.map((s) => Math.abs(s.pnl) || 0));
+  const rec = stage.honest;
+  const wr = rec?.n ? rec.wr : null;
   return (
-    <div style={{
-      margin: '10px 0 14px',
-      borderRadius: 16,
-      border: `1px solid ${B.line}`,
-      background: '#10141c',
-      padding: isMobile ? '0.9rem 0.85rem 1rem' : '1rem 1.1rem 1.05rem',
+    <section style={{
+      position: 'relative',
+      margin: '12px 0 18px',
+      borderRadius: 18,
+      border: `1px solid ${B.goldBorder}`,
+      background: `radial-gradient(120% 80% at 80% 0%, ${(stage.pathEnd ?? stage.bookPnl ?? 0) >= 0 ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.12)'}, transparent 46%), #10141c`,
+      overflow: 'hidden',
     }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-        <div style={{ ...T.kicker, color: B.gold }}>30-day path</div>
-        {path.length ? (
-          <div style={{ ...T.figure, color: pnlColor(path[path.length - 1]), fontSize: '0.95rem' }}>
-            {fmtVol(path[path.length - 1])}
+      <div style={{ height: 3, background: 'linear-gradient(90deg, transparent, #D4AF37 35%, #E8D28A 60%, transparent)' }} />
+      <div style={{ padding: isMobile ? '1rem 0.85rem 1.05rem' : '1.15rem 1.25rem 1.2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16 }}>
+          <div>
+            <div style={{ ...T.kicker, color: B.gold }}>30-day path</div>
+            <div style={{ ...T.body, color: B.textSec, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
+              {rec?.record && rec.record !== '—' ? rec.record : '—'}
+              {rec?.showPct ? ` · ${rec.wr}%` : ''}
+              {Number.isFinite(stage.roi) ? ` · ${stage.roi}% ROI` : ''}
+            </div>
+          </div>
+          {stage.path.length ? (
+            <div style={{ ...T.hero, color: tone, fontSize: isMobile ? '1.85rem' : '2.35rem', textAlign: 'right' }}>
+              {fmtVol(stage.pathEnd)}
+            </div>
+          ) : null}
+        </div>
+        {wr != null ? (
+          <div style={{ marginTop: 12, height: 5, borderRadius: 99, display: 'flex', overflow: 'hidden', background: 'rgba(239,68,68,0.45)' }}>
+            <div style={{ width: `${wr}%`, background: B.green, boxShadow: '0 0 10px rgba(16,185,129,0.45)' }} />
+          </div>
+        ) : null}
+        {stage.path.length ? (
+          <div style={{ marginTop: 8 }}>
+            <AreaChart points={stage.path} height={isMobile ? 168 : 214} />
+          </div>
+        ) : null}
+        {stage.uncharted != null ? (
+          <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>
+            Also {fmtVol(stage.uncharted)} from books with fewer than 5 bets.
+          </div>
+        ) : null}
+        {stage.sports.length ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr 1fr' : `repeat(${Math.min(stage.sports.length, 4)}, minmax(0, 1fr))`,
+            gap: 10,
+            marginTop: 16,
+          }}
+          >
+            {stage.sports.slice(0, 4).map((row) => (
+              <div key={row.sport} style={{
+                borderRadius: 12,
+                border: `1px solid ${B.hair}`,
+                background: 'rgba(255,255,255,0.025)',
+                padding: '0.7rem 0.75rem 0.75rem',
+              }}
+              >
+                <div style={{ ...T.kicker, color: B.textFaint }}>{row.sport}</div>
+                <div style={{ ...T.figure, color: pnlColor(row.pnl), fontSize: '1.15rem', marginTop: 6 }}>{fmtVol(row.pnl)}</div>
+                <div style={{ marginTop: 8 }}><WeightBar value={row.pnl} maxAbs={maxSport} height={6} /></div>
+                <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
+                  {row.honest?.text && row.honest.text !== '—' ? row.honest.text : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {stage.sharps.length ? (
+          <div style={{ marginTop: 18 }}>
+            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Who made it</div>
+            {stage.sharps.map((h) => {
+              const heat = h.heat?.key === 'hot' || h.heat?.key === 'cold'
+                ? `${h.heat.label} ${h.heat.window} ${h.heat.record}`
+                : null;
+              return (
+                <div key={h.walletShort} style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : 'minmax(0, 0.9fr) minmax(140px, 1.5fr) 92px',
+                  gap: isMobile ? '6px 12px' : '0 16px',
+                  alignItems: 'center',
+                  padding: '0.72rem 0',
+                  borderTop: `1px solid ${B.hair}`,
+                  marginTop: 8,
+                }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ ...T.name, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.name}</div>
+                    <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>
+                      {[
+                        h.honest?.text && h.honest.text !== '—' ? h.honest.text : null,
+                        Number.isFinite(h.roi) ? `${h.roi}% ROI` : null,
+                        heat,
+                      ].filter(Boolean).join(' · ')}
+                    </div>
+                  </div>
+                  {isMobile ? null : <WeightBar value={h.pnl} maxAbs={maxSharp} />}
+                  <div style={{ ...T.figure, color: pnlColor(h.pnl), textAlign: 'right', fontSize: '1.02rem' }}>{fmtVol(h.pnl)}</div>
+                  {isMobile ? <div style={{ gridColumn: '1 / -1' }}><WeightBar value={h.pnl} maxAbs={maxSharp} /></div> : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+        {stage.markets.length ? (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em', marginBottom: 8 }}>Where</div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : `repeat(${Math.min(stage.markets.length, 3)}, minmax(0, 1fr))`,
+              gap: 10,
+            }}
+            >
+              {stage.markets.slice(0, 3).map((m) => (
+                <div key={m.label} style={{
+                  borderRadius: 12,
+                  borderTop: `1px solid ${B.line}`,
+                  borderRight: `1px solid ${B.line}`,
+                  borderBottom: `1px solid ${B.line}`,
+                  borderLeft: `3px solid ${pnlColor(m.pnl ?? m.roi, B.gold)}`,
+                  padding: '0.7rem 0.8rem',
+                }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+                    <div style={{ ...T.kicker, color: B.goldSoft }}>{m.label}</div>
+                    <div style={{ ...T.figure, color: pnlColor(m.pnl, B.textSec), fontSize: '0.95rem' }}>
+                      {Number.isFinite(m.pnl) ? fmtVol(m.pnl) : (Number.isFinite(m.roi) ? `${m.roi}%` : '—')}
+                    </div>
+                  </div>
+                  <div style={{ ...T.meta, color: B.textSec, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
+                    {m.honest?.text && m.honest.text !== '—' ? m.honest.text : '—'}
+                    {m.n ? ` · ${m.n} bets` : ''}
+                  </div>
+                  <div style={{ ...T.meta, color: B.textMuted, marginTop: 2 }}>
+                    {Number.isFinite(m.roi) ? `${m.roi}% book` : ''}
+                    {Number.isFinite(m.pnl) ? ' · 30 days' : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
-      {path.length ? <div style={{ marginTop: 6 }}><LineChart points={path} /></div> : null}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1.2fr 0.8fr',
-        gap: isMobile ? 16 : 28,
-        marginTop: 8,
-      }}
-      >
-        <div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginBottom: 8 }}>By sharp</div>
-          {sharps.map((h) => (
-            <div key={h.walletShort} style={{ display: 'grid', gridTemplateColumns: 'minmax(72px, 0.7fr) 1fr 72px', gap: 10, alignItems: 'center', marginBottom: 7 }}>
-              <div style={{ ...T.meta, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.name || h.tag}</div>
-              <DivergingBar value={h.l30Pnl} maxAbs={maxAbs} />
-              <div style={{ ...T.figure, color: pnlColor(h.l30Pnl), textAlign: 'right', fontSize: '0.82rem' }}>{fmtVol(h.l30Pnl)}</div>
-            </div>
-          ))}
-        </div>
-        <div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginBottom: 8 }}>By sport</div>
-          {sportRows.length ? sportRows.map((row) => (
-            <div key={row.sport} style={{ display: 'grid', gridTemplateColumns: '42px 1fr 72px', gap: 10, alignItems: 'center', marginBottom: 7 }}>
-              <div style={{ ...T.meta, color: B.textSec }}>{row.sport}</div>
-              <DivergingBar value={row.pnl} maxAbs={maxAbs} />
-              <div style={{ ...T.figure, color: pnlColor(row.pnl), textAlign: 'right', fontSize: '0.82rem' }}>{fmtVol(row.pnl)}</div>
-            </div>
-          )) : (
-            <div style={{ ...T.meta, color: B.textFaint }}>No sport split yet.</div>
-          )}
-        </div>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -974,14 +1089,20 @@ function SharpProfile({ dossier, isMobile }) {
   const close = Number.isFinite(dossier.clv?.pctPos) ? `${dossier.clv.pctPos}% close` : null;
   const lead = [...(dossier.markets || [])].sort((a, b) => (b.n || 0) - (a.n || 0))[0];
   const haveL30 = Number.isFinite(dossier.l30Pnl);
+  const showingPath = !haveL30 && Number.isFinite(dossier.pathPnl);
+  const since = fmtSince(dossier.sparkFromDate);
   const thinBook = (lead?.n || 0) < HONEST_PCT_N;
-  const heroText = haveL30 ? fmtVol(dossier.l30Pnl) : (Number.isFinite(lead?.roi) ? `${lead.roi}%` : '—');
+  const heroText = haveL30
+    ? fmtVol(dossier.l30Pnl)
+    : (showingPath ? fmtVol(dossier.pathPnl) : (Number.isFinite(lead?.roi) ? `${lead.roi}%` : '—'));
   const heroColor = haveL30
     ? pnlColor(dossier.l30Pnl, B.text)
-    : (thinBook ? B.goldSoft : pnlColor(lead?.roi, B.text));
+    : (showingPath ? pnlColor(dossier.pathPnl, B.text) : (thinBook ? B.goldSoft : pnlColor(lead?.roi, B.text)));
   const side = haveL30
     ? [dossier.honest?.text, Number.isFinite(dossier.roi) ? `${dossier.roi}% ROI` : null, close].filter(Boolean).join(' · ')
-    : [lead?.honest?.text, Number.isFinite(lead?.roi) ? `${lead.roi}% book` : null, lead?.n ? `${lead.n} bets` : null].filter(Boolean).join(' · ');
+    : showingPath
+      ? [since ? `Since ${since}` : 'Last results', close].filter(Boolean).join(' · ')
+      : [lead?.honest?.text, Number.isFinite(lead?.roi) ? `${lead.roi}% book` : null, lead?.n ? `${lead.n} bets` : null].filter(Boolean).join(' · ');
   return (
     <div style={{
       margin: '0 0 8px',
@@ -1006,9 +1127,11 @@ function SharpProfile({ dossier, isMobile }) {
       {dossier.spark?.length >= 2 ? (
         <div style={{ marginTop: 8 }}>
           <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>
-            {dossier.sparkFrom === 'book' ? '30-day path' : 'These results'}
+            {dossier.sparkScope === 'recent'
+              ? `Last results${fmtSince(dossier.sparkFromDate) ? ` · since ${fmtSince(dossier.sparkFromDate)}` : ''}`
+              : (dossier.sparkFrom === 'book' ? '30-day path' : 'These results')}
           </div>
-          <LineChart points={dossier.spark} height={88} />
+          <AreaChart points={dossier.spark} height={isMobile ? 112 : 136} />
         </div>
       ) : null}
       {dossier.markets?.length ? (
@@ -1045,9 +1168,15 @@ function SharpProfile({ dossier, isMobile }) {
         </div>
       ) : null}
       <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', margin: '12px 0 4px' }}>
-        Last {dossier.results.length || 0} graded
-        {dossier.resultN > dossier.results.length ? ` of ${dossier.resultN}` : ''}
+        {dossier.results.length
+          ? `Last ${dossier.results.length} graded${dossier.resultN > dossier.results.length ? ` of ${dossier.resultN}` : ''}`
+          : (dossier.quietMonth ? 'Quiet month' : 'Last 0 graded')}
       </div>
+      {dossier.tapeScope === 'recent' && dossier.results.length ? (
+        <div style={{ ...T.meta, color: B.textMuted, marginBottom: 4 }}>
+          Older than 30 days{since ? ` · since ${since}` : ''}. Nothing graded this month.
+        </div>
+      ) : null}
       {dossier.results.length ? dossier.results.map((leg) => (
         <div
           key={leg.id}
@@ -1073,7 +1202,11 @@ function SharpProfile({ dossier, isMobile }) {
           </div>
         </div>
       )) : (
-        <div style={{ ...T.meta, color: B.textFaint, padding: '0.4rem 0 0.2rem' }}>No graded tickets in this window.</div>
+        <div style={{ ...T.meta, color: B.textFaint, padding: '0.4rem 0 0.2rem' }}>
+          {dossier.quietMonth || dossier.tapeScope === 'recent'
+            ? `No bets in the last 30 days. The path is the last stretch of this book${since ? `, from ${since}` : ''}.`
+            : 'No graded tickets in this window.'}
+        </div>
       )}
     </div>
   );
@@ -1477,7 +1610,7 @@ export default function MySharpsDesk({
       {room === 'book' ? (
         <>
           <Hero snapshot={snapshot} isMobile={isMobile} onOpenBets={() => setRoom('bets')} />
-          {holdings.length ? <BookVisual holdings={holdings} isMobile={isMobile} /> : null}
+          {holdings.length ? <PortfolioStage holdings={holdings} isMobile={isMobile} /> : null}
           {!holdings.length ? (
             <div style={{ padding: '1.6rem 0 0.4rem' }}>
               <div style={{ ...T.hero, fontSize: '1.45rem', color: B.text }}>Nobody on the list</div>

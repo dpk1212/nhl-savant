@@ -25,6 +25,7 @@ import {
   blendDollarCurves,
   buildFindCandidates,
   buildPortfolioSnapshot,
+  buildPortfolioStage,
   buildSharpDossier,
   gainsSplit,
   gradeTail,
@@ -645,6 +646,71 @@ assert.ok(String(dossier.results[0].date) >= String(dossier.results[29].date));
 assert.equal(dossier.results[0].pick, 'Yankees');
 assert.equal(dossier.sparkFrom, 'book');
 assert.ok(dossier.spark.length >= 5);
+
+const quiet = buildSharpDossier(new Map([['e05213', {
+  clvSkill: { n: 40, pctPos: 57 },
+  bySport: {
+    MLB: {
+      whitelistTier: 'CONFIRMED',
+      recentActionWindow: { n: 0, wins: 0, losses: 0, settledPnl: 0, dollarRoi: null },
+      positions: { n: 45, wins: 32, losses: 13, wr: 71, dollarRoi: 45, invested: 1781035 },
+      form: {
+        actionL10: { w: 4, l: 6 },
+        actionDollarCurve: [0, 120000, 240000, 360000, 485846],
+        actionDollarEnd: 485846,
+        flatCurveFrom: '2026-06-02',
+        recentAction: [],
+        recentActionTotalN: 0,
+        curveLegs: [
+          { date: '2026-06-18', marketType: 'TOTAL', side: 'over', line: 8.5, gameKey: 'nyy_bos', away: 'NYY', home: 'BOS', dollarPnl: 4200, won: 1 },
+          { date: '2026-06-12', marketType: 'ML', side: 'home', label: 'Dodgers', gameKey: 'sf_lad', away: 'SF', home: 'LAD', dollarPnl: -1800, won: 0 },
+        ],
+      },
+      byMarket: {
+        TOTAL: { positions: { n: 26, wins: 21, losses: 5, wr: 81, dollarRoi: 54 } },
+      },
+    },
+  },
+}]]), 'e05213', { sport: 'MLB' });
+assert.equal(quiet.l30Pnl, null);
+assert.equal(quiet.sparkScope, 'recent');
+assert.equal(quiet.sparkFromDate, '2026-06-02');
+assert.equal(quiet.pathPnl, 485846);
+assert.equal(quiet.tapeScope, 'recent');
+assert.equal(quiet.quietMonth, false);
+assert.equal(quiet.results.length, 2);
+assert.equal(quiet.results[0].pick, 'Over 8.5');
+assert.equal(quiet.results[0].date, '2026-06-18');
+
+const quietEmpty = buildSharpDossier(new Map([['913987', {
+  bySport: {
+    MLB: {
+      whitelistTier: 'CONFIRMED',
+      recentActionWindow: { n: 0, wins: 0, losses: 0, settledPnl: 0 },
+      form: {
+        actionDollarCurve: [0, -40000, -90000, -160000, -262000],
+        flatCurveFrom: '2026-06-04',
+        recentAction: [],
+        recentActionTotalN: 0,
+      },
+    },
+  },
+}]]), '913987', { sport: 'MLB' });
+assert.equal(quietEmpty.results.length, 0);
+assert.equal(quietEmpty.quietMonth, true);
+assert.equal(quietEmpty.pathPnl, -262000);
+assert.equal(quietEmpty.sparkScope, 'recent');
+
+const stage = buildPortfolioStage([
+  { walletShort: 'a', name: 'Bands', tag: '··a', l30Pnl: 51000, roi: 34, wins: 26, losses: 14, honest: { text: '26–14 · 65%', n: 40, wr: 65, showPct: true }, spark: [0, 51000], heat: { key: 'hot', label: 'Hot', window: 'L10', record: '7–3', n: 10 }, lines: [{ sport: 'MLB', pnl: 51000, wins: 26, losses: 14 }], markets: [{ label: 'Total', market: 'TOTAL', n: 16, wins: 11, losses: 5, roi: 22, l30: { pnl: 28000 } }] },
+  { walletShort: 'b', name: 'Harbor', tag: '··b', l30Pnl: 43100, roi: 27, wins: 22, losses: 12, honest: { text: '22–12 · 65%', n: 34, wr: 65, showPct: true }, spark: [0, 39300], lines: [{ sport: 'MLB', pnl: 39300, wins: 20, losses: 10 }, { sport: 'NFL', pnl: 3800, wins: 2, losses: 2 }], markets: [{ label: 'ML', market: 'ML', n: 12, wins: 9, losses: 3, roi: 17, l30: { pnl: 22000 } }] },
+]);
+assert.equal(stage.pathEnd, 90300);
+assert.equal(stage.bookPnl, 94100);
+assert.equal(stage.uncharted, 3800);
+assert.equal(stage.sports[0].sport, 'MLB');
+assert.equal(stage.sports[0].pnl, 90300);
+assert.equal(stage.markets.length, 2);
 
 const lines = groupPortfolioBets([{
   id: 't1', split: false, shared: false, maxRatio: 2.1, invested: 6400,

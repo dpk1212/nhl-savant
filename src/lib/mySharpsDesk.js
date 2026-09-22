@@ -56,8 +56,11 @@ function l30FromRec(rec) {
       roi: Number.isFinite(Number(win.dollarRoi)) ? Math.round(Number(win.dollarRoi)) : null,
     };
   }
+  // An explicit empty month is not the curve. The curve falls back to the
+  // last 20 bets when this month is thin, and that dollar is not "30 days".
+  if (win && Number(win.n) === 0) return null;
   const form = rec?.form;
-  if (Number.isFinite(Number(form?.actionDollarEnd))) {
+  if (Number.isFinite(Number(form?.actionDollarEnd)) && form?.actionCurveScope !== 'recent') {
     return {
       n: Number(form?.recentActionTotalN) || 0,
       wins: null,
@@ -207,6 +210,35 @@ function sparkFromForm(form) {
   if (!Array.isArray(raw) || raw.length < 5) return null;
   const pts = raw.map((v) => Number(v)).filter((n) => Number.isFinite(n));
   return pts.length >= 5 ? pts : null;
+}
+
+/**
+ * `l30` is a real month (5+ priced bets). `recent` is the last stretch of
+ * the book, drawn when this month is too thin to be a path.
+ */
+function sportPath(rec) {
+  const form = rec?.form || {};
+  const n = Number(rec?.recentActionWindow?.n) || 0;
+  const totalN = Number(form.recentActionTotalN) || 0;
+  const spark = sparkFromForm(form);
+  let scope = form.actionCurveScope || null;
+  if (scope !== 'l30' && scope !== 'recent') {
+    if (!spark) scope = null;
+    else scope = (n >= 5 || totalN >= 5) ? 'l30' : 'recent';
+  }
+  const from = form.actionCurveFrom || form.flatCurveFrom || null;
+  return {
+    scope,
+    from: scope === 'recent' ? from : null,
+    spark,
+    windowN: n,
+  };
+}
+
+function legWon(leg) {
+  if (leg?.won === 1 || leg?.won === true) return 1;
+  if (leg?.won === 0 || leg?.won === false) return 0;
+  return null;
 }
 
 function formFromRec(rec) {
@@ -1260,13 +1292,15 @@ function sharpBook(prof) {
       sport,
       pnl: sp,
       roi: Number.isFinite(l30?.roi) ? l30.roi : null,
+      wins: Number.isFinite(l30?.wins) ? l30.wins : null,
+      losses: Number.isFinite(l30?.losses) ? l30.losses : null,
       honest: l30 ? honestRecord(l30.wins, l30.losses, l30.wr) : honestRecord(null, null, null),
       market,
       heat,
     };
     lines.push(line);
-    const spark = sparkFromForm(rec?.form);
-    if (spark) sparks.push(spark);
+    const path = sportPath(rec);
+    if (path.scope === 'l30' && path.spark) sparks.push(path.spark);
     if (l30 && Number.isFinite(l30.pnl) && Number.isFinite(l30.roi)) {
       roiParts.push({ pnl: l30.pnl, roi: l30.roi });
     }
@@ -1319,6 +1353,7 @@ function scopedProfile(prof, sport) {
 function resultFromLeg(leg, sport) {
   const pnl = legDollar(leg);
   const date = leg?.date || null;
+  const won = legWon(leg);
   return {
     id: [sport, date, leg?.gameKey, leg?.marketType, leg?.side, leg?.team].filter(Boolean).join('|'),
     date,
@@ -1326,10 +1361,18 @@ function resultFromLeg(leg, sport) {
     matchup: ticketMatchup(leg),
     sport: leg?.sport || sport || null,
     market: MARKET_LABEL[String(leg?.marketType || '').toUpperCase()] || leg?.marketType || null,
-    won: leg?.won === 1,
-    lost: leg?.won === 0,
+    won: won === 1,
+    lost: won === 0,
     pnl: Number.isFinite(pnl) ? Math.round(pnl) : null,
   };
+}
+
+function gradedTape(form) {
+  const month = (Array.isArray(form?.recentAction) ? form.recentAction : []).filter((leg) => legWon(leg) != null);
+  if (month.length) return { legs: month, scope: 'l30' };
+  const older = (Array.isArray(form?.curveLegs) ? form.curveLegs : []).filter((leg) => legWon(leg) != null);
+  if (older.length) return { legs: older, scope: 'recent' };
+  return { legs: [], scope: null };
 }
 
 /**
@@ -1342,17 +1385,28 @@ export function buildSharpDossier(walletProfiles, walletShort, { sport = 'All', 
   const book = sharpBook(prof);
   const sports = confirmedSports(prof);
   const results = [];
+  const l30Sparks = [];
+  const recentSparks = [];
+  let recentFrom = null;
+  let sawRecent = false;
   for (const sp of sports) {
-    const legs = prof?.bySport?.[sp]?.form?.recentAction;
-    if (!Array.isArray(legs)) continue;
-    for (const leg of legs) {
-      if (leg?.won !== 0 && leg?.won !== 1) continue;
-      results.push(resultFromLeg(leg, sp));
+    const rec = prof?.bySport?.[sp];
+    const path = sportPath(rec);
+    if (path.spark && path.scope === 'l30') l30Sparks.push(path.spark);
+    if (path.spark && path.scope === 'recent') {
+      recentSparks.push(path.spark);
+      sawRecent = true;
+      if (path.from && (!recentFrom || String(path.from) < String(recentFrom))) recentFrom = path.from;
     }
+    const tape = gradedTape(rec?.form);
+    if (tape.scope === 'recent') sawRecent = true;
+    for (const leg of tape.legs) results.push(resultFromLeg(leg, sp));
   }
   results.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.id).localeCompare(String(a.id)));
   const shown = results.slice(0, limit);
-  const spark = blendDollarCurves(book.sparks);
+  const monthSpark = blendDollarCurves(l30Sparks);
+  const olderSpark = blendDollarCurves(recentSparks);
+  const spark = monthSpark.length ? monthSpark : olderSpark;
   let resultSpark = [];
   if (!spark.length && shown.some((r) => Number.isFinite(r.pnl))) {
     const chrono = [...shown].reverse();
@@ -1362,6 +1416,8 @@ export function buildSharpDossier(walletProfiles, walletShort, { sport = 'All', 
       return Math.round(run);
     });
   }
+  const sparkScope = monthSpark.length ? 'l30' : (olderSpark.length ? 'recent' : null);
+  const drawn = spark.length ? spark : resultSpark;
   return {
     walletShort: short,
     tag: fmtWalletTag(short),
@@ -1373,8 +1429,13 @@ export function buildSharpDossier(walletProfiles, walletShort, { sport = 'All', 
     heat: book.heat,
     markets: book.markets || [],
     lines: book.lines || [],
-    spark: spark.length ? spark : resultSpark,
+    spark: drawn,
     sparkFrom: spark.length ? 'book' : (resultSpark.length ? 'results' : null),
+    sparkScope,
+    sparkFromDate: sparkScope === 'recent' ? recentFrom : null,
+    pathPnl: sparkScope === 'recent' && drawn.length ? drawn[drawn.length - 1] : null,
+    tapeScope: results.length ? (sawRecent && !monthSpark.length ? 'recent' : 'l30') : (sawRecent ? 'recent' : null),
+    quietMonth: sawRecent && results.length === 0,
     results: shown,
     resultN: results.length,
   };
@@ -1667,6 +1728,115 @@ export function buildFindCandidates(walletProfiles, {
   };
   rows.sort(rankers[sort] || byRoi);
   return { total: rows.length, rows: rows.slice(0, limit) };
+}
+
+function marketRollup(holdings) {
+  const by = new Map();
+  for (const h of holdings || []) {
+    for (const m of h.markets || []) {
+      const key = m.label || m.market || 'Market';
+      const cur = by.get(key) || {
+        label: key, n: 0, wins: 0, losses: 0, pnl: 0, havePnl: false, roiN: 0, roiSum: 0,
+      };
+      cur.n += Number(m.n) || 0;
+      cur.wins += Number(m.wins) || 0;
+      cur.losses += Number(m.losses) || 0;
+      if (Number.isFinite(m.l30?.pnl)) {
+        cur.havePnl = true;
+        cur.pnl += m.l30.pnl;
+      }
+      if (Number.isFinite(m.roi) && Number(m.n) > 0) {
+        cur.roiN += Number(m.n);
+        cur.roiSum += m.roi * Number(m.n);
+      }
+      by.set(key, cur);
+    }
+  }
+  return [...by.values()].map((row) => ({
+    label: row.label,
+    n: row.n,
+    wins: row.wins,
+    losses: row.losses,
+    pnl: row.havePnl ? Math.round(row.pnl) : null,
+    roi: row.roiN > 0 ? Math.round(row.roiSum / row.roiN) : null,
+    honest: honestRecord(row.wins, row.losses),
+  })).sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0) || (b.n || 0) - (a.n || 0));
+}
+
+/**
+ * The portfolio instrument. Path is real 30-day curves only.
+ * Dollars in shorter books stay in the total and are named, not drawn.
+ */
+export function buildPortfolioStage(holdings) {
+  const rows = holdings || [];
+  const curves = rows.map((h) => h.spark).filter((c) => Array.isArray(c) && c.length >= 2);
+  const path = [];
+  if (curves.length) {
+    const n = Math.max(...curves.map((c) => c.length));
+    for (let i = 0; i < n; i += 1) {
+      path.push(curves.reduce((s, c) => {
+        const idx = Math.round((i / (n - 1)) * (c.length - 1));
+        return s + (Number(c[idx]) || 0);
+      }, 0));
+    }
+  }
+  let bookPnl = 0;
+  let have = false;
+  let w = 0;
+  let l = 0;
+  const roiParts = [];
+  for (const h of rows) {
+    if (Number.isFinite(h.l30Pnl)) {
+      have = true;
+      bookPnl += h.l30Pnl;
+      if (Number.isFinite(h.roi)) roiParts.push({ pnl: h.l30Pnl, roi: h.roi });
+    }
+    w += Number(h.wins) || 0;
+    l += Number(h.losses) || 0;
+  }
+  const pathEnd = path.length ? Math.round(path[path.length - 1]) : null;
+  const gap = have && pathEnd != null ? Math.round(bookPnl - pathEnd) : null;
+  const sports = new Map();
+  for (const h of rows) {
+    for (const line of h.lines || []) {
+      if (!line.sport || !Number.isFinite(line.pnl)) continue;
+      const cur = sports.get(line.sport) || { sport: line.sport, pnl: 0, wins: 0, losses: 0 };
+      cur.pnl += line.pnl;
+      cur.wins += Number(line.wins) || 0;
+      cur.losses += Number(line.losses) || 0;
+      sports.set(line.sport, cur);
+    }
+  }
+  const sportRows = [...sports.values()]
+    .map((row) => ({
+      ...row,
+      pnl: Math.round(row.pnl),
+      honest: honestRecord(row.wins, row.losses),
+    }))
+    .sort((a, b) => b.pnl - a.pnl);
+  const sharps = rows
+    .filter((h) => Number.isFinite(h.l30Pnl))
+    .map((h) => ({
+      walletShort: h.walletShort,
+      name: h.name || h.tag,
+      tag: h.tag,
+      pnl: h.l30Pnl,
+      roi: Number.isFinite(h.roi) ? h.roi : null,
+      honest: h.honest,
+      heat: h.heat,
+      spark: Array.isArray(h.spark) && h.spark.length >= 2 ? h.spark : null,
+    }));
+  return {
+    path: path.map((n) => Math.round(n)),
+    pathEnd,
+    bookPnl: have ? Math.round(bookPnl) : null,
+    uncharted: gap != null && Math.abs(gap) >= 500 ? gap : null,
+    roi: blendRoi(roiParts),
+    honest: honestRecord(w, l),
+    sharps,
+    sports: sportRows,
+    markets: marketRollup(rows),
+  };
 }
 
 /**
