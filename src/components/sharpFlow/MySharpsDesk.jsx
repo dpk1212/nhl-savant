@@ -914,7 +914,6 @@ function PortfolioStage({ holdings, isMobile }) {
   const maxSharp = Math.max(1, ...stage.sharps.map((h) => Math.abs(h.pnl) || 0));
   const maxSport = Math.max(1, ...stage.sports.map((s) => Math.abs(s.pnl) || 0));
   const rec = stage.honest;
-  const wr = rec?.n ? rec.wr : null;
   return (
     <section style={{
       position: 'relative',
@@ -942,19 +941,9 @@ function PortfolioStage({ holdings, isMobile }) {
             </div>
           ) : null}
         </div>
-        {wr != null ? (
-          <div style={{ marginTop: 12, height: 5, borderRadius: 99, display: 'flex', overflow: 'hidden', background: 'rgba(239,68,68,0.45)' }}>
-            <div style={{ width: `${wr}%`, background: B.green, boxShadow: '0 0 10px rgba(16,185,129,0.45)' }} />
-          </div>
-        ) : null}
         {stage.path.length ? (
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 4 }}>
             <AreaChart points={stage.path} height={isMobile ? 168 : 214} />
-          </div>
-        ) : null}
-        {stage.uncharted != null ? (
-          <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>
-            Also {fmtVol(stage.uncharted)} from books with fewer than 5 bets.
           </div>
         ) : null}
         {stage.sports.length ? (

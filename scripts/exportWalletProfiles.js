@@ -272,6 +272,35 @@ async function loadWalletBets() {
 }
 
 // ── Load Source B (positions) ──────────────────────────────────────
+/** Same game, side, stake, and dollars on another date is one bet. */
+function dedupePositionCopies(rows) {
+  const out = [];
+  const at = new Map();
+  for (const row of rows || []) {
+    const gk = String(row?.gameKey || '').toLowerCase();
+    if (!gk) {
+      out.push(row);
+      continue;
+    }
+    const key = [
+      row.sport,
+      row.market,
+      gk,
+      String(row.side || '').toLowerCase(),
+      Math.round(Number(row.invested) || 0),
+      Math.round(Number(row.settledPnl) || 0),
+    ].join('|');
+    const i = at.get(key);
+    if (i == null) {
+      at.set(key, out.length);
+      out.push(row);
+      continue;
+    }
+    if (String(row.date || '') < String(out[i].date || '')) out[i] = row;
+  }
+  return out;
+}
+
 async function loadPositions() {
   const snap = await db.collection('sharp_action_positions').where('status', '==', 'GRADED').get();
   const rows = [];
@@ -1122,7 +1151,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
   const profiles = {};
   for (const walletShort of allWallets) {
     const pickBets = walletBets.filter(b => b.wallet === walletShort);
-    const posBets = positions.filter(p => p.walletShort === walletShort);
+    const posBets = dedupePositionCopies(positions.filter(p => p.walletShort === walletShort));
     profiles[walletShort] = buildProfile(
       walletShort, pickBets, posBets, clvLedger, avgByShort.get(walletShort) ?? null,
     );

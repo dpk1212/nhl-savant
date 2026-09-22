@@ -184,6 +184,9 @@ const hotRoster = buildMySharpsRoster(hotState, {
   actionRows: [{ walletShort: 'e4ec62', invested: 162500, displaySizeRatio: 2 }],
   sportFilter: 'NFL',
 });
+assert.equal(heatFromForm({ actionL10: { w: 5, l: 0 }, actionL5: { w: 5, l: 0 } }).window, 'L5');
+assert.equal(heatFromForm({ actionL10: { w: 7, l: 3 }, actionL5: { w: 4, l: 1 } }).window, 'L10');
+
 assert.equal(hotRoster[0].heat.key, 'hot');
 assert.equal(hotRoster[0].lean.key, 'tail');
 assert.equal(hotRoster[0].l30Honest.showPct, true);
@@ -701,13 +704,46 @@ assert.equal(quietEmpty.quietMonth, true);
 assert.equal(quietEmpty.pathPnl, -262000);
 assert.equal(quietEmpty.sparkScope, 'recent');
 
+const copied = buildSharpDossier(new Map([['26f737', {
+  bySport: {
+    SOC: {
+      whitelistTier: 'CONFIRMED',
+      recentActionWindow: { n: 5, wins: 5, losses: 0, wr: 100, settledPnl: 51890, dollarRoi: 97.6, invested: 53144 },
+      positions: { n: 5, wins: 5, losses: 0, wr: 100, settledPnl: 51890, dollarRoi: 97.6, invested: 53144 },
+      form: {
+        actionL5: { w: 5, l: 0 },
+        actionL10: { w: 5, l: 0 },
+        actionDollarCurve: [3315, 6630, 27965, 49300, 51890],
+        actionDollarEnd: 51890,
+        recentActionTotalN: 5,
+        recentAction: [
+          { date: '2026-09-14', marketType: 'ML', side: 'away', label: 'Villarreal CF', gameKey: 'vil_mlg', away: 'Villarreal CF', home: 'Málaga CF', dollarPnl: 3315, invested: 3185, won: 1 },
+          { date: '2026-09-15', marketType: 'ML', side: 'away', label: 'Villarreal CF', gameKey: 'vil_mlg', away: 'Villarreal CF', home: 'Málaga CF', dollarPnl: 3315, invested: 3185, won: 1 },
+          { date: '2026-09-16', marketType: 'ML', side: 'away', label: 'Villarreal CF', gameKey: 'vil_mlg', away: 'Villarreal CF', home: 'Málaga CF', dollarPnl: 21335, invested: 21182, won: 1 },
+          { date: '2026-09-17', marketType: 'ML', side: 'away', label: 'Villarreal CF', gameKey: 'vil_mlg', away: 'Villarreal CF', home: 'Málaga CF', dollarPnl: 21335, invested: 21182, won: 1 },
+          { date: '2026-09-20', marketType: 'ML', side: 'home', label: 'Villarreal CF', gameKey: 'lev_vil', away: 'Levante UD', home: 'Villarreal CF', dollarPnl: 2590, invested: 4410, won: 1 },
+        ],
+      },
+      byMarket: {
+        ML: { positions: { n: 5, wins: 5, losses: 0, wr: 100, dollarRoi: 97.6, invested: 53144, settledPnl: 51890 } },
+      },
+    },
+  },
+}]]), '26f737', { sport: 'SOC' });
+assert.equal(copied.results.length, 3);
+assert.equal(copied.l30Pnl, 27240);
+assert.equal(copied.honest.record, '3–0');
+assert.equal(copied.heat.window, 'L5');
+assert.equal(copied.markets[0].n, 3);
+
 const stage = buildPortfolioStage([
   { walletShort: 'a', name: 'Bands', tag: '··a', l30Pnl: 51000, roi: 34, wins: 26, losses: 14, honest: { text: '26–14 · 65%', n: 40, wr: 65, showPct: true }, spark: [0, 51000], heat: { key: 'hot', label: 'Hot', window: 'L10', record: '7–3', n: 10 }, lines: [{ sport: 'MLB', pnl: 51000, wins: 26, losses: 14 }], markets: [{ label: 'Total', market: 'TOTAL', n: 16, wins: 11, losses: 5, roi: 22, l30: { pnl: 28000 } }] },
   { walletShort: 'b', name: 'Harbor', tag: '··b', l30Pnl: 43100, roi: 27, wins: 22, losses: 12, honest: { text: '22–12 · 65%', n: 34, wr: 65, showPct: true }, spark: [0, 39300], lines: [{ sport: 'MLB', pnl: 39300, wins: 20, losses: 10 }, { sport: 'NFL', pnl: 3800, wins: 2, losses: 2 }], markets: [{ label: 'ML', market: 'ML', n: 12, wins: 9, losses: 3, roi: 17, l30: { pnl: 22000 } }] },
 ]);
-assert.equal(stage.pathEnd, 90300);
 assert.equal(stage.bookPnl, 94100);
-assert.equal(stage.uncharted, 3800);
+assert.equal(stage.pathEnd, 94100);
+assert.equal(stage.path[stage.path.length - 1], 94100);
+assert.equal(stage.uncharted, null);
 assert.equal(stage.sports[0].sport, 'MLB');
 assert.equal(stage.sports[0].pnl, 90300);
 assert.equal(stage.markets.length, 2);

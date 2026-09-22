@@ -25,13 +25,159 @@ const HEAT_RANK = { hot: 0, even: 1, quiet: 2, cold: 3 };
 function profileFor(walletProfiles, short) {
   if (!walletProfiles || !short) return null;
   const s = String(short).toLowerCase();
-  if (typeof walletProfiles.get === 'function') {
-    return walletProfiles.get(s)
-      || walletProfiles.get(s.toUpperCase())
-      || walletProfiles.get(short)
-      || null;
+  const raw = typeof walletProfiles.get === 'function'
+    ? (walletProfiles.get(s) || walletProfiles.get(s.toUpperCase()) || walletProfiles.get(short) || null)
+    : (walletProfiles[s] || walletProfiles[short] || null);
+  return raw ? profileWithoutCopiedBets(raw) : null;
+}
+
+/** Same game, same side, same stake, same dollars — one ticket. Scan dates clone soccer bets. */
+function legCopyKey(leg) {
+  const gk = String(leg?.gameKey || '').toLowerCase();
+  if (!gk) return '';
+  const pnl = Number.isFinite(Number(leg?.dollarPnl)) ? Number(leg.dollarPnl) : Number(leg?.settledPnl);
+  return [
+    String(leg?.marketType || leg?.market || '').toUpperCase(),
+    gk,
+    String(leg?.side || '').toLowerCase(),
+    Math.round(Number(leg?.invested) || 0),
+    Math.round(Number(pnl) || 0),
+  ].join('|');
+}
+
+function dedupeLegs(legs) {
+  const out = [];
+  const at = new Map();
+  for (const leg of legs || []) {
+    const key = legCopyKey(leg);
+    if (!key) {
+      out.push(leg);
+      continue;
+    }
+    const i = at.get(key);
+    if (i == null) {
+      at.set(key, out.length);
+      out.push(leg);
+      continue;
+    }
+    if (String(leg?.date || '') < String(out[i]?.date || '')) out[i] = leg;
   }
-  return walletProfiles[s] || walletProfiles[short] || null;
+  return out;
+}
+
+function splitCopiedLegs(legs) {
+  const list = Array.isArray(legs) ? legs : [];
+  const unique = dedupeLegs(list);
+  const need = new Map();
+  for (const leg of unique) {
+    const key = legCopyKey(leg) || '';
+    if (!key) continue;
+    need.set(key, (need.get(key) || 0) + 1);
+  }
+  const dropped = [];
+  for (const leg of list) {
+    const key = legCopyKey(leg);
+    if (!key) continue;
+    const left = need.get(key) || 0;
+    if (left > 0) need.set(key, left - 1);
+    else dropped.push(leg);
+  }
+  return { unique, dropped };
+}
+
+function subtractCopies(block, dropped) {
+  if (!block || !(dropped || []).length) return block;
+  const n = Math.max(0, (Number(block.n) || 0) - dropped.length);
+  const winsDrop = dropped.filter((leg) => legWon(leg) === 1).length;
+  const wins = Math.max(0, (Number(block.wins) || 0) - winsDrop);
+  const losses = Math.max(0, n - wins);
+  const pnlDrop = dropped.reduce((sum, leg) => sum + (Number(leg?.dollarPnl ?? leg?.settledPnl) || 0), 0);
+  const invDrop = dropped.reduce((sum, leg) => sum + (Number(leg?.invested) || 0), 0);
+  const settled = Number(block.settledPnl);
+  const invested = Number(block.invested);
+  const nextPnl = Number.isFinite(settled) ? Math.round(settled - pnlDrop) : block.settledPnl;
+  const nextInv = Number.isFinite(invested) ? Math.max(0, Math.round(invested - invDrop)) : block.invested;
+  const wr = n ? +((wins / n) * 100).toFixed(1) : (n === 0 ? null : block.wr);
+  const dollarRoi = Number(nextInv) > 0 && Number.isFinite(Number(nextPnl))
+    ? +((Number(nextPnl) / Number(nextInv)) * 100).toFixed(1)
+    : block.dollarRoi;
+  return {
+    ...block,
+    n,
+    wins,
+    losses,
+    wr,
+    settledPnl: nextPnl,
+    invested: nextInv,
+    dollarRoi,
+  };
+}
+
+function stretchOf(legs, n) {
+  const slice = legs.slice(-n);
+  const w = slice.filter((leg) => legWon(leg) === 1).length;
+  return { w, l: slice.length - w };
+}
+
+function dedupeSportRec(rec) {
+  const form = rec?.form;
+  const raw = Array.isArray(form?.recentAction) ? form.recentAction : [];
+  const { unique, dropped } = splitCopiedLegs(raw);
+  if (!dropped.length) return rec;
+  const ordered = [...unique].sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  let run = 0;
+  const curve = [];
+  for (const leg of ordered) {
+    const d = legDollar(leg);
+    if (!Number.isFinite(d)) continue;
+    run += d;
+    curve.push(Math.round(run));
+  }
+  const byMarket = { ...(rec.byMarket || {}) };
+  const droppedByMarket = new Map();
+  for (const leg of dropped) {
+    const m = String(leg?.marketType || leg?.market || '').toUpperCase();
+    if (!m) continue;
+    const list = droppedByMarket.get(m) || [];
+    list.push(leg);
+    droppedByMarket.set(m, list);
+  }
+  for (const [m, legs] of droppedByMarket) {
+    if (!byMarket[m]) continue;
+    byMarket[m] = {
+      ...byMarket[m],
+      positions: subtractCopies(byMarket[m].positions, legs),
+      recentActionWindow: subtractCopies(byMarket[m].recentActionWindow, legs),
+    };
+  }
+  return {
+    ...rec,
+    positions: subtractCopies(rec.positions, dropped),
+    recentActionWindow: subtractCopies(rec.recentActionWindow, dropped),
+    byMarket,
+    form: {
+      ...form,
+      recentAction: ordered,
+      recentActionTotalN: ordered.length,
+      actionDollarCurve: curve.length >= 5 ? curve : [],
+      actionDollarEnd: curve.length ? curve[curve.length - 1] : form.actionDollarEnd,
+      actionL5: ordered.length ? stretchOf(ordered, Math.min(5, ordered.length)) : form.actionL5,
+      actionL10: ordered.length ? stretchOf(ordered, Math.min(10, ordered.length)) : form.actionL10,
+    },
+  };
+}
+
+function profileWithoutCopiedBets(prof) {
+  const by = prof?.bySport;
+  if (!by || typeof by !== 'object') return prof;
+  let changed = false;
+  const bySport = {};
+  for (const [sport, rec] of Object.entries(by)) {
+    const next = dedupeSportRec(rec);
+    if (next !== rec) changed = true;
+    bySport[sport] = next;
+  }
+  return changed ? { ...prof, bySport } : prof;
 }
 
 function confirmedSports(prof) {
@@ -106,15 +252,15 @@ export function heatFromForm(form) {
   const recent = wl(form?.actionL5) || wl(form?.l5);
   let use = null;
   let window = null;
-  if (stretch && stretch.n >= HEAT_CLAIM_N) {
+  if (stretch && stretch.n >= 10) {
     use = stretch;
     window = 'L10';
   } else if (recent && recent.n >= HEAT_THIN_N) {
     use = recent;
     window = 'L5';
-  } else if (stretch && stretch.n >= HEAT_THIN_N) {
+  } else if (stretch && stretch.n >= HEAT_CLAIM_N) {
     use = stretch;
-    window = 'L10';
+    window = 'L5';
   }
   if (!use) {
     return { key: 'quiet', label: 'Quiet', n: 0, record: null, wr: null, window: null };
@@ -1764,8 +1910,8 @@ function marketRollup(holdings) {
 }
 
 /**
- * The portfolio instrument. Path is real 30-day curves only.
- * Dollars in shorter books stay in the total and are named, not drawn.
+ * The portfolio instrument. The path ends on the same 30-day total as the hero.
+ * A short book is drawn as the last step so the headline is one number.
  */
 export function buildPortfolioStage(holdings) {
   const rows = holdings || [];
@@ -1794,8 +1940,9 @@ export function buildPortfolioStage(holdings) {
     w += Number(h.wins) || 0;
     l += Number(h.losses) || 0;
   }
-  const pathEnd = path.length ? Math.round(path[path.length - 1]) : null;
-  const gap = have && pathEnd != null ? Math.round(bookPnl - pathEnd) : null;
+  const total = have ? Math.round(bookPnl) : null;
+  const drawn = path.map((n) => Math.round(n));
+  if (drawn.length && total != null) drawn[drawn.length - 1] = total;
   const sports = new Map();
   for (const h of rows) {
     for (const line of h.lines || []) {
@@ -1827,10 +1974,10 @@ export function buildPortfolioStage(holdings) {
       spark: Array.isArray(h.spark) && h.spark.length >= 2 ? h.spark : null,
     }));
   return {
-    path: path.map((n) => Math.round(n)),
-    pathEnd,
-    bookPnl: have ? Math.round(bookPnl) : null,
-    uncharted: gap != null && Math.abs(gap) >= 500 ? gap : null,
+    path: drawn,
+    pathEnd: drawn.length ? drawn[drawn.length - 1] : total,
+    bookPnl: total,
+    uncharted: null,
     roi: blendRoi(roiParts),
     honest: honestRecord(w, l),
     sharps,
