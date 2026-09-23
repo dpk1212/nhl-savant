@@ -1,3 +1,6 @@
+import { Star } from 'lucide-react';
+import { normalizeWalletShort } from '../../../lib/mySharps.js';
+
 /**
  * Collapsed Locked — Zone A trust band.
  *
@@ -286,6 +289,46 @@ function buildVerdict(f, lead, board, sizeBit, boardAbove = false) {
   return { who, boardLine, boardTone };
 }
 
+function mineName(w, names) {
+  const named = names?.[w.id] || names?.[normalizeWalletShort(w.short)];
+  return named || `··${w.short}`;
+}
+
+function PortfolioOnPlay({ mine, names }) {
+  if (!mine?.length) return null;
+  const shown = mine.slice(0, 3);
+  const extra = mine.length - shown.length;
+  return (
+    <div style={{
+      marginTop: 10,
+      display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+      fontFeatureSettings: "'tnum'",
+    }}>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 9, fontWeight: 800, letterSpacing: '0.1em',
+        color: '#0a0904',
+        background: 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 40%, #D4AF37 100%)',
+        borderRadius: 999, padding: '3px 8px',
+        flexShrink: 0,
+      }}>
+        <Star size={9} fill="#0a0904" color="#0a0904" />
+        {mine.length === 1 ? 'MY SHARP' : 'MY SHARPS'}
+      </span>
+      {shown.map((w) => (
+        <span key={w.id} style={{ fontSize: 12.5, fontWeight: 650, color: C.textSec }}>
+          {mineName(w, names)}
+          {w.invested > 0 ? ` · ${fmtUsd(w.invested)}` : ''}
+          {w.side === 'against' ? ' against' : ''}
+        </span>
+      ))}
+      {extra > 0 && (
+        <span style={{ fontSize: 11, fontWeight: 650, color: C.textFaint }}>+{extra}</span>
+      )}
+    </div>
+  );
+}
+
 const RUN_STYLE = {
   plain: null,
   fig: { color: C.text, fontWeight: 700 },
@@ -303,10 +346,13 @@ function Runs({ runs }) {
   ));
 }
 
-export default function LockedCollapsedStrength({ f, face = 'original', boardAbove = false }) {
+export default function LockedCollapsedStrength({
+  f, face = 'original', boardAbove = false, mine = null, names = null,
+}) {
   if (!f) return null;
 
   const lead = pickLeadWallet(f);
+  const leadMine = !!(lead && (mine || []).some((w) => w.id === normalizeWalletShort(lead.short)));
   const trust = lead?.trust || null;
   const board = boardContext(f);
   const noStake = !(Number(f.units) > 0);
@@ -355,6 +401,7 @@ export default function LockedCollapsedStrength({ f, face = 'original', boardAbo
         )}
 
         {/* Résumé — the advanced reader's proof digits, one quiet rail. */}
+        <PortfolioOnPlay mine={mine} names={names} />
         {lead && (
           <div style={{
             marginTop: 12,
@@ -370,7 +417,11 @@ export default function LockedCollapsedStrength({ f, face = 'original', boardAbo
               }}>
                 Led by
               </span>
-              <span style={{ color: C.textSec, fontWeight: 650, letterSpacing: '0.01em' }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                color: leadMine ? '#E8D28A' : C.textSec, fontWeight: 650, letterSpacing: '0.01em',
+              }}>
+                {leadMine ? <Star size={11} fill="#E8D28A" color="#E8D28A" /> : null}
                 …{lead.short || '————'}
               </span>
               {(trust?.secondary || []).map((s) => (
@@ -425,6 +476,7 @@ export default function LockedCollapsedStrength({ f, face = 'original', boardAbo
           background: bar, minHeight: 44,
         }} />
         <div style={{ minWidth: 0, flex: 1 }}>
+          <PortfolioOnPlay mine={mine} names={names} />
           {/* Lead sharp — sport-specific Source B trust */}
           {lead && (
             <div style={{ marginBottom: board ? 8 : 0 }}>
@@ -440,9 +492,11 @@ export default function LockedCollapsedStrength({ f, face = 'original', boardAbo
                     {sport ? `${sport} lead` : 'Lead'}
                   </span>
                   <span style={{
-                    fontSize: 13, fontWeight: 700, color: C.textSec,
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    fontSize: 13, fontWeight: 700, color: leadMine ? '#E8D28A' : C.textSec,
                     fontFeatureSettings: "'tnum'", letterSpacing: '0.02em',
                   }}>
+                    {leadMine ? <Star size={11} fill="#E8D28A" color="#E8D28A" /> : null}
                     …{lead.short || '————'}
                   </span>
                   {lead.proven && (

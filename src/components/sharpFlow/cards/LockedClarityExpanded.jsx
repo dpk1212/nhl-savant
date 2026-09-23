@@ -4,7 +4,8 @@
  * Self-contained (no PositionCards imports) to avoid circular deps.
  */
 import { useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Star } from 'lucide-react';
+import { isMySharpShort, normalizeWalletShort, portfolioWalletsOnCard } from '../../../lib/mySharps.js';
 import { matchSizeRatioBand } from '../../../lib/sizeRatioBands.js';
 import {
   ELITE_ZONE_CLV,
@@ -138,7 +139,7 @@ function useStableBoardWallets(incoming) {
   return ref.current;
 }
 
-function WalletMap({ wallets, selected, onSelect, gid }) {
+function WalletMap({ wallets, selected, onSelect, gid, mineShorts = null }) {
   // Plot every wallet with a stake. Missing CLV/ROI used to exclude the dot
   // entirely — profiles loading mid-expand made them blink off then on.
   const plottable = wallets
@@ -320,10 +321,11 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
         const sel = selected === p.short;
         const sizedUp = Number.isFinite(p.sizeRatio) && p.sizeRatio >= 1.5;
         const isBestSharp = p.side === 'ours' && !!p.topQ;
-        // Quiet mark: champagne hairline = best on price; ↑ = sized up. No floating shout labels.
-        // Key by wallet id only — side tags must not remount the node.
+        const mine = isMySharpShort(mineShorts, p.short);
+        // Quiet mark: champagne hairline = best on price; ↑ = sized up.
+        // Gold star = already in My Sharps. Key by wallet id only.
         return (
-          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={sel ? 1 : 0.42}>
+          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={sel || mine ? 1 : 0.42}>
             <circle cx={cx} cy={cy} r={Math.max(r + 8, 16)} fill="transparent" />
             {sel && (
               <circle cx={cx} cy={cy} r={r + 5.5} fill="none" stroke={GOLD_HI} strokeWidth={1.15} opacity={0.85} />
@@ -349,6 +351,22 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
               style={{ pointerEvents: 'none' }}>
               {p.short.slice(0, 2)}
             </text>
+            {mine && (
+              <text
+                x={cx - r - 1}
+                y={cy - r + 2}
+                textAnchor="middle"
+                fill={GOLD_HI}
+                stroke="#0B0F18"
+                strokeWidth={3}
+                paintOrder="stroke"
+                fontSize={13}
+                fontWeight={800}
+                style={{ pointerEvents: 'none' }}
+              >
+                ★
+              </text>
+            )}
             {isBestSharp && sizedUp && (
               <text
                 x={cx + r * 0.55}
@@ -1038,6 +1056,7 @@ function bestProvenForDefault(wallets) {
  */
 export default function LockedClarityExpanded({
   f,
+  mySharps = null,
   onCollapse,
   tracked,
   noPlayReason,
@@ -1057,6 +1076,7 @@ export default function LockedClarityExpanded({
     all.map((w) => `${w.short}:${w.side}:${w.qualify}:${w.whitelist}`).join('|'),
   ]);
   const [sel, setSel] = useState(null);
+  const [saveNote, setSaveNote] = useState('');
   const activeSel = sel || defaultSel;
   const selected = all.find((w) => w.short === activeSel)
     || all.find((w) => w.short === defaultSel)
@@ -1119,6 +1139,14 @@ export default function LockedClarityExpanded({
   const leadAccent = againstSel ? VS
     : selectedTopQ || vault ? GOLD
       : selected?.proven ? GREEN : BLUE;
+
+  const mineOnCard = portfolioWalletsOnCard({ ...f, mapWallets: all }, mySharps?.shorts);
+  const selectedSaved = isMySharpShort(mySharps?.shorts, selected?.short);
+  const selectedName = selectedSaved
+    ? (mySharps?.names?.[normalizeWalletShort(selected?.short)] || null)
+    : null;
+  const showSave = !!(mySharps?.onToggle && selected && (selectedSaved || mySharps.ready));
+  const saveBlocked = !selectedSaved && !!mySharps?.atCap;
 
   const ours = all.filter((w) => w.side === 'ours');
   const isBiggest = selected && [...ours].sort((a, b) => (b.invested || 0) - (a.invested || 0))[0]?.short === selected.short;
@@ -1189,6 +1217,20 @@ export default function LockedClarityExpanded({
             {f.gameTime && <span style={{ color: C.textFaint }}> · {f.gameTime}</span>}
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {mineOnCard.length > 0 && (
+              <span
+                title={mineOnCard.map((w) => mySharps?.names?.[w.id] || `··${w.short}`).join(', ')}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
+                  padding: '4px 8px', borderRadius: 999, color: '#0a0904',
+                  background: 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)',
+                }}
+              >
+                <Star size={9} fill="#0a0904" color="#0a0904" />
+                {mineOnCard.length === 1 ? 'YOURS' : `YOURS · ${mineOnCard.length}`}
+              </span>
+            )}
             {statusSlot}
             <button
               type="button"
@@ -1341,12 +1383,13 @@ export default function LockedClarityExpanded({
               <span style={{ color: C.textFaint }}>· size = $</span>
               <span style={{ color: C.textFaint, marginLeft: 'auto' }}>
                 champagne ring = best on price · ↑ sized up
+                {mineOnCard.length > 0 ? ' · ★ yours' : ''}
               </span>
             </div>
           </div>
 
           <div style={{ padding: '2px 4px 6px' }}>
-            <WalletMap wallets={all} selected={activeSel} onSelect={setSel} gid={gid} />
+            <WalletMap wallets={all} selected={activeSel} onSelect={setSel} gid={gid} mineShorts={mySharps?.shorts} />
           </div>
 
           {selected && (
@@ -1371,6 +1414,10 @@ export default function LockedClarityExpanded({
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700 }}>…{selected.short}</span>
+                    {selectedName && (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: GOLD_HI }}>{selectedName}</span>
+                    )}
+                    {selectedSaved && <Pill c={GOLD} solid>Yours</Pill>}
                     {againstSel ? <Pill c={VS}>Against</Pill>
                       : selected.proven ? <Pill c={GREEN} solid>Proven</Pill>
                         : <Pill c={BLUE}>Secondary</Pill>}
@@ -1549,6 +1596,48 @@ export default function LockedClarityExpanded({
                       </>
                     );
                   })()}
+                </div>
+              )}
+
+              {showSave && (
+                <div style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    disabled={saveBlocked}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (saveBlocked || !mySharps?.onToggle) return;
+                      const res = await mySharps.onToggle({
+                        walletShort: selected.short,
+                        sport: f.sport || selected.sport || null,
+                        marketType: f.marketType || null,
+                        side: selected.marketSide || null,
+                      });
+                      if (res?.reason === 'cap') setSaveNote('My Sharps is full');
+                      else if (res?.reason === 'auth') setSaveNote('Sign in to save a sharp');
+                      else setSaveNote('');
+                    }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '6px 11px', borderRadius: 999, cursor: saveBlocked ? 'default' : 'pointer',
+                      fontFamily: 'inherit', fontSize: 12, fontWeight: 700, letterSpacing: '0.01em',
+                      color: selectedSaved ? '#0a0904' : GOLD_HI,
+                      background: selectedSaved
+                        ? 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)'
+                        : 'rgba(212,175,55,0.08)',
+                      border: `1px solid ${selectedSaved ? 'transparent' : 'rgba(212,175,55,0.45)'}`,
+                      opacity: saveBlocked ? 0.55 : 1,
+                    }}
+                  >
+                    <Star size={12} fill={selectedSaved ? '#0a0904' : 'none'} color={selectedSaved ? '#0a0904' : GOLD_HI} />
+                    {selectedSaved
+                      ? 'Remove from My Sharps'
+                      : (saveBlocked ? 'My Sharps is full' : 'Add to My Sharps')}
+                  </button>
+                  {saveNote ? (
+                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: GOLD_HI }}>{saveNote}</div>
+                  ) : null}
                 </div>
               )}
             </div>

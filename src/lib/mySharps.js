@@ -187,3 +187,35 @@ export function fmtWalletTag(short) {
   const s = normalizeWalletShort(short);
   return s ? `··${s}` : '··————';
 }
+
+export function isMySharpShort(shorts, short) {
+  if (!shorts || typeof shorts.has !== 'function') return false;
+  const id = normalizeWalletShort(short);
+  return !!id && shorts.has(id);
+}
+
+/**
+ * Portfolio wallets sitting on a locked card.
+ * Map tags win (ours / against). The play-side list fills anyone the map missed.
+ */
+export function portfolioWalletsOnCard(card, shorts) {
+  if (!card || !shorts || typeof shorts.has !== 'function' || shorts.size === 0) return [];
+  const seen = new Set();
+  const out = [];
+  const take = (w, fallbackSide) => {
+    const id = normalizeWalletShort(w?.short || w?.wallet);
+    if (!id || !shorts.has(id) || seen.has(id)) return;
+    seen.add(id);
+    const raw = String(w?.short || w?.wallet || id);
+    out.push({
+      id,
+      short: raw.length > 6 ? raw.slice(-6) : raw,
+      side: w?.side === 'against' ? 'against' : (fallbackSide || 'ours'),
+      invested: Number(w?.invested) || 0,
+    });
+  };
+  for (const w of (Array.isArray(card.mapWallets) ? card.mapWallets : [])) take(w);
+  for (const w of (Array.isArray(card.wallets) ? card.wallets : [])) take(w, 'ours');
+  out.sort((a, b) => b.invested - a.invested || a.id.localeCompare(b.id));
+  return out;
+}

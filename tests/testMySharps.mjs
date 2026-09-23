@@ -9,6 +9,8 @@ import {
   fmtWalletTag,
   memberFromActionRow,
   mySharpsShortSet,
+  isMySharpShort,
+  portfolioWalletsOnCard,
   cleanSharpName,
   parseMySharpsDoc,
   tailFromTicket,
@@ -49,6 +51,28 @@ import {
 } from '../src/lib/mySharpsDesk.js';
 
 assert.equal(fmtWalletTag('0xABC162937'), '··162937');
+
+const card = {
+  mapWallets: [
+    { short: 'CD2F63', side: 'ours', invested: 818 },
+    { short: '4b912c', side: 'against', invested: 1200 },
+    { short: '9214c2', side: 'ours', invested: 2400 },
+  ],
+  wallets: [
+    { short: 'cd2f63', invested: 818 },
+    { short: 'aabbcc', invested: 50 },
+  ],
+};
+const saved = new Set(['cd2f63', '4b912c']);
+assert.equal(isMySharpShort(saved, 'CD2F63'), true);
+assert.equal(isMySharpShort(saved, 'nope'), false);
+const onCard = portfolioWalletsOnCard(card, saved);
+assert.deepEqual(onCard.map((w) => [w.id, w.side, w.invested]), [
+  ['4b912c', 'against', 1200],
+  ['cd2f63', 'ours', 818],
+]);
+assert.equal(portfolioWalletsOnCard(card, new Set()).length, 0);
+assert.equal(portfolioWalletsOnCard(null, saved).length, 0);
 
 const row = {
   walletShort: '162937',
