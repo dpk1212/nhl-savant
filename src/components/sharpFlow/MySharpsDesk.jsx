@@ -904,43 +904,85 @@ function SharpPlate({ lines, hideChips }) {
   );
 }
 
-function proofLine(line, sport) {
-  const heat = heatWord(line.heat);
-  const bookBits = [
-    line.book?.record,
-    Number.isFinite(line.book?.roi) ? `${line.book.roi}%` : null,
-  ].filter(Boolean).join(' · ');
-  return [
-    line.heat?.record ? `${line.heat.record}${heat ? ` ${heat}` : ''}` : null,
-    bookBits || null,
-    Number.isFinite(line.marketL30) ? `${fmtVol(line.marketL30)} ${(line.book?.label || 'mkt')} 30d` : null,
-    Number.isFinite(line.sportL30) ? `${fmtVol(line.sportL30)} ${sport || 'sport'}` : null,
-  ].filter(Boolean).join('  ·  ');
+const RECEIPT_COLS = 'minmax(72px, 1.15fr) 62px 96px 68px minmax(64px, 0.85fr) 96px';
+
+function ReceiptHead({ children }) {
+  return (
+    <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', textAlign: 'right' }}>{children}</div>
+  );
 }
 
-function SharpReceipt({ line, sport }) {
+function SharpReceipt({ line, sport, isMobile }) {
   const pressing = (line.ratio || 0) >= 1.5;
-  const proof = proofLine(line, sport);
-  return (
-    <div style={{ padding: '0.55rem 0 0.45rem', borderTop: `1px solid ${B.hair}` }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flexWrap: 'wrap' }}>
+  const heat = heatWord(line.heat);
+  const heatColor = line.heat?.key === 'hot' ? B.green : line.heat?.key === 'cold' ? B.red : B.text;
+  const bookRoi = Number.isFinite(line.book?.roi) ? line.book.roi : null;
+  const size = line.ratio ? `${line.ratio.toFixed(1)}×` : '—';
+  const stake = fmtVol(line.invested, { signed: false });
+  const l10 = line.heat?.record || '—';
+  const book = line.book?.record || '—';
+  const month = Number.isFinite(line.marketL30) ? fmtVol(line.marketL30) : '—';
+  const sportBit = Number.isFinite(line.sportL30) ? `${sport || 'Sport'} ${fmtVol(line.sportL30)}` : null;
+
+  if (isMobile) {
+    return (
+      <div style={{ padding: '0.55rem 0', borderTop: `1px solid ${B.hair}` }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ ...T.name, color: B.text, fontSize: '0.92rem' }}>{line.tag}</span>
-          <SteamBit steam={line.steam} />
-          {line.ratio ? (
-            <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '0.92rem' }}>
-              {line.ratio.toFixed(1)}×
-            </span>
-          ) : null}
+          <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '1rem' }}>{size}</span>
+          <span style={{ textAlign: 'right' }}>
+            <span style={{ ...T.figure, color: B.goldSoft, fontSize: '1rem' }}>{stake}</span>
+            {line.price ? <span style={{ ...T.meta, color: B.text, marginLeft: 6 }}>{line.price}</span> : null}
+          </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexShrink: 0, fontFeatureSettings: "'tnum'" }}>
-          <span style={{ ...T.figure, color: B.goldSoft, fontSize: '1.02rem' }}>{fmtVol(line.invested, { signed: false })}</span>
-          {line.price ? <span style={{ ...T.figure, color: B.text, fontSize: '0.84rem' }}>{line.price}</span> : null}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginTop: 8 }}>
+          <div>
+            <div style={{ ...T.figure, color: heatColor, fontSize: '0.95rem' }}>{l10}</div>
+            <div style={{ ...T.kicker, color: heatColor, marginTop: 3 }}>{heat || 'L10'}</div>
+          </div>
+          <div>
+            <div style={{ ...T.figure, color: B.text, fontSize: '0.95rem' }}>{book}</div>
+            <div style={{ ...T.kicker, color: bookRoi == null ? B.textFaint : pnlColor(bookRoi, B.textMuted), marginTop: 3 }}>{bookRoi == null ? 'Book' : `${bookRoi}% book`}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ ...T.figure, color: pnlColor(line.marketL30, B.textMuted), fontSize: '0.95rem' }}>{month}</div>
+            <div style={{ ...T.kicker, color: B.textFaint, marginTop: 3 }}>30 days</div>
+          </div>
         </div>
       </div>
-      {proof ? (
-        <div style={{ ...T.meta, color: B.textMuted, marginTop: 5 }}>{proof}</div>
-      ) : null}
+    );
+  }
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: RECEIPT_COLS,
+      gap: '0 12px',
+      alignItems: 'center',
+      padding: '0.62rem 0',
+      borderTop: `1px solid ${B.hair}`,
+    }}
+    >
+      <div style={{ ...T.name, color: B.text, fontSize: '0.92rem' }}>{line.tag}</div>
+      <div style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '1.12rem', textAlign: 'right' }}>{size}</div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.08rem', lineHeight: 1 }}>{stake}</div>
+        {line.price ? <div style={{ ...T.meta, color: B.text, marginTop: 3 }}>{line.price}</div> : null}
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ ...T.figure, color: heatColor, fontSize: '1rem', lineHeight: 1 }}>{l10}</div>
+        {heat ? <div style={{ ...T.kicker, color: heatColor, marginTop: 4, letterSpacing: '0.08em' }}>{heat}</div> : null}
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ ...T.figure, color: B.text, fontSize: '1rem', lineHeight: 1 }}>{book}</div>
+        {bookRoi != null ? (
+          <div style={{ ...T.meta, color: pnlColor(bookRoi, B.textMuted), marginTop: 3, fontWeight: 700 }}>{bookRoi}%</div>
+        ) : null}
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ ...T.figure, color: pnlColor(line.marketL30, B.textMuted), fontSize: '1.08rem', lineHeight: 1 }}>{month}</div>
+        {sportBit ? <div style={{ ...T.meta, color: B.textMuted, marginTop: 3 }}>{sportBit}</div> : null}
+      </div>
     </div>
   );
 }
@@ -1011,7 +1053,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
         </div>
       </div>
       {lines.length ? <SharpPlate lines={lines} hideChips={expanded} /> : null}
-      {expanded ? <TicketContext item={item} /> : null}
+      {expanded ? <TicketContext item={item} isMobile={isMobile} /> : null}
       {open ? (
         <TailForm
           item={item}
@@ -1592,10 +1634,11 @@ function SharpProfile({ dossier, isMobile }) {
   );
 }
 
-function TicketContext({ item }) {
+function TicketContext({ item, isMobile }) {
   const lines = item.walletLines || [];
+  const bookLabel = lines.find((line) => line.book?.label)?.book?.label || 'Market';
   return (
-    <div style={{ marginTop: 8 }}>
+    <div style={{ marginTop: 10 }}>
       {(item.otherSide || []).map((side, i) => (
         <div
           key={`${side.pick || 'side'}-${i}`}
@@ -1613,9 +1656,26 @@ function TicketContext({ item }) {
           Other side · {[side.pick, ...(side.tags || [])].filter(Boolean).join(' · ')}
         </div>
       ))}
+      {isMobile || !lines.length ? null : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: RECEIPT_COLS,
+          gap: '0 12px',
+          alignItems: 'end',
+          padding: '0.15rem 0 0.2rem',
+        }}
+        >
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>Sharp</div>
+          <ReceiptHead>Vs usual</ReceiptHead>
+          <ReceiptHead>This bet</ReceiptHead>
+          <ReceiptHead>L10</ReceiptHead>
+          <ReceiptHead>{bookLabel} book</ReceiptHead>
+          <ReceiptHead>{bookLabel} 30d</ReceiptHead>
+        </div>
+      )}
       <div>
         {lines.map((line) => (
-          <SharpReceipt key={line.walletShort || line.tag} line={line} sport={item.sport} />
+          <SharpReceipt key={line.walletShort || line.tag} line={line} sport={item.sport} isMobile={isMobile} />
         ))}
       </div>
     </div>
