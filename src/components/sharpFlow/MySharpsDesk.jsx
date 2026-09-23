@@ -723,13 +723,170 @@ function betWash(item) {
   return B.card;
 }
 
+function heatPhrase(heat) {
+  if (!heat?.record || heat.key === 'quiet') return null;
+  const word = heat.key === 'hot' ? 'Hot ' : heat.key === 'cold' ? 'Cold ' : '';
+  return `${word}${heat.window || 'L10'} ${heat.record}`;
+}
+
+function SteamBit({ steam }) {
+  if (!steam?.show || !steam.tag) return null;
+  const gold = steam.goldConfirmed || steam.tier === 'gold';
+  return <Pill color={gold ? B.gold : B.green}>{steam.goldConfirmed ? steam.tag : `Steam ${steam.tag}`}</Pill>;
+}
+
+function HeatBit({ heat }) {
+  const phrase = heatPhrase(heat);
+  if (!phrase) return null;
+  const word = heat.key === 'hot' ? 'Hot' : heat.key === 'cold' ? 'Cold' : null;
+  const color = heatColor(heat);
+  return (
+    <span style={{ ...T.figure, color, fontSize: '0.86rem' }}>
+      {word ? <span style={{ ...T.kicker, color, letterSpacing: '0.08em', marginRight: 6 }}>{word}</span> : null}
+      {heat.window || 'L10'} {heat.record}
+    </span>
+  );
+}
+
+function SharpPlate({ lead, rest }) {
+  const steamGold = lead.steam?.goldConfirmed || lead.steam?.tier === 'gold';
+  return (
+    <div style={{
+      marginTop: 12,
+      borderRadius: 10,
+      border: `1px solid ${steamGold ? B.goldBorder : B.line}`,
+      background: steamGold ? 'rgba(212,175,55,0.07)' : 'rgba(255,255,255,0.028)',
+      padding: '0.7rem 0.8rem 0.62rem',
+    }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'baseline', minWidth: 0 }}>
+          <span style={{ ...T.name, color: B.text, fontSize: '0.95rem' }}>{lead.tag}</span>
+          {lead.ratio ? (
+            <span style={{ ...T.figure, color: lead.ratio >= 1.5 ? '#F59E0B' : B.textMuted, fontSize: '0.95rem' }}>
+              {lead.ratio.toFixed(1)}×
+            </span>
+          ) : null}
+          {lead.book?.record ? (
+            <span style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+              {lead.book.label} {lead.book.record}
+            </span>
+          ) : null}
+          {Number.isFinite(lead.marketL30) ? (
+            <span style={{ ...T.figure, color: pnlColor(lead.marketL30, B.textMuted), fontSize: '0.88rem' }}>
+              <span style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginRight: 6 }}>30d</span>
+              {fmtVol(lead.marketL30)}
+            </span>
+          ) : null}
+          <HeatBit heat={lead.heat} />
+        </div>
+        <SteamBit steam={lead.steam} />
+      </div>
+      {rest.map((line) => {
+        const phrase = heatPhrase(line.heat);
+        return (
+          <div key={line.walletShort || line.tag} style={{ ...T.meta, color: B.textMuted, marginTop: 7, fontFeatureSettings: "'tnum'" }}>
+            {line.tag}
+            {line.ratio ? `  ·  ${line.ratio.toFixed(1)}×` : ''}
+            {phrase ? <span style={{ color: heatColor(line.heat) }}>{`  ·  ${phrase}`}</span> : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FaceStat({ kicker, value, sub, color }) {
+  return (
+    <div>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{kicker}</div>
+      <div style={{ ...T.figure, color, marginTop: 4, fontSize: '0.98rem' }}>{value}</div>
+      {sub ? <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>{sub}</div> : null}
+    </div>
+  );
+}
+
+function SharpReceipt({ line, sport, isMobile }) {
+  const pressing = (line.ratio || 0) >= 1.5;
+  const bar = line.ratio ? Math.min(100, (line.ratio / 2.5) * 100) : 0;
+  const bookLabel = line.book?.label || 'Market';
+  const sportLabel = sport || 'Sport';
+  const sizeBits = [
+    line.ratio ? `${line.ratio.toFixed(1)}×` : null,
+    line.usual ? `usual ${fmtVol(line.usual, { signed: false })}` : null,
+  ].filter(Boolean);
+  return (
+    <div style={{
+      borderRadius: 10,
+      border: `1px solid ${B.line}`,
+      borderLeft: `3px solid ${pressing ? '#F59E0B' : B.gold}`,
+      background: 'rgba(255,255,255,0.025)',
+      padding: '0.8rem 0.85rem 0.75rem',
+    }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ ...T.name, color: B.text, fontSize: '1rem' }}>{line.tag}</div>
+          {sizeBits.length ? (
+            <div style={{ ...T.meta, color: pressing ? '#F59E0B' : B.textMuted, marginTop: 4, fontFeatureSettings: "'tnum'" }}>
+              {sizeBits.join(' · ')}
+            </div>
+          ) : null}
+          {line.ratio ? (
+            <div style={{ marginTop: 8, height: 7, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+              <div style={{ width: `${bar}%`, height: '100%', background: pressing ? '#F59E0B' : B.gold }} />
+            </div>
+          ) : null}
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.02rem' }}>{fmtVol(line.invested, { signed: false })}</div>
+          {line.price ? <div style={{ ...T.figure, color: B.text, fontSize: '0.86rem' }}>{line.price}</div> : null}
+          <SteamBit steam={line.steam} />
+        </div>
+      </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0, 1fr))',
+        gap: '12px 10px',
+        marginTop: 14,
+      }}
+      >
+        <FaceStat
+          kicker="L10"
+          value={line.heat?.record || '—'}
+          sub={line.heat?.key === 'hot' ? 'Hot' : line.heat?.key === 'cold' ? 'Cold' : (line.heat?.window || null)}
+          color={line.heat ? heatColor(line.heat) : B.textFaint}
+        />
+        <FaceStat
+          kicker={`${bookLabel} book`}
+          value={Number.isFinite(line.book?.roi) ? `${line.book.roi}%` : (line.book?.record || '—')}
+          sub={Number.isFinite(line.book?.roi) ? line.book.record : null}
+          color={Number.isFinite(line.book?.roi) ? pnlColor(line.book.roi, B.text) : B.text}
+        />
+        <FaceStat
+          kicker={`${bookLabel} 30d`}
+          value={Number.isFinite(line.marketL30) ? fmtVol(line.marketL30) : '—'}
+          color={pnlColor(line.marketL30, B.textMuted)}
+        />
+        <FaceStat
+          kicker={`${sportLabel} 30d`}
+          value={Number.isFinite(line.sportL30) ? fmtVol(line.sportL30) : '—'}
+          color={pnlColor(line.sportL30, B.textMuted)}
+        />
+      </div>
+    </div>
+  );
+}
+
 function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedStake, expanded, onToggle }) {
   const tailed = item.tail;
   const edge = item.split ? B.red : item.shared ? B.gold : (item.sizeText ? '#F59E0B' : B.line);
   const open = draft?.id === item.id;
   const clock = fmtClock(item.commenceMs);
-  const market = MARKET_LABEL[String(item.marketType || '').toUpperCase()] || null;
   const price = item.americanLabel || fmtPrice(item.americanOdds);
+  const lines = item.walletLines || [];
+  const lead = lines[0] || null;
+  const lineNote = item.pinMove === 'with' ? 'with the line' : item.pinMove === 'against' ? 'against the line' : null;
   return (
     <div style={{
       borderRadius: 14,
@@ -738,7 +895,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
       borderBottom: `1px solid ${open || tailed ? B.goldBorder : B.line}`,
       borderLeft: `3px solid ${edge}`,
       background: betWash(item),
-      padding: isMobile ? '0.9rem 0.85rem' : '1rem 1.05rem 0.95rem',
+      padding: isMobile ? '0.95rem 0.85rem' : '1.05rem 1.1rem 1rem',
       cursor: 'pointer',
     }}
     onClick={(e) => {
@@ -748,26 +905,20 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.05rem' : '1.2rem' }}>
+          <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.15rem' : '1.35rem' }}>
             {item.pick}
           </div>
           <div style={{ ...T.meta, color: B.textMuted, marginTop: 5 }}>
             {[item.matchup, clock, item.sport].filter(Boolean).join('   ·   ')}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-            {item.sizeText ? <Pill color="#F59E0B">{item.sizeText}</Pill> : null}
-            {item.shared && !item.split ? <Pill color={B.goldSoft}>{(item.shorts || []).length > 1 ? `${item.shorts.length} on it` : 'Together'}</Pill> : null}
-            {item.split ? <Pill color={B.red}>Opposed</Pill> : null}
-            {item.pinMove === 'with' ? <Pill color={B.goldSoft}>With the line</Pill> : null}
-            {item.pinMove === 'against' ? <Pill color={B.red}>Against the line</Pill> : null}
-            {market ? <Pill color={B.textSec}>{market}</Pill> : null}
-            {item.who && !item.split && !item.shared ? <Pill color={B.textMuted}>{item.who}</Pill> : null}
-            {tailed ? <Pill color={B.gold}>Tailed {fmtPrice(tailed.myAmerican)}</Pill> : null}
+            {lineNote ? (
+              <span style={{ color: item.pinMove === 'against' ? B.red : B.goldSoft }}>{`   ·   ${lineNote}`}</span>
+            ) : null}
+            {tailed ? <span style={{ color: B.gold }}>{`   ·   Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-          <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.05rem' }}>{fmtVol(item.invested, { signed: false })}</div>
-          <div style={{ ...T.figure, color: B.text, fontSize: '0.92rem' }}>{price}</div>
+          <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.15rem' : '1.28rem' }}>{fmtVol(item.invested, { signed: false })}</div>
+          <div style={{ ...T.figure, color: B.text, fontSize: '0.95rem' }}>{price}</div>
           {tailed && !open ? (
             <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
           ) : (
@@ -777,7 +928,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           )}
         </div>
       </div>
-      {expanded ? <TicketContext item={item} /> : null}
+      {expanded ? <TicketContext item={item} isMobile={isMobile} /> : (lead ? <SharpPlate lead={lead} rest={lines.slice(1)} /> : null)}
       {open ? (
         <TailForm
           item={item}
@@ -1357,7 +1508,7 @@ function SharpProfile({ dossier, isMobile }) {
   );
 }
 
-function TicketContext({ item }) {
+function TicketContext({ item, isMobile }) {
   const lines = item.walletLines || [];
   const note = item.split
     ? 'Someone on your list is on the other side of this number.'
@@ -1366,35 +1517,30 @@ function TicketContext({ item }) {
       : item.sizeText
         ? 'Sized up against their usual bet in this sport.'
         : 'One sharp, around their usual size.';
-  const maxRatio = Math.max(1.5, ...lines.map((l) => l.ratio || 0));
   return (
     <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${B.hair}` }} onClick={(e) => e.stopPropagation()}>
       <div style={{ ...T.body, color: B.textSec }}>{note}</div>
       {Number.isFinite(Number(item.entryLine)) ? (
         <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>Entered {item.entryLine}</div>
       ) : null}
-      <div style={{ marginTop: 8 }}>
+      {(item.otherSide || []).map((side, i) => (
+        <div
+          key={`${side.pick || 'side'}-${i}`}
+          style={{
+            marginTop: 8,
+            borderLeft: `3px solid ${B.red}`,
+            borderRadius: 2,
+            padding: '0.28rem 0.7rem',
+            ...T.meta,
+            color: B.red,
+          }}
+        >
+          Other side · {[side.pick, ...(side.tags || [])].filter(Boolean).join(' · ')}
+        </div>
+      ))}
+      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {lines.map((line) => (
-          <div key={line.walletShort || line.tag} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 88px 72px', gap: 10, alignItems: 'center', padding: '0.4rem 0', borderTop: `1px solid ${B.hair}` }}>
-            <div>
-              <div style={{ ...T.name, color: B.text, fontSize: '0.88rem' }}>{line.tag}</div>
-              {line.ratio ? (
-                <div style={{ marginTop: 5, height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <div style={{
-                    width: `${Math.min(100, (line.ratio / maxRatio) * 100)}%`,
-                    height: '100%',
-                    background: line.ratio >= 1.5 ? '#F59E0B' : B.gold,
-                  }}
-                  />
-                </div>
-              ) : null}
-            </div>
-            <div style={{ ...T.figure, color: B.goldSoft, textAlign: 'right', fontSize: '0.84rem' }}>{fmtVol(line.invested, { signed: false })}</div>
-            <div style={{ ...T.meta, color: B.textMuted, textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
-              {line.ratio ? `${line.ratio.toFixed(1)}×` : ''}
-              {line.price ? `${line.ratio ? ' · ' : ''}${line.price}` : ''}
-            </div>
-          </div>
+          <SharpReceipt key={line.walletShort || line.tag} line={line} sport={item.sport} isMobile={isMobile} />
         ))}
       </div>
     </div>
@@ -1694,8 +1840,8 @@ export default function MySharpsDesk({
     [holdings, bookBoard, tails, recentLegs],
   );
   const groups = useMemo(
-    () => groupPortfolioBets(betBoard.tickets, { names, tails }),
-    [betBoard, names, tails],
+    () => groupPortfolioBets(betBoard.tickets, { names, tails, walletProfiles }),
+    [betBoard, names, tails, walletProfiles],
   );
   const tailCards = useMemo(() => summarizeTails(tails, recentLegs).cards, [tails, recentLegs]);
   const found = useMemo(
