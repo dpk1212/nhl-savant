@@ -750,7 +750,7 @@ function SteamBit({ steam }) {
 
 function BarRow({ label, pct, color, value, h }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '46px minmax(0, 1fr) 58px', gap: 8, alignItems: 'center', marginTop: 6 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '46px minmax(0, 1fr) 58px', gap: 8, alignItems: 'center', marginTop: 4 }}>
       <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{label}</div>
       <div style={{ height: h, borderRadius: 99, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: color }} />
@@ -763,7 +763,7 @@ function BarRow({ label, pct, color, value, h }) {
 function SizeStory({ ratio, usual, invested, compact }) {
   const pressing = (ratio || 0) >= 1.5;
   const color = pressing ? '#F59E0B' : B.goldSoft;
-  const h = compact ? 8 : 11;
+  const h = compact ? 7 : 9;
   const hasDollars = Number.isFinite(usual) && usual > 0 && Number.isFinite(invested) && invested > 0;
   const headline = ratio
     ? `${ratio.toFixed(1)}×`
@@ -775,7 +775,7 @@ function SizeStory({ ratio, usual, invested, compact }) {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
         <div style={{
           ...T.figure,
-          fontSize: compact ? '1.85rem' : '2.15rem',
+          fontSize: compact ? '1.7rem' : '1.85rem',
           lineHeight: 0.9,
           letterSpacing: '-0.045em',
           color,
@@ -788,7 +788,7 @@ function SizeStory({ ratio, usual, invested, compact }) {
         </div>
       </div>
       {hasDollars ? (
-        <div style={{ marginTop: compact ? 8 : 12 }}>
+        <div style={{ marginTop: compact ? 6 : 8 }}>
           <BarRow label="Usual" pct={Math.max(8, (usual / max) * 100)} color="rgba(148,163,184,0.55)" value={fmtVol(usual, { signed: false })} h={h} />
           <BarRow label="This" pct={Math.max(8, (invested / max) * 100)} color={color} value={fmtVol(invested, { signed: false })} h={h} />
         </div>
@@ -806,7 +806,7 @@ function FaceStat({ kicker, value, sub, color, subColor, big }) {
   return (
     <div>
       <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{kicker}</div>
-      <div style={{ ...T.figure, color, marginTop: big ? 8 : 6, fontSize: big ? '1.45rem' : '1.22rem', letterSpacing: '-0.03em' }}>{value}</div>
+      <div style={{ ...T.figure, color, marginTop: 4, fontSize: big ? '1.28rem' : '1.15rem', letterSpacing: '-0.03em' }}>{value}</div>
       {sub ? (
         <div style={{ ...T.meta, color: subColor || B.textMuted, marginTop: 3, fontFeatureSettings: "'tnum'", fontWeight: 650 }}>{sub}</div>
       ) : (
@@ -825,9 +825,9 @@ function WhyStats({ line, sport, isMobile, columns }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: cols,
-      gap: '14px 16px',
-      marginTop: 16,
-      paddingTop: 14,
+      gap: '10px 16px',
+      marginTop: 12,
+      paddingTop: 10,
       borderTop: `1px solid ${B.hair}`,
     }}
     >
@@ -924,7 +924,7 @@ function SharpReceipt({ line, sport, isMobile }) {
       border: `1px solid ${pressing ? 'rgba(245,158,11,0.35)' : B.line}`,
       borderLeft: `3px solid ${pressing ? '#F59E0B' : B.gold}`,
       background: pressing ? 'rgba(245,158,11,0.05)' : 'rgba(255,255,255,0.025)',
-      padding: isMobile ? '0.95rem 0.85rem 1rem' : '1.05rem 1.1rem 1.1rem',
+      padding: isMobile ? '0.85rem 0.8rem 0.9rem' : '0.9rem 1rem 0.95rem',
     }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
@@ -937,8 +937,8 @@ function SharpReceipt({ line, sport, isMobile }) {
           {line.price ? <div style={{ ...T.figure, color: B.text, fontSize: '0.95rem', marginTop: 2 }}>{line.price}</div> : null}
         </div>
       </div>
-      <div style={{ marginTop: 16 }}>
-        <SizeStory ratio={line.ratio} usual={line.usual} invested={line.invested} />
+      <div style={{ marginTop: 10 }}>
+        <SizeStory ratio={line.ratio} usual={line.usual} invested={line.invested} compact />
       </div>
       <WhyStats line={line} sport={sport} isMobile={isMobile} />
     </div>
