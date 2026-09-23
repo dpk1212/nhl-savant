@@ -704,12 +704,6 @@ function betWash(item) {
   return B.card;
 }
 
-function heatPhrase(heat) {
-  if (!heat?.record || heat.key === 'quiet') return null;
-  const word = heat.key === 'hot' ? 'Hot ' : heat.key === 'cold' ? 'Cold ' : '';
-  return `${word}${heat.window || 'L10'} ${heat.record}`;
-}
-
 function heatWord(heat) {
   if (!heat?.record || heat.key === 'quiet') return null;
   if (heat.key === 'hot') return 'Hot';
@@ -731,14 +725,14 @@ function SteamBit({ steam }) {
   return (
     <span style={{
       ...T.kicker,
-      letterSpacing: '0.12em',
+      letterSpacing: '0.08em',
       color: gold ? '#1a1404' : '#6EE7B7',
       background: gold
         ? 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)'
-        : 'rgba(16,185,129,0.14)',
-      border: gold ? 'none' : '1px solid rgba(16,185,129,0.45)',
+        : 'rgba(16,185,129,0.12)',
+      border: gold ? 'none' : '1px solid rgba(16,185,129,0.35)',
       borderRadius: 999,
-      padding: '0.32rem 0.7rem',
+      padding: '0.22rem 0.55rem',
       lineHeight: 1.2,
       whiteSpace: 'nowrap',
     }}
@@ -748,70 +742,88 @@ function SteamBit({ steam }) {
   );
 }
 
-function BarRow({ label, pct, color, value, h }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '46px minmax(0, 1fr) 58px', gap: 8, alignItems: 'center', marginTop: 4 }}>
-      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{label}</div>
-      <div style={{ height: h, borderRadius: 99, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
-        <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: color }} />
-      </div>
-      <div style={{ ...T.figure, fontSize: '0.8rem', color: B.textSec, textAlign: 'right' }}>{value}</div>
-    </div>
-  );
-}
-
 function SizeStory({ ratio, usual, invested, compact }) {
   const pressing = (ratio || 0) >= 1.5;
   const color = pressing ? '#F59E0B' : B.goldSoft;
-  const h = compact ? 7 : 9;
   const hasDollars = Number.isFinite(usual) && usual > 0 && Number.isFinite(invested) && invested > 0;
   const headline = ratio
     ? `${ratio.toFixed(1)}×`
     : (hasDollars ? fmtVol(invested, { signed: false }) : null);
   if (!headline) return null;
   const max = hasDollars ? Math.max(usual, invested) : null;
+  const thisPct = hasDollars ? Math.max(6, (invested / max) * 100) : Math.min(100, ((ratio || 0) / 3) * 100);
+  const usualPct = hasDollars ? Math.max(4, (usual / max) * 100) : 33.3;
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <div style={{
           ...T.figure,
-          fontSize: compact ? '1.7rem' : '1.85rem',
+          fontSize: compact ? '1.85rem' : '2.05rem',
           lineHeight: 0.9,
-          letterSpacing: '-0.045em',
+          letterSpacing: '-0.05em',
           color,
         }}
         >
           {headline}
         </div>
-        <div style={{ ...T.kicker, color: pressing ? '#F59E0B' : B.textFaint, letterSpacing: '0.14em' }}>
+        <div style={{ ...T.kicker, color: pressing ? '#F59E0B' : B.textFaint, letterSpacing: '0.12em' }}>
           {pressing ? 'Sized up' : 'Vs usual'}
         </div>
       </div>
+      <div style={{ marginTop: compact ? 8 : 10, position: 'relative', height: compact ? 8 : 10, borderRadius: 99, background: 'rgba(255,255,255,0.06)' }}>
+        <div style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `${usualPct}%`,
+          borderRadius: 99,
+          background: 'rgba(148,163,184,0.38)',
+        }}
+        />
+        <div style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `${thisPct}%`,
+          borderRadius: 99,
+          background: color,
+          boxShadow: pressing ? '0 0 16px rgba(245,158,11,0.45)' : '0 0 14px rgba(232,210,138,0.28)',
+        }}
+        />
+        {hasDollars && thisPct > usualPct + 6 ? (
+          <div style={{
+            position: 'absolute',
+            left: `calc(${usualPct}% - 1px)`,
+            top: -4,
+            bottom: -4,
+            width: 2,
+            borderRadius: 2,
+            background: '#F8FAFC',
+            boxShadow: '0 0 0 2px rgba(20,24,33,0.85)',
+          }}
+          />
+        ) : null}
+      </div>
       {hasDollars ? (
-        <div style={{ marginTop: compact ? 6 : 8 }}>
-          <BarRow label="Usual" pct={Math.max(8, (usual / max) * 100)} color="rgba(148,163,184,0.55)" value={fmtVol(usual, { signed: false })} h={h} />
-          <BarRow label="This" pct={Math.max(8, (invested / max) * 100)} color={color} value={fmtVol(invested, { signed: false })} h={h} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontFeatureSettings: "'tnum'" }}>
+          <span style={{ ...T.meta, color: B.textMuted }}>Usual {fmtVol(usual, { signed: false })}</span>
+          <span style={{ ...T.meta, color, fontWeight: 700 }}>This {fmtVol(invested, { signed: false })}</span>
         </div>
-      ) : (
-        <div style={{ marginTop: 10, position: 'relative', height: h, borderRadius: 99, background: 'rgba(255,255,255,0.07)' }}>
-          <div style={{ width: `${Math.min(100, (ratio / 3) * 100)}%`, height: '100%', borderRadius: 99, background: color }} />
-          <div style={{ position: 'absolute', left: '33.3%', top: -3, bottom: -3, width: 2, background: 'rgba(255,255,255,0.55)' }} />
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
-function FaceStat({ kicker, value, sub, color, subColor, big }) {
+function FaceStat({ kicker, value, sub, color, subColor, big, rule }) {
   return (
-    <div>
-      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{kicker}</div>
-      <div style={{ ...T.figure, color, marginTop: 4, fontSize: big ? '1.28rem' : '1.15rem', letterSpacing: '-0.03em' }}>{value}</div>
+    <div style={{ minWidth: 0, paddingLeft: rule ? 14 : 0, borderLeft: rule ? `1px solid ${B.hair}` : 'none' }}>
+      <div style={{ ...T.figure, color, fontSize: big ? '1.45rem' : '1.2rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{value}</div>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>{kicker}</div>
       {sub ? (
-        <div style={{ ...T.meta, color: subColor || B.textMuted, marginTop: 3, fontFeatureSettings: "'tnum'", fontWeight: 650 }}>{sub}</div>
-      ) : (
-        <div style={{ height: 16 }} />
-      )}
+        <div style={{ ...T.meta, color: subColor || B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'", fontWeight: 650 }}>{sub}</div>
+      ) : null}
     </div>
   );
 }
@@ -825,9 +837,9 @@ function WhyStats({ line, sport, isMobile, columns }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: cols,
-      gap: '10px 16px',
-      marginTop: 12,
-      paddingTop: 10,
+      gap: 0,
+      marginTop: 14,
+      paddingTop: 12,
       borderTop: `1px solid ${B.hair}`,
     }}
     >
@@ -841,6 +853,7 @@ function WhyStats({ line, sport, isMobile, columns }) {
       />
       <FaceStat
         big
+        rule
         kicker={`${bookLabel} book`}
         value={Number.isFinite(line.book?.roi) ? `${line.book.roi}%` : (line.book?.record || '—')}
         sub={Number.isFinite(line.book?.roi) ? line.book.record : null}
@@ -848,6 +861,7 @@ function WhyStats({ line, sport, isMobile, columns }) {
       />
       <FaceStat
         big
+        rule
         kicker={`${bookLabel} 30d`}
         value={Number.isFinite(line.marketL30) ? fmtVol(line.marketL30) : '—'}
         color={pnlColor(line.marketL30, B.textMuted)}
@@ -855,6 +869,7 @@ function WhyStats({ line, sport, isMobile, columns }) {
       {columns ? null : (
         <FaceStat
           big
+          rule
           kicker={`${sportLabel} 30d`}
           value={Number.isFinite(line.sportL30) ? fmtVol(line.sportL30) : '—'}
           color={pnlColor(line.sportL30, B.textMuted)}
@@ -864,54 +879,53 @@ function WhyStats({ line, sport, isMobile, columns }) {
   );
 }
 
-function SharpPlate({ lead, rest, isMobile }) {
-  const steamGold = lead.steam?.goldConfirmed || lead.steam?.tier === 'gold';
+function SharpChip({ line }) {
+  const pressing = (line.ratio || 0) >= 1.5;
+  const heat = heatWord(line.heat);
   return (
-    <div style={{
-      marginTop: 16,
-      borderRadius: 12,
-      border: `1px solid ${steamGold ? B.goldBorder : B.line}`,
-      background: steamGold ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)',
-      padding: isMobile ? '0.9rem 0.85rem 0.8rem' : '1rem 1.05rem 0.9rem',
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'baseline',
+      gap: 6,
+      padding: '0.32rem 0.6rem',
+      borderRadius: 999,
+      border: `1px solid ${pressing ? 'rgba(245,158,11,0.4)' : B.line}`,
+      background: pressing ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.03)',
+      fontFeatureSettings: "'tnum'",
     }}
     >
+      <span style={{ ...T.name, color: B.text, fontSize: '0.78rem' }}>{line.tag}</span>
+      {line.ratio ? (
+        <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '0.78rem' }}>
+          {line.ratio.toFixed(1)}×
+        </span>
+      ) : null}
+      {heat ? (
+        <span style={{ ...T.kicker, letterSpacing: '0.06em', color: heatFigureColor(line.heat) }}>{heat}</span>
+      ) : null}
+    </span>
+  );
+}
+
+function SharpPlate({ lead, rest, isMobile }) {
+  return (
+    <div style={{ marginTop: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-        <div style={{ ...T.name, color: B.text, fontSize: '0.95rem' }}>{lead.tag}</div>
+        <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Lead sharp</div>
         <SteamBit steam={lead.steam} />
       </div>
-      <div style={{ marginTop: 12 }}>
+      <div style={{ ...T.name, color: B.text, fontSize: '0.92rem', marginTop: 6 }}>{lead.tag}</div>
+      <div style={{ marginTop: 10 }}>
         <SizeStory ratio={lead.ratio} usual={lead.usual} invested={lead.invested} compact />
       </div>
       <WhyStats line={lead} columns={isMobile ? '1fr 1fr' : 'repeat(3, minmax(0, 1fr))'} />
-      {rest.map((line) => {
-        const phrase = heatPhrase(line.heat);
-        const pressing = (line.ratio || 0) >= 1.5;
-        return (
-          <div
-            key={line.walletShort || line.tag}
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '4px 14px',
-              alignItems: 'baseline',
-              marginTop: 12,
-              paddingTop: 10,
-              borderTop: `1px solid ${B.hair}`,
-              fontFeatureSettings: "'tnum'",
-            }}
-          >
-            <span style={{ ...T.name, color: B.textSec, fontSize: '0.86rem' }}>{line.tag}</span>
-            {line.ratio ? (
-              <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.textMuted, fontSize: '0.95rem' }}>
-                {line.ratio.toFixed(1)}×
-              </span>
-            ) : null}
-            {phrase ? (
-              <span style={{ ...T.figure, color: heatFigureColor(line.heat), fontSize: '0.86rem' }}>{phrase}</span>
-            ) : null}
-          </div>
-        );
-      })}
+      {rest.length ? (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+          {rest.map((line) => (
+            <SharpChip key={line.walletShort || line.tag} line={line} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -920,25 +934,33 @@ function SharpReceipt({ line, sport, isMobile }) {
   const pressing = (line.ratio || 0) >= 1.5;
   return (
     <div style={{
-      borderRadius: 12,
-      border: `1px solid ${pressing ? 'rgba(245,158,11,0.35)' : B.line}`,
-      borderLeft: `3px solid ${pressing ? '#F59E0B' : B.gold}`,
-      background: pressing ? 'rgba(245,158,11,0.05)' : 'rgba(255,255,255,0.025)',
-      padding: isMobile ? '0.85rem 0.8rem 0.9rem' : '0.9rem 1rem 0.95rem',
+      borderRadius: 14,
+      border: `1px solid ${pressing ? 'rgba(245,158,11,0.28)' : B.line}`,
+      background: pressing
+        ? 'linear-gradient(180deg, rgba(245,158,11,0.10), rgba(20,24,33,0.2) 42%)'
+        : 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(20,24,33,0.15) 48%)',
+      padding: isMobile ? '0.95rem 0.85rem 0.85rem' : '1.05rem 1.1rem 0.95rem',
     }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ ...T.name, color: B.text, fontSize: '1.05rem' }}>{line.tag}</div>
-          {line.steam?.show ? <div style={{ marginTop: 8 }}><SteamBit steam={line.steam} /></div> : null}
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Sharp</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+            <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{line.tag}</div>
+            <SteamBit steam={line.steam} />
+          </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.35rem', letterSpacing: '-0.03em' }}>{fmtVol(line.invested, { signed: false })}</div>
-          {line.price ? <div style={{ ...T.figure, color: B.text, fontSize: '0.95rem', marginTop: 2 }}>{line.price}</div> : null}
+          <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.55rem', letterSpacing: '-0.04em', lineHeight: 0.95 }}>
+            {fmtVol(line.invested, { signed: false })}
+          </div>
+          {line.price ? (
+            <div style={{ ...T.figure, color: B.text, fontSize: '1rem', marginTop: 4 }}>{line.price}</div>
+          ) : null}
         </div>
       </div>
-      <div style={{ marginTop: 10 }}>
-        <SizeStory ratio={line.ratio} usual={line.usual} invested={line.invested} compact />
+      <div style={{ marginTop: 12 }}>
+        <SizeStory ratio={line.ratio} usual={line.usual} invested={line.invested} />
       </div>
       <WhyStats line={line} sport={sport} isMobile={isMobile} />
     </div>
@@ -954,38 +976,54 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
   const lines = item.walletLines || [];
   const lead = lines[0] || null;
   const lineNote = item.pinMove === 'with' ? 'with the line' : item.pinMove === 'against' ? 'against the line' : null;
+  const nSharps = lines.length;
+  const rail = item.split
+    ? 'linear-gradient(90deg, transparent, #EF4444 30%, #FCA5A5, transparent)'
+    : item.shared
+      ? 'linear-gradient(90deg, transparent, #D4AF37 35%, #F3E3AC, transparent)'
+      : (item.sizeText
+        ? 'linear-gradient(90deg, transparent, #F59E0B 35%, #FDE68A, transparent)'
+        : `linear-gradient(90deg, transparent, ${edge}, transparent)`);
   return (
     <div style={{
-      borderRadius: 14,
-      borderTop: `1px solid ${open || tailed ? B.goldBorder : B.line}`,
-      borderRight: `1px solid ${open || tailed ? B.goldBorder : B.line}`,
-      borderBottom: `1px solid ${open || tailed ? B.goldBorder : B.line}`,
-      borderLeft: `3px solid ${edge}`,
+      position: 'relative',
+      borderRadius: 18,
+      border: `1px solid ${open || tailed || expanded ? B.goldBorder : B.line}`,
       background: betWash(item),
-      padding: isMobile ? '0.95rem 0.85rem' : '1.05rem 1.1rem 1rem',
+      overflow: 'hidden',
       cursor: 'pointer',
+      boxShadow: expanded ? '0 18px 48px rgba(0,0,0,0.38)' : 'none',
     }}
     onClick={(e) => {
       if (e.target.closest('button, input, label')) return;
       onToggle?.();
     }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start' }}>
+      <div style={{ height: 3, background: rail }} />
+      <div style={{ padding: isMobile ? '0.95rem 0.9rem 1rem' : '1.15rem 1.2rem 1.05rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.28rem' : '1.55rem', letterSpacing: '-0.03em' }}>
-            {item.pick}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.55rem' : '1.9rem', letterSpacing: '-0.04em', lineHeight: 0.95 }}>
+              {item.pick}
+            </div>
+            <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.25rem' : '1.55rem', letterSpacing: '-0.04em' }}>
+              {price}
+            </div>
           </div>
-          <div style={{ ...T.meta, color: B.textMuted, marginTop: 5 }}>
-            {[item.matchup, clock, item.sport].filter(Boolean).join('   ·   ')}
+          <div style={{ ...T.meta, color: B.textMuted, marginTop: 8 }}>
+            {[item.matchup, clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean).join('  ·  ')}
             {lineNote ? (
-              <span style={{ color: item.pinMove === 'against' ? B.red : B.goldSoft }}>{`   ·   ${lineNote}`}</span>
+              <span style={{ color: item.pinMove === 'against' ? B.red : B.goldSoft }}>{`  ·  ${lineNote}`}</span>
             ) : null}
-            {tailed ? <span style={{ color: B.gold }}>{`   ·   Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
+            {tailed ? <span style={{ color: B.gold }}>{`  ·  Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
           </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-          <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.35rem' : '1.65rem', letterSpacing: '-0.04em' }}>{fmtVol(item.invested, { signed: false })}</div>
-          <div style={{ ...T.figure, color: B.text, fontSize: '1.02rem' }}>{price}</div>
+        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+          <div>
+            <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.55rem' : '1.9rem', letterSpacing: '-0.045em', lineHeight: 0.95 }}>{fmtVol(item.invested, { signed: false })}</div>
+            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em', marginTop: 6 }}>On this side</div>
+          </div>
           {tailed && !open ? (
             <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
           ) : (
@@ -1004,6 +1042,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           onTail={onTail}
         />
       ) : null}
+      </div>
     </div>
   );
 }
@@ -1585,27 +1624,34 @@ function TicketContext({ item, isMobile }) {
         ? 'Sized up against their usual bet in this sport.'
         : 'One sharp, around their usual size.';
   return (
-    <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${B.hair}` }}>
-      <div style={{ ...T.body, color: B.textSec }}>{note}</div>
-      {item.entryLine != null && Number.isFinite(Number(item.entryLine)) ? (
-        <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>Entered {item.entryLine}</div>
-      ) : null}
+    <div style={{ marginTop: 16 }}>
+      <div style={{
+        ...T.body,
+        color: item.split ? B.red : B.textSec,
+        fontWeight: 600,
+      }}
+      >
+        {note}
+        {item.entryLine != null && Number.isFinite(Number(item.entryLine)) ? ` · entered ${item.entryLine}` : ''}
+      </div>
       {(item.otherSide || []).map((side, i) => (
         <div
           key={`${side.pick || 'side'}-${i}`}
           style={{
-            marginTop: 8,
-            borderLeft: `3px solid ${B.red}`,
-            borderRadius: 2,
-            padding: '0.28rem 0.7rem',
+            marginTop: 10,
+            borderRadius: 10,
+            background: 'rgba(239,68,68,0.10)',
+            border: '1px solid rgba(239,68,68,0.28)',
+            padding: '0.55rem 0.75rem',
             ...T.meta,
-            color: B.red,
+            color: '#FCA5A5',
+            fontWeight: 650,
           }}
         >
           Other side · {[side.pick, ...(side.tags || [])].filter(Boolean).join(' · ')}
         </div>
       ))}
-      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {lines.map((line) => (
           <SharpReceipt key={line.walletShort || line.tag} line={line} sport={item.sport} isMobile={isMobile} />
         ))}
