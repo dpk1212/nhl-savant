@@ -9724,6 +9724,7 @@ export default function SharpFlow() {
               selectedWallet={vaultSelectedWallet}
               isMobile={isMobile}
               onSelectWallet={selectVaultWallet}
+              mySharps={mySharpCard}
             />
 
             <VaultRoster
@@ -9732,6 +9733,7 @@ export default function SharpFlow() {
               selectedWallet={vaultSelectedWallet}
               isMobile={isMobile}
               onSelectWallet={selectVaultWallet}
+              mySharps={mySharpCard}
             />
 
             <VaultWalletDrawer
@@ -9743,6 +9745,7 @@ export default function SharpFlow() {
               focusLeg={vaultLegFocus}
               isMobile={isMobile}
               onClose={() => selectVaultWallet(null)}
+              mySharps={mySharpCard}
             />
           </div>
         );
