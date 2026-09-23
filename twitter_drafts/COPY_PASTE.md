@@ -1,26 +1,32 @@
-# Twitter — 2026-09-23 · SELF-QT ASK · in the voice of the posts that actually worked
-**Source of the words:** Sep 17–23 CSV. Not a new slogan.
+# Twitter — 2026-09-23 · SELF-QT ASK · Hormozi seat, not a site tour
+**Dale killed:** "Hop on the site" and "don't gatekeep." That is feature talk. The free-trial paragraph in this file got **0 replies**.
 
-Winners this file, used on purpose:
-- `Yesterday we went 4-0...but we aren't in the clear yet` — **188 / 4R**
-- `Don't wait until lock to see the board. Hop on the site, see the sharps` — **55 / 6R** (best reply rate today)
-- `I want to see who you are following and why? Share some of those plays.. if you're willing to not gatekeep` — **261 / 4R**
-- Death we are not repeating: `good reason to try the free trial` — **241 / 0R**
+**Ask law (overlay):** hard number, then a fork in the same tweet. Proof is the meal. Trial words are the seat: watch the wallets and grade it yourself. Not a storefront. Not a product tour.
 
-**Quote:** 1:01 PM `+98.88` post. Do not reprint that open. Do not attach the 3–1 card. Dale says **4-1**.
+**Product:** we track wallets who already win and size with them. You don't have to pick the games.
+
+**Quote:** 1:01 PM `+98.88` post. Do not reprint that number. Do not attach the 3–1 card. He is **4-1**.
+
+| | |
+|--|--|
+| WHO | Someone ready to let baseball go, looking at a day that isn't over. |
+| PURPOSE | **Ask.** |
+| ONE | The wallets that built the June run are still sized tonight. Watch the money and grade it. You don't have to pick. |
+| SPCL | **C** (4-1, one loss) then the instruction. |
+| Ask | Free trial + `Who's still in on baseball?` |
 
 ---
 
 ## COPY THIS
 
 ```
-4-1 so far.
+4-1. One of them lost.
 
-One of them lost.. we aren't in the clear yet. Still a massive slate left and the same sharps are out with size.
+The sharps who built that June run are still sized on the rest of tonight. I'm staying with them.
 
-Don't wait until lock. Hop on the site and see who they're on. Free to watch the rest and grade it yourself.
+You don't have to pick the games. Watch where their money goes. Grade the night yourself.
 
-Who are you tailing tonight and why? Share the play if you're willing to not gatekeep.
+Free trial. Who's still in on baseball?
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.

@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/23 ~5:22 ET | Self-QT **ASK** | `4-1 so far.` / aren't in the clear / hop on the site / who are you tailing | **C + L** | his winning ask lines, not a slogan | **Staged** |
+| 9/23 ~5:26 ET | Self-QT **ASK** | `4-1. One of them lost.` / still sized / don't pick, watch the money / who's still in | **C** | trial seat + fork. Site tour killed. | **Staged** |
 | 9/23 | **INGEST** | Pin $20k **366**. `+98.88` **328**. Down-days **8R**. Trial paragraph **0R**. Dollar-stacks **0R** | — | none | Locked |
 | 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones | **S + C** | none | **Posted** · 8073 / 204 / **1R** |
 | 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / wipeout vs fight | **C + S** | none | **Posted** · 2357 / 177 / **2R** |
@@ -28,11 +28,11 @@
 ---
 
 ## Angle lock
-**ONE:** 4-1 with a loss in it — grade the rest of the slate, don't trust the season poster.  
-**Hook:** `4-1.` then the loss, then they're still sized.  
-**Body:** live day, not a season graphic · I said I wouldn't leave · free trial to grade the rest · what are you in, I'll say if we've got size.  
-**Ask:** after the day. The fork is a trade, not a poll.  
-**Killed:** the slogan QT · reprint `+98.88` · trial-as-the-body · `$5.35` · stale 3-1 card · dollar-stack · v12
+**ONE:** The June wallets are still sized tonight. Watch the money. You don't have to pick.  
+**Hook:** `4-1. One of them lost.`  
+**Body:** still sized · I'm staying · watch where the money goes · grade the night.  
+**Ask:** `Free trial. Who's still in on baseball?`  
+**Killed:** hop on the site · don't gatekeep · slogan QT · trial paragraph · reprint `+98.88` · stale 3-1 card
 
 ---
 
