@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/23 ~5:15 ET | Self-QT **ASK** | `4-1. One of them lost.` / grade the rest / which of the three | **C** | free trial + fork in-hero | **Staged** |
+| 9/23 ~5:20 ET | Self-QT **ASK** | `4-1.` / one lost / still sized / what are you in | **C + L** | trial after the day + a trade | **Staged** (2/10 slogan killed) |
 | 9/23 | **INGEST** | Pin $20k **366**. `+98.88` **328**. Down-days **8R**. Trial paragraph **0R**. Dollar-stacks **0R** | — | none | Locked |
 | 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones | **S + C** | none | **Posted** · 8073 / 204 / **1R** |
 | 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / wipeout vs fight | **C + S** | none | **Posted** · 2357 / 177 / **2R** |
@@ -29,10 +29,10 @@
 
 ## Angle lock
 **ONE:** 4-1 with a loss in it — grade the rest of the slate, don't trust the season poster.  
-**Hook:** `4-1. One of them lost.`  
-**Body:** a season number doesn't cash a ticket · free trial · watch and grade · which of the three.  
-**Ask:** in the hero. Fork = which of the three.  
-**Killed:** reprint `+98.88` · trial paragraph · `$5.35` · link/code · stale 3-1 card · `isn't fake` rerun · dollar-stack · v12
+**Hook:** `4-1.` then the loss, then they're still sized.  
+**Body:** live day, not a season graphic · I said I wouldn't leave · free trial to grade the rest · what are you in, I'll say if we've got size.  
+**Ask:** after the day. The fork is a trade, not a poll.  
+**Killed:** the slogan QT · reprint `+98.88` · trial-as-the-body · `$5.35` · stale 3-1 card · dollar-stack · v12
 
 ---
 
