@@ -31,7 +31,7 @@
 
 One of them lost.
 
-The sharps from this morning are still sized on what's left. That's the post. Not a season graphic. A live day, loss included.
+The sharps from this morning are still sized on what's left. Loss stays on the record.
 
 I said I couldn't leave them. So I'm not.
 
