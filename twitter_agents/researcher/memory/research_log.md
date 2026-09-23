@@ -2,6 +2,7 @@
 
 | Date | Pull | Key finding | Vault file |
 |------|------|-------------|------------|
+| 2026-09-23 | Dale: content CSV Sep 17–23 (results first — tweet next, no spine yet) | 24 heroes. Pin $20k **366/51PV/1R**. `+98.88` **328** on 1367 today. Down-days **8R**. Trial paragraph **0R**. `$215k` and `$131k/$178k` **0R**. 25× = 8073/**1R**. Give. No draft. | recent_timeline_latest, hormozi_tweet_process living window, messaging_continuity, sources CSV + notes, what_works, analytics_csv_ingest |
 | 2026-09-19 | Dale paste: Hormozi Qual / Algorithm / Trust video (fuller than 8/23 lock) | Varied conditions = week law. Whole-truth origin is a give. Comprehension cost on Hook QA. Imposter = lying. Overlay ask still wins. Do not steal “<1%” CTA. | hormozi_qual_algorithm.md, hormozi_tweet_process.md, sources/hormozi_qual_algorithm_2026-09-19_notes.md |
 | 2026-07-10 | Seed from ALGO_PSYCH + TWITTER + voice profile | Baseline vault created | knowledge/* |
 | 2026-07-10 PM | Pulse (no new X pull) + locked board export | Feel-vs-sharps QT = OVER reach / 0 replies — add forced take as one-variable fix; France 6u rarity hook burned — use size-vs-price / HC2 / path stakes for Tigers SUPER; Trent Fugazi = contrast receipt not dunk; kill lunch-$ T1 | viral_patterns, nlp_hooks, psych_arsenal, kill_list, visual_construction, cross_niche_wins |

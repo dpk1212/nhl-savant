@@ -7,72 +7,66 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-20 · QT **GIVE** · ProphetX / $209K at 25× fading Jones |
-| CSV window | Content Sep 8–14. Overlay ask-shape binds. |
-| Ask temperature | **Give.** No fork. |
-| Account arc | Under 47.5 cashed 9–3. Steelers ML smashed 20–3. Live: Chiefs -6.5 3u, printer $209K at 25.3×. Flagged, 8:05 lock. |
+| Last updated | 2026-09-23 · **INGEST** · content CSV Sep 17–23 · no tweet yet |
+| CSV window | Content Sep 17–23 (Sep 23 partial). Overlay ask-shape still binds. |
+| Ask temperature | **Give.** Trial paragraph this week = 0 replies. Ask only if Dale spines a number + fork. |
+| Account arc | Waiting on the next spine. Do not clone `+98.88`, the $20k limit, or 25×. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones / good day + Steelers hole | **S + C** | none | **Staged** |
-| 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / wipeout vs fight | **C + S** | none | **Staged** |
-| 9/20 ~11:20 ET | QT **GIVE** | `$131,000 ON THE VIKINGS` / `$178,000 ON THE STEELERS` | **S + C** | none | **Staged** |
-| 9/20 10:36 ET | Hero **GIVE** | `$215,000 ON THE STEELERS` / Pats upset alert | **S + C** | none | **Staged** — **play lost 20–3** |
+| 9/23 | **INGEST** | Sep 17–23 CSV. Eng: Pin $20k **366**. Rate: `+98.88` **328**. Talk: down-days **8R**. Deaths: trial **0R** · `$215k` **0R** · `$131k` **0R** | — | none | Locked. No draft. |
+| 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones | **S + C** | none | **Posted** · 8073 / 204 / **1R** |
+| 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / wipeout vs fight | **C + S** | none | **Posted** · 2357 / 177 / **2R** |
+| 9/20 ~11:20 ET | QT **GIVE** | `$131,000 ON THE VIKINGS` / `$178,000 ON THE STEELERS` | **S + C** | none | **Posted** · 4655 / 190 / **0R** |
+| 9/20 10:36 ET | Hero **GIVE** | `$215,000 ON THE STEELERS` / Pats upset alert | **S + C** | none | **Posted** · 2112 / 159 / **0R** · lost 20–3 |
 | 9/19 4:07 ET | Hero **GIVE** | `PINNACLE'S LIMIT ON THIS SPREAD IS $20,000` / Miss State +3.5 | **S + C** | none | **Posted/cashed** (41-34) |
 
 ---
 
 ## Angle lock
-**ONE:** They’re fading Jones because a 9-2 wallet bet 25× his normal on Kansas City — not because of a graphic.  
-**Yum:** you stop betting a screenshot and start looking at size.  
-**Hook:** `$209,000 AT 25×` / `His normal is $8,300.`  
-**Body:** 9 more proven · 3 proven Indy (real $) · -6.5 +113 · 3u · Under 9-3 · Pittsburgh 20-3 · good day anyway · fading Jones · they sized up so did we · 8:05.  
-**Ask:** none.  
-**Killed:** 1-15 restage · `$307K ON THE CHIEFS` · origin restage · majority of all $ · HC · 1-4 fade · locked · invented day units · “you fading Jones?”
+**No live tweet.** Ingest only. Next ONE waits on Dale’s spine.  
+**Law from this file:** limit walk wins attention. Honest down-day wins replies. Dollar-stack and trial-paragraph win neither.  
+**Killed for the next open:** `$N ON THE TEAM` · `+98.88` clone · `$20k` restage · `25×` restage · free-trial paragraph · `Down days suck` restage · v12 as line 1 · origin clone
 
 ---
 
 ## Themes spent / open
-**Spent this beat (once posted):** $209K at 25× · Jones fade QT · Under 9-3 grade · Steelers 20-3 hole inside this post
+**Spent (posted, do not echo):** Pin $20k Miss State · `+98.88 since June 1` · down-days · Colts hammer · portfolio share · feedback ask · free-trial paragraph · 25× Jones · `$131k/$178k` · `$215k` · `I don't pick games` · SIU 8.6× · +158 clawback
 
-**Still spent:** `$N ON THE TEAM` stack · origin “I don’t pick games” · Pin MIN $5k→$30k · $215K / $131K opens · Miss State $20k · +118u · Vault · grind-EV · MVP25 · caption last-look
+**Still spent:** grind-EV · better-way · MVP25 · `$5.35` · Vault-as-open · Camden · fade-Trent · `+60u` / `+125u` / `$79.5k`
 
-**Still open:** grade Chiefs -6.5 after 8:20 · weekly report · fence-sitter DMs
+**Still open:** whatever is live after today’s locks · weekly report · fence-sitter DMs
 
-**Don't:** restate 1-15 · restage 25× after it posts · `$N ON THE TEAM` · origin clone · lock-alert identity · pretend the Colts side is dead
+**Don't:** dollar-stack · trial paragraph · clone today’s `+98.88` · lock-alert identity
 
 ---
 
 ## Unfinished
-- Grade Chiefs -6.5 after 8:20 ET
+- Next hero — spine not in yet
 - Weekly report (Power)
 - Fence-sitter DMs
 
 ---
 
-## FORWARD LOOK — after this posts
-1. **Grade SNF.** Cash or scar. Do not restage 25×.
-2. Weekly report. Ask only if Dale spines it.
-3. Fence-sitter DMs if the QT thread is alive (parent already has reach).
+## FORWARD LOOK — next tweet (spine not in yet)
+1. **New-tape give** on whatever Dale drops. Limit/price paradox or a sized printer he has not posted. Human. Not `$N ON THE TEAM`.
+2. Honest scar only with a **new** hole. Do not rerun `Down days suck`.
+3. Ask only if he spines it. Not a free-trial paragraph (Tue = 0 replies at 4.8k).
 
-**NOT:** 1-15 restage · $209K restage · origin clone · dollar-stack · Vault · grind-EV
+**NOT:** `$20k` restage · `+98.88` restage · `25×` restage · `$215k` / `$131k` · origin clone · v12 as line 1 · grand finale · thankful open · grind-EV · `$5.35`
 
-**Avatar:** they saw a graphic, then a 25× size-up, plus today’s cash and hole. Next = the grade.  
-**Balance:** S+C live + Power trail (Under hit / Steelers smashed). Next = SNF grade.  
-**Varied condition:** ticket-vs-wallet QT (public record vs our size-up).  
-**Hormozi economics:** give. Parent supplies reach.  
-**Desk scar:** Steelers 4u ML lost 20–3 — keep saying it when we talk about the day.
+**Avatar:** they already saw the limit walk, the down-day, and a 25× that didn’t start a thread. Next post has to be a new condition.  
+**Balance:** S+C (limit) and P+L (down day) just printed. Don’t feed either the same sentence.  
+**Varied condition starved:** a live ticket that is not a dollar-stack and not today’s `+98.88`.  
+**Hormozi economics:** give.  
+**Desk scar:** `$N ON THE TEAM` = 0 replies twice. Trial paragraph = 0 replies. Limit walk = eng king with 1 reply — silhouette yes, copy no.
 
 ---
 
 ## Agent close-out
-- [x] QT law: do not restate 1-15
-- [x] Hook is 25× size-up, not `$N ON THE TEAM`
-- [x] Whole truth: 3 proven on Colts · Colts have more tape $ · Steelers 20–3
-- [x] Good day shaped, not line 1, no fake unit total
-- [x] Not locked (8:05)
-- [x] Staged COPY_PASTE only
-- [x] Continuity written
+- [x] Content CSV ingested (Sep 17–23). Trial overlay not wiped.
+- [x] Living window + timeline + continuity written
+- [x] No tweet. Waiting on the spine.

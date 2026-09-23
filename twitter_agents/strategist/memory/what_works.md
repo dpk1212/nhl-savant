@@ -86,6 +86,13 @@ Seed 2026-07-10:
 - Stuff inside > container. 1.5 at 95% > one over-edited 100%. Automate last. Ask shape unchanged (`trial_overlay.md`).
 - Vault: `hormozi_qual_algorithm.md` · notes `sources/hormozi_qual_algorithm_2026-09-19_notes.md`
 
+2026-09-23 (content CSV Sep 17–23 — no tweet this run):
+- Eng king = Pin limit walk **366 / 51 PV / 1R**. Rate king = `+98.88 since June 1` + three locks **328 / 1367** (today — spent).
+- Conversation = `Down days suck` **8R / 52 PV**, tied with `I need your feedback` **8R**.
+- `$215k ON THE STEELERS` and `$131k / $178k` = **0 replies**. `$209k AT 25×` = 8073 impr / **1R**.
+- Free-trial paragraph = **241 eng / 0R / 4794**. Ask shape unchanged: number + fork, or don’t ask.
+- Next = new-tape give. Do not clone any of the above.
+
 2026-09-14 (trial overlay Jul 17–Sep 13 + content CSV Sep 8–14):
 - **Two scoreboards.** Attention ≠ trials. t.co = **89 trial users / 49%** · 2.4% sess→trial vs 0.4% direct. `?ref=` broken.
 - **Ask shape:** hard number then a fork **in the same tweet**. Seats > storefront (Aug 4 = 7 t.co). `$476k` + free trial in-hero converted. Buried MVP25 / “first week is free” did not.

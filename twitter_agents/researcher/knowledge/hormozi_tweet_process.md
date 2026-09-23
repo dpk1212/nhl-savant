@@ -59,57 +59,54 @@ Ticket-slip reach alone (`$79.5k` / BetMGM most-bet) unless a proof/invite post 
 
 ## LIVING WINDOW (CSV — overwrite on every content ingest)
 
-**Source locked:** Content CSV Sep 8–14, 2026 (Sep 14 **partial**) · 26 heroes · 106 replies  
+**Source locked:** Content CSV Sep 17–23, 2026 (Sep 23 **partial**) · 24 heroes · 80 replies  
 **File:** `SHARED/recent_timeline_latest.md`  
-**Ingested:** 2026-09-14  
-**Post-level attention law:** **this CSV.** Aug 26–Sep 1 + Sep 5–11 convert-paragraph deaths still bind. Sep 5–7 kings (`+60u` **540** · `+125u` **21R**) are not in this file — they still bind from the overlay + the prior CSV.  
-**Compliance law:** `trial_overlay.md` (above). Do not let a mid-eng honest-L kill a converting family.  
+**Ingested:** 2026-09-23  
+**Post-level attention law:** **this CSV.** Aug 26–Sep 14 convert-paragraph / `$5.35` / MVP25 / Vault-as-open deaths still bind. Older kings (`+60u` **540** · `+125u` **21R** · `$79.5k` **305**) are not in this file — they still bind as silhouettes, not as copy.  
+**Compliance law:** `trial_overlay.md` (above). No new GA4 paste this run.  
 **Next tweet:** do not draft until Dale dumps a spine. This card binds PURPOSE / hook / ask.
 
 ### What actually converted attention (this content window)
 
 | Job | Winner | Why it counts |
 |-----|--------|----------------|
-| Engagement king | **Wed Sep 9** · `$79.5k on over 44.5` vs most-bet Under · **305 / 53 PV** | Pain-first `$XK`. Ticket-slip — overlay: pair with a proof/invite post the same week. |
-| Conversation (tie) | **Sat Sep 12** UFC gem **281 / 10R** · **Fri Sep 11** pretty bad night **88 / 10R** | Human. Spent as restage. |
-| Highest reach | **Fri Sep 11** · `+99u IN THE LAST 30 DAYS` · **6752 / 285 / 7R** | BetMGM / don’t-forget-MLB. Reach ≠ trials. |
-| Member receipt | **Sun Sep 13** · `JULY -$688. AUGUST -$848.` · **188 / 1492 / 2R** | Overlay: 6 trials / 1 t.co. Story worked; MVP25 SR did not. |
-| Say–do cash | **Wed Sep 9** · airport Jays · **272 / 4R** | Image is the stuff. |
-| TNF give (posted) | **Thu Sep 10** · `$51K AT 4.4×` fade-Trent · **232 / 3R** | Spent. Do not restage. |
+| Engagement + PV | **Sat Sep 19** · `PINNACLE'S LIMIT… $20,000` · **366 / 1R / 51 PV** | Limit walk, number still ours. Low replies. Do not restage. Do not throw out the silhouette. |
+| Rate king (today) | **Wed Sep 23** · `+98.88u since June 1` + three locks · **328 / 2R / 1367** | Printer then tonight. ~24% eng. **Spent today.** |
+| Conversation + PV | **Thu Sep 17** · `Down days suck` · **290 / 8R / 52 PV** | Honest L. v12 stayed in the body. Copy spent. |
+| Conversation tie | **Mon Sep 21** · `I need your feedback` · **233 / 8R** | Specific product question. Not a trial. |
+| Reach + follows | **Mon Sep 21** · Colts money hammered in · **275 / 4R / 7097 / 2 fol** | Narrative + the actual plays. |
+| Reach, thin talk | **Sun Sep 20** · `$209,000 AT 25×` · **204 / 1R / 8073** | `$XK at Y×` still reaches. It does not start a thread. Spent. |
 
 ### Empirical deaths (do not repeat — this is pathway law now)
 
 | Posted open | Eng | Law |
 |-------------|-----|-----|
-| `If you havent signed up… code - MVP25` | **9 / 296** | Code with no heat. Ask under the fold. Overlay: 1 t.co trial. |
-| `You don’t have to grind EV…` | **5** | Still bind (Sep 5–11). Convert promise, no pudding. |
-| `If only there was a better way. 🧐` | **43** | Still bind. Tease / no stuff. |
-| `If you’re are tired of losing… There is a better way` | **54** | Still bind. Convert paragraph. |
-| `Adding this while I board… odds are dropping` | **44 / 0R** | Juice/limit caption. |
-| `MLB we got back to winning.. officially 5-2` | **52 / 2106** | Recap furniture, high reach. |
-| Sharp Vault / v12 showcase | **67** | Product-room tour. |
-| Camden’s story | **71 / 0R** | Testimonial as hero. PV ≠ conversation. Member receipts convert **with a visible fork**. |
-| `+100u MLB` BetMGM | **139 / 0R / 5948** | Ticket-slip, no conversation. |
-| `I don't know what people are using for their data… Upgrade 25%` | **1** | Still bind from Aug 26–Sep 1. |
-| `Thankful to have someone like Dom…` · SUMMER-as-hero · `$5.35/week` · lunch | 35 / 13 / Aug 2 overlay | Still bind. Price as punchline. |
+| `good reason to try the free trial` | **241 / 0R / 4794** | Convert paragraph. This window. No hard number in line 1. |
+| `$131,000 ON THE VIKINGS` / `$178,000` | **190 / 0R / 4655** | `$N ON THE TEAM` stack. Reach, zero talk. |
+| `$215,000 ON THE STEELERS` | **159 / 0R** | Same stack. Zero talk. |
+| `You don’t have to grind EV…` | **5** | Still bind. |
+| `If only there was a better way` / tired of losing | **43 / 54** | Still bind. |
+| MVP25 · `$5.35` · SUMMER · thankful OG · Camden · Vault-as-open | prior CSVs | Still bind. |
+| `Today feel like the grand finale` | **24 / 1R** | Feeling, no receipt. |
 
-**Do not kill from attention alone:** `10 day green streak comes to an end` (this file **90 / 4049 / 5R**). Overlay Sep 9 = **11 trials / 4 t.co**. Honest L + month still green is a converting family. Do not restage that exact copy.
+**Do not kill from low replies alone:** Pin $20k is 1R and still #1 eng / co-#1 PV. Honest-L (`Down days suck`) is the reply engine in this file and still a legal family when the scar is new.
 
 ### Ask temperature (as of this ingest)
 
-**Give unless Dale sets PURPOSE=ask.** Last ask in-window (MVP25) was invisible and does not count as a spent successful ask.
+**Give unless Dale sets PURPOSE=ask.** This window already asked: feedback (8R), “who are you tailing” (4R), free trial (**0R**). The trial open does not count as a successful ask.
 
-If PURPOSE=ask: **hard number in line 1, fork in the same tweet.** Not `$5.35`. Not a 300-imp SR. Not a convert paragraph. Seats > storefront. Link/`?ref=` in line 1 still does not convert.
+If PURPOSE=ask: **hard number in line 1, fork in the same tweet.** Not “better time for a free trial.” Not `$5.35`. Not a link in line 1.
 
-Free SPCL that still pulls a next step: **new-tape** `$XK at Y×` · unfinished leftover on a **new** game · pain-first loud pile · printer-then-tonight’s-plays · honest L with 30-day still green.
+Free SPCL that still pulls a next step: **new-tape** limit/price paradox · printer-then-tonight on a **new** slate · `$XK at Y×` when we also want reach · honest L only with a **new** hole.
 
 ### Hook QA addendum (from this CSV + overlay)
 
-Line 1 must be **S and/or C a stranger can screenshot** — `$XK at Y×` / dead-pile vs our side / unfinished leftover / printer-then-tonight’s-plays / hard unit printer.  
-Feelings, grind-EV, “better way,” promo-code, price-as-punchline, Camden-without-fork, Vault-as-open, and fade-Trent restage fail this test **in market**.  
-Honest-L opens fail **engagement rate** and still **start trials** if the month is green — do not use that as a reason to open on price.
+Line 1 must be **S and/or C a stranger can screenshot.** This window’s proof: the limit walk beat `$215k ON THE STEELERS` and `$131k / $178k` on both eng and replies (those two had **zero**).  
+`$209k AT 25×` reached 8k and got 1 reply. Reach is not the job if Dale wants engagement.  
+v12 in line 1 is still a decoder ring. It can sit in the body of a human post (`Down days suck` did).  
+Feelings, grind-EV, “better way,” free-trial paragraph, price-as-punchline, and `$N ON THE TEAM` fail this test **in this file**.
 
-**Default next slot (9/14):** **grade / new-tape give.** Not Don restage. Not MVP25. Not grind-EV. If Dale spines an ask, use the overlay fork — not a buried code.
+**Default next slot (9/23):** **new-tape give** on whatever Dale spines. Not a `+98.88` clone. Not a trial open. Not another dollar stack.
 
 ---
 
