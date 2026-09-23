@@ -92,8 +92,25 @@ const kalshiData = {
   // Confirmed wallet 3100 + whale over 1000 + residual over 4000
   assert(r.full.ours === 3100 + 1000 + 4000, `full ours ${r.full.ours}`);
   assert(r.full.theirs === 3000 + 12000, `full theirs ${r.full.theirs}`);
-  // Losing must NOT include anonymous Kalshi whales
-  assert(r.losers.theirs === 0, `losers must ignore kalshi whales, got ${r.losers.theirs}`);
+  // Losing + Confirmed stay wallet-only — Kalshi O/U never paints those bars
+  assert(r.losers.ours === 0 && r.losers.theirs === 0, `losers must stay wallet-only, got ${JSON.stringify(r.losers)}`);
+  assert(r.confirmed.ours === 3100 && r.confirmed.theirs === 0, `confirmed must stay wallet-only, got ${JSON.stringify(r.confirmed)}`);
+
+  const noEx = buildWideBoardMoneySplits({
+    sport: 'MLB',
+    gameKey: 'atl_mil',
+    marketType: 'total',
+    playSideNorm: 'home',
+    rawTotal,
+    kalshiData,
+    getWalletProfile: (s) => profiles.get(String(s).toLowerCase()) || null,
+    away: 'Atlanta',
+    home: 'Milwaukee',
+    includeExchange: false,
+  });
+  assert(noEx.losers.ours === r.losers.ours && noEx.losers.theirs === r.losers.theirs, 'losers unchanged vs no-exchange');
+  assert(noEx.confirmed.ours === r.confirmed.ours && noEx.confirmed.theirs === r.confirmed.theirs, 'confirmed unchanged vs no-exchange');
+  assert(noEx.full.ours !== r.full.ours, 'Full must change when Kalshi O/U exchange is on');
 }
 
 console.log('testKalshiTotalExchange: ok');
