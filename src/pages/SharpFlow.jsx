@@ -18,6 +18,7 @@ import { trackEvent } from '../utils/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { useUnitDisplayScale } from '../hooks/useUnitDisplayScale';
+import { useMySharps } from '../hooks/useMySharps';
 import { scaleUnits } from '../lib/unitDisplayScale.js';
 import { redirectToCheckout } from '../utils/stripe';
 import AuthModal from '../components/AuthModal';
@@ -5073,6 +5074,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({
   rawMlPositions = null, rawSpreadPositions = null, rawTotalPositions = null,
   intelExcludedSet = null, polyData = null, kalshiData = null,
   unitDisplayScale = null,
+  mySharps = null,
 }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
@@ -5331,7 +5333,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({
     kalshiData,
     unitDisplayScale,
   });
-  return <LockedPositionCardView f={lockedFixture} />;
+  return <LockedPositionCardView f={lockedFixture} mySharps={mySharps} />;
 });
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
@@ -8560,6 +8562,27 @@ export default function SharpFlow() {
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
   const { scale: unitDisplayScale } = useUnitDisplayScale(user);
+  const mySharps = useMySharps({ user, isPremium });
+  const mySharpCard = useMemo(() => {
+    const names = {};
+    for (const m of mySharps.members) {
+      if (m?.name && m.walletShort) names[m.walletShort] = m.name;
+    }
+    return {
+      shorts: mySharps.shorts,
+      names,
+      ready: mySharps.ready,
+      atCap: mySharps.count >= mySharps.cap,
+      onToggle: mySharps.toggleRow,
+    };
+  }, [
+    mySharps.members,
+    mySharps.shorts,
+    mySharps.ready,
+    mySharps.count,
+    mySharps.cap,
+    mySharps.toggleRow,
+  ]);
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
   const [actionSortMode, setActionSortMode] = useState('size');
@@ -13350,7 +13373,7 @@ export default function SharpFlow() {
                                   gap: '0.75rem',
                                 }}>
                                   {stakedCards.map(p => (
-                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} />
+                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} mySharps={mySharpCard} />
                                   ))}
                                 </div>
                               )}
@@ -13376,7 +13399,7 @@ export default function SharpFlow() {
                                     opacity: 0.78,
                                   }}>
                                     {monitoringCards.map(p => (
-                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} />
+                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} mySharps={mySharpCard} />
                                     ))}
                                   </div>
                                 </div>
