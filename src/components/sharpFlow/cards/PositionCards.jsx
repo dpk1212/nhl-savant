@@ -2596,27 +2596,7 @@ function CollapsedCardFrame({ live, children, extraClass }) {
  * exactly one piece of metal on the right (the IN seal). The lock countdown
  * is a text chip, not a boxed pill. Two chrome objects became one.
  */
-function YoursChip({ mine, names }) {
-  if (!mine?.length) return null;
-  const who = mine.slice(0, 3).map((w) => names?.[w.id] || `··${w.short}`).join(', ');
-  return (
-    <span
-      title={who ? `In your portfolio: ${who}` : 'A sharp from your portfolio is on this play'}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
-        padding: '5px 9px', borderRadius: 999, color: '#0a0904',
-        background: 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)',
-        boxShadow: '0 2px 10px -2px rgba(212,175,55,0.55)',
-      }}
-    >
-      <Star size={9} fill="#0a0904" color="#0a0904" />
-      {mine.length === 1 ? 'YOURS' : `YOURS · ${mine.length}`}
-    </span>
-  );
-}
-
-function CollapsedHeader({ live, inClassName, mine = null, names = null }) {
+function CollapsedHeader({ live, inClassName }) {
   const { f, tracked, graded, muteTip, ticketFrozen, accent, edgeAura } = live;
   return (
     <div style={{
@@ -2659,7 +2639,6 @@ function CollapsedHeader({ live, inClassName, mine = null, names = null }) {
         )}
       </div>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-        <YoursChip mine={mine} names={names} />
         {tracked ? (
           <span title={muteTip} style={NO_PLAY_PILL}>NO PLAY</span>
         ) : graded ? (
@@ -3011,7 +2990,7 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
   const mine = portfolioWalletsOnCard(f, mySharps?.shorts);
   const hero = <CollapsedHero live={live} pickClass="live-pick" />;
   const trust = (
-    <LockedCollapsedStrength f={f} face="subscriber" boardAbove mine={mine} names={mySharps?.names} />
+    <LockedCollapsedStrength f={f} face="subscriber" boardAbove mine={mine} />
   );
   const money = <LockedCollapsedBattleBars f={f} face="subscriber" flush />;
   const tape = (
@@ -3025,11 +3004,11 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
 
   const perf = <TicketPerforation edgeAura={live.edgeAura} />;
   // The cornerstone. Every wallet on the board, drawn to the dollar.
-  const board = <LockedCollapsedBoard f={f} />;
+  const board = <LockedCollapsedBoard f={f} mineShorts={mySharps?.shorts} names={mySharps?.names} />;
 
   return (
     <CollapsedCardFrame live={live} extraClass={`live-ticket live-order-${order}`}>
-      <CollapsedHeader live={live} mine={mine} names={mySharps?.names} />
+      <CollapsedHeader live={live} />
       {/* Provisional state, said out loud — flagged now, official at T-15. */}
       {!live.tracked && !live.graded && (
         <LockFreezeStatus commenceMs={f.commenceMs} banner />

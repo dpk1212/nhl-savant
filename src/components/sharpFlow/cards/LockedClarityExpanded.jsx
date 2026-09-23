@@ -1217,20 +1217,6 @@ export default function LockedClarityExpanded({
             {f.gameTime && <span style={{ color: C.textFaint }}> · {f.gameTime}</span>}
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {mineOnCard.length > 0 && (
-              <span
-                title={mineOnCard.map((w) => mySharps?.names?.[w.id] || `··${w.short}`).join(', ')}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
-                  padding: '4px 8px', borderRadius: 999, color: '#0a0904',
-                  background: 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)',
-                }}
-              >
-                <Star size={9} fill="#0a0904" color="#0a0904" />
-                {mineOnCard.length === 1 ? 'YOURS' : `YOURS · ${mineOnCard.length}`}
-              </span>
-            )}
             {statusSlot}
             <button
               type="button"
@@ -1383,7 +1369,7 @@ export default function LockedClarityExpanded({
               <span style={{ color: C.textFaint }}>· size = $</span>
               <span style={{ color: C.textFaint, marginLeft: 'auto' }}>
                 champagne ring = best on price · ↑ sized up
-                {mineOnCard.length > 0 ? ' · ★ yours' : ''}
+                {mineOnCard.length > 0 ? ' · ★ My Sharps' : ''}
               </span>
             </div>
           </div>
@@ -1417,7 +1403,6 @@ export default function LockedClarityExpanded({
                     {selectedName && (
                       <span style={{ fontSize: 13, fontWeight: 700, color: GOLD_HI }}>{selectedName}</span>
                     )}
-                    {selectedSaved && <Pill c={GOLD} solid>Yours</Pill>}
                     {againstSel ? <Pill c={VS}>Against</Pill>
                       : selected.proven ? <Pill c={GREEN} solid>Proven</Pill>
                         : <Pill c={BLUE}>Secondary</Pill>}
