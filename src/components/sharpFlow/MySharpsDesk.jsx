@@ -13,9 +13,12 @@ import {
   buildPortfolioStage,
   buildSharpDossier,
   groupPortfolioBets,
+  marketTape,
+  rowsForBetsFeed,
   suggestTailStake,
   summarizeTails,
 } from '../../lib/mySharpsDesk.js';
+import { betsFeedKey, betsFeedOn } from '../../lib/mySharps.js';
 
 const B = {
   gold: '#D4AF37',
@@ -378,7 +381,38 @@ function HoldingRow({ row, selected, isMobile, onToggle, onOpen, onRename, start
   );
 }
 
-function MarketBook({ holding, onRemove }) {
+function sameSharp(rowShort, holdingShort) {
+  const a = String(rowShort || '').toLowerCase();
+  const b = String(holdingShort || '').toLowerCase();
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return a.slice(-6) === b || b.slice(-6) === a || a.slice(-6) === b.slice(-6);
+}
+
+function betsFollowLine(groups, betsOff) {
+  const off = new Set(betsOff || []);
+  const on = [];
+  let all = 0;
+  for (const g of groups) {
+    for (const m of g.markets) {
+      all += 1;
+      const key = betsFeedKey(g.sport, m.market);
+      if (key && !off.has(key)) on.push(`${g.sport} ${m.label}`);
+    }
+  }
+  if (!all || on.length === all) return 'Bets follows every market.';
+  if (!on.length) return 'Bets is off for every market.';
+  return `Bets follows ${on.join(', ')}.`;
+}
+
+function sizeMark(ratio) {
+  const n = Number(ratio);
+  if (!Number.isFinite(n) || n < 1.15) return null;
+  return `${n.toFixed(1)}×`;
+}
+
+function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets }) {
+  const [openKey, setOpenKey] = useState(null);
   const label = holding.name || holding.tag;
   const groups = [];
   const bySport = new Map();
@@ -387,14 +421,18 @@ function MarketBook({ holding, onRemove }) {
     bySport.get(m.sport).push(m);
   }
   for (const [sport, markets] of bySport) groups.push({ sport, markets });
+  const openRows = (actionRows || []).filter((r) => sameSharp(r.walletShort, holding.walletShort));
+
   return (
-    <div style={{
-      margin: '0 0 0.35rem',
-      padding: '0.85rem 0.85rem 0.45rem',
-      borderRadius: 12,
-      background: 'rgba(255,255,255,0.02)',
-      border: `1px solid ${B.line}`,
-    }}
+    <div
+      style={{
+        margin: '0 0 0.35rem',
+        padding: '0.85rem 0.85rem 0.45rem',
+        borderRadius: 12,
+        background: 'rgba(255,255,255,0.02)',
+        border: `1px solid ${B.line}`,
+      }}
+      onClick={(e) => e.stopPropagation()}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         <div style={{ ...T.kicker, color: B.gold }}>Market book</div>
@@ -406,39 +444,157 @@ function MarketBook({ holding, onRemove }) {
           Remove {label}
         </button>
       </div>
+      {groups.length ? (
+        <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>
+          {betsFollowLine(groups, holding.betsOff)}
+        </div>
+      ) : null}
       {groups.length ? groups.map((g) => (
         <div key={g.sport} style={{ marginTop: 10 }}>
           <div style={{ ...T.kicker, color: B.textSec, letterSpacing: '0.08em', marginBottom: 4 }}>{g.sport}</div>
-          {g.markets.map((m) => (
-            <div
-              key={`${g.sport}:${m.market}`}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '72px minmax(0, 1.2fr) 72px 84px',
-                gap: '0 12px',
-                alignItems: 'baseline',
-                padding: '0.42rem 0',
-                borderTop: `1px solid ${B.hair}`,
-              }}
-            >
-              <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{m.label}</div>
-              <div style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-                {m.honest?.text && m.honest.text !== '—' ? m.honest.text : '—'}
-                {m.n ? <span style={{ color: B.textFaint }}> · {m.n} bets</span> : null}
+          {g.markets.map((m) => {
+            const key = `${g.sport}:${m.market}`;
+            const open = openKey === key;
+            const feedOn = betsFeedOn(holding, g.sport, m.market);
+            const mineOpen = openRows.filter((r) => {
+              if (String(r.sport || '').toUpperCase() !== g.sport) return false;
+              return String(r.marketType || '').toUpperCase() === m.market;
+            });
+            const hot = mineOpen.reduce((best, r) => {
+              const ratio = Number(r.displaySizeRatio ?? r.sizeRatio);
+              return Number.isFinite(ratio) && ratio > best ? ratio : best;
+            }, 0);
+            const mark = sizeMark(hot);
+            const record = m.honest?.record
+              ? `${m.honest.record}${m.n ? ` · ${m.n} bets` : ''}`
+              : (m.n ? `${m.n} bets` : '—');
+            const tape = open ? marketTape(walletProfiles, holding.walletShort, g.sport, m.market) : null;
+            return (
+              <div key={key} style={{ borderTop: `1px solid ${B.hair}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  onClick={() => setOpenKey(open ? null : key)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '6px 14px',
+                    padding: '0.48rem 0',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <span style={{ ...T.name, color: B.text, fontSize: '0.84rem', minWidth: 64 }}>{m.label}</span>
+                  <span style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'", flex: '1 1 120px' }}>{record}</span>
+                  <span style={{ ...T.figure, color: pnlColor(m.roi, B.textFaint), fontSize: '0.82rem' }}>
+                    Book {Number.isFinite(m.roi) ? `${m.roi}%` : '—'}
+                  </span>
+                  <span style={{ ...T.figure, color: pnlColor(m.l30?.pnl, B.textFaint), fontSize: '0.82rem' }}>
+                    30d {Number.isFinite(m.l30?.pnl) ? fmtVol(m.l30.pnl) : '—'}
+                  </span>
+                  <span style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                    {m.usual ? `avg ${fmtVol(m.usual, { signed: false })}` : 'avg —'}
+                    {mark ? <span style={{ color: B.goldSoft }}> · {mark}</span> : null}
+                  </span>
+                </button>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={feedOn}
+                    aria-label={feedOn ? `Bets includes ${g.sport} ${m.label}` : `Bets skips ${g.sport} ${m.label}`}
+                    onClick={() => {
+                      if (onToggleBets) onToggleBets(holding.walletShort, g.sport, m.market);
+                    }}
+                    style={{
+                      ...T.kicker,
+                      letterSpacing: '0.08em',
+                      flexShrink: 0,
+                      padding: '0.18rem 0.5rem',
+                      borderRadius: 999,
+                      border: `1px solid ${feedOn ? B.goldBorder : B.line}`,
+                      color: feedOn ? '#0a0904' : B.textFaint,
+                      background: feedOn ? 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)' : 'transparent',
+                      cursor: onToggleBets ? 'pointer' : 'default',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    Bets
+                  </button>
+                </div>
+                {open ? (
+                  <MarketPlays openRows={mineOpen} tape={tape} usual={m.usual} />
+                ) : null}
               </div>
-              <div style={{ ...T.figure, color: pnlColor(m.roi, B.textFaint), textAlign: 'right', fontSize: '0.84rem' }}>
-                {Number.isFinite(m.roi) ? `${m.roi}%` : '—'}
-              </div>
-              <div style={{ ...T.figure, color: pnlColor(m.l30?.pnl, B.textFaint), textAlign: 'right', fontSize: '0.84rem' }}>
-                {Number.isFinite(m.l30?.pnl) ? fmtVol(m.l30.pnl) : ''}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )) : (
         <div style={{ ...T.meta, color: B.textFaint, padding: '0.7rem 0' }}>
           {holding.honest?.record ? `${holding.honest.text} across the book.` : 'Thin sample.'}
         </div>
+      )}
+    </div>
+  );
+}
+
+function MarketPlays({ openRows, tape, usual }) {
+  const graded = tape?.plays || [];
+  return (
+    <div style={{ padding: '0 0 0.45rem 0.15rem' }}>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', margin: '2px 0 4px' }}>
+        Open
+      </div>
+      {openRows.length ? openRows.map((r, i) => {
+        const ratio = Number(r.displaySizeRatio ?? r.sizeRatio);
+        const mark = sizeMark(ratio);
+        const pick = r.marketLabel || r.team || r.side || 'Open';
+        const matchup = r.away && r.home ? `${r.away} @ ${r.home}` : null;
+        return (
+          <div key={`${r.gameKey}-${r.side}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{pick}</div>
+              <div style={{ ...T.meta, color: B.textMuted }}>{matchup || 'Open ticket'}</div>
+            </div>
+            <div style={{ ...T.figure, color: B.goldSoft, fontSize: '0.82rem', textAlign: 'right' }}>
+              {fmtVol(r.invested, { signed: false })}
+              {mark ? <span style={{ color: B.textSec }}> · {mark}</span> : null}
+              {usual && !mark ? <span style={{ ...T.meta, color: B.textFaint }}> · usual</span> : null}
+            </div>
+          </div>
+        );
+      }) : (
+        <div style={{ ...T.meta, color: B.textFaint, padding: '0.25rem 0 0.35rem' }}>Nothing open in this market.</div>
+      )}
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', margin: '8px 0 4px' }}>
+        {tape?.scope === 'recent' ? 'Older graded' : 'Graded'}
+        {tape?.total > graded.length ? ` · ${graded.length} of ${tape.total}` : ''}
+      </div>
+      {graded.length ? graded.map((leg) => (
+        <div key={leg.id} style={{ display: 'grid', gridTemplateColumns: '52px minmax(0, 1fr) auto', gap: '0 12px', alignItems: 'baseline', padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
+          <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>{leg.date ? leg.date.slice(5) : '—'}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{leg.pick}</div>
+            <div style={{ ...T.meta, color: B.textMuted }}>
+              {[leg.matchup, leg.invested ? fmtVol(leg.invested, { signed: false }) : null].filter(Boolean).join(' · ') || '—'}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ ...T.kicker, letterSpacing: '0.08em', color: leg.won ? B.green : B.red }}>{leg.won ? 'W' : 'L'}</div>
+            <div style={{ ...T.figure, color: pnlColor(leg.pnl, B.textFaint), fontSize: '0.82rem' }}>
+              {Number.isFinite(leg.pnl) ? fmtVol(leg.pnl) : ''}
+            </div>
+          </div>
+        </div>
+      )) : (
+        <div style={{ ...T.meta, color: B.textFaint, padding: '0.25rem 0' }}>No graded plays in this market yet.</div>
       )}
     </div>
   );
@@ -1496,6 +1652,7 @@ export default function MySharpsDesk({
   onAdd = null,
   onTail = null,
   onUntail = null,
+  onToggleBets = null,
   onRoomChange = null,
   tails = {},
   cap = 40,
@@ -1530,7 +1687,8 @@ export default function MySharpsDesk({
 
   const bookSource = weekRows?.length ? weekRows : actionRows;
   const bookBoard = useMemo(() => buildMySharpsBoard(bookSource), [bookSource]);
-  const betBoard = useMemo(() => buildMySharpsBoard(actionRows), [actionRows]);
+  const betRows = useMemo(() => rowsForBetsFeed(actionRows, roster), [actionRows, roster]);
+  const betBoard = useMemo(() => buildMySharpsBoard(betRows), [betRows]);
   const snapshot = useMemo(
     () => buildPortfolioSnapshot({ holdings, tickets: bookBoard.tickets, tails, legs: recentLegs }),
     [holdings, bookBoard, tails, recentLegs],
@@ -1639,6 +1797,9 @@ export default function MySharpsDesk({
                   {focus === row.walletShort && holding ? (
                     <MarketBook
                       holding={holding}
+                      walletProfiles={walletProfiles}
+                      actionRows={actionRows}
+                      onToggleBets={onToggleBets}
                       onRemove={() => {
                         const id = holding.walletShort;
                         setSelected(null);

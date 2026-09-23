@@ -5,7 +5,7 @@
 import { CLV_SKILL_MIN_N, shortWalletId } from './walletClvSkill.js';
 import { sportBookForDisplay } from './walletSportBook.js';
 import { sportUsualBetFromProfile } from './sizeRatioBands.js';
-import { SIZED_UP_RATIO, fmtWalletTag, listMySharps, normalizeWalletShort, tailKey } from './mySharps.js';
+import { SIZED_UP_RATIO, betsFeedKey, fmtWalletTag, listMySharps, normalizeWalletShort, tailKey } from './mySharps.js';
 import { etDateKey } from './confirmedActionDesk.js';
 
 /** Last-N needed before Hot / Cold is a claim, not noise. */
@@ -433,11 +433,16 @@ export function marketBooksFromProfile(prof, sportFilter) {
       const mRec = byM[mkt];
       const packed = packBook(mRec?.positions) || packBook(mRec?.picks);
       if (!packed || packed.n < 2) continue;
+      const invested = Number(mRec?.positions?.invested);
+      const usual = packed.n > 0 && Number.isFinite(invested) && invested > 0
+        ? Math.round(invested / packed.n)
+        : null;
       out.push({
         sport,
         market: mkt,
         label: MARKET_LABEL[mkt] || mkt,
         ...packed,
+        usual,
         l30: l30FromRec(mRec),
         honest: honestRecord(packed.wins, packed.losses, packed.wr),
       });
@@ -455,6 +460,56 @@ function pickSportRec(prof, sportFilter) {
   const confirmed = confirmedSports(prof);
   const sport = confirmed[0] || Object.keys(by)[0] || null;
   return sport ? { sport, rec: by[sport] } : { sport: null, rec: null };
+}
+
+/**
+ * Drop a wallet's open rows for sport × markets they turned off.
+ * Other wallets on the same ticket stay. Empty means every market is on.
+ */
+export function rowsForBetsFeed(rows, roster = []) {
+  const offByShort = new Map();
+  for (const m of roster || []) {
+    const id = normalizeWalletShort(m?.walletShort);
+    const keys = new Set((m?.betsOff || []).map((k) => String(k)).filter(Boolean));
+    if (id && keys.size) offByShort.set(id, keys);
+  }
+  if (!offByShort.size) return rows || [];
+  return (rows || []).filter((r) => {
+    const id = normalizeWalletShort(r?.walletShort) || shortWalletId(r?.walletShort);
+    const keys = id ? offByShort.get(id) : null;
+    if (!keys) return true;
+    const key = betsFeedKey(r?.sport, r?.marketType);
+    return !key || !keys.has(key);
+  });
+}
+
+/** Graded plays for one sport × market. This month first, then the older tape. */
+export function marketTape(walletProfiles, walletShort, sport, market, { limit = 8 } = {}) {
+  const prof = profileFor(walletProfiles, walletShort);
+  const rec = prof?.bySport?.[sport];
+  const want = String(market || '').toUpperCase();
+  const take = (legs) => (Array.isArray(legs) ? legs : []).filter((leg) => {
+    if (legWon(leg) == null) return false;
+    return String(leg?.marketType || leg?.market || '').toUpperCase() === want;
+  });
+  let legs = take(rec?.form?.recentAction);
+  let scope = legs.length ? 'l30' : null;
+  if (!legs.length) {
+    legs = take(rec?.form?.curveLegs);
+    scope = legs.length ? 'recent' : null;
+  }
+  legs = [...legs].sort((a, b) => String(b?.date || '').localeCompare(String(a?.date || '')));
+  const shown = legs.slice(0, limit).map((leg) => {
+    const row = resultFromLeg(leg, sport);
+    const invested = Number(leg?.invested);
+    const ratio = Number(leg?.sizeRatio ?? leg?.displaySizeRatio);
+    return {
+      ...row,
+      invested: Number.isFinite(invested) && invested > 0 ? Math.round(invested) : null,
+      ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null,
+    };
+  });
+  return { scope, plays: shown, total: legs.length };
 }
 
 export function filterRowsToMySharps(rows, shorts, focusShort = null) {
@@ -2010,6 +2065,7 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
       heat: book.heat,
       openN: m.openN || 0,
       openInvested: m.openInvested || 0,
+      betsOff: Array.isArray(m.betsOff) ? m.betsOff : [],
       lines: book.lines,
       markets: book.markets || [],
       spark: blendDollarCurves(book.sparks),
