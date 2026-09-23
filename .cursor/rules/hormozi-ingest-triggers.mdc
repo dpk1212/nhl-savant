@@ -1,0 +1,22 @@
+---
+description: Auto-ingest when Dale drops Hormozi transcripts or X analytics CSVs for the Twitter/Hormozi desk
+globs: "**/account_analytics*.csv,**/hormozi*.md,twitter_agents/researcher/knowledge/**/*,twitter_drafts/**/*"
+alwaysApply: false
+---
+
+# Hormozi / Analytics drop triggers
+
+When Dale **pastes a Hormozi transcript** or says add/lock/use this teaching:
+
+1. Run `twitter_agents/researcher/knowledge/hormozi_ingest.md` **end-to-end**
+2. Do not draft tweets until leverage card + canon/notes are updated
+3. Then run `hormozi_tweet_process.md` if he also wants a post
+
+When Dale **drops an analytics CSV** (e.g. `account_analytics_content_*.csv`):
+
+1. Run `twitter_agents/researcher/knowledge/analytics_csv_ingest.md`
+2. Overwrite `twitter_agents/SHARED/recent_timeline_latest.md`
+3. Only then draft via `hormozi_tweet_process.md`
+
+Never skim a transcript into one poetic summary without file updates.  
+Never draft off a stale timeline when a fresh CSV was attached this session.
