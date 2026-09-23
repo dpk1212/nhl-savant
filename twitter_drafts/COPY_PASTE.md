@@ -1,30 +1,28 @@
-# Twitter — 2026-09-23 · SELF-QT ASK · Hormozi seat, not a site tour
-**Dale killed:** "Hop on the site" and "don't gatekeep." That is feature talk. The free-trial paragraph in this file got **0 replies**.
+# Twitter — 2026-09-23 · SELF-QT ASK · SPCL in the words
+**Canon:** `hormozi_spcl.md`. Influence = likelihood they comply. Stack the letters. Line 1 must show the scarce thing.
 
-**Ask law (overlay):** hard number, then a fork in the same tweet. Proof is the meal. Trial words are the seat: watch the wallets and grade it yourself. Not a storefront. Not a product tour.
+| Letter | In this tweet |
+|--------|----------------|
+| **S Status** | `+98.88 units since June 1` — the trail we control. Stranger sees it in line 1. |
+| **P Power** | We said it this morning with three locks. Reinforcing event: **4-1**. Loss shown, not hidden. Then the ask. |
+| **C Credibility** | 4-1 and the one loss. The June number is on the tweet being quoted. Not an adjective. |
+| **L Likeness** | Dale. You don't have to pick the games. Who's still in. |
 
-**Product:** we track wallets who already win and size with them. You don't have to pick the games.
-
-**Quote:** 1:01 PM `+98.88` post. Do not reprint that number. Do not attach the 3–1 card. He is **4-1**.
-
-| | |
-|--|--|
-| WHO | Someone ready to let baseball go, looking at a day that isn't over. |
-| PURPOSE | **Ask.** |
-| ONE | The wallets that built the June run are still sized tonight. Watch the money and grade it. You don't have to pick. |
-| SPCL | **C** (4-1, one loss) then the instruction. |
-| Ask | Free trial + `Who's still in on baseball?` |
+**Quote:** 1:01 PM post. Do not attach the 3–1 card.  
+**Killed:** hop on the site · gatekeep · slogan with no receipt · "still sized" as a claim with no number.
 
 ---
 
 ## COPY THIS
 
 ```
-4-1. One of them lost.
++98.88 units since June 1.
 
-The sharps who built that June run are still sized on the rest of tonight. I'm staying with them.
+Today we're 4-1. One of them lost.
 
-You don't have to pick the games. Watch where their money goes. Grade the night yourself.
+I posted that this morning with three early locks. The same wallets are still sized on the rest of tonight.
+
+You don't have to pick the games. Watch where their money goes. Grade it yourself.
 
 Free trial. Who's still in on baseball?
 ```
