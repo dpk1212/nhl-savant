@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/23 ~5:20 ET | Self-QT **ASK** | `4-1.` / one lost / still sized / what are you in | **C + L** | trial after the day + a trade | **Staged** (2/10 slogan killed) |
+| 9/23 ~5:22 ET | Self-QT **ASK** | `4-1 so far.` / aren't in the clear / hop on the site / who are you tailing | **C + L** | his winning ask lines, not a slogan | **Staged** |
 | 9/23 | **INGEST** | Pin $20k **366**. `+98.88` **328**. Down-days **8R**. Trial paragraph **0R**. Dollar-stacks **0R** | — | none | Locked |
 | 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones | **S + C** | none | **Posted** · 8073 / 204 / **1R** |
 | 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / wipeout vs fight | **C + S** | none | **Posted** · 2357 / 177 / **2R** |
