@@ -197,3 +197,67 @@ export function getTeamIdentity(name, sport) {
   const fb = LEAGUE_FALLBACK[league] || { c1: '#334155', c2: '#1e293b' };
   return { abbr: name ? deriveAbbr(name) : league.slice(0, 3) || '—', c1: fb.c1, c2: fb.c2 };
 }
+
+const TEAM_LEAGUE = {};
+{
+  let league = 'NHL';
+  for (const name of Object.keys(TEAMS)) {
+    if (name === 'Atlanta Hawks') league = 'NBA';
+    if (name === 'Arizona Diamondbacks') league = 'MLB';
+    TEAM_LEAGUE[name] = league;
+  }
+}
+
+const ESPN_LEAGUE = { MLB: 'mlb', NBA: 'nba', NHL: 'nhl', NFL: 'nfl', WNBA: 'wnba' };
+
+/** Our crest abbr → ESPN file slug, only where they differ. */
+const ESPN_SLUG = {
+  MLB: { AZ: 'ari', CWS: 'chw', ATH: 'ath', OAK: 'oak' },
+  NHL: { LAK: 'la', NJD: 'nj', SJS: 'sj', TBL: 'tb', UTA: 'utah' },
+};
+
+function pickInLeague(names, sport) {
+  const league = (sport || '').toUpperCase();
+  const scoped = names.filter((team) => TEAM_LEAGUE[team] === league);
+  if (scoped.length === 1) return scoped[0];
+  if (!scoped.length && names.length === 1) return names[0];
+  return null;
+}
+
+function resolveNamedTeam(name, sport) {
+  const raw = String(name || '').trim();
+  if (!raw || /^(over|under)$/i.test(raw)) return null;
+  if (TEAMS[raw]) return raw;
+  const lower = raw.toLowerCase();
+  const exact = Object.keys(TEAMS).find((key) => key.toLowerCase() === lower);
+  if (exact) return exact;
+  const lastWord = raw.split(/\s+/).pop()?.toLowerCase();
+  if (lastWord && lastWord.length > 3 && raw.includes(' ')) {
+    const hits = Object.keys(TEAMS).filter((key) => key.toLowerCase().split(/\s+/).pop() === lastWord);
+    const pick = pickInLeague(hits, sport);
+    if (pick) return pick;
+  }
+  if (lastWord && lastWord.length > 3 && !raw.includes(' ')) {
+    const hits = Object.keys(TEAMS).filter((key) => key.toLowerCase().split(/\s+/).pop() === lastWord);
+    const pick = pickInLeague(hits, sport);
+    if (pick) return pick;
+  }
+  const token = raw.toUpperCase();
+  if (!raw.includes(' ') && token.length >= 2 && token.length <= 4) {
+    const hits = Object.entries(TEAMS).filter(([, id]) => id.abbr === token).map(([team]) => team);
+    return pickInLeague(hits, sport);
+  }
+  return null;
+}
+
+/** ESPN crest PNG for a pro team we can name. Null for totals words and unknown clubs. */
+export function teamLogoUrl(name, sport) {
+  const league = (sport || '').toUpperCase();
+  const path = ESPN_LEAGUE[league];
+  const named = resolveNamedTeam(name, sport);
+  if (!path || !named) return null;
+  const abbr = getTeamIdentity(named, sport).abbr;
+  const slug = (ESPN_SLUG[league] && ESPN_SLUG[league][abbr]) || String(abbr || '').toLowerCase();
+  if (!slug || slug === '?' || slug === '—') return null;
+  return `https://a.espncdn.com/i/teamlogos/${path}/500/${slug}.png`;
+}
