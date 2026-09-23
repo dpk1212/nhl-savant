@@ -20,6 +20,7 @@ import {
   summarizeTails,
 } from '../../lib/mySharpsDesk.js';
 import { betsFeedKey, betsFeedOn } from '../../lib/mySharps.js';
+import { getTeamIdentity, shortTeamNick, teamLogoUrl } from '../../utils/teamIdentity.js';
 
 const B = {
   gold: '#D4AF37',
@@ -712,13 +713,6 @@ function heatWord(heat) {
   return 'Even';
 }
 
-function heatFigureColor(heat) {
-  if (!heat?.record || heat.key === 'quiet') return B.textFaint;
-  if (heat.key === 'hot') return B.green;
-  if (heat.key === 'cold') return B.red;
-  return B.text;
-}
-
 function SteamBit({ steam }) {
   if (!steam?.show || !steam.tag) return null;
   const gold = steam.goldConfirmed || steam.tier === 'gold';
@@ -787,78 +781,120 @@ function sideRollup(lines) {
   };
 }
 
-function RollupFigure({ value, kicker, color, hero }) {
+function TeamMark({ name, sport, size = 44 }) {
+  const [failed, setFailed] = useState(false);
+  const src = failed ? null : teamLogoUrl(name, sport);
+  const id = getTeamIdentity(name, sport);
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        width={size}
+        height={size}
+        onError={() => setFailed(true)}
+        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0, display: 'block' }}
+      />
+    );
+  }
   return (
-    <div style={{ minWidth: 0 }}>
-      <div style={{
-        ...T.figure,
-        color,
-        fontSize: hero ? '1.55rem' : '1.15rem',
-        letterSpacing: '-0.04em',
-        lineHeight: 0.95,
-      }}
-      >
-        {value}
-      </div>
-      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 5 }}>{kicker}</div>
+    <div style={{
+      width: size,
+      height: size,
+      borderRadius: 12,
+      flexShrink: 0,
+      background: `linear-gradient(145deg, ${id.c1}, ${id.c2})`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#fff',
+      fontWeight: 800,
+      fontSize: Math.max(11, size * 0.28),
+      letterSpacing: '-0.04em',
+    }}
+    >
+      {id.abbr}
     </div>
   );
 }
 
+function sideNames(item) {
+  const team = String(item?.team || '').trim();
+  if (team && !/^(over|under)$/i.test(team)) return [team];
+  return [item?.away, item?.home].filter(Boolean);
+}
+
+function MatchMarks({ item, size = 44 }) {
+  const names = sideNames(item);
+  if (!names.length) return null;
+  if (names.length === 1) return <TeamMark name={names[0]} sport={item.sport} size={size} />;
+  const mark = Math.round(size * 0.78);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+      {names.slice(0, 2).map((name) => (
+        <TeamMark key={name} name={name} sport={item.sport} size={mark} />
+      ))}
+    </div>
+  );
+}
+
+function shortMatchup(item) {
+  if (item?.away && item?.home) {
+    return `${shortTeamNick(item.away, item.home)} @ ${shortTeamNick(item.home, item.away)}`;
+  }
+  return item?.matchup || null;
+}
+
 function WhoChip({ line }) {
   const pressing = (line.ratio || 0) >= 1.5;
-  const heat = heatWord(line.heat);
+  const heat = line.heat?.key;
+  const color = pressing ? '#F59E0B' : heat === 'hot' ? B.green : heat === 'cold' ? B.red : B.goldSoft;
   return (
     <span style={{
       display: 'inline-flex',
-      alignItems: 'center',
-      gap: 6,
-      padding: '0.18rem 0.45rem 0.18rem 0.5rem',
-      borderRadius: 999,
-      border: `1px solid ${pressing ? 'rgba(245,158,11,0.4)' : B.line}`,
-      background: pressing ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.03)',
+      alignItems: 'baseline',
+      gap: 5,
       fontFeatureSettings: "'tnum'",
     }}
     >
-      <span style={{ ...T.name, color: B.text, fontSize: '0.74rem' }}>{line.tag}</span>
+      <span style={{ ...T.name, color: B.textSec, fontSize: '0.78rem' }}>{line.tag}</span>
       {line.ratio ? (
-        <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '0.74rem' }}>
-          {line.ratio.toFixed(1)}×
-        </span>
+        <span style={{ ...T.figure, color, fontSize: '0.78rem' }}>{line.ratio.toFixed(1)}×</span>
       ) : null}
-      {line.steam?.show ? <SteamBit steam={line.steam} /> : (heat ? (
-        <span style={{ ...T.kicker, letterSpacing: '0.06em', color: heatFigureColor(line.heat) }}>{heat}</span>
-      ) : null)}
     </span>
   );
 }
 
 function SharpPlate({ lines, hideChips }) {
   const roll = sideRollup(lines);
-  const cells = [
-    Number.isFinite(roll.pnl) ? { value: fmtVol(roll.pnl), kicker: `${roll.bookLabel} 30d`, color: pnlColor(roll.pnl, B.text), hero: true } : null,
-    Number.isFinite(roll.roi) ? { value: `${roll.roi}%`, kicker: 'ROI', color: pnlColor(roll.roi, B.text) } : null,
-    roll.book ? { value: roll.book, kicker: `${roll.bookLabel} book`, color: B.text } : null,
-    roll.l10 ? { value: roll.l10, kicker: 'L10', color: B.text } : null,
-  ].filter(Boolean);
-  if (!cells.length && !lines.length) return null;
+  const steam = (lines || []).find((line) => line.steam?.show)?.steam || null;
+  const support = [
+    roll.book ? `${roll.book} book` : null,
+    Number.isFinite(roll.roi) ? `${roll.roi}% ROI` : null,
+    roll.l10 ? `L10 ${roll.l10}` : null,
+  ].filter(Boolean).join('  ·  ');
+  const hero = Number.isFinite(roll.pnl)
+    ? { value: fmtVol(roll.pnl), kicker: `${roll.bookLabel} · 30 days`, color: pnlColor(roll.pnl, B.text) }
+    : (roll.book
+      ? { value: roll.book, kicker: `${roll.bookLabel} book`, color: B.text }
+      : null);
+  if (!hero && !lines.length) return null;
   return (
-    <div style={{ marginTop: 12 }}>
-      {cells.length ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))`,
-          gap: 8,
-          alignItems: 'end',
-        }}
-        >
-          {cells.map((cell) => (
-            <RollupFigure key={cell.kicker} value={cell.value} kicker={cell.kicker} color={cell.color} hero={cell.hero} />
-          ))}
+    <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${B.hair}` }}>
+      {hero ? (
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ ...T.figure, color: hero.color, fontSize: '1.72rem', letterSpacing: '-0.045em', lineHeight: 0.9 }}>{hero.value}</div>
+            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>{hero.kicker}</div>
+          </div>
+          {steam ? <SteamBit steam={steam} /> : null}
         </div>
       ) : null}
+      {support ? (
+        <div style={{ ...T.meta, color: B.textSec, marginTop: 6, fontFeatureSettings: "'tnum'" }}>{support}</div>
+      ) : null}
       {!hideChips && lines.length ? (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: cells.length ? 10 : 0 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', marginTop: 10 }}>
           {lines.map((line) => (
             <WhoChip key={line.walletShort || line.tag} line={line} />
           ))}
@@ -882,25 +918,6 @@ function proofLine(line, sport) {
   ].filter(Boolean).join('  ·  ');
 }
 
-function SizeTick({ ratio, usual, invested }) {
-  const pressing = (ratio || 0) >= 1.5;
-  const color = pressing ? '#F59E0B' : B.goldSoft;
-  const hasDollars = Number.isFinite(usual) && usual > 0 && Number.isFinite(invested) && invested > 0;
-  if (!hasDollars && !(ratio > 0)) return null;
-  const max = hasDollars ? Math.max(usual, invested) : null;
-  const thisPct = hasDollars ? Math.max(6, (invested / max) * 100) : Math.min(100, ((ratio || 0) / 3) * 100);
-  const usualPct = hasDollars ? Math.max(4, (usual / max) * 100) : 33.3;
-  return (
-    <div style={{ marginTop: 6, position: 'relative', height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.06)' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${usualPct}%`, borderRadius: 99, background: 'rgba(148,163,184,0.35)' }} />
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${thisPct}%`, borderRadius: 99, background: color }} />
-      {hasDollars && thisPct > usualPct + 6 ? (
-        <div style={{ position: 'absolute', left: `calc(${usualPct}% - 1px)`, top: -2, bottom: -2, width: 2, borderRadius: 2, background: '#F8FAFC' }} />
-      ) : null}
-    </div>
-  );
-}
-
 function SharpReceipt({ line, sport }) {
   const pressing = (line.ratio || 0) >= 1.5;
   const proof = proofLine(line, sport);
@@ -921,7 +938,6 @@ function SharpReceipt({ line, sport }) {
           {line.price ? <span style={{ ...T.figure, color: B.text, fontSize: '0.84rem' }}>{line.price}</span> : null}
         </div>
       </div>
-      <SizeTick ratio={line.ratio} usual={line.usual} invested={line.invested} />
       {proof ? (
         <div style={{ ...T.meta, color: B.textMuted, marginTop: 5 }}>{proof}</div>
       ) : null}
@@ -960,35 +976,38 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
     }}
     >
       <div style={{ height: 2, background: rail }} />
-      <div style={{ padding: isMobile ? '0.72rem 0.75rem 0.7rem' : '0.8rem 0.95rem 0.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-        <div style={{ minWidth: 0 }}>
+      <div style={{ padding: isMobile ? '0.7rem 0.75rem 0.68rem' : '0.78rem 0.95rem 0.72rem' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <MatchMarks item={item} size={isMobile ? 40 : 48} />
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.2rem' : '1.38rem', letterSpacing: '-0.03em', lineHeight: 1 }}>
+            <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.15rem' : '1.32rem', letterSpacing: '-0.03em', lineHeight: 1 }}>
               {item.pick}
             </div>
-            <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1rem' : '1.12rem', letterSpacing: '-0.03em' }}>
+            <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.02rem', letterSpacing: '-0.03em' }}>
               {price}
             </div>
           </div>
-          <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>
-            {[item.matchup, clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean).join('  ·  ')}
+          <div style={{ ...T.meta, color: B.textMuted, marginTop: 5 }}>
+            {[shortMatchup(item), clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean).join('  ·  ')}
             {lineNote ? (
               <span style={{ color: item.pinMove === 'against' ? B.red : B.goldSoft }}>{`  ·  ${lineNote}`}</span>
             ) : null}
             {tailed ? <span style={{ color: B.gold }}>{`  ·  Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
           </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.2rem' : '1.38rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>On this side</div>
-          {tailed && !open ? (
-            <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
-          ) : (
-            <button type="button" onClick={() => onDraft(item, suggestedStake)} style={goldBtn}>
-              {open ? 'Close' : 'Tail'}
-            </button>
-          )}
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.15rem' : '1.32rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 5 }}>On this side</div>
+          <div style={{ marginTop: 6 }}>
+            {tailed && !open ? (
+              <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
+            ) : (
+              <button type="button" onClick={() => onDraft(item, suggestedStake)} style={goldBtn}>
+                {open ? 'Close' : 'Tail'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
       {lines.length ? <SharpPlate lines={lines} hideChips={expanded} /> : null}
