@@ -2147,8 +2147,17 @@ export function sharpFaceFromProfile(prof, { sport = null, market = null } = {})
       record: honest?.record || null,
       roi: showBookPct ? packed.roi : null,
       n: packed.n,
+      wins: packed.wins,
+      losses: packed.losses,
     } : null,
     marketL30: Number.isFinite(marketL30?.pnl) ? marketL30.pnl : null,
+    market: marketL30 ? {
+      n: marketL30.n,
+      wins: marketL30.wins,
+      losses: marketL30.losses,
+      pnl: marketL30.pnl,
+      roi: marketL30.roi,
+    } : null,
     sportL30: Number.isFinite(sportL30?.pnl) ? sportL30.pnl : null,
     usual: Number.isFinite(usual) && usual > 0 ? Math.round(usual) : null,
   };
