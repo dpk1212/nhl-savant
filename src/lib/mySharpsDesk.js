@@ -1763,15 +1763,11 @@ export function suggestTailStake(ticket, walletProfiles) {
   return null;
 }
 
-export function groupPortfolioBets(tickets, { names = {}, tails = {} } = {}) {
-  const together = [];
-  const pressing = [];
-  const split = [];
-  const rest = [];
-  for (const t of tickets || []) {
+export function groupPortfolioBets(tickets, { names = {}, tails = {}, walletProfiles = null } = {}) {
+  const made = (tickets || []).map((t) => {
     const who = considerWho(t, names);
     const ratio = Number(t.maxRatio);
-    const item = {
+    return {
       ...t,
       pick: ticketPickLabel(t),
       matchup: ticketMatchup(t),
@@ -1779,10 +1775,39 @@ export function groupPortfolioBets(tickets, { names = {}, tails = {} } = {}) {
       whoOpposed: who.opposed,
       sizeText: Number.isFinite(ratio) && ratio >= SIZED_UP_RATIO ? `${ratio.toFixed(1)}×` : null,
       tail: tails[t.id] || null,
-      walletLines: walletLinesFor(t, names),
+      walletLines: walletLinesFor(t, names, walletProfiles),
     };
-    if (t.split) split.push(item);
-    else if (t.shared) together.push(item);
+  });
+  const clusters = new Map();
+  for (const item of made) {
+    const ck = `${item.sport}|${item.gameKey}|${item.marketType}`;
+    if (!clusters.has(ck)) clusters.set(ck, []);
+    clusters.get(ck).push(item);
+  }
+  for (const item of made) {
+    const ck = `${item.sport}|${item.gameKey}|${item.marketType}`;
+    const sibs = (clusters.get(ck) || []).filter((s) => s.id !== item.id);
+    if (sibs.length) {
+      item.otherSide = sibs.map((s) => ({
+        pick: s.pick,
+        tags: (s.walletLines || []).map((l) => l.tag).filter(Boolean),
+      }));
+    } else if (item.split && (item.oppShorts || []).length) {
+      item.otherSide = [{
+        pick: null,
+        tags: item.oppShorts.map((s) => names[s] || fmtWalletTag(s)),
+      }];
+    } else {
+      item.otherSide = [];
+    }
+  }
+  const together = [];
+  const pressing = [];
+  const split = [];
+  const rest = [];
+  for (const item of made) {
+    if (item.split) split.push(item);
+    else if (item.shared) together.push(item);
     else if (item.sizeText) pressing.push(item);
     else rest.push(item);
   }
@@ -2080,17 +2105,72 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
   return rows;
 }
 
-function walletLinesFor(ticket, names) {
+function marketKeyOf(market) {
+  let m = String(market || '').trim().toUpperCase();
+  if (m === 'MONEYLINE') m = 'ML';
+  if (m === 'SPREADS') m = 'SPREAD';
+  if (m === 'TOTALS') m = 'TOTAL';
+  return m;
+}
+
+function steamStamp(row) {
+  const s = row?.steam;
+  if (!s?.show) return null;
+  return {
+    show: true,
+    tier: s.tier || null,
+    goldConfirmed: !!s.goldConfirmed,
+    tag: s.tag || null,
+  };
+}
+
+/**
+ * Receipt for one sharp on this sport and this market.
+ * Book return stays off until the sample can carry a percent.
+ * Steam is copied from the row, never recomputed.
+ */
+export function sharpFaceFromProfile(prof, { sport = null, market = null } = {}) {
+  const rec = sport ? prof?.bySport?.[sport] : null;
+  const heat = heatFromForm(rec?.form);
+  const mkt = marketKeyOf(market);
+  const mRec = mkt ? rec?.byMarket?.[mkt] : null;
+  const packed = packBook(mRec?.positions) || packBook(mRec?.picks);
+  const honest = packed ? honestRecord(packed.wins, packed.losses, packed.wr) : null;
+  const marketL30 = l30FromRec(mRec);
+  const sportL30 = l30FromRec(rec);
+  const usual = sportUsualBetFromProfile(prof, sport);
+  const showBookPct = !!(honest?.showPct && Number.isFinite(packed?.roi));
+  return {
+    heat: heat?.record && heat.key !== 'quiet' ? heat : null,
+    book: packed ? {
+      label: MARKET_LABEL[mkt] || mkt,
+      record: honest?.record || null,
+      roi: showBookPct ? packed.roi : null,
+      n: packed.n,
+    } : null,
+    marketL30: Number.isFinite(marketL30?.pnl) ? marketL30.pnl : null,
+    sportL30: Number.isFinite(sportL30?.pnl) ? sportL30.pnl : null,
+    usual: Number.isFinite(usual) && usual > 0 ? Math.round(usual) : null,
+  };
+}
+
+function walletLinesFor(ticket, names, walletProfiles) {
   return [...(ticket?.rows || [])].map((r) => {
     const short = shortWalletId(r?.walletShort) || normalizeWalletShort(r?.walletShort);
     const named = short && names?.[short];
     const ratio = Number(r?.displaySizeRatio ?? r?.sizeRatio);
+    const face = sharpFaceFromProfile(profileFor(walletProfiles, short), {
+      sport: ticket?.sport || r?.sport,
+      market: ticket?.marketType || r?.marketType,
+    });
     return {
       walletShort: short,
       tag: named || fmtWalletTag(short),
       invested: Number(r?.invested) || 0,
       ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null,
       price: r?.americanLabel || null,
+      steam: steamStamp(r),
+      ...face,
     };
   }).sort((a, b) => (b.invested || 0) - (a.invested || 0));
 }

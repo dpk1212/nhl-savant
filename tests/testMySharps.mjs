@@ -50,6 +50,7 @@ import {
   shortsForDeskSection,
   sortMySharpsRoster,
   sortRowsByRelativeSize,
+  sharpFaceFromProfile,
   summarizeTails,
   tailLean,
   ticketPickLabel,
@@ -838,5 +839,93 @@ assert.equal(kept.length, 2);
 assert.equal(kept.some((r) => r.walletShort === 'abcd12' && r.marketType === 'SPREAD'), false);
 const rebuilt = buildMySharpsBoard(kept);
 assert.equal(rebuilt.tickets.length, 2);
+
+const face = sharpFaceFromProfile({
+  bySport: {
+    MLB: {
+      recentActionWindow: { n: 40, wins: 26, losses: 14, wr: 65, settledPnl: 51000, dollarRoi: 14 },
+      positions: { n: 90, wins: 54, losses: 36, invested: 420000 },
+      form: { actionL10: { w: 7, l: 3 } },
+      byMarket: {
+        TOTAL: {
+          positions: { n: 48, wins: 31, losses: 17, wr: 65, dollarRoi: 19, invested: 230400 },
+          recentActionWindow: { n: 16, wins: 11, losses: 5, settledPnl: 28000, dollarRoi: 22 },
+        },
+      },
+    },
+  },
+}, { sport: 'MLB', market: 'TOTAL' });
+assert.equal(face.heat.key, 'hot');
+assert.equal(face.heat.record, '7–3');
+assert.equal(face.book.label, 'Total');
+assert.equal(face.book.record, '31–17');
+assert.equal(face.book.roi, 19);
+assert.equal(face.marketL30, 28000);
+assert.equal(face.sportL30, 51000);
+assert.equal(face.usual, 4667);
+
+const thinFace = sharpFaceFromProfile({
+  bySport: {
+    NFL: {
+      positions: { n: 3, wins: 3, losses: 0, invested: 6000 },
+      form: { actionL5: { w: 2, l: 0 } },
+      byMarket: {
+        SPREAD: { positions: { n: 3, wins: 3, losses: 0, wr: 100, dollarRoi: 140 } },
+      },
+    },
+  },
+}, { sport: 'NFL', market: 'spreads' });
+assert.equal(thinFace.heat, null);
+assert.equal(thinFace.book.record, '3–0');
+assert.equal(thinFace.book.roi, null);
+assert.equal(thinFace.usual, 2000);
+
+const faced = groupPortfolioBets([{
+  id: 'tor-under', split: false, shared: true, maxRatio: 3, invested: 18200,
+  sport: 'MLB', marketType: 'TOTAL', gameKey: 'tor_bal', side: 'under',
+  shorts: ['e4ec62', '51176e'],
+  rows: [
+    { walletShort: 'e4ec62', invested: 14000, displaySizeRatio: 3, americanLabel: '-154', steam: { show: true, tier: 'gold', goldConfirmed: true, tag: 'GOLD 4.2%' } },
+    { walletShort: '51176e', invested: 4200, displaySizeRatio: 1, americanLabel: '-100', steam: { show: false, tier: 'watch', tag: '1.2%' } },
+  ],
+}, {
+  id: 'hou-over', split: true, shared: false, maxRatio: 0.9, invested: 1800,
+  sport: 'MLB', marketType: 'TOTAL', gameKey: 'hou_sea', side: 'over',
+  team: 'Over', marketLabel: 'O 7.5', away: 'HOU', home: 'SEA',
+  shorts: ['e4ec62'], oppShorts: ['51176e'],
+  rows: [{ walletShort: 'e4ec62', invested: 1800, displaySizeRatio: 0.9, americanLabel: '-102' }],
+}, {
+  id: 'hou-under', split: true, shared: false, maxRatio: 1.1, invested: 2200,
+  sport: 'MLB', marketType: 'TOTAL', gameKey: 'hou_sea', side: 'under',
+  team: 'Under', marketLabel: 'U 7.5', away: 'HOU', home: 'SEA',
+  shorts: ['51176e'], oppShorts: ['e4ec62'],
+  rows: [{ walletShort: '51176e', invested: 2200, displaySizeRatio: 1.1, americanLabel: '-108' }],
+}], {
+  names: { e4ec62: 'Bands' },
+  walletProfiles: new Map([['e4ec62', {
+    bySport: {
+      MLB: {
+        recentActionWindow: { n: 40, wins: 26, losses: 14, settledPnl: 51000 },
+        positions: { n: 90, invested: 420000 },
+        form: { actionL10: { w: 7, l: 3 } },
+        byMarket: {
+          TOTAL: {
+            positions: { n: 48, wins: 31, losses: 17, wr: 65, dollarRoi: 19 },
+            recentActionWindow: { n: 16, settledPnl: 28000 },
+          },
+        },
+      },
+    },
+  }]]),
+});
+assert.equal(faced.together[0].walletLines[0].tag, 'Bands');
+assert.equal(faced.together[0].walletLines[0].steam.tag, 'GOLD 4.2%');
+assert.equal(faced.together[0].walletLines[0].book.roi, 19);
+assert.equal(faced.together[0].walletLines[0].heat.key, 'hot');
+assert.equal(faced.together[0].walletLines[1].steam, null);
+assert.equal(faced.together[0].walletLines[1].tag, '··51176e');
+assert.equal(faced.split.length, 2);
+assert.equal(faced.split.find((t) => t.side === 'over').otherSide[0].pick, 'Under 7.5');
+assert.equal(faced.split.find((t) => t.side === 'over').otherSide[0].tags[0], '··51176e');
 
 console.log('testMySharps: ok');

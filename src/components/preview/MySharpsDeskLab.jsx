@@ -65,7 +65,7 @@ const profiles = new Map([
           ],
         },
         byMarket: {
-          ML: { positions: { n: 28, wins: 15, losses: 13, wr: 54, dollarRoi: 2, invested: 140000 } },
+          ML: { positions: { n: 28, wins: 15, losses: 13, wr: 54, dollarRoi: 2, invested: 140000 }, recentActionWindow: { n: 10, wins: 6, losses: 4, wr: 60, settledPnl: 6400, dollarRoi: 8 } },
           TOTAL: { positions: { n: 48, wins: 31, losses: 17, wr: 65, dollarRoi: 19, invested: 230400 }, recentActionWindow: { n: 16, wins: 11, losses: 5, wr: 69, settledPnl: 28000, dollarRoi: 22 } },
           SPREAD: { positions: { n: 14, wins: 6, losses: 8, wr: 43, dollarRoi: -8, invested: 42000 } },
         },
@@ -105,7 +105,7 @@ const profiles = new Map([
         byMarket: {
           ML: { positions: { n: 40, wins: 28, losses: 12, wr: 70, dollarRoi: 18 }, recentActionWindow: { n: 12, wins: 9, losses: 3, wr: 75, settledPnl: 22000, dollarRoi: 17 } },
           SPREAD: { positions: { n: 18, wins: 9, losses: 9, wr: 50, dollarRoi: 1 } },
-          TOTAL: { positions: { n: 15, wins: 6, losses: 9, wr: 40, dollarRoi: -11 } },
+          TOTAL: { positions: { n: 15, wins: 6, losses: 9, wr: 40, dollarRoi: -11, invested: 45000 }, recentActionWindow: { n: 8, wins: 3, losses: 5, wr: 38, settledPnl: -4200, dollarRoi: -9 } },
         },
       },
       NFL: {
@@ -253,13 +253,14 @@ const actionRows = [
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'tor_bal', marketType: 'TOTAL', side: 'under',
     team: 'Under', marketLabel: 'U 8.5', away: 'TOR', home: 'BAL', americanLabel: '-154', americanOdds: -154,
-    invested: 4900, displaySizeRatio: 1.1, opposed: 'clear',
+    invested: 14000, displaySizeRatio: 3.0, opposed: 'clear', pinMove: 'with', entryLine: 8.5,
+    steam: { show: true, tier: 'gold', goldConfirmed: true, tag: 'GOLD 4.2%' },
     commenceMs: Date.parse('2026-09-22T18:36:00-04:00'),
   },
   {
     walletShort: '51176e', sport: 'MLB', gameKey: 'tor_bal', marketType: 'TOTAL', side: 'under',
-    team: 'Under', marketLabel: 'U 8.5', away: 'TOR', home: 'BAL', americanLabel: '-150', americanOdds: -150,
-    invested: 2000, displaySizeRatio: 1.2, opposed: 'clear',
+    team: 'Under', marketLabel: 'U 8.5', away: 'TOR', home: 'BAL', americanLabel: '-100', americanOdds: -100,
+    invested: 4200, displaySizeRatio: 1.0, opposed: 'clear', entryLine: 8.5,
     commenceMs: Date.parse('2026-09-22T18:36:00-04:00'),
   },
   {
@@ -277,13 +278,14 @@ const actionRows = [
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'stl_pit', marketType: 'ML', side: 'home',
     team: 'Pirates', marketLabel: 'ML', away: 'STL', home: 'PIT', americanLabel: '-149', americanOdds: -149,
-    invested: 6400, displaySizeRatio: 2.1, opposed: 'clear', pinMove: 'with',
+    invested: 9800, displaySizeRatio: 2.1, opposed: 'clear', pinMove: 'with',
     commenceMs: Date.parse('2026-09-22T18:41:00-04:00'),
   },
   {
     walletShort: '51176e', sport: 'MLB', gameKey: 'nyy_tex', marketType: 'ML', side: 'away',
     team: 'Mets', marketLabel: 'ML', away: 'NYM', home: 'TEX', americanLabel: '+122', americanOdds: 122,
     invested: 2000, displaySizeRatio: 0.8, opposed: 'clear',
+    steam: { show: true, tier: 'steam', goldConfirmed: false, tag: '2× 3.1%' },
     commenceMs: Date.parse('2026-09-22T20:05:00-04:00'),
   },
 ];
