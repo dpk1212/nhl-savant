@@ -7,17 +7,18 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-23 · **INGEST** · content CSV Sep 17–23 · no tweet yet |
-| CSV window | Content Sep 17–23 (Sep 23 partial). Overlay ask-shape still binds. |
-| Ask temperature | **Give.** Trial paragraph this week = 0 replies. Ask only if Dale spines a number + fork. |
-| Account arc | Waiting on the next spine. Do not clone `+98.88`, the $20k limit, or 25×. |
+| Last updated | 2026-09-23 · SELF-QT **ASK** · 4-1 on the morning slate |
+| CSV window | Content Sep 17–23 (Sep 23 partial). Overlay ask-shape binds. |
+| Ask temperature | **Ask.** Dale spined it. Number + fork in the QT. Not a trial paragraph. |
+| Account arc | Morning `+98.88` is up (rate king). Live grade is 4-1 with a loss. Card's 3-1 / +5.31u is stale. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/23 | **INGEST** | Sep 17–23 CSV. Eng: Pin $20k **366**. Rate: `+98.88` **328**. Talk: down-days **8R**. Deaths: trial **0R** · `$215k` **0R** · `$131k` **0R** | — | none | Locked. No draft. |
+| 9/23 ~5:15 ET | Self-QT **ASK** | `4-1. One of them lost.` / grade the rest / which of the three | **C** | free trial + fork in-hero | **Staged** |
+| 9/23 | **INGEST** | Pin $20k **366**. `+98.88` **328**. Down-days **8R**. Trial paragraph **0R**. Dollar-stacks **0R** | — | none | Locked |
 | 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones | **S + C** | none | **Posted** · 8073 / 204 / **1R** |
 | 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / wipeout vs fight | **C + S** | none | **Posted** · 2357 / 177 / **2R** |
 | 9/20 ~11:20 ET | QT **GIVE** | `$131,000 ON THE VIKINGS` / `$178,000 ON THE STEELERS` | **S + C** | none | **Posted** · 4655 / 190 / **0R** |
@@ -27,9 +28,11 @@
 ---
 
 ## Angle lock
-**No live tweet.** Ingest only. Next ONE waits on Dale’s spine.  
-**Law from this file:** limit walk wins attention. Honest down-day wins replies. Dollar-stack and trial-paragraph win neither.  
-**Killed for the next open:** `$N ON THE TEAM` · `+98.88` clone · `$20k` restage · `25×` restage · free-trial paragraph · `Down days suck` restage · v12 as line 1 · origin clone
+**ONE:** 4-1 with a loss in it — grade the rest of the slate, don't trust the season poster.  
+**Hook:** `4-1. One of them lost.`  
+**Body:** a season number doesn't cash a ticket · free trial · watch and grade · which of the three.  
+**Ask:** in the hero. Fork = which of the three.  
+**Killed:** reprint `+98.88` · trial paragraph · `$5.35` · link/code · stale 3-1 card · `isn't fake` rerun · dollar-stack · v12
 
 ---
 
@@ -51,22 +54,22 @@
 
 ---
 
-## FORWARD LOOK — next tweet (spine not in yet)
-1. **New-tape give** on whatever Dale drops. Limit/price paradox or a sized printer he has not posted. Human. Not `$N ON THE TEAM`.
-2. Honest scar only with a **new** hole. Do not rerun `Down days suck`.
-3. Ask only if he spines it. Not a free-trial paragraph (Tue = 0 replies at 4.8k).
+## FORWARD LOOK — after this QT
+1. **Grade the rest of the slate** when it finishes. Cash and the loss, named. Do not restage 4-1.
+2. If the thread answers "which of the three," reply with the receipt. That is the fence-sitter close.
+3. No second ask tomorrow.
 
-**NOT:** `$20k` restage · `+98.88` restage · `25×` restage · `$215k` / `$131k` · origin clone · v12 as line 1 · grand finale · thankful open · grind-EV · `$5.35`
+**NOT:** reprint `+98.88` · trial paragraph · `$5.35` · 3-1 card · dollar-stack · v12 open
 
-**Avatar:** they already saw the limit walk, the down-day, and a 25× that didn’t start a thread. Next post has to be a new condition.  
-**Balance:** S+C (limit) and P+L (down day) just printed. Don’t feed either the same sentence.  
-**Varied condition starved:** a live ticket that is not a dollar-stack and not today’s `+98.88`.  
-**Hormozi economics:** give.  
-**Desk scar:** `$N ON THE TEAM` = 0 replies twice. Trial paragraph = 0 replies. Limit walk = eng king with 1 reply — silhouette yes, copy no.
+**Avatar:** they have the season number, the live 4-1, and a reason to talk.  
+**Hormozi economics:** ask, because he spined it, on a post that already worked.  
+**Desk scar:** Tue's trial paragraph was 0 replies. This ask is a grade plus a question, not a signup speech.
 
 ---
 
 ## Agent close-out
-- [x] Content CSV ingested (Sep 17–23). Trial overlay not wiped.
-- [x] Living window + timeline + continuity written
-- [x] No tweet. Waiting on the spine.
+- [x] QT does not reprint +98.88
+- [x] 4-1 with the loss. Stale 3-1 card kept off
+- [x] Ask is number + fork, not a trial paragraph
+- [x] No link, no code, no $5.35
+- [x] Staged only
