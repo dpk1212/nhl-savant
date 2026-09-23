@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { isMySharpShort } from '../../lib/mySharps.js';
+import MySharpToggle from './MySharpToggle';
 import { B, T, fmtVol, signedVol } from './vaultTheme';
 
 const SORTS = [
@@ -14,6 +16,7 @@ const CLV_N_MIN = 8;
 const HOT_N = 5;
 
 const DESKTOP_COLS = 'minmax(130px,1.5fr) 0.85fr 0.65fr 0.7fr 0.7fr 0.75fr 0.65fr 0.9fr';
+const TOGGLE_COLS = `${DESKTOP_COLS} minmax(168px, auto)`;
 
 /**
  * Full whitelist roster — Hot strip + truth-bound columns.
@@ -25,6 +28,7 @@ export default function VaultRoster({
   selectedWallet = null,
   isMobile,
   onSelectWallet,
+  mySharps = null,
 }) {
   const [sortBy, setSortBy] = useState('pnl');
   const rowRefs = useRef({});
@@ -38,6 +42,12 @@ export default function VaultRoster({
   }, [actionPositions]);
 
   const selected = selectedWallet ? String(selectedWallet).toLowerCase() : null;
+
+  const showToggle = !!(mySharps?.onToggle && (
+    mySharps.ready
+    || entries.some((e) => isMySharpShort(mySharps.shorts, e.walletShort || e.wallet))
+  ));
+  const rowCols = showToggle ? TOGGLE_COLS : DESKTOP_COLS;
 
   const hot = useMemo(() => {
     return [...entries]
@@ -174,12 +184,12 @@ export default function VaultRoster({
         {!isMobile && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: DESKTOP_COLS,
+            gridTemplateColumns: rowCols,
             gap: '0.5rem', padding: '0.55rem 0.85rem',
             borderBottom: `1px solid ${B.borderSubtle}`,
             background: 'rgba(0,0,0,0.2)',
           }}>
-            {['Wallet', 'Sports P&L', 'ROI', 'Volume', 'Week', 'Win rate', 'Beat close', 'Open'].map((h) => (
+            {['Wallet', 'Sports P&L', 'ROI', 'Volume', 'Week', 'Win rate', 'Beat close', 'Open', ...(showToggle ? ['My Sharps'] : [])].map((h) => (
               <span key={h} style={{ ...T.tiny, color: B.textSubtle }}>{h}</span>
             ))}
           </div>
@@ -200,27 +210,43 @@ export default function VaultRoster({
               ...(e.flatSports || []).filter((s) => !(e.confirmedSports || []).includes(s)).map((s) => ({ s, t: 'Steady' })),
             ].slice(0, 4);
 
+            const sport = (e.confirmedSports && e.confirmedSports[0])
+              || (e.whitelistSports && e.whitelistSports[0])
+              || null;
+
             return (
-              <button
+              <div
                 key={e.wallet}
-                type="button"
                 ref={(el) => { rowRefs.current[w] = el; }}
-                onClick={() => onSelectWallet?.(e.wallet)}
                 className="sf-fade-in"
                 style={{
                   width: '100%', display: isMobile ? 'flex' : 'grid',
-                  gridTemplateColumns: DESKTOP_COLS,
+                  gridTemplateColumns: isMobile ? undefined : rowCols,
                   flexDirection: isMobile ? 'column' : undefined,
-                  gap: isMobile ? '0.35rem' : '0.5rem',
+                  gap: isMobile ? '0.45rem' : '0.5rem',
                   alignItems: isMobile ? 'stretch' : 'center',
                   padding: isMobile ? '0.75rem 0.85rem' : '0.55rem 0.85rem',
-                  cursor: 'pointer', textAlign: 'left', color: 'inherit',
                   background: isSel
                     ? 'rgba(212,175,55,0.10)'
                     : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
-                  border: 'none',
                   borderLeft: isSel ? `2px solid ${B.gold}` : '2px solid transparent',
                   borderBottom: `1px solid ${B.borderSubtle}`,
+                }}
+              >
+              <button
+                type="button"
+                onClick={() => onSelectWallet?.(e.wallet)}
+                style={{
+                  display: isMobile ? 'flex' : 'grid',
+                  gridTemplateColumns: isMobile ? undefined : DESKTOP_COLS,
+                  gridColumn: isMobile ? undefined : (showToggle ? '1 / -2' : '1 / -1'),
+                  flexDirection: isMobile ? 'column' : undefined,
+                  gap: isMobile ? '0.35rem' : '0.5rem',
+                  alignItems: isMobile ? 'stretch' : 'center',
+                  minWidth: 0, width: '100%',
+                  padding: 0, margin: 0,
+                  cursor: 'pointer', textAlign: 'left', color: 'inherit',
+                  background: 'transparent', border: 'none',
                 }}
               >
                 <div style={{ minWidth: 0 }}>
@@ -306,6 +332,18 @@ export default function VaultRoster({
                   </>
                 )}
               </button>
+              {showToggle && (
+                <div style={{ display: 'flex', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+                  <MySharpToggle
+                    compact
+                    mySharps={mySharps}
+                    wallet={e.wallet}
+                    walletShort={e.walletShort || e.wallet}
+                    sport={sport}
+                  />
+                </div>
+              )}
+              </div>
             );
           })}
         </div>

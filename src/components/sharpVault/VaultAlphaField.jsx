@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, Cell, ReferenceLine,
+  ResponsiveContainer, CartesianGrid, Cell, ReferenceLine, Symbols,
 } from 'recharts';
+import { isMySharpShort } from '../../lib/mySharps.js';
 import { B, T, fmtVol, SPORT_COLORS } from './vaultTheme';
 
 const CLV_N_MIN = 8;
@@ -63,6 +64,35 @@ function gameTime(commence) {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+/** Circle for the field. Star when the wallet is already in My Sharps. */
+function VaultDot(props) {
+  const {
+    cx, cy, size, fill, fillOpacity, stroke, strokeWidth, className, isMine,
+  } = props;
+  if (!Number.isFinite(cx) || !Number.isFinite(cy) || !Number.isFinite(size)) return null;
+  return (
+    <Symbols
+      cx={cx}
+      cy={cy}
+      size={isMine ? size * 1.45 : size}
+      sizeType="area"
+      type={isMine ? 'star' : 'circle'}
+      fill={fill}
+      fillOpacity={fillOpacity ?? 1}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      className={className}
+    />
+  );
+}
+
+function fieldLegend(sportFilter, toggle) {
+  const base = sportFilter !== 'ALL' && toggle === 'all'
+    ? `Beat the close vs sports ROI · gold = proven ${sportFilter} · ring = live · bright = heavy`
+    : 'Beat the close vs sports ROI · gold = proven · ring = live · bright = heavy';
+  return `${base} · star = My Sharps`;
+}
+
 /**
  * Alpha Field — one chart, two lenses.
  * "All wallets": CLV × sports ROI skill field (qualified wallets only).
@@ -78,6 +108,7 @@ export default function VaultAlphaField({
   selectedWallet = null,
   isMobile,
   onSelectWallet,
+  mySharps = null,
 }) {
   const [toggle, setToggle] = useState('all');
   const [gameId, setGameId] = useState(null); // null = field mode
@@ -109,6 +140,7 @@ export default function VaultAlphaField({
   }, [actionPositions]);
 
   const selected = selectedWallet ? String(selectedWallet).toLowerCase() : null;
+  const mineShorts = mySharps?.shorts;
 
   // ── Field mode points (CLV × ROI, qualified wallets) ──────────────────────
   const fieldPoints = useMemo(() => {
@@ -163,17 +195,19 @@ export default function VaultAlphaField({
         isProvenGold,
         weeklyPnl: e.weeklyPnl,
         liveLine,
+        isMine: isMySharpShort(mineShorts, w),
         selected: selected === w,
       });
     }
     out.sort((a, b) => {
       if (a.selected !== b.selected) return a.selected ? 1 : -1;
+      if (a.isMine !== b.isMine) return a.isMine ? 1 : -1;
       if (a.isHc !== b.isHc) return a.isHc ? 1 : -1;
       if (a.isLive !== b.isLive) return a.isLive ? 1 : -1;
       return 0;
     });
     return out;
-  }, [game, entries, sportFilter, toggle, hcWallets, openLegsByWallet, selected]);
+  }, [game, entries, sportFilter, toggle, hcWallets, openLegsByWallet, selected, mineShorts]);
 
   // ── Battle mode points (side × ROI × money) ───────────────────────────────
   const battle = useMemo(() => {
@@ -199,18 +233,20 @@ export default function VaultAlphaField({
         y: roi,
         roiRaw: w.roi,
         z: Math.max(50, Math.min(300, 50 + w.sizeRatio * 60)),
+        isMine: isMySharpShort(mineShorts, w.wallet),
         selected: selected === w.wallet,
       });
     }
     out.sort((a, b) => {
       if (a.selected !== b.selected) return a.selected ? 1 : -1;
+      if (a.isMine !== b.isMine) return a.isMine ? 1 : -1;
       if ((a.cls === 'proven') !== (b.cls === 'proven')) return a.cls === 'proven' ? 1 : -1;
       return 0;
     });
     const lk = mkt === 'TOTAL' ? 'over' : 'away';
     const rk = mkt === 'TOTAL' ? 'under' : 'home';
     return { points: out, xMax: Math.ceil(maxAbs * 1.15 * 10) / 10, sideTotals: totals, leftKey: lk, rightKey: rk };
-  }, [game, mkt, selected]);
+  }, [game, mkt, selected, mineShorts]);
 
   const isBattle = !!game;
   const points = isBattle ? battle.points : fieldPoints;
@@ -235,6 +271,9 @@ export default function VaultAlphaField({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
           <span style={{ ...T.label, color: B.gold, fontWeight: 800 }}>{d.name}</span>
+          {d.isMine && (
+            <span style={{ ...T.tiny, color: '#F3E3AC', letterSpacing: '0.04em' }}>★ My Sharps</span>
+          )}
           {d.isHc && (
             <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.04em' }}>Heavy</span>
           )}
@@ -275,6 +314,9 @@ export default function VaultAlphaField({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
           <span style={{ ...T.label, color: meta.color, fontWeight: 800 }}>{d.name}</span>
+          {d.isMine && (
+            <span style={{ ...T.tiny, color: '#F3E3AC', letterSpacing: '0.04em' }}>★ My Sharps</span>
+          )}
           <span style={{ ...T.tiny, color: meta.color, letterSpacing: '0.04em' }}>{meta.label}</span>
         </div>
         <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.7 }}>
@@ -331,10 +373,8 @@ export default function VaultAlphaField({
           </div>
           <div style={{ ...T.label, color: B.textMuted, fontWeight: 500 }}>
             {isBattle
-              ? 'Sides face off across the line · gold = proven in this sport · height = wallet ROI · distance = money'
-              : sportFilter !== 'ALL' && toggle === 'all'
-                ? `Beat the close vs sports ROI · gold = proven ${sportFilter} · ring = live · bright = heavy`
-                : 'Beat the close vs sports ROI · gold = proven · ring = live · bright = heavy'}
+              ? 'Sides face off across the line · gold = proven in this sport · height = wallet ROI · distance = money · star = My Sharps'
+              : fieldLegend(sportFilter, toggle)}
           </div>
         </div>
         {!isBattle && (
@@ -549,6 +589,7 @@ export default function VaultAlphaField({
                 />
                 <Scatter
                   data={points}
+                  shape={VaultDot}
                   onClick={handleScatterClick}
                   style={{ cursor: 'pointer' }}
                 >
@@ -617,6 +658,10 @@ export default function VaultAlphaField({
               </span>
             ))}
             <span style={{ ...T.tiny, color: B.textSubtle }}>ring = 1.5×+ usual size</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', ...T.tiny, color: B.textMuted }}>
+              <span style={{ color: '#F3E3AC', fontSize: '0.7rem', lineHeight: 1 }}>★</span>
+              My Sharps
+            </span>
             {draw && (
               <span style={{ ...T.tiny, color: B.textSubtle }}>
                 Draw money on the center line · {fmtVol(draw.invested)}

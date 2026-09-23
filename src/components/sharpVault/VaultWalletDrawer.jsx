@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
+import MySharpToggle from './MySharpToggle';
 import { B, T, SPORT_COLORS, fmtVol, signedVol } from './vaultTheme';
 
 const TABS = [
@@ -20,6 +21,7 @@ export default function VaultWalletDrawer({
   focusLeg = null, // { sport, gameKey } | null
   isMobile,
   onClose,
+  mySharps = null,
 }) {
   const [tab, setTab] = useState('open');
   // Sport keys expanded in the "More" accordion. Focus sport is always open.
@@ -127,6 +129,14 @@ export default function VaultWalletDrawer({
               </div>
               <div style={{ ...T.heading, color: B.text, fontSize: '1.25rem' }}>
                 {entry.name || `***${wallet.slice(-4)}`}
+              </div>
+              <div style={{ marginTop: '0.55rem' }}>
+                <MySharpToggle
+                  mySharps={mySharps}
+                  wallet={wallet}
+                  walletShort={entry.walletShort || wallet}
+                  sport={focusLeg?.sport || entry.confirmedSports?.[0] || entry.whitelistSports?.[0] || null}
+                />
               </div>
             </div>
             <button
