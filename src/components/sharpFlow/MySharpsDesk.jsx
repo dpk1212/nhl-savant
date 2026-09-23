@@ -1518,9 +1518,9 @@ function TicketContext({ item, isMobile }) {
         ? 'Sized up against their usual bet in this sport.'
         : 'One sharp, around their usual size.';
   return (
-    <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${B.hair}` }} onClick={(e) => e.stopPropagation()}>
+    <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${B.hair}` }}>
       <div style={{ ...T.body, color: B.textSec }}>{note}</div>
-      {Number.isFinite(Number(item.entryLine)) ? (
+      {item.entryLine != null && Number.isFinite(Number(item.entryLine)) ? (
         <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>Entered {item.entryLine}</div>
       ) : null}
       {(item.otherSide || []).map((side, i) => (
