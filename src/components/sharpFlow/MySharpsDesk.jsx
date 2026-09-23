@@ -604,25 +604,6 @@ function sumInvested(items) {
   return (items || []).reduce((s, t) => s + (Number(t.invested) || 0), 0);
 }
 
-function Pill({ children, color }) {
-  if (!children) return null;
-  return (
-    <span style={{
-      ...T.kicker,
-      letterSpacing: '0.08em',
-      color,
-      border: `1px solid ${color}55`,
-      borderRadius: 999,
-      padding: '0.16rem 0.48rem',
-      lineHeight: 1.3,
-      whiteSpace: 'nowrap',
-    }}
-    >
-      {children}
-    </span>
-  );
-}
-
 function BetsHero({ groups, tails, isMobile, lens, onLens }) {
   const order = ['together', 'pressing', 'split', 'rest'];
   const n = order.reduce((s, key) => s + groups[key].length, 0);
@@ -729,66 +710,205 @@ function heatPhrase(heat) {
   return `${word}${heat.window || 'L10'} ${heat.record}`;
 }
 
+function heatWord(heat) {
+  if (!heat?.record || heat.key === 'quiet') return null;
+  if (heat.key === 'hot') return 'Hot';
+  if (heat.key === 'cold') return 'Cold';
+  return 'Even';
+}
+
+function heatFigureColor(heat) {
+  if (!heat?.record || heat.key === 'quiet') return B.textFaint;
+  if (heat.key === 'hot') return B.green;
+  if (heat.key === 'cold') return B.red;
+  return B.text;
+}
+
 function SteamBit({ steam }) {
   if (!steam?.show || !steam.tag) return null;
   const gold = steam.goldConfirmed || steam.tier === 'gold';
-  return <Pill color={gold ? B.gold : B.green}>{steam.goldConfirmed ? steam.tag : `Steam ${steam.tag}`}</Pill>;
-}
-
-function HeatBit({ heat }) {
-  const phrase = heatPhrase(heat);
-  if (!phrase) return null;
-  const word = heat.key === 'hot' ? 'Hot' : heat.key === 'cold' ? 'Cold' : null;
-  const color = heatColor(heat);
+  const label = steam.goldConfirmed ? steam.tag : `Steam ${steam.tag}`;
   return (
-    <span style={{ ...T.figure, color, fontSize: '0.86rem' }}>
-      {word ? <span style={{ ...T.kicker, color, letterSpacing: '0.08em', marginRight: 6 }}>{word}</span> : null}
-      {heat.window || 'L10'} {heat.record}
+    <span style={{
+      ...T.kicker,
+      letterSpacing: '0.12em',
+      color: gold ? '#1a1404' : '#6EE7B7',
+      background: gold
+        ? 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)'
+        : 'rgba(16,185,129,0.14)',
+      border: gold ? 'none' : '1px solid rgba(16,185,129,0.45)',
+      borderRadius: 999,
+      padding: '0.32rem 0.7rem',
+      lineHeight: 1.2,
+      whiteSpace: 'nowrap',
+    }}
+    >
+      {label}
     </span>
   );
 }
 
-function SharpPlate({ lead, rest }) {
+function BarRow({ label, pct, color, value, h }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '46px minmax(0, 1fr) 58px', gap: 8, alignItems: 'center', marginTop: 4 }}>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{label}</div>
+      <div style={{ height: h, borderRadius: 99, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: color }} />
+      </div>
+      <div style={{ ...T.figure, fontSize: '0.8rem', color: B.textSec, textAlign: 'right' }}>{value}</div>
+    </div>
+  );
+}
+
+function SizeStory({ ratio, usual, invested, compact }) {
+  const pressing = (ratio || 0) >= 1.5;
+  const color = pressing ? '#F59E0B' : B.goldSoft;
+  const h = compact ? 7 : 9;
+  const hasDollars = Number.isFinite(usual) && usual > 0 && Number.isFinite(invested) && invested > 0;
+  const headline = ratio
+    ? `${ratio.toFixed(1)}×`
+    : (hasDollars ? fmtVol(invested, { signed: false }) : null);
+  if (!headline) return null;
+  const max = hasDollars ? Math.max(usual, invested) : null;
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+        <div style={{
+          ...T.figure,
+          fontSize: compact ? '1.7rem' : '1.85rem',
+          lineHeight: 0.9,
+          letterSpacing: '-0.045em',
+          color,
+        }}
+        >
+          {headline}
+        </div>
+        <div style={{ ...T.kicker, color: pressing ? '#F59E0B' : B.textFaint, letterSpacing: '0.14em' }}>
+          {pressing ? 'Sized up' : 'Vs usual'}
+        </div>
+      </div>
+      {hasDollars ? (
+        <div style={{ marginTop: compact ? 6 : 8 }}>
+          <BarRow label="Usual" pct={Math.max(8, (usual / max) * 100)} color="rgba(148,163,184,0.55)" value={fmtVol(usual, { signed: false })} h={h} />
+          <BarRow label="This" pct={Math.max(8, (invested / max) * 100)} color={color} value={fmtVol(invested, { signed: false })} h={h} />
+        </div>
+      ) : (
+        <div style={{ marginTop: 10, position: 'relative', height: h, borderRadius: 99, background: 'rgba(255,255,255,0.07)' }}>
+          <div style={{ width: `${Math.min(100, (ratio / 3) * 100)}%`, height: '100%', borderRadius: 99, background: color }} />
+          <div style={{ position: 'absolute', left: '33.3%', top: -3, bottom: -3, width: 2, background: 'rgba(255,255,255,0.55)' }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FaceStat({ kicker, value, sub, color, subColor, big }) {
+  return (
+    <div>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{kicker}</div>
+      <div style={{ ...T.figure, color, marginTop: 4, fontSize: big ? '1.28rem' : '1.15rem', letterSpacing: '-0.03em' }}>{value}</div>
+      {sub ? (
+        <div style={{ ...T.meta, color: subColor || B.textMuted, marginTop: 3, fontFeatureSettings: "'tnum'", fontWeight: 650 }}>{sub}</div>
+      ) : (
+        <div style={{ height: 16 }} />
+      )}
+    </div>
+  );
+}
+
+function WhyStats({ line, sport, isMobile, columns }) {
+  const bookLabel = line.book?.label || 'Market';
+  const sportLabel = sport || 'Sport';
+  const word = heatWord(line.heat);
+  const cols = columns || (isMobile ? '1fr 1fr' : 'repeat(4, minmax(0, 1fr))');
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: cols,
+      gap: '10px 16px',
+      marginTop: 12,
+      paddingTop: 10,
+      borderTop: `1px solid ${B.hair}`,
+    }}
+    >
+      <FaceStat
+        big
+        kicker="L10"
+        value={line.heat?.record || '—'}
+        sub={word}
+        color={heatFigureColor(line.heat)}
+        subColor={line.heat?.key === 'even' ? B.textMuted : heatFigureColor(line.heat)}
+      />
+      <FaceStat
+        big
+        kicker={`${bookLabel} book`}
+        value={Number.isFinite(line.book?.roi) ? `${line.book.roi}%` : (line.book?.record || '—')}
+        sub={Number.isFinite(line.book?.roi) ? line.book.record : null}
+        color={Number.isFinite(line.book?.roi) ? pnlColor(line.book.roi, B.text) : B.text}
+      />
+      <FaceStat
+        big
+        kicker={`${bookLabel} 30d`}
+        value={Number.isFinite(line.marketL30) ? fmtVol(line.marketL30) : '—'}
+        color={pnlColor(line.marketL30, B.textMuted)}
+      />
+      {columns ? null : (
+        <FaceStat
+          big
+          kicker={`${sportLabel} 30d`}
+          value={Number.isFinite(line.sportL30) ? fmtVol(line.sportL30) : '—'}
+          color={pnlColor(line.sportL30, B.textMuted)}
+        />
+      )}
+    </div>
+  );
+}
+
+function SharpPlate({ lead, rest, isMobile }) {
   const steamGold = lead.steam?.goldConfirmed || lead.steam?.tier === 'gold';
   return (
     <div style={{
-      marginTop: 12,
-      borderRadius: 10,
+      marginTop: 16,
+      borderRadius: 12,
       border: `1px solid ${steamGold ? B.goldBorder : B.line}`,
-      background: steamGold ? 'rgba(212,175,55,0.07)' : 'rgba(255,255,255,0.028)',
-      padding: '0.7rem 0.8rem 0.62rem',
+      background: steamGold ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)',
+      padding: isMobile ? '0.9rem 0.85rem 0.8rem' : '1rem 1.05rem 0.9rem',
     }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'baseline', minWidth: 0 }}>
-          <span style={{ ...T.name, color: B.text, fontSize: '0.95rem' }}>{lead.tag}</span>
-          {lead.ratio ? (
-            <span style={{ ...T.figure, color: lead.ratio >= 1.5 ? '#F59E0B' : B.textMuted, fontSize: '0.95rem' }}>
-              {lead.ratio.toFixed(1)}×
-            </span>
-          ) : null}
-          {lead.book?.record ? (
-            <span style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-              {lead.book.label} {lead.book.record}
-            </span>
-          ) : null}
-          {Number.isFinite(lead.marketL30) ? (
-            <span style={{ ...T.figure, color: pnlColor(lead.marketL30, B.textMuted), fontSize: '0.88rem' }}>
-              <span style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginRight: 6 }}>30d</span>
-              {fmtVol(lead.marketL30)}
-            </span>
-          ) : null}
-          <HeatBit heat={lead.heat} />
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+        <div style={{ ...T.name, color: B.text, fontSize: '0.95rem' }}>{lead.tag}</div>
         <SteamBit steam={lead.steam} />
       </div>
+      <div style={{ marginTop: 12 }}>
+        <SizeStory ratio={lead.ratio} usual={lead.usual} invested={lead.invested} compact />
+      </div>
+      <WhyStats line={lead} columns={isMobile ? '1fr 1fr' : 'repeat(3, minmax(0, 1fr))'} />
       {rest.map((line) => {
         const phrase = heatPhrase(line.heat);
+        const pressing = (line.ratio || 0) >= 1.5;
         return (
-          <div key={line.walletShort || line.tag} style={{ ...T.meta, color: B.textMuted, marginTop: 7, fontFeatureSettings: "'tnum'" }}>
-            {line.tag}
-            {line.ratio ? `  ·  ${line.ratio.toFixed(1)}×` : ''}
-            {phrase ? <span style={{ color: heatColor(line.heat) }}>{`  ·  ${phrase}`}</span> : null}
+          <div
+            key={line.walletShort || line.tag}
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '4px 14px',
+              alignItems: 'baseline',
+              marginTop: 12,
+              paddingTop: 10,
+              borderTop: `1px solid ${B.hair}`,
+              fontFeatureSettings: "'tnum'",
+            }}
+          >
+            <span style={{ ...T.name, color: B.textSec, fontSize: '0.86rem' }}>{line.tag}</span>
+            {line.ratio ? (
+              <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.textMuted, fontSize: '0.95rem' }}>
+                {line.ratio.toFixed(1)}×
+              </span>
+            ) : null}
+            {phrase ? (
+              <span style={{ ...T.figure, color: heatFigureColor(line.heat), fontSize: '0.86rem' }}>{phrase}</span>
+            ) : null}
           </div>
         );
       })}
@@ -796,84 +916,31 @@ function SharpPlate({ lead, rest }) {
   );
 }
 
-function FaceStat({ kicker, value, sub, color }) {
-  return (
-    <div>
-      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{kicker}</div>
-      <div style={{ ...T.figure, color, marginTop: 4, fontSize: '0.98rem' }}>{value}</div>
-      {sub ? <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>{sub}</div> : null}
-    </div>
-  );
-}
-
 function SharpReceipt({ line, sport, isMobile }) {
   const pressing = (line.ratio || 0) >= 1.5;
-  const bar = line.ratio ? Math.min(100, (line.ratio / 2.5) * 100) : 0;
-  const bookLabel = line.book?.label || 'Market';
-  const sportLabel = sport || 'Sport';
-  const sizeBits = [
-    line.ratio ? `${line.ratio.toFixed(1)}×` : null,
-    line.usual ? `usual ${fmtVol(line.usual, { signed: false })}` : null,
-  ].filter(Boolean);
   return (
     <div style={{
-      borderRadius: 10,
-      border: `1px solid ${B.line}`,
+      borderRadius: 12,
+      border: `1px solid ${pressing ? 'rgba(245,158,11,0.35)' : B.line}`,
       borderLeft: `3px solid ${pressing ? '#F59E0B' : B.gold}`,
-      background: 'rgba(255,255,255,0.025)',
-      padding: '0.8rem 0.85rem 0.75rem',
+      background: pressing ? 'rgba(245,158,11,0.05)' : 'rgba(255,255,255,0.025)',
+      padding: isMobile ? '0.85rem 0.8rem 0.9rem' : '0.9rem 1rem 0.95rem',
     }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ ...T.name, color: B.text, fontSize: '1rem' }}>{line.tag}</div>
-          {sizeBits.length ? (
-            <div style={{ ...T.meta, color: pressing ? '#F59E0B' : B.textMuted, marginTop: 4, fontFeatureSettings: "'tnum'" }}>
-              {sizeBits.join(' · ')}
-            </div>
-          ) : null}
-          {line.ratio ? (
-            <div style={{ marginTop: 8, height: 7, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-              <div style={{ width: `${bar}%`, height: '100%', background: pressing ? '#F59E0B' : B.gold }} />
-            </div>
-          ) : null}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ ...T.name, color: B.text, fontSize: '1.05rem' }}>{line.tag}</div>
+          {line.steam?.show ? <div style={{ marginTop: 8 }}><SteamBit steam={line.steam} /></div> : null}
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.02rem' }}>{fmtVol(line.invested, { signed: false })}</div>
-          {line.price ? <div style={{ ...T.figure, color: B.text, fontSize: '0.86rem' }}>{line.price}</div> : null}
-          <SteamBit steam={line.steam} />
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.35rem', letterSpacing: '-0.03em' }}>{fmtVol(line.invested, { signed: false })}</div>
+          {line.price ? <div style={{ ...T.figure, color: B.text, fontSize: '0.95rem', marginTop: 2 }}>{line.price}</div> : null}
         </div>
       </div>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0, 1fr))',
-        gap: '12px 10px',
-        marginTop: 14,
-      }}
-      >
-        <FaceStat
-          kicker="L10"
-          value={line.heat?.record || '—'}
-          sub={line.heat?.key === 'hot' ? 'Hot' : line.heat?.key === 'cold' ? 'Cold' : (line.heat?.window || null)}
-          color={line.heat ? heatColor(line.heat) : B.textFaint}
-        />
-        <FaceStat
-          kicker={`${bookLabel} book`}
-          value={Number.isFinite(line.book?.roi) ? `${line.book.roi}%` : (line.book?.record || '—')}
-          sub={Number.isFinite(line.book?.roi) ? line.book.record : null}
-          color={Number.isFinite(line.book?.roi) ? pnlColor(line.book.roi, B.text) : B.text}
-        />
-        <FaceStat
-          kicker={`${bookLabel} 30d`}
-          value={Number.isFinite(line.marketL30) ? fmtVol(line.marketL30) : '—'}
-          color={pnlColor(line.marketL30, B.textMuted)}
-        />
-        <FaceStat
-          kicker={`${sportLabel} 30d`}
-          value={Number.isFinite(line.sportL30) ? fmtVol(line.sportL30) : '—'}
-          color={pnlColor(line.sportL30, B.textMuted)}
-        />
+      <div style={{ marginTop: 10 }}>
+        <SizeStory ratio={line.ratio} usual={line.usual} invested={line.invested} compact />
       </div>
+      <WhyStats line={line} sport={sport} isMobile={isMobile} />
     </div>
   );
 }
@@ -905,7 +972,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.15rem' : '1.35rem' }}>
+          <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.28rem' : '1.55rem', letterSpacing: '-0.03em' }}>
             {item.pick}
           </div>
           <div style={{ ...T.meta, color: B.textMuted, marginTop: 5 }}>
@@ -917,8 +984,8 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-          <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.15rem' : '1.28rem' }}>{fmtVol(item.invested, { signed: false })}</div>
-          <div style={{ ...T.figure, color: B.text, fontSize: '0.95rem' }}>{price}</div>
+          <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.35rem' : '1.65rem', letterSpacing: '-0.04em' }}>{fmtVol(item.invested, { signed: false })}</div>
+          <div style={{ ...T.figure, color: B.text, fontSize: '1.02rem' }}>{price}</div>
           {tailed && !open ? (
             <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
           ) : (
@@ -928,7 +995,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           )}
         </div>
       </div>
-      {expanded ? <TicketContext item={item} isMobile={isMobile} /> : (lead ? <SharpPlate lead={lead} rest={lines.slice(1)} /> : null)}
+      {expanded ? <TicketContext item={item} isMobile={isMobile} /> : (lead ? <SharpPlate lead={lead} rest={lines.slice(1)} isMobile={isMobile} /> : null)}
       {open ? (
         <TailForm
           item={item}
@@ -1023,7 +1090,7 @@ function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, on
           {items.length}{money ? ` · ${fmtVol(money, { signed: false })}` : ''}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {items.map((item) => (
           <BetCard
             key={item.id}
