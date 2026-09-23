@@ -1713,6 +1713,7 @@ export default function ConfirmedActionDesk({
           cap={mySharps.cap}
           onRoomChange={setMineRoom}
           onRename={(short, name) => mySharps.rename(short, name)}
+          onToggleBets={(short, sport, market) => mySharps.setBetsFeed(short, sport, market)}
           onRemove={(short) => mySharps.remove(short)}
           onAdd={(row) => mySharps.addFromRow(row)}
           onTail={(ticket, patch) => mySharps.markTail(ticket, patch)}

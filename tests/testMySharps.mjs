@@ -15,6 +15,9 @@ import {
   parseMySharpsDoc,
   tailFromTicket,
   toggleMySharpMember,
+  betsFeedKey,
+  betsFeedOn,
+  toggleBetsFeed,
 } from '../src/lib/mySharps.js';
 import {
   americanProfit,
@@ -41,6 +44,8 @@ import {
   heatFromForm,
   honestRecord,
   marketBooksFromProfile,
+  marketTape,
+  rowsForBetsFeed,
   pickDeskMovers,
   shortsForDeskSection,
   sortMySharpsRoster,
@@ -779,5 +784,59 @@ const lines = groupPortfolioBets([{
 }], { names: { e4ec62: 'Bands' } });
 assert.equal(lines.pressing[0].walletLines[0].tag, 'Bands');
 assert.equal(lines.pressing[0].walletLines[0].invested, 6400);
+
+assert.equal(betsFeedKey('mlb', 'spread'), 'MLB|SPREAD');
+assert.equal(betsFeedOn({ betsOff: ['MLB|SPREAD'] }, 'MLB', 'ML'), true);
+assert.equal(betsFeedOn({ betsOff: ['MLB|SPREAD'] }, 'CFB', 'SPREAD'), true);
+assert.equal(betsFeedOn({ betsOff: ['MLB|SPREAD'] }, 'MLB', 'SPREAD'), false);
+const fed = toggleBetsFeed({
+  members: { abcd12: { walletShort: 'abcd12', betsOff: [] } },
+  tails: {},
+}, 'abcd12', 'MLB', 'SPREAD');
+assert.deepEqual(fed.members.abcd12.betsOff, ['MLB|SPREAD']);
+const fedBack = toggleBetsFeed(fed, 'abcd12', 'MLB', 'SPREAD');
+assert.deepEqual(fedBack.members.abcd12.betsOff, []);
+const parsedOff = parseMySharpsDoc({
+  mySharps: { members: { abcd12: { walletShort: 'abcd12', betsOff: ['mlb|ml', 'nope', 'CFB|SPREAD'] } } },
+});
+assert.deepEqual(parsedOff.members.abcd12.betsOff, ['MLB|ML', 'CFB|SPREAD']);
+
+const sizedBooks = marketBooksFromProfile({
+  bySport: {
+    MLB: {
+      whitelistTier: 'CONFIRMED',
+      byMarket: {
+        SPREAD: { positions: { n: 4, wins: 2, losses: 2, wr: 50, dollarRoi: 11, invested: 16800 } },
+      },
+    },
+  },
+}, 'MLB');
+assert.equal(sizedBooks[0].usual, 4200);
+
+const spreadTape = marketTape(new Map([['abcd12', {
+  bySport: {
+    MLB: {
+      form: {
+        recentAction: [
+          { date: '2026-09-20', marketType: 'SPREAD', side: 'home', team: 'Yankees', line: -1.5, away: 'BOS', home: 'NYY', invested: 4000, dollarPnl: 1800, won: 1 },
+          { date: '2026-09-19', marketType: 'ML', side: 'away', team: 'Mets', away: 'NYM', home: 'TEX', invested: 2000, dollarPnl: -2000, won: 0 },
+        ],
+      },
+    },
+  },
+}]]), 'abcd12', 'MLB', 'SPREAD');
+assert.equal(spreadTape.plays.length, 1);
+assert.equal(spreadTape.plays[0].pick.includes('Yankees'), true);
+assert.equal(spreadTape.plays[0].invested, 4000);
+
+const kept = rowsForBetsFeed([
+  { walletShort: 'abcd12', sport: 'MLB', marketType: 'SPREAD', invested: 100 },
+  { walletShort: 'abcd12', sport: 'CFB', marketType: 'ML', invested: 200 },
+  { walletShort: 'eeeeee', sport: 'MLB', marketType: 'SPREAD', invested: 300 },
+], [{ walletShort: 'abcd12', betsOff: ['MLB|SPREAD'] }]);
+assert.equal(kept.length, 2);
+assert.equal(kept.some((r) => r.walletShort === 'abcd12' && r.marketType === 'SPREAD'), false);
+const rebuilt = buildMySharpsBoard(kept);
+assert.equal(rebuilt.tickets.length, 2);
 
 console.log('testMySharps: ok');

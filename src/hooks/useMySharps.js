@@ -14,6 +14,8 @@ import {
   parseMySharpsDoc,
   tailFromTicket,
   toggleMySharpMember,
+  toggleBetsFeed,
+  betsFeedOn,
 } from '../lib/mySharps.js';
 
 function readCache(uid) {
@@ -144,6 +146,15 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     return { ok: true };
   }, [persist]);
 
+  const setBetsFeed = useCallback(async (short, sport, market) => {
+    const id = normalizeWalletShort(short);
+    if (!id || !stateRef.current.members[id]) return { ok: false, reason: 'missing' };
+    const next = toggleBetsFeed(stateRef.current, id, sport, market);
+    if (next === stateRef.current) return { ok: false, reason: 'id' };
+    await persist(next);
+    return { ok: true, on: betsFeedOn(next.members[id], sport, market) };
+  }, [persist]);
+
   const toggleRow = useCallback(async (row) => {
     const id = normalizeWalletShort(row?.walletShort);
     if (!id) return { ok: false, reason: 'id' };
@@ -211,6 +222,7 @@ export function useMySharps({ user = null, isPremium = false } = {}) {
     toggleRow,
     remove,
     rename,
+    setBetsFeed,
     markTail,
     clearTail,
   };

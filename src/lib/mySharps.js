@@ -116,6 +116,7 @@ export function parseMySharpsDoc(data) {
       note: typeof v?.note === 'string' ? v.note : null,
       name: cleanSharpName(v?.name),
       muted: v?.muted === true,
+      betsOff: normalizeBetsOff(v?.betsOff),
     };
   }
   const tails = {};
@@ -181,6 +182,58 @@ export function toggleMySharpMember(state, member, { remove = false } = {}) {
   if (!canAddMySharp(state)) return state || emptyMySharps();
   next.members[short] = { ...member, walletShort: short };
   return next;
+}
+
+const BETS_MARKETS = new Set(['ML', 'SPREAD', 'TOTAL']);
+
+/** Sport × market key for the Bets feed. Absent means the market is on. */
+export function betsFeedKey(sport, market) {
+  const s = String(sport || '').trim().toUpperCase();
+  let m = String(market || '').trim().toUpperCase();
+  if (m === 'MONEYLINE') m = 'ML';
+  if (m === 'SPREADS') m = 'SPREAD';
+  if (m === 'TOTALS') m = 'TOTAL';
+  if (!s || !BETS_MARKETS.has(m)) return null;
+  return `${s}|${m}`;
+}
+
+export function normalizeBetsOff(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const item of raw) {
+    const parts = String(item || '').split('|');
+    const key = betsFeedKey(parts[0], parts.slice(1).join('|'));
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+
+export function betsFeedOn(member, sport, market) {
+  const key = betsFeedKey(sport, market);
+  if (!key) return true;
+  return !normalizeBetsOff(member?.betsOff).includes(key);
+}
+
+/** Flip one sport × market. Missing from the list means Bets still shows it. */
+export function toggleBetsFeed(state, short, sport, market) {
+  const id = normalizeWalletShort(short);
+  const key = betsFeedKey(sport, market);
+  const cur = id ? state?.members?.[id] : null;
+  if (!id || !key || !cur) return state || emptyMySharps();
+  const off = new Set(normalizeBetsOff(cur.betsOff));
+  if (off.has(key)) off.delete(key);
+  else off.add(key);
+  return {
+    updatedAt: Date.now(),
+    members: {
+      ...(state.members || {}),
+      [id]: { ...cur, betsOff: [...off] },
+    },
+    tails: { ...(state.tails || {}) },
+  };
 }
 
 export function fmtWalletTag(short) {

@@ -3,7 +3,7 @@
  * Fixture only. No auth, no live wallets.
  */
 import React, { useMemo, useState } from 'react';
-import { parseMySharpsDoc, tailFromTicket, toggleMySharpMember } from '../../lib/mySharps.js';
+import { parseMySharpsDoc, tailFromTicket, toggleBetsFeed, toggleMySharpMember } from '../../lib/mySharps.js';
 import { buildMySharpsRoster } from '../../lib/mySharpsDesk.js';
 import MySharpsDesk from '../sharpFlow/MySharpsDesk.jsx';
 
@@ -59,15 +59,30 @@ const profiles = new Map([
           actionL10: { w: 7, l: 3 },
           actionDollarCurve: bookPath(51000),
           recentAction: [
-            { date: '2026-09-20', marketType: 'TOTAL', side: 'under', line: 8.5, gameKey: 'tor_bal', away: 'TOR', home: 'BAL', dollarPnl: 2100, won: 1 },
-            { date: '2026-09-19', marketType: 'ML', side: 'home', team: 'Yankees', gameKey: 'bos_nyy', away: 'BOS', home: 'NYY', dollarPnl: -1400, won: 0 },
-            { date: '2026-09-18', marketType: 'TOTAL', side: 'over', line: 9, gameKey: 'laa_oak', away: 'LAA', home: 'OAK', dollarPnl: 900, won: 1 },
+            { date: '2026-09-20', marketType: 'TOTAL', side: 'under', line: 8.5, gameKey: 'tor_bal', away: 'TOR', home: 'BAL', invested: 4900, dollarPnl: 2100, won: 1 },
+            { date: '2026-09-19', marketType: 'ML', side: 'home', team: 'Yankees', gameKey: 'bos_nyy', away: 'BOS', home: 'NYY', invested: 3200, dollarPnl: -1400, won: 0 },
+            { date: '2026-09-18', marketType: 'TOTAL', side: 'over', line: 9, gameKey: 'laa_oak', away: 'LAA', home: 'OAK', invested: 1800, dollarPnl: 900, won: 1 },
           ],
         },
         byMarket: {
-          ML: { positions: { n: 28, wins: 15, losses: 13, wr: 54, dollarRoi: 2 } },
-          TOTAL: { positions: { n: 48, wins: 31, losses: 17, wr: 65, dollarRoi: 19 }, recentActionWindow: { n: 16, wins: 11, losses: 5, wr: 69, settledPnl: 28000, dollarRoi: 22 } },
-          SPREAD: { positions: { n: 14, wins: 6, losses: 8, wr: 43, dollarRoi: -8 } },
+          ML: { positions: { n: 28, wins: 15, losses: 13, wr: 54, dollarRoi: 2, invested: 140000 } },
+          TOTAL: { positions: { n: 48, wins: 31, losses: 17, wr: 65, dollarRoi: 19, invested: 230400 }, recentActionWindow: { n: 16, wins: 11, losses: 5, wr: 69, settledPnl: 28000, dollarRoi: 22 } },
+          SPREAD: { positions: { n: 14, wins: 6, losses: 8, wr: 43, dollarRoi: -8, invested: 42000 } },
+        },
+      },
+      CFB: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 6, wins: 4, losses: 2, wr: 67, settledPnl: 8200, dollarRoi: 18 },
+        positions: { n: 12, wins: 8, losses: 4, wr: 67, dollarRoi: 15, invested: 96000 },
+        form: {
+          recentAction: [
+            { date: '2026-09-20', marketType: 'ML', side: 'home', team: 'Georgia', gameKey: 'ala_uga', away: 'Alabama', home: 'Georgia', invested: 8000, dollarPnl: 4200, won: 1 },
+            { date: '2026-09-13', marketType: 'ML', side: 'away', team: 'Oregon', gameKey: 'ore_osu', away: 'Oregon', home: 'Ohio State', invested: 6400, dollarPnl: -6400, won: 0 },
+          ],
+        },
+        byMarket: {
+          ML: { positions: { n: 8, wins: 6, losses: 2, wr: 75, dollarRoi: 21, invested: 64000 }, recentActionWindow: { n: 4, wins: 3, losses: 1, settledPnl: 6100, dollarRoi: 19 } },
+          SPREAD: { positions: { n: 4, wins: 2, losses: 2, wr: 50, dollarRoi: -4, invested: 32000 } },
         },
       },
     },
@@ -308,6 +323,7 @@ export default function MySharpsDeskLab() {
               [short]: { ...cur.members[short], name: name || null },
             },
           }))}
+          onToggleBets={(short, sport, market) => setState((cur) => toggleBetsFeed(cur, short, sport, market))}
           onRemove={(short) => setState((cur) => toggleMySharpMember(cur, { walletShort: short }, { remove: true }))}
           onAdd={(row) => {
             const member = {
