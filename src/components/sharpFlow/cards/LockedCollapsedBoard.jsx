@@ -14,6 +14,7 @@
  * not described. Tooltips carry each wallet's receipt.
  */
 import { HC_RATIO } from '../../../lib/ags.js';
+import { isMySharpShort, normalizeWalletShort } from '../../../lib/mySharps.js';
 
 const C = {
   text: '#F4F7FB',
@@ -108,9 +109,11 @@ const LEGEND = [
   { cls: 'loser', label: 'losers', tip: 'Tracked losing wallets — shown honestly on either side', color: '#A05A54', opacity: 0.8 },
 ];
 
-function blockTip(w, side) {
+function blockTip(w, side, { saved = false, name = null } = {}) {
   const bits = [];
+  if (name) bits.push(name);
   if (w.short) bits.push(`…${w.short}`);
+  if (saved) bits.push('★ My Sharps');
   const cls = classify(w);
   bits.push(cls === 'hc' ? 'high-conviction winner' : cls === 'proven' ? 'proven winner' : 'tracked loser');
   bits.push(fmtUsd(w.invested));
@@ -120,7 +123,7 @@ function blockTip(w, side) {
   return bits.join(' · ');
 }
 
-export default function LockedCollapsedBoard({ f }) {
+export default function LockedCollapsedBoard({ f, mineShorts = null, names = null }) {
   if (!f) return null;
 
   const pool = boardPool(f).filter((w) => (Number(w?.invested) || 0) > 0);
@@ -158,19 +161,30 @@ export default function LockedCollapsedBoard({ f }) {
     const st = BLOCK_STYLE[side][cls] || BLOCK_STYLE[side].proven;
     const first = side === 'ours' && i === 0;
     const last = side === 'against' && i === arr.length - 1;
+    const saved = !w._agg && isMySharpShort(mineShorts, w.short);
+    const id = normalizeWalletShort(w.short);
+    const name = saved ? (names?.[id] || null) : null;
     return (
       <div
         key={`${side}-${i}`}
         className="sf-board-block"
         title={w._agg
           ? (side === 'ours' ? `${fmtUsd(w.invested)} qualified on our side` : `${fmtUsd(w.invested)} qualified against`)
-          : blockTip(w, side)}
+          : blockTip(w, side, { saved, name })}
         style={{
           width: `${widthOf(w).toFixed(2)}%`,
           height: '100%',
           borderRadius: first ? '5px 1px 1px 5px' : last ? '1px 5px 5px 1px' : 1,
           flexShrink: 1, minWidth: 3,
+          position: 'relative',
+          zIndex: saved ? 2 : 0,
           ...st,
+          // Portfolio is a ring, not a new color. HC is already gold; the
+          // hairline is what says this block is on the list.
+          ...(saved ? {
+            opacity: 1,
+            boxShadow: 'inset 0 0 0 2px #F3E3AC, 0 0 8px rgba(212,175,55,0.85)',
+          } : null),
         }}
       />
     );
