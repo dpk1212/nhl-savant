@@ -1,30 +1,31 @@
-# Twitter — 2026-09-23 · SELF-QT ASK · SPCL in the words
-**Canon:** `hormozi_spcl.md`. Influence = likelihood they comply. Stack the letters. Line 1 must show the scarce thing.
+# Twitter — 2026-09-23 · SELF-QT ASK · one idea, real product, canonical offer
+**Read:** `hormozi_rule_of_one.md` · `hormozi_value_equation.md` · `hormozi_diagnostic_sale.md` · `hormozi_spcl.md` · `BRAND_MESSAGING.md`
 
-| Letter | In this tweet |
-|--------|----------------|
-| **S Status** | `+98.88 units since June 1` — the trail we control. Stranger sees it in line 1. |
-| **P Power** | We said it this morning with three locks. Reinforcing event: **4-1**. Loss shown, not hidden. Then the ask. |
-| **C Credibility** | 4-1 and the one loss. The June number is on the tweet being quoted. Not an adjective. |
-| **L Likeness** | Dale. You don't have to pick the games. Who's still in. |
+**One idea:** You can test the rest of tonight against a record that is already public.  
+**Tests:** understand (4-1, one loss, +98.88 this morning) · believe (the loss is in the sentence) · unique (the morning tweet is already behind the live money).
 
-**Quote:** 1:01 PM post. Do not attach the 3–1 card.  
-**Killed:** hop on the site · gatekeep · slogan with no receipt · "still sized" as a claim with no number.
+**Product, from the brand kit, not a slogan:** we don't handicap. We track a small group of bettors who beat the market year after year, and we post where their money goes before the games start. Whole record on the site, losses included. Live board is ahead of any tweet. Nothing locks until 15 minutes before start.
+
+**Offer:** "the first week is free. Watch and grade it yourself." No price. No sign up. No site tour. No gatekeep.
+
+**SPCL as proof of that one idea:** S = the unit trail and the live board. P = posted +98.88 this morning, day is 4-1. C = both numbers, loss included. L = Dale, test us before you believe it.
+
+**Quote:** 1:01 PM post. Do not attach the 3–1 card.
 
 ---
 
 ## COPY THIS
 
 ```
-+98.88 units since June 1.
+We're 4-1 today, and one of them lost.
 
-Today we're 4-1. One of them lost.
+This morning I posted +98.88 units since June 1, with three early locks.
 
-I posted that this morning with three early locks. The same wallets are still sized on the rest of tonight.
+We don't handicap games. We track a small group of bettors who beat the market year after year, and we post where their money goes before the games start. The whole record is on the site, losses included.
 
-You don't have to pick the games. Watch where their money goes. Grade it yourself.
+Their money moves all day, so the live board is already ahead of that tweet. Nothing left tonight locks until 15 minutes before first pitch.
 
-Free trial. Who's still in on baseball?
+If you want to test us on the rest of it, the first week is free. Watch and grade it yourself.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.

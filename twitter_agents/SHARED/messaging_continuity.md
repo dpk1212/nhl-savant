@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/23 ~5:30 ET | Self-QT **ASK** | `+98.88 units since June 1.` / 4-1 one loss / posted this morning / who's still in | **S+P+C+L** | number then fork. Empty ask killed. | **Staged** |
+| 9/23 ~5:32 ET | Self-QT **ASK** | `We're 4-1 today, and one of them lost.` / real mechanism / first week free | **S+P+C+L** | canonical offer after the record | **Staged** |
 | 9/23 | **INGEST** | Pin $20k **366**. `+98.88` **328**. Down-days **8R**. Trial paragraph **0R**. Dollar-stacks **0R** | — | none | Locked |
 | 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones | **S + C** | none | **Posted** · 8073 / 204 / **1R** |
 | 9/20 ~12:45 ET | Hero **EDUCATE** | `I don't pick games.` / wipeout vs fight | **C + S** | none | **Posted** · 2357 / 177 / **2R** |
@@ -28,11 +28,11 @@
 ---
 
 ## Angle lock
-**ONE:** The June trail is real, the day is 4-1 with a loss, watch the money tonight.  
-**Hook:** `+98.88 units since June 1.` then `Today we're 4-1. One of them lost.`  
-**SPCL in the words:** S = the units. P = posted this morning, day printed 4-1, loss shown. C = both numbers, checkable on the parent. L = don't pick, who's still in.  
-**Ask:** `Free trial. Who's still in on baseball?`  
-**Killed:** asks with no letter in them · hop on the site · gatekeep · slogan · stale 3-1 card
+**ONE:** Test the rest of tonight against a record that is already public.  
+**Hook:** `We're 4-1 today, and one of them lost.` June +98.88 is the proof under it, not the stolen open.  
+**Product:** don't handicap · bettors who beat the market year after year · money posted before the games · record on the site, losses included · board ahead of the tweet · locks 15 min out.  
+**Ask:** `the first week is free. Watch and grade it yourself.`  
+**Killed:** thin "you don't have to pick" · who's still in · hop on the site · gatekeep · fragment slogans · price · stale 3-1 card
 
 ---
 
