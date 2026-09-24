@@ -1979,6 +1979,9 @@ export function mapLockedPickToCardFixture(pick, {
     unitsPreStFat: Number.isFinite(pick.unitsPreStFat) ? pick.unitsPreStFat
       : Number.isFinite(pick.v8_unitsPreStFat) ? pick.v8_unitsPreStFat
       : null,
+    unitsPreMarketSkill: Number.isFinite(pick.unitsPreMarketSkill) ? pick.unitsPreMarketSkill
+      : Number.isFinite(pick.v8_unitsPreMarketSkill) ? pick.v8_unitsPreMarketSkill
+      : null,
     steamTailReason: pick.steamTailReason || pick.v8_steamTailReason || null,
     marketAgreement: sma,
     marketSignals,
