@@ -33,7 +33,7 @@ import {
   enforceGitSafeSize,
   GIT_SAFE_MAX_BYTES,
 } from './lib/pinnacleTape.js';
-import { dhSecondKey } from './lib/doubleheaderKey.js';
+import { allocateScheduleKey } from './lib/doubleheaderKey.js';
 import { overrideCommenceIso } from './lib/commenceOverrides.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -492,7 +492,8 @@ async function run() {
     if (!history[label]) history[label] = {};
     let sportFair = 0;
     let sportSkip = 0;
-    const dhSeen = new Set();
+    const dhValid = new Set();
+    const dhCommence = {};
     const pinIdx = await pinnapiFor(label);
 
     const gamesRaw = await fetchOdds(sportKey, markets || 'h2h,spreads,totals');
@@ -515,8 +516,7 @@ async function run() {
       let gameKey = makeGameKey(awayName, homeName, label);
       if (!gameKey) continue; // SOC country we can't resolve to a FIFA code
       if (label === 'MLB') {
-        if (dhSeen.has(gameKey)) gameKey = dhSecondKey(gameKey);
-        else dhSeen.add(gameKey);
+        gameKey = allocateScheduleKey(dhValid, dhCommence, 'MLB', gameKey, game.commence_time);
       }
 
       const existing = history[label][gameKey] || {};
