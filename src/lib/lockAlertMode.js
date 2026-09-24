@@ -138,6 +138,27 @@ export function paidTagToWriteOnPaidVisit(current, stored, storedScale) {
 }
 
 /**
+ * Browser already opted in, but getTags came back empty (Safari often does).
+ * Write the mode saved on this browser at Enable. Never invent a tag for a
+ * browser that is not opted in — that path stays in paidTagToWriteOnPaidVisit.
+ * @param {unknown} current
+ * @param {unknown} stored
+ * @param {unknown} [scale]
+ * @returns {string|null}
+ */
+export function paidTagWhenOptedInAndUntagged(current, stored, scale) {
+  if (current != null && current !== '') return null;
+  if (!isLockAlertMode(stored)) return null;
+  return composePaidTag(stored, scale);
+}
+
+/** Full-book send actually matched devices. A 0-recipient 200 is not delivered. */
+export function fullAudienceReached(result) {
+  const n = Number(result?.recipients);
+  return Boolean(result?.id) && Number.isFinite(n) && n > 0;
+}
+
+/**
  * OneSignal notification filters for a lock at the given EDGE + unit book.
  * Full: `all` + legacy `true` (+ `edge11` when EDGE ≥ min).
  * Conservative: `all_c` (+ `edge11_c` when EDGE ≥ min).

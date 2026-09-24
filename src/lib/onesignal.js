@@ -30,6 +30,7 @@ import {
   normalizeLockAlertMode,
   paidTagIsExplicitMode,
   paidTagToWriteOnPaidVisit,
+  paidTagWhenOptedInAndUntagged,
   readStoredLockAlertMode,
   writeStoredLockAlertMode,
 } from './lockAlertMode.js';
@@ -103,9 +104,23 @@ export async function onesignalSyncPaidIdentity({ uid }) {
   if (!uid) return;
   await withOneSignal(async (OneSignal) => {
     await OneSignal.login(String(uid));
+    const permission = OneSignal.Notifications?.permission;
+    const granted = permission === true || permission === 'granted';
+    if (granted && OneSignal.User?.PushSubscription?.optIn) {
+      try {
+        await OneSignal.User.PushSubscription.optIn();
+      } catch (_) { /* already subscribed */ }
+    }
     const stored = readStoredLockAlertMode();
-    const current = await readPaidTag(OneSignal);
-    const next = paidTagToWriteOnPaidVisit(current, stored, readStoredUnitDisplayScale());
+    const scale = readStoredUnitDisplayScale();
+    let current = await readPaidTag(OneSignal);
+    if (current == null) {
+      await new Promise((r) => setTimeout(r, 1200));
+      current = await readPaidTag(OneSignal);
+    }
+    const optedIn = !!OneSignal.User?.PushSubscription?.optedIn;
+    const next = paidTagToWriteOnPaidVisit(current, stored, scale)
+      || (optedIn ? paidTagWhenOptedInAndUntagged(current, stored, scale) : null);
     if (!next) return;
     await OneSignal.User.addTags({ paid: next });
   });
