@@ -435,18 +435,52 @@ async function loadTodaysSchedule(cbbMap) {
     console.warn('⚠️  No ODDS_API_KEY — CBB schedule will be empty');
   }
 
-  try {
-    const nhlPath = join(ROOT, 'public', 'odds_money.md');
-    const nhlMd = readFileSync(nhlPath, 'utf8');
-    const nhlGames = parseOddsTrader(nhlMd);
-    for (const g of nhlGames) {
-      if (g.awayTeam && g.homeTeam) {
-        validNHL.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+  if (ODDS_API_KEY) {
+    const nhlWindowLo = Date.now() - 6 * 3600 * 1000;
+    const nhlWindowHi = Date.now() + 72 * 3600 * 1000;
+    for (const oddsKey of ['icehockey_nhl_preseason', 'icehockey_nhl']) {
+      try {
+        const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+        const res = await httpFetch(url);
+        if (res.ok) {
+          const games = await res.json();
+          let added = 0;
+          for (const g of games) {
+            const t = g.commence_time ? Date.parse(g.commence_time) : NaN;
+            if (!Number.isFinite(t) || t < nhlWindowLo || t > nhlWindowHi) continue;
+            const away = resolveNHLTeam(g.away_team);
+            const home = resolveNHLTeam(g.home_team);
+            if (away && home) {
+              validNHL.add(`${normalize(away)}_${normalize(home)}`);
+              added++;
+            } else {
+              console.warn(`NHL team resolution miss (${oddsKey}): "${g.away_team}" / "${g.home_team}"`);
+            }
+          }
+          const remaining = res.headers.get('x-requests-remaining');
+          console.log(`📋 Today's NHL (${oddsKey}): +${added} in window → ${validNHL.size} cumulative [credits left: ${remaining}]`);
+        } else {
+          console.warn(`Odds API NHL error (${oddsKey}): ${res.status}`);
+        }
+      } catch (e) {
+        console.warn(`Could not load NHL schedule from Odds API (${oddsKey}):`, e.message);
       }
     }
-    console.log(`📋 Today's NHL: ${nhlGames.length} games`);
-  } catch (e) {
-    console.warn('Could not load NHL schedule:', e.message);
+  }
+  if (validNHL.size === 0) {
+    try {
+      const nhlPath = join(ROOT, 'public', 'odds_money.md');
+      const nhlMd = readFileSync(nhlPath, 'utf8');
+      const nhlGames = parseOddsTrader(nhlMd);
+      for (const g of nhlGames) {
+        if (g.awayTeam && g.homeTeam) {
+          validNHL.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+        }
+      }
+      console.log(`📋 Today's NHL (OddsTrader fallback): ${validNHL.size} games`);
+    } catch (e) {
+      console.warn('Could not load NHL schedule:', e.message);
+    }
   }
   // NBA: use Odds API
   const validNBA = new Set();

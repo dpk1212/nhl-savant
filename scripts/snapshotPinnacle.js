@@ -47,6 +47,8 @@ if (!API_KEY) {
 }
 
 const SPORTS = [
+  // NHL — preseason + regular season (same label, closer commence wins).
+  { key: 'icehockey_nhl_preseason', label: 'NHL' },
   { key: 'icehockey_nhl', label: 'NHL' },
   { key: 'basketball_ncaab', label: 'CBB' },
   { key: 'baseball_mlb', label: 'MLB' },
