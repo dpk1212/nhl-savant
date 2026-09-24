@@ -1144,6 +1144,21 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     }
   }
 
+  if (sealed && Array.isArray(pick.lockedBooks) && pick.lockedBooks.length) {
+    books.length = 0;
+    for (const b of pick.lockedBooks) {
+      const odds = Number(b?.odds);
+      if (!b?.name || !Number.isFinite(odds) || odds === 0) continue;
+      books.push({
+        name: b.name,
+        odds,
+        line: Number.isFinite(Number(b.line)) ? Number(b.line) : stakedLine,
+        best: !!b.best,
+        sharp: !!b.sharp,
+      });
+    }
+  }
+
   if (!sealed) {
     appendExchangeQuotes(books, {
       pinnGame,
