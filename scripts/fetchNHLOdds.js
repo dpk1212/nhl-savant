@@ -22,7 +22,7 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-const SPORT = 'icehockey_nhl';
+const SPORTS = ['icehockey_nhl_preseason', 'icehockey_nhl'];
 const REGIONS = 'us';
 const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
 
@@ -48,21 +48,29 @@ function teamCode(name) {
 async function main() {
   console.log('🏒 Fetching NHL odds from The Odds API...\n');
 
-  const url = `https://api.the-odds-api.com/v4/sports/${SPORT}/odds/?apiKey=${API_KEY}&regions=${REGIONS}&markets=h2h,totals&oddsFormat=american&bookmakers=${BOOKMAKERS}`;
-
-  const res = await fetch(url);
-  if (!res.ok) {
-    console.error(`❌ API error: ${res.status} ${res.statusText}`);
-    const body = await res.text();
-    console.error(body);
-    process.exit(1);
+  const data = [];
+  const seen = new Set();
+  for (const sport of SPORTS) {
+    const url = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=${REGIONS}&markets=h2h,totals&oddsFormat=american&bookmakers=${BOOKMAKERS}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error(`❌ API error (${sport}): ${res.status} ${res.statusText}`);
+      const body = await res.text();
+      console.error(body);
+      process.exit(1);
+    }
+    const remaining = res.headers.get('x-requests-remaining');
+    const used = res.headers.get('x-requests-used');
+    const chunk = await res.json();
+    let added = 0;
+    for (const event of chunk) {
+      if (event.id && seen.has(event.id)) continue;
+      if (event.id) seen.add(event.id);
+      data.push(event);
+      added++;
+    }
+    console.log(`   ${sport}: +${added} [credits used: ${used} | remaining: ${remaining}]`);
   }
-
-  const remaining = res.headers.get('x-requests-remaining');
-  const used = res.headers.get('x-requests-used');
-  console.log(`   Credits used: ${used} | remaining: ${remaining}`);
-
-  const data = await res.json();
   console.log(`   Games returned: ${data.length}\n`);
 
   const now = new Date();

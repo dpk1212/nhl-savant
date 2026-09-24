@@ -572,29 +572,45 @@ async function loadTodaysSchedule(cbbMap) {
     console.warn('⚠️  No ODDS_API_KEY — CBB schedule will be empty');
   }
 
-  // NHL: use Odds API (like CBB/MLB/NBA) for reliable schedule + commence times
+  // NHL: Odds API preseason + regular season. Same 6h-back / 72h-forward
+  // window as NFL so a full-season slate cannot soft-gate futures. When the
+  // same matchup appears twice, keep the commence closer to now.
   if (ODDS_API_KEY) {
-    try {
-      const url = `https://api.the-odds-api.com/v4/sports/icehockey_nhl/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const games = await res.json();
-        for (const g of games) {
-          const away = resolveNHLTeam(g.away_team);
-          const home = resolveNHLTeam(g.home_team);
-          if (away && home) {
+    const nhlWindowLo = Date.now() - 6 * 3600 * 1000;
+    const nhlWindowHi = Date.now() + 72 * 3600 * 1000;
+    for (const oddsKey of ['icehockey_nhl_preseason', 'icehockey_nhl']) {
+      try {
+        const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const games = await res.json();
+          let added = 0;
+          for (const g of games) {
+            const t = g.commence_time ? Date.parse(g.commence_time) : NaN;
+            if (!Number.isFinite(t) || t < nhlWindowLo || t > nhlWindowHi) continue;
+            const away = resolveNHLTeam(g.away_team);
+            const home = resolveNHLTeam(g.home_team);
+            if (!away || !home) {
+              console.warn(`NHL team resolution miss (${oddsKey}): "${g.away_team}" / "${g.home_team}"`);
+              continue;
+            }
             const gk = `${normalize(away)}_${normalize(home)}`;
             validNHL.add(gk);
-            if (g.commence_time && !commenceTimes[`NHL:${gk}`]) commenceTimes[`NHL:${gk}`] = g.commence_time;
+            added++;
+            const slot = `NHL:${gk}`;
+            const prev = commenceTimes[slot] ? Date.parse(commenceTimes[slot]) : NaN;
+            if (!Number.isFinite(prev) || Math.abs(t - Date.now()) < Math.abs(prev - Date.now())) {
+              commenceTimes[slot] = g.commence_time;
+            }
           }
+          const remaining = res.headers.get('x-requests-remaining');
+          console.log(`📋 Today's NHL (${oddsKey}): +${added} in window → ${validNHL.size} cumulative [credits left: ${remaining}]`);
+        } else {
+          console.warn(`Odds API NHL error (${oddsKey}): ${res.status}`);
         }
-        const remaining = res.headers.get('x-requests-remaining');
-        console.log(`📋 Today's NHL (Odds API): ${validNHL.size} games [credits left: ${remaining}]`);
-      } else {
-        console.warn(`Odds API NHL error: ${res.status}`);
+      } catch (e) {
+        console.warn(`Could not load NHL schedule from Odds API (${oddsKey}):`, e.message);
       }
-    } catch (e) {
-      console.warn('Could not load NHL schedule from Odds API:', e.message);
     }
   }
 
