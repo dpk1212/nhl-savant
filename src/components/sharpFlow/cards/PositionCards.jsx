@@ -25,14 +25,16 @@ function formatLockCountdown(ms) {
 }
 
 /** Human reason a 0u / TRACKED card is not a ticket — audit + tooltip. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, stakePath } = {}) {
-  const preU = Number.isFinite(unitsPreNoConfirmed) && unitsPreNoConfirmed > 0
-    ? unitsPreNoConfirmed
-    : (Number.isFinite(unitsPreMaxSrSub4) && unitsPreMaxSrSub4 > 0
-      ? unitsPreMaxSrSub4
-      : (Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
-        ? unitsPreFlinchFailOpen
-        : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null)));
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreMarketSkill, stakePath } = {}) {
+  const preU = Number.isFinite(unitsPreMarketSkill) && unitsPreMarketSkill > 0
+    ? unitsPreMarketSkill
+    : (Number.isFinite(unitsPreNoConfirmed) && unitsPreNoConfirmed > 0
+      ? unitsPreNoConfirmed
+      : (Number.isFinite(unitsPreMaxSrSub4) && unitsPreMaxSrSub4 > 0
+        ? unitsPreMaxSrSub4
+        : (Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
+          ? unitsPreFlinchFailOpen
+          : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null))));
   const pre = preU != null
     ? `${preU % 1 === 0 ? preU.toFixed(0) : preU.toFixed(1)}u → 0u`
     : null;
@@ -50,6 +52,15 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   }
   if (mutedBy === 'no-confirmed') {
     return pre ? `No CONFIRMED on FOR · ${pre}` : 'No CONFIRMED on FOR — muted';
+  }
+  if (mutedBy === 'ml-mkt-skill') {
+    return pre ? `ML skill slip · ${pre}` : 'ML skill slip — no n≥6 WR≥52 FOR';
+  }
+  if (mutedBy === 'st-qual-wipe') {
+    return pre ? `S/T qual wipe · ${pre}` : 'S/T qual wipe — qualified $ not on our side';
+  }
+  if (mutedBy === 'st-hard-slip') {
+    return pre ? `S/T HARD slip · ${pre}` : 'S/T HARD slip — no n≥4 WR≥62 $ROI≥10 FOR';
   }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
@@ -2388,6 +2399,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     unitsPreFlinchFailOpen: f.unitsPreFlinchFailOpen,
     unitsPreMaxSrSub4: f.unitsPreMaxSrSub4,
     unitsPreNoConfirmed: f.unitsPreNoConfirmed,
+    unitsPreMarketSkill: f.unitsPreMarketSkill,
     stakePath: f.stakePath,
   });
   const ticketFrozen = Number.isFinite(f.commenceMs)

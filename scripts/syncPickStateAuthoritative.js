@@ -156,6 +156,19 @@ import {
   BLEND_STATE_DOC_ID,
 } from '../src/lib/walletClvSkill.js';
 import {
+  applyMarketSkillMuteOverlay,
+  isMarketSkillMuteLive,
+  MARKET_SKILL_MUTE_FROM,
+  ML_MKT_SKILL_MUTED_BY,
+  ST_QUAL_WIPE_MUTED_BY,
+  ST_HARD_SLIP_MUTED_BY,
+  ML_SKILL_MIN_N,
+  ML_SKILL_MIN_WR,
+  ST_HARD_MIN_N,
+  ST_HARD_MIN_WR,
+  ST_HARD_MIN_DOLLAR_ROI,
+} from '../src/lib/marketSkillMuteOverlay.js';
+import {
   EXP_WIN_LAMBDA_FROZEN,
   EXP_WIN_LOOKBACK_FROM,
   EXP_WIN_STATE_COLLECTION,
@@ -1116,6 +1129,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   nConfirmedFor = null,
   noConfirmedAction = null,
   unitsPreNoConfirmed = null,
+  marketSkillAction = null,
+  unitsPreMarketSkill = null,
   blendTier = null,
   pathBlendPriors = null,
   sideOdds = null,
@@ -1209,6 +1224,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (noConfirmedAction != null) target.v8_noConfirmedAction = noConfirmedAction;
   if (unitsPreNoConfirmed != null && Number.isFinite(unitsPreNoConfirmed)) {
     target.v8_unitsPreNoConfirmed = unitsPreNoConfirmed;
+  }
+  if (marketSkillAction != null) target.v8_marketSkillAction = marketSkillAction;
+  if (unitsPreMarketSkill != null && Number.isFinite(unitsPreMarketSkill)) {
+    target.v8_unitsPreMarketSkill = unitsPreMarketSkill;
   }
   // Path × EDGE expected WR (tracking only — no unit effect)
   const meanFor = wa?.meanFor ?? bundle.winnerAlign?.meanFor ?? null;
@@ -3004,7 +3023,7 @@ async function createMissingLockedPicks({
         peakUnitsApplied = maxSrSub4PolicyCreate.units;
       }
 
-      // no-CONFIRMED mute — ABSOLUTE LAST after maxSR. Cuts remaining
+      // no-CONFIRMED mute — after maxSR, before market-skill. Cuts remaining
       // tickets with zero CONFIRMED on FOR. Never resizes or repaths.
       let noConfirmedPolicyCreate = null;
       const nConfirmedCreate = countConfirmedOnSide(walletDetails, side, sport, walletProfiles);
@@ -3015,6 +3034,23 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE,
         });
         peakUnitsApplied = noConfirmedPolicyCreate.units;
+      }
+
+      // Market-skill mute — ABSOLUTE LAST after no-CONFIRMED. ML needs a
+      // n≥6 WR≥52 FOR wallet. S/T needs qual-$ AGREE plus a HARD backer.
+      // Never hides wallets from v12, never resizes or flips.
+      let marketSkillPolicyCreate = null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        marketSkillPolicyCreate = applyMarketSkillMuteOverlay({
+          units: peakUnitsApplied,
+          marketType,
+          sport,
+          side,
+          walletDetails,
+          walletProfiles,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = marketSkillPolicyCreate.units;
       }
 
       // Determine team label for the side.
@@ -3218,6 +3254,10 @@ async function createMissingLockedPicks({
           unitsPreNoConfirmed: (noConfirmedPolicyCreate && Number.isFinite(noConfirmedPolicyCreate.unitsPrePolicy))
             ? noConfirmedPolicyCreate.unitsPrePolicy
             : null,
+          marketSkillAction: marketSkillPolicyCreate?.action ?? null,
+          unitsPreMarketSkill: (marketSkillPolicyCreate && Number.isFinite(marketSkillPolicyCreate.unitsPrePolicy))
+            ? marketSkillPolicyCreate.unitsPrePolicy
+            : null,
           blendTier: hcStakeTierCreate,
           pathBlendPriors,
           sideOdds: odds ?? null,
@@ -3267,7 +3307,9 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (noConfirmedPolicyCreate?.mutedBy) {
+      if (marketSkillPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = marketSkillPolicyCreate.mutedBy;
+      } else if (noConfirmedPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = noConfirmedPolicyCreate.mutedBy;
       } else if (maxSrSub4PolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = maxSrSub4PolicyCreate.mutedBy;
@@ -3293,7 +3335,10 @@ async function createMissingLockedPicks({
       const noConfirmedMutedCreate = noConfirmedPolicyCreate?.action === 'MUTE'
         && Number.isFinite(noConfirmedPolicyCreate.unitsPrePolicy)
         && noConfirmedPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const marketSkillMutedCreate = marketSkillPolicyCreate?.action === 'MUTE'
+        && Number.isFinite(marketSkillPolicyCreate.unitsPrePolicy)
+        && marketSkillPolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = marketSkillMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -3305,6 +3350,7 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(marketSkillPolicyCreate?.reason ? [marketSkillPolicyCreate.reason] : []),
           ...(noConfirmedPolicyCreate?.reason ? [noConfirmedPolicyCreate.reason] : []),
           ...(maxSrSub4PolicyCreate?.reason ? [maxSrSub4PolicyCreate.reason] : []),
           ...(flinchFailOpenPolicyCreate?.reason ? [flinchFailOpenPolicyCreate.reason] : []),
@@ -4369,7 +4415,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = maxSrSub4Policy.units;
   }
 
-  // ─── no-CONFIRMED mute (absolute last after maxSR) ───────────────────
+  // ─── no-CONFIRMED mute (after maxSR, before market-skill) ────────────
   // Remaining tickets with zero CONFIRMED on FOR → 0u. Never resizes /
   // repaths. Manual stake exempt. Date-gated inside the overlay.
   let noConfirmedPolicy = null;
@@ -4381,6 +4427,25 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pickDate,
     });
     finalUnitsApplied = noConfirmedPolicy.units;
+  }
+
+  // ─── Market-skill mute (absolute last after no-CONFIRMED) ────────────
+  // ML: mute unless a FOR wallet has sport×ML n≥6 WR≥52.
+  // S/T: mute unless qual $ still AGREE and a HARD wallet backs FOR.
+  // Never hides wallets from v12. Never resizes or flips. Fail-open
+  // when byMarket schema is missing. Manual stake exempt.
+  let marketSkillPolicy = null;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    marketSkillPolicy = applyMarketSkillMuteOverlay({
+      units: finalUnitsApplied,
+      marketType: mkt,
+      sport: pick.sport,
+      side,
+      walletDetails: wd,
+      walletProfiles,
+      pickDate,
+    });
+    finalUnitsApplied = marketSkillPolicy.units;
   }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
@@ -4442,6 +4507,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (flinchFailOpenPolicy?.reason && !reasons.includes(flinchFailOpenPolicy.reason)) reasons.push(flinchFailOpenPolicy.reason);
   if (maxSrSub4Policy?.reason && !reasons.includes(maxSrSub4Policy.reason)) reasons.push(maxSrSub4Policy.reason);
   if (noConfirmedPolicy?.reason && !reasons.includes(noConfirmedPolicy.reason)) reasons.push(noConfirmedPolicy.reason);
+  if (marketSkillPolicy?.reason && !reasons.includes(marketSkillPolicy.reason)) reasons.push(marketSkillPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -4467,9 +4533,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const noConfirmedMuted = noConfirmedPolicy?.action === 'MUTE'
     && Number.isFinite(noConfirmedPolicy.unitsPrePolicy)
     && noConfirmedPolicy.unitsPrePolicy > 0;
+  const marketSkillMuted = marketSkillPolicy?.action === 'MUTE'
+    && Number.isFinite(marketSkillPolicy.unitsPrePolicy)
+    && marketSkillPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
-  // Flinch + maxSR + no-CONFIRMED run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Flinch + maxSR + no-CONFIRMED + market-skill run AFTER those floors, so they still win if they cancelled.
+  const sizeMuted = marketSkillMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -4508,7 +4577,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const FLINCH_MUTE_VALUES = new Set(['believed-cut', 'fail-open-sub4']);
   const MAX_SR_MUTE_VALUES = new Set([MAX_SR_SUB4_MUTED_BY]);
   const NO_CONF_MUTE_VALUES = new Set([NO_CONFIRMED_MUTED_BY]);
-  if (noConfirmedPolicy?.mutedBy) {
+  const MARKET_SKILL_MUTE_VALUES = new Set([
+    ML_MKT_SKILL_MUTED_BY, ST_QUAL_WIPE_MUTED_BY, ST_HARD_SLIP_MUTED_BY,
+  ]);
+  if (marketSkillPolicy?.mutedBy) {
+    patch.mutedBy = marketSkillPolicy.mutedBy;
+  } else if (noConfirmedPolicy?.mutedBy) {
     patch.mutedBy = noConfirmedPolicy.mutedBy;
   } else if (maxSrSub4Policy?.mutedBy) {
     patch.mutedBy = maxSrSub4Policy.mutedBy;
@@ -4538,7 +4612,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || FOOLS_MUTE_VALUES.has(sd.mutedBy)
       || FLINCH_MUTE_VALUES.has(sd.mutedBy)
       || MAX_SR_MUTE_VALUES.has(sd.mutedBy)
-      || NO_CONF_MUTE_VALUES.has(sd.mutedBy)) {
+      || NO_CONF_MUTE_VALUES.has(sd.mutedBy)
+      || MARKET_SKILL_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -4860,6 +4935,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       noConfirmedAction: noConfirmedPolicy?.action ?? null,
       unitsPreNoConfirmed: (noConfirmedPolicy && Number.isFinite(noConfirmedPolicy.unitsPrePolicy))
         ? noConfirmedPolicy.unitsPrePolicy
+        : null,
+      marketSkillAction: marketSkillPolicy?.action ?? null,
+      unitsPreMarketSkill: (marketSkillPolicy && Number.isFinite(marketSkillPolicy.unitsPrePolicy))
+        ? marketSkillPolicy.unitsPrePolicy
         : null,
       blendTier: hcStakeTier,
       pathBlendPriors,
@@ -5714,10 +5793,20 @@ async function main() {
   if (isNoConfirmedMuteLive(TARGET_DATE)) {
     console.log(
       `no-CONFIRMED mute LIVE: zero CONFIRMED on FOR → 0u`
-      + ` · from ${NO_CONFIRMED_MUTE_FROM} · last step after maxSR · no resize`,
+      + ` · from ${NO_CONFIRMED_MUTE_FROM} · after maxSR · no resize`,
     );
   } else {
     console.log(`no-CONFIRMED mute: not live before ${NO_CONFIRMED_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isMarketSkillMuteLive(TARGET_DATE)) {
+    console.log(
+      `Market-skill mute LIVE: ML FOR n≥${ML_SKILL_MIN_N} WR≥${ML_SKILL_MIN_WR}`
+      + ` · S/T qual$ AGREE + HARD n≥${ST_HARD_MIN_N} WR≥${ST_HARD_MIN_WR} $ROI≥${ST_HARD_MIN_DOLLAR_ROI}`
+      + ` · from ${MARKET_SKILL_MUTE_FROM} · last step after no-CONFIRMED · no resize / no flip`
+      + ` · fail-open if byMarket schema missing`,
+    );
+  } else {
+    console.log(`Market-skill mute: not live before ${MARKET_SKILL_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(

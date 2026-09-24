@@ -1235,7 +1235,7 @@ export function applyMaxSrSub4MuteOverlay({
   };
 }
 
-// ── no-CONFIRMED mute (absolute last 0u cancel — after maxSR) ─────────────
+// ── no-CONFIRMED mute (after maxSR, before market-skill) ──────────────────
 // 2026-08-23+: after ALL sizing / tape / skill / flinch / maxSR.
 // Full-cancel remaining tickets with zero CONFIRMED wallets on FOR.
 // Hard fences (zero impact on the rest of the book):
