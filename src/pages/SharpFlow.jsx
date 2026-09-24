@@ -37,6 +37,7 @@ import { fmtFlaggedAtLabel } from '../lib/oddsEv.js';
 import { signedSpreadEntryLine } from '../lib/spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
+import { selectBattlePositions } from '../lib/battlePositions.js';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
 import {
@@ -9375,6 +9376,11 @@ export default function SharpFlow() {
         const sportGames = posData[sport] || {};
         for (const [gameKey, gd] of Object.entries(sportGames)) {
           if (!gd.positions?.length) continue;
+          const picked = selectBattlePositions(gd.positions, {
+            minInvested: BATTLE_MIN_INVESTED,
+            excluded: intelExcludedSet,
+          });
+          if (!picked.length) continue;
           const gid = `${sport}|${gameKey}`;
           if (!battleGameMap.has(gid)) {
             const commence = polyData?.[sport]?.[gameKey]?.commence
@@ -9388,18 +9394,6 @@ export default function SharpFlow() {
             });
           }
           const game = battleGameMap.get(gid);
-          // Dedupe wallet+side within this market, keep max invested.
-          const seen = new Map();
-          for (const pos of gd.positions) {
-            const wLower = pos.wallet?.toLowerCase();
-            if (!wLower || !pos.side) continue;
-            if (intelExcludedSet?.has(wLower)) continue;
-            if ((pos.invested || 0) < BATTLE_MIN_INVESTED) continue;
-            const k = `${wLower}|${pos.side}`;
-            const cur = seen.get(k);
-            if (!cur || (pos.invested || 0) > (cur.invested || 0)) seen.set(k, pos);
-          }
-          if (seen.size === 0) continue;
           // Per-market totals — the chip used to roll ML+SPREAD+TOTAL into one
           // "5 wallets / $31K" number while the scatter only plotted the active
           // market, so a TOTAL-only wallet inflated the count with no dot on
@@ -9407,7 +9401,7 @@ export default function SharpFlow() {
           const mktRec = game.markets[mkt] || (game.markets[mkt] = {
             wallets: [], totalInvested: 0, provenInvested: 0, walletSet: new Set(),
           });
-          for (const pos of seen.values()) {
+          for (const pos of picked) {
             const wLower = pos.wallet.toLowerCase();
             const { cls, prof } = classifyBattleWallet(wLower, sport);
             const avgBet = pos.avgSportBet || 0;
