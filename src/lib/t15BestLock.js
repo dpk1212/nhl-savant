@@ -215,6 +215,81 @@ export function bestAvailableTicket({
   };
 }
 
+/**
+ * Every visible book on the ticket at the moment it seals.
+ * The card paints this list after lock instead of the live tape.
+ */
+export function snapshotBookRail({
+  pinnGame = null,
+  marketType = 'ml',
+  side = 'home',
+  ticketLine = null,
+} = {}) {
+  if (!pinnGame || typeof pinnGame !== 'object') return [];
+  const mt = String(marketType || 'ml').toLowerCase();
+  const s = String(side || '').toLowerCase();
+  const line = Number.isFinite(Number(ticketLine)) ? Number(ticketLine) : null;
+  const rows = [];
+  const seen = new Set();
+
+  const push = (name, odds, rowLine, { sharp = false } = {}) => {
+    if (!name || bookHidden(name, name) || !finiteOdds(Number(odds))) return;
+    const key = String(name).toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    rows.push({
+      name,
+      odds: Number(odds),
+      line: Number.isFinite(Number(rowLine)) ? Number(rowLine) : null,
+      sharp,
+    });
+  };
+
+  if (mt === 'total' || mt === 'tot') {
+    const wantOver = s === 'over' || s === 'home';
+    const pin = pinnGame.totalCurrent;
+    if (pin && (line == null || Math.abs(Number(pin.line) - line) <= 0.051)) {
+      push(pinnGame.fairTotalBook || 'Pinnacle', wantOver ? pin.overOdds : pin.underOdds, pin.line, { sharp: true });
+    }
+    for (const [k, b] of Object.entries(pinnGame.allTotalBooks || {})) {
+      if (!b || bookHidden(k, b.name)) continue;
+      if (line != null && !(Number.isFinite(Number(b.line)) && Math.abs(Number(b.line) - line) <= 0.051)) continue;
+      push(b.name || k, wantOver ? b.over : b.under, b.line);
+    }
+  } else if (mt === 'spread' || mt === 'sp') {
+    const pin = pinnGame.spreadCurrent;
+    const pinLine = s === 'away' ? Number(pin?.awayLine) : Number(pin?.homeLine);
+    const pinOdds = s === 'away' ? Number(pin?.awayOdds) : Number(pin?.homeOdds);
+    if (pin && (line == null || (Number.isFinite(pinLine) && Math.abs(pinLine - line) <= 0.051))) {
+      push(pinnGame.fairSpreadBook || 'Pinnacle', pinOdds, pinLine, { sharp: true });
+    }
+    for (const [k, b] of Object.entries(pinnGame.allSpreadBooks || {})) {
+      if (!b || bookHidden(k, b.name)) continue;
+      const rowLine = s === 'away' ? Number(b.awayLine) : Number(b.homeLine);
+      const odds = s === 'away' ? Number(b.away) : Number(b.home);
+      if (line != null && !(Number.isFinite(rowLine) && Math.abs(rowLine - line) <= 0.051)) continue;
+      push(b.name || k, odds, rowLine);
+    }
+  } else {
+    const pin = pinnGame.current;
+    const pinOdds = s === 'away' ? Number(pin?.away) : s === 'draw' ? Number(pin?.draw) : Number(pin?.home);
+    push(pinnGame.fairBook || 'Pinnacle', pinOdds, null, { sharp: true });
+    for (const [k, b] of Object.entries(pinnGame.allBooks || {})) {
+      if (!b || bookHidden(k, b.name)) continue;
+      const odds = s === 'away' ? Number(b.away) : s === 'draw' ? Number(b.draw) : Number(b.home);
+      push(b.name || k, odds, null);
+    }
+  }
+
+  let bestIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].sharp) continue;
+    if (bestIdx < 0 || rows[i].odds > rows[bestIdx].odds) bestIdx = i;
+  }
+  if (bestIdx >= 0) rows[bestIdx] = { ...rows[bestIdx], best: true };
+  return rows.slice(0, 12);
+}
+
 export function isSealedT15Lock(sd = {}) {
   return sd?.v8_lockBestAtT15 === true
     || String(sd?.lock?.oddsSource || '').includes('t15_best');

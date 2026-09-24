@@ -12881,6 +12881,9 @@ export default function SharpFlow() {
                             ? (lock.oddsSource || t15LiveBest?.oddsSource || 't15_best_available')
                             : (peak.oddsSource || lock.oddsSource || null),
                           t15Sealed: pastT15Odds && (t15Sealed || !!t15LiveBest),
+                          lockedBooks: (pastT15Odds && Array.isArray(lock.books) && lock.books.length)
+                            ? lock.books
+                            : null,
                           peakAt: peak.updatedAt || lock.lockedAt,
                           lockedAt: lock.lockedAt || null,
                           gameTime: doc.commenceTime,

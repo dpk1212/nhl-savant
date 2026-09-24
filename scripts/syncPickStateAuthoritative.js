@@ -197,6 +197,7 @@ import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveInstrument, ticketAmerican, coherentTicket } from '../src/lib/ticketInstrument.js';
 import {
   bestAvailableTicket,
+  snapshotBookRail,
   flaggedSnapshotFromPeakLock,
   isT15BestLockLive,
   lockTicketTeamLabel,
@@ -7531,6 +7532,12 @@ async function main() {
                     : (peak.book ?? lock.book ?? null),
                   oddsSource: useBest ? (best.oddsSource ?? 't15_best_available')
                     : (peak.oddsSource ?? lock.oddsSource ?? null),
+                  books: snapshotBookRail({
+                    pinnGame,
+                    marketType: mkt,
+                    side: sideKey,
+                    ticketLine: useBest ? best.line : (peak.line ?? lock.line ?? null),
+                  }),
                   sealedAt: now,
                 },
               };

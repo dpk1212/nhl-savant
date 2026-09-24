@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   bestAvailableTicket,
+  snapshotBookRail,
   flaggedSnapshotFromPeakLock,
   formatLockAlertPickText,
   isT15BestLockLive,
@@ -35,6 +36,17 @@ assert.equal(best.line, 41.5);
 assert.equal(best.odds, 103);
 assert.equal(best.book, 'FanDuel');
 assert.equal(best.oddsSource, 't15_best_available');
+
+const rail = snapshotBookRail({
+  pinnGame: siuTape,
+  marketType: 'SPREAD',
+  side: 'away',
+  ticketLine: 41.5,
+});
+assert.deepEqual(rail.map((b) => b.name), ['FanDuel']);
+assert.equal(rail[0].odds, 103);
+assert.equal(rail[0].line, 41.5);
+assert.equal(rail[0].best, true);
 
 const noTape = bestAvailableTicket({
   pinnGame: null,
