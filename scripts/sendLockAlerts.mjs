@@ -36,6 +36,7 @@ import {
 } from '../src/lib/ags.js';
 import {
   LOCK_ALERT_EDGE_MIN,
+  fullAudienceReached,
   onesignalFiltersForEdge,
   sideLockAlertEdge,
 } from '../src/lib/lockAlertMode.js';
@@ -61,6 +62,11 @@ const CLAIM_TTL_MS = 2 * 60 * 1000;
  *  TTL expired before the phone woke (Guardians arrived late, then vanished). */
 const PUSH_TTL_SEC = Number(process.env.ONESIGNAL_LOCK_TTL_SEC || 7200);
 const SEND_STAGGER_MS = 750;
+/** Gap between locks so Safari/iOS does not collapse a slate into one banner. */
+const LOCK_GAP_MS = 8000;
+const LOCK_ICON = 'https://nhlsavant.com/icons/icon-192.png';
+/** Retry a full-book send that OneSignal accepted for nobody. Then stop. */
+const MAX_EMPTY_ATTEMPTS = 2;
 // If the market cron hiccups across the freeze boundary, still deliver after
 // first pitch. 10m was too tight when Actions was dead across T−15
 // (Barcelona 2026-08-27: safety net last ran 12:08 PM, freeze at 2:45 PM).
@@ -199,10 +205,11 @@ function hasFreshClaim(sd, now) {
 }
 
 /** Deterministic UUID v5 so two overlapping crons share one OneSignal idempotency key. */
-function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = UNIT_DISPLAY_SCALE.FULL) {
+function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = UNIT_DISPLAY_SCALE.FULL, attempt = 0) {
+  const retry = attempt > 0 ? `|r${attempt}` : '';
   const hash = createHash('sha1')
     .update('lock-alert.nhlsavant.com')
-    .update(`${date}|${col}|${docId}|${sideKey}|${scale}`)
+    .update(`${date}|${col}|${docId}|${sideKey}|${scale}${retry}`)
     .digest();
   hash[6] = (hash[6] & 0x0f) | 0x50;
   hash[8] = (hash[8] & 0x3f) | 0x80;
@@ -378,6 +385,9 @@ async function sendOneSignal({ pickText, detail, tier, edge, idempotencyKey, top
     url: SITE_URL,
     ttl: PUSH_TTL_SEC,
     priority: 10,
+    chrome_web_icon: LOCK_ICON,
+    firefox_icon: LOCK_ICON,
+    chrome_web_badge: LOCK_ICON,
     web_push_topic: topic || `lock-${Date.now()}`,
     name: `${TEST_OWNER ? 'TEST ' : ''}Lock: ${pickText}`.slice(0, 128),
   };
@@ -536,7 +546,8 @@ async function main() {
         }
 
         try {
-          const topic = `lock-${TARGET_DATE}-${pick._id}-${sideKey}`.slice(0, 64);
+          const topic = `lock-${TARGET_DATE}-${pick._id}-${sideKey}`.slice(0, 32);
+          const attempt = Number(sd.lockAlertAttempt) || 0;
           let ownerScale = UNIT_DISPLAY_SCALE.FULL;
           if (TEST_OWNER) {
             try {
@@ -552,6 +563,7 @@ async function main() {
             ? [ownerScale]
             : [UNIT_DISPLAY_SCALE.FULL, UNIT_DISPLAY_SCALE.CONSERVATIVE];
           let result = null;
+          let fullResult = null;
           for (const scale of scales) {
             const tier = scale === UNIT_DISPLAY_SCALE.CONSERVATIVE ? consTier : fullTier;
             const detail = tier?.text ? ` ${tier.text}.` : ' Open Sharp Flow.';
@@ -560,14 +572,33 @@ async function main() {
               detail,
               tier,
               edge,
-              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, TARGET_DATE, scale),
-              topic: `${topic}-${scale === UNIT_DISPLAY_SCALE.CONSERVATIVE ? 'c' : 'f'}`.slice(0, 64),
+              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, TARGET_DATE, scale, attempt),
+              topic: `${topic}-${scale === UNIT_DISPLAY_SCALE.CONSERVATIVE ? 'c' : 'f'}`.slice(0, 32),
               scale,
             });
+            if (scale === UNIT_DISPLAY_SCALE.FULL) fullResult = result;
             console.log(`    · ${scale} message ${result?.id || '(no id)'} recipients=${result?.recipients ?? '?'}`);
             if (scales.length > 1) await new Promise((r) => setTimeout(r, SEND_STAGGER_MS));
           }
-          const messageId = result?.id || null;
+          if (!TEST_OWNER && !fullAudienceReached(fullResult)) {
+            const nextAttempt = attempt + 1;
+            await db.collection(col).doc(pick._id).set(
+              {
+                sides: {
+                  [sideKey]: {
+                    lockAlertAttempt: nextAttempt,
+                    lockAlertClaimAt: admin.firestore.FieldValue.delete(),
+                  },
+                },
+              },
+              { merge: true },
+            );
+            if (nextAttempt <= MAX_EMPTY_ATTEMPTS) {
+              throw new Error(`full audience recipients=${fullResult?.recipients ?? 0} — retry ${nextAttempt}`);
+            }
+            console.warn(`    · full audience still empty after ${nextAttempt} tries — stamping so we stop`);
+          }
+          const messageId = fullResult?.id || result?.id || null;
           // Never stamp Firestore on owner-only tests — production cron still owns idempotency.
           if (!TEST_OWNER) {
             await db
@@ -590,8 +621,8 @@ async function main() {
               );
           }
           stats.sent++;
-          console.log(`    ✓ message ${messageId || '(no id)'} recipients=${result.recipients ?? '?'}`);
-          if (stats.sent > 1) await new Promise((r) => setTimeout(r, SEND_STAGGER_MS));
+          console.log(`    ✓ message ${messageId || '(no id)'} recipients=${fullResult?.recipients ?? result.recipients ?? '?'}`);
+          await new Promise((r) => setTimeout(r, LOCK_GAP_MS));
         } catch (err) {
           stats.errors++;
           console.error(`    ✗ ${err.message || err}`);

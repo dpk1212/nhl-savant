@@ -17,6 +17,9 @@ const T_MINUS_15_MIN_MS = 15 * 60 * 1000;
 const GRACE_AFTER_COMMENCE_MS = 20 * 60 * 1000;
 const CLAIM_TTL_MS = 2 * 60 * 1000;
 const PUSH_TTL_SEC = 7200;
+const LOCK_GAP_MS = 8000;
+const LOCK_ICON = 'https://nhlsavant.com/icons/icon-192.png';
+const MAX_EMPTY_ATTEMPTS = 2;
 const LOCK_ALERT_EDGE_MIN = 11;
 const APP_ID = process.env.ONESIGNAL_APP_ID || 'd8fcb504-8d29-4354-a9e4-8b612d3eafeb';
 const SITE_URL = 'https://nhlsavant.com/#/';
@@ -153,10 +156,16 @@ function formatUnits(u) {
   return Number.isInteger(n) ? `${n}u` : `${n}u`;
 }
 
-function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = 'full') {
+function fullAudienceReached(result) {
+  const n = Number(result?.recipients);
+  return Boolean(result?.id) && Number.isFinite(n) && n > 0;
+}
+
+function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = 'full', attempt = 0) {
+  const retry = attempt > 0 ? `|r${attempt}` : '';
   const hash = createHash('sha1')
     .update('lock-alert.nhlsavant.com')
-    .update(`${date}|${col}|${docId}|${sideKey}|${scale}`)
+    .update(`${date}|${col}|${docId}|${sideKey}|${scale}${retry}`)
     .digest();
   hash[6] = (hash[6] & 0x0f) | 0x50;
   hash[8] = (hash[8] & 0x3f) | 0x80;
@@ -223,6 +232,9 @@ async function sendOneSignal({ pickText, tierText, unitsText, edge, idempotencyK
     url: SITE_URL,
     ttl: PUSH_TTL_SEC,
     priority: 10,
+    chrome_web_icon: LOCK_ICON,
+    firefox_icon: LOCK_ICON,
+    chrome_web_badge: LOCK_ICON,
     web_push_topic: topic,
     name: `Lock: ${pickText}`.slice(0, 128),
     filters: onesignalFiltersForEdge(edge, scale),
@@ -340,10 +352,12 @@ async function runLockAlerts({ forceWindow = false } = {}) {
         const units = sideStakeUnits(sd);
         const tier = typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : '';
         const edge = sideLockAlertEdge(sd);
-        const topic = `lock-${date}-${pick._id}-${sideKey}`.slice(0, 64);
+        const topic = `lock-${date}-${pick._id}-${sideKey}`.slice(0, 32);
+        const attempt = Number(sd.lockAlertAttempt) || 0;
 
         try {
           let result = null;
+          let fullResult = null;
           for (const scale of ['full', 'conservative']) {
             const unitsText = formatUnits(scaleUnits(units, scale));
             const tierText = [tier || null, unitsText].filter(Boolean).join(' · ');
@@ -352,13 +366,32 @@ async function runLockAlerts({ forceWindow = false } = {}) {
               tierText,
               unitsText,
               edge,
-              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, scale),
-              topic: `${topic}-${scale === 'conservative' ? 'c' : 'f'}`.slice(0, 64),
+              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, scale, attempt),
+              topic: `${topic}-${scale === 'conservative' ? 'c' : 'f'}`.slice(0, 32),
               scale,
             });
+            if (scale === 'full') fullResult = result;
             logger.info(`sent ${scale} ${col}/${pick._id} ${sideKey} message=${result?.id} recipients=${result?.recipients ?? '?'}`);
           }
-          const messageId = result?.id || null;
+          if (!fullAudienceReached(fullResult)) {
+            const nextAttempt = attempt + 1;
+            await db.collection(col).doc(pick._id).set(
+              {
+                sides: {
+                  [sideKey]: {
+                    lockAlertAttempt: nextAttempt,
+                    lockAlertClaimAt: admin.firestore.FieldValue.delete(),
+                  },
+                },
+              },
+              { merge: true },
+            );
+            if (nextAttempt <= MAX_EMPTY_ATTEMPTS) {
+              throw new Error(`full audience recipients=${fullResult?.recipients ?? 0} — retry ${nextAttempt}`);
+            }
+            logger.warn(`full audience still empty after ${nextAttempt} tries — stamping`);
+          }
+          const messageId = fullResult?.id || result?.id || null;
           await db
             .collection(col)
             .doc(pick._id)
@@ -378,7 +411,8 @@ async function runLockAlerts({ forceWindow = false } = {}) {
               { merge: true },
             );
           stats.sent++;
-          logger.info(`sent ${col}/${pick._id} ${sideKey} message=${messageId} recipients=${result.recipients ?? '?'}`);
+          logger.info(`sent ${col}/${pick._id} ${sideKey} message=${messageId} recipients=${fullResult?.recipients ?? result?.recipients ?? '?'}`);
+          await new Promise((r) => setTimeout(r, LOCK_GAP_MS));
         } catch (err) {
           stats.errors++;
           logger.error(`send failed ${col}/${pick._id} ${sideKey}: ${err.message || err}`);
@@ -401,7 +435,7 @@ exports.sendLockAlerts = onSchedule(
     schedule: 'every 2 minutes',
     timeZone: 'America/New_York',
     memory: '256MiB',
-    timeoutSeconds: 120,
+    timeoutSeconds: 300,
     maxInstances: 1,
   },
   async () => {

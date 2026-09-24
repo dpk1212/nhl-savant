@@ -11,6 +11,8 @@ import {
   paidTagToWriteOnPaidVisit,
   isLockAlertMode,
   onesignalFiltersForEdge,
+  paidTagWhenOptedInAndUntagged,
+  fullAudienceReached,
 } from '../src/lib/lockAlertMode.js';
 
 let n = 0;
@@ -63,5 +65,13 @@ ok(onesignalFiltersForEdge(12).some((f) => f.value === 'edge11'), 'full top incl
 ok(onesignalFiltersForEdge(5, { scale: 'conservative' }).every((f) => f.value !== 'all'), 'cons does not hit full all');
 ok(onesignalFiltersForEdge(5, { scale: 'conservative' }).some((f) => f.value === 'all_c'), 'cons all-lock audience');
 ok(onesignalFiltersForEdge(12, { scale: 'conservative' }).some((f) => f.value === 'edge11_c'), 'cons top includes edge11_c');
+
+ok(paidTagWhenOptedInAndUntagged(null, 'all') === 'all', 'opted-in empty tag restores All');
+ok(paidTagWhenOptedInAndUntagged(null, 'edge11') === 'edge11', 'opted-in empty tag restores Top');
+ok(paidTagWhenOptedInAndUntagged('all', 'edge11') === null, 'live tag is not replaced');
+ok(paidTagWhenOptedInAndUntagged(null, null) === null, 'no stored mode, no invent');
+ok(fullAudienceReached({ id: 'm1', recipients: 160 }), 'full audience reached');
+ok(!fullAudienceReached({ id: 'm1', recipients: 0 }), 'zero recipients is not delivered');
+ok(!fullAudienceReached({ recipients: 10 }), 'missing id is not delivered');
 
 console.log(`ok ${n}`);
