@@ -18,17 +18,60 @@ export function dhSecondKey(baseKey) {
   return `${baseGameKey(baseKey)}${DH_SUFFIX}`;
 }
 
-/** First Odds API row for a matchup → base key; second → `__2`. */
-export function allocateScheduleKey(validSet, commenceMap, sport, baseKey, commence) {
+/** Eastern calendar date of a first pitch. Late West Coast games stay on the ET night. */
+export function etDateOf(iso) {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function etToday(now) {
+  return new Date(now).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+/**
+ * Two Odds API rows, one matchup. A same-day pair 90+ minutes apart is a
+ * doubleheader. The next night (10:11 PM ET → 02:11Z the next calendar day)
+ * is not — it must keep the base key and land on its own ET date.
+ */
+export function preferSlateCommence(current, incoming, now = new Date()) {
+  const today = etToday(now);
+  const curDay = etDateOf(current);
+  const nextDay = etDateOf(incoming);
+  if (curDay === today && nextDay !== today) return current;
+  if (nextDay === today && curDay !== today) return incoming;
+  const curMs = Date.parse(current);
+  const nextMs = Date.parse(incoming);
+  const nowMs = now.getTime();
+  const curFuture = Number.isFinite(curMs) && curMs >= nowMs;
+  const nextFuture = Number.isFinite(nextMs) && nextMs >= nowMs;
+  if (curFuture && !nextFuture) return current;
+  if (nextFuture && !curFuture) return incoming;
+  if (!Number.isFinite(curMs)) return incoming;
+  if (!Number.isFinite(nextMs)) return current;
+  return curMs <= nextMs ? current : incoming;
+}
+
+/** First Odds API row for a matchup → base key. Same-day second game → `__2`. */
+export function allocateScheduleKey(validSet, commenceMap, sport, baseKey, commence, now = new Date()) {
+  const slot = `${sport}:${baseKey}`;
   if (!validSet.has(baseKey)) {
     validSet.add(baseKey);
-    if (commence) commenceMap[`${sport}:${baseKey}`] = commence;
+    if (commence) commenceMap[slot] = commence;
     return baseKey;
   }
-  const k2 = dhSecondKey(baseKey);
-  if (!validSet.has(k2)) validSet.add(k2);
-  if (commence && !commenceMap[`${sport}:${k2}`]) commenceMap[`${sport}:${k2}`] = commence;
-  return k2;
+  const prev = commenceMap[slot];
+  const sameDay = !!(prev && commence && etDateOf(prev) && etDateOf(prev) === etDateOf(commence));
+  if (sameDay && isDoubleheaderPair(prev, commence)) {
+    const k2 = dhSecondKey(baseKey);
+    if (!validSet.has(k2)) validSet.add(k2);
+    if (commence && !commenceMap[`${sport}:${k2}`]) commenceMap[`${sport}:${k2}`] = commence;
+    return k2;
+  }
+  if (commence && prev && preferSlateCommence(prev, commence, now) === commence) {
+    commenceMap[slot] = commence;
+  }
+  return baseKey;
 }
 
 /** Map a Poly/Kalshi startTime onto the Odds API slot with the closer commence. */

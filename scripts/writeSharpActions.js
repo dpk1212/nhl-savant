@@ -900,8 +900,13 @@ async function main() {
           const myShort = pos.wallet.slice(-6);
           const vaultHc = computeVaultHcSignals(wps.walletDetails, pos.side, sport, walletProfiles, myShort);
 
+          const commenceMs = commenceByGame.get(`${sport}|${gameKey}`);
+          const gameDate = commenceMs != null
+            ? new Date(commenceMs).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+            : date;
+
           positions.push({
-            date,
+            date: gameDate,
             sport,
             gameKey,
             away: gd.away,
