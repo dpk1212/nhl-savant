@@ -818,9 +818,22 @@ function TeamMark({ name, sport, size = 44 }) {
   );
 }
 
+function crestName(team, item) {
+  const t = String(team || '').trim();
+  if (!t) return t;
+  const nick = t.toLowerCase();
+  const pool = [item?.away, item?.home].filter(Boolean);
+  const hit = pool.find((name) => {
+    const full = String(name).trim();
+    const low = full.toLowerCase();
+    return low === nick || shortTeamNick(full).toLowerCase() === nick || low.endsWith(` ${nick}`);
+  });
+  return hit || t;
+}
+
 function sideNames(item) {
   const team = String(item?.team || '').trim();
-  if (team && !/^(over|under)$/i.test(team)) return [team];
+  if (team && !/^(over|under)$/i.test(team)) return [crestName(team, item)];
   return [item?.away, item?.home].filter(Boolean);
 }
 

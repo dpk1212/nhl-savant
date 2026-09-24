@@ -1668,14 +1668,23 @@ export function americanProfit(stake, american, won) {
   return Math.round(win);
 }
 
-export function gradeTail(tail, legs) {
+export function gradeTail(tail, legs, now = Date.now()) {
   if (!tail) return { status: 'open', pnl: null };
+  const commence = Number(tail.commenceMs);
+  if (Number.isFinite(commence) && now < commence) return { status: 'open', pnl: null };
+  const gameDay = Number.isFinite(commence) ? etDateKey(commence) : null;
+  const tailedDay = Number.isFinite(Number(tail.tailedAt)) ? etDateKey(Number(tail.tailedAt)) : null;
   const wallets = new Set((tail.wallets || []).map((w) => String(w).toLowerCase()));
   const match = (legs || []).find((leg) => {
     if (leg?.won !== 0 && leg?.won !== 1) return false;
     if (String(leg.gameKey || '').toLowerCase() !== String(tail.gameKey || '').toLowerCase()) return false;
     if (String(leg.marketType || '').toUpperCase() !== String(tail.marketType || '').toUpperCase()) return false;
     if (String(leg.side || '').toLowerCase() !== String(tail.side || '').toLowerCase()) return false;
+    const legDay = String(leg.date || '').slice(0, 10);
+    if (/^20\d{2}-\d{2}-\d{2}$/.test(legDay)) {
+      if (gameDay && legDay !== gameDay) return false;
+      if (!gameDay && tailedDay && legDay < tailedDay) return false;
+    }
     const w = String(leg.walletShort || '').toLowerCase();
     return wallets.size === 0 || wallets.has(w);
   });

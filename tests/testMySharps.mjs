@@ -573,6 +573,12 @@ const graded = gradeTail(tailedDoc.tails['MLB|nyy_tex|ML|away'], [
 ]);
 assert.equal(graded.status, 'won');
 assert.equal(graded.pnl, 455);
+const early = gradeTail(
+  { ...tailedDoc.tails['MLB|nyy_tex|ML|away'], tailedAt: Date.parse('2026-09-24T16:00:00Z'), commenceMs: Date.parse('2026-09-24T18:11:00Z') },
+  [{ walletShort: 'e4ec62', gameKey: 'nyy_tex', marketType: 'ML', side: 'away', won: 0, date: '2026-09-23' }],
+  Date.parse('2026-09-24T16:09:00Z'),
+);
+assert.equal(early.status, 'open');
 const summary = summarizeTails(tailedDoc.tails, [
   { walletShort: 'e4ec62', gameKey: 'nyy_tex', marketType: 'ML', side: 'away', won: 1 },
 ]);

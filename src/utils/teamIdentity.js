@@ -250,10 +250,24 @@ function resolveNamedTeam(name, sport) {
   return null;
 }
 
+const NFL_NICK = {
+  cardinals: 'ari', falcons: 'atl', ravens: 'bal', bills: 'buf', panthers: 'car',
+  bears: 'chi', bengals: 'cin', browns: 'cle', cowboys: 'dal', broncos: 'den',
+  lions: 'det', packers: 'gb', texans: 'hou', colts: 'ind', jaguars: 'jax',
+  chiefs: 'kc', raiders: 'lv', chargers: 'lac', rams: 'lar', dolphins: 'mia',
+  vikings: 'min', patriots: 'ne', saints: 'no', giants: 'nyg', jets: 'nyj',
+  eagles: 'phi', steelers: 'pit', '49ers': 'sf', niners: 'sf', seahawks: 'sea',
+  buccaneers: 'tb', bucs: 'tb', titans: 'ten', commanders: 'wsh',
+};
+
 /** ESPN crest PNG for a pro team we can name. Null for totals words and unknown clubs. */
 export function teamLogoUrl(name, sport) {
   const league = (sport || '').toUpperCase();
   const path = ESPN_LEAGUE[league];
+  if (league === 'NFL' && path) {
+    const nick = String(name || '').trim().toLowerCase().split(/\s+/).pop();
+    if (NFL_NICK[nick]) return `https://a.espncdn.com/i/teamlogos/nfl/500/${NFL_NICK[nick]}.png`;
+  }
   const named = resolveNamedTeam(name, sport);
   if (!path || !named) return null;
   const abbr = getTeamIdentity(named, sport).abbr;
