@@ -705,6 +705,9 @@ export function buildConfirmedActionRows({
       polyGame?.commenceTime,
       pinnGame?.commence,
     );
+    const slugDate = (String(pos.slug || pos.eventSlug || '').match(/(20\d{2}-\d{2}-\d{2})/) || [])[1] || null;
+    const gameDay = Number.isFinite(commenceMs) ? etDateKey(commenceMs) : null;
+    if (slugDate && gameDay && slugDate < gameDay) continue;
     if (rejectNonFullGameBoardPosition(pos, {
       marketType,
       sport,
