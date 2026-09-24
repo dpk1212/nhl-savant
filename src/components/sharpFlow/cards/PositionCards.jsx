@@ -43,21 +43,10 @@ function formatLockCountdown(ms) {
 
 /** Audit tooltip for a 0u / NO PLAY card — technical mute reason. */
 function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, steamTailReason, stakePath } = {}) {
-  const preU = Number.isFinite(unitsPreMarketSkill) && unitsPreMarketSkill > 0
-    ? unitsPreMarketSkill
-    : (Number.isFinite(unitsPreStFat) && unitsPreStFat > 0
-      ? unitsPreStFat
-    : (Number.isFinite(unitsPreFavJuice) && unitsPreFavJuice > 0
-      ? unitsPreFavJuice
-      : (Number.isFinite(unitsPreSteamTail) && unitsPreSteamTail > 0
-        ? unitsPreSteamTail
-        : (Number.isFinite(unitsPreNoConfirmed) && unitsPreNoConfirmed > 0
-          ? unitsPreNoConfirmed
-          : (Number.isFinite(unitsPreMaxSrSub4) && unitsPreMaxSrSub4 > 0
-            ? unitsPreMaxSrSub4
-            : (Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
-              ? unitsPreFlinchFailOpen
-              : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null))))))));
+  const preU = [
+    unitsPreMarketSkill, unitsPreStFat, unitsPreFavJuice, unitsPreSteamTail,
+    unitsPreNoConfirmed, unitsPreMaxSrSub4, unitsPreFlinchFailOpen, unitsPreTape,
+  ].find((n) => Number.isFinite(n) && n > 0) ?? null;
   const pre = preU != null
     ? `${preU % 1 === 0 ? preU.toFixed(0) : preU.toFixed(1)}u → 0u`
     : null;
