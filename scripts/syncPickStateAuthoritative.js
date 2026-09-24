@@ -2862,6 +2862,13 @@ async function createMissingLockedPicks({
       : '';
     const docId = `${TARGET_DATE}_${sport}_${gameKey}${suffix}`;
     if (existingDocIds.has(`${col}|${docId}`)) continue; // already in Firestore
+    if (String(gameKey).endsWith('__2')) {
+      const baseId = `${TARGET_DATE}_${sport}_${String(gameKey).replace(/__2$/, '')}${suffix}`;
+      if (existingDocIds.has(`${col}|${baseId}`)) {
+        skipped.push({ docId, col, reason: 'false_doubleheader_base_exists' });
+        continue;
+      }
+    }
 
     // Reject *past* Polymarket leftovers (wnba-atl-wsh-2026-08-07 on Aug 8).
     // Do not require slug === TARGET_DATE — night games carry the next UTC
@@ -7431,7 +7438,12 @@ async function main() {
       // re-evaluate by NOT adding it to existingDocIds.
       const sideEntries = Object.entries(sides);
       const liveSides = sideEntries.filter(([, sd]) => sd && !sd.superseded);
-      const isGhost = pick.status !== 'COMPLETED' && liveSides.length === 0;
+      // An exited false doubleheader is not an empty doc to rebuild.
+      // Ghost recovery was minting 2026-09-24_MLB_sdp_lad__2 back onto
+      // tonight's board after we retired last night's $525 Dodgers ticket.
+      const retired = pick.status === 'EXITED'
+        || pick.lastAction === 'remove_false_doubleheader';
+      const isGhost = !retired && pick.status !== 'COMPLETED' && liveSides.length === 0;
       if (isGhost) {
         ghostDocIds.add(`${col}|${pick._id}`);
         console.warn(`  ⚠ GHOST doc detected: ${col}/${pick._id} (${sideEntries.length} side(s), 0 live) — will let createMissingLockedPicks rebuild`);

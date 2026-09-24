@@ -12386,6 +12386,7 @@ export default function SharpFlow() {
                     const allLockedArr = [];
                     for (const [docId, doc] of Object.entries(lockedPicks)) {
                       if (!docId.startsWith(targetDate)) continue;
+                      if (doc.status === 'EXITED' || doc.lastAction === 'remove_false_doubleheader') continue;
                       const docSport = doc.sport || 'NHL';
                       if (docSport === 'UFC' && isUFCFlipAlias(doc.gameKey, { preferred: ufcPreferred })) continue;
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
