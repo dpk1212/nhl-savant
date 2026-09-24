@@ -11,23 +11,22 @@ const nhl = [
   { wallet: '0xaaa', side: 'away', invested: 75 },
   { wallet: '0xbbb', side: 'home', invested: 247 },
 ];
-const thin = selectBattlePositions(nhl);
-ok(thin.length === 2, 'thin NHL slate still plots');
-ok(thin.reduce((s, p) => s + p.invested, 0) === 322, 'thin slate keeps the real dollars');
+ok(selectBattlePositions(nhl).length === 0, 'under the floor stays off the field');
 
 const mixed = selectBattlePositions([
   { wallet: '0xaaa', side: 'away', invested: 80 },
   { wallet: '0xccc', side: 'home', invested: 4000 },
 ]);
-ok(mixed.length === 1 && mixed[0].invested === 4000, 'floor still hides dust when a real ticket exists');
+ok(mixed.length === 1 && mixed[0].invested === 4000, 'a ticket at the floor plots, dust does not');
 
 ok(selectBattlePositions([]).length === 0, 'empty game plots nothing');
 ok(selectBattlePositions([{ wallet: '0xaaa', side: 'away', invested: 500 }], { excluded: new Set(['0xaaa']) }).length === 0, 'excluded wallet stays out');
+ok(selectBattlePositions([{ wallet: '0xaaa', side: 'away', invested: 250 }]).length === 1, 'exactly the floor counts');
 
 const dup = selectBattlePositions([
-  { wallet: '0xAAA', side: 'away', invested: 90 },
-  { wallet: '0xaaa', side: 'away', invested: 140 },
+  { wallet: '0xAAA', side: 'away', invested: 300 },
+  { wallet: '0xaaa', side: 'away', invested: 900 },
 ]);
-ok(dup.length === 1 && dup[0].invested === 140, 'same wallet+side keeps the larger ticket');
+ok(dup.length === 1 && dup[0].invested === 900, 'same wallet+side keeps the larger ticket');
 
 console.log(`ok ${n}`);
