@@ -31,10 +31,18 @@ import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
 import { resolveCFBTeam, cfbTeamsMatch } from './lib/cfbTeams.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { shouldGradeExited } from '../src/lib/actionLockPin.js';
+import {
+  customerTailPnl,
+  outcomeToTailStatus,
+  tailGameDate,
+  tailLine,
+  usableCommenceMs,
+} from '../src/lib/tailGrade.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
 const COLLECTION = 'sharp_action_positions';
+const TAILS_ONLY = process.argv.includes('--tails-only');
 
 const NHL_SCHEDULE_URL = 'https://api-web.nhle.com/v1/schedule';
 const NCAA_API_URL = 'https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1';
@@ -1167,6 +1175,80 @@ async function loadKnownFinalsFromPicks(db, dates) {
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
+async function collectOpenTails(db) {
+  const snap = await db.collection('users').select('mySharps').get();
+  const open = [];
+  const now = Date.now();
+  for (const doc of snap.docs) {
+    const tails = doc.get('mySharps')?.tails;
+    if (!tails || typeof tails !== 'object') continue;
+    for (const [id, tail] of Object.entries(tails)) {
+      if (!tail || typeof tail !== 'object') continue;
+      if (tail.gradedBy === 'grader') continue;
+      if (tail.status === 'won' || tail.status === 'lost' || tail.status === 'push') continue;
+      const sport = String(tail.sport || String(id).split('|')[0] || '').toUpperCase();
+      const date = tailGameDate(tail);
+      const gameKey = tail.gameKey || String(id).split('|')[1] || '';
+      if (!sport || !date || !gameKey) continue;
+      const commence = usableCommenceMs(tail.commenceMs);
+      if (commence && commence > now) continue;
+      open.push({ uid: doc.id, id, tail, sport, date, gameKey });
+    }
+  }
+  return open;
+}
+
+async function gradeOpenTails(db, openTails, finals) {
+  const {
+    nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
+    ufcFinals, wnbaFinals, nflFinals, cfbFinals, knownFinals,
+  } = finals;
+  let graded = 0;
+  let waiting = 0;
+  const now = Date.now();
+  for (const row of openTails) {
+    const pos = {
+      sport: row.sport,
+      date: row.date,
+      gameKey: String(row.gameKey).replace(/__\d+$/, ''),
+      away: row.tail.away || null,
+      home: row.tail.home || null,
+      marketType: String(row.tail.marketType || String(row.id).split('|')[2] || 'ML').toUpperCase(),
+      side: String(row.tail.side || String(row.id).split('|')[3] || '').toLowerCase(),
+    };
+    let game = knownFinals.get(knownFinalKey(pos.sport, pos.date, pos.gameKey)) || null;
+    if (!game) {
+      game = findMatchingGame(
+        pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
+        ufcFinals, wnbaFinals, nflFinals, cfbFinals,
+      );
+    }
+    if (!game || game.awayScore == null || game.homeScore == null) {
+      waiting++;
+      continue;
+    }
+    const line = tailLine({ ...row.tail, marketType: pos.marketType });
+    const outcome = calculateOutcome(game, pos.marketType, pos.side, line, pos.sport);
+    if (!outcome) {
+      console.warn(`  tail ${row.id}: no outcome (line=${line})`);
+      waiting++;
+      continue;
+    }
+    const status = outcomeToTailStatus(outcome);
+    const pnl = customerTailPnl(row.tail.stake, row.tail.myAmerican ?? row.tail.theirAmerican, status);
+    await db.collection('users').doc(row.uid).update({
+      [`mySharps.tails.${row.id}.status`]: status,
+      [`mySharps.tails.${row.id}.pnl`]: pnl,
+      [`mySharps.tails.${row.id}.gradedBy`]: 'grader',
+      [`mySharps.tails.${row.id}.gradedAt`]: now,
+      [`mySharps.tails.${row.id}.gradeScore`]: `${game.awayScore}-${game.homeScore}`,
+    });
+    graded++;
+    console.log(`  tail ${row.sport} ${row.tail.pick || row.id} ${row.date} → ${outcome} ${game.awayScore}-${game.homeScore} pnl=${pnl}`);
+  }
+  console.log(`Tails graded: ${graded} · still open: ${waiting}`);
+}
+
 async function main() {
   const db = initFirebase();
   console.log('\n=== gradeSharpActions ===\n');
@@ -1178,7 +1260,9 @@ async function main() {
     return JSON.parse(readFileSync(p, 'utf8'));
   })();
 
-  const snapshot = await loadGradeCandidates(db);
+  const snapshot = TAILS_ONLY
+    ? { docs: [], pending: 0, exitedHeld: 0, exitedSkipped: 0 }
+    : await loadGradeCandidates(db);
   if (!snapshot.docs.length) {
     console.log('No pending or held-through-exit positions to grade.');
   } else {
@@ -1217,7 +1301,20 @@ async function main() {
     if (d.sport === 'UFC' && d.date) ufcDates.add(d.date);
   }
 
-  const pendingPicks = await collectPendingPickDates(db);
+  const openTails = await collectOpenTails(db);
+  console.log(`Open tails: ${openTails.length}`);
+  for (const t of openTails) {
+    sports.add(t.sport);
+    const bucket = {
+      CBB: cbbDates, NHL: nhlDates, MLB: mlbDates, NBA: nbaDates,
+      WNBA: wnbaDates, NFL: nflDates, CFB: cfbDates, SOC: socDates, UFC: ufcDates,
+    }[t.sport];
+    if (bucket) bucket.add(t.date);
+  }
+
+  const pendingPicks = TAILS_ONLY
+    ? { sports: new Set(), bySport: { CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(), WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set() } }
+    : await collectPendingPickDates(db);
   for (const s of pendingPicks.sports) sports.add(s);
   for (const d of pendingPicks.bySport.CBB) cbbDates.add(d);
   for (const d of pendingPicks.bySport.NHL) nhlDates.add(d);
@@ -1315,16 +1412,18 @@ async function main() {
     }
   }
 
-  await gradePendingSharpFlowPicks(db, {
-    nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals,
-  });
+  if (!TAILS_ONLY) {
+    await gradePendingSharpFlowPicks(db, {
+      nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals,
+    });
+  }
 
   // Grade each position
   let graded = 0, noGame = 0, errors = 0, cloneSkip = 0;
   const BATCH_SIZE = 400;
   const docs = snapshot.docs;
 
-  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+  if (!TAILS_ONLY) for (let i = 0; i < docs.length; i += BATCH_SIZE) {
     const chunk = docs.slice(i, i + BATCH_SIZE);
     const batch = db.batch();
     let batchOps = 0;
@@ -1469,6 +1568,11 @@ async function main() {
   // All-time performance summary used to re-scan every GRADED doc (~22k reads).
   // Skip that — exportWalletProfiles already rebuilds the CLV ledger + profiles
   // from the same collection on this workflow. Per-run graded count above is enough.
+
+  await gradeOpenTails(db, openTails, {
+    nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
+    ufcFinals, wnbaFinals, nflFinals, cfbFinals, knownFinals,
+  });
 
   console.log('\nDone.');
 }
