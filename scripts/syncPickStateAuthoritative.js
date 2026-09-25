@@ -248,6 +248,12 @@ import {
   HARD_MUTE_EXCEPTION_RESCUED_BY,
 } from '../src/lib/hardMuteExceptionOverlay.js';
 import {
+  applyHardAgMuteOverlay,
+  isHardAgMuteLive,
+  HARD_AG_MUTE_FROM,
+  HARD_AG_MUTED_BY,
+} from '../src/lib/hardAgMuteOverlay.js';
+import {
   evaluateFadeProvenHoldFromTicket,
 } from '../src/lib/fadeProvenHold.js';
 import {
@@ -1285,6 +1291,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   hardMuteExceptionAction = null,
   unitsPreHardMuteException = null,
   hardMuteExceptionFrom = null,
+  hardAgMuteAction = null,
+  unitsPreHardAgMute = null,
   fadeProvenHoldAction = null,
   fadeProvenHoldReason = null,
   fadeProvenShare = null,
@@ -1465,6 +1473,10 @@ function applySkillFeatureStamps(target, bundle, now, {
     target.v8_unitsPreHardMuteException = unitsPreHardMuteException;
   }
   if (hardMuteExceptionFrom != null) target.v8_hardMuteExceptionFrom = hardMuteExceptionFrom;
+  if (hardAgMuteAction != null) target.v8_hardAgMuteAction = hardAgMuteAction;
+  if (unitsPreHardAgMute != null && Number.isFinite(unitsPreHardAgMute)) {
+    target.v8_unitsPreHardAgMute = unitsPreHardAgMute;
+  }
   if (fadeProvenHoldAction != null) target.v8_fadeProvenHoldAction = fadeProvenHoldAction;
   if (fadeProvenHoldReason != null) target.v8_fadeProvenHoldReason = fadeProvenHoldReason;
   if (fadeProvenShare != null && Number.isFinite(Number(fadeProvenShare))) {
@@ -1582,6 +1594,7 @@ function skillStampsDrifted(sd, bundle, {
   stFatAction = null,
   fadeProvenHoldAction = null,
   hardMuteExceptionAction = null,
+  hardAgMuteAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1634,6 +1647,7 @@ function skillStampsDrifted(sd, bundle, {
   if (stFatAction != null && (sd.v8_stFatAction || null) !== stFatAction) return true;
   if (fadeProvenHoldAction != null && (sd.v8_fadeProvenHoldAction || null) !== fadeProvenHoldAction) return true;
   if (hardMuteExceptionAction != null && (sd.v8_hardMuteExceptionAction || null) !== hardMuteExceptionAction) return true;
+  if (hardAgMuteAction != null && (sd.v8_hardAgMuteAction || null) !== hardAgMuteAction) return true;
   return false;
 }
 
@@ -3615,7 +3629,7 @@ async function createMissingLockedPicks({
         peakUnitsApplied = marketSkillPolicyCreate.units;
       }
 
-      // HARD mute exception — after last mute, before operator kill.
+      // HARD mute exception — after last mute, before HARD+ AG mute.
       // Restores uPre when last mutedBy is tape/maxsr/fools/crowded and a
       // HARD FOR wallet backs the side. tape-weak S/T stays muted.
       let hardExceptionPolicyCreate = null;
@@ -3653,6 +3667,24 @@ async function createMissingLockedPicks({
             peakUnitsApplied = Math.round(oddsCap(peakUnitsApplied, odds) * 100) / 100;
           }
         }
+      }
+
+      // HARD+ AG mute — after HARD exception, before operator kill.
+      // Get out of the way when a HARD wallet is on the other side.
+      // Remutes both-sides tickets the exception just put back.
+      // Fail-open HOLD if byMarket schema is missing. 4u+ not exempt.
+      let hardAgPolicyCreate = null;
+      if (createV121Eligible) {
+        hardAgPolicyCreate = applyHardAgMuteOverlay({
+          units: peakUnitsApplied,
+          marketType,
+          sport,
+          side,
+          walletDetails,
+          walletProfiles,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = hardAgPolicyCreate.units;
       }
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
@@ -3919,6 +3951,10 @@ async function createMissingLockedPicks({
             ? hardExceptionPolicyCreate.unitsPrePolicy
             : null,
           hardMuteExceptionFrom: hardExceptionPolicyCreate?.rescuedFrom ?? null,
+          hardAgMuteAction: hardAgPolicyCreate?.action ?? null,
+          unitsPreHardAgMute: (hardAgPolicyCreate && Number.isFinite(hardAgPolicyCreate.unitsPrePolicy))
+            ? hardAgPolicyCreate.unitsPrePolicy
+            : null,
           steamTailReason: steamTailPolicyCreate?.reason ?? null,
           steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
           steamTailOnLock: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamOnLock : null,
@@ -3980,6 +4016,11 @@ async function createMissingLockedPicks({
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
+      } else if (hardAgPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = hardAgPolicyCreate.mutedBy;
+        if (v8Stamps.v8_rescuedBy === HARD_MUTE_EXCEPTION_RESCUED_BY) {
+          delete v8Stamps.v8_rescuedBy;
+        }
       } else if (hardExceptionPolicyCreate?.action === 'RESCUE') {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = HARD_MUTE_EXCEPTION_RESCUED_BY;
@@ -4052,7 +4093,10 @@ async function createMissingLockedPicks({
       const hardExceptionRescuedCreate = hardExceptionPolicyCreate?.action === 'RESCUE'
         && Number.isFinite(hardExceptionPolicyCreate.units)
         && hardExceptionPolicyCreate.units > 0;
-      const createSizeMuted = !hardExceptionRescuedCreate && (marketSkillMutedCreate || stFatMutedCreate || boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const hardAgMutedCreate = hardAgPolicyCreate?.action === 'MUTE'
+        && Number.isFinite(hardAgPolicyCreate.unitsPrePolicy)
+        && hardAgPolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = hardAgMutedCreate || (!hardExceptionRescuedCreate && (marketSkillMutedCreate || stFatMutedCreate || boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -4060,10 +4104,11 @@ async function createMissingLockedPicks({
           && Number.isFinite(qConvPolicyCreate.unitsPrePolicy)
           && qConvPolicyCreate.unitsPrePolicy > 0)
         || (!!clvPolicyCreate.mutedBy)
-      )));
+      ))));
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(hardAgPolicyCreate?.reason ? [hardAgPolicyCreate.reason] : []),
           ...(hardExceptionPolicyCreate?.reason ? [hardExceptionPolicyCreate.reason] : []),
           ...(marketSkillPolicyCreate?.reason ? [marketSkillPolicyCreate.reason] : []),
           ...(stFatPolicyCreate?.reason ? [stFatPolicyCreate.reason] : []),
@@ -5387,7 +5432,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = marketSkillPolicy.units;
   }
 
-  // HARD mute exception — after last mute, before odds-cap / operator kill.
+  // HARD mute exception — after last mute, before HARD+ AG mute / odds-cap.
   // Restores uPre when last mutedBy is tape/maxsr/fools/crowded and a
   // HARD FOR wallet backs the side. tape-weak S/T stays muted.
   // Fail-open (keep muted) if byMarket schema is missing. Manual stake exempt.
@@ -5423,6 +5468,25 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (hardExceptionPolicy.action === 'RESCUE') {
       finalUnitsApplied = hardExceptionPolicy.units;
     }
+  }
+
+  // HARD+ AG mute — after HARD exception, before odds-cap / operator kill.
+  // Get out of the way when a HARD wallet is on the other side.
+  // Remutes both-sides tickets the exception just put back.
+  // Fail-open HOLD if byMarket schema is missing. Manual stake exempt.
+  // 4u+ is not exempt.
+  let hardAgPolicy = null;
+  if (v121Eligible && !skipManualFlinch) {
+    hardAgPolicy = applyHardAgMuteOverlay({
+      units: finalUnitsApplied,
+      marketType: mkt,
+      sport: pick.sport,
+      side,
+      walletDetails: wd,
+      walletProfiles,
+      pickDate,
+    });
+    finalUnitsApplied = hardAgPolicy.units;
   }
 
   // Last choke — RANK / EDGE floors cannot publish past the dog cap.
@@ -5508,6 +5572,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (stFatPolicy?.reason && !reasons.includes(stFatPolicy.reason)) reasons.push(stFatPolicy.reason);
   if (marketSkillPolicy?.reason && !reasons.includes(marketSkillPolicy.reason)) reasons.push(marketSkillPolicy.reason);
   if (hardExceptionPolicy?.reason && !reasons.includes(hardExceptionPolicy.reason)) reasons.push(hardExceptionPolicy.reason);
+  if (hardAgPolicy?.reason && !reasons.includes(hardAgPolicy.reason)) reasons.push(hardAgPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -5560,10 +5625,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const hardExceptionRescued = hardExceptionPolicy?.action === 'RESCUE'
     && Number.isFinite(hardExceptionPolicy.units)
     && hardExceptionPolicy.units > 0;
+  const hardAgMuted = hardAgPolicy?.action === 'MUTE'
+    && Number.isFinite(hardAgPolicy.unitsPrePolicy)
+    && hardAgPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
   // Later mutes (incl. market-skill) run AFTER those floors, so they still win if they cancelled.
-  // HARD hold is last-step: a rescued ticket is live even if an earlier mute cancelled.
-  // Operator kill still wins after the hold.
+  // HARD hold restores; HARD+ AG remutes if specialists faded us; operator kill still wins.
   const earlyMuteCancelled = marketSkillMuted || stFatMuted || boardShareMuted || unitTierMuted || favJuiceMuted || steamTailMuted || evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted;
   const tapeClvMuted = tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
@@ -5571,6 +5638,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const lateMuteCancelled = !confirmedQ1Floored && !confirmedUnoppFloored
     && (foolsMuted || qConvMuted || tapeClvMuted);
   const sizeMuted = operatorKilled
+    || hardAgMuted
     || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled));
   const healthStatusOut = sizeMuted
     ? 'MUTED'
@@ -5618,9 +5686,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const MARKET_SKILL_MUTE_VALUES = new Set([
     ML_MKT_SKILL_MUTED_BY, ST_QUAL_WIPE_MUTED_BY, ST_HARD_SLIP_MUTED_BY,
   ]);
+  const HARD_AG_MUTE_VALUES = new Set([HARD_AG_MUTED_BY]);
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
+  } else if (hardAgPolicy?.mutedBy) {
+    patch.mutedBy = hardAgPolicy.mutedBy;
   } else if (hardExceptionRescued) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = HARD_MUTE_EXCEPTION_RESCUED_BY;
@@ -5678,11 +5749,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || UNIT_TIER_MUTE_VALUES.has(sd.mutedBy)
       || BOARD_SHARE_MUTE_VALUES.has(sd.mutedBy)
       || ST_FAT_MUTE_VALUES.has(sd.mutedBy)
-      || MARKET_SKILL_MUTE_VALUES.has(sd.mutedBy)) {
+      || MARKET_SKILL_MUTE_VALUES.has(sd.mutedBy)
+      || HARD_AG_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
-  if (!hardExceptionRescued && sd.v8_rescuedBy === HARD_MUTE_EXCEPTION_RESCUED_BY) {
+  if ((!hardExceptionRescued || hardAgMuted) && sd.v8_rescuedBy === HARD_MUTE_EXCEPTION_RESCUED_BY) {
     patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== healthStatusOut) {
@@ -6143,6 +6215,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         ? hardExceptionPolicy.unitsPrePolicy
         : null,
       hardMuteExceptionFrom: hardExceptionPolicy?.rescuedFrom ?? null,
+      hardAgMuteAction: hardAgPolicy?.action ?? null,
+      unitsPreHardAgMute: (hardAgPolicy && Number.isFinite(hardAgPolicy.unitsPrePolicy))
+        ? hardAgPolicy.unitsPrePolicy
+        : null,
       fadeProvenHoldAction: fadeProvenHold?.action ?? null,
       fadeProvenHoldReason: fadeProvenHold?.reason ?? null,
       fadeProvenShare: fadeProvenHold?.shareP ?? null,
@@ -6187,6 +6263,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       stFatAction: stFatPolicy?.action ?? null,
       fadeProvenHoldAction: fadeProvenHold?.action ?? null,
       hardMuteExceptionAction: hardExceptionPolicy?.action ?? null,
+      hardAgMuteAction: hardAgPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -6209,7 +6286,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (boardSharePolicy && (sd.v8_boardShareAction || null) !== boardSharePolicy.action)
         || (stFatPolicy && (sd.v8_stFatAction || null) !== stFatPolicy.action)
         || (fadeProvenHold && (sd.v8_fadeProvenHoldAction || null) !== fadeProvenHold.action)
-        || (hardExceptionPolicy && (sd.v8_hardMuteExceptionAction || null) !== hardExceptionPolicy.action)) {
+        || (hardExceptionPolicy && (sd.v8_hardMuteExceptionAction || null) !== hardExceptionPolicy.action)
+        || (hardAgPolicy && (sd.v8_hardAgMuteAction || null) !== hardAgPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -7146,6 +7224,15 @@ async function main() {
     );
   } else {
     console.log(`HARD mute exception: not live before ${HARD_MUTE_EXCEPTION_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isHardAgMuteLive(TARGET_DATE)) {
+    console.log(
+      `HARD+ AG mute LIVE: ≥1 HARD wallet on the other side → 0u`
+      + ` · from ${HARD_AG_MUTE_FROM} · after HARD exception · mutedBy=${HARD_AG_MUTED_BY}`
+      + ` · fail-open HOLD if byMarket schema missing · 4u+ not exempt · no resize / no flip`,
+    );
+  } else {
+    console.log(`HARD+ AG mute: not live before ${HARD_AG_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(
