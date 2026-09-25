@@ -1997,6 +1997,9 @@ export function mapLockedPickToCardFixture(pick, {
     unitsPreMarketSkill: Number.isFinite(pick.unitsPreMarketSkill) ? pick.unitsPreMarketSkill
       : Number.isFinite(pick.v8_unitsPreMarketSkill) ? pick.v8_unitsPreMarketSkill
       : null,
+    unitsPreHardAg: Number.isFinite(pick.unitsPreHardAg) ? pick.unitsPreHardAg
+      : Number.isFinite(pick.v8_unitsPreHardAgMute) ? pick.v8_unitsPreHardAgMute
+      : null,
     steamTailReason: pick.steamTailReason || pick.v8_steamTailReason || null,
     marketAgreement: sma,
     marketSignals,

@@ -1,5 +1,5 @@
 /**
- * HARD mute-exception overlay — last-step HOLD after the mute stack.
+ * HARD mute-exception overlay — HOLD after the mute stack, before HARD+ AG.
  *
  * Directional rescue: if the last mute is tape-weak / maxsr-sub4 /
  * fools-gold-flat / top-crowded AND ≥1 FOR wallet is HARD on the

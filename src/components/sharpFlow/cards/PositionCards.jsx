@@ -42,9 +42,9 @@ function formatLockCountdown(ms) {
 }
 
 /** Audit tooltip for a 0u / NO PLAY card — technical mute reason. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, steamTailReason, stakePath } = {}) {
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, unitsPreHardAg, steamTailReason, stakePath } = {}) {
   const preU = [
-    unitsPreMarketSkill, unitsPreStFat, unitsPreFavJuice, unitsPreSteamTail,
+    unitsPreHardAg, unitsPreMarketSkill, unitsPreStFat, unitsPreFavJuice, unitsPreSteamTail,
     unitsPreNoConfirmed, unitsPreMaxSrSub4, unitsPreFlinchFailOpen, unitsPreTape,
   ].find((n) => Number.isFinite(n) && n > 0) ?? null;
   const pre = preU != null
@@ -88,6 +88,9 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   if (mutedBy === 'st-hard-slip') {
     return pre ? `S/T HARD slip · ${pre}` : 'S/T HARD slip — no n≥4 WR≥62 $ROI≥10 FOR';
   }
+  if (mutedBy === 'hard-ag') {
+    return pre ? `Best wallet against us · ${pre}` : 'Best wallet against us';
+  }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
   if (stakePath === 'MONITORING') return 'Monitoring — never sized';
@@ -108,6 +111,7 @@ function noPlayReason({ mutedBy, tapeAction, stakePath } = {}) {
   if (mutedBy === 'ml-mkt-skill') return 'No ML skill wallet on our side';
   if (mutedBy === 'st-qual-wipe') return 'Qualified spread/total money not on our side';
   if (mutedBy === 'st-hard-slip') return 'No HARD spread/total wallet on our side';
+  if (mutedBy === 'hard-ag') return 'Best wallet on the other side';
   if (stakePath === 'FADE') return "Didn't meet the size bar";
   return "Didn't meet the size bar";
 }
@@ -3071,6 +3075,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
     unitsPreFavJuice: f.unitsPreFavJuice,
     unitsPreStFat: f.unitsPreStFat,
     unitsPreMarketSkill: f.unitsPreMarketSkill,
+    unitsPreHardAg: f.unitsPreHardAg,
     steamTailReason: f.steamTailReason || f.v8_steamTailReason || null,
     stakePath: f.stakePath,
   };
