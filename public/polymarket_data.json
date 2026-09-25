@@ -3,8 +3,8 @@
   "NHL": {},
   "MLB": {
     "tbr_phi": {
-      "volume24h": 19054.083375,
-      "liveVolume": 19112.664021,
+      "volume24h": 19112.664021000004,
+      "liveVolume": 19112.66402,
       "awayMoneyPct": 6.5,
       "homeMoneyPct": 93.5,
       "awayTicketPct": 42.5,
@@ -23,7 +23,7 @@
           41.5,
           40.5,
           39.5,
-          39,
+          38.5,
           39.5,
           38.5,
           38.5
@@ -154,6 +154,7 @@
             51.5,
             51.5,
             51.5,
+            51.5,
             51.5
           ],
           "open": 51,
@@ -171,7 +172,7 @@
       "enrichmentFailed": false
     },
     "bal_nyy": {
-      "volume24h": 9100.736337,
+      "volume24h": 9136.450623,
       "liveVolume": 9136.450622999999,
       "awayMoneyPct": 50.3,
       "homeMoneyPct": 49.7,
@@ -190,10 +191,10 @@
           43.5,
           43.5,
           37.5,
-          42,
+          42.5,
           44.5,
           43.5,
-          44.5,
+          44,
           44
         ],
         "open": 44,
@@ -225,14 +226,14 @@
       "enrichmentFailed": false
     },
     "ari_sdp": {
-      "volume24h": 7840.795322999999,
-      "liveVolume": 8068.080878,
+      "volume24h": 8008.080878999999,
+      "liveVolume": 8089.810878,
       "awayMoneyPct": 97.8,
       "homeMoneyPct": 2.2,
-      "awayTicketPct": 77.8,
-      "homeTicketPct": 22.2,
-      "tradeCount": 63,
-      "sampleCash": 4355,
+      "awayTicketPct": 78.1,
+      "homeTicketPct": 21.9,
+      "tradeCount": 64,
+      "sampleCash": 4365,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -375,8 +376,150 @@
       "polyGameDate": "2026-09-25",
       "enrichmentFailed": false
     },
+    "cin_tor": {
+      "volume24h": 7310.851798,
+      "liveVolume": 10094.619654,
+      "awayMoneyPct": 87,
+      "homeMoneyPct": 13,
+      "awayTicketPct": 45.5,
+      "homeTicketPct": 54.5,
+      "tradeCount": 33,
+      "sampleCash": 4867,
+      "priceMove1h": 3.4,
+      "priceHistory": {
+        "points": [
+          45,
+          45.5,
+          45.5,
+          45.5,
+          45.5,
+          45,
+          45,
+          45.5,
+          45.5,
+          45.5,
+          44.5,
+          44,
+          45.5
+        ],
+        "open": 45,
+        "current": 45.5,
+        "high": 46,
+        "low": 43.5,
+        "change": 0.5
+      },
+      "whales": {
+        "count": 2,
+        "totalCash": 2383,
+        "largest": 1269,
+        "buyCount": 2,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 1269,
+            "side": "BUY",
+            "outcome": "Cincinnati Reds",
+            "price": 46,
+            "ts": 1790336342000,
+            "wallet": "0xa7e8df8bb30e17514cebe26091ddefdf85ce5c8c",
+            "traderName": "Krown"
+          },
+          {
+            "amount": 1114,
+            "side": "BUY",
+            "outcome": "Cincinnati Reds",
+            "price": 46,
+            "ts": 1790337140000,
+            "wallet": "0xa7e8df8bb30e17514cebe26091ddefdf85ce5c8c",
+            "traderName": "Krown"
+          }
+        ]
+      },
+      "awayProb": 45.5,
+      "homeProb": 54.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polyMl": {
+        "slug": "mlb-cin-tor-2026-09-25",
+        "conditionId": "0xf57c3232b921d8ad505ca60baa641bd962c700ebf92d305183164bae5ac1895c",
+        "title": "Cincinnati Reds vs. Toronto Blue Jays"
+      },
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Toronto Blue Jays",
+          "Cincinnati Reds"
+        ],
+        "probs": [
+          37.5,
+          62.5
+        ],
+        "priceHistory": {
+          "points": [
+            38,
+            36,
+            35.5,
+            36,
+            36,
+            36,
+            36,
+            35,
+            35,
+            34.5,
+            37.5,
+            37.5,
+            37.5
+          ],
+          "open": 38,
+          "current": 37.5,
+          "change": -0.5
+        }
+      },
+      "polyTotal": {
+        "line": 6.5,
+        "title": "O/U 6.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          62.5,
+          37.5
+        ],
+        "priceHistory": {
+          "points": [
+            62,
+            62,
+            61.5,
+            62.5,
+            62,
+            62,
+            61.5,
+            62,
+            62,
+            62,
+            62,
+            62,
+            62.5
+          ],
+          "open": 62,
+          "current": 62.5,
+          "change": 0.5
+        }
+      },
+      "awayTeam": "Cincinnati Reds",
+      "homeTeam": "Toronto Blue Jays",
+      "eventId": "1047826",
+      "title": "Cincinnati Reds vs. Toronto Blue Jays",
+      "commence": "2026-09-25T23:08:00Z",
+      "polyGameTime": "2026-09-25T23:07:00Z",
+      "polyGameDate": "2026-09-25",
+      "enrichmentFailed": false
+    },
     "lad_sfg": {
-      "volume24h": 6794.984955999999,
+      "volume24h": 6836.984955999999,
       "liveVolume": 6836.984955999999,
       "awayMoneyPct": 62.3,
       "homeMoneyPct": 37.7,
@@ -426,13 +569,13 @@
           "San Francisco Giants"
         ],
         "probs": [
-          63,
-          37
+          63.5,
+          36.5
         ],
         "priceHistory": {
           "points": [
             41,
-            63.5,
+            63,
             64,
             63.5,
             64,
@@ -441,9 +584,8 @@
             64,
             64,
             64,
-            63.5,
             64,
-            62.5,
+            64,
             63.5
           ],
           "open": 41,
@@ -459,8 +601,8 @@
           "Under"
         ],
         "probs": [
-          47,
-          53
+          47.5,
+          52.5
         ],
         "priceHistory": {
           "points": [
@@ -493,8 +635,8 @@
       "enrichmentFailed": false
     },
     "chc_bos__2": {
-      "volume24h": 5108.438191,
-      "liveVolume": 5657.938189,
+      "volume24h": 5657.938191,
+      "liveVolume": 5676.457421,
       "awayMoneyPct": 73.7,
       "homeMoneyPct": 26.3,
       "awayTicketPct": 50.7,
@@ -567,7 +709,7 @@
           "points": [
             36,
             36,
-            37.5,
+            37,
             36.5,
             36.5,
             36.5,
@@ -601,7 +743,7 @@
             50,
             49.5,
             49.5,
-            49.5,
+            50,
             49.5,
             49.5,
             49.5,
@@ -640,7 +782,7 @@
           51.5,
           51.5,
           52.5,
-          50.5,
+          50,
           53,
           54.5,
           55.5,
@@ -709,6 +851,7 @@
             42.5,
             42.5,
             42.5,
+            42,
             42
           ],
           "open": 51,
@@ -735,6 +878,7 @@
             52,
             52.5,
             52.5,
+            50.5,
             50.5,
             50.5,
             50.5,
@@ -833,8 +977,8 @@
           "Los Angeles Angels"
         ],
         "probs": [
-          35,
-          65
+          35.5,
+          64.5
         ],
         "priceHistory": {
           "points": [
@@ -899,7 +1043,7 @@
       "enrichmentFailed": false
     },
     "bal_nyy__2": {
-      "volume24h": 2585.302828,
+      "volume24h": 3039.292828,
       "liveVolume": 3039.292828,
       "awayMoneyPct": 86.7,
       "homeMoneyPct": 13.3,
@@ -965,6 +1109,7 @@
             36.5,
             36.5,
             36.5,
+            36,
             36
           ],
           "open": 34,
@@ -996,6 +1141,7 @@
             51.5,
             51.5,
             51.5,
+            51.5,
             51.5
           ],
           "open": 50,
@@ -1013,14 +1159,14 @@
       "enrichmentFailed": false
     },
     "nym_wsh": {
-      "volume24h": 2420.094641,
-      "liveVolume": 2441.824641,
-      "awayMoneyPct": 46.8,
-      "homeMoneyPct": 53.2,
-      "awayTicketPct": 31.5,
-      "homeTicketPct": 68.5,
-      "tradeCount": 73,
-      "sampleCash": 1219,
+      "volume24h": 2441.824641,
+      "liveVolume": 2463.554641,
+      "awayMoneyPct": 46.5,
+      "homeMoneyPct": 53.5,
+      "awayTicketPct": 31.1,
+      "homeTicketPct": 68.9,
+      "tradeCount": 74,
+      "sampleCash": 1229,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1033,7 +1179,7 @@
           55,
           54,
           54,
-          54,
+          53.5,
           53.5,
           54.5,
           54.5
@@ -1079,6 +1225,7 @@
             42,
             41.5,
             42,
+            42,
             42
           ],
           "open": 43,
@@ -1106,6 +1253,7 @@
             45,
             45,
             45,
+            45.5,
             45.5,
             45.5,
             45.5,
@@ -1148,7 +1296,7 @@
           61.5,
           60.5,
           59,
-          62.5,
+          62,
           60.5,
           61.5
         ],
@@ -1209,8 +1357,8 @@
           "Under"
         ],
         "probs": [
-          51,
-          49
+          50.5,
+          49.5
         ],
         "priceHistory": {
           "points": [
@@ -1225,6 +1373,7 @@
             49,
             49,
             50,
+            50.5,
             50.5
           ],
           "open": 50,
@@ -1241,8 +1390,141 @@
       "polyGameDate": "2026-09-25",
       "enrichmentFailed": false
     },
+    "atl_mia": {
+      "volume24h": 2312.611261,
+      "liveVolume": 2312.611261,
+      "awayMoneyPct": 99.3,
+      "homeMoneyPct": 0.7,
+      "awayTicketPct": 81.3,
+      "homeTicketPct": 18.8,
+      "tradeCount": 16,
+      "sampleCash": 1139,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          49.5,
+          50.5,
+          50.5,
+          50.5,
+          50.5,
+          52.5,
+          52.5,
+          52.5,
+          52.5,
+          52.5,
+          52.5,
+          52.5,
+          53.5
+        ],
+        "open": 49.5,
+        "current": 53.5,
+        "high": 53.5,
+        "low": 49.5,
+        "change": 4
+      },
+      "whales": {
+        "count": 1,
+        "totalCash": 636,
+        "largest": 636,
+        "buyCount": 1,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 636,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 48,
+            "ts": 1790336711000,
+            "wallet": "0xdc41c39b95453c943174f369926018f6963bdd7e",
+            "traderName": "nigiri99"
+          }
+        ]
+      },
+      "awayProb": 53.5,
+      "homeProb": 46.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polyMl": {
+        "slug": "mlb-atl-mia-2026-09-25",
+        "conditionId": "0xa8f21655fedd42f8e3c3b5eab409cc7988c95ecb2baee292404d0eaa4ec033e0",
+        "title": "Atlanta Braves vs. Miami Marlins"
+      },
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Atlanta Braves",
+          "Miami Marlins"
+        ],
+        "probs": [
+          39.5,
+          60.5
+        ],
+        "priceHistory": {
+          "points": [
+            41,
+            40.5,
+            40.5,
+            40,
+            41,
+            41,
+            41,
+            41.5,
+            41.5,
+            41.5,
+            39.5,
+            39.5,
+            39.5
+          ],
+          "open": 41,
+          "current": 39.5,
+          "change": -1.5
+        }
+      },
+      "polyTotal": {
+        "line": 9.5,
+        "title": "O/U 9.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          35.5,
+          64.5
+        ],
+        "priceHistory": {
+          "points": [
+            38,
+            36.5,
+            35.5,
+            35.5,
+            35.5,
+            35,
+            35.5,
+            35,
+            35,
+            36,
+            35.5,
+            35.5,
+            35.5
+          ],
+          "open": 38,
+          "current": 35.5,
+          "change": -2.5
+        }
+      },
+      "awayTeam": "Atlanta Braves",
+      "homeTeam": "Miami Marlins",
+      "eventId": "1047828",
+      "title": "Atlanta Braves vs. Miami Marlins",
+      "commence": "2026-09-25T23:11:00Z",
+      "polyGameTime": "2026-09-25T23:10:00Z",
+      "polyGameDate": "2026-09-25",
+      "enrichmentFailed": false
+    },
     "col_cws": {
-      "volume24h": 2063.386848,
+      "volume24h": 2077.116848,
       "liveVolume": 2077.1168479999997,
       "awayMoneyPct": 0.2,
       "homeMoneyPct": 99.8,
@@ -1254,7 +1536,7 @@
       "priceHistory": {
         "points": [
           39.5,
-          38.5,
+          38,
           36,
           35.5,
           35.5,
@@ -1374,149 +1656,9 @@
       "polyGameDate": "2026-09-25",
       "enrichmentFailed": false
     },
-    "cin_tor": {
-      "volume24h": 1696.131798,
-      "liveVolume": 5095.851797,
-      "awayMoneyPct": 87.1,
-      "homeMoneyPct": 12.9,
-      "awayTicketPct": 48.4,
-      "homeTicketPct": 51.6,
-      "tradeCount": 31,
-      "sampleCash": 4856,
-      "priceMove1h": 3.4,
-      "priceHistory": {
-        "points": [
-          45.5,
-          45.5,
-          45.5,
-          45.5,
-          45,
-          44.5,
-          45,
-          45.5,
-          45.5,
-          45.5,
-          44.5,
-          44,
-          45.5
-        ],
-        "open": 45.5,
-        "current": 45.5,
-        "high": 46,
-        "low": 43.5,
-        "change": 0
-      },
-      "whales": {
-        "count": 2,
-        "totalCash": 2383,
-        "largest": 1269,
-        "buyCount": 2,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 1269,
-            "side": "BUY",
-            "outcome": "Cincinnati Reds",
-            "price": 46,
-            "ts": 1790336342000,
-            "wallet": "0xa7e8df8bb30e17514cebe26091ddefdf85ce5c8c",
-            "traderName": "Krown"
-          },
-          {
-            "amount": 1114,
-            "side": "BUY",
-            "outcome": "Cincinnati Reds",
-            "price": 46,
-            "ts": 1790337140000,
-            "wallet": "0xa7e8df8bb30e17514cebe26091ddefdf85ce5c8c",
-            "traderName": "Krown"
-          }
-        ]
-      },
-      "awayProb": 45.5,
-      "homeProb": 54.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polyMl": {
-        "slug": "mlb-cin-tor-2026-09-25",
-        "conditionId": "0xf57c3232b921d8ad505ca60baa641bd962c700ebf92d305183164bae5ac1895c",
-        "title": "Cincinnati Reds vs. Toronto Blue Jays"
-      },
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Toronto Blue Jays",
-          "Cincinnati Reds"
-        ],
-        "probs": [
-          37.5,
-          62.5
-        ],
-        "priceHistory": {
-          "points": [
-            38,
-            36,
-            35.5,
-            36,
-            36,
-            36,
-            36,
-            35,
-            35,
-            34.5,
-            37.5,
-            37.5
-          ],
-          "open": 38,
-          "current": 37.5,
-          "change": -0.5
-        }
-      },
-      "polyTotal": {
-        "line": 8.5,
-        "title": "O/U 8.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          42,
-          58
-        ],
-        "priceHistory": {
-          "points": [
-            43,
-            43,
-            42.5,
-            42.5,
-            41,
-            41,
-            42.5,
-            42,
-            42,
-            42,
-            42,
-            42
-          ],
-          "open": 43,
-          "current": 42,
-          "change": -1
-        }
-      },
-      "awayTeam": "Cincinnati Reds",
-      "homeTeam": "Toronto Blue Jays",
-      "eventId": "1047826",
-      "title": "Cincinnati Reds vs. Toronto Blue Jays",
-      "commence": "2026-09-25T23:08:00Z",
-      "polyGameTime": "2026-09-25T23:07:00Z",
-      "polyGameDate": "2026-09-25",
-      "enrichmentFailed": false
-    },
     "stl_mil": {
-      "volume24h": 1315.052089,
-      "liveVolume": 1315.052089,
+      "volume24h": 1336.472089,
+      "liveVolume": 1336.472089,
       "awayMoneyPct": 80.5,
       "homeMoneyPct": 19.5,
       "awayTicketPct": 38.2,
@@ -1644,10 +1786,10 @@
         "points": [
           55,
           55,
-          55,
+          55.5,
           54,
           51.5,
-          51.5,
+          50.5,
           50.5,
           50.5,
           50.5,
@@ -1747,8 +1889,8 @@
       "enrichmentFailed": false
     },
     "chc_bos": {
-      "volume24h": 795.6096050000002,
-      "liveVolume": 795.609605,
+      "volume24h": 795.6096050000001,
+      "liveVolume": 795.609604,
       "awayMoneyPct": 28.5,
       "homeMoneyPct": 71.5,
       "awayTicketPct": 59.3,
@@ -1766,7 +1908,7 @@
           48.5,
           51.5,
           47.5,
-          50.5,
+          51,
           52.5,
           52.5,
           53.5,
@@ -1800,137 +1942,6 @@
       "polyGameDate": "2026-09-25",
       "enrichmentFailed": false
     },
-    "atl_mia": {
-      "volume24h": 648.611261,
-      "liveVolume": 648.611261,
-      "awayMoneyPct": 99.3,
-      "homeMoneyPct": 0.7,
-      "awayTicketPct": 81.3,
-      "homeTicketPct": 18.8,
-      "tradeCount": 16,
-      "sampleCash": 1139,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          50,
-          49.5,
-          50.5,
-          50.5,
-          50.5,
-          52.5,
-          52.5,
-          52.5,
-          52.5,
-          52.5,
-          52.5,
-          52.5,
-          53.5
-        ],
-        "open": 50,
-        "current": 53.5,
-        "high": 53.5,
-        "low": 49.5,
-        "change": 3.5
-      },
-      "whales": {
-        "count": 1,
-        "totalCash": 636,
-        "largest": 636,
-        "buyCount": 1,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 636,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 48,
-            "ts": 1790336711000,
-            "wallet": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-            "traderName": "nigiri99"
-          }
-        ]
-      },
-      "awayProb": 53.5,
-      "homeProb": 46.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polyMl": {
-        "slug": "mlb-atl-mia-2026-09-25",
-        "conditionId": "0xa8f21655fedd42f8e3c3b5eab409cc7988c95ecb2baee292404d0eaa4ec033e0",
-        "title": "Atlanta Braves vs. Miami Marlins"
-      },
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Atlanta Braves",
-          "Miami Marlins"
-        ],
-        "probs": [
-          39.5,
-          60.5
-        ],
-        "priceHistory": {
-          "points": [
-            41,
-            40.5,
-            40.5,
-            40,
-            41,
-            41,
-            41,
-            41.5,
-            41.5,
-            41.5,
-            39.5,
-            39.5
-          ],
-          "open": 41,
-          "current": 39.5,
-          "change": -1.5
-        }
-      },
-      "polyTotal": {
-        "line": 8.5,
-        "title": "O/U 8.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          46,
-          54
-        ],
-        "priceHistory": {
-          "points": [
-            47,
-            45.5,
-            45,
-            46,
-            46,
-            46,
-            46,
-            45.5,
-            45.5,
-            45.5,
-            45.5,
-            45.5
-          ],
-          "open": 47,
-          "current": 45.5,
-          "change": -1.5
-        }
-      },
-      "awayTeam": "Atlanta Braves",
-      "homeTeam": "Miami Marlins",
-      "eventId": "1047828",
-      "title": "Atlanta Braves vs. Miami Marlins",
-      "commence": "2026-09-25T23:11:00Z",
-      "polyGameTime": "2026-09-25T23:10:00Z",
-      "polyGameDate": "2026-09-25",
-      "enrichmentFailed": false
-    },
     "tex_min": {
       "volume24h": 240.589183,
       "liveVolume": 240.589183,
@@ -1948,7 +1959,7 @@
           52.5,
           52.5,
           52.5,
-          50.5,
+          50,
           51,
           50.5,
           50.5,
@@ -2030,6 +2041,7 @@
             50.5,
             50.5,
             50.5,
+            50.5,
             50.5
           ],
           "open": 51,
@@ -2051,7 +2063,7 @@
   "SOC": {},
   "UFC": {
     "vanessademopoulos_yazminjauregui": {
-      "volume24h": 89472.507323,
+      "volume24h": 89472.50732300001,
       "liveVolume": 89472.507322,
       "awayMoneyPct": 94,
       "homeMoneyPct": 6,
@@ -2266,7 +2278,7 @@
       "enrichmentFailed": false
     },
     "raulrosas_raonibarcelos": {
-      "volume24h": 70914.194763,
+      "volume24h": 70924.194763,
       "liveVolume": 70924.194763,
       "awayMoneyPct": 69.3,
       "homeMoneyPct": 30.7,
@@ -2281,8 +2293,8 @@
           57.5,
           57.5,
           57.5,
-          57.5,
           58,
+          57.5,
           58,
           58,
           58.5,
@@ -2463,7 +2475,7 @@
       "enrichmentFailed": false
     },
     "bradyhiestand_rinyanakamura": {
-      "volume24h": 14551.979199,
+      "volume24h": 14551.979199000001,
       "liveVolume": 14551.979199,
       "awayMoneyPct": 71.5,
       "homeMoneyPct": 28.5,
@@ -2552,7 +2564,7 @@
       "enrichmentFailed": false
     },
     "rodolfovieira_robertbryczek": {
-      "volume24h": 11050.859124,
+      "volume24h": 11060.859123999999,
       "liveVolume": 11060.859123999999,
       "awayMoneyPct": 75.3,
       "homeMoneyPct": 24.7,
@@ -2721,7 +2733,7 @@
       "enrichmentFailed": false
     },
     "normadumont_ailinperez": {
-      "volume24h": 9104.052576000002,
+      "volume24h": 9235.004957,
       "liveVolume": 9235.004956,
       "awayMoneyPct": 13.8,
       "homeMoneyPct": 86.2,
@@ -2819,7 +2831,7 @@
       "enrichmentFailed": false
     },
     "paytontalbott_deivesonfigueiredo": {
-      "volume24h": 6713.760248,
+      "volume24h": 6713.7602480000005,
       "liveVolume": 6713.760248,
       "awayMoneyPct": 4,
       "homeMoneyPct": 96,
@@ -2834,7 +2846,7 @@
           83,
           83,
           83,
-          83,
+          82,
           82,
           82,
           82,
@@ -2998,8 +3010,8 @@
       "enrichmentFailed": false
     },
     "rodolfobellato_christianedwards": {
-      "volume24h": 857.0511660000001,
-      "liveVolume": 857.051166,
+      "volume24h": 857.051166,
+      "liveVolume": 920.745128,
       "awayMoneyPct": 53.2,
       "homeMoneyPct": 46.8,
       "awayTicketPct": 54.8,
@@ -3060,33 +3072,32 @@
       "homeTicketPct": 100,
       "tradeCount": 4,
       "sampleCash": 227,
-      "priceMove1h": 2.4,
+      "priceMove1h": 4.9,
       "priceHistory": {
         "points": [
           68.5,
+          60,
+          71.5,
           71,
-          70,
-          70,
-          66.5,
-          57,
+          67,
+          71.5,
           70.5,
           71,
           71,
           71,
           71,
           71,
-          62,
-          58.5
+          61
         ],
         "open": 68.5,
-        "current": 58.5,
+        "current": 61,
         "high": 72.5,
         "low": 53.5,
-        "change": -10
+        "change": -7.5
       },
       "whales": null,
-      "awayProb": 58.5,
-      "homeProb": 41.5,
+      "awayProb": 60,
+      "homeProb": 40,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -3107,7 +3118,7 @@
       "enrichmentFailed": false
     },
     "alatengheili_johncastaneda": {
-      "volume24h": 597.86984,
+      "volume24h": 597.8698400000001,
       "liveVolume": 597.86984,
       "awayMoneyPct": 62.6,
       "homeMoneyPct": 37.4,
@@ -3175,7 +3186,7 @@
           65.5,
           65.5,
           66,
-          66.5,
+          67.5,
           67.5,
           67.5,
           67.5,
@@ -3215,7 +3226,7 @@
       "enrichmentFailed": false
     },
     "estebanribovics_kinggreen": {
-      "volume24h": 254.41081999999997,
+      "volume24h": 254.41082,
       "liveVolume": 254.41082,
       "awayMoneyPct": 53.5,
       "homeMoneyPct": 46.5,
@@ -3228,8 +3239,8 @@
         "points": [
           59,
           62,
-          63.5,
           63,
+          63.5,
           63,
           67.5,
           70.5,
@@ -3281,16 +3292,16 @@
       "priceHistory": {
         "points": [
           38.5,
-          39,
-          41,
+          33,
+          41.5,
           34,
           43,
+          38,
+          37,
+          37.5,
           37.5,
           37,
-          37,
-          37,
-          37,
-          37,
+          37.5,
           37,
           36.5
         ],
@@ -3334,13 +3345,13 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          43,
-          52.5,
+          45.5,
+          48,
           50,
+          47.5,
+          49.5,
           50,
-          50,
-          41,
-          39.5,
+          39,
           39,
           39,
           39,
@@ -3348,15 +3359,15 @@
           38,
           34
         ],
-        "open": 43,
+        "open": 45.5,
         "current": 34,
         "high": 58.5,
         "low": 34,
-        "change": -9
+        "change": -11.5
       },
       "whales": null,
-      "awayProb": 34.5,
-      "homeProb": 65.5,
+      "awayProb": 34,
+      "homeProb": 66,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -3388,25 +3399,25 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          26.5,
+          26,
           22.5,
+          23.5,
           22.5,
+          23.5,
           22.5,
-          22.5,
-          22.5,
-          20,
+          19.5,
           19,
           20,
-          20,
+          19.5,
           20,
           19.5,
           20
         ],
-        "open": 26.5,
+        "open": 26,
         "current": 20,
         "high": 33.5,
         "low": 18,
-        "change": -6.5
+        "change": -6
       },
       "whales": null,
       "awayProb": 20,
@@ -3442,11 +3453,11 @@
       "priceMove1h": 1.1,
       "priceHistory": {
         "points": [
-          61,
-          56,
-          48.5,
-          56.5,
-          57.5,
+          59.5,
+          57,
+          46.5,
+          59.5,
+          59,
           56.5,
           55,
           55,
@@ -3456,11 +3467,11 @@
           55,
           55.5
         ],
-        "open": 61,
+        "open": 59.5,
         "current": 55.5,
         "high": 61.5,
         "low": 46,
-        "change": -5.5
+        "change": -4
       },
       "whales": null,
       "awayProb": 55.5,
@@ -3490,12 +3501,12 @@
     "bal_dal": {
       "volume24h": 198684.02666899998,
       "liveVolume": 198684.02666799998,
-      "awayMoneyPct": 49.1,
-      "homeMoneyPct": 50.9,
-      "awayTicketPct": 59.5,
-      "homeTicketPct": 40.5,
-      "tradeCount": 380,
-      "sampleCash": 97053,
+      "awayMoneyPct": 41.2,
+      "homeMoneyPct": 58.8,
+      "awayTicketPct": 59.3,
+      "homeTicketPct": 40.7,
+      "tradeCount": 381,
+      "sampleCash": 115636,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3520,12 +3531,21 @@
         "change": 0
       },
       "whales": {
-        "count": 43,
-        "totalCash": 67638,
-        "largest": 7498,
-        "buyCount": 42,
+        "count": 44,
+        "totalCash": 86221,
+        "largest": 18583,
+        "buyCount": 43,
         "sellCount": 1,
         "topTrades": [
+          {
+            "amount": 18583,
+            "side": "BUY",
+            "outcome": "Cowboys",
+            "price": 55,
+            "ts": 1790337434000,
+            "wallet": "0x68df8708aadb901618f11abf2471805a66a24815",
+            "traderName": "TKD44"
+          },
           {
             "amount": 7498,
             "side": "BUY",
@@ -3741,15 +3761,6 @@
             "ts": 1790320625000,
             "wallet": "0xd106952ebf30a3125affd8a23b6c1f30c35fc79c",
             "traderName": "Herdonia"
-          },
-          {
-            "amount": 1050,
-            "side": "BUY",
-            "outcome": "Cowboys",
-            "price": 53,
-            "ts": 1790193841000,
-            "wallet": "0xabea08725590a4c6ae7c8e63214c9628bbc772ae",
-            "traderName": "0xaBea08725590a4C6Ae7c8E63214C9628BbC772AE-1781431873018"
           }
         ]
       },
@@ -3837,7 +3848,7 @@
       "enrichmentFailed": false
     },
     "lac_buf": {
-      "volume24h": 129253.35656599999,
+      "volume24h": 129492.286566,
       "liveVolume": 129492.28656600001,
       "awayMoneyPct": 64.5,
       "homeMoneyPct": 35.5,
@@ -4132,7 +4143,7 @@
       "enrichmentFailed": false
     },
     "car_cle": {
-      "volume24h": 57796.86332399999,
+      "volume24h": 57796.863324,
       "liveVolume": 57796.863323,
       "awayMoneyPct": 50,
       "homeMoneyPct": 50,
@@ -4373,14 +4384,14 @@
       "enrichmentFailed": false
     },
     "nyj_det": {
-      "volume24h": 293006.31220700004,
+      "volume24h": 293006.3122070001,
       "liveVolume": 293006.31220499997,
       "awayMoneyPct": 61.4,
       "homeMoneyPct": 38.6,
-      "awayTicketPct": 43.5,
-      "homeTicketPct": 56.5,
-      "tradeCount": 425,
-      "sampleCash": 127163,
+      "awayTicketPct": 43.4,
+      "homeTicketPct": 56.6,
+      "tradeCount": 426,
+      "sampleCash": 127173,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -4659,7 +4670,7 @@
       "enrichmentFailed": false
     },
     "hou_ind": {
-      "volume24h": 129880.546695,
+      "volume24h": 129947.05860999998,
       "liveVolume": 129943.354906,
       "awayMoneyPct": 54.8,
       "homeMoneyPct": 45.2,
@@ -5008,7 +5019,7 @@
       "enrichmentFailed": false
     },
     "ne_jax": {
-      "volume24h": 228157.94476600003,
+      "volume24h": 228157.94476599997,
       "liveVolume": 228157.944763,
       "awayMoneyPct": 78.6,
       "homeMoneyPct": 21.4,
@@ -5357,7 +5368,7 @@
       "enrichmentFailed": false
     },
     "kc_mia": {
-      "volume24h": 145112.47685,
+      "volume24h": 145805.006256,
       "liveVolume": 145805.00625399998,
       "awayMoneyPct": 57.5,
       "homeMoneyPct": 42.5,
@@ -5706,7 +5717,7 @@
       "enrichmentFailed": false
     },
     "ten_nyg": {
-      "volume24h": 98524.00721999998,
+      "volume24h": 98524.00722,
       "liveVolume": 98524.00721499999,
       "awayMoneyPct": 53.8,
       "homeMoneyPct": 46.2,
@@ -6340,7 +6351,7 @@
             38.5,
             38.5,
             39.5,
-            39.5,
+            39,
             39.5,
             39.5
           ],
@@ -6359,8 +6370,8 @@
       "enrichmentFailed": false
     },
     "sea_was": {
-      "volume24h": 285710.000861,
-      "liveVolume": 285713.3608559999,
+      "volume24h": 298201.340861,
+      "liveVolume": 310865.340857,
       "awayMoneyPct": 78.2,
       "homeMoneyPct": 21.8,
       "awayTicketPct": 64.6,
@@ -6378,7 +6389,7 @@
           75.5,
           75.5,
           75.5,
-          75.5,
+          76,
           76.5,
           76.5,
           76.5,
@@ -6659,11 +6670,11 @@
             74.5,
             74.5,
             74,
-            74.5
+            74
           ],
           "open": 72.5,
-          "current": 74.5,
-          "change": 2
+          "current": 74,
+          "change": 1.5
         }
       },
       "polyTotal": {
@@ -6708,7 +6719,7 @@
       "enrichmentFailed": false
     },
     "ari_sf": {
-      "volume24h": 53898.891313,
+      "volume24h": 54652.800065,
       "liveVolume": 54652.80006299998,
       "awayMoneyPct": 48.5,
       "homeMoneyPct": 51.5,
@@ -6922,7 +6933,7 @@
       "enrichmentFailed": false
     },
     "min_tb": {
-      "volume24h": 90335.42045399999,
+      "volume24h": 92328.671288,
       "liveVolume": 92328.671287,
       "awayMoneyPct": 29.9,
       "homeMoneyPct": 70.1,
@@ -7146,7 +7157,7 @@
             46,
             46,
             46,
-            46,
+            45.5,
             45.5,
             45.5,
             45.5,
@@ -7395,7 +7406,7 @@
       "enrichmentFailed": false
     },
     "lar_den": {
-      "volume24h": 126341.42413899998,
+      "volume24h": 126341.424139,
       "liveVolume": 126341.42413900001,
       "awayMoneyPct": 64.8,
       "homeMoneyPct": 35.2,
@@ -7660,8 +7671,8 @@
           "Broncos"
         ],
         "probs": [
-          52,
-          48
+          52.5,
+          47.5
         ],
         "priceHistory": {
           "points": [
@@ -7675,7 +7686,7 @@
             52,
             52,
             52,
-            52,
+            52.5,
             52.5,
             52
           ],
@@ -7728,14 +7739,14 @@
   },
   "CFB": {
     "miss_fla": {
-      "volume24h": 281882.365619,
-      "liveVolume": 286194.265618,
-      "awayMoneyPct": 34.3,
-      "homeMoneyPct": 65.7,
-      "awayTicketPct": 67.6,
-      "homeTicketPct": 32.4,
-      "tradeCount": 751,
-      "sampleCash": 148951,
+      "volume24h": 286194.265619,
+      "liveVolume": 287117.265618,
+      "awayMoneyPct": 34.4,
+      "homeMoneyPct": 65.6,
+      "awayTicketPct": 68.7,
+      "homeTicketPct": 31.3,
+      "tradeCount": 766,
+      "sampleCash": 149156,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -8011,15 +8022,15 @@
           "Florida"
         ],
         "probs": [
-          9.5,
-          90.5
+          11,
+          89
         ],
         "priceHistory": {
           "points": [
             8.5,
+            9,
             9.5,
-            9.5,
-            10.5,
+            10,
             10,
             7.5,
             9.5,
@@ -8078,13 +8089,13 @@
     },
     "haw_wyo": {
       "volume24h": 240136.807983,
-      "liveVolume": 240136.80798200006,
+      "liveVolume": 240136.80798300004,
       "awayMoneyPct": 66.9,
       "homeMoneyPct": 33.1,
-      "awayTicketPct": 67.7,
-      "homeTicketPct": 32.3,
-      "tradeCount": 316,
-      "sampleCash": 119834,
+      "awayTicketPct": 67.8,
+      "homeTicketPct": 32.2,
+      "tradeCount": 317,
+      "sampleCash": 119835,
       "priceMove1h": -1.8,
       "priceHistory": {
         "points": [
@@ -8400,7 +8411,7 @@
             45,
             45.5,
             46,
-            44.5,
+            43.5,
             43.5,
             43.5,
             43.5,
@@ -8430,17 +8441,16 @@
       "liveVolume": 181049.80088299996,
       "awayMoneyPct": 72.7,
       "homeMoneyPct": 27.3,
-      "awayTicketPct": 49,
-      "homeTicketPct": 51,
-      "tradeCount": 157,
-      "sampleCash": 57878,
+      "awayTicketPct": 48.7,
+      "homeTicketPct": 51.3,
+      "tradeCount": 158,
+      "sampleCash": 57879,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
           23.5,
           23.5,
           23.5,
-          24.5,
           24.5,
           24.5,
           24.5,
@@ -8895,11 +8905,11 @@
             49,
             49,
             49,
-            49.5
+            49
           ],
           "open": 49,
-          "current": 49.5,
-          "change": 0.5
+          "current": 49,
+          "change": 0
         }
       },
       "polyTotal": {
@@ -8917,14 +8927,14 @@
           "points": [
             52,
             52,
+            52,
+            51.5,
+            52,
+            51.5,
             52.5,
             52,
-            52,
             51.5,
-            52,
-            52,
-            51.5,
-            51.5,
+            52.5,
             54.5,
             54.5,
             55.5
@@ -8944,14 +8954,14 @@
       "enrichmentFailed": false
     },
     "fau_ulm": {
-      "volume24h": 131846.003105,
+      "volume24h": 132133.04310500002,
       "liveVolume": 132133.04310299997,
       "awayMoneyPct": 18.5,
       "homeMoneyPct": 81.5,
-      "awayTicketPct": 53.1,
-      "homeTicketPct": 46.9,
-      "tradeCount": 98,
-      "sampleCash": 64884,
+      "awayTicketPct": 53.5,
+      "homeTicketPct": 46.5,
+      "tradeCount": 99,
+      "sampleCash": 64885,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -9167,14 +9177,14 @@
       "enrichmentFailed": false
     },
     "clem_cal": {
-      "volume24h": 113167.233636,
-      "liveVolume": 113198.23363399999,
-      "awayMoneyPct": 78.4,
-      "homeMoneyPct": 21.6,
-      "awayTicketPct": 41.8,
-      "homeTicketPct": 58.2,
-      "tradeCount": 335,
-      "sampleCash": 56297,
+      "volume24h": 113198.233636,
+      "liveVolume": 113288.23363399999,
+      "awayMoneyPct": 78.3,
+      "homeMoneyPct": 21.7,
+      "awayTicketPct": 42,
+      "homeTicketPct": 58,
+      "tradeCount": 338,
+      "sampleCash": 56352,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -9408,18 +9418,17 @@
       "enrichmentFailed": false
     },
     "orst_utep": {
-      "volume24h": 90510.40657700002,
+      "volume24h": 90510.406577,
       "liveVolume": 90510.40657400001,
       "awayMoneyPct": 99.2,
       "homeMoneyPct": 0.8,
-      "awayTicketPct": 88.7,
-      "homeTicketPct": 11.3,
-      "tradeCount": 53,
-      "sampleCash": 44890,
+      "awayTicketPct": 88.9,
+      "homeTicketPct": 11.1,
+      "tradeCount": 54,
+      "sampleCash": 44891,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          79.5,
           79.5,
           79.5,
           79.5,
@@ -9515,8 +9524,8 @@
             11,
             10.5,
             9.5,
-            9.5,
-            10,
+            9,
+            9,
             10.5,
             10.5,
             11
@@ -9568,8 +9577,8 @@
       "enrichmentFailed": false
     },
     "navy_uab": {
-      "volume24h": 82196.2867,
-      "liveVolume": 82210.366698,
+      "volume24h": 82210.3667,
+      "liveVolume": 82210.366699,
       "awayMoneyPct": 91.6,
       "homeMoneyPct": 8.4,
       "awayTicketPct": 63.3,
@@ -9857,22 +9866,22 @@
         "priceHistory": {
           "points": [
             49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
+            49,
             7,
-            6,
-            6.5,
-            6.5,
+            50,
+            50,
+            7,
             7,
             6.5,
             6.5,
-            7
+            6.5,
+            6.5,
+            6.5,
+            6.5
           ],
           "open": 49.5,
-          "current": 7,
-          "change": -42.5
+          "current": 6.5,
+          "change": -43
         }
       },
       "polyTotal": {
@@ -9896,7 +9905,7 @@
             48,
             48,
             48,
-            48,
+            48.5,
             48,
             48.5,
             48.5,
@@ -9917,7 +9926,7 @@
       "enrichmentFailed": false
     },
     "tex_tenn": {
-      "volume24h": 77671.152871,
+      "volume24h": 77681.860562,
       "liveVolume": 77681.86055800001,
       "awayMoneyPct": 88.6,
       "homeMoneyPct": 11.4,
@@ -9932,7 +9941,7 @@
           63.5,
           62.5,
           63.5,
-          64,
+          63.5,
           63.5,
           64.5,
           64,
@@ -10460,7 +10469,7 @@
             50,
             50,
             50,
-            49.5,
+            50,
             50,
             50,
             50,
@@ -10692,7 +10701,7 @@
             50,
             50,
             50,
-            49.5,
+            50,
             50,
             50,
             50,
@@ -10748,7 +10757,7 @@
       "enrichmentFailed": false
     },
     "how_rutg": {
-      "volume24h": 42834.861191,
+      "volume24h": 42835.872314,
       "liveVolume": 42835.872314,
       "awayMoneyPct": 91,
       "homeMoneyPct": 9,
@@ -10759,7 +10768,7 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          1.4,
+          1.8,
           1.8,
           1.8,
           1.6,
@@ -10773,11 +10782,11 @@
           1.5,
           1.5
         ],
-        "open": 1.4,
+        "open": 1.8,
         "current": 1.5,
         "high": 1.8,
         "low": 1.2,
-        "change": 0.1
+        "change": -0.3
       },
       "whales": {
         "count": 16,
@@ -10957,10 +10966,10 @@
           "points": [
             49.5,
             49.5,
-            49.5,
-            49.5,
-            49.5,
             26,
+            49.5,
+            49.5,
+            49.5,
             49.5,
             49.5,
             49.5,
@@ -10975,35 +10984,35 @@
         }
       },
       "polyTotal": {
-        "line": 57.5,
-        "title": "O/U 57.5",
+        "line": 53.5,
+        "title": "O/U 53.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          47,
-          53
+          59,
+          41
         ],
         "priceHistory": {
           "points": [
-            48,
-            44,
-            44.5,
-            45.5,
-            46,
-            45.5,
-            46.5,
-            46.5,
-            46.5,
-            46.5,
-            45.5,
-            47.5,
-            47
+            56,
+            56,
+            56,
+            57,
+            57.5,
+            57,
+            57.5,
+            57.5,
+            57.5,
+            57.5,
+            58,
+            58.5,
+            59
           ],
-          "open": 48,
-          "current": 47,
-          "change": -1
+          "open": 56,
+          "current": 59,
+          "change": 3
         }
       },
       "awayTeam": "Howard",
@@ -11031,8 +11040,8 @@
           36,
           36,
           36,
-          35,
-          35,
+          34.5,
+          35.5,
           35.5,
           35.5,
           35.5,
@@ -11162,7 +11171,6 @@
             50,
             50,
             50,
-            50,
             50
           ],
           "open": 50,
@@ -11190,9 +11198,9 @@
             31.5,
             31,
             31.5,
+            31,
             31.5,
-            31.5,
-            31.5,
+            30.5,
             29.5,
             31.5,
             31.5
@@ -11367,35 +11375,35 @@
         }
       },
       "polyTotal": {
-        "line": 70.5,
-        "title": "O/U 70.5",
+        "line": 52.5,
+        "title": "O/U 52.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          13,
-          87
+          51.5,
+          48.5
         ],
         "priceHistory": {
           "points": [
-            12.5,
-            12.5,
-            12.5,
-            12,
-            13.5,
-            12,
-            12.5,
-            13.5,
-            13.5,
-            12.5,
-            13,
-            13,
-            13
+            52.5,
+            52.5,
+            52.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5
           ],
-          "open": 12.5,
-          "current": 13,
-          "change": 0.5
+          "open": 52.5,
+          "current": 51.5,
+          "change": -1
         }
       },
       "awayTeam": "UNLV",
@@ -11408,7 +11416,7 @@
       "enrichmentFailed": false
     },
     "ill_osu": {
-      "volume24h": 34775.214224999996,
+      "volume24h": 34775.214225,
       "liveVolume": 34775.21422400001,
       "awayMoneyPct": 22.2,
       "homeMoneyPct": 77.8,
@@ -11427,7 +11435,7 @@
           4.3,
           4.3,
           4.3,
-          4.3,
+          4.2,
           4.2,
           4.2,
           4.2,
@@ -11498,7 +11506,7 @@
             88.5,
             88,
             88.5,
-            88,
+            88.5,
             88,
             87.5,
             88
@@ -11712,7 +11720,6 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          33.5,
           33.5,
           33.5,
           33.5,
@@ -11962,7 +11969,7 @@
             8,
             8,
             8.5,
-            15,
+            14.5,
             8
           ],
           "open": 8,
@@ -12023,7 +12030,7 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          71.5,
+          72.5,
           72.5,
           72,
           72.5,
@@ -12037,11 +12044,11 @@
           72.5,
           72.5
         ],
-        "open": 71.5,
+        "open": 72.5,
         "current": 72.5,
         "high": 72.5,
-        "low": 71.5,
-        "change": 1
+        "low": 72,
+        "change": 0
       },
       "whales": {
         "count": 3,
@@ -12103,17 +12110,17 @@
         "priceHistory": {
           "points": [
             49.5,
-            50,
             49.5,
+            25.5,
             48.5,
             48.5,
             49.5,
             49.5,
             48.5,
-            45.5,
+            44.5,
             49.5,
             48.5,
-            29,
+            5,
             7
           ],
           "open": 49.5,
@@ -12293,28 +12300,28 @@
           "UTSA"
         ],
         "probs": [
-          6,
-          94
+          5.5,
+          94.5
         ],
         "priceHistory": {
           "points": [
             50,
-            49.5,
+            50,
             26.5,
+            12,
             7.5,
-            9,
-            7,
+            6.5,
             6,
             6.5,
             6,
+            6,
             5.5,
             6,
-            6,
-            6
+            5.5
           ],
           "open": 50,
-          "current": 6,
-          "change": -44
+          "current": 5.5,
+          "change": -44.5
         }
       },
       "polyTotal": {
@@ -12360,13 +12367,13 @@
     },
     "gweb_mrsh": {
       "volume24h": 23660.35914,
-      "liveVolume": 23660.359139,
+      "liveVolume": 24215.2611,
       "awayMoneyPct": 100,
       "homeMoneyPct": 0,
       "awayTicketPct": 100,
       "homeTicketPct": 0,
-      "tradeCount": 29,
-      "sampleCash": 11191,
+      "tradeCount": 30,
+      "sampleCash": 11474,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -12662,7 +12669,7 @@
             47,
             47,
             47,
-            47,
+            46.5,
             46,
             46,
             46,
@@ -12688,14 +12695,14 @@
       "enrichmentFailed": false
     },
     "tlsa_ark": {
-      "volume24h": 19825.937176000003,
-      "liveVolume": 19825.937176,
+      "volume24h": 19825.937176,
+      "liveVolume": 19827.860253,
       "awayMoneyPct": 68.9,
       "homeMoneyPct": 31.1,
-      "awayTicketPct": 73.3,
-      "homeTicketPct": 26.7,
-      "tradeCount": 30,
-      "sampleCash": 9920,
+      "awayTicketPct": 74.2,
+      "homeTicketPct": 25.8,
+      "tradeCount": 31,
+      "sampleCash": 9921,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -12779,14 +12786,14 @@
         "priceHistory": {
           "points": [
             49.5,
-            50,
-            48.5,
-            49.5,
-            49.5,
-            49.5,
             49.5,
             47.5,
             49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            48.5,
             49.5,
             7.5,
             7.5,
@@ -12850,7 +12857,6 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          18.5,
           18.5,
           18.5,
           18.5,
@@ -12958,16 +12964,16 @@
           "points": [
             50,
             50,
-            50,
+            26.5,
             50,
             50,
             24,
-            8.5,
-            7.5,
-            10,
+            19.5,
+            8,
+            12,
             7,
-            6.5,
-            6.5,
+            7,
+            6,
             6.5
           ],
           "open": 50,
@@ -13040,13 +13046,13 @@
           81.5,
           81.5,
           81.5,
-          82.5
+          81.5
         ],
         "open": 81.5,
-        "current": 82.5,
+        "current": 81.5,
         "high": 83,
         "low": 81.5,
-        "change": 1
+        "change": 0
       },
       "whales": {
         "count": 7,
@@ -13120,8 +13126,8 @@
           }
         ]
       },
-      "awayProb": 82.5,
-      "homeProb": 17.5,
+      "awayProb": 81.5,
+      "homeProb": 18.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -13143,23 +13149,23 @@
         ],
         "priceHistory": {
           "points": [
-            37.5,
+            32,
+            40,
+            32,
             32.5,
-            37,
+            31,
+            29.5,
+            35,
             32.5,
-            31.5,
-            31.5,
             30.5,
-            30.5,
-            31.5,
             24.5,
             24.5,
             24.5,
             24.5
           ],
-          "open": 37.5,
+          "open": 32,
           "current": 24.5,
-          "change": -13
+          "change": -7.5
         }
       },
       "polyTotal": {
@@ -13323,7 +13329,7 @@
           "points": [
             50,
             50,
-            50,
+            49.5,
             50,
             50,
             50,
@@ -13402,7 +13408,6 @@
           1.4,
           1.4,
           1.4,
-          1.3,
           1.3,
           1.3,
           1.3
@@ -13486,8 +13491,8 @@
             50,
             50,
             50,
-            79,
-            90.5,
+            80,
+            91,
             90.5,
             90.5,
             91.5,
@@ -13524,7 +13529,6 @@
             55.5,
             54.5,
             54.5,
-            55.5,
             55.5
           ],
           "open": 53,
@@ -13555,7 +13559,7 @@
         "points": [
           39.5,
           39.5,
-          39.5,
+          40.5,
           40.5,
           40.5,
           40.5,
@@ -13634,14 +13638,14 @@
           "points": [
             7,
             7,
-            7,
+            7.5,
             7.5,
             8,
-            8,
+            7.5,
             7.5,
             8.5,
-            7,
-            7,
+            7.5,
+            7.5,
             7,
             7.5,
             6
@@ -13853,7 +13857,7 @@
       "enrichmentFailed": false
     },
     "okla_uga": {
-      "volume24h": 14795.18602,
+      "volume24h": 14795.186020000001,
       "liveVolume": 14795.186020000001,
       "awayMoneyPct": 46.1,
       "homeMoneyPct": 53.9,
@@ -13954,7 +13958,7 @@
             8,
             6.5,
             7,
-            7,
+            7.5,
             7.5
           ],
           "open": 6.5,
@@ -13986,7 +13990,6 @@
             47,
             47,
             47,
-            46.5,
             46.5
           ],
           "open": 46,
@@ -14084,8 +14087,8 @@
             8,
             8,
             8,
-            8,
             7,
+            6.5,
             8.5,
             7.5,
             7.5
@@ -14119,7 +14122,6 @@
             52,
             52,
             52,
-            52.5,
             52.5
           ],
           "open": 52,
@@ -14137,7 +14139,7 @@
       "enrichmentFailed": false
     },
     "minn_wash": {
-      "volume24h": 14069.243723,
+      "volume24h": 14069.243723000001,
       "liveVolume": 14069.243721999997,
       "awayMoneyPct": 11.3,
       "homeMoneyPct": 88.7,
@@ -14222,19 +14224,19 @@
           "Washington"
         ],
         "probs": [
-          5.5,
-          94.5
+          5.4,
+          94.6
         ],
         "priceHistory": {
           "points": [
             5.5,
-            5.3,
+            5.5,
+            5.1,
+            5.9,
+            5.9,
+            5,
             5.4,
-            6,
-            6.2,
-            5.3,
-            5.3,
-            4.7,
+            5.1,
             6.1,
             5.4,
             5.3,
@@ -14373,28 +14375,28 @@
           "Toledo"
         ],
         "probs": [
-          8.5,
-          91.5
+          8,
+          92
         ],
         "priceHistory": {
           "points": [
             8,
             8,
-            8,
+            8.5,
             8,
             8,
             8,
             8,
             9.5,
-            7.5,
+            8,
             8.5,
             8.5,
             9,
-            8.5
+            8
           ],
           "open": 8,
-          "current": 8.5,
-          "change": 0.5
+          "current": 8,
+          "change": 0
         }
       },
       "polyTotal": {
@@ -14413,7 +14415,7 @@
             48,
             48,
             48,
-            48,
+            46.5,
             46.5,
             46.5,
             46.5,
@@ -14576,34 +14578,34 @@
         }
       },
       "polyTotal": {
-        "line": 53.5,
-        "title": "O/U 53.5",
+        "line": 51.5,
+        "title": "O/U 51.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          48.5,
-          51.5
+          54.5,
+          45.5
         ],
         "priceHistory": {
           "points": [
-            46.5,
-            46.5,
-            46.5,
-            47.5,
-            47.5,
-            47.5,
-            47.5,
-            47.5,
-            47.5,
-            48.5,
-            48.5,
-            48.5,
-            48.5
+            52.5,
+            53.5,
+            53.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5
           ],
-          "open": 46.5,
-          "current": 48.5,
+          "open": 52.5,
+          "current": 54.5,
           "change": 2
         }
       },
@@ -14617,7 +14619,7 @@
       "enrichmentFailed": false
     },
     "ariz_wsu": {
-      "volume24h": 11960.489758,
+      "volume24h": 12010.489758,
       "liveVolume": 12010.489757,
       "awayMoneyPct": 99.8,
       "homeMoneyPct": 0.2,
@@ -14631,7 +14633,6 @@
           77.5,
           77.5,
           77.5,
-          78.5,
           78.5,
           78.5,
           78.5,
@@ -14727,7 +14728,6 @@
             8,
             9,
             8.5,
-            9.5,
             9.5
           ],
           "open": 9,
@@ -14778,7 +14778,7 @@
     },
     "mizz_msst": {
       "volume24h": 11271.983533,
-      "liveVolume": 11271.983532999999,
+      "liveVolume": 11271.983531999998,
       "awayMoneyPct": 81.5,
       "homeMoneyPct": 18.5,
       "awayTicketPct": 39.7,
@@ -14791,7 +14791,7 @@
           32.5,
           32.5,
           32.5,
-          32.5,
+          33.5,
           33.5,
           33.5,
           33.5,
@@ -14866,8 +14866,8 @@
             7.5,
             7,
             6.5,
-            6.5,
             6,
+            5.5,
             7,
             6.5,
             7.5
@@ -14901,7 +14901,6 @@
             51.5,
             51.5,
             51.5,
-            51.5,
             51.5
           ],
           "open": 50,
@@ -14919,14 +14918,14 @@
       "enrichmentFailed": false
     },
     "army_tem": {
-      "volume24h": 10478.333493,
-      "liveVolume": 10855.512980000001,
+      "volume24h": 10855.512981,
+      "liveVolume": 10917.277686000001,
       "awayMoneyPct": 97.2,
       "homeMoneyPct": 2.8,
-      "awayTicketPct": 72.6,
-      "homeTicketPct": 27.4,
-      "tradeCount": 106,
-      "sampleCash": 6327,
+      "awayTicketPct": 72.9,
+      "homeTicketPct": 27.1,
+      "tradeCount": 107,
+      "sampleCash": 6369,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -14938,7 +14937,6 @@
           58.5,
           58.5,
           58.5,
-          59.5,
           59.5,
           59.5,
           59.5,
@@ -15027,8 +15025,8 @@
             7.5,
             8.5,
             8.5,
-            23,
             7.5,
+            8.5,
             7.5,
             7
           ],
@@ -15101,7 +15099,6 @@
           8.5,
           8.5,
           8.5,
-          8.5,
           8.5
         ],
         "open": 9.5,
@@ -15168,10 +15165,10 @@
             9,
             9,
             9,
-            8.5,
             8,
             8,
-            17.5,
+            8,
+            18.5,
             8
           ],
           "open": 9,
@@ -15202,7 +15199,7 @@
             46.5,
             46.5,
             46.5,
-            46.5,
+            46,
             46.5,
             46.5
           ],
@@ -15235,7 +15232,6 @@
           17,
           17,
           17,
-          17.5,
           17.5,
           17.5,
           17.5,
@@ -15314,11 +15310,10 @@
             7,
             7,
             7,
-            8,
+            7.5,
             8,
             7.5,
             7.5,
-            8,
             8,
             7.5,
             7.5,
@@ -15344,7 +15339,7 @@
         "priceHistory": {
           "points": [
             48,
-            48,
+            48.5,
             48.5,
             47.5,
             47.5,
@@ -15604,10 +15599,10 @@
         ],
         "priceHistory": {
           "points": [
-            7,
             6,
             6,
-            7.5,
+            6,
+            8,
             8,
             6.5,
             7,
@@ -15618,9 +15613,9 @@
             6,
             7.5
           ],
-          "open": 7,
+          "open": 6,
           "current": 7.5,
-          "change": 0.5
+          "change": 1.5
         }
       },
       "polyTotal": {
@@ -15687,7 +15682,6 @@
           42.5,
           42.5,
           42.5,
-          42.5,
           42.5
         ],
         "open": 42,
@@ -15751,8 +15745,8 @@
             7.5,
             8.5,
             8.5,
-            10,
-            8.5,
+            9.5,
+            8,
             8.5,
             8.5,
             8,
@@ -15874,28 +15868,28 @@
           "Boston College"
         ],
         "probs": [
-          8.5,
-          91.5
+          18.5,
+          81.5
         ],
         "priceHistory": {
           "points": [
+            9,
             8,
-            8,
+            11,
             10,
-            8.5,
-            27,
+            25.5,
             9,
             27.5,
-            10.5,
-            8,
-            26,
-            15,
-            8,
-            33
+            14,
+            9,
+            25.5,
+            8.5,
+            8.5,
+            28.5
           ],
-          "open": 8,
-          "current": 33,
-          "change": 25
+          "open": 9,
+          "current": 28.5,
+          "change": 19.5
         }
       },
       "polyTotal": {
@@ -15911,7 +15905,7 @@
         ],
         "priceHistory": {
           "points": [
-            47.5,
+            46.5,
             46.5,
             46.5,
             48.5,
@@ -15925,9 +15919,9 @@
             47.5,
             47.5
           ],
-          "open": 47.5,
+          "open": 46.5,
           "current": 47.5,
-          "change": 0
+          "change": 1
         }
       },
       "awayTeam": "Virginia Tech",
@@ -16053,11 +16047,11 @@
         ],
         "priceHistory": {
           "points": [
+            50.5,
+            50,
             51,
             50,
             50.5,
-            50,
-            50,
             50.5,
             50.5,
             51.5,
@@ -16067,9 +16061,9 @@
             55.5,
             55.5
           ],
-          "open": 51,
+          "open": 50.5,
           "current": 55.5,
-          "change": 4.5
+          "change": 5
         }
       },
       "awayTeam": "Lindenwood",
@@ -16300,28 +16294,28 @@
           "Florida State"
         ],
         "probs": [
-          2.1,
-          98
+          1.5,
+          98.5
         ],
         "priceHistory": {
           "points": [
-            47.5,
+            47.4,
             46.5,
-            45.5,
+            25.9,
             24.5,
             22.6,
-            20.5,
-            18.1,
-            15.5,
-            13.1,
-            10.1,
-            7,
-            4,
-            2.1
+            20.4,
+            17.9,
+            15.4,
+            13,
+            10,
+            6.9,
+            3.8,
+            1.5
           ],
-          "open": 47.5,
-          "current": 2.1,
-          "change": -45.4
+          "open": 47.4,
+          "current": 1.5,
+          "change": -45.9
         }
       },
       "polyTotal": {
@@ -16442,27 +16436,28 @@
           "Iowa State"
         ],
         "probs": [
-          26.5,
-          73.5
+          7.5,
+          92.5
         ],
         "priceHistory": {
           "points": [
-            9,
-            27.5,
-            11,
-            10,
-            25.5,
-            26.5,
-            26.5,
-            10,
-            8,
             8.5,
             27.5,
-            26.5
+            14.5,
+            11.5,
+            21.5,
+            26,
+            25.5,
+            10,
+            9.5,
+            26,
+            25.5,
+            12.5,
+            27
           ],
-          "open": 9,
-          "current": 26.5,
-          "change": 17.5
+          "open": 8.5,
+          "current": 27,
+          "change": 18.5
         }
       },
       "polyTotal": {
@@ -16588,11 +16583,11 @@
         ],
         "priceHistory": {
           "points": [
-            7,
             7.5,
-            7,
+            7.5,
+            6,
             9,
-            8.5,
+            9,
             8.5,
             8.5,
             7,
@@ -16602,9 +16597,9 @@
             6.5,
             7
           ],
-          "open": 7,
+          "open": 7.5,
           "current": 7,
-          "change": 0
+          "change": -0.5
         }
       },
       "polyTotal": {
@@ -16620,6 +16615,7 @@
         ],
         "priceHistory": {
           "points": [
+            52.5,
             52.5,
             52.5,
             52.5,
@@ -16863,14 +16859,15 @@
         "priceHistory": {
           "points": [
             8,
-            8,
-            8,
-            7.5,
+            8.5,
             8,
             7,
             8,
+            6.5,
             8,
-            7.5,
+            8,
+            8,
+            7,
             7.5,
             7.5,
             7.5
@@ -16922,8 +16919,8 @@
       "enrichmentFailed": false
     },
     "colo_bay": {
-      "volume24h": 4759.079321,
-      "liveVolume": 4759.079320000001,
+      "volume24h": 4759.079320999999,
+      "liveVolume": 4846.579320000001,
       "awayMoneyPct": 62.3,
       "homeMoneyPct": 37.7,
       "awayTicketPct": 62.9,
@@ -16941,6 +16938,7 @@
           22.5,
           22.5,
           22.5,
+          23.5,
           23.5,
           23.5,
           23.5,
@@ -16998,6 +16996,7 @@
             7.5,
             6.5,
             8,
+            7.5,
             7.5,
             7.5,
             7.5,
@@ -17075,7 +17074,7 @@
           31.5,
           31,
           31,
-          31,
+          31.5,
           31
         ],
         "open": 32,
@@ -17126,22 +17125,22 @@
         "priceHistory": {
           "points": [
             4.5,
-            4,
+            4.2,
+            4.4,
             4.5,
-            4.5,
-            5.8,
+            5.7,
             4.6,
             6.1,
-            6.2,
-            5.7,
+            5.5,
+            5.4,
             4,
-            4.5,
-            5.8,
-            4.5
+            4.3,
+            5.9,
+            4.4
           ],
           "open": 4.5,
-          "current": 4.5,
-          "change": 0
+          "current": 4.4,
+          "change": -0.1
         }
       },
       "polyTotal": {
@@ -17160,6 +17159,7 @@
             51,
             51,
             51,
+            49.5,
             49.5,
             49.5,
             49.5,
@@ -17196,6 +17196,7 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
+          89.5,
           89.5,
           89.5,
           89.5,
@@ -17267,16 +17268,16 @@
           "points": [
             7.5,
             7.5,
-            8.5,
-            10.5,
+            9,
             9.5,
-            8.5,
+            10,
+            9,
             7.5,
             7.5,
             9.5,
             7.5,
             6.5,
-            7,
+            6.5,
             6.5
           ],
           "open": 7.5,
@@ -17297,6 +17298,7 @@
         ],
         "priceHistory": {
           "points": [
+            49.5,
             49.5,
             49.5,
             49.5,
@@ -17337,6 +17339,7 @@
       "priceHistory": {
         "points": [
           67.5,
+          67,
           67,
           67,
           67,
@@ -17407,6 +17410,7 @@
             50,
             50,
             50,
+            50,
             50
           ],
           "open": 50,
@@ -17438,6 +17442,7 @@
             50,
             50.5,
             50.5,
+            50.5,
             50.5
           ],
           "open": 48,
@@ -17466,6 +17471,7 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
+          22.5,
           22.5,
           22.5,
           22.5,
@@ -17569,6 +17575,7 @@
             50.5,
             50.5,
             50.5,
+            50.5,
             50.5
           ],
           "open": 48.5,
@@ -17608,6 +17615,7 @@
           46.5,
           46.5,
           46.5,
+          46.5,
           46.5
         ],
         "open": 46.5,
@@ -17640,6 +17648,7 @@
         ],
         "priceHistory": {
           "points": [
+            50,
             50,
             50,
             50,
@@ -17722,6 +17731,7 @@
           24.5,
           24.5,
           24.5,
+          24.5,
           24.5
         ],
         "open": 24.5,
@@ -17765,6 +17775,7 @@
             9,
             7.5,
             7.5,
+            7.5,
             7.5
           ],
           "open": 7.5,
@@ -17795,6 +17806,7 @@
             49.5,
             49.5,
             49.5,
+            50.5,
             50.5,
             50.5
           ],
@@ -17889,11 +17901,12 @@
             90.5,
             90,
             91,
-            92.5,
+            91,
             91,
             91,
             89.5,
             89,
+            89.5,
             89.5,
             89.5,
             89.5
@@ -17904,35 +17917,35 @@
         }
       },
       "polyTotal": {
-        "line": 72.5,
-        "title": "O/U 72.5",
+        "line": 60.5,
+        "title": "O/U 60.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          21,
-          79
+          49.5,
+          50.5
         ],
         "priceHistory": {
           "points": [
-            21.5,
-            21.5,
-            22,
-            21.5,
-            21.5,
-            21.5,
-            22,
-            21.5,
-            20,
-            20.5,
-            20.5,
-            20.5,
-            21
+            47.5,
+            48,
+            48,
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            49.5,
+            49.5
           ],
-          "open": 21.5,
-          "current": 21,
-          "change": -0.5
+          "open": 47.5,
+          "current": 49.5,
+          "change": 2
         }
       },
       "awayTeam": "Missouri State",
@@ -17956,11 +17969,11 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          87.5,
-          88,
           88.5,
+          88,
+          89,
           90.5,
-          90,
+          89,
           91.5,
           91.5,
           91,
@@ -17970,11 +17983,11 @@
           91,
           91.5
         ],
-        "open": 87.5,
+        "open": 88.5,
         "current": 91.5,
         "high": 91.5,
         "low": 86.5,
-        "change": 4
+        "change": 3
       },
       "whales": {
         "count": 2,
@@ -18037,6 +18050,7 @@
             50,
             50,
             50,
+            50,
             50
           ],
           "open": 50,
@@ -18045,34 +18059,35 @@
         }
       },
       "polyTotal": {
-        "line": 59.5,
-        "title": "O/U 59.5",
+        "line": 57.5,
+        "title": "O/U 57.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          47.5,
-          52.5
+          53,
+          47
         ],
         "priceHistory": {
           "points": [
-            47,
-            47,
-            47,
-            47,
-            47,
-            47,
-            47,
-            47,
-            47,
-            47,
-            47,
-            47.5
+            53,
+            53,
+            53,
+            53,
+            53,
+            53,
+            53,
+            53,
+            53,
+            53,
+            53,
+            53,
+            53
           ],
-          "open": 47,
-          "current": 47.5,
-          "change": 0.5
+          "open": 53,
+          "current": 53,
+          "change": 0
         }
       },
       "awayTeam": "Illinois State",
@@ -18085,7 +18100,7 @@
       "enrichmentFailed": false
     },
     "wm_duke": {
-      "volume24h": 1758.444153,
+      "volume24h": 1758.4441530000001,
       "liveVolume": 1758.444153000001,
       "awayMoneyPct": 4.3,
       "homeMoneyPct": 95.7,
@@ -18107,6 +18122,7 @@
           0.5,
           0.5,
           0.6,
+          0.5,
           0.5
         ],
         "open": 0.5,
@@ -18134,8 +18150,8 @@
           "Duke"
         ],
         "probs": [
-          18,
-          82
+          17.5,
+          82.5
         ],
         "priceHistory": {
           "points": [
@@ -18144,50 +18160,50 @@
             49,
             49,
             49,
-            25,
+            25.5,
             24,
             23,
-            21.5,
+            22,
             20,
             19,
             18.5,
-            18
+            17.5
           ],
           "open": 49,
-          "current": 18,
-          "change": -31
+          "current": 17.5,
+          "change": -31.5
         }
       },
       "polyTotal": {
-        "line": 65.5,
-        "title": "O/U 65.5",
+        "line": 75.5,
+        "title": "O/U 75.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          43.5,
-          56.5
+          21,
+          79
         ],
         "priceHistory": {
           "points": [
-            42.5,
-            42.5,
-            42.5,
-            42,
-            42.5,
-            42.5,
-            42.5,
-            42.5,
-            43,
-            43,
-            43.5,
-            43.5,
-            43
+            21.5,
+            20.5,
+            21.5,
+            21,
+            27.5,
+            22,
+            22,
+            25.5,
+            26,
+            21,
+            21,
+            24.5,
+            21
           ],
-          "open": 42.5,
-          "current": 43,
-          "change": 0.5
+          "open": 21.5,
+          "current": 21,
+          "change": -0.5
         }
       },
       "awayTeam": "William & Mary",
@@ -18221,7 +18237,7 @@
           67.5,
           67.5,
           67.5,
-          67.5,
+          68,
           67.5,
           67.5
         ],
@@ -18255,11 +18271,11 @@
         ],
         "priceHistory": {
           "points": [
+            50,
+            50,
             50.5,
             50,
             50.5,
-            50.5,
-            50,
             50.5,
             50.5,
             50.5,
@@ -18269,9 +18285,9 @@
             50.5,
             50.5
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 50.5,
-          "change": 0
+          "change": 0.5
         }
       },
       "polyTotal": {
@@ -18296,7 +18312,7 @@
             50.5,
             50.5,
             50.5,
-            50.5,
+            50,
             50.5,
             50.5,
             50.5
@@ -18431,6 +18447,7 @@
             50,
             50,
             50,
+            50,
             50
           ],
           "open": 50,
@@ -18462,6 +18479,7 @@
           19.5,
           19.5,
           19.5,
+          18.5,
           18.5,
           18.5,
           18.5,
@@ -18502,23 +18520,23 @@
         ],
         "priceHistory": {
           "points": [
-            6.5,
-            7,
+            6,
             7.5,
             7,
-            7,
-            7,
-            7,
-            7,
+            7.5,
+            6.5,
+            8,
+            8,
+            6.5,
             7.5,
             6,
             6.5,
             7,
             6.5
           ],
-          "open": 6.5,
+          "open": 6,
           "current": 6.5,
-          "change": 0
+          "change": 0.5
         }
       },
       "polyTotal": {
@@ -18545,6 +18563,7 @@
             49,
             49,
             49,
+            49.5,
             49.5
           ],
           "open": 48,
@@ -18570,18 +18589,18 @@
       "homeTicketPct": 20,
       "tradeCount": 10,
       "sampleCash": 838,
-      "priceMove1h": 1.3,
+      "priceMove1h": 4.1,
       "priceHistory": {
         "points": [
           75,
-          84,
-          75.5,
-          80,
+          83.5,
+          79.5,
+          79.5,
           79.5,
           81,
           80,
           79.5,
-          78,
+          77.5,
           77.5,
           76,
           77.5,
@@ -18617,22 +18636,23 @@
         ],
         "priceHistory": {
           "points": [
+            50,
             50.5,
             50.5,
+            50,
+            50,
             50.5,
-            50.5,
-            50.5,
-            51,
             50.5,
             50.5,
             50,
             50.5,
+            50,
             50.5,
             50.5
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 50.5,
-          "change": 0
+          "change": 0.5
         }
       },
       "polyTotal": {
@@ -18648,21 +18668,23 @@
         ],
         "priceHistory": {
           "points": [
+            50,
             49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
+            50,
+            50,
             49.5,
             50,
             49.5,
             49.5,
-            49.5
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            50
           ],
-          "open": 49.5,
-          "current": 49.5,
+          "open": 50,
+          "current": 50,
           "change": 0
         }
       },
@@ -18726,60 +18748,60 @@
           "Ohio"
         ],
         "probs": [
-          48,
-          52
+          47.5,
+          52.5
         ],
         "priceHistory": {
           "points": [
-            44,
+            44.5,
             41.5,
-            40.5,
+            25.5,
             38.5,
             47.5,
             45,
             42,
-            47,
+            47.5,
             47.5,
             46,
             45,
-            43.5,
-            48
+            42.5,
+            47.5
           ],
-          "open": 44,
-          "current": 48,
-          "change": 4
+          "open": 44.5,
+          "current": 47.5,
+          "change": 3
         }
       },
       "polyTotal": {
-        "line": 73.5,
-        "title": "O/U 73.5",
+        "line": 51.5,
+        "title": "O/U 51.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          13,
-          87
+          53.5,
+          46.5
         ],
         "priceHistory": {
           "points": [
-            13.5,
-            13,
-            13,
-            13.5,
-            32,
-            13.5,
-            14,
-            26.5,
-            27,
-            14,
-            13,
-            14.5,
-            13
+            52,
+            52,
+            52,
+            52,
+            52,
+            52,
+            52.5,
+            53,
+            53,
+            53.5,
+            53.5,
+            54,
+            53.5
           ],
-          "open": 13.5,
-          "current": 13,
-          "change": -0.5
+          "open": 52,
+          "current": 53.5,
+          "change": 1.5
         }
       },
       "awayTeam": "Stonehill",
@@ -18810,6 +18832,7 @@
           0.5,
           0.5,
           0.5,
+          0.4,
           0.4,
           0.4,
           0.4,
@@ -18920,6 +18943,7 @@
         "points": [
           5,
           5,
+          5.5,
           5,
           5,
           5,
@@ -18963,7 +18987,7 @@
           "points": [
             50,
             50,
-            50,
+            26.5,
             50,
             50,
             50,
@@ -18996,15 +19020,15 @@
             27.5,
             27,
             27,
-            27.5,
+            27,
             40,
-            28.5,
+            28,
             29,
-            38.5,
+            37.5,
             31.5,
             28,
             28,
-            34,
+            32.5,
             28
           ],
           "open": 27.5,
@@ -19043,7 +19067,7 @@
           2.2,
           2.4,
           2.1,
-          2.1,
+          2,
           2.1,
           2.1
         ],
@@ -19072,19 +19096,19 @@
           "East Carolina"
         ],
         "probs": [
-          37,
-          63
+          36.5,
+          63.5
         ],
         "priceHistory": {
           "points": [
             49.5,
             49.5,
+            49,
             49.5,
             49.5,
-            49.5,
-            47.5,
-            43.5,
-            42,
+            48.5,
+            44,
+            42.5,
             41,
             40,
             39,
@@ -19115,17 +19139,17 @@
             50.5,
             50,
             50.5,
-            52.5,
+            51,
             51.5,
             50.5,
             51.5,
-            51.5,
+            61,
             52,
-            51.5
+            52
           ],
           "open": 48.5,
-          "current": 51.5,
-          "change": 3
+          "current": 52,
+          "change": 3.5
         }
       },
       "awayTeam": "North Carolina Central",
@@ -19149,25 +19173,25 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          3.3,
+          3.8,
           3.7,
           3.3,
           3.8,
           3.3,
-          3.4,
+          3.3,
           3.4,
           3.4,
           3.5,
-          3.9,
+          3.5,
           3.5,
           3.8,
           3.6
         ],
-        "open": 3.3,
+        "open": 3.8,
         "current": 3.6,
         "high": 4.4,
         "low": 2.7,
-        "change": 0.3
+        "change": -0.2
       },
       "whales": null,
       "awayProb": 3.6,
@@ -19204,6 +19228,7 @@
             50,
             50,
             50,
+            50,
             50
           ],
           "open": 50,
@@ -19212,34 +19237,35 @@
         }
       },
       "polyTotal": {
-        "line": 51.5,
-        "title": "O/U 51.5",
+        "line": 57.5,
+        "title": "O/U 57.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          33,
-          67
+          20.5,
+          79.5
         ],
         "priceHistory": {
           "points": [
-            31.5,
+            20,
+            19,
+            19.5,
+            20.5,
             31,
-            31.5,
-            31,
-            33,
-            33,
-            33,
-            33.5,
-            33,
-            33.5,
-            33,
-            33
+            21,
+            21.5,
+            22,
+            22,
+            21,
+            20.5,
+            22,
+            20.5
           ],
-          "open": 31.5,
-          "current": 33,
-          "change": 1.5
+          "open": 20,
+          "current": 20.5,
+          "change": 0.5
         }
       },
       "awayTeam": "Robert Morris",
@@ -19309,7 +19335,7 @@
           "points": [
             50,
             50,
-            50,
+            26.5,
             50,
             50,
             50,
@@ -19349,7 +19375,7 @@
             40.5,
             40.5,
             41,
-            41.5,
+            41,
             40,
             41
           ],
@@ -19379,8 +19405,8 @@
       "priceMove1h": -1.1,
       "priceHistory": {
         "points": [
-          88.5,
-          90.5,
+          88,
+          91,
           91.5,
           91.5,
           90.5,
@@ -19389,15 +19415,15 @@
           91,
           91.5,
           91,
-          92.5,
+          91,
           91,
           90.5
         ],
-        "open": 88.5,
+        "open": 88,
         "current": 90.5,
         "high": 92.5,
         "low": 87.5,
-        "change": 2
+        "change": 2.5
       },
       "whales": null,
       "awayProb": 90.5,
@@ -19429,8 +19455,8 @@
             50,
             49.5,
             50,
-            49.5,
-            49.5,
+            50,
+            50,
             50,
             50,
             50,
@@ -19492,21 +19518,21 @@
       "homeTicketPct": 60,
       "tradeCount": 5,
       "sampleCash": 149,
-      "priceMove1h": 6.3,
+      "priceMove1h": 0,
       "priceHistory": {
         "points": [
           26,
           26,
           26,
           26,
-          26,
-          26,
-          24,
+          26.5,
+          26.5,
+          24.5,
           26.5,
           25.5,
           26.5,
           26.5,
-          25,
+          25.5,
           24
         ],
         "open": 26,
@@ -19544,7 +19570,8 @@
             50,
             50,
             50,
-            26.5,
+            50,
+            50,
             50,
             50,
             50,
@@ -19618,7 +19645,7 @@
           86.5,
           85,
           86.5,
-          86.5,
+          87,
           87.5,
           87,
           87.5,
@@ -19649,28 +19676,28 @@
           "Indiana State"
         ],
         "probs": [
-          63,
-          37
+          63.5,
+          36.5
         ],
         "priceHistory": {
           "points": [
-            49.5,
-            49.5,
-            49.5,
-            50,
-            50,
             50,
             49.5,
-            65,
-            65,
+            61,
+            50.5,
+            50,
+            50,
+            49.5,
+            66,
+            65.5,
             63.5,
-            63,
+            64,
             64.5,
             63.5
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 63.5,
-          "change": 14
+          "change": 13.5
         }
       },
       "polyTotal": {
@@ -19681,22 +19708,22 @@
           "Under"
         ],
         "probs": [
-          50,
-          50
+          49.5,
+          50.5
         ],
         "priceHistory": {
           "points": [
             50,
             50,
-            49.5,
             50,
             50,
             49.5,
-            50,
-            50,
-            50,
+            49.5,
             50,
             49.5,
+            50,
+            49.5,
+            50,
             49.5,
             50
           ],
@@ -19715,27 +19742,27 @@
       "enrichmentFailed": false
     },
     "unh_shu": {
-      "volume24h": 201.18129799999997,
-      "liveVolume": 201.181298,
+      "volume24h": 201.181298,
+      "liveVolume": 201.181297,
       "awayMoneyPct": 70.5,
       "homeMoneyPct": 29.5,
       "awayTicketPct": 64.3,
       "homeTicketPct": 35.7,
       "tradeCount": 14,
       "sampleCash": 114,
-      "priceMove1h": -3.8,
+      "priceMove1h": -5.1,
       "priceHistory": {
         "points": [
           36.5,
           38,
           37.5,
-          37,
+          37.5,
           38.5,
           38,
           38.5,
           39,
           39,
-          39,
+          39.5,
           38.5,
           38.5,
           37.5
@@ -19772,15 +19799,15 @@
           "points": [
             50,
             50.5,
+            27,
+            50,
             50.5,
             50.5,
             50.5,
             50,
             50.5,
             50,
-            50.5,
             50,
-            50.5,
             50,
             50
           ],
@@ -19809,10 +19836,10 @@
             21.5,
             21.5,
             21.5,
+            22,
+            21,
             21.5,
-            21.5,
-            21.5,
-            21.5,
+            21,
             22,
             21.5
           ],
@@ -19839,14 +19866,14 @@
       "homeTicketPct": 100,
       "tradeCount": 6,
       "sampleCash": 190,
-      "priceMove1h": 0,
+      "priceMove1h": 7.8,
       "priceHistory": {
         "points": [
           3.4,
           3.3,
           2.6,
-          2.6,
-          2.5,
+          2.9,
+          2.9,
           2.8,
           2.8,
           2.7,
@@ -19854,17 +19881,17 @@
           2.7,
           2.5,
           2.5,
-          2.5
+          2.8
         ],
         "open": 3.4,
-        "current": 2.5,
+        "current": 2.8,
         "high": 4.1,
         "low": 2.4,
-        "change": -0.9
+        "change": -0.6
       },
       "whales": null,
-      "awayProb": 2.5,
-      "homeProb": 97.5,
+      "awayProb": 2.8,
+      "homeProb": 97.3,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -19888,7 +19915,7 @@
           "points": [
             50,
             50,
-            50,
+            26.5,
             50,
             50,
             50,
@@ -19918,12 +19945,12 @@
         ],
         "priceHistory": {
           "points": [
-            50.5,
-            50.5,
-            50.5,
-            50.5,
-            50.5,
             50,
+            50.5,
+            50.5,
+            50.5,
+            50.5,
+            50.5,
             50.5,
             50.5,
             50.5,
@@ -19932,9 +19959,9 @@
             53,
             52.5
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 52.5,
-          "change": 2
+          "change": 2.5
         }
       },
       "awayTeam": "Mississippi Valley State",
@@ -19955,16 +19982,16 @@
       "homeTicketPct": 0,
       "tradeCount": 6,
       "sampleCash": 84,
-      "priceMove1h": -3.2,
+      "priceMove1h": -2.2,
       "priceHistory": {
         "points": [
           48,
           49.5,
           48,
           49.5,
+          48.5,
           48,
-          48,
-          48,
+          48.5,
           48,
           48,
           48,
@@ -19997,22 +20024,22 @@
           "East Tennessee State"
         ],
         "probs": [
-          27,
-          73
+          26.5,
+          73.5
         ],
         "priceHistory": {
           "points": [
             26.5,
-            33.5,
             27,
+            26,
             25,
             25,
-            25.5,
-            22,
             25,
-            33.5,
-            21.5,
+            25,
+            25,
             27,
+            24,
+            26,
             33,
             26.5
           ],
@@ -20043,14 +20070,14 @@
             62,
             62,
             62,
-            62,
+            62.5,
             62,
             57,
-            62
+            63
           ],
           "open": 62,
-          "current": 62,
-          "change": 0
+          "current": 63,
+          "change": 1
         }
       },
       "awayTeam": "Western Carolina",
@@ -20081,7 +20108,7 @@
           11,
           11.5,
           11.5,
-          11.5,
+          10.5,
           9.5,
           9.5,
           9.5,
@@ -20124,7 +20151,7 @@
             50,
             50,
             26.5,
-            49.5,
+            50,
             50,
             50,
             50,
@@ -20191,9 +20218,9 @@
       "priceHistory": {
         "points": [
           90,
-          90.5,
           91,
-          92,
+          91,
+          91.5,
           92,
           91.5,
           92,
@@ -20229,27 +20256,27 @@
           "North Carolina A&T"
         ],
         "probs": [
-          50,
-          50
+          51,
+          49
         ],
         "priceHistory": {
           "points": [
+            50,
+            50,
             50.5,
+            50,
+            50,
             50,
             50.5,
             50.5,
-            50.5,
-            50.5,
-            50.5,
-            51,
+            50,
             50,
             50.5,
-            51,
             50.5,
-            51
+            50.5
           ],
-          "open": 50.5,
-          "current": 51,
+          "open": 50,
+          "current": 50.5,
           "change": 0.5
         }
       },
@@ -20266,7 +20293,7 @@
         ],
         "priceHistory": {
           "points": [
-            50.5,
+            49.5,
             50,
             50,
             47.5,
@@ -20275,14 +20302,14 @@
             47.5,
             47.5,
             47.5,
-            48.5,
-            48,
+            47.5,
+            47.5,
             44.5,
             44
           ],
-          "open": 50.5,
+          "open": 49.5,
           "current": 44,
-          "change": -6.5
+          "change": -5.5
         }
       },
       "awayTeam": "Rhode Island",
@@ -20350,7 +20377,7 @@
         ],
         "priceHistory": {
           "points": [
-            8.5,
+            9,
             8,
             8,
             9,
@@ -20358,15 +20385,15 @@
             8,
             8,
             8.5,
-            8,
+            7.5,
             7.5,
             7.5,
             7.5,
             7.5
           ],
-          "open": 8.5,
+          "open": 9,
           "current": 7.5,
-          "change": -1
+          "change": -1.5
         }
       },
       "polyTotal": {
@@ -20425,12 +20452,13 @@
           74.5,
           75,
           75,
-          75.5,
           75,
-          75.5,
+          75,
+          76,
           76,
           76,
           76.5,
+          76,
           76,
           76,
           76
@@ -20460,60 +20488,60 @@
           "Fordham"
         ],
         "probs": [
-          36.5,
-          63.5
+          30,
+          70
         ],
         "priceHistory": {
           "points": [
-            31.5,
+            44.5,
             42.5,
-            42.5,
-            29.5,
-            36.5,
-            29.5,
-            28,
+            36,
+            37.5,
             29.5,
             29.5,
-            37,
-            33,
-            33,
-            37
+            35,
+            34,
+            29.5,
+            34,
+            28.5,
+            28.5,
+            34
           ],
-          "open": 31.5,
-          "current": 37,
-          "change": 5.5
+          "open": 44.5,
+          "current": 34,
+          "change": -10.5
         }
       },
       "polyTotal": {
-        "line": 49.5,
-        "title": "O/U 49.5",
+        "line": 53.5,
+        "title": "O/U 53.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          64.5,
-          35.5
+          50.5,
+          49.5
         ],
         "priceHistory": {
           "points": [
-            64.5,
-            48.5,
-            65,
-            65,
-            65.5,
-            64.5,
-            65,
-            65,
-            65.5,
-            65,
-            65,
-            65,
-            64.5
+            56,
+            56,
+            56.5,
+            55,
+            55,
+            55,
+            55,
+            55.5,
+            55.5,
+            55,
+            55,
+            50.5,
+            50.5
           ],
-          "open": 64.5,
-          "current": 64.5,
-          "change": 0
+          "open": 56,
+          "current": 50.5,
+          "change": -5.5
         }
       },
       "awayTeam": "Stony Brook",
@@ -20545,7 +20573,7 @@
           1.3,
           1.3,
           1.4,
-          1.3,
+          1.4,
           1.3,
           1.3,
           1.3,
@@ -20576,59 +20604,59 @@
           "North Texas"
         ],
         "probs": [
-          44,
-          56
+          42,
+          58
         ],
         "priceHistory": {
           "points": [
             48.5,
             47,
-            46,
+            46.5,
             49.5,
             49.5,
-            25.5,
+            26,
             47.5,
-            46,
+            46.5,
             45,
             43.5,
-            42,
-            41.5,
-            43
+            42.5,
+            41,
+            42
           ],
           "open": 48.5,
-          "current": 43,
-          "change": -5.5
+          "current": 42,
+          "change": -6.5
         }
       },
       "polyTotal": {
-        "line": 71.5,
-        "title": "O/U 71.5",
+        "line": 65.5,
+        "title": "O/U 65.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          26,
-          74
+          36,
+          64
         ],
         "priceHistory": {
           "points": [
-            26.5,
-            26.5,
-            26.5,
-            26.5,
-            31.5,
-            26,
-            26.5,
-            31,
-            29,
-            26.5,
-            26.5,
-            26.5,
-            26.5
+            36,
+            35.5,
+            36,
+            35.5,
+            35.5,
+            35.5,
+            35.5,
+            36.5,
+            35.5,
+            36,
+            35.5,
+            35.5,
+            36
           ],
-          "open": 26.5,
-          "current": 26.5,
+          "open": 36,
+          "current": 36,
           "change": 0
         }
       },
@@ -20656,7 +20684,8 @@
           75.5,
           78.5,
           78.5,
-          75.5,
+          76,
+          78.5,
           78.5,
           78.5,
           78.5,
@@ -20733,7 +20762,7 @@
             30.5,
             30.5,
             30.5,
-            29,
+            30.5,
             30.5,
             30.5,
             30.5,
@@ -20765,12 +20794,12 @@
       "homeTicketPct": 25,
       "tradeCount": 4,
       "sampleCash": 61,
-      "priceMove1h": 0.6,
+      "priceMove1h": 1.2,
       "priceHistory": {
         "points": [
-          83,
-          82.5,
           83.5,
+          82.5,
+          84.5,
           82,
           82,
           81.5,
@@ -20780,10 +20809,10 @@
           81.5,
           81.5,
           81.5,
-          82
+          82.5
         ],
-        "open": 83,
-        "current": 82,
+        "open": 83.5,
+        "current": 82.5,
         "high": 84.5,
         "low": 80.5,
         "change": -1
@@ -20822,7 +20851,7 @@
             48.5,
             47.5,
             47.5,
-            48,
+            47.5,
             48,
             48
           ],
@@ -20845,9 +20874,9 @@
         "priceHistory": {
           "points": [
             50,
-            50,
             49.5,
             50,
+            49.5,
             50,
             50,
             50,
@@ -20939,6 +20968,7 @@
             50,
             50,
             50,
+            50,
             50
           ],
           "open": 50,
@@ -20966,7 +20996,7 @@
             31.5,
             31.5,
             31.5,
-            31.5,
+            32,
             31.5,
             31.5,
             31.5,
@@ -20996,28 +21026,28 @@
       "homeTicketPct": 66.7,
       "tradeCount": 3,
       "sampleCash": 37,
-      "priceMove1h": -2.4,
+      "priceMove1h": -1.2,
       "priceHistory": {
         "points": [
-          39.5,
+          39,
           39,
           40.5,
-          39.5,
+          40,
           41.5,
           40.5,
           41.5,
           41,
           41,
           41.5,
-          41,
+          41.5,
           41.5,
           41.5
         ],
-        "open": 39.5,
+        "open": 39,
         "current": 41.5,
         "high": 43.5,
         "low": 39,
-        "change": 2
+        "change": 2.5
       },
       "whales": null,
       "awayProb": 41.5,
@@ -21038,8 +21068,8 @@
           "Dartmouth"
         ],
         "probs": [
-          35.5,
-          64.5
+          38,
+          62
         ],
         "priceHistory": {
           "points": [
@@ -21050,16 +21080,16 @@
             50,
             50,
             50,
-            33.5,
+            36.5,
             38,
             36,
-            36,
-            38,
-            35.5
+            35,
+            36.5,
+            38
           ],
           "open": 50,
-          "current": 35.5,
-          "change": -14.5
+          "current": 38,
+          "change": -12
         }
       },
       "polyTotal": {
@@ -21075,6 +21105,7 @@
         ],
         "priceHistory": {
           "points": [
+            50,
             50,
             50,
             50,
@@ -21269,28 +21300,28 @@
           "Jacksonville State"
         ],
         "probs": [
-          50,
-          50
+          49.5,
+          50.5
         ],
         "priceHistory": {
           "points": [
             50,
             49.5,
-            50.5,
+            50,
             49.5,
-            50,
-            50,
-            50,
-            50,
-            50,
+            49.5,
+            49.5,
             50,
             49.5,
             50,
-            49.5
+            49.5,
+            50,
+            49.5,
+            50
           ],
           "open": 50,
-          "current": 49.5,
-          "change": -0.5
+          "current": 50,
+          "change": 0
         }
       },
       "polyTotal": {
@@ -21348,9 +21379,9 @@
         "points": [
           87,
           87,
-          88,
-          88,
+          87,
           87.5,
+          88,
           86,
           88,
           88.5,
@@ -21422,7 +21453,7 @@
         ],
         "priceHistory": {
           "points": [
-            41,
+            40.5,
             41,
             41,
             41,
@@ -21436,9 +21467,9 @@
             41,
             40.5
           ],
-          "open": 41,
+          "open": 40.5,
           "current": 40.5,
-          "change": -0.5
+          "change": 0
         }
       },
       "awayTeam": "Campbell",
@@ -21459,16 +21490,16 @@
       "homeTicketPct": 0,
       "tradeCount": 1,
       "sampleCash": 40,
-      "priceMove1h": -1.2,
+      "priceMove1h": 0,
       "priceHistory": {
         "points": [
           79.5,
           80,
           79.5,
+          79.5,
+          79.5,
+          78.5,
           80,
-          79,
-          78.5,
-          78.5,
           82,
           82,
           82,
@@ -21507,11 +21538,11 @@
         "priceHistory": {
           "points": [
             49.5,
-            50,
-            46.5,
+            49.5,
             45,
             45,
-            43.5,
+            45,
+            43,
             43,
             47,
             47,
@@ -21538,12 +21569,13 @@
         ],
         "priceHistory": {
           "points": [
+            50,
+            50,
             49.5,
             50,
             49.5,
             49.5,
             49.5,
-            49,
             49.5,
             49.5,
             49.5,
@@ -21551,9 +21583,9 @@
             49.5,
             49.5
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 49.5,
-          "change": 0
+          "change": -0.5
         }
       },
       "awayTeam": "South Carolina State",
@@ -21574,16 +21606,16 @@
       "homeTicketPct": 0,
       "tradeCount": 3,
       "sampleCash": 25,
-      "priceMove1h": -0.7,
+      "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          76.5,
-          76.5,
           76,
+          76.5,
           76,
           75.5,
-          76,
           75.5,
+          75.5,
+          76,
           76.5,
           76,
           76,
@@ -21591,11 +21623,11 @@
           75,
           75
         ],
-        "open": 76.5,
+        "open": 76,
         "current": 75,
         "high": 77,
         "low": 75,
-        "change": -1.5
+        "change": -1
       },
       "whales": null,
       "awayProb": 75,
@@ -21616,60 +21648,60 @@
           "Southern Utah"
         ],
         "probs": [
-          31,
-          69
+          30.5,
+          69.5
         ],
         "priceHistory": {
           "points": [
-            49.5,
+            50,
+            50,
             50,
             33,
-            33.5,
+            40,
             50,
             50,
-            49.5,
-            50.5,
+            51.5,
             46,
-            38.5,
-            29,
+            45.5,
+            29.5,
             30.5,
-            40.5
+            40
           ],
-          "open": 49.5,
-          "current": 40.5,
-          "change": -9
+          "open": 50,
+          "current": 40,
+          "change": -10
         }
       },
       "polyTotal": {
-        "line": 53.5,
-        "title": "O/U 53.5",
+        "line": 57.5,
+        "title": "O/U 57.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          51,
-          49
+          51.5,
+          48.5
         ],
         "priceHistory": {
           "points": [
+            50,
+            50,
             50.5,
-            50.5,
-            50.5,
-            50.5,
-            50.5,
+            50,
+            50,
             50.5,
             50.5,
             51.5,
             51,
-            51.5,
-            51.5,
+            51,
+            52,
             51.5,
             51.5
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 51.5,
-          "change": 1
+          "change": 1.5
         }
       },
       "awayTeam": "Idaho State",
@@ -21696,7 +21728,7 @@
           32.5,
           32.5,
           34.5,
-          33.5,
+          34,
           35,
           35,
           34.5,
@@ -21747,8 +21779,8 @@
             11,
             11,
             11,
-            11,
-            11,
+            10.5,
+            11.5,
             11
           ],
           "open": 11,
@@ -21764,28 +21796,28 @@
           "Under"
         ],
         "probs": [
-          51,
-          49
+          51.5,
+          48.5
         ],
         "priceHistory": {
           "points": [
-            50.5,
             50,
             50.5,
             50.5,
             50.5,
-            50.5,
+            50,
+            50,
             50.5,
             51.5,
             51,
+            51,
             51.5,
             51.5,
-            51.5,
-            51
+            52
           ],
-          "open": 50.5,
-          "current": 51,
-          "change": 0.5
+          "open": 50,
+          "current": 52,
+          "change": 2
         }
       },
       "awayTeam": "Maine",
@@ -21794,6 +21826,122 @@
       "title": "Maine vs. Elon",
       "commence": "2026-09-26T18:00:00Z",
       "polyGameTime": "2026-09-26T18:00:00Z",
+      "polyGameDate": "2026-09-26",
+      "enrichmentFailed": false
+    },
+    "colg_vill": {
+      "volume24h": 27.317073999999998,
+      "liveVolume": 27.317074,
+      "awayMoneyPct": 43.3,
+      "homeMoneyPct": 56.7,
+      "awayTicketPct": 60,
+      "homeTicketPct": 40,
+      "tradeCount": 5,
+      "sampleCash": 13,
+      "priceMove1h": 2.3,
+      "priceHistory": {
+        "points": [
+          37,
+          37,
+          36,
+          37.5,
+          41.5,
+          43.5,
+          43,
+          43.5,
+          43,
+          44,
+          43,
+          43,
+          44.5
+        ],
+        "open": 37,
+        "current": 44.5,
+        "high": 44.5,
+        "low": 36,
+        "change": 7.5
+      },
+      "whales": null,
+      "awayProb": 44.5,
+      "homeProb": 55.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polyMl": {
+        "slug": "cfb-colg-vill-2026-09-26",
+        "conditionId": "0x91fdf787e4cd79c8576ab18affec1e97dd499eb096bc6117cc5810af72b3bc71",
+        "title": "Colgate vs. Villanova"
+      },
+      "polySpread": {
+        "line": -14.5,
+        "title": "Spread -14.5",
+        "outcomes": [
+          "Colgate",
+          "Villanova"
+        ],
+        "probs": [
+          50.5,
+          49.5
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            50.5,
+            50.5,
+            50.5,
+            49.5,
+            50,
+            50,
+            50,
+            50,
+            50,
+            50.5,
+            50.5,
+            50.5
+          ],
+          "open": 50,
+          "current": 50.5,
+          "change": 0.5
+        }
+      },
+      "polyTotal": {
+        "line": 59.5,
+        "title": "O/U 59.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          24.5,
+          75.5
+        ],
+        "priceHistory": {
+          "points": [
+            24.5,
+            24.5,
+            25,
+            24.5,
+            24.5,
+            25.5,
+            24.5,
+            24.5,
+            24,
+            24.5,
+            23.5,
+            25.5,
+            24.5
+          ],
+          "open": 24.5,
+          "current": 24.5,
+          "change": 0
+        }
+      },
+      "awayTeam": "Colgate",
+      "homeTeam": "Villanova",
+      "eventId": "1060506",
+      "title": "Colgate vs. Villanova",
+      "commence": "2026-09-26T18:30:00Z",
+      "polyGameTime": "2026-09-26T18:30:00Z",
       "polyGameDate": "2026-09-26",
       "enrichmentFailed": false
     },
@@ -21880,28 +22028,28 @@
           "Under"
         ],
         "probs": [
-          50,
-          50
+          50.5,
+          49.5
         ],
         "priceHistory": {
           "points": [
+            50,
+            50,
             50.5,
+            50,
+            50,
             50,
             50.5,
             50.5,
-            50.5,
-            50.5,
-            50.5,
-            51,
             50,
-            50.5,
+            50,
             50.5,
             50.5,
             50.5
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 50.5,
-          "change": 0
+          "change": 0.5
         }
       },
       "awayTeam": "Butler",
@@ -21922,10 +22070,10 @@
       "homeTicketPct": 100,
       "tradeCount": 2,
       "sampleCash": 11,
-      "priceMove1h": -1.5,
+      "priceMove1h": -0.7,
       "priceHistory": {
         "points": [
-          68,
+          67.5,
           68.5,
           68,
           69,
@@ -21939,11 +22087,11 @@
           68.5,
           67.5
         ],
-        "open": 68,
+        "open": 67.5,
         "current": 67.5,
         "high": 69,
         "low": 66.5,
-        "change": -0.5
+        "change": 0
       },
       "whales": null,
       "awayProb": 67.5,
@@ -21970,16 +22118,16 @@
         "priceHistory": {
           "points": [
             29.5,
-            30,
+            29.5,
             29.5,
             32.5,
             32.5,
             31.5,
             31,
             31,
-            31,
-            30.5,
             31.5,
+            30.5,
+            30.5,
             28.5,
             28.5
           ],
@@ -22086,8 +22234,8 @@
         "priceHistory": {
           "points": [
             49.5,
-            50,
             49.5,
+            50,
             50,
             49.5,
             49.5,
@@ -22142,122 +22290,6 @@
       "title": "LIU vs. Florida International",
       "commence": "2026-09-26T22:00:00Z",
       "polyGameTime": "2026-09-26T22:00:00Z",
-      "polyGameDate": "2026-09-26",
-      "enrichmentFailed": false
-    },
-    "colg_vill": {
-      "volume24h": 20.817073999999998,
-      "liveVolume": 27.317074,
-      "awayMoneyPct": 43.3,
-      "homeMoneyPct": 56.7,
-      "awayTicketPct": 60,
-      "homeTicketPct": 40,
-      "tradeCount": 5,
-      "sampleCash": 13,
-      "priceMove1h": 2.3,
-      "priceHistory": {
-        "points": [
-          36.5,
-          37,
-          37,
-          37.5,
-          40.5,
-          43.5,
-          43.5,
-          43.5,
-          43,
-          43.5,
-          42.5,
-          43,
-          44.5
-        ],
-        "open": 36.5,
-        "current": 44.5,
-        "high": 44.5,
-        "low": 36,
-        "change": 8
-      },
-      "whales": null,
-      "awayProb": 44.5,
-      "homeProb": 55.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polyMl": {
-        "slug": "cfb-colg-vill-2026-09-26",
-        "conditionId": "0x91fdf787e4cd79c8576ab18affec1e97dd499eb096bc6117cc5810af72b3bc71",
-        "title": "Colgate vs. Villanova"
-      },
-      "polySpread": {
-        "line": -14.5,
-        "title": "Spread -14.5",
-        "outcomes": [
-          "Colgate",
-          "Villanova"
-        ],
-        "probs": [
-          50.5,
-          49.5
-        ],
-        "priceHistory": {
-          "points": [
-            50.5,
-            50.5,
-            50.5,
-            50.5,
-            50,
-            50.5,
-            50,
-            50,
-            50,
-            51,
-            50.5,
-            50.5,
-            50.5
-          ],
-          "open": 50.5,
-          "current": 50.5,
-          "change": 0
-        }
-      },
-      "polyTotal": {
-        "line": 59.5,
-        "title": "O/U 59.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          24.5,
-          75.5
-        ],
-        "priceHistory": {
-          "points": [
-            24.5,
-            24.5,
-            25,
-            24.5,
-            24.5,
-            25.5,
-            24.5,
-            24.5,
-            24.5,
-            24.5,
-            24,
-            23,
-            24.5
-          ],
-          "open": 24.5,
-          "current": 24.5,
-          "change": 0
-        }
-      },
-      "awayTeam": "Colgate",
-      "homeTeam": "Villanova",
-      "eventId": "1060506",
-      "title": "Colgate vs. Villanova",
-      "commence": "2026-09-26T18:30:00Z",
-      "polyGameTime": "2026-09-26T18:30:00Z",
       "polyGameDate": "2026-09-26",
       "enrichmentFailed": false
     },
@@ -22322,7 +22354,7 @@
             50,
             50,
             50,
-            26.5,
+            50,
             50,
             50,
             50,
@@ -22386,7 +22418,7 @@
       "homeTicketPct": 0,
       "tradeCount": 1,
       "sampleCash": 4,
-      "priceMove1h": -1.2,
+      "priceMove1h": 0,
       "priceHistory": {
         "points": [
           42.5,
@@ -22433,23 +22465,23 @@
         ],
         "priceHistory": {
           "points": [
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
             50,
             49.5,
-            25,
             26.5,
+            50,
+            50,
+            49.5,
+            49.5,
+            27.5,
+            38,
             27,
             25,
-            33,
+            27,
             27
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 27,
-          "change": -22.5
+          "change": -23
         }
       },
       "polyTotal": {
@@ -22465,13 +22497,13 @@
         ],
         "priceHistory": {
           "points": [
+            50,
+            50,
+            39,
+            49.5,
+            49.5,
+            50,
             50.5,
-            50,
-            50,
-            50,
-            50,
-            50,
-            61.5,
             51,
             51,
             51,
@@ -22479,9 +22511,9 @@
             51,
             51
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 51,
-          "change": 0.5
+          "change": 1
         }
       },
       "awayTeam": "Texas Southern",
@@ -22511,9 +22543,9 @@
           83,
           82,
           82.5,
-          82,
+          81.5,
           83.5,
-          84,
+          85,
           84.5,
           84.5,
           84.5,
@@ -22582,22 +22614,22 @@
         "priceHistory": {
           "points": [
             50,
+            50,
+            50,
+            50,
+            50.5,
+            50,
+            50,
+            50,
+            50,
+            49.5,
             49.5,
             50,
-            50,
-            49.5,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            49.5
+            50
           ],
           "open": 50,
-          "current": 49.5,
-          "change": -0.5
+          "current": 50,
+          "change": 0
         }
       },
       "awayTeam": "Tennessee Tech",
@@ -22618,32 +22650,32 @@
       "homeTicketPct": 0,
       "tradeCount": 1,
       "sampleCash": 3,
-      "priceMove1h": 0,
+      "priceMove1h": 0.7,
       "priceHistory": {
         "points": [
-          74.5,
           74,
           74,
+          74,
+          73,
           73.5,
+          74.5,
+          74.5,
+          75.5,
+          74,
           74,
           73,
           74.5,
-          74.5,
-          74.5,
-          74,
-          73.5,
-          74,
-          74
+          74.5
         ],
-        "open": 74.5,
-        "current": 74,
+        "open": 74,
+        "current": 74.5,
         "high": 75.5,
         "low": 72.5,
-        "change": -0.5
+        "change": 0.5
       },
       "whales": null,
-      "awayProb": 74,
-      "homeProb": 26,
+      "awayProb": 74.5,
+      "homeProb": 25.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -22666,7 +22698,7 @@
         "priceHistory": {
           "points": [
             49.5,
-            50,
+            49.5,
             49.5,
             49.5,
             49.5,
@@ -22737,12 +22769,12 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          25.5,
+          26,
           27,
-          27,
           26.5,
           26.5,
           26.5,
+          26,
           26,
           25.5,
           23.5,
@@ -22751,11 +22783,11 @@
           25,
           25
         ],
-        "open": 25.5,
+        "open": 26,
         "current": 25,
         "high": 28,
         "low": 23.5,
-        "change": -0.5
+        "change": -1
       },
       "whales": null,
       "awayProb": 25,
@@ -22786,7 +22818,7 @@
             12,
             12,
             12,
-            12.5,
+            12,
             12,
             12,
             12,
@@ -22808,8 +22840,8 @@
           "Under"
         ],
         "probs": [
-          49.5,
-          50.5
+          50,
+          50
         ],
         "priceHistory": {
           "points": [
@@ -22818,18 +22850,18 @@
             50,
             50,
             49.5,
+            49.5,
             50,
             50,
             50,
             50,
             50,
             50,
-            50,
-            49.5
+            50
           ],
           "open": 50,
-          "current": 49.5,
-          "change": -0.5
+          "current": 50,
+          "change": 0
         }
       },
       "awayTeam": "New Haven",
@@ -22857,8 +22889,8 @@
           35,
           35,
           36.5,
-          37,
-          35.5,
+          36.5,
+          35,
           37.5,
           37.5,
           37.5,
@@ -22899,7 +22931,7 @@
           "points": [
             50,
             50,
-            50,
+            26.5,
             50,
             50,
             50,
@@ -22970,15 +23002,15 @@
       "priceHistory": {
         "points": [
           34,
-          35,
+          35.5,
           35,
           34.5,
-          34,
+          34.5,
           35.5,
-          36,
+          34.5,
           35.5,
           35.5,
-          36,
+          35,
           34.5,
           34.5,
           34.5
@@ -23020,11 +23052,11 @@
             50,
             50,
             50,
-            35,
             37,
             37,
             37,
-            28.5,
+            37,
+            27.5,
             15.5
           ],
           "open": 50,
@@ -23045,7 +23077,7 @@
         ],
         "priceHistory": {
           "points": [
-            41.5,
+            42,
             42,
             42,
             37,
@@ -23055,13 +23087,13 @@
             37,
             37.5,
             37.5,
-            38,
+            37.5,
             39.5,
             42
           ],
-          "open": 41.5,
+          "open": 42,
           "current": 42,
-          "change": 0.5
+          "change": 0
         }
       },
       "awayTeam": "Holy Cross",
@@ -23161,10 +23193,10 @@
         ],
         "priceHistory": {
           "points": [
+            50,
+            50,
             49.5,
-            49.5,
-            49.5,
-            49.5,
+            50,
             49.5,
             49.5,
             49.5,
@@ -23175,9 +23207,9 @@
             49.5,
             49.5
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 49.5,
-          "change": 0
+          "change": -0.5
         }
       },
       "awayTeam": "Furman",
@@ -23202,9 +23234,9 @@
       "priceHistory": {
         "points": [
           47,
-          48,
-          48,
           47,
+          47.5,
+          46.5,
           48,
           48,
           48,
@@ -23256,7 +23288,7 @@
             13.5,
             13.5,
             13.5,
-            13.5,
+            14,
             13.5
           ],
           "open": 13.5,
@@ -23277,11 +23309,11 @@
         ],
         "priceHistory": {
           "points": [
-            50.5,
-            50.5,
+            50,
             50,
             50.5,
-            50.5,
+            50,
+            51,
             50.5,
             50.5,
             51.5,
@@ -23291,9 +23323,9 @@
             51.5,
             51.5
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 51.5,
-          "change": 1
+          "change": 1.5
         }
       },
       "awayTeam": "South Dakota",
@@ -23314,28 +23346,28 @@
       "homeTicketPct": 100,
       "tradeCount": 1,
       "sampleCash": 1,
-      "priceMove1h": 0.9,
+      "priceMove1h": -1.8,
       "priceHistory": {
         "points": [
-          50.5,
+          48.5,
           50,
           50,
           48,
-          46.5,
-          49,
+          48.5,
           47.5,
           48,
-          55,
-          55,
-          55.5,
+          48.5,
           54.5,
-          56
+          54.5,
+          55,
+          54.5,
+          55
         ],
-        "open": 50.5,
-        "current": 56,
+        "open": 48.5,
+        "current": 55,
         "high": 56,
         "low": 43.5,
-        "change": 5.5
+        "change": 6.5
       },
       "whales": null,
       "awayProb": 55.5,
@@ -23404,7 +23436,7 @@
             50,
             50,
             50,
-            50,
+            53.5,
             53
           ],
           "open": 50,
@@ -23430,7 +23462,7 @@
       "homeTicketPct": 0,
       "tradeCount": 0,
       "sampleCash": 0,
-      "priceMove1h": 3.8,
+      "priceMove1h": 1.9,
       "priceHistory": {
         "points": [
           27.5,
@@ -23441,7 +23473,7 @@
           28.5,
           29.5,
           28.5,
-          28.5,
+          28,
           28.5,
           28.5,
           26.5,
@@ -23477,23 +23509,23 @@
         ],
         "priceHistory": {
           "points": [
-            49,
+            50,
             26.5,
             25.5,
-            37.5,
+            26.5,
             27,
             26.5,
+            18,
+            25,
+            15.5,
+            26.5,
             15,
-            25.5,
-            14.5,
-            27,
-            15,
-            34.5,
+            34,
             26.5
           ],
-          "open": 49,
+          "open": 50,
           "current": 26.5,
-          "change": -22.5
+          "change": -23.5
         }
       },
       "polyTotal": {
@@ -23509,7 +23541,7 @@
         ],
         "priceHistory": {
           "points": [
-            50.5,
+            50,
             50.5,
             51,
             51,
@@ -23523,9 +23555,9 @@
             51,
             51
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 51,
-          "change": 0.5
+          "change": 1
         }
       },
       "awayTeam": "Western Illinois",
@@ -23595,7 +23627,7 @@
           "points": [
             50,
             50,
-            50,
+            49.5,
             50,
             50,
             50,
@@ -23782,12 +23814,12 @@
       "priceHistory": {
         "points": [
           49.5,
-          49.5,
-          52.5,
           50.5,
+          52.5,
           51,
-          52,
           51.5,
+          52,
+          52,
           51.5,
           51.5,
           51.5,
@@ -23826,12 +23858,12 @@
         "priceHistory": {
           "points": [
             14,
+            14,
+            14,
+            14,
+            14,
+            14,
             14.5,
-            14,
-            14,
-            14,
-            14,
-            14,
             14,
             14,
             14,
@@ -23899,15 +23931,15 @@
         "points": [
           2.1,
           2.1,
-          2.1,
-          2.1,
           2,
           2.1,
           2.1,
-          1.9,
-          1.9,
-          1.9,
           2.1,
+          2.1,
+          1.9,
+          1.9,
+          1.9,
+          1.9,
           1.9,
           1.9
         ],
@@ -23919,7 +23951,7 @@
       },
       "whales": null,
       "awayProb": 1.9,
-      "homeProb": 98.1,
+      "homeProb": 98,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -23975,16 +24007,16 @@
           "points": [
             25.5,
             25,
-            38.5,
-            25.5,
+            39.5,
+            25,
             35,
             25,
-            26,
+            32,
             31.5,
             31.5,
             24.5,
-            25.5,
-            25.5,
+            25,
+            25,
             25.5
           ],
           "open": 25.5,
@@ -24023,7 +24055,7 @@
           21.5,
           20,
           21,
-          20.5,
+          21,
           22.5,
           22
         ],
@@ -24077,35 +24109,35 @@
         }
       },
       "polyTotal": {
-        "line": 55.5,
-        "title": "O/U 55.5",
+        "line": 53.5,
+        "title": "O/U 53.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          46.5,
-          53.5
+          52,
+          48
         ],
         "priceHistory": {
           "points": [
             50,
             50,
+            50.5,
             50,
-            50,
-            46.5,
-            46.5,
-            46.5,
-            46.5,
-            46.5,
-            46.5,
-            46.5,
-            46.5,
-            46.5
+            52,
+            52,
+            52,
+            52,
+            52,
+            52,
+            52,
+            52,
+            52
           ],
           "open": 50,
-          "current": 46.5,
-          "change": -3.5
+          "current": 52,
+          "change": 2
         }
       },
       "awayTeam": "Grambling State",
@@ -24131,15 +24163,15 @@
         "points": [
           43.5,
           43.5,
+          42.5,
+          42.5,
+          41.5,
+          42,
           42,
           43.5,
-          41,
-          42.5,
-          42.5,
-          43.5,
           44,
-          41.5,
-          43,
+          42,
+          44.5,
           43,
           42.5
         ],
@@ -24173,23 +24205,23 @@
         ],
         "priceHistory": {
           "points": [
+            50,
             50.5,
             50.5,
-            50.5,
-            50.5,
-            50.5,
-            50.5,
-            51,
             50,
             50,
             50.5,
             50.5,
+            50.5,
+            50,
+            50.5,
+            50,
             50.5,
             50.5
           ],
-          "open": 50.5,
+          "open": 50,
           "current": 50.5,
-          "change": 0
+          "change": 0.5
         }
       },
       "polyTotal": {
@@ -24212,7 +24244,7 @@
             68.5,
             68.5,
             68.5,
-            68.5,
+            68,
             68.5,
             68.5,
             68.5,
@@ -24246,16 +24278,16 @@
       "priceHistory": {
         "points": [
           84.5,
-          84.5,
-          84,
-          84,
           84,
           84.5,
           84,
+          84.5,
+          84.5,
+          84.5,
           85.5,
-          84.5,
+          85,
           87.5,
-          87,
+          87.5,
           87.5,
           87.5
         ],
@@ -24362,8 +24394,8 @@
       "priceHistory": {
         "points": [
           32,
-          33,
           32.5,
+          31.5,
           31.5,
           32,
           32.5,
@@ -24407,7 +24439,7 @@
           "points": [
             50,
             50,
-            50,
+            49.5,
             50,
             50,
             50,
@@ -24480,7 +24512,7 @@
           28,
           28,
           27.5,
-          28,
+          27.5,
           28,
           27,
           26.5,
@@ -24488,7 +24520,7 @@
           26.5,
           27,
           26.5,
-          29,
+          28.5,
           28
         ],
         "open": 28,
@@ -24541,34 +24573,34 @@
         }
       },
       "polyTotal": {
-        "line": 61.5,
-        "title": "O/U 61.5",
+        "line": 57.5,
+        "title": "O/U 57.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          25,
-          75
+          32.5,
+          67.5
         ],
         "priceHistory": {
           "points": [
-            25,
-            25,
-            25,
-            25,
-            25,
-            25,
-            25,
-            25,
-            25,
-            25,
-            25.5,
-            25.5,
-            25
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            30.5,
+            31,
+            31,
+            31,
+            31.5,
+            32.5
           ],
-          "open": 25,
-          "current": 25,
+          "open": 32.5,
+          "current": 32.5,
           "change": 0
         }
       },
@@ -24593,25 +24625,25 @@
       "priceMove1h": -2.6,
       "priceHistory": {
         "points": [
+          41,
+          41,
+          41,
           41.5,
           40,
           41,
-          41,
-          40,
-          40.5,
           39.5,
           39,
-          39,
+          38,
           39.5,
-          39.5,
+          38.5,
           39.5,
           38
         ],
-        "open": 41.5,
+        "open": 41,
         "current": 38,
         "high": 41.5,
         "low": 38,
-        "change": -3.5
+        "change": -3
       },
       "whales": null,
       "awayProb": 38,
@@ -24632,16 +24664,14 @@
           "Abilene Christian"
         ],
         "probs": [
-          48.5,
-          51.5
+          49.5,
+          50.5
         ],
         "priceHistory": {
           "points": [
             43.5,
-            49.5,
-            49.5,
-            49.5,
             47.5,
+            26,
             49.5,
             49.5,
             49.5,
@@ -24649,11 +24679,13 @@
             49.5,
             49.5,
             49.5,
-            48.5
+            49.5,
+            49.5,
+            49.5
           ],
           "open": 43.5,
-          "current": 48.5,
-          "change": 5
+          "current": 49.5,
+          "change": 6
         }
       },
       "polyTotal": {
@@ -24676,10 +24708,10 @@
             33.5,
             34,
             33,
-            33.5,
+            33,
             33.5,
             32.5,
-            32,
+            31.5,
             34.5,
             33.5
           ],
@@ -24709,25 +24741,25 @@
       "priceMove1h": -1.2,
       "priceHistory": {
         "points": [
+          46,
+          46,
           45.5,
           46,
-          46,
-          46.5,
           43,
-          41.5,
+          41,
+          42,
           42.5,
           42.5,
-          42.5,
-          42.5,
+          43,
           42.5,
           41,
           41.5
         ],
-        "open": 45.5,
+        "open": 46,
         "current": 41.5,
         "high": 46.5,
         "low": 40.5,
-        "change": -4
+        "change": -4.5
       },
       "whales": null,
       "awayProb": 41.5,
@@ -24753,10 +24785,10 @@
         ],
         "priceHistory": {
           "points": [
-            49.5,
+            50,
+            26,
             26.5,
-            26.5,
-            27,
+            49,
             27,
             27,
             26.5,
@@ -24767,41 +24799,41 @@
             40.5,
             27
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 27,
-          "change": -22.5
+          "change": -23
         }
       },
       "polyTotal": {
-        "line": 57.5,
-        "title": "O/U 57.5",
+        "line": 49.5,
+        "title": "O/U 49.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          59.5,
-          40.5
+          76.5,
+          23.5
         ],
         "priceHistory": {
           "points": [
-            60,
-            60,
-            59.5,
-            60,
-            60,
-            58.5,
-            58.5,
-            60.5,
-            60.5,
-            59.5,
-            59.5,
-            54.5,
-            59.5
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5,
+            76.5
           ],
-          "open": 60,
-          "current": 59.5,
-          "change": -0.5
+          "open": 76.5,
+          "current": 76.5,
+          "change": 0
         }
       },
       "awayTeam": "Montana",
@@ -24822,7 +24854,7 @@
       "homeTicketPct": 0,
       "tradeCount": 0,
       "sampleCash": 0,
-      "priceMove1h": 0,
+      "priceMove1h": 0.9,
       "priceHistory": {
         "points": [
           52.5,
@@ -24830,13 +24862,13 @@
           52.5,
           52.5,
           55.5,
-          54,
+          53.5,
           55.5,
           54,
           53.5,
           56,
           56.5,
-          55.5,
+          56,
           56.5
         ],
         "open": 52.5,
@@ -24946,13 +24978,13 @@
           52.5,
           52.5,
           49.5,
-          47.5,
+          44.5,
+          45.5,
+          45.5,
+          49.5,
           45,
-          46.5,
-          48,
-          46,
           47,
-          48.5,
+          48,
           47
         ],
         "open": 50.5,
@@ -24962,8 +24994,8 @@
         "change": -3.5
       },
       "whales": null,
-      "awayProb": 47,
-      "homeProb": 53,
+      "awayProb": 48.5,
+      "homeProb": 51.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -25068,7 +25100,7 @@
           57.5,
           50.5,
           50.5,
-          54.5,
+          53.5,
           56
         ],
         "open": 59.5,
@@ -25293,11 +25325,11 @@
           70.5,
           70.5,
           70.5,
-          72.5,
-          69,
           71.5,
-          70.5,
-          71,
+          69,
+          70,
+          71.5,
+          71.5,
           70,
           71.5,
           71.5,
@@ -25510,5 +25542,5 @@
       "enrichmentFailed": false
     }
   },
-  "updatedAt": "2026-09-25T11:53:57.882Z"
+  "updatedAt": "2026-09-25T12:00:08.882Z"
 }
