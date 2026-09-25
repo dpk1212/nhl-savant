@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-09-25T02:13:53.030Z",
-  "elapsedSec": 54,
+  "scannedAt": "2026-09-25T02:21:54.391Z",
+  "elapsedSec": 54.8,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 175,
+  "todayGamesCount": 174,
   "summary": {
     "total": 404,
-    "coveredByMain": 66,
+    "coveredByMain": 64,
     "recovered": 22,
-    "recoveredPositions": 535,
-    "noPositions": 316,
+    "recoveredPositions": 537,
+    "noPositions": 318,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,8 +16,8 @@
       "ml": 32,
       "spread": 30,
       "total": 5,
-      "dropped_shadow_gate": 221,
-      "dropped_excluded": 239,
+      "dropped_shadow_gate": 224,
+      "dropped_excluded": 238,
       "dropped_duplicate": 8
     }
   },
@@ -896,11 +896,11 @@
       "sports": "WNBA,SOC,UFC,CFB,MLB,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 98,
+      "positionsCount": 99,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 2961,
       "willPassShadowGate": 34,
-      "willDropAtShadowGate": 64,
+      "willDropAtShadowGate": 65,
       "positions": [
         {
           "sport": "NFL",
@@ -1312,7 +1312,16 @@
           "gameKey": "ball_kent",
           "marketType": "ml",
           "side": "away",
-          "invested": 103,
+          "invested": 106,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "alatengheili_johncastaneda",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 58,
           "entryLine": null,
           "passesShadow": false
         },
@@ -1341,15 +1350,6 @@
           "side": "home",
           "invested": 105,
           "entryLine": 6.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "UFC",
-          "gameKey": "alatengheili_johncastaneda",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 52,
-          "entryLine": null,
           "passesShadow": false
         },
         {
@@ -1438,6 +1438,15 @@
           "gameKey": "miss_fla",
           "marketType": "spread",
           "side": "away",
+          "invested": 48,
+          "entryLine": -0.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "miss_fla",
+          "marketType": "spread",
+          "side": "away",
           "invested": 47,
           "entryLine": 2.5,
           "passesShadow": false
@@ -1476,15 +1485,6 @@
           "side": "away",
           "invested": 23,
           "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "miss_fla",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 30,
-          "entryLine": -0.5,
           "passesShadow": false
         },
         {
@@ -1593,6 +1593,15 @@
           "side": "away",
           "invested": 1,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "cark_fsu",
+          "marketType": "total",
+          "side": "under",
+          "invested": 16,
+          "entryLine": 61.5,
           "passesShadow": false
         },
         {
@@ -3063,10 +3072,10 @@
       "sports": "CFB,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0d2d845a6ff64e31e04a70afce8a573940767ff5",
-      "positionsCount": 140,
+      "positionsCount": 139,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 426,
-      "willPassShadowGate": 138,
+      "willPassShadowGate": 137,
       "willDropAtShadowGate": 2,
       "positions": [
         {
@@ -3452,7 +3461,7 @@
           "gameKey": "nym_wsh",
           "marketType": "ml",
           "side": "away",
-          "invested": 259,
+          "invested": 261,
           "entryLine": null,
           "passesShadow": true
         },
@@ -4318,15 +4327,6 @@
           "side": "away",
           "invested": 177,
           "entryLine": 3.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "van_aub",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 182,
-          "entryLine": 10.5,
           "passesShadow": true
         }
       ]
@@ -5941,7 +5941,8 @@
       "tier": "CONFIRMED",
       "name": "insidiousidiot",
       "sports": "WNBA",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xd88ad596fa48b3ea6acac2c699bba7a92abca7e4"
     },
     {
       "walletShort": "bd2d54",
@@ -6153,11 +6154,11 @@
       "sports": "SOC,NFL,MLB,NBA,CFB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 123,
+      "positionsCount": 125,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1290,
       "willPassShadowGate": 41,
-      "willDropAtShadowGate": 82,
+      "willDropAtShadowGate": 84,
       "positions": [
         {
           "sport": "CFB",
@@ -7265,6 +7266,24 @@
           "invested": 46,
           "entryLine": 53.5,
           "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "jmu_odu",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 47,
+          "entryLine": 4.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "ore_usc",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 23,
+          "entryLine": -11.5,
+          "passesShadow": false
         }
       ]
     },
@@ -7896,7 +7915,8 @@
       "tier": "FLAT",
       "name": "SDODNDPD",
       "sports": "NFL",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x3458ae6606828ed4d9666573e1585d9419efb5a7"
     },
     {
       "walletShort": "f06866",
