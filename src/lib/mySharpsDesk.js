@@ -7,6 +7,7 @@ import { sportBookForDisplay } from './walletSportBook.js';
 import { sportUsualBetFromProfile } from './sizeRatioBands.js';
 import { SIZED_UP_RATIO, betsFeedKey, fmtWalletTag, listMySharps, normalizeWalletShort, tailKey } from './mySharps.js';
 import { etDateKey } from './confirmedActionDesk.js';
+import { graderTailResult, tailGameDate, usableCommenceMs } from './tailGrade.js';
 
 /** Last-N needed before Hot / Cold is a claim, not noise. */
 export const HEAT_CLAIM_N = 5;
@@ -1670,9 +1671,11 @@ export function americanProfit(stake, american, won) {
 
 export function gradeTail(tail, legs, now = Date.now()) {
   if (!tail) return { status: 'open', pnl: null };
-  const commence = Number(tail.commenceMs);
-  if (Number.isFinite(commence) && now < commence) return { status: 'open', pnl: null };
-  const gameDay = Number.isFinite(commence) ? etDateKey(commence) : null;
+  const stamped = graderTailResult(tail);
+  if (stamped) return stamped;
+  const commence = usableCommenceMs(tail.commenceMs);
+  if (commence && now < commence) return { status: 'open', pnl: null };
+  const gameDay = commence ? etDateKey(commence) : (tailGameDate(tail));
   const tailedDay = Number.isFinite(Number(tail.tailedAt)) ? etDateKey(Number(tail.tailedAt)) : null;
   const wallets = new Set((tail.wallets || []).map((w) => String(w).toLowerCase()));
   const match = (legs || []).find((leg) => {
@@ -1712,8 +1715,8 @@ export function summarizeTails(tails, legs) {
   for (const c of cards) {
     if (c.status === 'won') wins += 1;
     else if (c.status === 'lost') losses += 1;
-    else openN += 1;
-    if ((c.status === 'won' || c.status === 'lost') && Number.isFinite(c.pnl)) {
+    else if (c.status !== 'push') openN += 1;
+    if ((c.status === 'won' || c.status === 'lost' || c.status === 'push') && Number.isFinite(c.pnl)) {
       have = true;
       pnl += c.pnl;
     }

@@ -1189,8 +1189,8 @@ function TailStrip({ cards, onUntail }) {
       <div style={{ ...T.kicker, color: B.gold, marginBottom: 8 }}>Marked</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {cards.map((card) => {
-          const result = card.status === 'won' ? 'Won' : card.status === 'lost' ? 'Lost' : 'Open';
-          const tone = card.status === 'won' ? B.green : card.status === 'lost' ? B.red : B.goldSoft;
+          const result = card.status === 'won' ? 'Won' : card.status === 'lost' ? 'Lost' : card.status === 'push' ? 'Push' : 'Open';
+          const tone = card.status === 'won' ? B.green : card.status === 'lost' ? B.red : card.status === 'push' ? B.textSec : B.goldSoft;
           const figure = Number.isFinite(card.pnl) && card.status !== 'open'
             ? fmtVol(card.pnl)
             : (card.stake ? fmtVol(card.stake, { signed: false }) : '—');

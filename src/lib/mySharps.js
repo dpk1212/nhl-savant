@@ -52,7 +52,8 @@ export function normalizeTail(id, raw) {
   const wallets = Array.isArray(raw.wallets)
     ? raw.wallets.map((w) => normalizeWalletShort(w)).filter(Boolean)
     : [];
-  const status = raw.status === 'won' || raw.status === 'lost' ? raw.status : 'open';
+  const status = raw.status === 'won' || raw.status === 'lost' || raw.status === 'push' ? raw.status : 'open';
+  const line = Number(raw.line ?? raw.entryLine);
   return {
     id: key,
     pick: typeof raw.pick === 'string' ? raw.pick : null,
@@ -65,7 +66,10 @@ export function normalizeTail(id, raw) {
     myAmerican: parseAmericanOdds(raw.myAmerican),
     stake: Number.isFinite(stake) && stake > 0 ? Math.round(stake) : null,
     tailedAt: Number.isFinite(Number(raw.tailedAt)) ? Number(raw.tailedAt) : Date.now(),
-    commenceMs: Number.isFinite(Number(raw.commenceMs)) ? Number(raw.commenceMs) : null,
+    commenceMs: Number.isFinite(Number(raw.commenceMs)) && Number(raw.commenceMs) > 0 ? Number(raw.commenceMs) : null,
+    date: typeof raw.date === 'string' ? raw.date.slice(0, 10) : null,
+    line: Number.isFinite(line) ? line : null,
+    gradedBy: raw.gradedBy === 'grader' ? 'grader' : null,
     wallets,
     status,
     pnl: Number.isFinite(Number(raw.pnl)) ? Math.round(Number(raw.pnl)) : null,
@@ -93,7 +97,12 @@ export function tailFromTicket(ticket, { myAmerican, stake, now = Date.now() } =
     myAmerican: mine != null ? mine : their,
     stake: Number.isFinite(st) && st > 0 ? Math.round(st) : null,
     tailedAt: now,
-    commenceMs: Number.isFinite(Number(ticket?.commenceMs)) ? Number(ticket.commenceMs) : null,
+    commenceMs: Number.isFinite(Number(ticket?.commenceMs)) && Number(ticket.commenceMs) > 0
+      ? Number(ticket.commenceMs)
+      : null,
+    date: typeof ticket?.commenceDateKey === 'string' ? ticket.commenceDateKey.slice(0, 10) : null,
+    line: Number.isFinite(Number(ticket?.entryLine)) ? Number(ticket.entryLine) : null,
+    gradedBy: null,
     wallets,
     status: 'open',
     pnl: null,
