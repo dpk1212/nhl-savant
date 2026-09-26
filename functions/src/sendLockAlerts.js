@@ -339,48 +339,58 @@ async function runLockAlerts({ forceWindow = false } = {}) {
         const units = sideStakeUnits(sd);
         const tier = typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : '';
         const edge = sideLockAlertEdge(sd);
+        const stamp = (messageId) => db.collection(col).doc(pick._id).set({
+          sides: {
+            [sideKey]: {
+              lockAlertSentAt: now,
+              lockAlertMessageId: messageId,
+              lockAlertEdge: Number.isFinite(edge) ? edge : null,
+              lockAlertClaimAt: admin.firestore.FieldValue.delete(),
+              lockAlertSource: 'cloud_scheduler',
+            },
+          },
+          lastAction: 'lock_alert_sent',
+        }, { merge: true });
         try {
-          let result = null;
-          let fullResult = null;
-          for (const scale of ['full', 'conservative']) {
-            const unitsText = formatUnits(scaleUnits(units, scale));
-            const tierText = [tier || null, unitsText].filter(Boolean).join(' · ');
-            result = await sendOneSignal({
-              pickText,
-              tierText,
-              unitsText,
-              edge,
-              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, scale),
-              topic: lockAlertTopic(pick._id, sideKey, scale),
-              scale,
-            });
-            if (scale === 'full') fullResult = result;
-            logger.info(`sent ${scale} ${col}/${pick._id} ${sideKey} message=${result?.id} recipients=${result?.recipients ?? '?'}`);
-          }
+          const unitsText = formatUnits(scaleUnits(units, 'full'));
+          const tierText = [tier || null, unitsText].filter(Boolean).join(' · ');
+          const fullResult = await sendOneSignal({
+            pickText,
+            tierText,
+            unitsText,
+            edge,
+            idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, 'full'),
+            topic: lockAlertTopic(pick._id, sideKey, 'full'),
+            scale: 'full',
+          });
           if (!fullAudienceReached(fullResult)) {
             throw new Error(`OneSignal returned no notification id (recipients=${fullResult?.recipients ?? 0})`);
           }
-          const messageId = fullResult?.id || result?.id || null;
-          await db
-            .collection(col)
-            .doc(pick._id)
-            .set(
-              {
-                sides: {
-                  [sideKey]: {
-                    lockAlertSentAt: now,
-                    lockAlertMessageId: messageId,
-                    lockAlertEdge: Number.isFinite(edge) ? edge : null,
-                    lockAlertClaimAt: admin.firestore.FieldValue.delete(),
-                    lockAlertSource: 'cloud_scheduler',
-                  },
-                },
-                lastAction: 'lock_alert_sent',
-              },
-              { merge: true },
-            );
+          await stamp(fullResult.id);
           stats.sent++;
-          logger.info(`sent ${col}/${pick._id} ${sideKey} message=${messageId} recipients=${fullResult?.recipients ?? result?.recipients ?? '?'}`);
+          logger.info(`sent full ${col}/${pick._id} ${sideKey} message=${fullResult.id} recipients=${fullResult.recipients ?? '?'}`);
+
+          try {
+            const consUnits = formatUnits(scaleUnits(units, 'conservative'));
+            const consTier = [tier || null, consUnits].filter(Boolean).join(' · ');
+            const consResult = await sendOneSignal({
+              pickText,
+              tierText: consTier,
+              unitsText: consUnits,
+              edge,
+              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, 'conservative'),
+              topic: lockAlertTopic(pick._id, sideKey, 'conservative'),
+              scale: 'conservative',
+            });
+            logger.info(`sent conservative ${col}/${pick._id} ${sideKey} message=${consResult?.id} recipients=${consResult?.recipients ?? '?'}`);
+          } catch (scaleErr) {
+            const msg = String(scaleErr.message || scaleErr);
+            if (msg.includes('not subscribed')) {
+              logger.info(`no conservative subscribers ${col}/${pick._id} ${sideKey}`);
+            } else {
+              logger.error(`conservative failed after full was stamped ${col}/${pick._id} ${sideKey}: ${msg}`);
+            }
+          }
           await new Promise((r) => setTimeout(r, LOCK_GAP_MS));
         } catch (err) {
           stats.errors++;
