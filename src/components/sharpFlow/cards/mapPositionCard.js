@@ -631,6 +631,7 @@ function formatEntryLadderLabel(ladder, { isTotal, isSpread, teamShort }) {
 export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
   const freezeAtMs = Number.isFinite(opts?.freezeAtMs) ? opts.freezeAtMs : null;
   const sealed = Number.isFinite(freezeAtMs);
+  const railSaved = Array.isArray(pick.lockedBooks) && pick.lockedBooks.length > 0;
   const empty = {
     pinSeries: null,
     pinPath: null,
@@ -859,9 +860,9 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         line: stakedLine,
       });
     }
-    // Past T-15: freeze snapshot only — live leftovers on the old main
-    // (Matchbook +430 after the board moved) must not become gold.
-    if (!sealed) {
+    // Past T-15 with no saved rail yet: keep the live books. An empty
+    // freeze used to blank the logos until the cron wrote lock.books.
+    if (!railSaved) {
       const allT = pinnGame.allTotalBooks || {};
       const prefer = SHOP_BOOK_PREFER;
       const keys = [
@@ -1038,9 +1039,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         line: best?.line ?? stakedLine,
       });
     }
-    // Past T-15: no live retail. In-play Matchbook still quoting +1.5 at
-    // +430 after the main moved to +4.5 was painting as gold (phi_nym).
-    if (!sealed) {
+    // Past T-15 with no saved rail yet: keep the live books.
+    if (!railSaved) {
       const allS = pinnGame.allSpreadBooks || {};
       const prefer = SHOP_BOOK_PREFER;
       const keys = [
@@ -1097,7 +1097,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       // Soccer / 3-way: include draw. 2-way sports stay home vs away.
       fairPair = mlFairOddsList(h, a, d, sideKey);
     }
-    if (!sealed) {
+    if (!railSaved) {
       bestOdds = sideKey === 'away' ? pinnGame.bestAway
         : sideKey === 'draw' ? pinnGame.bestDraw
         : pinnGame.bestHome;
@@ -1119,8 +1119,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         sharp: true,
       });
     }
-    // Past T-15: sharp fair from freeze snapshot only — no live retail strip.
-    if (!sealed) {
+    // Past T-15 with no saved rail yet: keep the live books.
+    if (!railSaved) {
       const allBooks = pinnGame.allBooks || {};
       const sideOdds = (b) => (sideKey === 'away' ? b?.away : sideKey === 'draw' ? b?.draw : b?.home);
       const seen = new Set(books.map((b) => b.name.toLowerCase()));
@@ -1164,7 +1164,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     }
   }
 
-  if (!sealed) {
+  if (!railSaved) {
     appendExchangeQuotes(books, {
       pinnGame,
       isTotal,
@@ -1186,7 +1186,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     books.length = 0;
     books.push(...shown);
   }
-  if (!sealed) {
+  if (!railSaved) {
     const gold = markGoldFromTicketBooks(books);
     if (gold.bestOdds != null) {
       bestOdds = gold.bestOdds;
