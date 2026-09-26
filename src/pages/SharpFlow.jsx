@@ -12609,7 +12609,8 @@ export default function SharpFlow() {
                         // At T-15 the cron seal can lag a cycle. Paint shop-best
                         // immediately so the hero does not sit on vault 47.5
                         // then jump to lock 47 when v8_lockBestAtT15 lands.
-                        const t15LiveBest = (pastT15Odds && !gameStarted && isT15BestLockLive(doc.date))
+                        const lockAlreadySent = sd.lockAlertSentAt != null || !!sd.lockAlertMessageId;
+                        const t15LiveBest = (!lockAlreadySent && pastT15Odds && !gameStarted && isT15BestLockLive(doc.date))
                           ? bestAvailableTicket({
                             pinnGame: lookupPinnGame(pinnacleHistory, docSport, doc.gameKey),
                             marketType: marketTypeKey,
@@ -12624,7 +12625,8 @@ export default function SharpFlow() {
                             },
                           })
                           : null;
-                        const t15Sealed = sd.v8_lockBestAtT15 === true
+                        const t15Sealed = lockAlreadySent
+                          || sd.v8_lockBestAtT15 === true
                           || String(lock.oddsSource || '').includes('t15_best');
                         const t15Line = t15Sealed && Number.isFinite(Number(lock.line))
                           ? Number(lock.line)
