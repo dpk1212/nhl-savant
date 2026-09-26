@@ -120,15 +120,6 @@ function onesignalFiltersForEdge(edge, scale = 'full') {
   return filters;
 }
 
-const T15_BEST_LOCK_FROM = '2026-09-19';
-function isT15BestLockLive(pickDate) {
-  return String(pickDate || '') >= T15_BEST_LOCK_FROM;
-}
-function isSealedT15Lock(sd) {
-  return sd?.v8_lockBestAtT15 === true
-    || String(sd?.lock?.oddsSource || '').includes('t15_best');
-}
-
 function pickLabel(pick, sideKey, market) {
   const sd = pick.sides?.[sideKey] || {};
   const team =
@@ -337,14 +328,6 @@ async function runLockAlerts({ forceWindow = false } = {}) {
           stats.skipped_started++;
           continue;
         }
-        // Prefer the sealed T-15 number. If the sealer is still late inside
-        // the last 3 minutes, send the locked ticket anyway.
-        const sealReady = isSealedT15Lock(sd) || sd.v8_ticketSealedAt;
-        if (isT15BestLockLive(pick.date || date) && !sealReady && now < ct - 3 * 60 * 1000) {
-          stats.skipped_not_sealed = (stats.skipped_not_sealed || 0) + 1;
-          continue;
-        }
-
         const claimed = await claimLockAlert(db, col, pick._id, sideKey, now);
         if (!claimed) {
           stats.skipped_claimed++;
