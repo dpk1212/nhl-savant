@@ -14,3 +14,90 @@ Seed 2026-07-10:
 
 2026-07-18 (Dale catalog — measured house gold):
 - **whale_battle_receipt** — Rays `207780…` **2220v/2r**: proven-wallet $ + Nx usual + opposing honesty + unfinished hold + dual-pane Battle/wallet media. Prefer when live Nx wallet exists; do not collapse to Vault shock or naked size flex.
+
+2026-08-23 (Hormozi SPCL canon locked — Dale transcript):
+- Influence goal = **compliance with requests**, not vanity views. Stack **Status · Power · Credibility · Likeness**.
+- Line 1 must stamp **S and/or C** observably (scarce $ / hard-to-fake receipt). Soft diary without scarce control underperforms (Aug 17–23 analytics).
+- **Power** = say–do trail (pointed → they followed → good thing / avoided bad). Honest L next to W builds Power.
+- **Likeness** = Dale voice; zero ROI NPC cosplay. Content **is** targeting (interest media).
+- Free SPCL in hero → soft ask in SR. Volume × right avatar > clever low-volume.
+- Vault: `researcher/knowledge/hormozi_spcl.md`
+
+2026-08-26 (Hormozi Rule of One — Masterson / *Great Leads* via Hormozi transcript):
+- **One big idea** per hero: easy to understand · easy to believe · interesting/unique.
+- Sub-bullets / stories / facts only **reinforce** that idea — never parallel competing pitches (**toss salad** banned).
+- USP = one selling proposition, not nineteen. Hard part = choosing the tip; writing gets simple after.
+- Stack order: **ONE → hook twist → SPCL as proof → QUAL** (pick spear tip before dressing or scoring copy). SPCL is not the angle.
+- Vault: `researcher/knowledge/hormozi_rule_of_one.md` (Agora/91-of-100 figures = Hormozi recount, not independently verified)
+
+2026-09-01 eve (Dale on TheBetDesk QT):
+- Printer open without a **line-2 paradox** is not enough (`ON THE PLAYS WE SIZE` = jargon, fails unique).
+- Educate hook silhouette that already won: `+46.8u IN AUGUST.` / `ALMOST 3× JULY.`
+- This QT’s spear: +67.73u last 30 **and** the 6-unit plays were 8 tickets (honest: those 8 made +13.00u, not the 67).
+
+2026-09-01 lock (BetMGM QT — Dale: follow process / correct SPCL):
+- Do **not** clone `$XK AT Y×` onto a **$1.8K** ticket. Status = scarce control. On this feed $1.8K is not scarce; **3.8× vs their #1 ticket** is.
+- Correct letters for a tickets-vs-proven QT: **S + C** in the `90% money / 0% proven` family (`hormozi_spcl.md`) — not “S+C because Cubs is hot.”
+- Two on-fire wallets in one QT = toss salad. Nats +$69K (0.2× light) is the next hero, not this parent.
+
+2026-08-27 (Hormozi tweet manufacturing locked):
+- Never jump to copy. Pathway: Timeline → WHO → PURPOSE → ONE → 1–2 SPCL → STUFF → HOOK QA → draft → Ask decision.
+- Drop CSV → `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` before drafting.
+- Drop Hormozi transcript → `hormozi_ingest.md` full synthesize (extract/conflict/SF-map/canon/leverage card) before drafting.
+- Stuff > container. Own 1–2 SPCL. Ask temperature from timeline.
+
+2026-09-01 (CSV Aug 26–Sep 1 — measured, 29 heroes):
+- **S+C live `$XK at Y× usual`** still #1 (Cubs 237/5R). Ride that silhouette on new tape only.
+- **Anti-sexy printer** (`No sexy post here…`) = **PV champion (49)**. L+C when the card is in the image.
+- **Valley / ownership** = reply factory (`DOWN 76` 8R · `LOST ON THE SITE` 9R). Don’t rerun −76u; FAQ only if PURPOSE=buzz.
+- **Convert paragraph as hero/line 1 = death (1 eng).** Thankful customer QT = 35. SUMMER = 13. Convert words stay the close after pudding.
+- Become-sharp clones get likes, **0 replies** — spent, not an ask vehicle.
+- Recap furniture (`here is how the last 30 days played` 44) loses to the same idea with a printer open (`+46.8u IN AUGUST` 94/3R).
+
+2026-09-06 (Hormozi 2026 brand stack — Ep 958 / 976 / 990):
+- Brand = **pairing through an outcome**, not a lock caption. Pair Sharp Flow with “you don’t sit with the dead pile” — never with Over-as-identity or Under-as-identity.
+- Live give = **demonstrate and document** the audit. Attach order = the walk (pain they see → lock → say–do). Captioning three cards is not the post.
+- **Proof over promise.** Start free. Four proof elements: recent · visual · volume-on-one-spear · **pain first** (loud side they’re already staring at, classified in ≤2 lines).
+- Vault: `hormozi_brand_pairing.md` · `hormozi_proof_machine.md`
+
+2026-09-10 r2 (Dale: Hormozi disgusted — starved caption):
+- Restart at PURPOSE. Do **not** tighten educate to 280. August `+46.8u / ALMOST 3× JULY` won WITH mechanism. MLB +104u was 531 chars of process.
+- Hook must stop a stranger: `2 RED NIGHTS.` / `This week is still +33.4u.` (paradox). Kill `USUAL` in line 1–2.
+- Body = walk all four cards + whole truth (Aug 28 −30.3u, red weeks −16.2/−13.3/−8.6, July ugly) + expect-if-you-use-this close. No ask.
+
+2026-09-10 (account-overview CSV — daily totals, no post text):
+- Sep 2–9 beat the last content week on the scoreboard that matters: **+37% eng/day · +85% replies/day** at ~1 post/day.
+- **Mon Sep 7 = 89-day champion** (398 eng / 48R / 198 PV on **one** post). Concentration + live board > more posts. Open unidentified (X auth down).
+- Residual days with 0 Create Post still printed 20R (Sep 2, Sep 4) — do not spam the slot.
+- Ask already fired Sep 6. Next slot stays **give**. NFL Thursday is the parked unfinished stake.
+- Post-level hook chart unchanged: `$XK at Y×` · anti-sexy printer · valley/ownership. Convert-as-open still death.
+
+2026-09-11 (content CSV Sep 5–11 — 32 heroes · post-level law updates):
+- Eng king = **printer then tonight’s plays** (`+60u last 7` + four cards + `$100k` D-backs) **540 / 8R**.
+- Conversation king = `+125u since June 1` + need-a-comment **21R**. Human close after pudding. Do not rerun this week.
+- PV king = `$79.5k on over 44.5` vs most-bet Under **52 PV**. Pain-first `$XK` still the compliance open.
+- `$51K AT 4.4× on the guy we normally fade` **posted 227 / 3R** — silhouette works; copy is spent.
+- Convert still dies: grind-EV **5** · better-way tease **43** · tired-of-losing **54**. Camden **0R**. Vault tour **57**. Ask **cold**. Next = Saturday live give.
+
+2026-09-19 (Hormozi Qual video — Dale full paste):
+- **Varied conditions** is the trust-economy calendar. Same method (size with printers / don’t sit with the losing pile) on different day-types. Cloning last week’s `$XK` / `+118u` silhouette is make-lots without Qual.
+- **Whole-truth origin** is a legal give: we don’t handicap; we track wallets; L’s stay up so the W is believable. Agency-imposter story = never capper cosplay.
+- **Comprehension cost:** line 1–3 must be an instruction a stranger can follow. Decoder-ring jargon fails even if the printer is real.
+- Stuff inside > container. 1.5 at 95% > one over-edited 100%. Automate last. Ask shape unchanged (`trial_overlay.md`).
+- Vault: `hormozi_qual_algorithm.md` · notes `sources/hormozi_qual_algorithm_2026-09-19_notes.md`
+
+2026-09-23 (content CSV Sep 17–23 — no tweet this run):
+- Eng king = Pin limit walk **366 / 51 PV / 1R**. Rate king = `+98.88 since June 1` + three locks **328 / 1367** (today — spent).
+- Conversation = `Down days suck` **8R / 52 PV**, tied with `I need your feedback` **8R**.
+- `$215k ON THE STEELERS` and `$131k / $178k` = **0 replies**. `$209k AT 25×` = 8073 impr / **1R**.
+- Free-trial paragraph = **241 eng / 0R / 4794**. Ask shape unchanged: number + fork, or don’t ask.
+- Next = new-tape give. Do not clone any of the above.
+
+2026-09-14 (trial overlay Jul 17–Sep 13 + content CSV Sep 8–14):
+- **Two scoreboards.** Attention ≠ trials. t.co = **89 trial users / 49%** · 2.4% sess→trial vs 0.4% direct. `?ref=` broken.
+- **Ask shape:** hard number then a fork **in the same tweet**. Seats > storefront (Aug 4 = 7 t.co). `$476k` + free trial in-hero converted. Buried MVP25 / “first week is free” did not.
+- **Skip:** `$5.35/week` as punchline (Aug 2 = 11.9k impr / 2 t.co trials) · how-to threads · ticket-slip reach alone.
+- **Do not kill:** honest L + month still green (Sep 9 = 11 trials) even when eng rate looks like recap furniture.
+- Attention this CSV: `$79.5k` **305** · UFC **10R** · `+99u` **6752**. Convert-paragraph-as-open still dies. Do not flip the desk to price-forward heroes.
+- Vault: `trial_overlay.md`
+
