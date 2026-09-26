@@ -64,6 +64,9 @@ const SPORTS = [
   { key: 'americanfootball_nfl_preseason', label: 'NFL', markets: 'h2h,spreads,totals' },
   { key: 'americanfootball_nfl', label: 'NFL', markets: 'h2h,spreads,totals' },
   { key: 'americanfootball_ncaaf', label: 'CFB', markets: 'h2h,spreads,totals' },
+  // FCS is a separate Odds API feed. McNeese / SEMO never reached the
+  // T-15 shop while this was omitted, so the lock stayed on the Poly average.
+  { key: 'americanfootball_ncaaf_fcs', label: 'CFB', markets: 'h2h,spreads,totals' },
 ];
 
 // Reputation order for fair line (highest → lowest). First with both sides wins.
