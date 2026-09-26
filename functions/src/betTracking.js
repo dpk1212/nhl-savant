@@ -418,6 +418,27 @@ function impliedProbability(american) {
     : 100 / (american + 100);
 }
 
+/** Price actually locked. Peak / flagged is a different number and does not settle the bet. */
+function finiteOdds(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n !== 0 ? n : null;
+}
+
+function lockedBetLine(sideData) {
+  const lock = Number(sideData?.lock?.line);
+  if (Number.isFinite(lock)) return lock;
+  const peak = Number(sideData?.peak?.line);
+  return Number.isFinite(peak) ? peak : 0;
+}
+
+function lockedBetOdds(sideData) {
+  return finiteOdds(sideData?.lock?.odds)
+    ?? finiteOdds(sideData?.peak?.odds)
+    ?? finiteOdds(sideData?.lock?.pinnacleOdds)
+    ?? finiteOdds(sideData?.peak?.pinnacleOdds)
+    ?? 0;
+}
+
 function normalizeName(s) {
   return (s || "").toLowerCase()
       .replace(/\(.*?\)/g, "")
@@ -1339,7 +1360,7 @@ exports.updateBetResults = onSchedule({
                 ?? sideData.peak?.units
                 ?? sideData.lock?.units
                 ?? 0;
-              const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
+              const odds = lockedBetOdds(sideData);
               // A play is "tracked" (0u, MUTED display) ONLY when AGS-U
               // hard-muted it — i.e. cron stamped 0 units. Do NOT treat
               // LEAN-tier or any other shipped tier as automatic tracked,
@@ -1357,8 +1378,8 @@ exports.updateBetResults = onSchedule({
               updates[`sides.${side}.result.gradedAt`] =
                 admin.firestore.FieldValue.serverTimestamp();
 
-              // CLV: compare actual bet odds (best retail) to closing Pinnacle
-              const betOddsForCLV = sideData.peak?.odds || sideData.lock?.odds || sideData.peak?.pinnacleOdds || sideData.lock?.pinnacleOdds;
+              // CLV: locked ticket vs the close. Peak is the flagged number, not the bet.
+              const betOddsForCLV = lockedBetOdds(sideData);
               const closeOdds = sideData.closingOdds;
               if (betOddsForCLV && closeOdds) {
                 const lockProb = impliedProbability(betOddsForCLV);
@@ -1576,7 +1597,7 @@ exports.updateBetResults = onSchedule({
 
             for (const [side, sideData] of Object.entries(pick.sides)) {
               if (sideData.status === "COMPLETED") continue;
-              const line = sideData.peak?.line || sideData.lock?.line || 0;
+              const line = lockedBetLine(sideData);
               const sideUpper = side === "away" ? "AWAY" : "HOME";
               const outcome = calculateOutcome(matchingGame, {
                 market: "PUCK_LINE",
@@ -1590,7 +1611,7 @@ exports.updateBetResults = onSchedule({
                 ?? sideData.peak?.units
                 ?? sideData.lock?.units
                 ?? 0;
-              const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
+              const odds = lockedBetOdds(sideData);
               const isTracked = !units;
               const profit = isTracked ? 0 :
                 calculateProfit(outcome, odds, units);
@@ -1603,7 +1624,7 @@ exports.updateBetResults = onSchedule({
               updates[`sides.${side}.result.gradedAt`] =
                 admin.firestore.FieldValue.serverTimestamp();
 
-              const betOddsForCLV = sideData.peak?.odds || sideData.lock?.odds;
+              const betOddsForCLV = lockedBetOdds(sideData);
               const closeOdds = sideData.closingOdds;
               if (betOddsForCLV && closeOdds) {
                 const lockProb = impliedProbability(betOddsForCLV);
@@ -1772,7 +1793,7 @@ exports.updateBetResults = onSchedule({
 
             for (const [side, sideData] of Object.entries(pick.sides)) {
               if (sideData.status === "COMPLETED") continue;
-              const line = sideData.peak?.line || sideData.lock?.line || 0;
+              const line = lockedBetLine(sideData);
               const sideUpper = side === "over" ? "OVER" : "UNDER";
               const outcome = calculateOutcome(matchingGame, {
                 market: "TOTAL",
@@ -1786,7 +1807,7 @@ exports.updateBetResults = onSchedule({
                 ?? sideData.peak?.units
                 ?? sideData.lock?.units
                 ?? 0;
-              const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
+              const odds = lockedBetOdds(sideData);
               const isTracked = !units;
               const profit = isTracked ? 0 :
                 calculateProfit(outcome, odds, units);
@@ -1799,7 +1820,7 @@ exports.updateBetResults = onSchedule({
               updates[`sides.${side}.result.gradedAt`] =
                 admin.firestore.FieldValue.serverTimestamp();
 
-              const betOddsForCLV = sideData.peak?.odds || sideData.lock?.odds;
+              const betOddsForCLV = lockedBetOdds(sideData);
               const closeOdds = sideData.closingOdds;
               if (betOddsForCLV && closeOdds) {
                 const lockProb = impliedProbability(betOddsForCLV);
