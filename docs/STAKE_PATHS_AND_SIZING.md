@@ -2,7 +2,7 @@
 
 _Status: **LIVE** · stack `v12abcde` + **tape** (2026-07-15) + **EDGE/net Path C** (2026-07-19) + **EDGE band size on A/C** (2026-07-20; **mute&lt;7 / ×0.75** from 2026-07-22)_  
 _Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js`_  
-_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
+_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md) · **[`HARD_AND_PROVEN_WEEK_2026-09-26.md`](./HARD_AND_PROVEN_WEEK_2026-09-26.md)** (HARD+ overlays + Door 2 Proven, 2026-09-24…26)_
 
 ---
 
@@ -21,6 +21,8 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **FOOLS-gold mute** | Final mute (2026-08-05+) | Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 | **Flinch / fail-open leftover mute** | Last mute (2026-08-19+) | Still **&lt;4u** AND (odds-capped native-4u path **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · **4u+ never touched** · **A/B arriving HOLDs** (2026-09-09+) · Q1/UNOPP floors cannot revive |
 | **Sport Confirmed unlock CAP** | Absolute last (2026-08-29+) | **NFL / CFB only** · sport-wide CONFIRMED n → max u (&lt;5→1 · 5–9→2 · 10–14→3 · ≥15→full) · CAP only · deep sports EXEMPT |
+| **HARD+ last steps** | Overlay (2026-09-24…26) | Market-skill · HARD exception · HARD+ AG mute · S/T HARD+ FOR require · see week memo |
+| **Proven bag** | Who v12 scores (2026-09-26) | Source B n≥6 WR≥55 $ROI>3 · A-only out · FLAT gone |
 | **T-15** | Freeze | No further rewrite |
 
 **Paths pick who. EDGE band sizes A/C. Tape dials size. qConv cuts the Path C Q1 tail (Path A + RANK + UNOPP/Q1 exempt). FOOLS cancels FLAT-led. Leftover mute cancels believed-then-cut stubs and sub-4 FAIL_OPEN. CONFIRMED-UNOPP fills sized unopposed CONFIRMED left at 0u, including after mutes — leftover mute still wins after that restore.**
@@ -94,6 +96,15 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
      └─ arriving (off→on) and units ≥4 → 0u
      └─ ML exempt · BOTH reason wins if both fire · fail-open if both unknown
      └─ mutedBy=st-fat
+12e. no-CONFIRMED (2026-08-23+) then **market-skill** (2026-09-24+)
+     └─ ML: ≥1 FOR sport×ML B `n≥6 WR≥52` else 0u
+     └─ S/T: qual$ AGREE + HARD slip (`n≥4 WR≥62 $ROI≥10`) else 0u
+     └─ mutedBy=no-confirmed | ml-mkt-skill | st-qual-wipe | st-hard-slip
+12f. HARD mute-exception (2026-09-24+) — restore listed mutes if ≥1 HARD FOR
+     └─ tape-weak **S/T stays muted** · rescuedBy=hard-mkt-hold
+12g. HARD+ AG mute (2026-09-25+) — ≥1 HARD on the other side → 0u · mutedBy=hard-ag
+12h. S/T HARD+ FOR require (2026-09-26+) — SPREAD/TOTAL needs ≥1 HARD FOR else 0u
+     └─ ML exempt · 4u+ not exempt · mutedBy=st-hard-for
 13. T-15 → freeze
 ```
 
@@ -120,6 +131,10 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
 | **2026-09-18** | **Fade proven-$ hold** — SHARP-LEAN ML with proven $ share ≥50% skips fadeTop mute and continues to the next filter. Missing proven still fades. SPREAD/TOTAL and SUPER/TOP/MINI/RANK/SHARP still fade. |
 | **2026-09-19** | **Source B lock** — v12 quality + RANK n read Action first (featured n only if Action is empty). T−15 scan-drop stays PENDING for grade. |
+| **2026-09-24** | **Market-skill mute** — ML FOR n≥6 WR≥52 · S/T qual$ + HARD slip. **HARD mute-exception** after. |
+| **2026-09-25** | **HARD+ AG mute** — HARD wallet on the other side → 0u. |
+| **2026-09-26** | **S/T HARD+ FOR require** — spreads/totals need ≥1 HARD FOR. |
+| **2026-09-26** | **Door 2 Proven** — Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven. FLAT not assigned. See [`HARD_AND_PROVEN_WEEK_2026-09-26.md`](./HARD_AND_PROVEN_WEEK_2026-09-26.md). |
 | **2026-09-19** | **Featured → Action union** — a shipped featured lock that Source B missed is merged onto Their Action so the result counts. Do not hide Featured to paper over the miss. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |
