@@ -34,7 +34,7 @@ function profiles(entries) {
     m.get(key).bySport[sport] = {
       whitelistTier: tier,
       picks: { flatRoi: flatA, n },
-      positions: { dollarRoi: dol, positionFlatRoi: flatB, n },
+      positions: { dollarRoi: dol, positionFlatRoi: flatB, n, wr: 60 },
     };
   }
   return m;
@@ -44,8 +44,8 @@ function profiles(entries) {
 const equal = profiles([
   rec('aaaaaa', 10, 40),
   rec('bbbbbb', 10, 20),
-  rec('cccccc', 10, 5),
-  rec('dddddd', 10, -5),
+  rec('cccccc', 10, 10),
+  rec('dddddd', 10, 4),
 ]);
 const qEq = buildFlatDollarQBySport(equal);
 assert.equal(qEq.get('MLB')?.get('aaaaaa'), 1);
@@ -53,10 +53,10 @@ assert.equal(qEq.get('MLB')?.get('dddddd'), 4);
 
 // Established +15% n=200 vs lottery +54% n=4.
 const mixed = profiles([
-  rec('thin00', 4, 54),
+  rec('thin00', 6, 54),
   rec('fatg00', 200, 15),
   rec('mid000', 80, 5),
-  rec('low000', 80, -2),
+  rec('low000', 80, 3.5),
 ]);
 const scores = scoreFlatDollarRows([
   { wallet: 'thin00', flatA: 54, nA: 4, flatB: 54, nB: 4, dol: 54, nDol: 4 },

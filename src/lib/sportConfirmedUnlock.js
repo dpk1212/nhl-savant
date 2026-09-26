@@ -15,6 +15,8 @@
  * Forward-only via SPORT_UNLOCK_GATE_FROM.
  */
 
+import { isConfirmedSportRec } from './whitelistTier.js';
+
 /** Live from this pickDate (YYYY-MM-DD) inclusive. */
 export const SPORT_UNLOCK_GATE_FROM = '2026-08-29';
 
@@ -52,7 +54,7 @@ export function sportUnlockMaxUnits(nSportConfirmed) {
 }
 
 /**
- * Count wallets with whitelistTier === CONFIRMED for one sport.
+ * Count wallets that clear Door 2 CONFIRMED for one sport.
  * Accepts Map or plain object of profiles (same shapes as sync).
  */
 export function countSportConfirmed(sport, walletProfiles) {
@@ -61,7 +63,7 @@ export function countSportConfirmed(sport, walletProfiles) {
   let n = 0;
   const visit = (profile) => {
     if (!profile || typeof profile !== 'object') return;
-    if (profile?.bySport?.[sportKey]?.whitelistTier === 'CONFIRMED') n++;
+    if (isConfirmedSportRec(profile?.bySport?.[sportKey])) n++;
   };
   if (typeof walletProfiles.values === 'function') {
     for (const profile of walletProfiles.values()) visit(profile);

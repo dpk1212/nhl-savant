@@ -30,7 +30,7 @@ function profileMap() {
     bySport: {
       MLB: {
         whitelistTier: 'CONFIRMED',
-        positions: { n: 30, invested: 30 * 540 }, // usual $540
+        positions: { n: 30, invested: 30 * 540, wr: 60, dollarRoi: 10 },
         picks: { n: 40, flatRoi: -11.4 },
       },
     },
@@ -148,15 +148,15 @@ function scanFiles() {
     profiles,
   );
   const bestFlat = bestProvenForSide(flatOnly, 'away', 'MLB', profiles);
-  assert.equal(bestFlat.tier, 'FLAT');
+  assert.equal(bestFlat.tier, null, 'FLAT stamp is not Door 2 Proven');
   const foolsFlat = applyFoolsGoldMuteOverlay({
     units: 4,
     tier: 'RANK',
     bestForTier: bestFlat.tier,
     pickDate: '2026-08-29',
   });
-  assert.equal(foolsFlat.mutedBy, 'fools-gold-flat');
-  assert.equal(foolsFlat.units, 0);
+  assert.equal(foolsFlat.mutedBy, null, 'FOOLS fail-open when no Proven FOR');
+  assert.equal(foolsFlat.units, 4);
 
   const both = mapPositionsToStakeWalletDetails(
     [
