@@ -159,6 +159,11 @@ function fullAudienceReached(result) {
   return Boolean(result?.id);
 }
 
+function lockAlertTopic(docId, sideKey, scale) {
+  const hash = createHash('sha1').update(`${docId}|${sideKey}|${scale}`).digest('hex').slice(0, 20);
+  return `lk${hash}`;
+}
+
 function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = 'full') {
   const hash = createHash('sha1')
     .update('lock-alert.nhlsavant.com')
@@ -332,8 +337,10 @@ async function runLockAlerts({ forceWindow = false } = {}) {
           stats.skipped_started++;
           continue;
         }
-        // Wait for T-15 shop seal so we don't push Under 10.5 then paint 11.
-        if (isT15BestLockLive(pick.date || date) && !isSealedT15Lock(sd) && !sd.v8_ticketSealedAt) {
+        // Prefer the sealed T-15 number. If the sealer is still late inside
+        // the last 3 minutes, send the locked ticket anyway.
+        const sealReady = isSealedT15Lock(sd) || sd.v8_ticketSealedAt;
+        if (isT15BestLockLive(pick.date || date) && !sealReady && now < ct - 3 * 60 * 1000) {
           stats.skipped_not_sealed = (stats.skipped_not_sealed || 0) + 1;
           continue;
         }
@@ -349,8 +356,6 @@ async function runLockAlerts({ forceWindow = false } = {}) {
         const units = sideStakeUnits(sd);
         const tier = typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : '';
         const edge = sideLockAlertEdge(sd);
-        const topic = `lock-${date}-${pick._id}-${sideKey}`.slice(0, 32);
-
         try {
           let result = null;
           let fullResult = null;
@@ -363,7 +368,7 @@ async function runLockAlerts({ forceWindow = false } = {}) {
               unitsText,
               edge,
               idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, scale),
-              topic: `${topic}-${scale === 'conservative' ? 'c' : 'f'}`.slice(0, 32),
+              topic: lockAlertTopic(pick._id, sideKey, scale),
               scale,
             });
             if (scale === 'full') fullResult = result;

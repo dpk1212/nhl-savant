@@ -204,6 +204,11 @@ function hasFreshClaim(sd, now) {
 }
 
 /** Deterministic UUID v5 so two overlapping crons share one OneSignal idempotency key. */
+function lockAlertTopic(docId, sideKey, scale) {
+  const hash = createHash('sha1').update(`${docId}|${sideKey}|${scale}`).digest('hex').slice(0, 20);
+  return `lk${hash}`;
+}
+
 function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = UNIT_DISPLAY_SCALE.FULL) {
   const hash = createHash('sha1')
     .update('lock-alert.nhlsavant.com')
@@ -544,7 +549,6 @@ async function main() {
         }
 
         try {
-          const topic = `lock-${TARGET_DATE}-${pick._id}-${sideKey}`.slice(0, 32);
           let ownerScale = UNIT_DISPLAY_SCALE.FULL;
           if (TEST_OWNER) {
             try {
@@ -570,7 +574,7 @@ async function main() {
               tier,
               edge,
               idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, TARGET_DATE, scale),
-              topic: `${topic}-${scale === UNIT_DISPLAY_SCALE.CONSERVATIVE ? 'c' : 'f'}`.slice(0, 32),
+              topic: lockAlertTopic(pick._id, sideKey, scale),
               scale,
             });
             if (scale === UNIT_DISPLAY_SCALE.FULL) fullResult = result;
