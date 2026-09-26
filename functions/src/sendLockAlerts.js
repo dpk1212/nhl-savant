@@ -178,7 +178,7 @@ async function claimLockAlert(db, col, docId, sideKey, now) {
     if (!snap.exists) return false;
     const sd = snap.data()?.sides?.[sideKey];
     if (!sd) return false;
-    if (sd.lockAlertSentAt) return false;
+    if (sd.lockAlertSentAt || sd.lockAlertMessageId) return false;
     if (hasFreshClaim(sd, now)) return false;
     tx.set(
       ref,
@@ -311,7 +311,7 @@ async function runLockAlerts({ forceWindow = false } = {}) {
       for (const [sideKey, sd] of Object.entries(sides)) {
         stats.examined++;
         if (!isStakedLockedSide(sd)) continue;
-        if (sd.lockAlertSentAt) {
+        if (sd.lockAlertSentAt || sd.lockAlertMessageId) {
           stats.skipped_already++;
           continue;
         }

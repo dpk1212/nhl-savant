@@ -215,15 +215,6 @@ jobs:
               echo "::warning::syncPickStateAuthoritative failed inline (cycle $i) — will retry via sync-pick-state-on-deploy workflow after gh-pages push"
             fi
 
-            # Paid-only lock alerts: newly frozen LOCKED sides at T−15 →
-            # OneSignal filter tag paid=true. Idempotent via lockAlertSentAt.
-            echo "--- sendLockAlerts ---"
-            if [ -n "${ONESIGNAL_REST_API_KEY:-}" ]; then
-              node scripts/sendLockAlerts.mjs || echo "::warning::sendLockAlerts failed (cycle $i — non-fatal)"
-            else
-              echo "--- sendLockAlerts skipped (ONESIGNAL_REST_API_KEY not set) ---"
-            fi
-
             echo "--- updateClosingOdds ---"
             node scripts/updateClosingOdds.js || echo "closingOdds failed (cycle $i)"
 
@@ -414,10 +405,6 @@ jobs:
               echo "--- syncPickStateAuthoritative (post-deploy safety net) ---"
               if ! node scripts/syncPickStateAuthoritative.js; then
                 echo "::warning::syncPickStateAuthoritative POST-DEPLOY also failed (cycle $i) — Firestore may be stale relative to deployed JSON until next cycle"
-              fi
-              echo "--- sendLockAlerts (post-deploy) ---"
-              if [ -n "${ONESIGNAL_REST_API_KEY:-}" ]; then
-                node scripts/sendLockAlerts.mjs || echo "::warning::sendLockAlerts post-deploy failed (cycle $i)"
               fi
             fi
 

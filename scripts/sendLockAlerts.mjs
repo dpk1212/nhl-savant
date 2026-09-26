@@ -186,7 +186,7 @@ function isStakedLockedSide(sd) {
 
 function isAlertableSide(sd) {
   if (!isStakedLockedSide(sd)) return false;
-  if (!TEST_OWNER && sd.lockAlertSentAt) return false;
+  if (!TEST_OWNER && (sd.lockAlertSentAt || sd.lockAlertMessageId)) return false;
   return true;
 }
 
@@ -232,7 +232,7 @@ async function claimLockAlert(db, col, docId, sideKey, now) {
     if (!snap.exists) return false;
     const sd = snap.data()?.sides?.[sideKey];
     if (!sd) return false;
-    if (sd.lockAlertSentAt) return false;
+    if (sd.lockAlertSentAt || sd.lockAlertMessageId) return false;
     if (hasFreshClaim(sd, now)) return false;
     tx.set(
       ref,
@@ -425,6 +425,11 @@ async function sendOneSignal({ pickText, detail, tier, edge, idempotencyKey, top
 }
 
 async function main() {
+  const MANUAL = argv.includes('--manual');
+  if (!MANUAL && !DRY_RUN && !TEST_OWNER) {
+    console.log('Lock alerts are sent only by Cloud Scheduler (sendLockAlerts). This script does not send.');
+    process.exit(0);
+  }
   const now = Date.now();
   console.log(`\n=== sendLockAlerts — ${TARGET_DATE} ===`);
   console.log(
@@ -483,7 +488,7 @@ async function main() {
           stats.skipped_unstaked++;
           continue;
         }
-        if (!TEST_OWNER && sd.lockAlertSentAt) {
+        if (!TEST_OWNER && (sd.lockAlertSentAt || sd.lockAlertMessageId)) {
           stats.skipped_already++;
           continue;
         }
