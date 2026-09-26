@@ -66,7 +66,6 @@ const SEND_STAGGER_MS = 750;
 const LOCK_GAP_MS = 8000;
 const LOCK_ICON = 'https://nhlsavant.com/icons/icon-192.png';
 /** Retry a full-book send that OneSignal accepted for nobody. Then stop. */
-const MAX_EMPTY_ATTEMPTS = 2;
 // If the market cron hiccups across the freeze boundary, still deliver after
 // first pitch. 10m was too tight when Actions was dead across T−15
 // (Barcelona 2026-08-27: safety net last ran 12:08 PM, freeze at 2:45 PM).
@@ -205,11 +204,10 @@ function hasFreshClaim(sd, now) {
 }
 
 /** Deterministic UUID v5 so two overlapping crons share one OneSignal idempotency key. */
-function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = UNIT_DISPLAY_SCALE.FULL, attempt = 0) {
-  const retry = attempt > 0 ? `|r${attempt}` : '';
+function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = UNIT_DISPLAY_SCALE.FULL) {
   const hash = createHash('sha1')
     .update('lock-alert.nhlsavant.com')
-    .update(`${date}|${col}|${docId}|${sideKey}|${scale}${retry}`)
+    .update(`${date}|${col}|${docId}|${sideKey}|${scale}`)
     .digest();
   hash[6] = (hash[6] & 0x0f) | 0x50;
   hash[8] = (hash[8] & 0x3f) | 0x80;
@@ -547,7 +545,6 @@ async function main() {
 
         try {
           const topic = `lock-${TARGET_DATE}-${pick._id}-${sideKey}`.slice(0, 32);
-          const attempt = Number(sd.lockAlertAttempt) || 0;
           let ownerScale = UNIT_DISPLAY_SCALE.FULL;
           if (TEST_OWNER) {
             try {
@@ -572,7 +569,7 @@ async function main() {
               detail,
               tier,
               edge,
-              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, TARGET_DATE, scale, attempt),
+              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, TARGET_DATE, scale),
               topic: `${topic}-${scale === UNIT_DISPLAY_SCALE.CONSERVATIVE ? 'c' : 'f'}`.slice(0, 32),
               scale,
             });
@@ -581,22 +578,7 @@ async function main() {
             if (scales.length > 1) await new Promise((r) => setTimeout(r, SEND_STAGGER_MS));
           }
           if (!TEST_OWNER && !fullAudienceReached(fullResult)) {
-            const nextAttempt = attempt + 1;
-            await db.collection(col).doc(pick._id).set(
-              {
-                sides: {
-                  [sideKey]: {
-                    lockAlertAttempt: nextAttempt,
-                    lockAlertClaimAt: admin.firestore.FieldValue.delete(),
-                  },
-                },
-              },
-              { merge: true },
-            );
-            if (nextAttempt <= MAX_EMPTY_ATTEMPTS) {
-              throw new Error(`full audience recipients=${fullResult?.recipients ?? 0} — retry ${nextAttempt}`);
-            }
-            console.warn(`    · full audience still empty after ${nextAttempt} tries — stamping so we stop`);
+            throw new Error(`OneSignal returned no notification id (recipients=${fullResult?.recipients ?? 0})`);
           }
           const messageId = fullResult?.id || result?.id || null;
           // Never stamp Firestore on owner-only tests — production cron still owns idempotency.

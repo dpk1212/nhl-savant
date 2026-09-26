@@ -19,7 +19,6 @@ const CLAIM_TTL_MS = 2 * 60 * 1000;
 const PUSH_TTL_SEC = 7200;
 const LOCK_GAP_MS = 8000;
 const LOCK_ICON = 'https://nhlsavant.com/icons/icon-192.png';
-const MAX_EMPTY_ATTEMPTS = 2;
 const LOCK_ALERT_EDGE_MIN = 11;
 const APP_ID = process.env.ONESIGNAL_APP_ID || 'd8fcb504-8d29-4354-a9e4-8b612d3eafeb';
 const SITE_URL = 'https://nhlsavant.com/#/';
@@ -157,15 +156,13 @@ function formatUnits(u) {
 }
 
 function fullAudienceReached(result) {
-  const n = Number(result?.recipients);
-  return Boolean(result?.id) && Number.isFinite(n) && n > 0;
+  return Boolean(result?.id);
 }
 
-function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = 'full', attempt = 0) {
-  const retry = attempt > 0 ? `|r${attempt}` : '';
+function lockAlertIdempotencyKey(col, docId, sideKey, date, scale = 'full') {
   const hash = createHash('sha1')
     .update('lock-alert.nhlsavant.com')
-    .update(`${date}|${col}|${docId}|${sideKey}|${scale}${retry}`)
+    .update(`${date}|${col}|${docId}|${sideKey}|${scale}`)
     .digest();
   hash[6] = (hash[6] & 0x0f) | 0x50;
   hash[8] = (hash[8] & 0x3f) | 0x80;
@@ -353,7 +350,6 @@ async function runLockAlerts({ forceWindow = false } = {}) {
         const tier = typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : '';
         const edge = sideLockAlertEdge(sd);
         const topic = `lock-${date}-${pick._id}-${sideKey}`.slice(0, 32);
-        const attempt = Number(sd.lockAlertAttempt) || 0;
 
         try {
           let result = null;
@@ -366,7 +362,7 @@ async function runLockAlerts({ forceWindow = false } = {}) {
               tierText,
               unitsText,
               edge,
-              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, scale, attempt),
+              idempotencyKey: lockAlertIdempotencyKey(col, pick._id, sideKey, date, scale),
               topic: `${topic}-${scale === 'conservative' ? 'c' : 'f'}`.slice(0, 32),
               scale,
             });
@@ -374,22 +370,7 @@ async function runLockAlerts({ forceWindow = false } = {}) {
             logger.info(`sent ${scale} ${col}/${pick._id} ${sideKey} message=${result?.id} recipients=${result?.recipients ?? '?'}`);
           }
           if (!fullAudienceReached(fullResult)) {
-            const nextAttempt = attempt + 1;
-            await db.collection(col).doc(pick._id).set(
-              {
-                sides: {
-                  [sideKey]: {
-                    lockAlertAttempt: nextAttempt,
-                    lockAlertClaimAt: admin.firestore.FieldValue.delete(),
-                  },
-                },
-              },
-              { merge: true },
-            );
-            if (nextAttempt <= MAX_EMPTY_ATTEMPTS) {
-              throw new Error(`full audience recipients=${fullResult?.recipients ?? 0} — retry ${nextAttempt}`);
-            }
-            logger.warn(`full audience still empty after ${nextAttempt} tries — stamping`);
+            throw new Error(`OneSignal returned no notification id (recipients=${fullResult?.recipients ?? 0})`);
           }
           const messageId = fullResult?.id || result?.id || null;
           await db
