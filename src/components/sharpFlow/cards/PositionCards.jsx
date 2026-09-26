@@ -42,9 +42,9 @@ function formatLockCountdown(ms) {
 }
 
 /** Audit tooltip for a 0u / NO PLAY card — technical mute reason. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, unitsPreHardAg, steamTailReason, stakePath } = {}) {
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, unitsPreHardAg, unitsPreHardStFor, steamTailReason, stakePath } = {}) {
   const preU = [
-    unitsPreHardAg, unitsPreMarketSkill, unitsPreStFat, unitsPreFavJuice, unitsPreSteamTail,
+    unitsPreHardStFor, unitsPreHardAg, unitsPreMarketSkill, unitsPreStFat, unitsPreFavJuice, unitsPreSteamTail,
     unitsPreNoConfirmed, unitsPreMaxSrSub4, unitsPreFlinchFailOpen, unitsPreTape,
   ].find((n) => Number.isFinite(n) && n > 0) ?? null;
   const pre = preU != null
@@ -85,8 +85,8 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   if (mutedBy === 'st-qual-wipe') {
     return pre ? `S/T qual wipe · ${pre}` : 'S/T qual wipe — qualified $ not on our side';
   }
-  if (mutedBy === 'st-hard-slip') {
-    return pre ? `S/T HARD slip · ${pre}` : 'S/T HARD slip — no n≥4 WR≥62 $ROI≥10 FOR';
+  if (mutedBy === 'st-hard-slip' || mutedBy === 'st-hard-for') {
+    return pre ? `No tracked sharp on this market · ${pre}` : 'No tracked sharp on this market';
   }
   if (mutedBy === 'hard-ag') {
     return pre ? `Best wallet against us · ${pre}` : 'Best wallet against us';
@@ -110,7 +110,7 @@ function noPlayReason({ mutedBy, tapeAction, stakePath } = {}) {
   if (mutedBy === 'st-fat') return 'Spread/total size';
   if (mutedBy === 'ml-mkt-skill') return 'No ML skill wallet on our side';
   if (mutedBy === 'st-qual-wipe') return 'Qualified spread/total money not on our side';
-  if (mutedBy === 'st-hard-slip') return 'No HARD spread/total wallet on our side';
+  if (mutedBy === 'st-hard-slip' || mutedBy === 'st-hard-for') return 'No tracked sharp on our side';
   if (mutedBy === 'hard-ag') return 'Best wallet on the other side';
   if (stakePath === 'FADE') return "Didn't meet the size bar";
   return "Didn't meet the size bar";
@@ -3076,6 +3076,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
     unitsPreStFat: f.unitsPreStFat,
     unitsPreMarketSkill: f.unitsPreMarketSkill,
     unitsPreHardAg: f.unitsPreHardAg,
+    unitsPreHardStFor: f.unitsPreHardStFor,
     steamTailReason: f.steamTailReason || f.v8_steamTailReason || null,
     stakePath: f.stakePath,
   };

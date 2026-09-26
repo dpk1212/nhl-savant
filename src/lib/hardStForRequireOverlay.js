@@ -1,20 +1,19 @@
 /**
- * HARD+ AG mute overlay — 0u after the HARD FOR exception, before
- * the S/T HARD+ FOR require.
+ * S/T HARD+ FOR require — last-step 0u after HARD+ AG.
  *
- * If a live ticket has ≥1 HARD wallet on the other side
- * (Source B sport×market n≥4 WR≥62 $ROI≥10), mute it.
- * Get out of the way. Do not fade specialists. Do not rescue T.
+ * Spreads and totals need ≥1 HARD wallet on our side
+ * (Source B sport×market n≥4 WR≥62 $ROI≥10). No specialist with us → mute.
+ * ML is exempt. Do not fade. Do not resize, repath, or flip.
  *
- * Does NOT hide wallets from v12. Does NOT resize, repath, or flip.
- * leftover / Policy T / unit-tier / market-skill run unchanged.
- * This overlay only 0u's a ticket that already published size.
+ * market-skill already has st-hard-slip (2026-09-24). This remute catches
+ * tickets that slip leaked (fail-open HOLD, leftover size, day-1 lock).
+ * leftover / Policy T / unit-tier / HARD+ AG run unchanged.
  *
  * Fail-open (HOLD at exact units) when we cannot judge:
  *   missing walletProfiles, empty walletDetails, or no sport×byMarket
  *   schema on any ticket wallet. Never wipe the book on a load miss.
  *
- * Going-forward only. Roll-back: HARD_AG_MUTE_FROM = '9999-01-01'.
+ * Going-forward only. Roll-back: HARD_ST_FOR_REQUIRE_FROM = '9999-01-01'.
  */
 import {
   attachMarketBooks,
@@ -22,11 +21,11 @@ import {
   normalizeMarketType,
 } from './marketSkillMuteOverlay.js';
 
-export const HARD_AG_MUTE_FROM = '2026-09-25';
-export const HARD_AG_MUTED_BY = 'hard-ag';
+export const HARD_ST_FOR_REQUIRE_FROM = '2026-09-26';
+export const HARD_ST_FOR_MUTED_BY = 'st-hard-for';
 
-export function isHardAgMuteLive(pickDate) {
-  return typeof pickDate === 'string' && pickDate >= HARD_AG_MUTE_FROM;
+export function isHardStForRequireLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= HARD_ST_FOR_REQUIRE_FROM;
 }
 
 function identity(units, action, reason, extra = {}) {
@@ -42,10 +41,11 @@ function identity(units, action, reason, extra = {}) {
 }
 
 /**
- * Last-step HARD+ AG mute. Never changes units unless a HARD wallet
- * is on the other side. 4u+ is NOT exempt.
+ * Last-step S/T HARD+ FOR require. Never changes units unless the
+ * ticket is SPREAD/TOTAL and no HARD wallet is on our side.
+ * 4u+ is NOT exempt.
  */
-export function applyHardAgMuteOverlay({
+export function applyHardStForRequireOverlay({
   units,
   marketType = null,
   sport = null,
@@ -56,17 +56,20 @@ export function applyHardAgMuteOverlay({
 } = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   const mkt = normalizeMarketType(marketType);
-  const extra = { marketType: mkt, schemaN: 0, hardAgN: 0 };
+  const extra = { marketType: mkt, schemaN: 0, hardForN: 0 };
 
   if (!(pre > 0)) {
     return {
       units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre, ...extra,
     };
   }
-  if (!isHardAgMuteLive(pickDate)) {
+  if (!isHardStForRequireLive(pickDate)) {
     return identity(pre, 'EXEMPT', 'pre_cutover', extra);
   }
-  if (mkt !== 'ML' && mkt !== 'SPREAD' && mkt !== 'TOTAL') {
+  if (mkt === 'ML') {
+    return identity(pre, 'EXEMPT', 'market_exempt', extra);
+  }
+  if (mkt !== 'SPREAD' && mkt !== 'TOTAL') {
     return identity(pre, 'EXEMPT', 'market_exempt', extra);
   }
   if (!sport || side == null || side === '') {
@@ -84,16 +87,16 @@ export function applyHardAgMuteOverlay({
     return identity(pre, 'HOLD', 'schema_missing', extra);
   }
 
-  const hardAg = wallets.filter((w) => !w.onFor && isHardMarketWallet(w.pos));
-  extra.hardAgN = hardAg.length;
-  if (hardAg.length < 1) {
+  const hardFor = wallets.filter((w) => w.onFor && isHardMarketWallet(w.pos));
+  extra.hardForN = hardFor.length;
+  if (hardFor.length >= 1) {
     return identity(pre, 'HOLD', null, extra);
   }
   return {
     units: 0,
     action: 'MUTE',
-    reason: 'hard_ag_against',
-    mutedBy: HARD_AG_MUTED_BY,
+    reason: 'st_no_hard_for',
+    mutedBy: HARD_ST_FOR_MUTED_BY,
     unitsPrePolicy: pre,
     ...extra,
   };
