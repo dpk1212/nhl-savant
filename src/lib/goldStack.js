@@ -1,7 +1,8 @@
 /**
- * GOLD hero-card tag = inside the steam-era stack.
+ * GOLD stack classifier — HARD+ FOR only · proven ≥75%.
  *
- * Display-only. Does not size, mute, repath, or flip.
+ * Used by the hero GOLD tag (display) and the 4u size cap (staking).
+ * This file does not change units. The cap overlay does.
  *
  * Stack:
  *   HARD+ FOR only — ≥1 Source B sport×market HARD on our side

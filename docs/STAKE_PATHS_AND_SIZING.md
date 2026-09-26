@@ -22,6 +22,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **Flinch / fail-open leftover mute** | Last mute (2026-08-19+) | Still **&lt;4u** AND (odds-capped native-4u path **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · **4u+ never touched** · **A/B arriving HOLDs** (2026-09-09+) · Q1/UNOPP floors cannot revive |
 | **Sport Confirmed unlock CAP** | Absolute last (2026-08-29+) | **NFL / CFB only** · sport-wide CONFIRMED n → max u (&lt;5→1 · 5–9→2 · 10–14→3 · ≥15→full) · CAP only · deep sports EXEMPT |
 | **HARD+ last steps** | Overlay (2026-09-24…26) | Market-skill · HARD exception · HARD+ AG mute · S/T HARD+ FOR require · see week memo |
+| **GOLD-stack 4u cap** | Last size choke (2026-09-26+) | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps 5–6u. Fail-open if we cannot judge. |
 | **Proven bag** | Who v12 scores (2026-09-26) | Source B n≥6 WR≥55 $ROI>3 · A-only out · FLAT gone |
 | **T-15** | Freeze | No further rewrite |
 
@@ -105,6 +106,9 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 12g. HARD+ AG mute (2026-09-25+) — ≥1 HARD on the other side → 0u · mutedBy=hard-ag
 12h. S/T HARD+ FOR require (2026-09-26+) — SPREAD/TOTAL needs ≥1 HARD FOR else 0u
      └─ ML exempt · 4u+ not exempt · mutedBy=st-hard-for
+12i. GOLD-stack size cap (2026-09-26+) — off-stack >4u → 4u
+     └─ stack (HARD+ FOR only · proven ≥75%) keeps fat
+     └─ fail-open HOLD if we cannot judge · cappedBy=gold-stack-cap
 13. T-15 → freeze
 ```
 
@@ -135,6 +139,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-09-25** | **HARD+ AG mute** — HARD wallet on the other side → 0u. |
 | **2026-09-26** | **S/T HARD+ FOR require** — spreads/totals need ≥1 HARD FOR. |
 | **2026-09-26** | **Door 2 Proven** — Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven. FLAT not assigned. See [`HARD_AND_PROVEN_WEEK_2026-09-26.md`](./HARD_AND_PROVEN_WEEK_2026-09-26.md). |
+| **2026-09-26** | **GOLD-stack 4u cap** — off-stack tickets cannot publish above 4u. EDGE + tape can still fatten the stack to 6u. Ball State ML hole. |
 | **2026-09-19** | **Featured → Action union** — a shipped featured lock that Source B missed is merged onto Their Action so the result counts. Do not hide Featured to paper over the miss. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |
