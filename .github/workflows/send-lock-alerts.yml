@@ -1,9 +1,7 @@
-name: Send Lock Alerts (T−15 safety net)
+name: Sync pick state (lock-alert schedule)
 
-# Backup for paid lock pushes. Primary sender is Cloud Scheduler
-# (functions/sendLockAlerts, every 2 minutes) — GitHub `*/5` cron went
-# silent for 2.5h on 2026-08-27 and missed Barcelona TOP at T−15.
-# Keep this workflow as a second path + pick-state sync.
+# Cloud Scheduler sendLockAlerts is the only lock-alert sender.
+# This schedule still refreshes pick state. It does not push.
 on:
   schedule:
     - cron: '*/5 * * * *'
@@ -63,11 +61,3 @@ jobs:
         if: steps.gate.outputs.skip != 'true'
         run: node scripts/syncPickStateAuthoritative.js
 
-      - name: sendLockAlerts
-        if: steps.gate.outputs.skip != 'true'
-        run: |
-          if [ -z "${ONESIGNAL_REST_API_KEY:-}" ]; then
-            echo "::error::ONESIGNAL_REST_API_KEY secret missing — lock alerts cannot send"
-            exit 1
-          fi
-          node scripts/sendLockAlerts.mjs
