@@ -42,7 +42,7 @@ function profiles(entries) {
     m.get(key).bySport[sport] = {
       whitelistTier: tier,
       picks: { flatRoi, n: 10 },
-      positions: { dollarRoi, positionFlatRoi: bFlat, n: 10 },
+      positions: { dollarRoi, positionFlatRoi: bFlat, n: 10, wr: 60 },
     };
   }
   return m;
@@ -56,7 +56,7 @@ const prof = profiles([
   ['aaaaaa', 'MLB', 'CONFIRMED', 40, 40],
   ['bbbbbb', 'MLB', 'CONFIRMED', 20, 20],
   ['cccccc', 'MLB', 'CONFIRMED', 5, 5],
-  ['dddddd', 'MLB', 'CONFIRMED', -5, -5],
+  ['dddddd', 'MLB', 'CONFIRMED', 3.5, 3.5],
 ]);
 const qBy = buildFlatDollarQBySport(prof);
 ok(qBy.get('MLB')?.get('aaaaaa') === 1, 'top score → Q1');
@@ -68,9 +68,9 @@ ok(FLAT_DOLLAR_Q_WEIGHT_FLAT === 0.4 && FLAT_DOLLAR_Q_WEIGHT_DOLLAR === 0.6, '40
   // Same Q for Action + stake. 60% B$ ranks dollar-hot over A-flat-hot.
   const split = profiles([
     ['hotb00', 'MLB', 'CONFIRMED', 0, 50, 0],
-    ['hota00', 'MLB', 'CONFIRMED', 50, 0, 50],
+    ['hota00', 'MLB', 'CONFIRMED', 50, 8, 50],
     ['mid000', 'MLB', 'CONFIRMED', 10, 10, 10],
-    ['low000', 'MLB', 'CONFIRMED', -10, -10, -10],
+    ['low000', 'MLB', 'CONFIRMED', 4, 4, 4],
   ]);
   const q = buildFlatDollarQBySport(split);
   ok(q.get('MLB')?.get('hotb00') < q.get('MLB')?.get('hota00'), 'B$ hot ranks above A-flat hot');
@@ -81,7 +81,7 @@ ok(FLAT_DOLLAR_Q_WEIGHT_FLAT === 0.4 && FLAT_DOLLAR_Q_WEIGHT_DOLLAR === 0.6, '40
     ['bflat0', 'MLB', 'CONFIRMED', 0, 10, 50],
     ['aflat0', 'MLB', 'CONFIRMED', 50, 10, 0],
     ['mid000', 'MLB', 'CONFIRMED', 10, 10, 10],
-    ['low000', 'MLB', 'CONFIRMED', -10, -10, -10],
+    ['low000', 'MLB', 'CONFIRMED', 4, 4, 4],
   ]);
   const q = buildFlatDollarQBySport(flats);
   ok(q.get('MLB')?.get('bflat0') < q.get('MLB')?.get('aflat0'), 'B-flat hot ranks above A-flat hot');
@@ -137,7 +137,7 @@ ok(FLAT_DOLLAR_Q_WEIGHT_FLAT === 0.4 && FLAT_DOLLAR_Q_WEIGHT_DOLLAR === 0.6, '40
     ['aaaaaa', 'MLB', 'CONFIRMED', 40, 40],
     ['bbbbbb', 'MLB', 'CONFIRMED', 20, 20],
     ['cccccc', 'MLB', 'CONFIRMED', 5, 5],
-    ['dddddd', 'MLB', 'CONFIRMED', -5, -5],
+    ['dddddd', 'MLB', 'CONFIRMED', 3.5, 3.5],
   ]);
   local.get('aaaaaa').bySport.MLB.positions = {
     ...local.get('aaaaaa').bySport.MLB.positions,
@@ -157,11 +157,11 @@ ok(FLAT_DOLLAR_Q_WEIGHT_FLAT === 0.4 && FLAT_DOLLAR_Q_WEIGHT_DOLLAR === 0.6, '40
     ['aaaaaa', 'MLB', 'CONFIRMED', 40, 40],
     ['bbbbbb', 'MLB', 'CONFIRMED', 20, 20],
     ['cccccc', 'MLB', 'CONFIRMED', 5, 5],
-    ['dddddd', 'MLB', 'CONFIRMED', -5, -5],
+    ['dddddd', 'MLB', 'CONFIRMED', 3.5, 3.5],
   ]);
   local.get('aaaaaa').bySport.MLB.positions = {
     ...local.get('aaaaaa').bySport.MLB.positions,
-    n: 5,
+    n: 8,
     invested: 10000,
   };
   const r = computeConfirmedQ1Sized(
@@ -175,10 +175,10 @@ ok(FLAT_DOLLAR_Q_WEIGHT_FLAT === 0.4 && FLAT_DOLLAR_Q_WEIGHT_DOLLAR === 0.6, '40
   const r = computeConfirmedQ1Sized(
     [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 1.0 }],
     side, sport,
-    profiles([['aaaaaa', 'MLB', 'FLAT', 40, 40]]),
+    profiles([['aaaaaa', 'MLB', 'FLAT', 40, 1]]),
     qBy,
   );
-  ok(r.qualifies === false, 'FLAT tier fails');
+  ok(r.qualifies === false, 'soft-B FLAT stamp is not Door 2 CONFIRMED');
 }
 
 // Create-path: AGS mute / no-signal bypass when Q1×sized qualifies

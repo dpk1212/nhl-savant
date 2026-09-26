@@ -116,7 +116,7 @@ const side = 'home';
 {
   // Sport-local usual beats model/v8 (Astros −1.5: card 0.7×, v8 0.24×).
   const m = profiles([['aaaaaa', 'MLB', 'CONFIRMED']]);
-  m.get('aaaaaa').bySport.MLB.positions = { n: 6, invested: 7351 };
+  m.get('aaaaaa').bySport.MLB.positions = { n: 6, invested: 7351, wr: 60, dollarRoi: 8 };
   const r = computeConfirmedUnoppSized(
     [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 0.24, invested: 808 }],
     side, sport, m,
@@ -128,7 +128,7 @@ const side = 'home';
 {
   // Inverse: fat model size, light vs this sport's usual → fail.
   const m = profiles([['aaaaaa', 'MLB', 'CONFIRMED']]);
-  m.get('aaaaaa').bySport.MLB.positions = { n: 5, invested: 10000 };
+  m.get('aaaaaa').bySport.MLB.positions = { n: 8, invested: 10000, wr: 60, dollarRoi: 8 };
   const r = computeConfirmedUnoppSized(
     [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 1.2, invested: 200 }],
     side, sport, m,

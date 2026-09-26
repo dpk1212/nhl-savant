@@ -21,6 +21,7 @@
 
 import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
 import { stakeSizeRatio } from './sizeRatioBands.js';
+import { isConfirmedSportRec, isProvenSportRec } from './whitelistTier.js';
 
 export const CLV_HIST_FROM = '2026-04-01';
 export const CLV_SKILL_MIN_N = 5;
@@ -652,13 +653,13 @@ export function bestProvenForSide(walletDetails, mySide, sport, walletProfiles) 
       || walletProfiles.get(key.toUpperCase())
       || walletProfiles.get(s);
     const bs = profile?.bySport?.[sport];
-    const tier = bs?.whitelistTier;
-    if (tier !== 'CONFIRMED' && tier !== 'FLAT') continue;
+    if (!isProvenSportRec(bs)) continue;
     // Size-skill CONFIRMED: only count when this ticket is sized ≥ 1.0×.
     if (!passesSizeSkillLiveGate(bs, w.sizeRatio)) continue;
     const picks = bs.picks || {};
     const flatRoi = Number.isFinite(picks.flatRoi) ? picks.flatRoi : null;
     const n = picks.n ?? 0;
+    const tier = isConfirmedSportRec(bs) ? 'CONFIRMED' : 'FLAT';
     const tierScore = tier === 'CONFIRMED' ? 2 : 1;
     forR.push({
       walletShort: s,
@@ -722,8 +723,7 @@ export function computeConfirmedUnoppSized(
       || walletProfiles.get(key.toUpperCase())
       || walletProfiles.get(s);
     const bs = profile?.bySport?.[sport];
-    const tier = bs?.whitelistTier;
-    if (tier !== 'CONFIRMED') continue;
+    if (!isConfirmedSportRec(bs)) continue;
     const sr = stakeSizeRatio(w, profile, sport);
     if (!passesSizeSkillLiveGate(bs, sr)) continue;
     if (w.side === mySide) {
@@ -948,8 +948,11 @@ export function buildFlatDollarQBySport(walletProfiles, { tiers = ['CONFIRMED'] 
     const short = shortWalletId(id);
     if (!short || !prof?.bySport) continue;
     for (const [sport, rec] of Object.entries(prof.bySport)) {
-      const tier = String(rec?.whitelistTier || '').toUpperCase();
-      if (!tierSet.has(tier)) continue;
+      const stamped = String(rec?.whitelistTier || '').toUpperCase();
+      const liveConfirmed = isConfirmedSportRec(rec);
+      const inUniverse = (tierSet.has('CONFIRMED') && liveConfirmed)
+        || (tierSet.has(stamped) && rec.positions == null);
+      if (!inUniverse) continue;
       const flatA = Number(rec.picks?.flatRoi);
       const flatB = Number(rec.positions?.positionFlatRoi);
       const dol = Number(rec.positions?.dollarRoi);
@@ -1014,7 +1017,7 @@ export function computeConfirmedQ1Sized(
     const profile = walletProfiles.get(key)
       || walletProfiles.get(key.toUpperCase())
       || walletProfiles.get(s);
-    if (profile?.bySport?.[sport]?.whitelistTier !== 'CONFIRMED') continue;
+    if (!isConfirmedSportRec(profile?.bySport?.[sport])) continue;
     const sr = stakeSizeRatio(w, profile, sport);
     if (!passesSizeSkillLiveGate(profile?.bySport?.[sport], sr)) continue;
     if (qMap.get(s) !== 1 && qMap.get(key) !== 1) continue;
@@ -1302,7 +1305,7 @@ export function countConfirmedOnSide(walletDetails, sideKey, sport, walletProfil
     if (!short || seen.has(short)) continue;
     seen.add(short);
     const profile = getProfile(short);
-    if (profile?.bySport?.[sport]?.whitelistTier === 'CONFIRMED') n++;
+    if (isConfirmedSportRec(profile?.bySport?.[sport])) n++;
   }
   return n;
 }

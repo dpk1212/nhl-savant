@@ -22,12 +22,12 @@ import {
   acceptFullGameSidePosition,
   acceptFullGameTotalPosition,
 } from './totalMarketFilter.js';
+import { isProvenSportRec } from '../../src/lib/whitelistTier.js';
 
 /** Same floor as writeSharpActions SHADOW_MIN_MULTIPLIER. */
 export const SCAN_BOARD_SHADOW_MIN = 0.10;
 
 const SPORTS = ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA'];
-const PROVEN_TIERS = new Set(['CONFIRMED', 'FLAT']);
 
 export function softPositionKey(wallet, sport, gameKey, marketType, side) {
   return `${String(wallet || '').toLowerCase()}|${sport}|${gameKey}|${marketType}|${side}`;
@@ -117,8 +117,7 @@ export function collectScanBoardProvenPositions({
           if (!fgOk) continue;
 
           const profile = profileFor(walletProfiles, wallet);
-          const tier = String(profile?.bySport?.[sport]?.whitelistTier || '').toUpperCase();
-          if (!PROVEN_TIERS.has(tier)) continue;
+          if (!isProvenSportRec(profile?.bySport?.[sport])) continue;
 
           const { usual: avgBet } = resolveSportUsualBet({
             sport,

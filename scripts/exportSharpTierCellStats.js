@@ -27,6 +27,7 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { scoreFlatDollarRows, quartileFromScores } from '../src/lib/walletClvSkill.js';
+import { classifyWhitelistTier } from '../src/lib/whitelistTier.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -53,8 +54,6 @@ const V8_CUTOVER = '2026-04-18';
 const FROM = '2026-06-15';
 const COLS = [['sharpFlowPicks', 'ML'], ['sharpFlowSpreads', 'SPREAD'], ['sharpFlowTotals', 'TOTAL']];
 const OPPOSITE = { home: 'away', away: 'home', over: 'under', under: 'over' };
-const WHITELIST_MIN_BETS = 2;
-const B_ONLY_MIN_BETS = 4; // keep in sync with exportWalletProfiles.js
 const MIN_N_FEAT = 8;
 /** Match Action MODEL_MIN_SIZE — token bets don't count as opposed money. */
 const COUNTED_MIN_SIZE = 0.10;
@@ -92,13 +91,7 @@ function positionsAgg(bets) {
   };
 }
 function classifyTier(p, q) {
-  p = p || { n: 0 }; q = q || { n: 0 };
-  const flatOkA = p.n >= WHITELIST_MIN_BETS && (p.flatRoi ?? 0) > 0;
-  const flatOkB = q.n >= B_ONLY_MIN_BETS && (q.positionFlatRoi ?? 0) > 0;
-  const dollarOk = q.n >= WHITELIST_MIN_BETS && q.dollarRoi != null && q.dollarRoi > 0;
-  if ((flatOkA || flatOkB) && dollarOk) return 'CONFIRMED';
-  if (flatOkA || flatOkB) return 'FLAT';
-  return null;
+  return classifyWhitelistTier(p, q);
 }
 
 function isCountedSize(sr) {

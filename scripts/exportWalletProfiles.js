@@ -45,45 +45,21 @@
  *
  * Per (wallet, sport), classifyWhitelistTier() resolves the tier as:
  *
- *   CONFIRMED — flat-positive (Source A OR B) AND ($-positive Source B
- *               OR recent-dollar rescue — see below)
- *   FLAT      — flat-positive (Source A OR B)
- *   WR50      — WR ≥ 50% (Source A OR B)
- *   null      — none of the above (wallet not whitelisted in this sport)
+ *   CONFIRMED — Source B n≥6 AND WR≥55 AND dollarRoi > 3  (v5 Door 2)
+ *   FLAT      — not assigned (every Proven wallet is CONFIRMED)
+ *   WR50      — WR ≥ 50% (Source A n≥2 OR Source B n≥4)
+ *   null      — none of the above
  *
- * Where:
- *   flatOkA   = picks.n      >= WHITELIST_MIN_BETS (2)  AND picks.flatRoi      > 0
- *   flatOkB   = positions.n  >= B_ONLY_MIN_BETS    (4)  AND positions.positionFlatRoi > 0
- *   dollarOk  = positions.n  >= WHITELIST_MIN_BETS (2)  AND positions.dollarRoi > 0
- *   wr50OkA   = picks.n      >= WHITELIST_MIN_BETS (2)  AND picks.wr      >= 50
- *   wr50OkB   = positions.n  >= B_ONLY_MIN_BETS    (4)  AND positions.wr  >= 50
- *
- * Recent-dollar rescue (v3, 2026-08-12) — FLAT → CONFIRMED when lifetime
- * Source B $ is ≤0 (sample can be thin / skewed) but last-30d Action $ is
- * green with skill floors:
- *   recentDollarOk = last-30d Action n ≥ 15 AND $ ROI > 0
- *                    AND lifetime positions.n ≥ 80
- *                    AND clvSkill n ≥ 50 AND pctPos ≥ 55
- * Stamp bySport[sport].whitelistRescue = 'recent-dollar-30d' when used.
- * Roll-back: set RECENT_DOLLAR_RESCUE_MIN_N = Infinity.
- *
- * Size-skill rescue (v4, 2026-08-12) — $ up / flat down → CONFIRMED when
- * wallet-level own-median size-up WR lift clears floors. Live Proven/Action
- * only when sizeRatio ≥ 1.0 (full/press). See src/lib/sizeSkillRescue.js.
- * Stamp whitelistRescue = 'size-skill'. Roll-back: SIZE_SKILL_BAND_MIN_N = Infinity.
- *
- * The Source-B-only paths (B_ONLY_MIN_BETS = 4 as of 2026-08-11; was 5) let
- * us promote sharps who never appear on a featured pick (the historical
- * MLB/NHL coverage gap). The bar stays above Source A (4 vs 2) since
- * these wallets have no independent featured-pick verification.
+ * Source A cannot confer Proven. Recent-dollar and size-skill rescues
+ * do not grant CONFIRMED. HARD+ (sport×market n≥4 WR≥62 $ROI≥10) is a
+ * separate overlay — see marketSkillMuteOverlay.js.
  *
  * Audit fields (v2+):
  *   bySport[sport].whitelistSource    ∈ {'A', 'A+B', 'B', null}
- *   bySport[sport].whitelistRescue    ∈ {'recent-dollar-30d', 'size-skill', null}
+ *   bySport[sport].whitelistRescue    ∈ {null} under v5
  *   profile.whitelistSourceBySport    map of all sports → source
  *
- * Re-evaluation pinned for 2026-05-24 — see TWO_WEEK_REEVAL.md.
- * Roll-back path: set B_ONLY_MIN_BETS = Infinity (next cron reverts).
+ * Roll-back: revert src/lib/whitelistTier.js to v4.
  */
 
 import 'dotenv/config';
@@ -109,15 +85,18 @@ import { buildSizeRatioBands } from '../src/lib/sizeRatioBands.js';
 import { mergeFeaturedIntoAction } from '../src/lib/actionLockPin.js';
 import {
   SIZE_SKILL_RESCUE,
-  SIZE_SKILL_LIVE_MIN,
-  SIZE_SKILL_WR_LIFT_MIN,
-  SIZE_SKILL_BAND_MIN_N,
-  SIZE_SKILL_HIGH_WR_MIN,
-  SIZE_SKILL_SPORT_POS_MIN_N,
-  SIZE_SKILL_SPORT_DOLLAR_ROI_MIN,
   evaluateSizeSkillLift,
-  sizeSkillRescueOk,
 } from '../src/lib/sizeSkillRescue.js';
+import {
+  WHITELIST_VERSION,
+  WHITELIST_FROM,
+  WHITELIST_MIN_BETS,
+  B_ONLY_MIN_BETS,
+  PROVEN_B_MIN_N,
+  PROVEN_B_MIN_WR,
+  PROVEN_B_MIN_DOLLAR_ROI,
+  classifyWhitelistTierWithSource,
+} from '../src/lib/whitelistTier.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -703,31 +682,13 @@ function verdict(picks, positions) {
   return 'INCONCLUSIVE';
 }
 
-// ── Whitelist tier classification (see WALLET_WHITELIST_BACKTEST.md) ──
-// For each sport a wallet has activity in, assign one of:
-//   CONFIRMED — flat-positive AND (lifetime $ ROI > 0 OR recent-dollar rescue)
-//   FLAT      — positive flat-equivalent ROI
-//   WR50      — WR ≥ 50%
-//   null      — none of the above OR below MIN_BETS in that sport
-// Precedence: CONFIRMED > FLAT > WR50.
-//
-// v2 (2026-05-10) — Source-B-only promotion enabled.
-// v3 (2026-08-12) — recent-dollar rescue: FLAT → CONFIRMED when last-30d
-// Action $ is green with pos/CLV floors (tracked sample can be skewed).
-// v4 (2026-08-12) — size-skill rescue: $ up / flat down → CONFIRMED when
-// own-median size-up WR lift ≥ +15pp; live proven only at sizeRatio ≥ 1.0.
-// Was 5; lowered B_ONLY_MIN_BETS 2026-08-11 for B on-ramp
-// ($-pos + flat-pos at n=4) without opening n=2 lottery books.
-const WHITELIST_MIN_BETS    = 2;   // Source A min (unchanged from v1)
-const B_ONLY_MIN_BETS       = 4;   // Source-B-only min (was 5; 2026-08-11)
-const WHITELIST_VERSION     = 4;   // v4: size-skill rescue (2026-08-12)
+// ── Whitelist tier classification (src/lib/whitelistTier.js, v5 Door 2) ──
+// CONFIRMED = Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven.
+// recentActionDollarWindow below is form/UI only — it does not grant a tier.
 
-/** Last-30d Action $ rescue — FLAT → CONFIRMED when lifetime $ sample is red. */
+/** Last-30d Action $ window — form curves / audit, not a CONFIRMED grant. */
 const RECENT_DOLLAR_RESCUE_DAYS = 30;
-const RECENT_DOLLAR_RESCUE_MIN_N = 15;       // set Infinity to disable rescue
-const RECENT_DOLLAR_RESCUE_POS_MIN_N = 80;   // lifetime Action positions in sport
-const RECENT_DOLLAR_RESCUE_CLV_MIN_N = 50;
-const RECENT_DOLLAR_RESCUE_CLV_MIN_PCT = 55;
+const RECENT_DOLLAR_RESCUE_MIN_N = 15;
 
 /**
  * Graded Action $ book in the last `days` ET calendar window.
@@ -760,83 +721,6 @@ function recentActionDollarWindow(posBets, {
     dollarRoi,
     ok: n >= minN && dollarRoi != null && dollarRoi > 0,
   };
-}
-
-function recentDollarRescueOk(positionsInSport, recentWindow, clvSkill) {
-  if (!(RECENT_DOLLAR_RESCUE_MIN_N < Infinity)) return false;
-  const q = positionsInSport || { n: 0 };
-  if ((q.n || 0) < RECENT_DOLLAR_RESCUE_POS_MIN_N) return false;
-  if (!recentWindow?.ok) return false;
-  const clvN = Number(clvSkill?.n) || 0;
-  const clvPct = Number(clvSkill?.pctPos);
-  if (clvN < RECENT_DOLLAR_RESCUE_CLV_MIN_N) return false;
-  if (!Number.isFinite(clvPct) || clvPct < RECENT_DOLLAR_RESCUE_CLV_MIN_PCT) return false;
-  return true;
-}
-
-// Source-attribution helper. Returns 'A', 'B', or 'A+B' for audit/reporting.
-// Used to populate `bySport[sport].whitelistSource` so the 2-week re-eval
-// can isolate the lift attributable to the new Source-B-only path.
-function classifyWhitelistTierWithSource(picksInSport, positionsInSport, {
-  recentWindow = null,
-  clvSkill = null,
-  sizeLiftEval = null,
-} = {}) {
-  const p = picksInSport || { n: 0 };
-  const q = positionsInSport || { n: 0 };
-
-  // Source A (featured-pick) signals — original v1 gates. Finite-guard:
-  // a poisoned Infinity flatRoi must never auto-pass the profitability gate.
-  const flatOkA   = p.n >= WHITELIST_MIN_BETS && Number.isFinite(p.flatRoi ?? 0) && (p.flatRoi ?? 0) > 0;
-  const wr50OkA   = p.n >= WHITELIST_MIN_BETS && (p.wr ?? 0) >= 50;
-  // Source B (on-chain position) signals — flat-ROI uses positionFlatRoi
-  // (Polymarket unit return), WR uses settledPnl > 0 win rate, dollar-ROI
-  // is the existing $-weighted measure used for CONFIRMED.
-  const flatOkB   = q.n >= B_ONLY_MIN_BETS && (q.positionFlatRoi ?? 0) > 0;
-  const wr50OkB   = q.n >= B_ONLY_MIN_BETS && (q.wr ?? 0) >= 50;
-  const dollarOk  = q.n >= WHITELIST_MIN_BETS && q.dollarRoi != null && q.dollarRoi > 0;
-  const recentRescued = !dollarOk && recentDollarRescueOk(q, recentWindow, clvSkill);
-  const sizeRescued = sizeSkillRescueOk(p, q, sizeLiftEval);
-
-  // Tier resolution — CONFIRMED via flat+$ (or recent-$ rescue), OR size-skill.
-  let tier = null;
-  let whitelistRescue = null;
-  if ((flatOkA || flatOkB) && (dollarOk || recentRescued)) {
-    tier = 'CONFIRMED';
-    if (recentRescued && !dollarOk) whitelistRescue = 'recent-dollar-30d';
-  } else if (sizeRescued) {
-    tier = 'CONFIRMED';
-    whitelistRescue = SIZE_SKILL_RESCUE;
-  } else if (flatOkA || flatOkB) {
-    tier = 'FLAT';
-  } else if (wr50OkA || wr50OkB) {
-    tier = 'WR50';
-  }
-
-  // Source attribution for the active flat/WR signal driving the tier.
-  // Size-skill has no flat path — attribute B when positions exist.
-  let source = null;
-  if (whitelistRescue === SIZE_SKILL_RESCUE) {
-    source = 'B';
-  } else if (tier === 'CONFIRMED' || tier === 'FLAT') {
-    if (flatOkA && flatOkB) source = 'A+B';
-    else if (flatOkA)       source = 'A';
-    else if (flatOkB)       source = 'B';
-  } else if (tier === 'WR50') {
-    if (wr50OkA && wr50OkB) source = 'A+B';
-    else if (wr50OkA)       source = 'A';
-    else if (wr50OkB)       source = 'B';
-  }
-  return {
-    tier,
-    source,
-    whitelistRescue,
-  };
-}
-
-// Back-compat shim — callers that only need the tier string.
-function classifyWhitelistTier(picksInSport, positionsInSport, opts) {
-  return classifyWhitelistTierWithSource(picksInSport, positionsInSport, opts).tier;
 }
 
 // ── Build per-wallet profile ───────────────────────────────────────
@@ -1210,7 +1094,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
   out.push('');
   out.push('Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that\'s the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.');
   out.push('');
-  out.push(`> **Promotion policy (v${WHITELIST_VERSION}, continuous gate)**: rebuilt every 2h via \`grade-sharp-actions\`. Tier = CONFIRMED if flat-positive in either source AND (lifetime $-positive in B **or** recent-dollar rescue: last-${RECENT_DOLLAR_RESCUE_DAYS}d Action n≥${RECENT_DOLLAR_RESCUE_MIN_N} with $ ROI>0, lifetime pos n≥${RECENT_DOLLAR_RESCUE_POS_MIN_N}, CLV n≥${RECENT_DOLLAR_RESCUE_CLV_MIN_N} & pct≥${RECENT_DOLLAR_RESCUE_CLV_MIN_PCT}); **or** size-skill rescue ($ up / flat down, own-median size-up WR lift ≥ +${SIZE_SKILL_WR_LIFT_MIN}pp, high-band n≥${SIZE_SKILL_BAND_MIN_N} WR≥${SIZE_SKILL_HIGH_WR_MIN}% $+ , sport pos n≥${SIZE_SKILL_SPORT_POS_MIN_N} $ROI≥${SIZE_SKILL_SPORT_DOLLAR_ROI_MIN}% — live Proven/Action only at sizeRatio≥${SIZE_SKILL_LIVE_MIN}); FLAT if flat-positive in either source; WR50 if WR ≥ 50% in either source. Source A min ${WHITELIST_MIN_BETS} bets, Source-B-only min ${B_ONLY_MIN_BETS} bets. \`whitelistRescue\` ∈ {recent-dollar-30d, size-skill}. Roll-back: \`RECENT_DOLLAR_RESCUE_MIN_N = Infinity\`, \`SIZE_SKILL_BAND_MIN_N = Infinity\`, or \`B_ONLY_MIN_BETS = Infinity\`.`);
+  out.push(`> **Promotion policy (v${WHITELIST_VERSION}, Door 2, from ${WHITELIST_FROM})**: rebuilt every 2h via \`grade-sharp-actions\`. CONFIRMED = Source B n≥${PROVEN_B_MIN_N} AND WR≥${PROVEN_B_MIN_WR} AND $ROI>${PROVEN_B_MIN_DOLLAR_ROI}. Source A cannot confer Proven. FLAT is not assigned. WR50 if WR≥50 on A (n≥${WHITELIST_MIN_BETS}) or B (n≥${B_ONLY_MIN_BETS}). Recent-dollar / size-skill rescues do not grant CONFIRMED. HARD+ (sport×market n≥4 WR≥62 $ROI≥10) is a separate overlay. Roll-back: revert \`src/lib/whitelistTier.js\` to v4.`);
   out.push('');
   out.push(`> **TAPE / beats-the-close**: every profile carries \`clvSkill.pctPos\` — causal % of graded positions with CLV > 0 since ${CLV_HIST_FROM} (min n=${CLV_SKILL_MIN_N}). Same definition as \`walletClvSkill.js\` / netCLV. Rebuilt every cycle. Coverage this run: **${clvScored.length}/${Object.keys(profiles).length}** wallets scored${clvAvg != null ? ` · mean **${clvAvg.toFixed(1)}%**` : ''}.`);
   out.push('');
@@ -1355,7 +1239,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
   const allSports = [...new Set(list.flatMap(p => Object.keys(p.bySport)))].sort();
   sum.push('## Whitelist tiers per sport');
   sum.push('');
-  sum.push(`Minimum ${WHITELIST_MIN_BETS} bets per sport. Precedence: CONFIRMED > FLAT > WR50. "FLAT-or-better" is the population Phase 2 uses for the green badge and Δ consensus math.`);
+  sum.push(`Door 2 Proven = Source B n≥${PROVEN_B_MIN_N} WR≥${PROVEN_B_MIN_WR} $ROI>${PROVEN_B_MIN_DOLLAR_ROI}. A-only cannot be Proven. FLAT is not assigned. WR50 remains a display / RANK tier.`);
   sum.push('');
   sum.push('| Sport | CONFIRMED | FLAT-or-better | WR50-only | Active (≥2 bets) | Any activity |');
   sum.push('|---|---|---|---|---|---|');

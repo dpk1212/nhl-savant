@@ -78,6 +78,15 @@ import {
   positionToWalletDetail,
 } from '../src/lib/ags.js';
 import { stakeSizeRatio } from '../src/lib/sizeRatioBands.js';
+import {
+  WHITELIST_VERSION,
+  WHITELIST_FROM,
+  PROVEN_B_MIN_N,
+  PROVEN_B_MIN_WR,
+  PROVEN_B_MIN_DOLLAR_ROI,
+  isConfirmedSportRec,
+  isProvenSportRec,
+} from '../src/lib/whitelistTier.js';
 
 import {
   CLV_HIST_FROM,
@@ -517,7 +526,7 @@ function computeWalletConsensus(rawPositions, mySide, sport, walletProfiles) {
   for (const p of positions) {
     const short = String(p.walletShort || p.wallet || '').slice(-6).toLowerCase();
     const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
-    const tier = profile?.bySport?.[sport]?.whitelistTier || null;
+    const sportRec = profile?.bySport?.[sport];
     const modelSr = Number.isFinite(Number(p.v8_sizeRatio)) && Number(p.v8_sizeRatio) > 0
       ? Number(p.v8_sizeRatio)
       : (p.avgSportBet > 0 ? (p.invested || 0) / p.avgSportBet : null);
@@ -531,14 +540,14 @@ function computeWalletConsensus(rawPositions, mySide, sport, walletProfiles) {
       if (p.side === mySide) qFor++;
       else if (p.side) qAg++;
     }
-    if (tier === 'CONFIRMED' || tier === 'FLAT') {
+    if (isProvenSportRec(sportRec)) {
       if (p.side === mySide) forW++;
       else if (p.side) agW++;
     }
-    if (tier === 'CONFIRMED' && sr >= HC_RATIO) {
+    if (isConfirmedSportRec(sportRec) && sr >= HC_RATIO) {
       if (p.side === mySide) hcF++;
       else if (p.side) hcA++;
-    } else if (tier === 'CONFIRMED' && sr >= HC_MINI_FLOOR) {
+    } else if (isConfirmedSportRec(sportRec) && sr >= HC_MINI_FLOOR) {
       // Mini-HC band: CONFIRMED + sized HC_MINI_FLOOR ≤ sizeRatio < HC_RATIO.
       if (p.side === mySide) mhcF++;
       else if (p.side) mhcA++;
@@ -594,8 +603,7 @@ function buildIsProvenFn(walletProfiles) {
     const key = String(walletShort).toLowerCase();
     const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
     const bs = profile?.bySport?.[sport];
-    const tier = bs?.whitelistTier;
-    if (tier !== 'CONFIRMED' && tier !== 'FLAT') return false;
+    if (!isProvenSportRec(bs)) return false;
     const sr = w?.sizeRatio ?? w?.v8_sizeRatio ?? null;
     return passesSizeSkillLiveGate(bs, sr);
   };
@@ -610,7 +618,7 @@ function buildIsHcEligibleFn(walletProfiles) {
     if (!walletShort || !sport) return false;
     const key = String(walletShort).toLowerCase();
     const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
-    return profile?.bySport?.[sport]?.whitelistTier === 'CONFIRMED';
+    return isConfirmedSportRec(profile?.bySport?.[sport]);
   };
 }
 
@@ -7322,6 +7330,11 @@ async function main() {
   } else {
     console.log(`S/T HARD+ FOR require: not live before ${HARD_ST_FOR_REQUIRE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
+  console.log(
+    `Door 2 Proven bag v${WHITELIST_VERSION} from ${WHITELIST_FROM}: Source B n≥${PROVEN_B_MIN_N}`
+    + ` WR≥${PROVEN_B_MIN_WR} $ROI>${PROVEN_B_MIN_DOLLAR_ROI} · A-only cannot be Proven`
+    + ` · FLAT not assigned · rescues do not grant CONFIRMED`,
+  );
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(
       `CONFIRMED-Q1 promote LIVE: CONFIRMED × flatDollar Q1 × size≥${CONFIRMED_Q1_MIN_SIZE}× `
