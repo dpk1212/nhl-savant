@@ -1,10 +1,9 @@
 /**
- * T-15 lock ticket = best available sportsbook line + juice on this side.
+ * T-15 lock ticket = best available odds on the mainline.
+ * The line is the fair book's main (`spreadCurrent` / `totalCurrent`).
+ * The price is the best American on that number.
+ * An alt (Novig +38.5 -2339 while the main is +17) is not a candidate.
  * Flagged (vault / Poly) stays a separate Firestore snapshot.
- *
- * Spreads: Odds API `spreads` is each book's main. After a move, DK can
- * still be +37.5 while FD is +41.5 — take the most favorable main, then
- * the best American on that number. Never mix alt-line juice onto main.
  */
 import { shopRailHidden } from './shopTicketLine.js';
 
@@ -45,6 +44,19 @@ function betterMl(a, b) {
   if (!a) return b;
   if (!b) return a;
   return a.odds > b.odds ? a : b;
+}
+
+const MAX_ABS_ODDS = 1000;
+
+function quotesOnMainline(quotes, anchorLine) {
+  const sane = quotes.filter((q) => finiteOdds(q.odds) && Math.abs(q.odds) < MAX_ABS_ODDS);
+  if (Number.isFinite(anchorLine)) {
+    return sane.filter((q) => Number.isFinite(q.line) && Math.abs(q.line - anchorLine) <= 0.051);
+  }
+  const lines = sane.map((q) => q.line).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
+  if (lines.length < 2) return sane;
+  const mid = lines[Math.floor((lines.length - 1) / 2)];
+  return sane.filter((q) => !Number.isFinite(q.line) || Math.abs(q.line - mid) <= 2);
 }
 
 function snapshotFromFlagged(flagged) {
@@ -108,8 +120,11 @@ export function bestAvailableTicket({
         });
       }
     }
+    const anchor = cur && Number.isFinite(Number(s === 'away' ? cur.awayLine : cur.homeLine))
+      ? Number(s === 'away' ? cur.awayLine : cur.homeLine)
+      : null;
     let best = null;
-    for (const q of quotes) best = betterSpread(best, q);
+    for (const q of quotesOnMainline(quotes, anchor)) best = betterSpread(best, q);
     if (!best) return fallback;
     const pin = quotes.find((q) => String(q.book || '').toLowerCase().includes('pinn')
       && Number.isFinite(q.line) && Math.abs(q.line - best.line) <= 0.051);
@@ -154,8 +169,9 @@ export function bestAvailableTicket({
         });
       }
     }
+    const anchor = cur && Number.isFinite(Number(cur.line)) ? Number(cur.line) : null;
     let best = null;
-    for (const q of quotes) best = betterTotal(best, q, wantOver ? 'over' : 'under');
+    for (const q of quotesOnMainline(quotes, anchor)) best = betterTotal(best, q, wantOver ? 'over' : 'under');
     if (!best) return fallback;
     return {
       line: best.line,
@@ -203,7 +219,7 @@ export function bestAvailableTicket({
     });
   }
   let best = null;
-  for (const q of quotes) best = betterMl(best, q);
+  for (const q of quotes.filter((q) => finiteOdds(q.odds) && Math.abs(q.odds) < MAX_ABS_ODDS)) best = betterMl(best, q);
   if (!best) return fallback;
   return {
     line: null,
@@ -312,8 +328,9 @@ export function resolveLockDisplayTicket({
   const flagged = (sd.flagged && typeof sd.flagged === 'object')
     ? sd.flagged
     : flaggedSnapshotFromPeakLock(peak, lock);
+  const notified = sd.lockAlertSentAt != null || !!sd.lockAlertMessageId;
 
-  if (isSealedT15Lock(sd)
+  if ((notified || isSealedT15Lock(sd))
       && (Number.isFinite(Number(lock.line)) || finiteOdds(Number(lock.odds)))) {
     return {
       line: Number.isFinite(Number(lock.line)) ? Number(lock.line) : null,

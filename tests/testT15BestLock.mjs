@@ -32,9 +32,9 @@ const best = bestAvailableTicket({
   side: 'away',
   flagged: { line: 37.5, odds: 156, book: 'Polymarket', oddsSource: 'poly_avgPrice' },
 });
-assert.equal(best.line, 41.5);
-assert.equal(best.odds, 103);
-assert.equal(best.book, 'FanDuel');
+assert.equal(best.line, 38.5);
+assert.equal(best.odds, -110);
+assert.equal(best.book, 'pinnacle');
 assert.equal(best.oddsSource, 't15_best_available');
 
 const rail = snapshotBookRail({
@@ -98,6 +98,57 @@ const ml = bestAvailableTicket({
 assert.equal(ml.odds, 130);
 assert.equal(ml.book, 'DraftKings');
 
+const southern = bestAvailableTicket({
+  pinnGame: {
+    allSpreadBooks: {
+      pinnacle: { away: -104, home: -104, awayLine: -17, homeLine: 17, name: 'Pinnacle' },
+      matchbook: { away: -120, home: 100, awayLine: -17, homeLine: 17, name: 'Matchbook' },
+      novig: { away: -100000, home: -2339, awayLine: -38.5, homeLine: 38.5, name: 'Novig' },
+    },
+    spreadCurrent: { awayLine: -17, awayOdds: -104, homeLine: 17, homeOdds: -104 },
+    fairSpreadBook: 'pinnacle',
+  },
+  marketType: 'SPREAD',
+  side: 'home',
+  flagged: { line: 18.5, odds: -109, book: 'Polymarket' },
+});
+assert.equal(southern.line, 17);
+assert.equal(southern.odds, 100);
+assert.equal(southern.book, 'Matchbook');
+
+const wisconsin = bestAvailableTicket({
+  pinnGame: {
+    allTotalBooks: {
+      pinnacle: { line: 44, over: -105, under: -111, name: 'Pinnacle' },
+      matchbook: { line: 44, over: -110, under: -104, name: 'Matchbook' },
+      novig: { line: 61.5, over: -100000, under: -1329, name: 'Novig' },
+    },
+    totalCurrent: { line: 44, overOdds: -105, underOdds: -111 },
+    fairTotalBook: 'pinnacle',
+  },
+  marketType: 'TOTAL',
+  side: 'under',
+  flagged: { line: 44.5, odds: -110, book: 'Polymarket' },
+});
+assert.equal(wisconsin.line, 44);
+assert.equal(wisconsin.odds, -104);
+assert.equal(wisconsin.book, 'Matchbook');
+
+const insaneOnly = bestAvailableTicket({
+  pinnGame: {
+    allSpreadBooks: {
+      novig: { away: -100000, home: -2339, awayLine: -38.5, homeLine: 38.5, name: 'Novig' },
+    },
+    spreadCurrent: { awayLine: -17, awayOdds: -104, homeLine: 17, homeOdds: -100000 },
+  },
+  marketType: 'SPREAD',
+  side: 'home',
+  flagged: { line: 18.5, odds: -109, book: 'Polymarket' },
+});
+assert.equal(insaneOnly.line, 18.5);
+assert.equal(insaneOnly.odds, -109);
+assert.equal(insaneOnly.source, 'flagged_fallback');
+
 const flagged = flaggedSnapshotFromPeakLock(
   { line: 37.5, odds: 156, book: 'Polymarket', oddsSource: 'poly_avgPrice' },
   { line: 37.5, odds: 103 },
@@ -144,6 +195,29 @@ assert.equal(flagged.odds, 156);
     pickDate: '2026-09-20',
   });
   assert.equal(ticket.line, 11, 'unsealed alert still uses shop-best, not flagged 10.5');
+}
+
+{
+  const ticket = resolveLockDisplayTicket({
+    sd: {
+      lockAlertSentAt: 1,
+      peak: { line: 18.5, odds: -109, team: 'Georgia Southern' },
+      lock: { line: 18.5, odds: -109, book: 'Polymarket', team: 'Georgia Southern' },
+    },
+    pinnGame: {
+      allSpreadBooks: {
+        novig: { away: -100000, home: -2339, awayLine: -38.5, homeLine: 38.5, name: 'Novig' },
+      },
+      spreadCurrent: { awayLine: -17, awayOdds: -104, homeLine: 17, homeOdds: 100 },
+      fairSpreadBook: 'pinnacle',
+    },
+    marketType: 'SPREAD',
+    side: 'home',
+    pickDate: '2026-09-26',
+  });
+  assert.equal(ticket.line, 18.5);
+  assert.equal(ticket.odds, -109);
+  assert.equal(ticket.source, 'sealed');
 }
 
 assert.equal(

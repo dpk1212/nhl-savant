@@ -7763,10 +7763,10 @@ async function main() {
           } else if (result.reason === 'completed') stats.skipped_completed++;
           else if (result.reason === 'within_t_minus_15') {
             stats.skipped_t15++;
-            // One-shot ticket seal. From 2026-09-19: lock = best available
-            // book line/odds at T-15; flagged = vault/Poly peak. Older dates
-            // still copy peak → lock. Already-sealed tickets stay put so a
-            // later live move cannot overwrite the T-15 number.
+            // One-shot ticket seal. From 2026-09-19: lock = best American
+            // odds on the fair book's main line. Flagged stays the vault/Poly
+            // peak. A lock whose alert already went out keeps that number.
+            // Already-sealed tickets stay put.
             const wantBestLock = isT15BestLockLive(pick.date || TARGET_DATE);
             const canSeal = !DRY_RUN && !sd.v8_ticketSealedAt && sd.peak
               && (sd.lockStage === 'LOCKED' || sd.lockStage === 'LEAN'
@@ -7778,7 +7778,8 @@ async function main() {
                 ? sd.flagged
                 : flaggedSnapshotFromPeakLock(peak, lock);
               const pinnGame = gameMeta.get(`${pick.sport}|${pick.gameKey}`)?.pinnGame || null;
-              const best = wantBestLock
+              const alreadySent = sd.lockAlertSentAt != null || !!sd.lockAlertMessageId;
+              const best = (wantBestLock && !alreadySent)
                 ? bestAvailableTicket({
                   pinnGame,
                   marketType: mkt,
@@ -7786,41 +7787,47 @@ async function main() {
                   flagged,
                 })
                 : null;
-              const useBest = wantBestLock && best
+              const useBest = wantBestLock && !alreadySent && best
                 && (Number.isFinite(best.line) || Number.isFinite(best.odds));
-              const sealPatch = {
-                v8_ticketSealedAt: sd.v8_ticketSealedAt || now,
-                ...(wantBestLock ? { v8_lockBestAtT15: true, flagged } : {}),
-                lock: {
-                  ...lock,
-                  line: useBest ? (best.line ?? flagged.line ?? lock.line ?? null)
-                    : (peak.line ?? lock.line ?? null),
-                  odds: useBest ? (best.odds ?? flagged.odds ?? lock.odds ?? null)
-                    : (peak.odds ?? lock.odds ?? null),
-                  pinnacleOdds: useBest
-                    ? (best.pinnacleOdds ?? lock.pinnacleOdds ?? peak.pinnacleOdds ?? null)
-                    : (peak.pinnacleOdds ?? lock.pinnacleOdds ?? null),
-                  team: useBest
-                    ? (lockTicketTeamLabel({
+              const sealPatch = alreadySent
+                ? {
+                  v8_ticketSealedAt: sd.v8_ticketSealedAt || now,
+                  ...(wantBestLock ? { v8_lockBestAtT15: true, flagged } : {}),
+                  lock: { ...lock, sealedAt: now },
+                }
+                : {
+                  v8_ticketSealedAt: sd.v8_ticketSealedAt || now,
+                  ...(wantBestLock ? { v8_lockBestAtT15: true, flagged } : {}),
+                  lock: {
+                    ...lock,
+                    line: useBest ? (best.line ?? flagged.line ?? lock.line ?? null)
+                      : (peak.line ?? lock.line ?? null),
+                    odds: useBest ? (best.odds ?? flagged.odds ?? lock.odds ?? null)
+                      : (peak.odds ?? lock.odds ?? null),
+                    pinnacleOdds: useBest
+                      ? (best.pinnacleOdds ?? lock.pinnacleOdds ?? peak.pinnacleOdds ?? null)
+                      : (peak.pinnacleOdds ?? lock.pinnacleOdds ?? null),
+                    team: useBest
+                      ? (lockTicketTeamLabel({
+                        marketType: mkt,
+                        side: sideKey,
+                        line: best.line,
+                        fallbackTeam: peak.team || lock.team || null,
+                      }) || peak.team || lock.team || null)
+                      : (peak.team ?? lock.team ?? null),
+                    book: useBest ? (best.book ?? lock.book ?? null)
+                      : (peak.book ?? lock.book ?? null),
+                    oddsSource: useBest ? (best.oddsSource ?? 't15_best_available')
+                      : (peak.oddsSource ?? lock.oddsSource ?? null),
+                    books: snapshotBookRail({
+                      pinnGame,
                       marketType: mkt,
                       side: sideKey,
-                      line: best.line,
-                      fallbackTeam: peak.team || lock.team || null,
-                    }) || peak.team || lock.team || null)
-                    : (peak.team ?? lock.team ?? null),
-                  book: useBest ? (best.book ?? lock.book ?? null)
-                    : (peak.book ?? lock.book ?? null),
-                  oddsSource: useBest ? (best.oddsSource ?? 't15_best_available')
-                    : (peak.oddsSource ?? lock.oddsSource ?? null),
-                  books: snapshotBookRail({
-                    pinnGame,
-                    marketType: mkt,
-                    side: sideKey,
-                    ticketLine: useBest ? best.line : (peak.line ?? lock.line ?? null),
-                  }),
-                  sealedAt: now,
-                },
-              };
+                      ticketLine: useBest ? best.line : (peak.line ?? lock.line ?? null),
+                    }),
+                    sealedAt: now,
+                  },
+                };
               const ref = db.collection(col).doc(pick._id);
               await ref.set(
                 { sides: { [sideKey]: sealPatch }, lastWriteAt: now, lastAction: 'ticket_seal_at_t15' },
@@ -7828,9 +7835,11 @@ async function main() {
               );
               console.log(
                 `  🔒 T-15 SEAL: ${col}/${pick._id} ${sideKey}`
-                + (useBest
-                  ? ` — flagged ${flagged.odds ?? '∅'}/${flagged.line ?? '∅'} → lock ${best.odds ?? '∅'}/${best.line ?? '∅'} (${best.book || 'best'})`
-                  : ` — lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'} → peak ${peak.odds ?? '∅'}/${peak.line ?? '∅'}`),
+                + (alreadySent
+                  ? ` — kept notified lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'}`
+                  : useBest
+                    ? ` — flagged ${flagged.odds ?? '∅'}/${flagged.line ?? '∅'} → lock ${best.odds ?? '∅'}/${best.line ?? '∅'} (${best.book || 'best'})`
+                    : ` — lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'} → peak ${peak.odds ?? '∅'}/${peak.line ?? '∅'}`),
               );
             }
           } else if (result.reason === 'within_t_minus_15_needs_rescue') {
