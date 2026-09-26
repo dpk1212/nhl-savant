@@ -70,8 +70,8 @@ ok(paidTagWhenOptedInAndUntagged(null, 'all') === 'all', 'opted-in empty tag res
 ok(paidTagWhenOptedInAndUntagged(null, 'edge11') === 'edge11', 'opted-in empty tag restores Top');
 ok(paidTagWhenOptedInAndUntagged('all', 'edge11') === null, 'live tag is not replaced');
 ok(paidTagWhenOptedInAndUntagged(null, null) === null, 'no stored mode, no invent');
-ok(fullAudienceReached({ id: 'm1', recipients: 160 }), 'full audience reached');
-ok(!fullAudienceReached({ id: 'm1', recipients: 0 }), 'zero recipients is not delivered');
+ok(fullAudienceReached({ id: 'm1', recipients: 160 }), 'id with a count is delivered');
+ok(fullAudienceReached({ id: 'm1', recipients: 0 }), 'id with recipients still 0 is delivered');
 ok(!fullAudienceReached({ recipients: 10 }), 'missing id is not delivered');
 
 console.log(`ok ${n}`);

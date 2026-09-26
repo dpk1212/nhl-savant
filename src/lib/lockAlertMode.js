@@ -152,10 +152,9 @@ export function paidTagWhenOptedInAndUntagged(current, stored, scale) {
   return composePaidTag(stored, scale);
 }
 
-/** Full-book send actually matched devices. A 0-recipient 200 is not delivered. */
+/** OneSignal created the notification. Recipients on the create call is often still 0. */
 export function fullAudienceReached(result) {
-  const n = Number(result?.recipients);
-  return Boolean(result?.id) && Number.isFinite(n) && n > 0;
+  return Boolean(result?.id);
 }
 
 /**
