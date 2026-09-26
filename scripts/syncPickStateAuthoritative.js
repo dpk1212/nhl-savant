@@ -269,6 +269,13 @@ import {
   HARD_ST_FOR_MUTED_BY,
 } from '../src/lib/hardStForRequireOverlay.js';
 import {
+  applyGoldStackSizeCapOverlay,
+  isGoldStackSizeCapLive,
+  GOLD_STACK_SIZE_CAP_FROM,
+  GOLD_STACK_SIZE_CAP,
+  GOLD_STACK_SIZE_CAPPED_BY,
+} from '../src/lib/goldStackSizeCapOverlay.js';
+import {
   evaluateFadeProvenHoldFromTicket,
 } from '../src/lib/fadeProvenHold.js';
 import {
@@ -1309,6 +1316,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreHardAgMute = null,
   hardStForRequireAction = null,
   unitsPreHardStForRequire = null,
+  goldStackCapAction = null,
+  unitsPreGoldStackCap = null,
   fadeProvenHoldAction = null,
   fadeProvenHoldReason = null,
   fadeProvenShare = null,
@@ -1497,6 +1506,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreHardStForRequire != null && Number.isFinite(unitsPreHardStForRequire)) {
     target.v8_unitsPreHardStForRequire = unitsPreHardStForRequire;
   }
+  if (goldStackCapAction != null) target.v8_goldStackCapAction = goldStackCapAction;
+  if (unitsPreGoldStackCap != null && Number.isFinite(unitsPreGoldStackCap)) {
+    target.v8_unitsPreGoldStackCap = unitsPreGoldStackCap;
+  }
   if (fadeProvenHoldAction != null) target.v8_fadeProvenHoldAction = fadeProvenHoldAction;
   if (fadeProvenHoldReason != null) target.v8_fadeProvenHoldReason = fadeProvenHoldReason;
   if (fadeProvenShare != null && Number.isFinite(Number(fadeProvenShare))) {
@@ -1616,6 +1629,7 @@ function skillStampsDrifted(sd, bundle, {
   hardMuteExceptionAction = null,
   hardAgMuteAction = null,
   hardStForRequireAction = null,
+  goldStackCapAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1670,6 +1684,7 @@ function skillStampsDrifted(sd, bundle, {
   if (hardMuteExceptionAction != null && (sd.v8_hardMuteExceptionAction || null) !== hardMuteExceptionAction) return true;
   if (hardAgMuteAction != null && (sd.v8_hardAgMuteAction || null) !== hardAgMuteAction) return true;
   if (hardStForRequireAction != null && (sd.v8_hardStForRequireAction || null) !== hardStForRequireAction) return true;
+  if (goldStackCapAction != null && (sd.v8_goldStackCapAction || null) !== goldStackCapAction) return true;
   return false;
 }
 
@@ -3725,6 +3740,23 @@ async function createMissingLockedPicks({
         });
         peakUnitsApplied = hardStForPolicyCreate.units;
       }
+
+      // GOLD-stack size cap — after S/T HARD+ FOR, before operator kill.
+      // Off-stack >4u → 4u. Stack keeps fat. Fail-open HOLD if we
+      // cannot judge HARD+ / proven share. Manual create has no stake yet.
+      let goldStackCapPolicyCreate = null;
+      if (createV121Eligible) {
+        goldStackCapPolicyCreate = applyGoldStackSizeCapOverlay({
+          units: peakUnitsApplied,
+          marketType,
+          sport,
+          side,
+          walletDetails,
+          walletProfiles,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = goldStackCapPolicyCreate.units;
+      }
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
       }
@@ -3997,6 +4029,10 @@ async function createMissingLockedPicks({
           hardStForRequireAction: hardStForPolicyCreate?.action ?? null,
           unitsPreHardStForRequire: (hardStForPolicyCreate && Number.isFinite(hardStForPolicyCreate.unitsPrePolicy))
             ? hardStForPolicyCreate.unitsPrePolicy
+            : null,
+          goldStackCapAction: goldStackCapPolicyCreate?.action ?? null,
+          unitsPreGoldStackCap: (goldStackCapPolicyCreate && Number.isFinite(goldStackCapPolicyCreate.unitsPrePolicy))
+            ? goldStackCapPolicyCreate.unitsPrePolicy
             : null,
           steamTailReason: steamTailPolicyCreate?.reason ?? null,
           steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
@@ -5559,6 +5595,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = hardStForPolicy.units;
   }
 
+  // GOLD-stack size cap — after S/T HARD+ FOR, before odds-cap.
+  // Off-stack >4u → 4u. Stack keeps fat. Fail-open HOLD if we cannot
+  // judge. Manual stake exempt. Does not mute.
+  let goldStackCapPolicy = null;
+  if (v121Eligible && !skipManualFlinch) {
+    goldStackCapPolicy = applyGoldStackSizeCapOverlay({
+      units: finalUnitsApplied,
+      marketType: mkt,
+      sport: pick.sport,
+      side,
+      walletDetails: wd,
+      walletProfiles,
+      pickDate,
+    });
+    finalUnitsApplied = goldStackCapPolicy.units;
+  }
+
   // Last choke — RANK / EDGE floors cannot publish past the dog cap.
   let oddsCapClamped = false;
   if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
@@ -6164,6 +6217,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + ` (${hardExceptionPolicy.hardN || 0} HARD FOR)`
     );
   }
+  if (goldStackCapPolicy?.action === 'CAP') {
+    const provenPct = goldStackCapPolicy.provenShare != null
+      ? `${Math.round(goldStackCapPolicy.provenShare * 100)}%`
+      : '—';
+    changes.push(
+      `GOLD-STACK-CAP: ${goldStackCapPolicy.reason || 'off_stack'} `
+      + `hardFor=${goldStackCapPolicy.hardForN} proven=${provenPct} `
+      + `${goldStackCapPolicy.unitsPrePolicy}u → ${goldStackCapPolicy.units}u (${hcStakeTier})`
+    );
+  }
   if (sharpRescued) {
     if (pathCEdgeNet && sharpEdgeNetBucket) {
       changes.push(
@@ -6303,6 +6366,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreHardStForRequire: (hardStForPolicy && Number.isFinite(hardStForPolicy.unitsPrePolicy))
         ? hardStForPolicy.unitsPrePolicy
         : null,
+      goldStackCapAction: goldStackCapPolicy?.action ?? null,
+      unitsPreGoldStackCap: (goldStackCapPolicy && Number.isFinite(goldStackCapPolicy.unitsPrePolicy))
+        ? goldStackCapPolicy.unitsPrePolicy
+        : null,
       fadeProvenHoldAction: fadeProvenHold?.action ?? null,
       fadeProvenHoldReason: fadeProvenHold?.reason ?? null,
       fadeProvenShare: fadeProvenHold?.shareP ?? null,
@@ -6349,6 +6416,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hardMuteExceptionAction: hardExceptionPolicy?.action ?? null,
       hardAgMuteAction: hardAgPolicy?.action ?? null,
       hardStForRequireAction: hardStForPolicy?.action ?? null,
+      goldStackCapAction: goldStackCapPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -6373,7 +6441,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (fadeProvenHold && (sd.v8_fadeProvenHoldAction || null) !== fadeProvenHold.action)
         || (hardExceptionPolicy && (sd.v8_hardMuteExceptionAction || null) !== hardExceptionPolicy.action)
         || (hardAgPolicy && (sd.v8_hardAgMuteAction || null) !== hardAgPolicy.action)
-        || (hardStForPolicy && (sd.v8_hardStForRequireAction || null) !== hardStForPolicy.action)) {
+        || (hardStForPolicy && (sd.v8_hardStForRequireAction || null) !== hardStForPolicy.action)
+        || (goldStackCapPolicy && (sd.v8_goldStackCapAction || null) !== goldStackCapPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -6398,7 +6467,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (stFatPolicy?.action ? ` stFatAct=${stFatPolicy.action}` : '')
         + (fadeProvenHold?.action ? ` fadeHold=${fadeProvenHold.action}` : '')
         + (hardExceptionPolicy?.action ? ` hardHold=${hardExceptionPolicy.action}` : '')
-        + (hardStForPolicy?.action ? ` stHardFor=${hardStForPolicy.action}` : ''),
+        + (hardStForPolicy?.action ? ` stHardFor=${hardStForPolicy.action}` : '')
+        + (goldStackCapPolicy?.action ? ` goldCap=${goldStackCapPolicy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -7329,6 +7399,16 @@ async function main() {
     );
   } else {
     console.log(`S/T HARD+ FOR require: not live before ${HARD_ST_FOR_REQUIRE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isGoldStackSizeCapLive(TARGET_DATE)) {
+    console.log(
+      `GOLD-stack size cap LIVE: off-stack >${GOLD_STACK_SIZE_CAP}u → ${GOLD_STACK_SIZE_CAP}u`
+      + ` · stack (HARD+ FOR only · proven ≥75%) keeps fat`
+      + ` · from ${GOLD_STACK_SIZE_CAP_FROM} · after S/T HARD+ FOR · cappedBy=${GOLD_STACK_SIZE_CAPPED_BY}`
+      + ` · fail-open HOLD if stack cannot be judged · no mute / no flip`,
+    );
+  } else {
+    console.log(`GOLD-stack size cap: not live before ${GOLD_STACK_SIZE_CAP_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   console.log(
     `Door 2 Proven bag v${WHITELIST_VERSION} from ${WHITELIST_FROM}: Source B n≥${PROVEN_B_MIN_N}`

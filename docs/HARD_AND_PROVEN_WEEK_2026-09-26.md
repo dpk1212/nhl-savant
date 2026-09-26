@@ -44,8 +44,9 @@ Used by:
 | HARD mute-exception | **2026-09-24** | Rescue tape-weak / maxsr-sub4 / fools-gold-flat / top-crowded if ≥1 HARD FOR. Tape-weak **S/T stays muted**. | `rescuedBy=hard-mkt-hold` |
 | HARD+ AG mute | **2026-09-25** | ≥1 HARD on the **other** side → 0u. 4u+ not exempt. | `hard-ag` |
 | S/T HARD+ FOR require | **2026-09-26** | SPREAD/TOTAL with `hardFor < 1` → 0u. ML exempt. 4u+ not exempt. Last step after HARD+ AG. | `st-hard-for` |
+| GOLD-stack 4u cap | **2026-09-26** | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps fat. | `cappedBy=gold-stack-cap` |
 
-All four fail-open (HOLD at exact units) if `byMarket` schema is missing. They do not resize, repath, or flip.
+The mutes fail-open (HOLD at exact units) if `byMarket` schema is missing. The 4u cap also fail-opens — never shrink a ticket we cannot judge. Mutes do not resize, repath, or flip. The cap only cuts size.
 
 `st-hard-slip` (inside market-skill, from 9/24) did **not** stop TBR/NYY Under 6.5 4u LOSS on day-1 — that ticket stamped HOLD. `st-hard-for` sits after the exception so an S/T with no HARD FOR cannot publish going forward.
 
