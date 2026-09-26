@@ -98,6 +98,22 @@ const ml = bestAvailableTicket({
 assert.equal(ml.odds, 130);
 assert.equal(ml.book, 'DraftKings');
 
+const mcneese = bestAvailableTicket({
+  pinnGame: {
+    allBooks: {
+      fanduel: { away: 198, home: -250, name: 'FanDuel' },
+      draftkings: { away: 175, home: -222, name: 'DraftKings' },
+      betmgm: { away: 190, home: -235, name: 'BetMGM' },
+      polymarket: { away: 146, home: -146, name: 'Polymarket' },
+    },
+  },
+  marketType: 'ML',
+  side: 'home',
+  flagged: { odds: -146, book: 'Polymarket', oddsSource: 'poly_avgPrice' },
+});
+assert.equal(mcneese.odds, -222);
+assert.equal(mcneese.book, 'DraftKings');
+
 const southern = bestAvailableTicket({
   pinnGame: {
     allSpreadBooks: {

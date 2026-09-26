@@ -7765,8 +7765,8 @@ async function main() {
             stats.skipped_t15++;
             // One-shot ticket seal. From 2026-09-19: lock = best American
             // odds on the fair book's main line. Flagged stays the vault/Poly
-            // peak. A lock whose alert already went out keeps that number.
-            // Already-sealed tickets stay put.
+            // peak. A notified Poly receipt is still replaced by that book.
+            // A number that already came from the shop stays put.
             const wantBestLock = isT15BestLockLive(pick.date || TARGET_DATE);
             const canSeal = !DRY_RUN && !sd.v8_ticketSealedAt && sd.peak
               && (sd.lockStage === 'LOCKED' || sd.lockStage === 'LEAN'
@@ -7779,7 +7779,8 @@ async function main() {
                 : flaggedSnapshotFromPeakLock(peak, lock);
               const pinnGame = gameMeta.get(`${pick.sport}|${pick.gameKey}`)?.pinnGame || null;
               const alreadySent = sd.lockAlertSentAt != null || !!sd.lockAlertMessageId;
-              const best = (wantBestLock && !alreadySent)
+              const lockIsPoly = /poly/i.test(`${lock.oddsSource || ''} ${lock.book || ''}`);
+              const best = wantBestLock
                 ? bestAvailableTicket({
                   pinnGame,
                   marketType: mkt,
@@ -7787,9 +7788,15 @@ async function main() {
                   flagged,
                 })
                 : null;
-              const useBest = wantBestLock && !alreadySent && best
-                && (Number.isFinite(best.line) || Number.isFinite(best.odds));
-              const sealPatch = alreadySent
+              const bestIsBook = !!(best
+                && best.source === 't15_best_available'
+                && !/poly/i.test(best.book || ''));
+              // A notified Poly receipt is not a shop. Take the book when
+              // one exists. A number that already came from the shop stays.
+              const useBest = wantBestLock && bestIsBook
+                && (Number.isFinite(best.line) || Number.isFinite(best.odds))
+                && (!alreadySent || lockIsPoly);
+              const sealPatch = (alreadySent && !useBest)
                 ? {
                   v8_ticketSealedAt: sd.v8_ticketSealedAt || now,
                   ...(wantBestLock ? { v8_lockBestAtT15: true, flagged } : {}),
@@ -7835,10 +7842,10 @@ async function main() {
               );
               console.log(
                 `  🔒 T-15 SEAL: ${col}/${pick._id} ${sideKey}`
-                + (alreadySent
-                  ? ` — kept notified lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'}`
-                  : useBest
-                    ? ` — flagged ${flagged.odds ?? '∅'}/${flagged.line ?? '∅'} → lock ${best.odds ?? '∅'}/${best.line ?? '∅'} (${best.book || 'best'})`
+                + (useBest
+                  ? ` — flagged ${flagged.odds ?? '∅'}/${flagged.line ?? '∅'} → lock ${best.odds ?? '∅'}/${best.line ?? '∅'} (${best.book || 'best'})`
+                  : alreadySent
+                    ? ` — kept notified lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'}`
                     : ` — lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'} → peak ${peak.odds ?? '∅'}/${peak.line ?? '∅'}`),
               );
             }
