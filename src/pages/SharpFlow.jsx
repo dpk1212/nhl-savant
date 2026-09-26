@@ -67,6 +67,7 @@ import { sportBookForDisplay } from '../lib/walletSportBook.js';
 import { passesSizeSkillLiveGate } from '../lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
 import { compareLockedPicks } from '../lib/lockedPickSort.js';
+import { lockedStatusBucket } from '../lib/lockedStatus.js';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
 import { lookupPinnGame, flipUFCGameKey, isUFCFlipAlias } from '../../scripts/lib/ufcFighters.js';
@@ -8656,7 +8657,7 @@ export default function SharpFlow() {
   const [showAgsuLedger, setShowAgsuLedger] = useState(false);
   const [showAgsuTiers, setShowAgsuTiers] = useState(false);
   const [lockedDay, setLockedDay] = useState('today');
-  // Default Pending — hide resolved (won/lost) locked plays until user opts in.
+  // Default Pending — pregame only. In progress is past commence and ungraded.
   const [lockedStatusFilter, setLockedStatusFilter] = useState('pending');
   const [lockedSort, setLockedSort] = useState('units');
   const [lockedSportFilter, setLockedSportFilter] = useState('All');
@@ -13131,17 +13132,14 @@ export default function SharpFlow() {
                     }
                     const sportFiltered = lockedSportFilter === 'All' ? allLockedArr : allLockedArr.filter(p => p.sport === lockedSportFilter);
                     const lockedArr = lockedMarketFilter === 'all' ? sportFiltered : sportFiltered.filter(p => (p.marketType || 'ml') === lockedMarketFilter);
-                    // Resolved = has W/L/PUSH outcome OR side marked COMPLETED.
-                    // Pending default hides those; All / Won / Lost still reach them.
+                    // Pending = ungraded and before commence. In progress = ungraded
+                    // after commence. Won / Lost are graded. All shows every card.
                     const isResolvedLocked = (p) => {
-                      const o = p?.outcome || p?.result?.outcome || null;
-                      if (o === 'WIN' || o === 'LOSS' || o === 'PUSH') return true;
-                      return String(p?.status || '').toUpperCase() === 'COMPLETED';
+                      const bucket = lockedStatusBucket(p);
+                      return bucket === 'won' || bucket === 'lost' || bucket === 'resolved';
                     };
                     const statusFiltered = lockedStatusFilter === 'all' ? lockedArr
-                      : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !isResolvedLocked(p))
-                      : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
-                      : lockedArr.filter(p => p.outcome === 'LOSS');
+                      : lockedArr.filter(p => lockedStatusBucket(p) === lockedStatusFilter);
                     const cancelledCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'CANCELLED' && !isResolvedLocked(p)).length;
                     const mutedCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'MUTED' && !isResolvedLocked(p)).length;
                     const filteredLocked = showCancelled ? statusFiltered : statusFiltered.filter(p => (p.health?.status || 'ACTIVE') !== 'CANCELLED' || isResolvedLocked(p));
@@ -13154,7 +13152,8 @@ export default function SharpFlow() {
                     // shown for volume but never staked: they are excluded from
                     // the record / units / ROI ledger entirely.
                     const stakedLockedArr = lockedArr.filter(p => !p.isMonitoring);
-                    const pendingCount = stakedLockedArr.filter(p => !isResolvedLocked(p)).length;
+                    const pendingCount = stakedLockedArr.filter(p => lockedStatusBucket(p) === 'pending').length;
+                    const inProgressCount = stakedLockedArr.filter(p => lockedStatusBucket(p) === 'inprogress').length;
                     const wonCount = stakedLockedArr.filter(p => p.outcome === 'WIN').length;
                     const lostCount = stakedLockedArr.filter(p => p.outcome === 'LOSS').length;
                     const sportCounts = {};
@@ -13190,6 +13189,7 @@ export default function SharpFlow() {
                     const ledgerCells = [
                       { label: 'RECORD', value: `${wonCount}–${lostCount}`, color: wonCount > lostCount ? B.green : wonCount < lostCount ? B.red : B.text },
                       { label: 'PENDING', value: `${pendingCount}`, color: B.gold },
+                      { label: 'IN PROGRESS', value: `${inProgressCount}`, color: B.sky },
                       { label: 'UNITS AT RISK', value: `${ledgerUnitsAtRisk.toFixed(1)}u`, color: B.text },
                       { label: 'TO WIN', value: `+${ledgerToWin.toFixed(1)}u`, color: B.green },
                       ...(wonCount + lostCount > 0 ? [{ label: 'REALIZED P&L', value: `${ledgerRealized >= 0 ? '+' : ''}${ledgerRealized.toFixed(2)}u`, color: ledgerRealized >= 0 ? B.green : B.red }] : []),
@@ -13234,6 +13234,7 @@ export default function SharpFlow() {
                           {[
                             { id: 'all', label: `All ${lockedArr.length}`, color: B.gold },
                             { id: 'pending', label: `Pending ${pendingCount}`, color: B.gold },
+                            { id: 'inprogress', label: `In Progress ${inProgressCount}`, color: B.sky },
                             { id: 'won', label: `Won ${wonCount}`, color: B.green },
                             { id: 'lost', label: `Lost ${lostCount}`, color: B.red },
                           ].map(opt => (
@@ -13286,7 +13287,11 @@ export default function SharpFlow() {
                     // tells the user what's filtered without opening it.
                     const summaryBits = [
                       lockedDay === 'yesterday' ? 'Yesterday' : 'Today',
-                      lockedStatusFilter !== 'all' ? (lockedStatusFilter.charAt(0).toUpperCase() + lockedStatusFilter.slice(1)) : null,
+                      lockedStatusFilter === 'pending' ? 'Pending'
+                        : lockedStatusFilter === 'inprogress' ? 'In progress'
+                        : lockedStatusFilter === 'won' ? 'Won'
+                        : lockedStatusFilter === 'lost' ? 'Lost'
+                        : null,
                       lockedSportFilter !== 'All' ? lockedSportFilter : null,
                       lockedMarketFilter !== 'all' ? lockedMarketFilter.toUpperCase() : null,
                       lockedSort === 'time' ? 'By time' : null,
@@ -13358,7 +13363,7 @@ export default function SharpFlow() {
                           <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
                             {lockedArr.length === 0
                               ? `No locked picks for ${lockedDay === 'today' ? 'today' : 'yesterday'}`
-                              : `No ${lockedStatusFilter === 'pending' ? 'pending' : lockedStatusFilter === 'won' ? 'winning' : 'losing'} picks`}
+                              : `No ${lockedStatusFilter === 'pending' ? 'pending' : lockedStatusFilter === 'inprogress' ? 'in-progress' : lockedStatusFilter === 'won' ? 'winning' : 'losing'} picks`}
                           </div>
                         ) : (() => {
                           // Split staked tickets (units > 0) from no-ticket
