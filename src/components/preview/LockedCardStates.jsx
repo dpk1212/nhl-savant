@@ -141,11 +141,16 @@ const base = {
 
 const FIXTURES = [
   {
-    title: 'Showcase — unopposed + killer lead',
-    f: { ...base, commenceMs: now + 12 * H },
+    title: 'Showcase — GOLD stack (HARD+ FOR · proven ≥75%)',
+    f: {
+      ...base,
+      commenceMs: now + 12 * H,
+      goldStack: true,
+      goldStackTip: 'Inside stack — HARD+ FOR only · proven 86%',
+    },
   },
   {
-    title: 'Contested — big ticket needs wallet context',
+    title: 'Contested — IN, EDGE 14 does not gold it',
     f: {
       ...base,
       sport: 'NFL',
@@ -241,6 +246,8 @@ const FIXTURES = [
         },
       }],
       commenceMs: now + 9 * H,
+      goldStack: true,
+      goldStackTip: 'Inside stack — HARD+ FOR only · proven 91%',
       pinPath: pinPath(-118, -124, -120, 1900),
       sharpEntryOdds: -118,
       currentFairOdds: -120,
@@ -293,7 +300,7 @@ export default function LockedCardStates() {
     <div style={{ minHeight: '100vh', background: '#0B0F1F', padding: '2rem 1rem' }}>
       <div style={{ maxWidth: 1040, margin: '0 auto' }}>
         <div style={{ color: '#9aa6bd', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.14em', marginBottom: 18 }}>
-          LOCKED CARD — FULL / LOSING / CONFIRMED DOLLAR SPLITS
+          LOCKED CARD — GOLD = HARD+ FOR · PROVEN ≥75% STACK
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: 18 }}>
           {FIXTURES.map(({ title, f }) => (

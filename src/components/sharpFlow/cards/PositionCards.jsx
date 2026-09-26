@@ -164,7 +164,6 @@ export const fmtMoney = (v) => {
   return `${neg ? '-' : ''}$${Math.round(n)}`;
 };
 
-const EDGE_AURA_MIN = 11;
 const EDGE_AURA_BORDER = 'rgba(232,210,138,0.78)';
 const EDGE_AURA_SHADOW_IDLE =
   '0 0 0 1px rgba(232,210,138,0.42), 0 0 18px -2px rgba(212,175,55,0.55), 0 0 40px -8px rgba(212,175,55,0.32)';
@@ -2528,8 +2527,8 @@ function CollapsedSpark({ f, gid, bleed = false }) {
 
 /**
  * Premium frame. One flat surface, one hairline, one soft shadow with a real
- * offset. EDGE conviction is a slightly warmer hairline — not an animated
- * glow stack. Restraint is the brand (DESIGN.md: flat at rest, gold ≤10%).
+ * offset. Inside-stack tickets get a slightly warmer hairline — not an
+ * animated glow stack. Restraint is the brand (DESIGN.md: flat at rest, gold ≤10%).
  */
 function CollapsedCardFrame({ live, children, extraClass }) {
   const { f, edgeAura, setExpanded, tracked, graded } = live;
@@ -2550,7 +2549,7 @@ function CollapsedCardFrame({ live, children, extraClass }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true); }}
-      title={edgeAura ? `EDGE ${Number(f.edge).toFixed(1)} · high-conviction lock` : undefined}
+      title={edgeAura ? (f.goldStackTip || 'Inside stack — HARD+ FOR only · proven ≥75%') : undefined}
       style={{
         borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
         // One barely-there vertical light, not a flat slab — depth without glow.
@@ -2668,13 +2667,12 @@ function CollapsedHeader({ live, inClassName }) {
               </span>
             ) : (
               // Gold tier says its name. The aura border alone was invisible
-              // to most eyes — EDGE picks trade the IN label for GOLD in the
-              // same metal pill (zero extra header width, matchup never
-              // truncates).
+              // to most eyes — inside-stack tickets trade the IN label for
+              // GOLD in the same metal pill (zero extra header width).
               <span
                 className={inClassName}
                 title={edgeAura
-                  ? `Gold-tier flag — EDGE ${Number.isFinite(f.edge) ? Number(f.edge).toFixed(1) : ''} · locks at T-15`
+                  ? `${f.goldStackTip || 'Inside stack — HARD+ FOR only · proven ≥75%'} · locks at T-15`
                   : 'Flagged — locks at T-15'}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -3055,8 +3053,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
   // Tracked (0u) cards keep the gold frame; the pill reads NO PLAY so they
   // are not mistaken for locks. Graded tickets tint the accent to the result.
   const accent = graded && resultColor ? resultColor : B.gold;
-  // Gold aura: staked live tickets (countdown or fully LOCKED) with EDGE ≥ 11.
-  const edgeAura = !tracked && !graded && Number.isFinite(f.edge) && f.edge >= EDGE_AURA_MIN;
+  // Gold aura: staked live tickets inside the stack
+  // (HARD+ FOR only · proven ≥75%). EDGE no longer drives this tag.
+  const edgeAura = !tracked && !graded && !!f.goldStack;
   const cardBorder = tracked
     ? 'rgba(139,150,171,0.22)'
     : graded

@@ -1183,7 +1183,7 @@ export default function LockedClarityExpanded({
   return (
     <div
       className={edgeAura ? 'sf-edge-aura' : undefined}
-      title={edgeAura && Number.isFinite(f.edge) ? `EDGE ${Number(f.edge).toFixed(1)} · high-conviction lock` : undefined}
+      title={edgeAura ? (f.goldStackTip || 'Inside stack — HARD+ FOR only · proven ≥75%') : undefined}
       style={{
       borderRadius: 16, overflow: 'hidden',
       background: edgeAura

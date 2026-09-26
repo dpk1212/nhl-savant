@@ -53,6 +53,11 @@ import {
 } from '../../../lib/shopTicketLine.js';
 import { SHOP_BOOK_PREFER, sharpConsensusFromBooks } from '../../../lib/sharpConsensus.js';
 import { lookupPinnGame } from '../../../../scripts/lib/ufcFighters.js';
+import {
+  classifyGoldStack,
+  goldStackTip,
+  walletDetailsForGoldStack,
+} from '../../../lib/goldStack.js';
 
 export { americanFromPolyPrice };
 export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb, mlFairOddsList };
@@ -1683,6 +1688,14 @@ export function mapLockedPickToCardFixture(pick, {
   const provenForN = mapWallets.filter((w) => w.side === 'ours' && w.proven && isCounted(w)).length;
   const provenAgN = mapWallets.filter((w) => w.side === 'against' && w.proven && isCounted(w)).length;
   const provenMargin = mapWallets.length > 0 ? (provenForN - provenAgN) : null;
+  // GOLD pill = inside the stack. Display-only — EDGE no longer drives it.
+  const goldInfo = classifyGoldStack({
+    marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
+    sport: pick.sport,
+    side,
+    walletDetails: walletDetailsForGoldStack(pick, boardRaw),
+    walletProfiles,
+  });
   const base = pathBaseUnits(stakePath);
 
   const toWin = (() => {
@@ -1911,6 +1924,12 @@ export function mapLockedPickToCardFixture(pick, {
     confMargin: Number.isFinite(confMargin) ? confMargin : null,
     provenMargin: Number.isFinite(provenMargin) ? provenMargin : null,
     edge,
+    goldStack: goldInfo.gold,
+    goldStackTip: goldStackTip(goldInfo),
+    goldStackReason: goldInfo.reason,
+    hardForN: goldInfo.hardForN,
+    hardAgN: goldInfo.hardAgN,
+    provenShare: goldInfo.provenShare,
     netClv,
     confirmedOnSide,
     vaultOnSide,
