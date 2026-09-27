@@ -15,6 +15,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseOddsTrader } from '../src/utils/oddsTraderParser.js';
 import { resolveSOCTeam, isMainSoccerMatchSlug, makeSOCGameKey } from './lib/soccerTeams.js';
+import { isPlayerPropsEvent, stripPlayerPropsSuffix } from './lib/playerPropsEvent.js';
 import {
   resolveUFCFighter,
   makeUFCGameKey,
@@ -457,7 +458,7 @@ function resolveNBATeam(raw) {
 
 // ─── Extract team names from Polymarket title ───────────────────────────────
 function extractTeamsFromTitle(title) {
-  const t = (title || '').trim();
+  const t = stripPlayerPropsSuffix((title || '').trim());
   const patterns = [
     /(.+?)\s+vs\.?\s+(.+?)(?:\s*\([Ww]\))?\s*$/,
     /(.+?)\s+@\s+(.+?)\s*$/,
@@ -1017,6 +1018,9 @@ async function run() {
   for (const ev of byId.values()) {
     const id = ev.id ?? ev.slug;
     const title = ev.title || ev.question || '';
+    // MLB player-prop boards reuse the game's "A vs B" title and would
+    // claim the moneyline key (2026-09-27 Rangers @ Twins → "Props").
+    if (isPlayerPropsEvent(title, ev.slug)) continue;
 
     // Reject stale events (eventDate > 2 days in the past). Reused rainout
     // slugs keep the old eventDate (Cards–Reds mlb-stl-cin-2026-05-24) but

@@ -20,6 +20,7 @@ import { matchCFBPositionTitle, resolveCFBTeam, CFB_NAME_TO_CODE } from './lib/c
 import { resolveBinarySide, resolveSpreadSide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 import { parseSpreadTitle } from '../src/lib/spreadLineSign.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
+import { isPlayerPropsEvent, stripPlayerPropsSuffix } from './lib/playerPropsEvent.js';
 import { resolveDoubleheaderMatch } from './lib/doubleheaderKey.js';
 import {
   acceptFullGameSidePosition,
@@ -234,7 +235,7 @@ function findCBBTeam(cbbMap, name) {
 
 // ─── Title parsing (reused from fetchPolymarketData.js) ──────────────────────
 function extractTeamsFromTitle(title) {
-  const t = (title || '').trim();
+  const t = stripPlayerPropsSuffix((title || '').trim());
   const patterns = [
     /(.+?)\s+vs\.?\s+(.+?)(?:\s*\([Ww]\))?\s*$/,
     /(.+?)\s+@\s+(.+?)\s*$/,
@@ -868,6 +869,7 @@ async function run() {
 
     for (const pos of positions) {
       const title = pos.title || '';
+      if (isPlayerPropsEvent(title, pos.slug || pos.eventSlug)) continue;
       let match = matchPositionToGameOrSoccer(title, todaysGames, cbbMap);
       let forcedSpread = false;
 
