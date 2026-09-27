@@ -1,24 +1,24 @@
 {
-  "scannedAt": "2026-09-27T23:04:02.224Z",
-  "elapsedSec": 70,
+  "scannedAt": "2026-09-27T23:11:48.941Z",
+  "elapsedSec": 65.9,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 125,
   "summary": {
     "total": 423,
-    "coveredByMain": 47,
+    "coveredByMain": 48,
     "recovered": 32,
     "recoveredPositions": 214,
-    "noPositions": 344,
+    "noPositions": 343,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 39,
+      "ml": 38,
       "spread": 13,
       "total": 13,
-      "dropped_shadow_gate": 65,
-      "dropped_excluded": 64,
-      "dropped_duplicate": 20
+      "dropped_shadow_gate": 64,
+      "dropped_excluded": 67,
+      "dropped_duplicate": 19
     }
   },
   "perWallet": [
@@ -128,8 +128,8 @@
       "positionsCount": 5,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 71461,
-      "willPassShadowGate": 3,
-      "willDropAtShadowGate": 2,
+      "willPassShadowGate": 4,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "NFL",
@@ -154,8 +154,17 @@
           "gameKey": "lar_den",
           "marketType": "total",
           "side": "under",
-          "invested": 8619,
+          "invested": 9798,
           "entryLine": 44.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "lar_den",
+          "marketType": "total",
+          "side": "under",
+          "invested": 7351,
+          "entryLine": 43.5,
           "passesShadow": true
         },
         {
@@ -165,15 +174,6 @@
           "side": "away",
           "invested": 5868,
           "entryLine": -2.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "NFL",
-          "gameKey": "lar_den",
-          "marketType": "total",
-          "side": "under",
-          "invested": 5673,
-          "entryLine": 43.5,
           "passesShadow": false
         }
       ]
@@ -1068,11 +1068,11 @@
       "sports": "WNBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 32,
+      "positionsCount": 33,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 2961,
-      "willPassShadowGate": 13,
-      "willDropAtShadowGate": 19,
+      "willPassShadowGate": 15,
+      "willDropAtShadowGate": 18,
       "positions": [
         {
           "sport": "NFL",
@@ -1120,6 +1120,15 @@
           "passesShadow": true
         },
         {
+          "sport": "NFL",
+          "gameKey": "lar_den",
+          "marketType": "total",
+          "side": "over",
+          "invested": 2124,
+          "entryLine": 43.5,
+          "passesShadow": true
+        },
+        {
           "sport": "UFC",
           "gameKey": "paytontalbott_deivesonfigueiredo",
           "marketType": "ml",
@@ -1160,6 +1169,15 @@
           "gameKey": "lar_den",
           "marketType": "spread",
           "side": "away",
+          "invested": 987,
+          "entryLine": 2.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "lar_den",
+          "marketType": "spread",
+          "side": "away",
           "invested": 517,
           "entryLine": -2.5,
           "passesShadow": true
@@ -1187,7 +1205,7 @@
           "gameKey": "dal_gsv",
           "marketType": "total",
           "side": "under",
-          "invested": 401,
+          "invested": 374,
           "entryLine": 154.5,
           "passesShadow": false
         },
@@ -1199,15 +1217,6 @@
           "invested": 328,
           "entryLine": 3.5,
           "passesShadow": true
-        },
-        {
-          "sport": "NFL",
-          "gameKey": "lar_den",
-          "marketType": "total",
-          "side": "over",
-          "invested": 232,
-          "entryLine": 43.5,
-          "passesShadow": false
         },
         {
           "sport": "NFL",
@@ -1313,7 +1322,7 @@
           "gameKey": "dal_gsv",
           "marketType": "total",
           "side": "over",
-          "invested": 26,
+          "invested": 24,
           "entryLine": 154.5,
           "passesShadow": false
         },
@@ -2586,10 +2595,10 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0d2d845a6ff64e31e04a70afce8a573940767ff5",
-      "positionsCount": 33,
+      "positionsCount": 31,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 366,
-      "willPassShadowGate": 32,
+      "willPassShadowGate": 30,
       "willDropAtShadowGate": 1,
       "positions": [
         {
@@ -2800,6 +2809,15 @@
           "passesShadow": true
         },
         {
+          "sport": "NFL",
+          "gameKey": "lar_den",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 109,
+          "entryLine": -2.5,
+          "passesShadow": true
+        },
+        {
           "sport": "CFB",
           "gameKey": "utep_unm",
           "marketType": "ml",
@@ -2860,33 +2878,6 @@
           "side": "home",
           "invested": 154,
           "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "NFL",
-          "gameKey": "lar_den",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 59,
-          "entryLine": -4.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "ucf_hou",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 95,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "NFL",
-          "gameKey": "phi_chi",
-          "marketType": "total",
-          "side": "over",
-          "invested": 81,
-          "entryLine": 43.5,
           "passesShadow": true
         }
       ]
@@ -4310,11 +4301,11 @@
       "sports": "NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 34,
+      "positionsCount": 35,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 11648,
       "willPassShadowGate": 8,
-      "willDropAtShadowGate": 26,
+      "willDropAtShadowGate": 27,
       "positions": [
         {
           "sport": "NFL",
@@ -4337,19 +4328,19 @@
         {
           "sport": "NFL",
           "gameKey": "lar_den",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 1614,
-          "entryLine": 3.5,
+          "marketType": "total",
+          "side": "over",
+          "invested": 1371,
+          "entryLine": 44.5,
           "passesShadow": true
         },
         {
           "sport": "NFL",
           "gameKey": "lar_den",
-          "marketType": "total",
-          "side": "over",
-          "invested": 1237,
-          "entryLine": 44.5,
+          "marketType": "spread",
+          "side": "home",
+          "invested": 1614,
+          "entryLine": 3.5,
           "passesShadow": true
         },
         {
@@ -4386,6 +4377,15 @@
           "side": "home",
           "invested": 411,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "lar_den",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 520,
+          "entryLine": 1.5,
           "passesShadow": false
         },
         {
@@ -4895,7 +4895,7 @@
           "gameKey": "lar_den",
           "marketType": "ml",
           "side": "away",
-          "invested": 3725,
+          "invested": 4225,
           "entryLine": null,
           "passesShadow": true
         },
@@ -5435,8 +5435,7 @@
       "tier": "WR50",
       "name": "EVhunter69",
       "sports": "",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x8ce7eb8a3ad1d6907b24368865c8487a68fb3150"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "fbc6a0",
