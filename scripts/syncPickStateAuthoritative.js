@@ -192,6 +192,7 @@ import {
   fitExpWinLambda,
 } from '../src/lib/expectedWin.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
+import { cleanStoredTeam, stripPlayerPropsSuffix } from './lib/playerPropsEvent.js';
 import { acceptFullGameSidePosition, acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import { flipUFCGameKey, remapUFCPinnSides, canonicalUFCKey, isUFCFlipAlias } from './lib/ufcFighters.js';
 import { slugDatesAreBoardLeftovers } from './lib/positionEventMatch.js';
@@ -2370,8 +2371,8 @@ function loadGameMetadata() {
           const ms = new Date(ctRaw).getTime();
           if (Number.isFinite(ms)) cur.commenceTime = ms;
         }
-        cur.away = g.awayTeam || cur.away || null;
-        cur.home = g.homeTeam || cur.home || null;
+        cur.away = stripPlayerPropsSuffix(g.awayTeam || '') || cur.away || null;
+        cur.home = stripPlayerPropsSuffix(g.homeTeam || '') || cur.home || null;
         cur.polyAwayProb = typeof g.awayProb === 'number' ? g.awayProb : null;
         cur.polyHomeProb = typeof g.homeProb === 'number' ? g.homeProb : null;
         cur.polyDrawProb = typeof g.drawProb === 'number' ? g.drawProb : null;
@@ -2445,6 +2446,8 @@ function loadGameMetadata() {
         if (g.bestUnder) cur.bestUnder = g.bestUnder;
         if (g.fairTotalBook) cur.fairTotalBook = g.fairTotalBook;
         cur.pinnGame = g;
+        if (g.awayTeam && (!cur.away || /\bplayer props\b/i.test(cur.away))) cur.away = g.awayTeam;
+        if (g.homeTeam && (!cur.home || /\bplayer props\b/i.test(cur.home))) cur.home = g.homeTeam;
         meta.set(key, cur);
       }
     }
@@ -7717,6 +7720,30 @@ async function main() {
         console.warn(`  ⚠ GHOST doc detected: ${col}/${pick._id} (${sideEntries.length} side(s), 0 live) — will let createMissingLockedPicks rebuild`);
       } else {
         existingDocIds.add(`${col}|${pick._id}`);
+      }
+      if (pick.status !== 'COMPLETED') {
+        const meta = gameMeta.get(`${pick.sport}|${pick.gameKey}`) || {};
+        const namePatch = {};
+        const away = cleanStoredTeam(pick.away, meta.away);
+        const home = cleanStoredTeam(pick.home, meta.home);
+        if (away) namePatch.away = away;
+        if (home) namePatch.home = home;
+        for (const [sideKey, sd] of Object.entries(sides)) {
+          if (!sd) continue;
+          const fallback = sideKey === 'away' ? (away || meta.away) : sideKey === 'home' ? (home || meta.home) : null;
+          const team = cleanStoredTeam(sd.team, fallback);
+          const peakTeam = cleanStoredTeam(sd.peak?.team, fallback);
+          const lockTeam = cleanStoredTeam(sd.lock?.team, fallback);
+          if (team) namePatch[`sides.${sideKey}.team`] = team;
+          if (peakTeam) namePatch[`sides.${sideKey}.peak.team`] = peakTeam;
+          if (lockTeam) namePatch[`sides.${sideKey}.lock.team`] = lockTeam;
+        }
+        if (Object.keys(namePatch).length && !DRY_RUN) {
+          await db.collection(col).doc(pick._id).update(namePatch);
+          if (away) pick.away = away;
+          if (home) pick.home = home;
+          console.log(`  ↳ props name: ${col}/${pick._id} ${namePatch.away || pick.away} @ ${namePatch.home || pick.home}`);
+        }
       }
       if (liveUFCKeys.size
           && String(pick.sport || '').toUpperCase() === 'UFC'
