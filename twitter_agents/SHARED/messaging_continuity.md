@@ -7,17 +7,18 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-26 · HERO **GIVE** · Mississippi State ML 6u at 12.9× |
+| Last updated | 2026-09-27 · HERO **GIVE** · three 1:00 NFL flagged plays |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
 | Ask temperature | **Give.** No fork. |
-| Account arc | Michigan lost. Full send is State ML. Wallet $68K at 12.9×, L30 +$13K, 6-4. Card is SET. 7:45 ET. |
+| Account arc | Giants $174K vs $546K against. Jaguars $83K at 2.7×, nothing against. Steelers under 42.5→43.5, proven ticket is $2K. Locks 12:45. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/26 ~7:36 ET | Hero **GIVE** | `$68,000 AT 12.9× ON MISSISSIPPI STATE` / Michigan lost / run it back | **S + C** | none | **Staged** |
+| 9/27 ~12:08 ET | Hero **GIVE** | `$174,000 ON THE GIANTS` / $546K against / Jags 2.7× / under 42.5→43.5 | **S + C** | none | **Staged** |
+| 9/26 ~7:36 ET | Hero **GIVE** | `$68,000 AT 12.9× ON MISSISSIPPI STATE` | **S + C** | none | **Staged** |
 | 9/23 ~5:32 ET | Self-QT **ASK** | `We're 4-1 today, and one of them lost.` / first week free | **S+P+C+L** | canonical offer | **Staged** |
 | 9/23 | **INGEST** | Pin $20k **366**. `+98.88` **328**. Down-days **8R**. Trial paragraph **0R**. Dollar-stacks **0R** | — | none | Locked |
 | 9/20 ~7:15 ET | QT **GIVE** | `$209,000 AT 25×` / fade Jones | **S + C** | none | **Posted** · 8073 / 204 / **1R** |

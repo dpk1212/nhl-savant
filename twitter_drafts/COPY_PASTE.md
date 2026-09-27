@@ -1,51 +1,65 @@
-# Twitter — 2026-09-26 · HERO GIVE · Mississippi State ML 6u, 12.9×
+# Twitter — 2026-09-27 · HERO GIVE · three 1:00 ET flagged plays
 **Pathway:** Hormozi. One idea. Give. No ask.
 
 | | |
 |--|--|
-| WHO | Anyone who just watched Michigan lose and thinks the Saturday card is dead. |
+| WHO | Sunday NFL room about to bet the side with the most logos on it. |
 | PURPOSE | **Give.** |
-| ONE | Michigan's gone, so the size is on Mississippi State with a bettor who pressed 12.9× and is up $13,000 the last 30 days. |
-| SPCL | **S + C** in line 1 (`$68,000` / `12.9×`). Power = State won outright last week. Likeness = Michigan lost, this is the full send. |
+| ONE | A proven wallet is sized on three 1:00 games, and on the Giants most of the tracked money is on the other side. |
+| SPCL | **S + C.** Giants $174K vs $546K is the open. Jaguars $83K at 2.7× and the under number are the proof. |
 | Ask | **None.** |
 
-**Attach:** State ML card, then his last-30 action chart.  
-**Card is SET.** Kick 7:45 PM ET. Do not say flagged. Do not say locks.
+**Attach (walk order):** Giants ML → Jaguars ML → Steelers under. The Giants chart is the one that shows the against-money.  
+**All flagged.** Locks **12:45 ET.** Do not say locked. Do not say gold. Do not say HC.
 
 ### Spine
-- Michigan lost → all-in full send on Mississippi State
-- They delivered last week, running it back
-- Tailing this sharp, up on the last 30
+- Three games worth talking about at 1pm
+- Look for Pinnacle limits rising, odds moving our way, proven sharp money, big money
+- He says all three have that
 
-### Receipts (cards, ~7:36 ET)
-- State ML **-165** · **6.00u** · to win +3.64u · flagged at -164 · Pin **-169**
-- **$79K** on State · card says **nothing against** · 100% of that bar
-- Proven winner **$68K** · **12.9×** usual · **1 more proven** with him
-- Lead `…bc44b0` · card **6-4 · 60%** · **L30 +$13K**
-- Same profile, CFB last 30: **6-4, +$13K, +24% ROI, 60%**. Moneylines **2-1, +$11K, +148%**. He is not undefeated. Do not use the header 6-2 / +105% next to the 6-4 line.
-- All-money is $142K State / $87K Missouri. Do not say all the money is on State.
-- Do not say HC. Do not say unopposed as a system word. "Nothing against" is the card's words.
-- Last week: Mississippi State beat South Carolina **41-34**. Won outright. That is the run-back.
-- Michigan lost today (Dale). Do not invent the final score. Search snippets disagreed.
+### What the cards actually show (~12:08 ET)
+- **Giants ML -127** · flagged -127 · **3.0u** · Pin **-134** · Kalshi -127
+- **$175K** Giants / **$546K** Titans · card: **most of the tracked money is against this**
+- Proven **$174K** at **2.0×** · `…28658e` · NFL **13-3** · 81% · **L30 +$1,037,000**
+- His NFL moneylines in that window are **2-3**, +$211K, 40%. Say it. This is a moneyline.
+- **Jaguars ML -149** · flagged **-144** · **5.4u** · Pin **-157**
+- **$418K** on Jacksonville · **nothing against** · proven **$83K** at **2.7×** · 4-3 · 57% · +54% ROI
+- Since the flag, Jacksonville juice got a little worse (-144 to -149). We still beat Pinnacle. Do not say the price improved from the flag.
+- Losing money $432K Patriots / $77K on Jacksonville. Not "losers only on New England."
+- **Under 43.5 -124** · flagged **Under 42.5 -102** · **3.0u**
+- The total moved **42.5 → 43.5**. That is the number moving the under's way. The juice got worse.
+- Tracked sharp money is **$13K** under / $785 over. Proven ticket is **$2,000 at 1×**, not a press. L30 **+$6,700**. Totals **6-2**.
+- All-money on the total is **$212K under / $69K over**. That is the big pile. Do not call the $2,000 bet big.
+- Pinnacle history file is still Sep 18. **No from-to limit climb is in the file.** Chart shows current max labels $75K / $50K / $20K. Do not invent "limits just rose."
 
 ### Hook
-Line 1 is the size, not "Michigan lost" and not another bare `$N ON THE TEAM`. The 12.9× is the scarce part.
+Not three `$N ON THE TEAM` lines. The interesting fact is the Giants split.
 
 ---
 
 ## COPY THIS
 
 ```
-$68,000 AT 12.9× ON MISSISSIPPI STATE
+$174,000 ON THE GIANTS
+$546,000 is on the Titans.
 
-His usual bet isn't this. Last 30 days he's up $13,000 in college football. 6-4. His moneylines in that stretch are 2-1.
+He's 13-3 in the NFL the last 30 days. Up $1,037,000.
+This bet is 2× his usual. His moneylines in that stretch are 2-3.
+We're -127. Pinnacle is -134. 3 units.
 
-$79,000 on State. Nothing against him. One more proven wallet is with him.
+Jaguars are the clean one.
+$83,000 from a proven winner at 2.7× his usual. 4-3. Up 54%.
+$418,000 on Jacksonville. Nothing against him.
+We're -149. Pinnacle is -157. 5.4 units.
 
-Michigan lost. This is the full send. 6 units. -165.
-Pinnacle is -169.
+Steelers under 43.5. We flagged it at 42.5.
+One proven winner, 6-2 on totals, up $6,700 the last 30 days.
+That's a normal bet for him. $2,000.
+$212,000 on the under. $69,000 on the over. 3 units.
 
-They won outright last week. We're running it back with him.
+We don't handicap these. We post where the proven money is before the game.
+
+12:45. All three are flagged.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
