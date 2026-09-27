@@ -30,11 +30,11 @@
 ---
 
 ## Angle lock
-**ONE:** Michigan's gone, so the size is on Mississippi State with the bettor at 12.9× who is up $13,000 the last 30 days.  
-**Hook:** `$68,000 AT 12.9× ON MISSISSIPPI STATE`  
-**Body:** 6-4 · moneylines 2-1 · $79K · nothing against · one more proven · 6u -165 · Pin -169 · won outright last week.  
+**ONE:** Proven money is in on three 1:00 games, and on the Giants most of the tracked money is on the Titans.  
+**Hook:** `$174,000 ON THE GIANTS` / `$546,000 is on the Titans.`  
+**Body:** 13-3, +$1,037,000, 2×, moneylines 2-3, -127 vs Pin -134 · Jags $83K at 2.7×, nothing against, -149 vs -157 · under 42.5→43.5, $2K normal bet, $212K vs $69K.  
 **Ask:** none.  
-**Killed:** HC · unopposed-as-label · 6-2/+105% next to the 6-4 line · all-money wipeout · invented Michigan score · trial · locked-as-identity
+**Killed:** invented limit climb · calling the under ticket big · Giants unopposed · HC · gold · locked · trial · three-stack `$N ON THE TEAM` open
 
 ---
 
