@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-28T13:40:15.866Z",
-  "elapsedSec": 69.1,
+  "scannedAt": "2026-09-28T13:47:35.443Z",
+  "elapsedSec": 51.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 137,
   "summary": {
     "total": 424,
     "coveredByMain": 27,
     "recovered": 21,
-    "recoveredPositions": 197,
+    "recoveredPositions": 198,
     "noPositions": 376,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 54,
       "spread": 15,
       "total": 9,
-      "dropped_shadow_gate": 66,
+      "dropped_shadow_gate": 67,
       "dropped_excluded": 35,
       "dropped_duplicate": 18
     }
@@ -576,11 +576,11 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x684baa57c338c2549aec0aa3f034f695d72a8409",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 13470,
       "willPassShadowGate": 3,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "NFL",
@@ -608,6 +608,15 @@
           "invested": 4000,
           "entryLine": 4.5,
           "passesShadow": true
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "phi_chi",
+          "marketType": "total",
+          "side": "over",
+          "invested": 251,
+          "entryLine": 41.5,
+          "passesShadow": false
         }
       ]
     },
@@ -1550,7 +1559,7 @@
           "gameKey": "phi_chi",
           "marketType": "spread",
           "side": "home",
-          "invested": 1882,
+          "invested": 2390,
           "entryLine": 5.5,
           "passesShadow": true
         },
@@ -4055,7 +4064,7 @@
           "gameKey": "phi_chi",
           "marketType": "spread",
           "side": "away",
-          "invested": 3078,
+          "invested": 3080,
           "entryLine": -4.5,
           "passesShadow": true
         },
@@ -4276,6 +4285,15 @@
           "passesShadow": false
         },
         {
+          "sport": "NHL",
+          "gameKey": "van_edm",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 163,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
           "sport": "CFB",
           "gameKey": "unt_tlsa",
           "marketType": "ml",
@@ -4298,16 +4316,7 @@
           "gameKey": "atl_was",
           "marketType": "ml",
           "side": "away",
-          "invested": 136,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "NHL",
-          "gameKey": "van_edm",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 131,
+          "invested": 141,
           "entryLine": null,
           "passesShadow": false
         },
