@@ -679,7 +679,7 @@ function pressProf(sport, market, bookPos, usualN, usualInvested) {
 const pressSpreadProf = new Map([
   ['press1', pressProf('MLB', 'SPREAD', pos(4, 62, 10), 10, 10000)],
   ['full01', pressProf('MLB', 'SPREAD', pos(4, 62, 10), 10, 10000)],
-  ['pressT', pressProf('MLB', 'TOTAL', pos(12, 67, 21), 10, 10000)],
+  ['prestt', pressProf('MLB', 'TOTAL', pos(12, 67, 21), 10, 10000)],
   ['aghard', pressProf('MLB', 'SPREAD', pos(8, 65, 15), 10, 10000)],
   ['twoaaa', pressProf('MLB', 'SPREAD', pos(4, 62, 10), 10, 10000)],
   ['twobbb', pressProf('MLB', 'SPREAD', pos(12, 70, 20), 10, 10000)],
@@ -725,7 +725,7 @@ const pressSpreadProf = new Map([
     marketType: 'TOTAL',
     sport: 'MLB',
     side: 'under',
-    walletDetails: [{ side: 'under', walletShort: 'pressT', invested: 2000 }],
+    walletDetails: [{ side: 'under', walletShort: 'prestt', invested: 2000 }],
     walletProfiles: pressSpreadProf,
   });
   ok(r.action === 'RESCUE' && r.units === 4, 'S/T 1 HARD press fat caps at 4');
@@ -754,7 +754,7 @@ const pressSpreadProf = new Map([
     marketType: 'TOTAL',
     sport: 'MLB',
     side: 'under',
-    walletDetails: [{ side: 'under', walletShort: 'pressT', invested: 1800 }],
+    walletDetails: [{ side: 'under', walletShort: 'prestt', invested: 1800 }],
     walletProfiles: pressSpreadProf,
   });
   ok(r.action === 'RESCUE' && r.units === 1, 'leftover S/T 1 HARD press restores 1u');
@@ -768,7 +768,7 @@ const pressSpreadProf = new Map([
     marketType: 'TOTAL',
     sport: 'MLB',
     side: 'under',
-    walletDetails: [{ side: 'under', walletShort: 'pressT', invested: 1500 }],
+    walletDetails: [{ side: 'under', walletShort: 'prestt', invested: 1500 }],
     walletProfiles: pressSpreadProf,
   });
   ok(r.action === 'RESCUE' && r.units === 4, 'st-fat S/T 1 HARD press restores 4u');
