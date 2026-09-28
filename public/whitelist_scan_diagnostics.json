@@ -1,24 +1,24 @@
 {
-  "scannedAt": "2026-09-28T14:32:47.910Z",
-  "elapsedSec": 49.9,
+  "scannedAt": "2026-09-28T14:39:41.790Z",
+  "elapsedSec": 46.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 137,
   "summary": {
     "total": 424,
     "coveredByMain": 30,
     "recovered": 22,
-    "recoveredPositions": 213,
+    "recoveredPositions": 216,
     "noPositions": 372,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 55,
+      "ml": 56,
       "spread": 17,
-      "total": 9,
-      "dropped_shadow_gate": 72,
-      "dropped_excluded": 42,
-      "dropped_duplicate": 18
+      "total": 10,
+      "dropped_shadow_gate": 73,
+      "dropped_excluded": 43,
+      "dropped_duplicate": 17
     }
   },
   "perWallet": [
@@ -1244,10 +1244,10 @@
       "sports": "MLB,WNBA,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x7e5972bfc25819775ee5a9d4f191919375487b8b",
-      "positionsCount": 18,
+      "positionsCount": 19,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 777,
-      "willPassShadowGate": 11,
+      "willPassShadowGate": 12,
       "willDropAtShadowGate": 7,
       "positions": [
         {
@@ -1334,6 +1334,15 @@
         {
           "sport": "CFB",
           "gameKey": "tol_ball",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 89,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "mtst_idho",
           "marketType": "ml",
           "side": "away",
           "invested": 89,
@@ -1577,7 +1586,7 @@
           "gameKey": "phi_chi",
           "marketType": "spread",
           "side": "home",
-          "invested": 4461,
+          "invested": 4464,
           "entryLine": -0.5,
           "passesShadow": true
         },
@@ -2329,11 +2338,11 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0d2d845a6ff64e31e04a70afce8a573940767ff5",
-      "positionsCount": 46,
+      "positionsCount": 47,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 366,
       "willPassShadowGate": 45,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
         {
           "sport": "CFB",
@@ -2552,15 +2561,6 @@
           "passesShadow": true
         },
         {
-          "sport": "NFL",
-          "gameKey": "phi_chi",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 43,
-          "entryLine": -3.5,
-          "passesShadow": true
-        },
-        {
           "sport": "CFB",
           "gameKey": "mem_char",
           "marketType": "ml",
@@ -2604,6 +2604,24 @@
           "invested": 95,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "pitt_vt",
+          "marketType": "total",
+          "side": "under",
+          "invested": 77,
+          "entryLine": 51.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "phi_chi",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 8,
+          "entryLine": -14.5,
+          "passesShadow": false
         },
         {
           "sport": "CFB",
@@ -5327,12 +5345,21 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9f15613ebf1f36d4bc679e1211d1fc567cf9bdb3",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 11329,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "NFL",
+          "gameKey": "phi_chi",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 7954,
+          "entryLine": 3.5,
+          "passesShadow": true
+        },
         {
           "sport": "NFL",
           "gameKey": "phi_chi",
