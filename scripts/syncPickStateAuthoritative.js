@@ -1170,7 +1170,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 21; // v21: Source B lock — Action priors + RANK n, Featured ⊆ Action, T-15 hold
+const SKILL_FEATURE_VERSION = 22; // v22: S/T walk is paint-only — juiceSteam sets arriving / Policy T / leftover HOLD
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -5257,7 +5257,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── Flinch / fail-open leftover mute (after Q1/UNOPP restore) ────────
   // Believed-then-cut leftovers + sub-4 FAIL_OPEN → 0u. 4u+ never touched.
-  // A/B arriving HOLDs so T can floor/hold; later mutes still run.
+  // A/B juice-arriving HOLDs so T can floor/hold; S/T walk is not arriving.
   // Manual stake exempt. Runs before maxSR mute.
   // Tape snap is captured here so leftover sees off→on this cycle; ev-drift
   // and steam-tail reuse the same snap.

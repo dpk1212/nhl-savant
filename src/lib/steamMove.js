@@ -5,10 +5,12 @@
  * dropPct = (fromDec − toDec) / fromDec × 100 when the price shortens.
  * Positive = steam toward this side (favorite getting more expensive).
  *
- * Spreads / totals also count a main-line move toward the ticket (OR with
- * juice). −3 → −3.5 or 47.5 → 48.5 is the event — juice on a pinned number
- * is not. Do not compare alt lines for juice (7.5 vs 9.5) or invent a
- * main from |hdp| → 0.
+ * Spreads / totals still PAINT a main-line walk toward the ticket
+ * (−3 → −3.5, 47.5 → 48.5). Walk does not set policy steamOn (arriving /
+ * Policy T / leftover arriving-HOLD). juiceSteam is a 3%+ drop on the
+ * first-write pin while |main−pin| < 0.5. lineWalkPts is paint-only.
+ * Do not compare alt lines for juice (7.5 vs 9.5) or invent a main
+ * from |hdp| → 0.
  *
  * Quant floors (sharp-book, not retail juice):
  *   2.0%  WATCH  — noise / juice; stored, not painted
@@ -56,6 +58,28 @@ export function steamTierFromPct(dropPct) {
   if (p >= STEAM_GOLD_PCT) return 'gold';
   if (p >= STEAM_EVENT_PCT) return 'steam';
   return 'watch';
+}
+
+/**
+ * Policy steam-on (arriving / Policy T / leftover arriving-HOLD).
+ * Walk paint can still set display tier=steam on S/T; that is not steamOn.
+ * Explicit juiceSteam wins. Legacy rows without the bit: juice event
+ * (3%+ last-hour / since-open) or unmeasured steam/gold (fail-open).
+ */
+export function policySteamOn(steamOrRow) {
+  if (!steamOrRow || typeof steamOrRow !== 'object') return false;
+  if (steamOrRow.juiceSteam === true) return true;
+  if (steamOrRow.juiceSteam === false) return false;
+  const t = steamOrRow.tier;
+  if (t !== 'steam' && t !== 'gold') return false;
+  const lh = Number(steamOrRow.lastHourPct);
+  const so = Number(steamOrRow.sinceOpenPct);
+  const hasLh = Number.isFinite(lh);
+  const hasSo = Number.isFinite(so);
+  if (hasLh || hasSo) {
+    return (hasLh && lh >= STEAM_EVENT_PCT) || (hasSo && so >= STEAM_EVENT_PCT);
+  }
+  return true;
 }
 
 function histMax(h, marketType) {
@@ -508,8 +532,21 @@ export function summarizeSteam(pinnGame, {
   } else if (Number.isFinite(displayPct) && displayPct >= STEAM_WATCH_PCT) {
     tier = 'watch';
   }
-  // Juice gold stays gold. A half-point main move is a steam event even when
-  // the pinned-number juice eased (TNF −3 → −3.5 at −109).
+  const juiceEvent = tier === 'steam' || tier === 'gold';
+  const steamPinLine = (isSpread || isTotal)
+    ? (Number.isFinite(lineMove.openLine) ? lineMove.openLine : pinLine)
+    : null;
+  const mainNow = (isSpread || isTotal)
+    ? (Number.isFinite(lineMove.nowLine) ? lineMove.nowLine : null)
+    : null;
+  // Fail-open when we cannot see pin vs main — do not invent a walk.
+  const pinStillMain = !isSpread && !isTotal
+    ? true
+    : (!Number.isFinite(steamPinLine) || !Number.isFinite(mainNow)
+      ? true
+      : Math.abs(mainNow - steamPinLine) < STEAM_LINE_MOVE_PTS - LINE_STEAM_EPS);
+  const juiceSteam = juiceEvent && pinStillMain;
+  // Paint only. Walk still shows −3 → −3.5 on the card; policy reads juiceSteam.
   if (lineMove.steam && (tier == null || tier === 'watch')) tier = 'steam';
 
   const goldConfirmed = tier === 'gold' && limitRising;
@@ -572,8 +609,11 @@ export function summarizeSteam(pinnGame, {
     maxOpen: Number.isFinite(maxOpen) ? maxOpen : null,
     maxNow: Number.isFinite(maxNow) ? maxNow : null,
     lineMovePts: Number.isFinite(lineMovePts) ? lineMovePts : null,
+    lineWalkPts: Number.isFinite(lineMovePts) ? lineMovePts : null,
     lineOpen: Number.isFinite(lineMove.openLine) ? lineMove.openLine : null,
     lineNow: Number.isFinite(lineMove.nowLine) ? lineMove.nowLine : null,
+    steamPinLine: Number.isFinite(steamPinLine) ? steamPinLine : null,
+    juiceSteam,
   };
 }
 
@@ -592,6 +632,10 @@ export function compactSteam(summary) {
     at: summary.at || null,
     frozen: !!summary.frozen,
     lineMovePts: Number.isFinite(summary.lineMovePts) ? summary.lineMovePts : null,
+    lineWalkPts: Number.isFinite(summary.lineWalkPts) ? summary.lineWalkPts
+      : (Number.isFinite(summary.lineMovePts) ? summary.lineMovePts : null),
+    steamPinLine: Number.isFinite(summary.steamPinLine) ? summary.steamPinLine : null,
+    juiceSteam: summary.juiceSteam === true,
   };
 }
 

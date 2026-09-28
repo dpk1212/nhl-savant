@@ -83,6 +83,7 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
      └─ still <4u AND (native-4u plus-money OR tape BOOST OR E≥10 OR FAIL_OPEN) → 0u
      └─ 4u+ EXEMPT · unflagged tickets HOLD at exact incoming units
      └─ A/B arriving (off→on) HOLD · no-steam / already-on still MUTE
+     └─ **2026-09-28+** S/T arriving = juiceSteam only (walk paint is not steamOn)
      └─ mutedBy=believed-cut | fail-open-sub4
 12. Odds cap + global 6u cap (already applied on path/tape; mute is 0u)
 12b. Sport Confirmed unlock CAP (2026-08-29+) — **NFL / CFB only**
@@ -132,6 +133,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-08-16** | **Stake size = sport-local volume** — Path A HC / mini-HC, Q1, and UNOPP use invested / this wallet's usual in that sport (same as locked-card "Size vs usual"). Model `v8_sizeRatio` is fallback only. AGS features stay on model size. |
 | **2026-08-19** | **Flinch / fail-open leftover mute** — still &lt;4u AND (odds-capped native RANK/TOP/SUPER **or** tape BOOST leftover **or** E≥10 leftover **or** tape FAIL_OPEN) → **0u**. 4u+ never touched. Native 3u RANK/TOP favorites without those flags stay. After Q1/UNOPP restore so those floors cannot revive a stub. |
 | **2026-09-09** | **Leftover A/B arriving HOLD** — leftover mute skips when Source A/B CONFIRMED and steam arrived (off→on). No-steam / already-on leftover still 0u. Later mutes (maxSR, ev-drift, T) still run. **Policy T native 2–3u A/B arriving → 4u.** 1u arriving stays floor 2u. Climate/unlock shrink not restacked. |
+| **2026-09-28** | **S/T walk is not steamOn** — main-line walk still paints on the card (`lineWalkPts` / `+6.5 → +4.5`) but cannot set arriving, Policy T floor/boost/4u-confirm, or leftover arriving-HOLD. `juiceSteam` = 3%+ drop on the first-write pin while \|main−pin\| < 0.5. ML steam unchanged. Juice-stable S/T unchanged. |
 | **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
 | **2026-09-18** | **Fade proven-$ hold** — SHARP-LEAN ML with proven $ share ≥50% skips fadeTop mute and continues to the next filter. Missing proven still fades. SPREAD/TOTAL and SUPER/TOP/MINI/RANK/SHARP still fade. |
 | **2026-09-19** | **Source B lock** — v12 quality + RANK n read Action first (featured n only if Action is empty). T−15 scan-drop stays PENDING for grade. |

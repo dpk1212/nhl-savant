@@ -10,6 +10,7 @@ import {
   summarizeSteam,
   compactSteam,
   mainLineTowardTicket,
+  policySteamOn,
   STEAM_EVENT_PCT,
   STEAM_GOLD_PCT,
   STEAM_LINE_MOVE_PTS,
@@ -140,6 +141,9 @@ assert.ok(pregame.sinceOpen.dropPct >= 4.5, `pregame still live ${pregame.sinceO
   assert.equal(over.limitRising, true, 'limits $1k → $4k');
   assert.equal(over.goldConfirmed, true, 'gold + limits = Closing Dime gold card');
   assert.ok(over.lastHour.dropPct >= 4.5, `last-hour drop ${over.lastHour.dropPct}%`);
+  assert.equal(over.juiceSteam, true, 'same-number juice is policy steam');
+  assert.equal(over.steamPinLine, 8.5);
+  assert.equal(policySteamOn(compactSteam(over)), true);
   const under = summarizeSteam(cinChc, { marketType: 'total', sideNorm: 'under', line: 8.5, nowSec: now });
   assert.equal(under.goldConfirmed, false, 'Under is the steamed-against side');
 }
@@ -170,13 +174,21 @@ assert.equal(STEAM_LINE_MOVE_PTS, 0.5);
   assert.equal(home.tier, 'steam', `Rams −3.5 tier ${home.tier} juice ${home.lastHour?.dropPct}`);
   assert.equal(home.show, true);
   assert.ok(home.lineMovePts >= 0.5, `lineMovePts ${home.lineMovePts}`);
+  assert.equal(home.lineWalkPts, home.lineMovePts);
+  assert.equal(home.steamPinLine, -3);
+  assert.equal(home.juiceSteam, false, 'walk is paint — juice on −3.5 eased');
   assert.ok(!(home.lastHour.dropPct > 0), 'pinned −3.5 juice eased — not juice steam');
   assert.match(home.tag, /−3 → −3\.5|-3 → -3\.5/);
   const stamp = compactSteam(home);
   assert.equal(stamp.tier, 'steam');
   assert.ok(stamp.lineMovePts >= 0.5);
+  assert.equal(stamp.juiceSteam, false);
+  assert.equal(stamp.steamPinLine, -3);
+  assert.equal(stamp.lineWalkPts, stamp.lineMovePts);
   const life = resolveSteamLifecycle([], { steam: stamp });
-  assert.equal(life.steamOnLock, true, 'Policy T sees line-move steam on lock');
+  assert.equal(life.steamOnLock, false, 'Policy T does not treat S/T walk as steamOn');
+  assert.equal(life.steamArriving, false, 'walk-only create is not arriving');
+  assert.equal(policySteamOn(stamp), false);
 
   const away = summarizeSteam(tnf, { marketType: 'spread', sideNorm: 'away', line: 3.5, nowSec: now });
   assert.equal(away.show, false, '49ers +3.5 is the steamed-against side');
@@ -197,6 +209,9 @@ assert.equal(STEAM_LINE_MOVE_PTS, 0.5);
   const over = summarizeSteam(tot, { marketType: 'total', sideNorm: 'over', line: 47.5, nowSec: now });
   assert.equal(over.tier, 'steam', `Over 47.5 after main → 48.5 is ${over.tier}`);
   assert.ok(over.lineMovePts >= 0.5);
+  assert.equal(over.juiceSteam, false, 'walk paints steam; juiceSteam stays off');
+  assert.equal(over.steamPinLine, 47.5);
+  assert.equal(policySteamOn(compactSteam(over)), false);
   const under = summarizeSteam(tot, { marketType: 'total', sideNorm: 'under', line: 47.5, nowSec: now });
   assert.equal(under.show, false, 'Under does not inherit Over line steam');
 
@@ -226,5 +241,45 @@ assert.equal(STEAM_LINE_MOVE_PTS, 0.5);
   assert.equal(live.frozen, true);
   assert.equal(live.show, false, 'post-commence main move is ignored');
 }
+
+// Falcons ATL +6.5 → +4.5: card still paints the walk. Policy does not arrive it.
+{
+  const fal = {
+    commence: new Date((now + 4 * 3600) * 1000).toISOString(),
+    spreadOpener: { t: now - 12 * 3600, homeLine: -6.5, awayLine: 6.5, homeOdds: 107, awayOdds: -127, isMain: true },
+    spreadCurrent: { homeLine: -4.5, awayLine: 4.5, homeOdds: -101, awayOdds: -111, max: 8000, isMain: true },
+    spreadHistory: [
+      { t: now - 12 * 3600, homeLine: -6.5, awayLine: 6.5, homeOdds: 107, awayOdds: -127, isMain: true },
+      { t: now - 3600, homeLine: -5.5, awayLine: 5.5, homeOdds: -105, awayOdds: -107, isMain: true },
+      { t: now - 60, homeLine: -4.5, awayLine: 4.5, homeOdds: -101, awayOdds: -111, isMain: true },
+    ],
+  };
+  const away = summarizeSteam(fal, { marketType: 'spread', sideNorm: 'away', line: 4.5, nowSec: now });
+  assert.equal(away.show, true, 'walk still paints on the locked card');
+  assert.match(away.tag, /6\.5 → .*4\.5/);
+  assert.equal(away.steamPinLine, 6.5, 'first write stays pinned');
+  assert.ok(away.lineWalkPts >= 0.5, `walk ${away.lineWalkPts}`);
+  assert.equal(away.juiceSteam, false, 'chased +4.5 juice is not juiceSteam');
+  const life = resolveSteamLifecycle(
+    [{ gate: 'first', tier: null, evPct: 1, fair: -110 }],
+    { steam: compactSteam(away) },
+  );
+  assert.equal(life.steamArriving, false, 'walk cannot set arriving');
+  assert.equal(life.steamOnLock, false, 'walk cannot set steamOnLock');
+}
+
+// ML juice is unchanged — policy steamOn follows gold/steam tier.
+{
+  assert.equal(home.juiceSteam, true, 'Yankees ML gold is juiceSteam');
+  assert.equal(policySteamOn(compactSteam(home)), true);
+}
+
+// Legacy tape rows without juiceSteam: walk-only juice% is off; 3%+ juice is on.
+assert.equal(policySteamOn({ tier: 'steam', lastHourPct: -0.5, sinceOpenPct: -1.9 }), false);
+assert.equal(policySteamOn({ tier: 'steam', lastHourPct: 3.2 }), true);
+assert.equal(policySteamOn({ tier: 'gold' }), true, 'unmeasured gold fail-open');
+assert.equal(policySteamOn({ tier: 'steam' }), true, 'unmeasured steam fail-open');
+assert.equal(policySteamOn({ juiceSteam: false, tier: 'steam' }), false);
+assert.equal(policySteamOn({ juiceSteam: true, tier: 'watch' }), true);
 
 console.log('testSteamMove: ok');
