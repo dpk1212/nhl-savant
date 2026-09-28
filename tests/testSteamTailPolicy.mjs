@@ -329,4 +329,41 @@ function T(args) {
   ok(!tapeHasSteamPct({ liveSnap: { steam: { tier: 'gold' } }, existingLog: [{}] }), 'tier alone is not a %');
 }
 
+// ── S/T walk paint is not Policy T steamOn / arriving ────────────────────
+{
+  const walk = { steam: { tier: 'steam', juiceSteam: false, lastHourPct: -0.5, tag: '-3 → -3.5' } };
+  const life = resolveSteamLifecycle([{ gate: 'first', tier: null, evPct: 1, fair: -110 }], walk);
+  ok(!life.steamOnLock && !life.steamArriving, 'walk-only live is not policy steam');
+}
+{
+  const profiles = new Map([
+    ['aaaaaa', { bySport: { MLB: { whitelistTier: 'CONFIRMED', whitelistSource: 'A+B' } } }],
+  ]);
+  const walkSnap = { steam: { tier: 'steam', juiceSteam: false, lastHourPct: -0.5, tag: '-3 → -3.5' } };
+  const mid = applySteamTailPolicyFromTicket({
+    units: 3,
+    pickDate: '2026-08-31',
+    walletDetails: [{ side: 'home', walletShort: 'aaaaaa' }],
+    side: 'home',
+    sport: 'MLB',
+    walletProfiles: profiles,
+    existingLog: [{ gate: 'first', tier: null, fair: -110, evPct: 0 }],
+    liveSnap: walkSnap,
+    hasPinnGame: true,
+  });
+  ok(mid.action === 'HOLD' && mid.units === 3, 'walk-only mid does not Policy-T to 4u');
+  const lean = applySteamTailPolicyFromTicket({
+    units: 1,
+    pickDate: '2026-08-31',
+    walletDetails: [{ side: 'home', walletShort: 'aaaaaa' }],
+    side: 'home',
+    sport: 'MLB',
+    walletProfiles: profiles,
+    existingLog: [{ gate: 'first', tier: null, fair: -110, evPct: 0 }],
+    liveSnap: walkSnap,
+    hasPinnGame: true,
+  });
+  ok(lean.action === 'MUTE' && lean.units === 0, 'walk-only lean is cut, not arriving-floored');
+}
+
 console.log(`ok — ${n} assertions (steam-tail policy T)`);

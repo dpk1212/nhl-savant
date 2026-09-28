@@ -16,9 +16,13 @@
  * tape but this line never produced a since-open or last-hour % (unmeasured
  * ≠ steam-off). 1u cut does not need steam. Live Ev-drift mute stays
  * upstream. Manual stake exempt at the call site.
+ *
+ * S/T main-line walk is paint-only. steamOn / arriving read juiceSteam
+ * (drop on the first-write pin while the main is still on that number).
  */
 
 import { analyzeTicketTapeLog } from './ticketTapeCapture.js';
+import { policySteamOn } from './steamMove.js';
 
 export const STEAM_TAIL_POLICY_FROM = '2026-08-31';
 export const STEAM_TAIL_MUTED_BY = 'steam-tail';
@@ -103,8 +107,7 @@ export function countSourceAbOnSide(walletDetails, side, sport, walletProfiles) 
 export function resolveSteamLifecycle(existingLog, liveSnap = null) {
   const rows = Array.isArray(existingLog) ? existingLog : [];
   const tape = analyzeTicketTapeLog(rows);
-  const liveTier = liveSnap?.steam?.tier ?? null;
-  const liveOn = liveTier === 'steam' || liveTier === 'gold';
+  const liveOn = policySteamOn(liveSnap?.steam);
   const steamOnLock = !!(tape.steamOnLock || liveOn);
   const steamOnFirst = tape.n > 0 ? !!tape.steamOnFirst : liveOn;
   return {

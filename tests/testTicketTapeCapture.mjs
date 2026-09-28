@@ -64,6 +64,8 @@ ok(snap.fairOdds === -113, `fair stamped ${snap.fairOdds}`);
 ok(snap.offerOdds === -100, 'offer is the flagged ticket');
 ok(snap.steam?.sinceOpenPct >= 6.3 && snap.steam.sinceOpenPct <= 6.5, `steam open ${snap.steam?.sinceOpenPct}%`);
 ok(snap.steam?.tier === 'gold' || snap.steam?.tier === 'steam', `steam tier ${snap.steam?.tier}`);
+ok(snap.steam?.juiceSteam === false, '8.5→9 walk keeps display steam but juiceSteam is off');
+ok(snap.steam?.steamPinLine === 8.5, 'first-write pin stays 8.5');
 
 const doc = {};
 applyTicketTapeStamps(doc, snap);
@@ -137,7 +139,9 @@ ok(fat[0].gate === 'first', 'trim keeps first');
 ok(fat.some((e) => e.gate === 't15'), 'trim keeps t15');
 
 const ax = analyzeTicketTapeLog(life);
-ok(ax.steamOnFirst === true, 'steam was on at first');
+ok(ax.steamOnFirst === false, 'walk-off-pin juice is not policy steamOn');
+ok(life[0].juiceSteam === false, 'first log row stores juiceSteam false');
+ok(life[0].steamPinLine === 8.5, 'first log row stores steamPinLine');
 ok(ax.evFirst === 3.1 && ax.evLock === 1.2, `first vs lock EV ${ax.evFirst} → ${ax.evLock}`);
 ok(ax.dEvFirstToLock === -1.9, 'EV faded from first to t15');
 ok(ax.t15.hoursOut === 0.3, 't15 hoursOut is true distance');
@@ -216,6 +220,49 @@ ok(actionDoc.ticketEvPct === 3.1 && actionDoc.ticketTapeLog[0].gate === 'first',
   ok(away3[0] === 1180 && away3.length === 3, 'away side is first in 3-way list');
   const draw3 = fairPairFromPinnGame(soc, { marketType: 'ml', sideNorm: 'draw' });
   ok(draw3[0] === 610 && draw3.length === 3, 'draw side is first in 3-way list');
+}
+
+// Same-number juice still counts as policy steamOn. Walk-off-pin above does not.
+{
+  const unmoved = {
+    commence: '2026-08-19T22:05:00Z',
+    totalOpener: { t: 1787135711, line: 8.5, overOdds: -118, underOdds: -102, max: 1000 },
+    totalCurrent: { line: 8.5, overOdds: -150, underOdds: 130, max: 4000, isMain: true },
+    maxTotal: 4000,
+    totalHistory: [
+      { t: 1787135711, line: 8.5, overOdds: -118, underOdds: -102, max: 1000, isMain: true },
+      { t: 1787169694, line: 8.5, overOdds: -150, underOdds: 130, max: 4000, isMain: true },
+    ],
+  };
+  const juiceSnap = captureTicketTape({
+    pinnGame: unmoved,
+    marketType: 'total',
+    sideNorm: 'over',
+    line: 8.5,
+    offerOdds: -133,
+    nowMs,
+  });
+  ok(juiceSnap.steam?.juiceSteam === true, 'same-number juice is juiceSteam');
+  ok(juiceSnap.steam?.steamPinLine === 8.5, 'unmoved pin is 8.5');
+  const juiceDoc = {};
+  applyTicketTapeStamps(juiceDoc, juiceSnap, { nowMs: t0, hoursUntilGame: 8 });
+  ok(analyzeTicketTapeLog(juiceDoc.v8_ticketTapeLog).steamOnFirst === true, 'juice-stable is steamOn at first');
+}
+
+// First-write pin never chases a later compact main.
+{
+  const first = {
+    evPct: 1,
+    steam: { tier: 'steam', juiceSteam: false, steamPinLine: 6.5, lastHourPct: -1, tag: '+6.5 → +4.5' },
+  };
+  const later = {
+    evPct: 1,
+    steam: { tier: 'steam', juiceSteam: false, steamPinLine: 4.5, lastHourPct: -1, tag: '+4.5' },
+  };
+  const pinDoc = {};
+  applyTicketTapeStamps(pinDoc, first, { nowMs: t0, hoursUntilGame: 8 });
+  applyTicketTapeStamps(pinDoc, later, { nowMs: t0 + 60 * 60 * 1000, hoursUntilGame: 7 });
+  ok(pinDoc.v8_steam.steamPinLine === 6.5, 'stamped pin never chases later main');
 }
 
 console.log(`testTicketTapeCapture: ${n} assertions passed`);

@@ -1090,8 +1090,8 @@ export function applyFoolsGoldMuteOverlay({
 // Hard fences (zero impact on the rest of the book):
 //   • units ≥ 4 → EXEMPT (4u+ BOOST/E≥10/FAIL_OPEN TOP never touched)
 //   • no matching flag → HOLD at the exact incoming units
-//   • Source A/B CONFIRMED + steam arriving (off→on) → HOLD at incoming units
-//     (no-steam and already-on leftover still MUTE; later mutes still run)
+//   • Source A/B CONFIRMED + juice steam arriving (off→on) → HOLD at incoming
+//     units (S/T line-walk is not arriving; no-steam / already-on still MUTE)
 //   • pre-cutover → EXEMPT
 // Q1/UNOPP floors run BEFORE this overlay so they cannot revive a stub.
 export const FLINCH_FAIL_OPEN_MUTE_FROM = '2026-08-19';
@@ -1152,8 +1152,8 @@ export function applyFlinchFailOpenMuteOverlay({
   }
   if (!flags.length) return out('HOLD', null);
 
-  // Same arriving test as Policy T's 1u floor: A/B on our side AND steam
-  // off on first tape row, on at lock. Already-on and no-steam still MUTE.
+  // Same arriving test as Policy T's 1u floor: A/B on our side AND juice
+  // steam off on first tape row, on at lock. Walk paint is not arriving.
   if (sharpAB && steamArriving) {
     return {
       units: pre,

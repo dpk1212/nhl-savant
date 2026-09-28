@@ -17,7 +17,7 @@ import {
   noVigFairAmerican,
   mlFairOddsList,
 } from './oddsEv.js';
-import { compactSteam, summarizeSteam } from './steamMove.js';
+import { compactSteam, policySteamOn, summarizeSteam } from './steamMove.js';
 
 function twoWay(us, them) {
   if (!Number.isFinite(us) || !Number.isFinite(them)) return null;
@@ -138,6 +138,16 @@ export function compactTapeLogRow(snap, {
   // Closing Dime gold-card combo. Only store true to keep the log compact.
   if (snap?.steam?.goldConfirmed) row.goldConfirmed = true;
   if (snap?.steam?.limitRising) row.limitRising = true;
+  // juiceSteam false is the walk-only signal — must persist, not omit.
+  if (snap?.steam && typeof snap.steam.juiceSteam === 'boolean') {
+    row.juiceSteam = snap.steam.juiceSteam;
+  }
+  if (Number.isFinite(Number(snap?.steam?.steamPinLine))) {
+    row.steamPinLine = Number(snap.steam.steamPinLine);
+  }
+  if (Number.isFinite(Number(snap?.steam?.lineWalkPts))) {
+    row.lineWalkPts = Number(snap.steam.lineWalkPts);
+  }
   return row;
 }
 
@@ -218,8 +228,16 @@ export function tapeLogRowAt(log, gate) {
 }
 
 function steamOnRow(row) {
-  const t = row?.tier;
-  return t === 'steam' || t === 'gold';
+  return policySteamOn(row);
+}
+
+/** First-write pin never chases a later main. */
+function lockSteamPinLine(prevSteam, nextSteam) {
+  if (!nextSteam || typeof nextSteam !== 'object') return nextSteam || null;
+  const pinned = Number(prevSteam?.steamPinLine);
+  if (!Number.isFinite(pinned)) return nextSteam;
+  if (nextSteam.steamPinLine === pinned) return nextSteam;
+  return { ...nextSteam, steamPinLine: pinned };
 }
 
 /** fair=0 American is a known sentinel bug — treat Ev on that row as null. */
@@ -367,10 +385,11 @@ export function applyTicketTapeStamps(target, snap, {
   target.v8_ticketEvPct = Number.isFinite(snap.evPct) ? snap.evPct : null;
   target.v8_ticketEvFair = Number.isFinite(snap.fairOdds) ? snap.fairOdds : null;
   target.v8_ticketEvOffer = Number.isFinite(snap.offerOdds) ? snap.offerOdds : null;
-  target.v8_steam = snap.steam || null;
-  target.v8_steamLastHourPct = snap.steam?.lastHourPct ?? null;
-  target.v8_steamSinceOpenPct = snap.steam?.sinceOpenPct ?? null;
-  target.v8_steamTier = snap.steam?.tier ?? null;
+  const steam = lockSteamPinLine(target.v8_steam, snap.steam || null);
+  target.v8_steam = steam;
+  target.v8_steamLastHourPct = steam?.lastHourPct ?? null;
+  target.v8_steamSinceOpenPct = steam?.sinceOpenPct ?? null;
+  target.v8_steamTier = steam?.tier ?? null;
   const prev = existingLog ?? target.v8_ticketTapeLog ?? null;
   target.v8_ticketTapeLog = appendTicketTapeLog(prev, snap, {
     nowMs,
@@ -391,7 +410,7 @@ export function applyActionTicketTape(target, snap, {
   target.ticketEvPct = Number.isFinite(snap.evPct) ? snap.evPct : null;
   target.ticketEvFair = Number.isFinite(snap.fairOdds) ? snap.fairOdds : null;
   target.ticketEvOffer = Number.isFinite(snap.offerOdds) ? snap.offerOdds : null;
-  target.steam = snap.steam || null;
+  target.steam = lockSteamPinLine(target.steam, snap.steam || null);
   const prev = existingLog ?? target.ticketTapeLog ?? null;
   target.ticketTapeLog = appendTicketTapeLog(prev, snap, {
     nowMs,
