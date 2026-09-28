@@ -1,6 +1,6 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 24` from **2026-09-28**_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 25` from **2026-09-28**_  
 _Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
@@ -54,6 +54,7 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **Spread/total fat mute** | 2026-09-17+: after board-share · **SPREAD / TOTAL only** · leftover **BOTH** (EDGE≥10 ∧ tape BOOST) any current units → **0u** · arriving (off→on) **and** units ≥ 4 → **0u** · ML exempt · BOTH reason wins if both fire · missing BOTH + arriving unknown fail-open · `mutedBy=st-fat` · stamp `v8_stFatAction` |
 | **Fade proven-$ hold** | 2026-09-18+: fadeTop mute **skips** SHARP-LEAN **ML** when proven $ share ≥ 50% · missing proven still fades · SPREAD/TOTAL and Path A/RANK/SHARP still fade · later filters still run · stamp `v8_fadeProvenHoldAction` |
 | **HARD 2+ FOR / 0 AG hold** | 2026-09-28+: muted ticket with **≥2 unique HARD+ FOR** and **0 HARD+ AG** → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at **max(uPre, 3) capped 4u** · unique wallets not duplicate listings · skip ev-drift / fav-juice / unstamped 0u / fade · stamp `v8_rescuedBy=hard-2for-hold` |
+| **HARD S/T press hold** | 2026-09-28+: **SPREAD/TOTAL** muted ticket with **≥1 unique HARD+ FOR sized ≥1.5× sport usual** and **0 HARD+ AG** → restore the same mute set as 2-for at **uPre capped 4u** (no 3u floor) · ML stays on 1-for / 2-for · skip board-share / ev-drift / fav-juice / unstamped 0u / fade · 2-for still wins when ≥2 HARD · stamp `v8_rescuedBy=hard-st-press-hold` |
 
 ---
 
@@ -238,6 +239,7 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **22** | **2026-09-28** | S/T walk is paint-only — `juiceSteam` sets arriving / Policy T / leftover HOLD |
 | **23** | **2026-09-28** | Q1 floor + Policy T lean arriving 1→2 require HARD+ FOR |
 | **24** | **2026-09-28** | 2+ unique HARD+ FOR / 0 HARD+ AG unmute steam-tail + leftover at floor 3u cap 4u |
+| **25** | **2026-09-28** | S/T 1 HARD+ FOR press ≥1.5× sport usual / 0 AG unmute steam-tail + leftover at uPre cap 4u |
 
 ---
 

@@ -137,10 +137,12 @@ export function attachMarketBooks(walletDetails, sideKey, sport, market, walletP
     const profile = getWalletProfile(walletProfiles, short);
     const book = marketPositions(profile, sport, market);
     if (book.schema) schemaN += 1;
+    const sizeRatioRaw = Number(w.sizeRatio ?? w.v8_sizeRatio);
     seen.set(short, {
       short,
       onFor,
       invested,
+      sizeRatio: Number.isFinite(sizeRatioRaw) && sizeRatioRaw > 0 ? sizeRatioRaw : null,
       schema: book.schema,
       pos: book.pos,
     });

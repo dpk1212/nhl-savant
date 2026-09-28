@@ -263,6 +263,11 @@ import {
   HARD_TWO_FOR_RESCUED_BY,
   HARD_TWO_FOR_FLOOR_U,
   HARD_TWO_FOR_CAP_U,
+  isHardStPressExceptionLive,
+  HARD_ST_PRESS_EXCEPTION_FROM,
+  HARD_ST_PRESS_RESCUED_BY,
+  HARD_ST_PRESS_MIN_SR,
+  HARD_ST_PRESS_CAP_U,
 } from '../src/lib/hardMuteExceptionOverlay.js';
 import {
   applyHardAgMuteOverlay,
@@ -1177,7 +1182,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 24; // v24: 2+ HARD FOR / 0 HARD AG unmute · floor 3u cap 4u
+const SKILL_FEATURE_VERSION = 25; // v25: S/T 1 HARD FOR press ≥1.5× / 0 AG unmute · uPre cap 4u
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
@@ -3693,6 +3698,8 @@ async function createMissingLockedPicks({
       // and a HARD FOR wallet backs the side. tape-weak S/T stays muted.
       // 09-28: 2+ unique HARD+ FOR and 0 HARD+ AG also restores steam-tail /
       // leftover / st-fat / tape-weak S/T at max(uPre, 3) capped at 4.
+      // 09-28: S/T 1 HARD+ FOR sized ≥1.5× sport usual / 0 AG restores the
+      // same mute set at uPre capped 4 (no 3u floor). ML stays on 1-for / 2-for.
       let hardExceptionPolicyCreate = null;
       if (createV121Eligible) {
         const lastMuteCreate = stackLastMute({
@@ -5551,6 +5558,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // HARD FOR wallet backs the side. tape-weak S/T stays muted.
   // 09-28: 2+ unique HARD+ FOR and 0 HARD+ AG also restores steam-tail /
   // leftover / st-fat / tape-weak S/T at max(uPre, 3) capped at 4.
+  // 09-28: S/T 1 HARD+ FOR sized ≥1.5× sport usual / 0 AG restores the same
+  // mute set at uPre capped 4 (no 3u floor). ML stays on 1-for / 2-for.
   // Fail-open (keep muted) if byMarket schema is missing. Manual stake exempt.
   let hardExceptionPolicy = null;
   if (v121Eligible && !skipManualFlinch) {
@@ -6244,8 +6253,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (hardExceptionPolicy?.action === 'RESCUE') {
     const holdLabel = hardExceptionPolicy.rescuedBy === HARD_TWO_FOR_RESCUED_BY
       ? 'HARD-2FOR'
-      : 'HARD-HOLD';
-    const agBit = hardExceptionPolicy.rescuedBy === HARD_TWO_FOR_RESCUED_BY
+      : hardExceptionPolicy.rescuedBy === HARD_ST_PRESS_RESCUED_BY
+        ? 'HARD-ST-PRESS'
+        : 'HARD-HOLD';
+    const agBit = (
+      hardExceptionPolicy.rescuedBy === HARD_TWO_FOR_RESCUED_BY
+      || hardExceptionPolicy.rescuedBy === HARD_ST_PRESS_RESCUED_BY
+    )
       ? ` · ${hardExceptionPolicy.hardAgN || 0} AG`
       : '';
     changes.push(
@@ -7428,6 +7442,18 @@ async function main() {
     );
   } else {
     console.log(`HARD 2+ FOR exception: not live before ${HARD_TWO_FOR_EXCEPTION_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isHardStPressExceptionLive(TARGET_DATE)) {
+    console.log(
+      `HARD S/T press exception LIVE: SPREAD/TOTAL unique HARD FOR ≥1 sized`
+      + ` ≥${HARD_ST_PRESS_MIN_SR}× sport usual and HARD AG = 0`
+      + ` → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at`
+      + ` uPre capped ${HARD_ST_PRESS_CAP_U}u (no 3u floor)`
+      + ` · from ${HARD_ST_PRESS_EXCEPTION_FROM} · rescuedBy=${HARD_ST_PRESS_RESCUED_BY}`
+      + ` · skip ML / board-share / ev-drift / fav-juice / unstamped 0u / fade`,
+    );
+  } else {
+    console.log(`HARD S/T press exception: not live before ${HARD_ST_PRESS_EXCEPTION_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isHardAgMuteLive(TARGET_DATE)) {
     console.log(

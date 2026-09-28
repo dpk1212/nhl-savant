@@ -1,9 +1,12 @@
 /**
- * HARD mute-exception overlay (2026-09-24+ / 2026-09-28+ 2-for).
+ * HARD mute-exception overlay (2026-09-24+ / 2026-09-28+ 2-for / S/T press).
  * Last-step HOLD: restore uPre when last mute is tape/maxsr/fools/crowded
- * and a HARD FOR wallet backs the side. tape-weak S/T stays muted at 1 HARD.
+ * and a HARD FOR wallet backs the side. tape-weak S/T stays muted at 1 HARD
+ * unless that HARD FOR is sized ≥1.5× sport usual (2026-09-28+).
  * 2026-09-28+: 2 unique HARD+ FOR / 0 HARD+ AG restores steam-tail and
  * leftover at max(uPre, 3) capped 4u.
+ * 2026-09-28+: S/T 1 HARD+ FOR press ≥1.5× / 0 AG restores the same mute
+ * set at uPre capped 4 (no 3u floor). ML stays on 1-for / 2-for.
  * Usage: node tests/testHardMuteExceptionOverlay.mjs
  */
 import assert from 'assert';
@@ -12,8 +15,10 @@ import {
   lastAppliedMute,
   isHardMuteExceptionLive,
   isHardTwoForExceptionLive,
+  isHardStPressExceptionLive,
   isHardExceptionRescueStamp,
   twoHardForRestoreUnits,
+  stPressRestoreUnits,
   HARD_MUTE_EXCEPTION_FROM,
   HARD_MUTE_EXCEPTION_RESCUED_BY,
   HARD_EXCEPTION_MUTES,
@@ -22,6 +27,10 @@ import {
   HARD_TWO_FOR_EXCEPTION_MUTES,
   HARD_TWO_FOR_FLOOR_U,
   HARD_TWO_FOR_CAP_U,
+  HARD_ST_PRESS_EXCEPTION_FROM,
+  HARD_ST_PRESS_RESCUED_BY,
+  HARD_ST_PRESS_MIN_SR,
+  HARD_ST_PRESS_CAP_U,
 } from '../src/lib/hardMuteExceptionOverlay.js';
 import {
   isHardMarketWallet,
@@ -75,15 +84,24 @@ ok(HARD_TWO_FOR_EXCEPTION_MUTES.has('steam-tail')
   && HARD_TWO_FOR_EXCEPTION_MUTES.has('tape-weak'), '2-for mute set');
 ok(!HARD_TWO_FOR_EXCEPTION_MUTES.has('ev-drift-edge'), 'ev-drift not excepted');
 ok(!HARD_TWO_FOR_EXCEPTION_MUTES.has('fav-juice'), 'fav-juice not excepted');
+ok(!HARD_TWO_FOR_EXCEPTION_MUTES.has('board-share'), 'board-share not excepted');
 ok(isHardTwoForExceptionLive('2026-09-28'), '2-for live on cutover');
 ok(!isHardTwoForExceptionLive('2026-09-27'), '2-for not live before');
 ok(HARD_TWO_FOR_EXCEPTION_FROM === '2026-09-28', '2-for cutover date');
 ok(isHardExceptionRescueStamp(HARD_MUTE_EXCEPTION_RESCUED_BY)
-  && isHardExceptionRescueStamp(HARD_TWO_FOR_RESCUED_BY), 'rescue stamps');
+  && isHardExceptionRescueStamp(HARD_TWO_FOR_RESCUED_BY)
+  && isHardExceptionRescueStamp(HARD_ST_PRESS_RESCUED_BY), 'rescue stamps');
 ok(twoHardForRestoreUnits(1) === HARD_TWO_FOR_FLOOR_U, 'floor 3 on 1u');
 ok(twoHardForRestoreUnits(2.5) === 3, 'floor 3 on 2.5u');
 ok(twoHardForRestoreUnits(3.5) === 3.5, 'keep mid 3.5');
 ok(twoHardForRestoreUnits(5.4) === HARD_TWO_FOR_CAP_U, 'cap 4 on fat');
+ok(isHardStPressExceptionLive('2026-09-28'), 'S/T press live on cutover');
+ok(!isHardStPressExceptionLive('2026-09-27'), 'S/T press not live before');
+ok(HARD_ST_PRESS_EXCEPTION_FROM === '2026-09-28', 'S/T press cutover date');
+ok(HARD_ST_PRESS_MIN_SR === 1.5, 'press is 1.5× sport usual');
+ok(stPressRestoreUnits(1) === 1, 'press keeps 1u (no 3u floor)');
+ok(stPressRestoreUnits(2.5) === 2.5, 'press keeps 2.5u');
+ok(stPressRestoreUnits(5.4) === HARD_ST_PRESS_CAP_U, 'press caps fat at 4');
 ok(isHardMarketWallet(pos(4, 62, 10)), 'HARD exact');
 
 {
@@ -643,6 +661,278 @@ const twoHardProf = new Map([
     ]),
   });
   ok(r.action === 'RESCUE' && r.units === 3, 'fail-open-sub4 2 HARD floors to 3');
+}
+
+function pressProf(sport, market, bookPos, usualN, usualInvested) {
+  return {
+    bySport: {
+      [sport]: {
+        positions: { n: usualN, invested: usualInvested },
+        byMarket: {
+          [market]: { positions: bookPos },
+        },
+      },
+    },
+  };
+}
+
+const pressSpreadProf = new Map([
+  ['press1', pressProf('MLB', 'SPREAD', pos(4, 62, 10), 10, 10000)],
+  ['full01', pressProf('MLB', 'SPREAD', pos(4, 62, 10), 10, 10000)],
+  ['pressT', pressProf('MLB', 'TOTAL', pos(12, 67, 21), 10, 10000)],
+  ['aghard', pressProf('MLB', 'SPREAD', pos(8, 65, 15), 10, 10000)],
+  ['twoaaa', pressProf('MLB', 'SPREAD', pos(4, 62, 10), 10, 10000)],
+  ['twobbb', pressProf('MLB', 'SPREAD', pos(12, 70, 20), 10, 10000)],
+]);
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 1,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'press1', invested: 1500 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'RESCUE' && r.units === 1, 'S/T 1 HARD press steam-tail restores 1u (no 3u floor)');
+  ok(r.rescuedBy === HARD_ST_PRESS_RESCUED_BY, 'press rescuedBy');
+  ok(r.reason === 'hard_st_press_hold', 'press reason');
+  ok(r.rescuedFrom === 'steam-tail', 'rescuedFrom steam-tail');
+  ok(r.hardN === 1 && r.hardAgN === 0 && r.pressN === 1, '1 HARD press 0 AG');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'press1', invested: 1500 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'RESCUE' && r.units === 2.5, 'S/T 1 HARD press keeps 2.5u');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 5.4,
+    marketType: 'TOTAL',
+    sport: 'MLB',
+    side: 'under',
+    walletDetails: [{ side: 'under', walletShort: 'pressT', invested: 2000 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'RESCUE' && r.units === 4, 'S/T 1 HARD press fat caps at 4');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'tape-weak',
+    unitsPreMute: 1.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'press1', invested: 1500 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'RESCUE' && r.units === 1.5 && r.rescuedBy === HARD_ST_PRESS_RESCUED_BY,
+    'tape-weak S/T 1 HARD press now restores (before tape_st_cut)');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'believed-cut',
+    unitsPreMute: 1,
+    marketType: 'TOTAL',
+    sport: 'MLB',
+    side: 'under',
+    walletDetails: [{ side: 'under', walletShort: 'pressT', invested: 1800 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'RESCUE' && r.units === 1, 'leftover S/T 1 HARD press restores 1u');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'st-fat',
+    unitsPreMute: 4,
+    marketType: 'TOTAL',
+    sport: 'MLB',
+    side: 'under',
+    walletDetails: [{ side: 'under', walletShort: 'pressT', invested: 1500 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'RESCUE' && r.units === 4, 'st-fat S/T 1 HARD press restores 4u');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'ML',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{
+      side: 'home',
+      walletShort: 'press1',
+      invested: 1500,
+    }],
+    walletProfiles: new Map([
+      ['press1', pressProf('MLB', 'ML', pos(4, 62, 10), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'EXEMPT' && r.reason === 'mute_not_excepted' && r.units === 0,
+    'ML 1 HARD press steam-tail stays muted');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'full01', invested: 1000 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'EXEMPT' && r.reason === 'mute_not_excepted' && r.units === 0,
+    'S/T 1 HARD full-size (1.0×) steam-tail stays muted');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'tape-weak',
+    unitsPreMute: 1.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'full01', invested: 1499 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'EXEMPT' && r.reason === 'tape_st_cut' && r.units === 0,
+    'tape-weak S/T 1 HARD under 1.5× still cut');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [
+      { side: 'home', walletShort: 'press1', invested: 1500 },
+      { side: 'away', walletShort: 'aghard', invested: 2000 },
+    ],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'HOLD_MUTE' && r.reason === 'hard_ag' && r.units === 0,
+    'S/T 1 HARD press + HARD AG stays muted');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'board-share',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'press1', invested: 1500 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'EXEMPT' && r.reason === 'mute_not_excepted' && r.units === 0,
+    'board-share 1 HARD press stays muted');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'ev-drift-edge',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'press1', invested: 1500 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'EXEMPT' && r.units === 0, 'ev-drift 1 HARD press stays muted');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 1,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [
+      { side: 'home', walletShort: 'twoaaa', invested: 1500 },
+      { side: 'home', walletShort: 'twobbb', invested: 2000 },
+    ],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'RESCUE' && r.units === 3 && r.rescuedBy === HARD_TWO_FOR_RESCUED_BY,
+    '2 HARD press still takes 2-for floor 3, not press 1u');
+}
+
+{
+  const r = applyHardMuteExceptionOverlay({
+    pickDate: '2026-09-27',
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'press1', invested: 1500 }],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'EXEMPT' && r.units === 0, 'S/T press not live 09-27');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'press1', invested: 500, sizeRatio: 2 }],
+    walletProfiles: new Map([['press1', prof('MLB', 'SPREAD', pos(4, 62, 10))]]),
+  });
+  ok(r.action === 'RESCUE' && r.units === 2.5,
+    'sizeRatio fallback presses when sport usual is missing');
+}
+
+{
+  const r = twoHold({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'press1', invested: 5000 }],
+    walletProfiles: new Map([['press1', prof('MLB', 'SPREAD', pos(4, 62, 10))]]),
+  });
+  ok(r.action === 'EXEMPT' && r.units === 0,
+    'unknown size is not a press — keep muted');
 }
 
 console.log(`ok ${n}`);

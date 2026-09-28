@@ -2,9 +2,9 @@
  * HARD mute-exception overlay — HOLD after the mute stack, before HARD+ AG
  * and the S/T HARD+ FOR require.
  *
- * Two rescue paths. Neither resizes a live ticket, repaths, or flips.
+ * Three rescue paths. None resize a live ticket, repath, or flip.
  * Fail-open (keep muted) when the sport×byMarket schema is missing —
- * never invent a HARD read.
+ * never invent a HARD read. Size unknown is not a press — keep muted.
  *
  * 1. 2026-09-24+  ≥1 HARD FOR restores uPre when last mute is tape-weak /
  *    maxsr-sub4 / fools-gold-flat / top-crowded. tape-weak S/T stays muted.
@@ -15,15 +15,23 @@
  *    Unique wallets, not duplicate listings. Do not except ev-drift,
  *    fav-juice, unstamped 0u, or fade.
  *
+ * 3. 2026-09-28+  SPREAD/TOTAL, ≥1 unique HARD+ FOR sized ≥1.5× sport
+ *    usual, 0 HARD+ AG, same mute set as (2). Restore uPre capped at 4
+ *    (no 3u floor). ML stays on (1)/(2). Skip board-share / ev-drift /
+ *    fav-juice / unstamped 0u / fade. 2-for still wins when ≥2 HARD.
+ *
  * Going-forward only. Roll-back:
  *   HARD_MUTE_EXCEPTION_FROM = '9999-01-01'
  *   HARD_TWO_FOR_EXCEPTION_FROM = '9999-01-01'
+ *   HARD_ST_PRESS_EXCEPTION_FROM = '9999-01-01'
  */
 import {
   attachMarketBooks,
+  getWalletProfile,
   isHardMarketWallet,
   normalizeMarketType,
 } from './marketSkillMuteOverlay.js';
+import { stakeSizeRatio } from './sizeRatioBands.js';
 
 export const HARD_MUTE_EXCEPTION_FROM = '2026-09-24';
 export const HARD_MUTE_EXCEPTION_RESCUED_BY = 'hard-mkt-hold';
@@ -34,9 +42,16 @@ export const HARD_TWO_FOR_MIN_N = 2;
 export const HARD_TWO_FOR_FLOOR_U = 3;
 export const HARD_TWO_FOR_CAP_U = 4;
 
+export const HARD_ST_PRESS_EXCEPTION_FROM = '2026-09-28';
+export const HARD_ST_PRESS_RESCUED_BY = 'hard-st-press-hold';
+export const HARD_ST_PRESS_MIN_N = 1;
+export const HARD_ST_PRESS_MIN_SR = 1.5;
+export const HARD_ST_PRESS_CAP_U = 4;
+
 export const HARD_EXCEPTION_RESCUE_STAMPS = new Set([
   HARD_MUTE_EXCEPTION_RESCUED_BY,
   HARD_TWO_FOR_RESCUED_BY,
+  HARD_ST_PRESS_RESCUED_BY,
 ]);
 
 export const HARD_EXCEPTION_MUTES = new Set([
@@ -63,6 +78,10 @@ export function isHardMuteExceptionLive(pickDate) {
 
 export function isHardTwoForExceptionLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= HARD_TWO_FOR_EXCEPTION_FROM;
+}
+
+export function isHardStPressExceptionLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= HARD_ST_PRESS_EXCEPTION_FROM;
 }
 
 export function isHardExceptionRescueStamp(value) {
@@ -93,6 +112,22 @@ export function twoHardForRestoreUnits(unitsPreMute) {
   return Math.min(HARD_TWO_FOR_CAP_U, Math.max(HARD_TWO_FOR_FLOOR_U, pre));
 }
 
+export function stPressRestoreUnits(unitsPreMute) {
+  const pre = Number.isFinite(unitsPreMute) ? Math.max(0, unitsPreMute) : 0;
+  if (!(pre > 0)) return 0;
+  return Math.min(HARD_ST_PRESS_CAP_U, pre);
+}
+
+function hardForPressN(hardFor, sport, walletProfiles) {
+  let n = 0;
+  for (const w of hardFor || []) {
+    const profile = getWalletProfile(walletProfiles, w.short);
+    const sr = stakeSizeRatio(w, profile, sport);
+    if (Number.isFinite(sr) && sr >= HARD_ST_PRESS_MIN_SR) n += 1;
+  }
+  return n;
+}
+
 function identity(units, action, reason, extra = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   return {
@@ -113,6 +148,7 @@ function packExtra(mutedBy, mkt, extra = {}) {
     schemaN: extra.schemaN ?? 0,
     hardN: extra.hardN ?? 0,
     hardAgN: extra.hardAgN ?? 0,
+    pressN: extra.pressN ?? 0,
     mutedBy: mutedBy || null,
   };
 }
@@ -168,6 +204,7 @@ export function applyHardMuteExceptionOverlay({
   const hardAg = wallets.filter((w) => !w.onFor && isHardMarketWallet(w.pos));
   extra.hardN = hardFor.length;
   extra.hardAgN = hardAg.length;
+  extra.pressN = hardForPressN(hardFor, sport, walletProfiles);
 
   if (
     isHardTwoForExceptionLive(pickDate)
@@ -191,6 +228,35 @@ export function applyHardMuteExceptionOverlay({
       schemaN: extra.schemaN,
       hardN: extra.hardN,
       hardAgN: extra.hardAgN,
+      pressN: extra.pressN,
+    };
+  }
+
+  if (
+    isHardStPressExceptionLive(pickDate)
+    && (mkt === 'SPREAD' || mkt === 'TOTAL')
+    && HARD_TWO_FOR_EXCEPTION_MUTES.has(mutedBy)
+    && extra.hardN >= HARD_ST_PRESS_MIN_N
+    && extra.pressN >= 1
+  ) {
+    if (extra.hardAgN >= 1) {
+      return identity(current, 'HOLD_MUTE', 'hard_ag', extra);
+    }
+    const sized = stPressRestoreUnits(restore);
+    return {
+      units: sized,
+      action: 'RESCUE',
+      reason: 'hard_st_press_hold',
+      mutedBy: null,
+      rescuedBy: HARD_ST_PRESS_RESCUED_BY,
+      rescuedFrom: mutedBy,
+      unitsPrePolicy: restore,
+      marketType: mkt,
+      lastMutedBy: mutedBy,
+      schemaN: extra.schemaN,
+      hardN: extra.hardN,
+      hardAgN: extra.hardAgN,
+      pressN: extra.pressN,
     };
   }
 
@@ -217,5 +283,6 @@ export function applyHardMuteExceptionOverlay({
     schemaN: extra.schemaN,
     hardN: extra.hardN,
     hardAgN: extra.hardAgN,
+    pressN: extra.pressN,
   };
 }
