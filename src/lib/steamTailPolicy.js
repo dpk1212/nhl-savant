@@ -23,11 +23,18 @@
 
 import { analyzeTicketTapeLog } from './ticketTapeCapture.js';
 import { policySteamOn } from './steamMove.js';
+import { countHardMarketFor } from './marketSkillMuteOverlay.js';
 
 export const STEAM_TAIL_POLICY_FROM = '2026-08-31';
 export const STEAM_TAIL_MUTED_BY = 'steam-tail';
 export const STEAM_TAIL_ARRIVING_FLOOR = 2;
 export const STEAM_TAIL_ARRIVING_MID_UNITS = 4;
+/** Lean arriving 1→2 needs ≥1 HARD+ FOR. Same day as Q1 HARD+ gate. */
+export const WHO_FLOOR_HARD_FOR_FROM = '2026-09-28';
+
+export function isWhoFloorHardForLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= WHO_FLOOR_HARD_FOR_FROM;
+}
 
 /** Match analyzeGoldSteamAb.mjs unitBand. */
 export function steamTailBand(u) {
@@ -173,6 +180,7 @@ export function applySteamTailPolicy({
   steamArriving = false,
   sharpAB = false,
   bandUnits = null,
+  hasHardFor = null,
 } = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   const hold = (action, reason = null) => pack({
@@ -203,6 +211,21 @@ export function applySteamTailPolicy({
 
   if (band === 'lean') {
     if (abArriving) {
+      // 2026-09-28+: arriving steam is a size rule, not a quality rule.
+      // No HARD+ FOR → do not invent 2u. hasHardFor null = fail-open (load miss).
+      if (isWhoFloorHardForLive(pickDate) && hasHardFor === false) {
+        return pack({
+          units: 0,
+          action: 'MUTE',
+          reason: 'arriving_no_hard_for',
+          mutedBy: STEAM_TAIL_MUTED_BY,
+          unitsPrePolicy: pre,
+          steamOnLock,
+          steamArriving,
+          sharpAB,
+          band,
+        });
+      }
       return pack({
         units: STEAM_TAIL_ARRIVING_FLOOR,
         action: 'FLOOR',
@@ -274,6 +297,7 @@ export function applySteamTailPolicyFromTicket({
   walletDetails = [],
   side = null,
   sport = null,
+  marketType = null,
   walletProfiles = null,
   existingLog = null,
   liveSnap = null,
@@ -290,6 +314,11 @@ export function applySteamTailPolicyFromTicket({
     Number.isFinite(Number(unitsPreSportUnlock)) ? Number(unitsPreSportUnlock) : 0,
   );
   const logN = Array.isArray(existingLog) ? existingLog.length : 0;
+  let hasHardFor = null;
+  if (isWhoFloorHardForLive(pickDate)) {
+    const hard = countHardMarketFor(walletDetails, side, sport, marketType, walletProfiles);
+    if (hard.judged) hasHardFor = hard.hardForN >= 1;
+  }
   return applySteamTailPolicy({
     units: pre,
     pickDate,
@@ -299,5 +328,6 @@ export function applySteamTailPolicyFromTicket({
     steamArriving: life.steamArriving,
     sharpAB: ab.sharpAB,
     bandUnits,
+    hasHardFor,
   });
 }

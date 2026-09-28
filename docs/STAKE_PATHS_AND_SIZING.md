@@ -22,6 +22,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **Flinch / fail-open leftover mute** | Last mute (2026-08-19+) | Still **&lt;4u** AND (odds-capped native-4u path **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · **4u+ never touched** · **A/B arriving HOLDs** (2026-09-09+) · Q1/UNOPP floors cannot revive |
 | **Sport Confirmed unlock CAP** | Absolute last (2026-08-29+) | **NFL / CFB only** · sport-wide CONFIRMED n → max u (&lt;5→1 · 5–9→2 · 10–14→3 · ≥15→full) · CAP only · deep sports EXEMPT |
 | **HARD+ last steps** | Overlay (2026-09-24…26) | Market-skill · HARD exception · HARD+ AG mute · S/T HARD+ FOR require · see week memo |
+| **Who-floor HARD+ FOR** | Q1 / T arriving (2026-09-28+) | Q1 and lean arriving 1→2 need ≥1 HARD+ FOR · fail-open if we cannot judge · mid 4u boost unchanged |
 | **GOLD-stack 4u cap** | Last size choke (2026-09-26+) | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps 5–6u. Fail-open if we cannot judge. |
 | **Proven bag** | Who v12 scores (2026-09-26) | Source B n≥6 WR≥55 $ROI>3 · A-only out · FLAT gone |
 | **T-15** | Freeze | No further rewrite |
@@ -47,6 +48,7 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 4. If still 0u → Path C SHARP rescue  → SHARP @ 3u (BOTH) / SHARP-LEAN @ 1.5u (ONE)
 5. CONFIRMED-Q1 (2026-08-08+) → floor **2u** (3u if size≥1×)
    └─ ≥1 FOR: CONFIRMED × flatDollar Q1 × **sport-local** size≥0.5 · **opposed OK** · hard floor after mutes
+   └─ **2026-09-28+** also needs ≥1 HARD+ FOR (sport×market). Q1 answers WHO; HARD+ is the board. Fail-open if we cannot judge.
 6. If still 0u → CONFIRMED-UNOPP → 1u
    └─ ≥1 live CONFIRMED FOR **sport-local** size ≥ 0.5 · zero CONFIRMED on AG · **hard floor after mutes**
 7. If still 0u → Path D DISSENT       → DISSENT @ 1u  (MLB only)
@@ -79,11 +81,13 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 
 11. FOOLS-gold mute (2026-08-05+)     → 0u if FLAT-led
 11b. Q1 / UNOPP hard floor after mutes
+     └─ **2026-09-28+** Q1 floor / AGS bypass skipped when HARD+ FOR = 0
 11c. Flinch / fail-open leftover mute (2026-08-19+)
      └─ still <4u AND (native-4u plus-money OR tape BOOST OR E≥10 OR FAIL_OPEN) → 0u
      └─ 4u+ EXEMPT · unflagged tickets HOLD at exact incoming units
      └─ A/B arriving (off→on) HOLD · no-steam / already-on still MUTE
      └─ **2026-09-28+** S/T arriving = juiceSteam only (walk paint is not steamOn)
+     └─ **2026-09-28+** lean arriving 1→2 needs ≥1 HARD+ FOR else 0u (`arriving_no_hard_for`). Mid 2–3u→4u unchanged.
      └─ mutedBy=believed-cut | fail-open-sub4
 12. Odds cap + global 6u cap (already applied on path/tape; mute is 0u)
 12b. Sport Confirmed unlock CAP (2026-08-29+) — **NFL / CFB only**
@@ -134,6 +138,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-08-19** | **Flinch / fail-open leftover mute** — still &lt;4u AND (odds-capped native RANK/TOP/SUPER **or** tape BOOST leftover **or** E≥10 leftover **or** tape FAIL_OPEN) → **0u**. 4u+ never touched. Native 3u RANK/TOP favorites without those flags stay. After Q1/UNOPP restore so those floors cannot revive a stub. |
 | **2026-09-09** | **Leftover A/B arriving HOLD** — leftover mute skips when Source A/B CONFIRMED and steam arrived (off→on). No-steam / already-on leftover still 0u. Later mutes (maxSR, ev-drift, T) still run. **Policy T native 2–3u A/B arriving → 4u.** 1u arriving stays floor 2u. Climate/unlock shrink not restacked. |
 | **2026-09-28** | **S/T walk is not steamOn** — main-line walk still paints on the card (`lineWalkPts` / `+6.5 → +4.5`) but cannot set arriving, Policy T floor/boost/4u-confirm, or leftover arriving-HOLD. `juiceSteam` = 3%+ drop on the first-write pin while \|main−pin\| < 0.5. ML steam unchanged. Juice-stable S/T unchanged. |
+| **2026-09-28** | **Who-floor HARD+ FOR** — Q1 floor / AGS bypass and Policy T lean arriving 1→2 need ≥1 HARD+ FOR on this sport×market. Do not invent 2u on a board GOLD would refuse. Fail-open if we cannot judge. Mid arriving 2–3u→4u, UNOPP 1u fill, and S/T last-step remute unchanged. |
 | **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
 | **2026-09-18** | **Fade proven-$ hold** — SHARP-LEAN ML with proven $ share ≥50% skips fadeTop mute and continues to the next filter. Missing proven still fades. SPREAD/TOTAL and SUPER/TOP/MINI/RANK/SHARP still fade. |
 | **2026-09-19** | **Source B lock** — v12 quality + RANK n read Action first (featured n only if Action is empty). T−15 scan-drop stays PENDING for grade. |

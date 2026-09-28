@@ -10,7 +10,7 @@ import {
   HARD_ST_FOR_REQUIRE_FROM,
   HARD_ST_FOR_MUTED_BY,
 } from '../src/lib/hardStForRequireOverlay.js';
-import { isHardMarketWallet } from '../src/lib/marketSkillMuteOverlay.js';
+import { isHardMarketWallet, countHardMarketFor } from '../src/lib/marketSkillMuteOverlay.js';
 import {
   applyHardMuteExceptionOverlay,
   HARD_EXCEPTION_MUTES,
@@ -58,6 +58,25 @@ const books = new Map([
   ['eeeeee', prof('MLB', 'ML', pos(10, 70, 20))],
   ['ffffff', prof('MLB', 'TOTAL', pos(12, 70, 25))],
 ]);
+
+{
+  const counted = countHardMarketFor(
+    [{ wallet: 'aaaaaa', side: 'under', invested: 80 }],
+    'under', 'MLB', 'TOTAL', books,
+  );
+  ok(counted.judged && counted.hardForN === 1, 'countHardMarketFor HARD FOR');
+  const none = countHardMarketFor(
+    [{ wallet: 'cccccc', side: 'under', invested: 80 }],
+    'under', 'MLB', 'TOTAL', books,
+  );
+  ok(none.judged && none.hardForN === 0, 'countHardMarketFor no HARD FOR');
+  const miss = countHardMarketFor(
+    [{ wallet: 'zzzzzz', side: 'under', invested: 80 }],
+    'under', 'MLB', 'TOTAL',
+    new Map([['zzzzzz', { bySport: { MLB: { whitelistTier: 'CONFIRMED' } } }]]),
+  );
+  ok(miss.judged === false, 'countHardMarketFor fail-open without byMarket');
+}
 
 {
   const r = mute({

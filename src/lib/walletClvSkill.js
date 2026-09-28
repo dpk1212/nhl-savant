@@ -754,6 +754,12 @@ export const CONFIRMED_Q1_UNITS = 2;
 /** Lean/full/press conviction bump (sport-local size ≥ 1×). */
 export const CONFIRMED_Q1_PRESS_MIN_SIZE = 1.0;
 export const CONFIRMED_Q1_PRESS_UNITS = 3;
+/** Q1 floor / AGS bypass need ≥1 HARD+ FOR. Same day as Policy T arriving floor. */
+export const WHO_FLOOR_HARD_FOR_FROM = '2026-09-28';
+
+export function isWhoFloorHardForLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= WHO_FLOOR_HARD_FOR_FROM;
+}
 
 export function isConfirmedQ1PromoteLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= CONFIRMED_Q1_FROM;
@@ -997,10 +1003,15 @@ export function computeConfirmedQ1Sized(
     baseUnits = CONFIRMED_Q1_UNITS,
     pressMinSize = CONFIRMED_Q1_PRESS_MIN_SIZE,
     pressUnits = CONFIRMED_Q1_PRESS_UNITS,
+    pickDate = null,
+    hardForN = null,
+    hardJudged = false,
   } = {},
 ) {
   const empty = {
     qualifies: false, forQ1Sized: 0, bestSize: null, targetUnits: baseUnits, wallets: [],
+    hardForN: Number.isFinite(hardForN) ? hardForN : 0,
+    reason: null,
   };
   if (!Array.isArray(walletDetails) || !mySide || !sport || !walletProfiles) return empty;
   const qMap = qBySport?.get?.(sport) || qBySport?.get?.(String(sport).toUpperCase()) || new Map();
@@ -1028,12 +1039,28 @@ export function computeConfirmedQ1Sized(
   }
   if (forQ1Sized < 1) return empty;
   const targetUnits = (bestSize != null && bestSize >= pressMinSize) ? pressUnits : baseUnits;
+  const hardN = Number.isFinite(hardForN) ? hardForN : 0;
+  // 2026-09-28+: Q1 answers WHO. Do not invent 2u/3u with 0 HARD+ FOR.
+  // Unguessable HARD book (hardJudged=false) fail-opens — do not kill Q1 on a load miss.
+  if (isWhoFloorHardForLive(pickDate) && hardJudged === true && hardN < 1) {
+    return {
+      qualifies: false,
+      forQ1Sized,
+      bestSize: bestSize != null ? +bestSize.toFixed(3) : null,
+      targetUnits,
+      wallets,
+      hardForN: hardN,
+      reason: 'no_hard_for',
+    };
+  }
   return {
     qualifies: true,
     forQ1Sized,
     bestSize: bestSize != null ? +bestSize.toFixed(3) : null,
     targetUnits,
     wallets,
+    hardForN: hardN,
+    reason: null,
   };
 }
 
