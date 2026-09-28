@@ -7680,7 +7680,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   };
   /** Build battle sides + enriched play-side wallets for one market. */
   const buildMarketBoard = (positions, playSide, {
-    mapAway = 'away', mapHome = 'home', rawPositions = null,
+    mapAway = 'away', mapHome = 'home', rawPositions = null, marketType = null,
   } = {}) => {
     const all = Array.isArray(positions) ? positions : [];
     const awayPos = all.filter((p) => p.side === mapAway);
@@ -7704,7 +7704,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       sizeRatio: posSizeRatio(p),
       avgSportBet: p.avgSportBet,
     }));
-    let wallets = enrichWallets(walletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
+    let wallets = enrichWallets(
+      walletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay,
+      { marketType },
+    );
     const mapRaw = (side) => all
       .filter((p) => p.side === side)
       .map((p) => ({
@@ -7714,7 +7717,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         sizeRatio: posSizeRatio(p),
         avgSportBet: p.avgSportBet,
       }));
-    const tag = (list, side) => enrichWallets(list, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay)
+    const tag = (list, side) => enrichWallets(
+      list, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay,
+      { marketType },
+    )
       .map((w) => ({
         ...w,
         side: side === mapAway ? 'away' : side === mapHome ? 'home' : side,
@@ -7824,7 +7830,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const rawMlPositions = rawSharpPositions?.[gd.sport]?.[gd.key]?.positions || null;
   const rawSpreadPos = rawSpreadPositions?.[gd.sport]?.[gd.key]?.positions || null;
   const rawTotalPos = rawTotalPositions?.[gd.sport]?.[gd.key]?.positions || null;
-  const mlBoard = buildMarketBoard(gd.positions || [], cardSideKey, { rawPositions: rawMlPositions });
+  const mlBoard = buildMarketBoard(gd.positions || [], cardSideKey, {
+    rawPositions: rawMlPositions,
+    marketType: 'ML',
+  });
   const mlWallets = mlBoard.wallets;
   const mlMapWallets = mlBoard.mapWallets;
   const awaySharps = (gd.positions || []).filter((p) => p.side === 'away' && isBoardProvenPos(p));
@@ -8023,6 +8032,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   })();
   const spreadBoard = buildMarketBoard(spreadGameData?.positions || [], spreadPlaySide, {
     rawPositions: rawSpreadPos,
+    marketType: 'SPREAD',
   });
 
   const totalPlaySide = (() => {
@@ -8035,7 +8045,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalBoard = buildMarketBoard(
     totalGameData?.positions || [],
     totalPlaySide,
-    { mapAway: 'under', mapHome: 'over', rawPositions: rawTotalPos },
+    { mapAway: 'under', mapHome: 'over', rawPositions: rawTotalPos, marketType: 'TOTAL' },
   );
 
   // Spread / total market siblings for the rail (when data exists)

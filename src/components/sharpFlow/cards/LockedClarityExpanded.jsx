@@ -14,6 +14,12 @@ import {
   isTopQWallet,
   walletRoiForPlot,
 } from './mapPositionCard.js';
+import {
+  isMarketSpecialistPress,
+  MARKET_SPECIALIST_PRESS_SR,
+  selectedWalletHeadline,
+  walletDisplaySizeRatio,
+} from '../../../lib/marketSpecialistDisplay.js';
 import OddsLimitSpark from './OddsLimitSpark';
 import LockedSignalsRow from './LockedSignalsRow';
 import SteamTag from './SteamTag';
@@ -221,11 +227,13 @@ function WalletMap({ wallets, selected, onSelect, gid, mineShorts = null }) {
 
   const sorted = [...plottable].sort((a, b) => {
     const r = (p) => (
-      p.short === selected ? 6
-        : (p.side === 'ours' && p.topQ) ? 5
-          : p.qualify === 'VAULT' ? 4
-            : p.proven ? 3
-              : p.side === 'ours' ? 2 : 1
+      p.short === selected ? 7
+        : isMarketSpecialistPress(p) ? 6
+          : (p.side === 'ours' && p.topQ) ? 5
+            : p.hardMarket ? 4.5
+              : p.qualify === 'VAULT' ? 4
+                : p.proven ? 3
+                  : p.side === 'ours' ? 2 : 1
     );
     return r(a) - r(b);
   });
@@ -319,13 +327,17 @@ function WalletMap({ wallets, selected, onSelect, gid, mineShorts = null }) {
         const r = rFor(p);
         const st = bubbleStyle(p);
         const sel = selected === p.short;
-        const sizedUp = Number.isFinite(p.sizeRatio) && p.sizeRatio >= 1.5;
+        const sr = walletDisplaySizeRatio(p);
+        const sizedUp = sr != null && sr >= MARKET_SPECIALIST_PRESS_SR;
+        const specialist = !!p.hardMarket;
+        const specialistPress = specialist && sizedUp;
         const isBestSharp = p.side === 'ours' && !!p.topQ;
         const mine = isMySharpShort(mineShorts, p.short);
-        // Quiet mark: champagne hairline = best on price; ↑ = sized up.
-        // Gold star = already in My Sharps. Key by wallet id only.
+        // Quiet mark: champagne hairline = best on price; ◆ = market specialist;
+        // ↑ = sized up (≥1.5×). Gold star = already in My Sharps.
+        const pop = sel || mine || specialistPress;
         return (
-          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={sel || mine ? 1 : 0.42}>
+          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={pop ? 1 : specialist ? 0.82 : 0.42}>
             <circle cx={cx} cy={cy} r={Math.max(r + 8, 16)} fill="transparent" />
             {sel && (
               <circle cx={cx} cy={cy} r={r + 5.5} fill="none" stroke={GOLD_HI} strokeWidth={1.15} opacity={0.85} />
@@ -339,12 +351,22 @@ function WalletMap({ wallets, selected, onSelect, gid, mineShorts = null }) {
                 opacity={sel ? 0.95 : 0.72}
               />
             )}
+            {specialist && !isBestSharp && (
+              <circle
+                cx={cx} cy={cy} r={r + (sel ? 3.2 : 2.6)}
+                fill="none"
+                stroke={GOLD_HI}
+                strokeWidth={1}
+                strokeDasharray={specialistPress ? undefined : '2 2'}
+                opacity={sel || specialistPress ? 0.9 : 0.62}
+              />
+            )}
             <circle
               cx={cx} cy={cy} r={r}
               fill={st.fill}
-              stroke={sel ? GOLD_HI : isBestSharp ? GOLD : st.stroke}
-              strokeWidth={sel || isBestSharp ? 1.35 : 1.15}
-              strokeDasharray={sel || isBestSharp ? undefined : st.dash}
+              stroke={sel ? GOLD_HI : (isBestSharp || specialistPress) ? GOLD : st.stroke}
+              strokeWidth={sel || isBestSharp || specialistPress ? 1.35 : 1.15}
+              strokeDasharray={sel || isBestSharp || specialistPress ? undefined : st.dash}
             />
             <text x={cx} y={cy + 3.5} textAnchor="middle" fill={st.text}
               fontSize={r >= 12 ? 9 : 7.5} fontFamily={MONO} fontWeight={800}
@@ -367,7 +389,23 @@ function WalletMap({ wallets, selected, onSelect, gid, mineShorts = null }) {
                 ★
               </text>
             )}
-            {isBestSharp && sizedUp && (
+            {specialist && (
+              <text
+                x={cx - r * 0.55}
+                y={cy + r * 0.85}
+                textAnchor="middle"
+                fill={GOLD_HI}
+                stroke="#0B0F18"
+                strokeWidth={3}
+                paintOrder="stroke"
+                fontSize={9}
+                fontWeight={800}
+                style={{ pointerEvents: 'none' }}
+              >
+                ◆
+              </text>
+            )}
+            {(specialistPress || (isBestSharp && sizedUp)) && (
               <text
                 x={cx + r * 0.55}
                 y={cy - r * 0.55}
@@ -1035,11 +1073,13 @@ function bestProvenForDefault(wallets) {
     return w.proven ? 1 : 0;
   };
   const score = (w) => {
+    const sr = Number(w.displaySizeRatio ?? w.sizeRatio);
+    const specialistPress = !!w.hardMarket && Number.isFinite(sr) && sr >= 1.5;
     const vault = w.qualify === 'VAULT' ? 1e9 : 0;
     const roi = Number.isFinite(w.roi) ? w.roi : -999;
     const inv = Number(w.invested) || 0;
     const wr = Number.isFinite(w.wr) ? w.wr : 0;
-    return vault + tierScore(w) * 1e6 + (roi + 500) * 1e3 + inv + wr;
+    return (specialistPress ? 2e9 : 0) + vault + tierScore(w) * 1e6 + (roi + 500) * 1e3 + inv + wr;
   };
   return [...pool].sort((a, b) => score(b) - score(a))[0]?.short || null;
 }
@@ -1109,6 +1149,8 @@ export default function LockedClarityExpanded({
   const provenN = all.filter((w) => w.side === 'ours' && w.proven).length;
   const secondaryN = all.filter((w) => w.side === 'ours' && !w.proven && w.skillEligible).length;
   const againstN = all.filter((w) => w.side === 'against').length;
+  const specialistN = all.filter((w) => w.hardMarket).length;
+  const specialistPressN = all.filter((w) => isMarketSpecialistPress(w)).length;
 
   const vault = selected?.qualify === 'VAULT';
   const againstSel = selected?.side === 'against';
@@ -1130,14 +1172,16 @@ export default function LockedClarityExpanded({
     : (Number.isFinite(sizeRatio) && sizeRatio > 0 && selected?.invested > 0
       ? selected.invested / sizeRatio
       : null);
-  const sizeHot = Number.isFinite(sizeRatio) && sizeRatio >= 1.5;
+  const sizeHot = Number.isFinite(sizeRatio) && sizeRatio >= MARKET_SPECIALIST_PRESS_SR;
+  const selectedSpecialist = !!(selected && selected.hardMarket);
+  const selectedSpecialistPress = selectedSpecialist && sizeHot;
   // Prefer enriched sizeBand; re-match from bands on the wallet if first paint raced profiles.
   const sizeBand = (selected?.sizeBand && Number.isFinite(selected.sizeBand.wr))
     ? selected.sizeBand
     : matchSizeRatioBand(sizeRatio, selected?.sizeRatioBands);
   const beatHot = Number.isFinite(selected?.priorClvPct) && selected.priorClvPct >= 55;
   const leadAccent = againstSel ? VS
-    : selectedTopQ || vault ? GOLD
+    : selectedSpecialistPress || selectedTopQ || vault ? GOLD
       : selected?.proven ? GREEN : BLUE;
 
   const mineOnCard = portfolioWalletsOnCard({ ...f, mapWallets: all }, mySharps?.shorts);
@@ -1151,19 +1195,12 @@ export default function LockedClarityExpanded({
   const ours = all.filter((w) => w.side === 'ours');
   const isBiggest = selected && [...ours].sort((a, b) => (b.invested || 0) - (a.invested || 0))[0]?.short === selected.short;
 
-  const headline = !selected
-    ? 'No wallets on the board'
-    : againstSel
-      ? 'On the other side — weak track record'
-      : selectedTopQ && sizeHot
-        ? 'One of our best on price — and betting above their usual'
-        : selectedTopQ
-          ? 'One of our best on price'
-          : isBiggest && selected.proven
-            ? 'This is the lead wallet on this play'
-            : selected.proven
-              ? 'A proven winner on this side'
-              : 'Secondary wallet — on the board, not the stake path';
+  const headline = selectedWalletHeadline(selected, {
+    againstSel,
+    selectedTopQ,
+    sizeHot,
+    isBiggest,
+  });
 
   const sharpUsd = f.sharpUsd || f.sideInvested || oursUsd || 0;
   const journey = Array.isArray(f.journey) && f.journey.length >= 2
@@ -1358,6 +1395,15 @@ export default function LockedClarityExpanded({
                   Secondary ({secondaryN})
                 </span>
               )}
+              {specialistN > 0 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: GOLD_HI }}>
+                  <i style={{
+                    width: 7, height: 7, display: 'inline-block',
+                    background: GOLD, transform: 'rotate(45deg)',
+                  }} />
+                  Specialist ({specialistN}{specialistPressN > 0 ? ` · ${specialistPressN}↑` : ''})
+                </span>
+              )}
               {againstN > 0 ? (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <i style={{ width: 7, height: 7, borderRadius: '50%', background: VS, display: 'inline-block' }} />
@@ -1368,7 +1414,7 @@ export default function LockedClarityExpanded({
               )}
               <span style={{ color: C.textFaint }}>· size = $</span>
               <span style={{ color: C.textFaint, marginLeft: 'auto' }}>
-                champagne ring = best on price · ↑ sized up
+                champagne ring = best on price · ◆ specialist · ↑ sized up
                 {mineOnCard.length > 0 ? ' · ★ My Sharps' : ''}
               </span>
             </div>
@@ -1385,13 +1431,19 @@ export default function LockedClarityExpanded({
               borderLeft: `3px solid ${leadAccent}`,
               background: againstSel
                 ? 'rgba(240,113,103,0.06)'
-                : selectedTopQ || vault ? 'rgba(212,175,55,0.07)' : 'rgba(52,211,153,0.04)',
+                : selectedSpecialistPress || selectedTopQ || vault ? 'rgba(212,175,55,0.07)' : 'rgba(52,211,153,0.04)',
             }}>
               <div style={{
                 fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em',
                 color: leadAccent, marginBottom: 6,
               }}>
-                {againstSel ? 'SELECTED · OTHER SIDE' : '① LEAD WALLET'}
+                {againstSel
+                  ? 'SELECTED · OTHER SIDE'
+                  : selectedSpecialistPress
+                    ? '① MARKET SPECIALIST · SIZED UP'
+                    : selectedSpecialist
+                      ? '① MARKET SPECIALIST'
+                      : '① LEAD WALLET'}
               </div>
 
               <div style={{
@@ -1406,11 +1458,21 @@ export default function LockedClarityExpanded({
                     {againstSel ? <Pill c={VS}>Against</Pill>
                       : selected.proven ? <Pill c={GREEN} solid>Proven</Pill>
                         : <Pill c={BLUE}>Secondary</Pill>}
+                    {selectedSpecialist && !againstSel && (
+                      <Pill c={GOLD} title="Sport × this market HARD+ (n≥4 WR≥62 $ROI≥10)">
+                        Specialist
+                      </Pill>
+                    )}
+                    {selectedSpecialist && againstSel && (
+                      <Pill c={GOLD} title="Sport × this market HARD+ on the other side">
+                        Specialist
+                      </Pill>
+                    )}
                     {vault && !againstSel && <Pill c={GOLD}>Vault</Pill>}
                   </div>
                   <div style={{
                     marginTop: 5, fontSize: 13, fontWeight: 600,
-                    color: selectedTopQ && !againstSel ? GOLD_HI : C.text,
+                    color: (selectedSpecialistPress || selectedTopQ) && !againstSel ? GOLD_HI : C.text,
                     lineHeight: 1.35, letterSpacing: '-0.01em',
                   }}>
                     {headline}

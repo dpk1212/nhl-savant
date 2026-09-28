@@ -58,6 +58,7 @@ import {
   goldStackTip,
   walletDetailsForGoldStack,
 } from '../../../lib/goldStack.js';
+import { walletIsHardMarket } from '../../../lib/marketSpecialistDisplay.js';
 
 export { americanFromPolyPrice };
 export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb, mlFairOddsList };
@@ -297,6 +298,8 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const skillEligible = edgeEligible || netEligible;
       const whitelist = sportRec?.whitelistTier || (whitelisted ? 'CONFIRMED' : null);
       const topQ = isTopQWallet({ whitelist, clvN, priorClvPct }, q1Thr);
+      const mkt = opts.marketType;
+      const hardMarket = walletIsHardMarket(profile, sport, mkt);
       const badges = proven
         ? ['SHARP', `${sport} WINNER`]
         : whitelisted
@@ -344,6 +347,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         priorClvPct,
         clvN,
         topQ,
+        hardMarket,
         trust,
         trustBook,
         trustScore,
@@ -1290,9 +1294,12 @@ export function mapLockedPickToCardFixture(pick, {
   unitDisplayScale = null,
 } = {}) {
   const confirmedClvQ1 = computeConfirmedBeatCloseQ1(walletProfiles);
-  const enrichOpts = { confirmedClvQ1 };
   const isTotal = pick.marketType === 'total' || pick.marketType === 'TOTAL';
   const isSpread = pick.marketType === 'spread' || pick.marketType === 'SPREAD';
+  const enrichOpts = {
+    confirmedClvQ1,
+    marketType: isSpread ? 'SPREAD' : isTotal ? 'TOTAL' : 'ML',
+  };
   const alreadyGraded = pick.status === 'COMPLETED'
     && !!(pick.outcome || pick.result?.outcome);
 

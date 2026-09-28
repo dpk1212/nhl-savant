@@ -23,6 +23,11 @@ const leadTrust = {
   invested: 5400,
   sizeRatio: 1.6,
   displaySizeRatio: 1.6,
+  hardMarket: true,
+  priorClvPct: 61,
+  roi: 26,
+  wr: 73,
+  record: '11-4',
   sport: 'NFL',
   trustScore: 4600,
   trust: {
@@ -51,8 +56,9 @@ const showcaseBoard = [
 
 const contestedBoard = [
   {
-    ...leadTrust, short: 'a91f2c', side: 'ours', invested: 6200,
+    short: 'a91f2c', side: 'ours', invested: 6200,
     sizeRatio: 1.8, displaySizeRatio: 1.8, whitelist: 'CONFIRMED', whitelisted: true, proven: true,
+    hardMarket: true, priorClvPct: 58, roi: 22, wr: 67, record: '14-7',
   },
   {
     short: 'b3e811', side: 'ours', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
@@ -65,6 +71,7 @@ const contestedBoard = [
   {
     short: 'c9vs01', side: 'against', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
     invested: 2400, sizeRatio: 1.1, displaySizeRatio: 1.1,
+    hardMarket: true, priorClvPct: 52, roi: 12, wr: 63, record: '8-5',
   },
   {
     short: 'lose01', side: 'against', proven: false, whitelisted: false, whitelist: 'WR50',
@@ -308,7 +315,7 @@ export default function LockedCardStates() {
               <div style={{ color: '#647089', fontSize: '0.62rem', fontWeight: 700, marginBottom: 6, letterSpacing: '0.06em' }}>
                 {title}
               </div>
-              <LockedPositionCardView f={f} />
+              <LockedPositionCardView f={f} defaultExpanded />
             </div>
           ))}
         </div>
