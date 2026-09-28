@@ -42,6 +42,7 @@ Used by:
 |---------|------|------|-------------------|
 | Market-skill | **2026-09-24** | ML: ≥1 FOR with sport×ML `n≥6 WR≥52`. S/T: qual$ AGREE + HARD slip on FOR. | `ml-mkt-skill` / `st-qual-wipe` / `st-hard-slip` |
 | HARD mute-exception | **2026-09-24** | Rescue tape-weak / maxsr-sub4 / fools-gold-flat / top-crowded if ≥1 HARD FOR. Tape-weak **S/T stays muted**. | `rescuedBy=hard-mkt-hold` |
+| HARD 2+ FOR / 0 AG | **2026-09-28** | Unique HARD+ FOR ≥2 and HARD+ AG = 0 restores steam-tail / leftover / st-fat / tape-weak (incl S/T) at max(uPre, 3) capped 4u. Skip ev-drift / fav-juice / unstamped / fade. | `rescuedBy=hard-2for-hold` |
 | HARD+ AG mute | **2026-09-25** | ≥1 HARD on the **other** side → 0u. 4u+ not exempt. | `hard-ag` |
 | S/T HARD+ FOR require | **2026-09-26** | SPREAD/TOTAL with `hardFor < 1` → 0u. ML exempt. 4u+ not exempt. Last step after HARD+ AG. | `st-hard-for` |
 | GOLD-stack 4u cap | **2026-09-26** | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps fat. | `cappedBy=gold-stack-cap` |

@@ -108,6 +108,9 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
      └─ mutedBy=no-confirmed | ml-mkt-skill | st-qual-wipe | st-hard-slip
 12f. HARD mute-exception (2026-09-24+) — restore listed mutes if ≥1 HARD FOR
      └─ tape-weak **S/T stays muted** · rescuedBy=hard-mkt-hold
+     └─ **2026-09-28+** 2+ unique HARD+ FOR and 0 HARD+ AG also restores steam-tail / leftover / st-fat / tape-weak S/T
+     └─ size = max(uPre, 3) capped 4u · unique wallets not duplicate listings
+     └─ skip ev-drift / fav-juice / unstamped 0u / fade · rescuedBy=hard-2for-hold
 12g. HARD+ AG mute (2026-09-25+) — ≥1 HARD on the other side → 0u · mutedBy=hard-ag
 12h. S/T HARD+ FOR require (2026-09-26+) — SPREAD/TOTAL needs ≥1 HARD FOR else 0u
      └─ ML exempt · 4u+ not exempt · mutedBy=st-hard-for
@@ -139,6 +142,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-09-09** | **Leftover A/B arriving HOLD** — leftover mute skips when Source A/B CONFIRMED and steam arrived (off→on). No-steam / already-on leftover still 0u. Later mutes (maxSR, ev-drift, T) still run. **Policy T native 2–3u A/B arriving → 4u.** 1u arriving stays floor 2u. Climate/unlock shrink not restacked. |
 | **2026-09-28** | **S/T walk is not steamOn** — main-line walk still paints on the card (`lineWalkPts` / `+6.5 → +4.5`) but cannot set arriving, Policy T floor/boost/4u-confirm, or leftover arriving-HOLD. `juiceSteam` = 3%+ drop on the first-write pin while \|main−pin\| < 0.5. ML steam unchanged. Juice-stable S/T unchanged. |
 | **2026-09-28** | **Who-floor HARD+ FOR** — Q1 floor / AGS bypass and Policy T lean arriving 1→2 need ≥1 HARD+ FOR on this sport×market. Do not invent 2u on a board GOLD would refuse. Fail-open if we cannot judge. Mid arriving 2–3u→4u, UNOPP 1u fill, and S/T last-step remute unchanged. |
+| **2026-09-28** | **HARD 2+ FOR / 0 AG hold** — unique HARD+ FOR ≥2 and HARD+ AG = 0 restores steam-tail / leftover / st-fat / tape-weak (incl S/T) at max(uPre, 3) capped 4u. Skip ev-drift / fav-juice / unstamped 0u / fade. Unique wallets, not duplicate listings. |
 | **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
 | **2026-09-18** | **Fade proven-$ hold** — SHARP-LEAN ML with proven $ share ≥50% skips fadeTop mute and continues to the next filter. Missing proven still fades. SPREAD/TOTAL and SUPER/TOP/MINI/RANK/SHARP still fade. |
 | **2026-09-19** | **Source B lock** — v12 quality + RANK n read Action first (featured n only if Action is empty). T−15 scan-drop stays PENDING for grade. |

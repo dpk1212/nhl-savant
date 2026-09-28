@@ -149,22 +149,30 @@ export function attachMarketBooks(walletDetails, sideKey, sport, market, walletP
 }
 
 /**
- * HARD+ FOR count on this sport×market (same bar as GOLD / S/T require).
+ * Unique HARD+ FOR / AG counts on this sport×market (same bar as GOLD / S/T require).
+ * attachMarketBooks already dedupes by wallet short — duplicate listings
+ * on the reconstructed board do not count as two specialists.
  * judged=false when we cannot read a byMarket book — fail-open, do not invent a cut.
  */
-export function countHardMarketFor(walletDetails, side, sport, marketType, walletProfiles) {
+export function countHardMarketSides(walletDetails, side, sport, marketType, walletProfiles) {
   const mkt = normalizeMarketType(marketType);
   if (!mkt || !sport || side == null || side === '' || !walletProfiles) {
-    return { hardForN: 0, schemaN: 0, judged: false };
+    return { hardForN: 0, hardAgN: 0, schemaN: 0, judged: false };
   }
   const { wallets, schemaN } = attachMarketBooks(
     walletDetails, side, sport, mkt, walletProfiles,
   );
   if (!wallets.length || schemaN === 0) {
-    return { hardForN: 0, schemaN, judged: false };
+    return { hardForN: 0, hardAgN: 0, schemaN, judged: false };
   }
   const hardForN = wallets.filter((w) => w.onFor && isHardMarketWallet(w.pos)).length;
-  return { hardForN, schemaN, judged: true };
+  const hardAgN = wallets.filter((w) => !w.onFor && isHardMarketWallet(w.pos)).length;
+  return { hardForN, hardAgN, schemaN, judged: true };
+}
+
+export function countHardMarketFor(walletDetails, side, sport, marketType, walletProfiles) {
+  const r = countHardMarketSides(walletDetails, side, sport, marketType, walletProfiles);
+  return { hardForN: r.hardForN, schemaN: r.schemaN, judged: r.judged };
 }
 
 export function qualMoneyVote(wallets) {

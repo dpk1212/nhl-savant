@@ -14,6 +14,7 @@ import { isHardMarketWallet } from '../src/lib/marketSkillMuteOverlay.js';
 import {
   applyHardMuteExceptionOverlay,
   HARD_EXCEPTION_MUTES,
+  HARD_TWO_FOR_EXCEPTION_MUTES,
 } from '../src/lib/hardMuteExceptionOverlay.js';
 
 let n = 0;
@@ -47,6 +48,7 @@ ok(!isHardAgMuteLive('2026-09-24'), 'not live before cutover');
 ok(HARD_AG_MUTE_FROM === '2026-09-25', 'cutover date');
 ok(HARD_AG_MUTED_BY === 'hard-ag', 'mutedBy stamp');
 ok(!HARD_EXCEPTION_MUTES.has('hard-ag'), 'HARD exception does not rescue this mute');
+ok(!HARD_TWO_FOR_EXCEPTION_MUTES.has('hard-ag'), '2-for exception does not rescue hard-ag');
 ok(isHardMarketWallet(pos(4, 62, 10)), 'HARD exact');
 
 const hardProf = new Map([
