@@ -255,8 +255,14 @@ import {
   applyHardMuteExceptionOverlay,
   lastAppliedMute,
   isHardMuteExceptionLive,
+  isHardTwoForExceptionLive,
+  isHardExceptionRescueStamp,
   HARD_MUTE_EXCEPTION_FROM,
   HARD_MUTE_EXCEPTION_RESCUED_BY,
+  HARD_TWO_FOR_EXCEPTION_FROM,
+  HARD_TWO_FOR_RESCUED_BY,
+  HARD_TWO_FOR_FLOOR_U,
+  HARD_TWO_FOR_CAP_U,
 } from '../src/lib/hardMuteExceptionOverlay.js';
 import {
   applyHardAgMuteOverlay,
@@ -1171,7 +1177,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 23; // v23: Q1 + T arriving 1→2 require HARD+ FOR
+const SKILL_FEATURE_VERSION = 24; // v24: 2+ HARD FOR / 0 HARD AG unmute · floor 3u cap 4u
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
@@ -3683,8 +3689,10 @@ async function createMissingLockedPicks({
       }
 
       // HARD mute exception — after last mute, before HARD+ AG mute.
-      // Restores uPre when last mutedBy is tape/maxsr/fools/crowded and a
-      // HARD FOR wallet backs the side. tape-weak S/T stays muted.
+      // 09-24: restore uPre when last mutedBy is tape/maxsr/fools/crowded
+      // and a HARD FOR wallet backs the side. tape-weak S/T stays muted.
+      // 09-28: 2+ unique HARD+ FOR and 0 HARD+ AG also restores steam-tail /
+      // leftover / st-fat / tape-weak S/T at max(uPre, 3) capped at 4.
       let hardExceptionPolicyCreate = null;
       if (createV121Eligible) {
         const lastMuteCreate = stackLastMute({
@@ -4113,17 +4121,18 @@ async function createMissingLockedPicks({
         v8Stamps.manualMute = true;
       } else if (hardStForPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = hardStForPolicyCreate.mutedBy;
-        if (v8Stamps.v8_rescuedBy === HARD_MUTE_EXCEPTION_RESCUED_BY) {
+        if (isHardExceptionRescueStamp(v8Stamps.v8_rescuedBy)) {
           delete v8Stamps.v8_rescuedBy;
         }
       } else if (hardAgPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = hardAgPolicyCreate.mutedBy;
-        if (v8Stamps.v8_rescuedBy === HARD_MUTE_EXCEPTION_RESCUED_BY) {
+        if (isHardExceptionRescueStamp(v8Stamps.v8_rescuedBy)) {
           delete v8Stamps.v8_rescuedBy;
         }
       } else if (hardExceptionPolicyCreate?.action === 'RESCUE') {
         delete v8Stamps.mutedBy;
-        v8Stamps.v8_rescuedBy = HARD_MUTE_EXCEPTION_RESCUED_BY;
+        v8Stamps.v8_rescuedBy = hardExceptionPolicyCreate.rescuedBy
+          || HARD_MUTE_EXCEPTION_RESCUED_BY;
       } else if (marketSkillPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = marketSkillPolicyCreate.mutedBy;
       } else if (stFatPolicyCreate?.mutedBy) {
@@ -5538,8 +5547,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // HARD mute exception — after last mute, before HARD+ AG mute / odds-cap.
-  // Restores uPre when last mutedBy is tape/maxsr/fools/crowded and a
+  // 09-24: restore uPre when last mutedBy is tape/maxsr/fools/crowded and a
   // HARD FOR wallet backs the side. tape-weak S/T stays muted.
+  // 09-28: 2+ unique HARD+ FOR and 0 HARD+ AG also restores steam-tail /
+  // leftover / st-fat / tape-weak S/T at max(uPre, 3) capped at 4.
   // Fail-open (keep muted) if byMarket schema is missing. Manual stake exempt.
   let hardExceptionPolicy = null;
   if (v121Eligible && !skipManualFlinch) {
@@ -5843,7 +5854,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.mutedBy = hardAgPolicy.mutedBy;
   } else if (hardExceptionRescued) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
-    patch.v8_rescuedBy = HARD_MUTE_EXCEPTION_RESCUED_BY;
+    patch.v8_rescuedBy = hardExceptionPolicy.rescuedBy
+      || HARD_MUTE_EXCEPTION_RESCUED_BY;
   } else if (marketSkillPolicy?.mutedBy) {
     patch.mutedBy = marketSkillPolicy.mutedBy;
   } else if (stFatPolicy?.mutedBy) {
@@ -5904,7 +5916,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
-  if ((!hardExceptionRescued || hardAgMuted || hardStForMuted) && sd.v8_rescuedBy === HARD_MUTE_EXCEPTION_RESCUED_BY) {
+  if ((!hardExceptionRescued || hardAgMuted || hardStForMuted)
+      && isHardExceptionRescueStamp(sd.v8_rescuedBy)) {
     patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== healthStatusOut) {
@@ -6229,9 +6242,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     );
   }
   if (hardExceptionPolicy?.action === 'RESCUE') {
+    const holdLabel = hardExceptionPolicy.rescuedBy === HARD_TWO_FOR_RESCUED_BY
+      ? 'HARD-2FOR'
+      : 'HARD-HOLD';
+    const agBit = hardExceptionPolicy.rescuedBy === HARD_TWO_FOR_RESCUED_BY
+      ? ` · ${hardExceptionPolicy.hardAgN || 0} AG`
+      : '';
     changes.push(
-      `HARD-HOLD: ${hardExceptionPolicy.rescuedFrom || 'mute'} → ${finalUnitsApplied}u`
-      + ` (${hardExceptionPolicy.hardN || 0} HARD FOR)`
+      `${holdLabel}: ${hardExceptionPolicy.rescuedFrom || 'mute'} → ${finalUnitsApplied}u`
+      + ` (${hardExceptionPolicy.hardN || 0} HARD FOR${agBit})`
     );
   }
   if (goldStackCapPolicy?.action === 'CAP') {
@@ -7398,6 +7417,17 @@ async function main() {
     );
   } else {
     console.log(`HARD mute exception: not live before ${HARD_MUTE_EXCEPTION_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isHardTwoForExceptionLive(TARGET_DATE)) {
+    console.log(
+      `HARD 2+ FOR / 0 AG exception LIVE: unique HARD FOR ≥2 and HARD AG = 0`
+      + ` → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at`
+      + ` max(uPre, ${HARD_TWO_FOR_FLOOR_U}) capped ${HARD_TWO_FOR_CAP_U}u`
+      + ` · from ${HARD_TWO_FOR_EXCEPTION_FROM} · rescuedBy=${HARD_TWO_FOR_RESCUED_BY}`
+      + ` · skip ev-drift / fav-juice / unstamped 0u / fade`,
+    );
+  } else {
+    console.log(`HARD 2+ FOR exception: not live before ${HARD_TWO_FOR_EXCEPTION_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isHardAgMuteLive(TARGET_DATE)) {
     console.log(

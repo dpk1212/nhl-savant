@@ -14,6 +14,7 @@ import { isHardMarketWallet, countHardMarketFor } from '../src/lib/marketSkillMu
 import {
   applyHardMuteExceptionOverlay,
   HARD_EXCEPTION_MUTES,
+  HARD_TWO_FOR_EXCEPTION_MUTES,
 } from '../src/lib/hardMuteExceptionOverlay.js';
 import { applyHardAgMuteOverlay } from '../src/lib/hardAgMuteOverlay.js';
 
@@ -48,6 +49,7 @@ ok(!isHardStForRequireLive('2026-09-25'), 'not live before cutover');
 ok(HARD_ST_FOR_REQUIRE_FROM === '2026-09-26', 'cutover date');
 ok(HARD_ST_FOR_MUTED_BY === 'st-hard-for', 'mutedBy stamp');
 ok(!HARD_EXCEPTION_MUTES.has('st-hard-for'), 'HARD exception does not rescue this mute');
+ok(!HARD_TWO_FOR_EXCEPTION_MUTES.has('st-hard-for'), '2-for exception does not rescue st-hard-for');
 ok(isHardMarketWallet(pos(4, 62, 10)), 'HARD exact');
 
 const books = new Map([
