@@ -37,14 +37,15 @@ const TRIAL_DAYS = {
   pro: 10,
 };
 
-// Flash — mirrors frontend PAYWALL_PROMO / PROMO_CODES.SHARPFLOW.
-// Auto-applied at Checkout for monthly/weekly only. Keep Stripe coupon
-// restricted to scout + elite price IDs (33% off, repeating 2 months).
+// Opening week — mirrors frontend PAYWALL_PROMO / PROMO_CODES.NHL40.
+// Auto-applied at Checkout for monthly/weekly only. Stripe coupon is 40%
+// once (first invoice = first week on weekly, first month on monthly).
+// Keep it restricted to scout + elite prices. Annual stays full price.
 const FLASH_PROMO = {
-  code: 'SHARPFLOW',
-  codeAliases: ['SharpFlow', 'SHARPFLOW', 'sharpflow'],
+  code: 'NHL40',
+  codeAliases: ['NHL40', 'nhl40'],
   tiers: new Set(['scout', 'elite']),
-  endMs: Date.parse('2026-09-19T16:00:00Z'), // Sat Sep 19, 12:00pm ET
+  endMs: Date.parse('2026-10-05T04:00:00Z'), // Mon Oct 5, 12:00am ET
 };
 
 async function resolveFlashPromoId(stripeClient, tier) {
@@ -218,7 +219,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
       },
     };
 
-    // Flash: auto-apply SHARPFLOW on monthly/weekly so users don't miss the code.
+    // Opening week: auto-apply NHL40 on monthly/weekly so users don't miss the code.
     // Stripe forbids discounts + allow_promotion_codes together.
     const flashPromoId = await resolveFlashPromoId(stripeClient, tier);
     if (flashPromoId) {
