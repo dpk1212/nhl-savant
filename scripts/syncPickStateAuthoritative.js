@@ -249,6 +249,7 @@ import {
   ST_HARD_MIN_N,
   ST_HARD_MIN_WR,
   ST_HARD_MIN_DOLLAR_ROI,
+  countHardMarketFor,
 } from '../src/lib/marketSkillMuteOverlay.js';
 import {
   applyHardMuteExceptionOverlay,
@@ -1170,7 +1171,18 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 22; // v22: S/T walk is paint-only — juiceSteam sets arriving / Policy T / leftover HOLD
+const SKILL_FEATURE_VERSION = 23; // v23: Q1 + T arriving 1→2 require HARD+ FOR
+
+/** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
+function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
+  const hard = countHardMarketFor(walletDetails, side, sport, marketType, profiles);
+  return {
+    minSize: CONFIRMED_Q1_MIN_SIZE,
+    pickDate,
+    hardForN: hard.hardForN,
+    hardJudged: hard.judged,
+  };
+}
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -2878,7 +2890,7 @@ async function createMissingLockedPicks({
       : ['away', 'home'];
     return trialSides.some((s) => computeConfirmedQ1Sized(
       wd, s, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
-      { minSize: CONFIRMED_Q1_MIN_SIZE },
+      q1HardForOpts(wd, s, sport, marketType, TARGET_DATE, walletProfiles),
     ).qualifies);
   }
 
@@ -2988,7 +3000,7 @@ async function createMissingLockedPicks({
       const q1Early = isConfirmedQ1PromoteLive(TARGET_DATE)
         ? computeConfirmedQ1Sized(
           walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
-          { minSize: CONFIRMED_Q1_MIN_SIZE },
+          q1HardForOpts(walletDetails, side, sport, marketType, TARGET_DATE, walletProfiles),
         )
         : { qualifies: false, forQ1Sized: 0, bestSize: null, targetUnits: CONFIRMED_Q1_UNITS, wallets: [] };
       // v11 (informational / sidecar diagnostic)
@@ -3550,9 +3562,9 @@ async function createMissingLockedPicks({
       }
 
       // Steam-tail policy T — last size overlay. Cut junk 1u, floor A/B
-      // arriving to 2u, boost native 2–3u A/B arriving to 4u, steam-confirm
-      // 4u and 5.4u+. 5u untouched. Fail-open 4u/fat when steam unobserved.
-      // Ev-drift stays upstream.
+      // arriving to 2u (2026-09-28+ needs HARD+ FOR), boost native 2–3u
+      // A/B arriving to 4u, steam-confirm 4u and 5.4u+. 5u untouched.
+      // Fail-open 4u/fat when steam unobserved. Ev-drift stays upstream.
       let steamTailPolicyCreate = null;
       if (createV121Eligible && peakUnitsApplied > 0) {
         if (!tapeCreateCtxEarly) {
@@ -3577,6 +3589,7 @@ async function createMissingLockedPicks({
           walletDetails,
           side,
           sport,
+          marketType,
           walletProfiles,
           existingLog: null,
           liveSnap: liveTapeCreate,
@@ -4611,9 +4624,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // with cold featured flat used to stay MUTED/SHADOW forever).
   const confirmedQ1SliceEarly = (isV121Eligible(pickDate) && Array.isArray(wd) && wd.length > 0
     && isConfirmedQ1PromoteLive(pickDate))
-    ? computeConfirmedQ1Sized(wd, side, pick.sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT, {
-      minSize: CONFIRMED_Q1_MIN_SIZE,
-    })
+    ? computeConfirmedQ1Sized(wd, side, pick.sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
+      q1HardForOpts(wd, side, pick.sport, mkt, pickDate, walletProfiles))
     : {
       qualifies: false, forQ1Sized: 0, bestSize: null, targetUnits: CONFIRMED_Q1_UNITS, wallets: [],
     };
@@ -5406,9 +5418,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── Steam-tail policy T (last size overlay) ──────────────────────────
-  // Cut junk 1u · floor A/B arriving → 2u · native 2–3u A/B arriving → 4u
-  // · steam-confirm 4u and 5.4u+. 5u untouched. Fail-open 4u/fat when
-  // steam cannot be observed. Manual stake exempt. Date-gated. Ev-drift upstream.
+  // Cut junk 1u · floor A/B arriving → 2u (2026-09-28+ needs HARD+ FOR)
+  // · native 2–3u A/B arriving → 4u · steam-confirm 4u and 5.4u+. 5u
+  // untouched. Fail-open 4u/fat when steam cannot be observed.
+  // Manual stake exempt. Date-gated. Ev-drift upstream.
   let steamTailPolicy = null;
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
     if (!tapeCtxLive) tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
@@ -5429,6 +5442,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       walletDetails: wd,
       side,
       sport: pick.sport,
+      marketType: mkt,
       walletProfiles,
       existingLog: sd.v8_ticketTapeLog,
       liveSnap: liveTapeSnap,

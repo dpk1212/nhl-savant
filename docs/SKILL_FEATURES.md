@@ -1,6 +1,6 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 21` from **2026-09-19**_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 23` from **2026-09-28**_  
 _Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
@@ -42,7 +42,7 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | Soft size overlay | ONLY when EDGE band did not apply (non–A/C) · BOTH ×1.25 · NEITHER ×0.5 · RANK exempt |
 | Tape | `&lt;0` mute (RANK exempt) · `≥2.89` ×1.35 · else hold |
 | **qConv Q1 mute** | 2026-08-03+: after tape · Path C SHARP* · `qConv < expanding Q1 thr` → **0u** · Path A + RANK + UNOPP/Q1 exempt · fail-open if missing · DISSENT/manual exempt |
-| **CONFIRMED-Q1 promote** | 2026-08-08+: ≥1 FOR CONFIRMED × flatDollar Q1 × **sport-local** size≥0.5× → **2u** (3u if size≥1×) · opposed OK · hard floor after mutes · stamp `v8_confirmedQ1Promote` |
+| **CONFIRMED-Q1 promote** | 2026-08-08+: ≥1 FOR CONFIRMED × flatDollar Q1 × **sport-local** size≥0.5× → **2u** (3u if size≥1×) · opposed OK · hard floor after mutes · **2026-09-28+ also ≥1 HARD+ FOR** (fail-open if unjudged) · stamp `v8_confirmedQ1Promote` |
 | **CONFIRMED-UNOPP promote** | 2026-08-08+: after SHARP/Q1 · still 0u · ≥1 CONFIRMED FOR **sport-local** size≥0.5× · zero CONFIRMED AG → **1u** · hard floor after mutes (2026-08-16) · stamp `v8_confirmedUnoppPromote` |
 | **FOOLS-gold mute** | 2026-08-05+: after qConv · Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 | **Flinch / fail-open leftover mute** | 2026-08-19+: after Q1/UNOPP restore · still &lt;4u AND (odds-capped native-4u **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · 4u+ never touched · `mutedBy=believed-cut` \| `fail-open-sub4` |
@@ -234,6 +234,8 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **19** | **2026-09-17** | `v8_stFatAction` / `v8_unitsPreStFat` — S/T leftover BOTH + arriving ≥4u mute |
 | **20** | **2026-09-18** | `v8_fadeProvenHoldAction` / `v8_fadeProvenShare` — SHARP-LEAN ML proven ≥50 skip fade |
 | **21** | **2026-09-19** | Source B lock — v12 quality + RANK n read Action first; T−15 scan-drop hold; featured shipped locks merge onto Their Action |
+| **22** | **2026-09-28** | S/T walk is paint-only — `juiceSteam` sets arriving / Policy T / leftover HOLD |
+| **23** | **2026-09-28** | Q1 floor + Policy T lean arriving 1→2 require HARD+ FOR |
 
 ---
 

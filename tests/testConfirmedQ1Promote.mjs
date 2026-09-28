@@ -13,10 +13,12 @@ import {
   confirmedQ1BypassesAgsCreateGate,
   applyConfirmedQ1UnitFloor,
   isConfirmedQ1PromoteLive,
+  isWhoFloorHardForLive,
   CONFIRMED_Q1_FROM,
   CONFIRMED_Q1_MIN_SIZE,
   CONFIRMED_Q1_UNITS,
   CONFIRMED_Q1_PRESS_UNITS,
+  WHO_FLOOR_HARD_FOR_FROM,
 } from '../src/lib/walletClvSkill.js';
 
 let n = 0;
@@ -225,6 +227,55 @@ const oddsCapFn = (u) => u;
 {
   const r = computeConfirmedQ1Sized([], side, sport, prof, qBy);
   ok(r.qualifies === false, 'no walletDetails (EXITED pruned) ⇒ no Q1');
+}
+
+ok(WHO_FLOOR_HARD_FOR_FROM === '2026-09-28', 'HARD+ FOR gate cutover');
+ok(isWhoFloorHardForLive('2026-09-28'), 'HARD+ FOR live on cutover');
+ok(!isWhoFloorHardForLive('2026-09-27'), 'HARD+ FOR not before cutover');
+
+{
+  const r = computeConfirmedQ1Sized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 0.8 }],
+    side, sport, prof, qBy,
+    { pickDate: '2026-09-28', hardForN: 0, hardJudged: true },
+  );
+  ok(r.qualifies === false && r.reason === 'no_hard_for', 'Q1 + no HARD+ FOR does not qualify');
+  const floored = applyConfirmedQ1UnitFloor({
+    units: 0, odds: null, q1Result: r, oddsCapFn,
+  });
+  ok(floored.floored === false && floored.units === 0, 'no HARD+ FOR does not invent 2u');
+  ok(confirmedQ1BypassesAgsCreateGate(r.qualifies, -1) === false, 'no AGS bypass without HARD+ FOR');
+}
+
+{
+  const r = computeConfirmedQ1Sized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 0.8 }],
+    side, sport, prof, qBy,
+    { pickDate: '2026-09-28', hardForN: 1, hardJudged: true },
+  );
+  ok(r.qualifies === true, 'Q1 + HARD+ FOR still qualifies');
+  const floored = applyConfirmedQ1UnitFloor({
+    units: 0, odds: null, q1Result: r, oddsCapFn,
+  });
+  ok(floored.floored === true && floored.units === CONFIRMED_Q1_UNITS, 'HARD+ FOR still floors to 2u');
+}
+
+{
+  const r = computeConfirmedQ1Sized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 0.8 }],
+    side, sport, prof, qBy,
+    { pickDate: '2026-09-28', hardForN: 0, hardJudged: false },
+  );
+  ok(r.qualifies === true, 'unguessable HARD book fail-opens Q1');
+}
+
+{
+  const r = computeConfirmedQ1Sized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 0.8 }],
+    side, sport, prof, qBy,
+    { pickDate: '2026-09-27', hardForN: 0, hardJudged: true },
+  );
+  ok(r.qualifies === true, 'pre-cutover Q1 still floors without HARD+ FOR');
 }
 
 console.log(`OK — ${n} assertions`);

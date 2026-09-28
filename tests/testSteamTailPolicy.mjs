@@ -15,6 +15,8 @@ import {
   STEAM_TAIL_MUTED_BY,
   STEAM_TAIL_ARRIVING_FLOOR,
   STEAM_TAIL_ARRIVING_MID_UNITS,
+  WHO_FLOOR_HARD_FOR_FROM,
+  isWhoFloorHardForLive,
 } from '../src/lib/steamTailPolicy.js';
 
 let n = 0;
@@ -364,6 +366,90 @@ function T(args) {
     hasPinnGame: true,
   });
   ok(lean.action === 'MUTE' && lean.units === 0, 'walk-only lean is cut, not arriving-floored');
+}
+
+ok(WHO_FLOOR_HARD_FOR_FROM === '2026-09-28', 'HARD+ FOR arriving gate cutover');
+ok(isWhoFloorHardForLive('2026-09-28'), 'HARD+ FOR arriving live');
+ok(!isWhoFloorHardForLive('2026-09-27'), 'HARD+ FOR arriving not before');
+
+{
+  const r = applySteamTailPolicy({
+    units: 1, pickDate: '2026-09-28', steamObservable: true,
+    steamArriving: true, steamOnLock: true, sharpAB: true, hasHardFor: false,
+  });
+  ok(r.action === 'MUTE' && r.units === 0 && r.reason === 'arriving_no_hard_for',
+    'arriving lean with 0 HARD+ FOR does not invent 2u');
+  ok(r.mutedBy === STEAM_TAIL_MUTED_BY, 'arriving_no_hard_for is a steam-tail mute');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 1, pickDate: '2026-09-28', steamObservable: true,
+    steamArriving: true, steamOnLock: true, sharpAB: true, hasHardFor: true,
+  });
+  ok(r.action === 'FLOOR' && r.units === 2, 'arriving lean with HARD+ FOR still floors');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 1, pickDate: '2026-09-28', steamObservable: true,
+    steamArriving: true, steamOnLock: true, sharpAB: true, hasHardFor: null,
+  });
+  ok(r.action === 'FLOOR' && r.units === 2, 'unguessable HARD book fail-opens arriving floor');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 1, pickDate: '2026-09-27', steamObservable: true,
+    steamArriving: true, steamOnLock: true, sharpAB: true, hasHardFor: false,
+  });
+  ok(r.action === 'FLOOR' && r.units === 2, 'pre-cutover arriving still floors without HARD+ FOR');
+}
+{
+  const r = applySteamTailPolicy({
+    units: 2.5, pickDate: '2026-09-28', steamObservable: true,
+    steamArriving: true, steamOnLock: true, sharpAB: true, hasHardFor: false,
+  });
+  ok(r.action === 'BOOST' && r.units === 4, 'mid arriving 4u boost does not need HARD+ FOR');
+}
+
+{
+  const soft = new Map([
+    ['aaaaaa', {
+      bySport: {
+        MLB: {
+          whitelistTier: 'CONFIRMED',
+          whitelistSource: 'A+B',
+          byMarket: { ML: { positions: { n: 8, wr: 55, dollarRoi: 4 } } },
+        },
+      },
+    }],
+  ]);
+  const hard = new Map([
+    ['aaaaaa', {
+      bySport: {
+        MLB: {
+          whitelistTier: 'CONFIRMED',
+          whitelistSource: 'A+B',
+          byMarket: { ML: { positions: { n: 8, wr: 70, dollarRoi: 20 } } },
+        },
+      },
+    }],
+  ]);
+  const arriving = {
+    units: 1,
+    pickDate: '2026-09-28',
+    walletDetails: [{ side: 'home', walletShort: 'aaaaaa' }],
+    side: 'home',
+    sport: 'MLB',
+    marketType: 'ML',
+    existingLog: [{ gate: 'first', tier: null, fair: -110, evPct: 0 }],
+    liveSnap: { steam: { tier: 'steam', juiceSteam: true, lastHourPct: -4 } },
+    hasPinnGame: true,
+  };
+  const noHard = applySteamTailPolicyFromTicket({ ...arriving, walletProfiles: soft });
+  ok(noHard.action === 'MUTE' && noHard.reason === 'arriving_no_hard_for',
+    'from-ticket ML arriving without HARD+ FOR mutes');
+  const yesHard = applySteamTailPolicyFromTicket({ ...arriving, walletProfiles: hard });
+  ok(yesHard.action === 'FLOOR' && yesHard.units === 2,
+    'from-ticket ML arriving with HARD+ FOR floors');
 }
 
 console.log(`ok — ${n} assertions (steam-tail policy T)`);
