@@ -315,7 +315,7 @@ export default function LockedCardStates() {
               <div style={{ color: '#647089', fontSize: '0.62rem', fontWeight: 700, marginBottom: 6, letterSpacing: '0.06em' }}>
                 {title}
               </div>
-              <LockedPositionCardView f={f} />
+              <LockedPositionCardView f={f} defaultExpanded />
             </div>
           ))}
         </div>
