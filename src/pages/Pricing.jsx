@@ -25,16 +25,17 @@ const logEvent = (eventName, params) => {
 };
 
 const PROMO_CODES = {
-  // Flash — monthly (elite) + weekly (scout) only. Annual (pro) excluded.
-  // Stripe promotion code `SharpFlow` must also be limited to those two price IDs.
-  SHARPFLOW: {
-    code: 'SHARPFLOW',
-    discount: 33,
-    label: 'Flash Sale',
+  // Opening week — monthly (elite) + weekly (scout) only. Annual (pro) excluded.
+  // Stripe coupon is 40% once (first invoice): one week on Scout, one month on Elite.
+  // Promotion code NHL40 must stay limited to those two prices.
+  NHL40: {
+    code: 'NHL40',
+    discount: 40,
+    label: 'NHL Opening',
     forLife: false,
     flash: true,
-    durationLabel: 'first 2 weeks / 2 months',
-    expires: new Date('2026-09-19T16:00:00Z'), // Sat Sep 19, 12:00pm ET
+    durationLabel: 'your first week (Weekly) or first month (Monthly)',
+    expires: new Date('2026-10-05T04:00:00Z'), // Mon Oct 5, 12:00am ET — end of opening week
     tiers: ['scout', 'elite'],
   },
 };
@@ -54,10 +55,10 @@ const Pricing = () => {
   const [promoApplied, setPromoApplied] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
 
-  // Check for promo code in URL query params — also auto-apply live SHARPFLOW flash
+  // Check for promo code in URL query params — also auto-apply live NHL40
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const promo = (params.get('promo') || 'SHARPFLOW')?.toUpperCase();
+    const promo = (params.get('promo') || 'NHL40')?.toUpperCase();
     if (promo && PROMO_CODES[promo]) {
       const p = PROMO_CODES[promo];
       if (p.expires && new Date() > p.expires) return;
@@ -227,7 +228,7 @@ const Pricing = () => {
     return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
   })();
 
-  // During flash: Monthly + Weekly highlighted. Annual demoted (no SHARPFLOW discount).
+  // During opening week: Monthly + Weekly highlighted. Annual stays full price.
   const tiers = [
     {
       id: 'elite',
@@ -238,15 +239,15 @@ const Pricing = () => {
       trial: '7-day free trial',
       description: 'The full edge, month to month',
       popular: true,
-      popularLabel: flashLive ? 'Flash Sale' : 'Most Popular',
+      popularLabel: flashLive ? 'NHL Opening' : 'Most Popular',
       priceAnchor: flashLive
-        ? '33% off your first 2 months with code SHARPFLOW'
+        ? '40% off your first month with code NHL40'
         : 'One blown $20 parlay costs more than this',
       pricePerDay: '87¢/day',
-      savings: flashLive ? 'Save 33% for 2 months' : 'Save $9/month vs weekly',
-      saleBadge: ' FIRST 2 MONTHS',
+      savings: flashLive ? 'Save 40% your first month' : 'Save $9/month vs weekly',
+      saleBadge: ' FIRST MONTH',
       cta: 'Start 7-Day Trial',
-      highlight: flashLive ? 'Flash sale — monthly & weekly only' : 'Most popular with serious bettors'
+      highlight: flashLive ? 'Opening week — monthly & weekly' : 'Most popular with serious bettors'
     },
     {
       id: 'scout',
@@ -257,15 +258,15 @@ const Pricing = () => {
       trial: '5-day free trial',
       description: 'Follow the sharps, week to week',
       featured: flashLive,
-      featuredLabel: 'Weekly Flash',
+      featuredLabel: 'Opening Week',
       priceAnchor: flashLive
-        ? '33% off your first 2 weeks with code SHARPFLOW'
+        ? '40% off your first week with code NHL40'
         : 'Less than one stadium beer',
       pricePerDay: '$1.14/day',
-      savings: flashLive ? 'Save 33% for 2 weeks' : null,
-      saleBadge: ' FIRST 2 WEEKS',
+      savings: flashLive ? 'Save 40% your first week' : null,
+      saleBadge: ' FIRST WEEK',
       cta: 'Start 5-Day Trial',
-      highlight: flashLive ? 'Same 33% off — try a week before CFB' : 'No commitment — cancel any week'
+      highlight: flashLive ? 'Same 40% off for opening week' : 'No commitment — cancel any week'
     },
     {
       id: 'pro',
@@ -305,7 +306,7 @@ const Pricing = () => {
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
-        {/* Flash promo banner (SHARPFLOW) */}
+        {/* Opening-week promo banner (NHL40) */}
         {flashLive && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(16,185,129,0.1) 100%)',
@@ -333,7 +334,7 @@ const Pricing = () => {
               color: 'rgba(241,245,249,0.8)',
               lineHeight: 1.5,
             }}>
-              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off your first 2 weeks / 2 months</strong> on Monthly & Weekly — gone Saturday at noon ET, before CFB kickoff. Annual excluded.
+              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off {activeDiscount.durationLabel || 'your first week or month'}</strong> on Monthly & Weekly — through opening week, for the start of the NHL season. Annual excluded.
               <br />Use code <strong style={{
                 color: '#D4AF37',
                 padding: '0.1rem 0.4rem',
@@ -454,14 +455,14 @@ const Pricing = () => {
                 background: 'linear-gradient(135deg, #10B981 0%, #D4AF37 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0,
               }}>
-                {activeDiscount.discount}% Off First 2 Weeks / 2 Months
+                {activeDiscount.discount}% Off Your First Week or Month
               </h3>
             </div>
             <p style={{
               fontSize: window.innerWidth < 640 ? '0.938rem' : '1rem',
               color: 'rgba(241,245,249,0.8)', marginBottom: '0.75rem', lineHeight: 1.5,
             }}>
-              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is 33% off your first 2 weeks (Weekly) or 2 months (Monthly). Ends Saturday noon ET. Annual excluded.
+              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is {activeDiscount.discount}% off your first week (Weekly) or first month (Monthly). Through Sunday night ET, opening week. Annual excluded.
             </p>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
@@ -832,7 +833,7 @@ const Pricing = () => {
             lineHeight: '1.6'
           }}>
             {flashLive
-              ? `Every plan includes everything. Code ${activeDiscount.code} = ${activeDiscount.discount}% off your first 2 weeks / 2 months on Monthly & Weekly only.`
+              ? `Every plan includes everything. Code ${activeDiscount.code} = ${activeDiscount.discount}% off your first week (Weekly) or first month (Monthly). Annual stays full price.`
               : 'Every plan includes everything — pick the commitment that fits.'}
           </p>
           <div style={{
@@ -1013,7 +1014,7 @@ const Pricing = () => {
                   {tierInfo.description}
                 </p>
 
-                {/* Price — SHARPFLOW flash only discounts monthly/weekly */}
+                {/* Price — NHL40 only discounts monthly/weekly */}
                 <div style={{ marginBottom: '1rem' }}>
                   {onSale ? (
                     <>

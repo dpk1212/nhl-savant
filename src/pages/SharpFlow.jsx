@@ -1043,15 +1043,15 @@ function computeRecentWindowStats(picks, daysBack = 7) {
   return { ready: true, w, l, pu, total, profit, record: `${w}-${l}${pu ? `-${pu}` : ''}` };
 }
 
-// Sharp Flow paywall — flash (mirrors Pricing.jsx PROMO_CODES.SHARPFLOW).
-// SHARPFLOW is monthly/weekly only — annual stays full price (Stripe coupon
-// must also be restricted to scout/elite price IDs). 33% off first 2 weeks
-// (weekly) / first 2 months (monthly). Ends Saturday noon ET.
+// Sharp Flow paywall — opening week (mirrors Pricing.jsx PROMO_CODES.NHL40).
+// NHL40 is monthly/weekly only — annual stays full price (Stripe coupon
+// is 40% once, restricted to scout/elite prices). First week on weekly,
+// first month on monthly. Ends Sunday night ET, opening week.
 const PAYWALL_PROMO = {
-  code: 'SHARPFLOW',
-  discount: 0.33,
-  label: 'Flash Sale',
-  endMs: new Date('2026-09-19T16:00:00Z').getTime(), // Sat Sep 19, 12:00pm ET
+  code: 'NHL40',
+  discount: 0.40,
+  label: 'NHL Opening',
+  endMs: new Date('2026-10-05T04:00:00Z').getTime(), // Mon Oct 5, 12:00am ET
   tiers: ['elite', 'scout'], // monthly + weekly
 };
 
@@ -1064,15 +1064,15 @@ const PAYWALL_PLANS = [
     name: 'Monthly',
     trialDays: 7,
     badge: 'MOST POPULAR',
-    badgePromo: '33% · 2 MONTHS',
+    badgePromo: '40% · 1 MONTH',
     save: null,
-    savePromo: 'SAVE 33%',
+    savePromo: 'SAVE 40%',
     promoEligible: true,
-    heroFull: '$25.99', heroPromo: '$17.41', heroPer: '/mo',
+    heroFull: '$25.99', heroPromo: '$15.59', heroPer: '/mo',
     billFull: null, billPromo: null,
-    chargeFull: '$25.99/mo', chargePromo: '$17.41/mo',
+    chargeFull: '$25.99/mo', chargePromo: '$15.59/mo',
     sub: 'One blown $20 parlay costs more',
-    subPromo: '33% off your first 2 months',
+    subPromo: '40% off your first month',
     winMath: 'One 1u win (+$91 at $100/unit) covers your next 5 months',
   },
   {
@@ -1080,15 +1080,15 @@ const PAYWALL_PLANS = [
     name: 'Weekly',
     trialDays: 5,
     badge: null,
-    badgePromo: '33% · 2 WEEKS',
+    badgePromo: '40% · 1 WEEK',
     save: null,
-    savePromo: 'SAVE 33%',
+    savePromo: 'SAVE 40%',
     promoEligible: true,
-    heroFull: '$7.99', heroPromo: '$5.35', heroPer: '/wk',
+    heroFull: '$7.99', heroPromo: '$4.79', heroPer: '/wk',
     billFull: null, billPromo: null,
-    chargeFull: '$7.99/wk', chargePromo: '$5.35/wk',
+    chargeFull: '$7.99/wk', chargePromo: '$4.79/wk',
     sub: 'Less than one stadium beer',
-    subPromo: '33% off your first 2 weeks',
+    subPromo: '40% off your first week',
     winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
   },
   {
@@ -1104,7 +1104,7 @@ const PAYWALL_PLANS = [
     billFull: 'billed $150/yr', billPromo: 'billed $150/yr',
     chargeFull: '$150/yr', chargePromo: '$150/yr',
     sub: 'Cheaper per month than Netflix',
-    subPromo: 'Full year at $12.50/mo — flash is weekly & monthly',
+    subPromo: 'Full year at $12.50/mo — 40% off is weekly & monthly',
     winMath: 'One 1u win (+$91 at $100/unit) covers 90% of your entire year',
   },
 ];
@@ -13461,7 +13461,7 @@ export default function SharpFlow() {
                             <>
                               <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>Build your personal watchlist</div>
                               <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.75rem' }}>Pro members can save games to their watchlist for easy tracking.</div>
-                              <a href="#/pricing?promo=SHARPFLOW" style={{
+                              <a href="#/pricing?promo=NHL40" style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
                                 padding: '0.5rem 1.25rem', borderRadius: '8px',
                                 background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(129,140,248,0.08) 100%)',
@@ -14512,7 +14512,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           textAlign: 'center',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase', lineHeight: 1.35 }}>
-            FLASH · CODE {promoCode} · {promoPct}% OFF FIRST 2 WEEKS / 2 MONTHS — ENDS SAT NOON ET
+            NHL OPENING · CODE {promoCode} · {promoPct}% OFF YOUR FIRST WEEK OR MONTH — THROUGH SUNDAY NIGHT ET
           </span>
         </div>
       )}
@@ -15086,13 +15086,13 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                           padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'rgba(212,175,55,0.16)',
                         }}>{promoCode}</span>
                         <span style={{ color: B.green, fontWeight: 800 }}>
-                          {' '}locks {plan.id === 'scout' ? `${promoPct}% off your first 2 weeks` : `${promoPct}% off your first 2 months`}
+                          {' '}locks {plan.id === 'scout' ? `${promoPct}% off your first week` : `${promoPct}% off your first month`}
                         </span>
                       </>
                     )}
                     {promoActive && !plan.promoEligible && (
                       <span style={{ color: B.textMuted, fontWeight: 600 }}>
-                        {' · 33% off first 2 weeks / 2 months is on weekly and monthly'}
+                        {' · 40% off the first week or month is on weekly and monthly'}
                       </span>
                     )}
                   </span>
@@ -15199,7 +15199,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     {plan.trialDays} days free — grade it yourself
                   </div>
                   <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(241,245,249,0.55)', marginTop: '0.1rem', fontFeatureSettings: "'tnum'" }}>
-                    then {charge}{planOnSale ? (plan.id === 'scout' ? ` · ${promoPct}% off first 2 weeks` : ` · ${promoPct}% off first 2 months`) : ''}
+                    then {charge}{planOnSale ? (plan.id === 'scout' ? ` · ${promoPct}% off first week` : ` · ${promoPct}% off first month`) : ''}
                   </div>
                 </div>
                 <button
