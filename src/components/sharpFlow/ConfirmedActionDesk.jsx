@@ -15,6 +15,7 @@ import {
   etDateKey,
   formatActionDateChip,
   actionDateParts,
+  isActionTopPlay,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import SteamTag from './cards/SteamTag';
@@ -129,6 +130,7 @@ const deskUi = {
   sizedOnly: false,
   clearOnly: false,
   pinWithOnly: false,
+  topPlayOnly: false,
   dateKey: null,
   deskMode: 'all',
 };
@@ -838,21 +840,24 @@ function ActionExpandPanel({ row, isMobile }) {
   );
 }
 
-function Chip({ children, tone }) {
+function Chip({ children, tone, dataTopPlay = false }) {
   return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.28rem',
-      padding: '0.22rem 0.5rem',
-      borderRadius: '6px',
-      ...T.micro,
-      fontWeight: 700,
-      color: tone?.color || B.textSec,
-      background: tone?.bg || 'rgba(148,163,184,0.07)',
-      border: `1px solid ${tone?.border || B.borderSubtle}`,
-      whiteSpace: 'nowrap',
-    }}>
+    <span
+      data-top-play={dataTopPlay ? 'true' : undefined}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.28rem',
+        padding: '0.22rem 0.5rem',
+        borderRadius: '6px',
+        ...T.micro,
+        fontWeight: 700,
+        color: tone?.color || B.textSec,
+        background: tone?.bg || 'rgba(148,163,184,0.07)',
+        border: `1px solid ${tone?.border || B.borderSubtle}`,
+        whiteSpace: 'nowrap',
+      }}
+    >
       {children}
     </span>
   );
@@ -1116,6 +1121,7 @@ const ActionTape = memo(function ActionTape({ items }) {
 
 function signalChips(row) {
   const sk = skillTone(row.skillKey);
+  const topPlay = row.topPlay === true || isActionTopPlay(row);
   const oppN = Number(row.opposedBy) || 0;
   const opp = row.opposed === 'clear'
     ? { label: 'Unopposed', tone: { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' } }
@@ -1131,6 +1137,11 @@ function signalChips(row) {
 
   return (
     <>
+      {topPlay && (
+        <Chip tone={{ color: B.gold, bg: B.goldDim, border: B.goldBorder }} dataTopPlay>
+          Top play
+        </Chip>
+      )}
       <Chip tone={sk}>
         <span style={{ opacity: 0.65, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.55rem' }}>
           Sharp tier
@@ -1308,9 +1319,11 @@ function ActionRow({
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
   if (!rowMatchesActionSport(row, sportFilter)) return null;
   const clock = entryClock(row.ts);
-  const accent = row.skillKey === 'high' ? B.gold
-    : row.skillKey === 'mid' ? B.green
-      : B.border;
+  const topPlay = row.topPlay === true || isActionTopPlay(row);
+  const accent = topPlay ? B.gold
+    : row.skillKey === 'high' ? B.gold
+      : row.skillKey === 'mid' ? B.green
+        : B.border;
   const trust = row.trust;
   const reduceMotion = typeof window !== 'undefined'
     && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
@@ -1364,7 +1377,7 @@ function ActionRow({
 
   if (isMobile) {
     return (
-      <div data-action-sport={row.sport} style={shell}>
+      <div data-action-sport={row.sport} data-top-play={topPlay ? 'true' : undefined} style={shell}>
         <button {...headerBtnProps}>
           <div style={{ padding: '1rem 1rem 0.85rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
@@ -1421,6 +1434,7 @@ function ActionRow({
   return (
     <div
       data-action-sport={row.sport}
+      data-top-play={topPlay ? 'true' : undefined}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={shell}
@@ -1515,6 +1529,7 @@ export default function ConfirmedActionDesk({
   const [sizedOnly, setSizedOnlyState] = useState(deskUi.sizedOnly);
   const [clearOnly, setClearOnlyState] = useState(deskUi.clearOnly);
   const [pinWithOnly, setPinWithOnlyState] = useState(deskUi.pinWithOnly);
+  const [topPlayOnly, setTopPlayOnlyState] = useState(deskUi.topPlayOnly);
   const [dateKey, setDateKeyState] = useState(deskUi.dateKey);
   const [deskMode, setDeskModeState] = useState(deskUi.deskMode);
   const [cellStatsTable, setCellStatsTable] = useState(null);
@@ -1552,6 +1567,11 @@ export default function ConfirmedActionDesk({
     deskUi.pinWithOnly = value;
     setPinWithOnlyState(value);
   };
+  const setTopPlayOnly = (next) => {
+    const value = typeof next === 'function' ? next(deskUi.topPlayOnly) : next;
+    deskUi.topPlayOnly = value;
+    setTopPlayOnlyState(value);
+  };
   const setDateKey = (next) => {
     const value = typeof next === 'function' ? next(deskUi.dateKey) : next;
     deskUi.dateKey = value;
@@ -1574,7 +1594,7 @@ export default function ConfirmedActionDesk({
 
   useEffect(() => {
     setExpandedId(null);
-  }, [sortMode, highMidOnly, sizedOnly, clearOnly, pinWithOnly, dateKey]);
+  }, [sortMode, highMidOnly, sizedOnly, clearOnly, pinWithOnly, topPlayOnly, dateKey]);
 
   useEffect(() => {
     if (!focusShort) return;
@@ -1609,11 +1629,12 @@ export default function ConfirmedActionDesk({
       sizedOnly: deskMode === 'mine' ? false : sizedOnly,
       clearOnly: deskMode === 'mine' ? false : clearOnly,
       pinWithOnly: deskMode === 'mine' ? false : pinWithOnly,
+      topPlayOnly: deskMode === 'mine' ? false : topPlayOnly,
       dateKey: selectedDate,
       nowMs: Date.now(),
     }).filter((r) => rowMatchesActionSport(r, sportFilter));
     return filtered;
-  }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, selectedDate, deskMode]);
+  }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, topPlayOnly, selectedDate, deskMode]);
 
   const allMine = useMemo(
     () => filterRowsToMySharps(dated, mySharps.shorts),
@@ -1728,6 +1749,7 @@ export default function ConfirmedActionDesk({
           <Pill key={s.id} active={sortMode === s.id} onClick={() => setSortMode(s.id)}>{s.label}</Pill>
         ))}
         <span style={{ width: 1, height: 16, background: B.border, margin: '0 0.15rem' }} />
+        <Pill active={topPlayOnly} onClick={() => setTopPlayOnly((v) => !v)}>Top play</Pill>
         <Pill active={highMidOnly} onClick={() => setHighMidOnly((v) => !v)}>Top half</Pill>
         <Pill active={sizedOnly} onClick={() => setSizedOnly((v) => !v)}>Sized</Pill>
         <Pill active={clearOnly} onClick={() => setClearOnly((v) => !v)}>Unopposed</Pill>

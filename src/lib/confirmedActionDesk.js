@@ -871,6 +871,7 @@ export function buildConfirmedActionRows({
     }, cellStatsTable);
     r.cellHist = hit;
     r.cellHistText = formatSharpTierCellHist(hit);
+    r.topPlay = isActionTopPlay(r);
   }
 
   const stats = {
@@ -878,6 +879,7 @@ export function buildConfirmedActionRows({
     highMid: rows.filter((r) => r.skillKey === 'high' || r.skillKey === 'mid').length,
     clear: rows.filter((r) => r.opposed === 'clear').length,
     pinWith: rows.filter((r) => r.pinMove === 'with').length,
+    topPlay: rows.filter((r) => r.topPlay).length,
   };
 
   return { rows, qBySport, stats };
@@ -1002,6 +1004,35 @@ function displaySized(r) {
   return Number.isFinite(s) && s >= 0.5;
 }
 
+/** Card × vs usual — 1.0× Usual / press count; lean/light do not. */
+export function actionSizeAtLeast1x(r) {
+  const d = Number(r?.displaySizeRatio);
+  if (Number.isFinite(d)) return d >= 1;
+  const s = Number(r?.sizeRatio);
+  return Number.isFinite(s) && s >= 1;
+}
+
+/**
+ * T1–3 = Sharp tier A/B/C (flat$ Q1–Q3). D / thin sample are out.
+ * Prefer stamped skillQ when present.
+ */
+export function isActionT13(r) {
+  if (!r) return false;
+  if (r.skillQ === 1 || r.skillQ === 2 || r.skillQ === 3) return true;
+  if (r.skillQ === 4) return false;
+  const k = r.skillKey;
+  return k === 'high' || k === 'mid' || k === 'low';
+}
+
+/**
+ * Top play tag: T1–3 × unopposed × 1×+ usual.
+ * Unopposed matches the Action "Sharp contested" chip (other counted
+ * CONFIRMED on the opposite side, ≥0.10×). Size uses the card meter.
+ */
+export function isActionTopPlay(r) {
+  return isActionT13(r) && r?.opposed === 'clear' && actionSizeAtLeast1x(r);
+}
+
 function lineWithTicket(r) {
   return r.pinMove === 'with' || !!r.steam?.show;
 }
@@ -1012,6 +1043,7 @@ export function filterActionRows(rows, {
   sizedOnly = false,
   clearOnly = false,
   pinWithOnly = false,
+  topPlayOnly = false,
   dateKey = null,
   nowMs = Date.now(),
   /** Dollar floor; default hides sub-$500. Pass 0 to show all sizes. */
@@ -1025,6 +1057,7 @@ export function filterActionRows(rows, {
     if (sizedOnly && !displaySized(r)) return false;
     if (clearOnly && r.opposed !== 'clear') return false;
     if (pinWithOnly && !lineWithTicket(r)) return false;
+    if (topPlayOnly && !isActionTopPlay(r)) return false;
     if (dateKey && !rowMatchesActionDate(r, dateKey, nowMs)) return false;
     return true;
   });
