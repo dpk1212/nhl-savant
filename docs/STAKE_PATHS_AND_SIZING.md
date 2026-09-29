@@ -109,11 +109,14 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 12f. HARD mute-exception (2026-09-24+) — restore listed mutes if ≥1 HARD FOR
      └─ tape-weak **S/T stays muted** · rescuedBy=hard-mkt-hold
      └─ **2026-09-28+** 2+ unique HARD+ FOR and 0 HARD+ AG also restores steam-tail / leftover / st-fat / tape-weak S/T
+     └─ **2026-09-29+** 2+ unique HARD+ FOR and margin (FOR−AG) ≥ +1 (2-1 HOLDs, 2-2 stays muted)
      └─ size = max(uPre, 3) capped 4u · unique wallets not duplicate listings
      └─ skip ev-drift / fav-juice / unstamped 0u / fade · rescuedBy=hard-2for-hold
      └─ **2026-09-28+** S/T 1 HARD+ FOR sized ≥1.5× sport usual and 0 HARD+ AG restores the same mute set at uPre capped 4u (no 3u floor)
      └─ ML stays on 1-for / 2-for · skip board-share · 2-for still wins when ≥2 HARD · rescuedBy=hard-st-press-hold
 12g. HARD+ AG mute (2026-09-25+) — ≥1 HARD on the other side → 0u · mutedBy=hard-ag
+     └─ **2026-09-29+** mute only when HARD AG ≥1 **and** margin (FOR−AG) ≤ 0
+     └─ 2-1 / 3-2 HOLD · 1-1 / 0-1 / 1-2 MUTE · GOLD stays FOR-only
 12h. S/T HARD+ FOR require (2026-09-26+) — SPREAD/TOTAL needs ≥1 HARD FOR else 0u
      └─ ML exempt · 4u+ not exempt · mutedBy=st-hard-for
 12i. GOLD-stack size cap (2026-09-26+) — off-stack >4u → 4u
@@ -151,6 +154,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-09-19** | **Source B lock** — v12 quality + RANK n read Action first (featured n only if Action is empty). T−15 scan-drop stays PENDING for grade. |
 | **2026-09-24** | **Market-skill mute** — ML FOR n≥6 WR≥52 · S/T qual$ + HARD slip. **HARD mute-exception** after. |
 | **2026-09-25** | **HARD+ AG mute** — HARD wallet on the other side → 0u. |
+| **2026-09-29** | **HARD+ unique-wallet margin** — AG mute only when HARD AG ≥1 and (FOR−AG) ≤ 0. 2-1 HOLD, 1-1 MUTE. 2-for rescue if ≥2 HARD FOR and margin ≥ +1. GOLD stays FOR-only. S/T press stays 0 AG. Binary any-AG remains on 09-25…09-28 tickets. |
 | **2026-09-26** | **S/T HARD+ FOR require** — spreads/totals need ≥1 HARD FOR. |
 | **2026-09-26** | **Door 2 Proven** — Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven. FLAT not assigned. See [`HARD_AND_PROVEN_WEEK_2026-09-26.md`](./HARD_AND_PROVEN_WEEK_2026-09-26.md). |
 | **2026-09-26** | **GOLD-stack 4u cap** — off-stack tickets cannot publish above 4u. EDGE + tape can still fatten the stack to 6u. Ball State ML hole. |

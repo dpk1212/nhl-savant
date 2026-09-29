@@ -263,6 +263,8 @@ import {
   HARD_TWO_FOR_RESCUED_BY,
   HARD_TWO_FOR_FLOOR_U,
   HARD_TWO_FOR_CAP_U,
+  isHardTwoForMarginLive,
+  HARD_TWO_FOR_MARGIN_FROM,
   isHardStPressExceptionLive,
   HARD_ST_PRESS_EXCEPTION_FROM,
   HARD_ST_PRESS_RESCUED_BY,
@@ -272,7 +274,9 @@ import {
 import {
   applyHardAgMuteOverlay,
   isHardAgMuteLive,
+  isHardAgMarginLive,
   HARD_AG_MUTE_FROM,
+  HARD_AG_MARGIN_FROM,
   HARD_AG_MUTED_BY,
 } from '../src/lib/hardAgMuteOverlay.js';
 import {
@@ -6517,6 +6521,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (stFatPolicy?.action ? ` stFatAct=${stFatPolicy.action}` : '')
         + (fadeProvenHold?.action ? ` fadeHold=${fadeProvenHold.action}` : '')
         + (hardExceptionPolicy?.action ? ` hardHold=${hardExceptionPolicy.action}` : '')
+        + (hardAgPolicy?.action ? ` hardAg=${hardAgPolicy.action}` : '')
         + (hardStForPolicy?.action ? ` stHardFor=${hardStForPolicy.action}` : '')
         + (goldStackCapPolicy?.action ? ` goldCap=${goldStackCapPolicy.action}` : ''),
       );
@@ -7433,13 +7438,25 @@ async function main() {
     console.log(`HARD mute exception: not live before ${HARD_MUTE_EXCEPTION_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isHardTwoForExceptionLive(TARGET_DATE)) {
-    console.log(
-      `HARD 2+ FOR / 0 AG exception LIVE: unique HARD FOR ≥2 and HARD AG = 0`
-      + ` → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at`
-      + ` max(uPre, ${HARD_TWO_FOR_FLOOR_U}) capped ${HARD_TWO_FOR_CAP_U}u`
-      + ` · from ${HARD_TWO_FOR_EXCEPTION_FROM} · rescuedBy=${HARD_TWO_FOR_RESCUED_BY}`
-      + ` · skip ev-drift / fav-juice / unstamped 0u / fade`,
-    );
+    if (isHardTwoForMarginLive(TARGET_DATE)) {
+      console.log(
+        `HARD 2+ FOR / margin≥+1 exception LIVE: unique HARD FOR ≥2 and (FOR−AG) ≥ 1`
+        + ` → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at`
+        + ` max(uPre, ${HARD_TWO_FOR_FLOOR_U}) capped ${HARD_TWO_FOR_CAP_U}u`
+        + ` · 2-1 HOLD · 2-2 stays muted`
+        + ` · binary 0 AG ${HARD_TWO_FOR_EXCEPTION_FROM} until ${HARD_TWO_FOR_MARGIN_FROM}`
+        + ` · margin from ${HARD_TWO_FOR_MARGIN_FROM} · rescuedBy=${HARD_TWO_FOR_RESCUED_BY}`
+        + ` · skip ev-drift / fav-juice / unstamped 0u / fade`,
+      );
+    } else {
+      console.log(
+        `HARD 2+ FOR / 0 AG exception LIVE: unique HARD FOR ≥2 and HARD AG = 0`
+        + ` → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at`
+        + ` max(uPre, ${HARD_TWO_FOR_FLOOR_U}) capped ${HARD_TWO_FOR_CAP_U}u`
+        + ` · from ${HARD_TWO_FOR_EXCEPTION_FROM} · rescuedBy=${HARD_TWO_FOR_RESCUED_BY}`
+        + ` · skip ev-drift / fav-juice / unstamped 0u / fade`,
+      );
+    }
   } else {
     console.log(`HARD 2+ FOR exception: not live before ${HARD_TWO_FOR_EXCEPTION_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
@@ -7456,11 +7473,21 @@ async function main() {
     console.log(`HARD S/T press exception: not live before ${HARD_ST_PRESS_EXCEPTION_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isHardAgMuteLive(TARGET_DATE)) {
-    console.log(
-      `HARD+ AG mute LIVE: ≥1 HARD wallet on the other side → 0u`
-      + ` · from ${HARD_AG_MUTE_FROM} · after HARD exception · mutedBy=${HARD_AG_MUTED_BY}`
-      + ` · fail-open HOLD if byMarket schema missing · 4u+ not exempt · no resize / no flip`,
-    );
+    if (isHardAgMarginLive(TARGET_DATE)) {
+      console.log(
+        `HARD+ AG mute LIVE: HARD AG ≥1 and margin (FOR−AG) ≤ 0 → 0u`
+        + ` · 2-1 HOLD · 1-1 MUTE · GOLD stays FOR-only`
+        + ` · binary any-AG ${HARD_AG_MUTE_FROM} until ${HARD_AG_MARGIN_FROM}`
+        + ` · margin from ${HARD_AG_MARGIN_FROM} · after HARD exception · mutedBy=${HARD_AG_MUTED_BY}`
+        + ` · fail-open HOLD if byMarket schema missing · 4u+ not exempt · no resize / no flip`,
+      );
+    } else {
+      console.log(
+        `HARD+ AG mute LIVE: ≥1 HARD wallet on the other side → 0u`
+        + ` · from ${HARD_AG_MUTE_FROM} · after HARD exception · mutedBy=${HARD_AG_MUTED_BY}`
+        + ` · fail-open HOLD if byMarket schema missing · 4u+ not exempt · no resize / no flip`,
+      );
+    }
   } else {
     console.log(`HARD+ AG mute: not live before ${HARD_AG_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }

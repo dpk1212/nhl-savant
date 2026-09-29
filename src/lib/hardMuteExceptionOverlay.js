@@ -9,11 +9,13 @@
  * 1. 2026-09-24+  ≥1 HARD FOR restores uPre when last mute is tape-weak /
  *    maxsr-sub4 / fools-gold-flat / top-crowded. tape-weak S/T stays muted.
  *
- * 2. 2026-09-28+  ≥2 unique HARD+ FOR and 0 HARD+ AG restores a wider
- *    mute set (steam-tail / leftover / st-fat / tape-weak including S/T,
+ * 2. 2026-09-28+  ≥2 unique HARD+ FOR restores a wider mute set
+ *    (steam-tail / leftover / st-fat / tape-weak including S/T,
  *    plus the 09-24 list). Size = max(uPre, 3) capped at 4.
  *    Unique wallets, not duplicate listings. Do not except ev-drift,
  *    fav-juice, unstamped 0u, or fade.
+ *    2026-09-28: also requires 0 HARD+ AG.
+ *    2026-09-29+: margin (FOR−AG) ≥ +1 is enough (2-1 rescues, 2-2 stays muted).
  *
  * 3. 2026-09-28+  SPREAD/TOTAL, ≥1 unique HARD+ FOR sized ≥1.5× sport
  *    usual, 0 HARD+ AG, same mute set as (2). Restore uPre capped at 4
@@ -23,6 +25,7 @@
  * Going-forward only. Roll-back:
  *   HARD_MUTE_EXCEPTION_FROM = '9999-01-01'
  *   HARD_TWO_FOR_EXCEPTION_FROM = '9999-01-01'
+ *   HARD_TWO_FOR_MARGIN_FROM = '9999-01-01'   (2-for requires 0 AG again)
  *   HARD_ST_PRESS_EXCEPTION_FROM = '9999-01-01'
  */
 import {
@@ -37,6 +40,7 @@ export const HARD_MUTE_EXCEPTION_FROM = '2026-09-24';
 export const HARD_MUTE_EXCEPTION_RESCUED_BY = 'hard-mkt-hold';
 
 export const HARD_TWO_FOR_EXCEPTION_FROM = '2026-09-28';
+export const HARD_TWO_FOR_MARGIN_FROM = '2026-09-29';
 export const HARD_TWO_FOR_RESCUED_BY = 'hard-2for-hold';
 export const HARD_TWO_FOR_MIN_N = 2;
 export const HARD_TWO_FOR_FLOOR_U = 3;
@@ -78,6 +82,17 @@ export function isHardMuteExceptionLive(pickDate) {
 
 export function isHardTwoForExceptionLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= HARD_TWO_FOR_EXCEPTION_FROM;
+}
+
+export function isHardTwoForMarginLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= HARD_TWO_FOR_MARGIN_FROM;
+}
+
+/** True when 2-for must stay muted because we are not ahead on unique HARD wallets. */
+export function twoForAgBlocks(hardN, hardAgN, pickDate) {
+  if (!(hardAgN >= 1)) return false;
+  if (isHardTwoForMarginLive(pickDate)) return (hardN - hardAgN) < 1;
+  return true;
 }
 
 export function isHardStPressExceptionLive(pickDate) {
@@ -148,6 +163,7 @@ function packExtra(mutedBy, mkt, extra = {}) {
     schemaN: extra.schemaN ?? 0,
     hardN: extra.hardN ?? 0,
     hardAgN: extra.hardAgN ?? 0,
+    margin: extra.margin ?? 0,
     pressN: extra.pressN ?? 0,
     mutedBy: mutedBy || null,
   };
@@ -204,6 +220,7 @@ export function applyHardMuteExceptionOverlay({
   const hardAg = wallets.filter((w) => !w.onFor && isHardMarketWallet(w.pos));
   extra.hardN = hardFor.length;
   extra.hardAgN = hardAg.length;
+  extra.margin = extra.hardN - extra.hardAgN;
   extra.pressN = hardForPressN(hardFor, sport, walletProfiles);
 
   if (
@@ -211,7 +228,7 @@ export function applyHardMuteExceptionOverlay({
     && HARD_TWO_FOR_EXCEPTION_MUTES.has(mutedBy)
     && extra.hardN >= HARD_TWO_FOR_MIN_N
   ) {
-    if (extra.hardAgN >= 1) {
+    if (twoForAgBlocks(extra.hardN, extra.hardAgN, pickDate)) {
       return identity(current, 'HOLD_MUTE', 'hard_ag', extra);
     }
     const sized = twoHardForRestoreUnits(restore);
@@ -228,6 +245,7 @@ export function applyHardMuteExceptionOverlay({
       schemaN: extra.schemaN,
       hardN: extra.hardN,
       hardAgN: extra.hardAgN,
+      margin: extra.margin,
       pressN: extra.pressN,
     };
   }
@@ -256,6 +274,7 @@ export function applyHardMuteExceptionOverlay({
       schemaN: extra.schemaN,
       hardN: extra.hardN,
       hardAgN: extra.hardAgN,
+      margin: extra.margin,
       pressN: extra.pressN,
     };
   }
@@ -283,6 +302,7 @@ export function applyHardMuteExceptionOverlay({
     schemaN: extra.schemaN,
     hardN: extra.hardN,
     hardAgN: extra.hardAgN,
+    margin: extra.margin,
     pressN: extra.pressN,
   };
 }
