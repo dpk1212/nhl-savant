@@ -29,6 +29,7 @@ import {
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
+import { fetchTwoPositionPages, takeSecondPageCount, POSITION_PAGE_SIZE } from './lib/fetchPositionPages.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -840,8 +841,12 @@ async function run() {
   const fetchedPositions = await mapPool(
     walletsToScan,
     SCAN_CONCURRENCY,
-    (wallet) => fetchWithRetry(`${DATA_API}/positions?user=${wallet.addr}&limit=500`),
+    (wallet) => fetchTwoPositionPages((offset) => fetchWithRetry(
+      `${DATA_API}/positions?user=${wallet.addr}&limit=${POSITION_PAGE_SIZE}&offset=${offset}`,
+    )),
   );
+  const secondPages = takeSecondPageCount();
+  if (secondPages > 0) console.log(`Position second page: ${secondPages} wallet(s)`);
 
   // ── Phase B: process results sequentially in original order (no network) ──
   for (let wi = 0; wi < walletsToScan.length; wi++) {
