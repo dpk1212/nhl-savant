@@ -221,3 +221,21 @@ export function sizeTierWinRates(sizeRatioBands, { minPctN = 8 } = {}) {
     tiers,
   };
 }
+
+/** The size-tier win rate for this bet's multiple. Same bands as the market book. */
+export function sizeTierForRatio(sizeRatioBands, ratio, { minPctN = 8 } = {}) {
+  const n = Number(ratio);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const face = sizeTierWinRates(sizeRatioBands, { minPctN });
+  if (!face) return null;
+  const id = n < 0.5 ? 'light' : n < 1 ? 'lean' : n < 1.5 ? 'full' : 'press';
+  const tier = face.tiers.find((t) => t.id === id);
+  if (!tier || (tier.wr == null && !tier.record)) return null;
+  return {
+    id: tier.id,
+    kicker: tier.kicker,
+    wr: tier.wr,
+    record: tier.record,
+    n: tier.n,
+  };
+}
