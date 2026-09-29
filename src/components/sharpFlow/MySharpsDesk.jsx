@@ -65,7 +65,7 @@ const T = {
   body: { fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.4 },
 };
 
-const HOLD_GRID = 'minmax(148px, 1.6fr) minmax(108px, 1fr) 96px 72px 78px 92px';
+const SHARP_GRID = 'minmax(0, 1.15fr) minmax(72px, 1.2fr) 92px 52px 56px 76px';
 const MARKET_LABEL = { ML: 'ML', SPREAD: 'Spread', TOTAL: 'Total' };
 const FIND_SPORTS = ['All', 'MLB', 'NFL', 'NBA', 'NHL', 'CFB', 'CBB', 'SOC', 'UFC', 'WNBA'];
 const FIND_SORTS = [
@@ -307,12 +307,33 @@ function NameField({ name, tag, selected, startEditing, onRename, onOpen }) {
   );
 }
 
-function HoldingRow({ row, selected, isMobile, onToggle, onOpen, onRename, startEditing }) {
-  const form = row.heat?.key === 'hot' || row.heat?.key === 'cold'
-    ? `${row.heat.label} ${row.heat.window} ${row.heat.record}`
-    : (row.heat?.record && row.heat.window ? `${row.heat.window} ${row.heat.record}` : null);
+function heatLine(heat) {
+  if (heat?.key === 'hot' || heat?.key === 'cold') return `${heat.label} ${heat.window} ${heat.record}`;
+  if (heat?.record && heat.window) return `${heat.window} ${heat.record}`;
+  return null;
+}
+
+function openOnSport(holding, sport, actionRows) {
+  if (!sport) return { n: holding.openN || 0, invested: holding.openInvested || 0 };
+  const mine = (actionRows || []).filter((r) =>
+    sameSharp(r.walletShort, holding.walletShort)
+    && String(r.sport || '').toUpperCase() === sport
+  );
+  return {
+    n: mine.length,
+    invested: mine.reduce((s, r) => s + (Number(r.invested) || 0), 0),
+  };
+}
+
+function PortfolioSharp({
+  row, face, maxAbs, selected, isMobile, onToggle, onOpen, onRename, startEditing,
+}) {
+  const form = heatLine(face.heat);
   const close = Number.isFinite(row.clv?.pctPos) ? `${row.clv.pctPos}%` : '—';
   const closeTone = Number.isFinite(row.clv?.pctPos) && row.clv.pctPos >= 55 ? B.goldSoft : B.textFaint;
+  const record = face.honest?.record
+    ? `${face.honest.record}${face.honest.showPct ? ` · ${face.honest.wr}%` : ''}`
+    : null;
   return (
     <div
       role="button"
@@ -324,61 +345,60 @@ function HoldingRow({ row, selected, isMobile, onToggle, onOpen, onRename, start
       }}
       style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : HOLD_GRID,
-        gap: isMobile ? '2px 12px' : '0 14px',
+        gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : SHARP_GRID,
+        gap: isMobile ? '6px 12px' : '0 14px',
         alignItems: 'center',
-        padding: '0.92rem 0.35rem 0.92rem 0.7rem',
-        borderBottom: `1px solid ${B.hair}`,
+        padding: '0.72rem 0.15rem 0.72rem 0.35rem',
         boxShadow: selected ? `inset 3px 0 0 ${B.gold}` : 'none',
         background: selected ? 'rgba(212,175,55,0.05)' : 'transparent',
         cursor: 'pointer',
       }}
     >
-      <NameField
-        name={row.name}
-        tag={row.tag}
-        selected={selected}
-        startEditing={startEditing}
-        onRename={onRename}
-        onOpen={onOpen}
-      />
-      <div style={{ display: isMobile ? 'none' : 'block' }}>
-        <div style={{ ...T.figure, color: B.textSec, fontSize: '0.88rem' }}>
-          {row.honest?.record || '—'}
-          {row.honest?.showPct ? <span style={{ color: B.textFaint }}> · {row.honest.wr}%</span> : null}
+      <div style={{ minWidth: 0 }}>
+        <NameField
+          name={row.name}
+          tag={row.tag}
+          selected={selected}
+          startEditing={startEditing}
+          onRename={onRename}
+          onOpen={onOpen}
+        />
+        <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>
+          {isMobile ? (
+            <>
+              {face.honest?.text && face.honest.text !== '—' ? face.honest.text : '—'}
+              {form ? <span style={{ color: heatColor(face.heat) }}>{` · ${form}`}</span> : null}
+              {Number.isFinite(face.roi) ? ` · ${face.roi}% ROI` : ''}
+              {Number.isFinite(row.clv?.pctPos) ? ` · close ${row.clv.pctPos}%` : ''}
+              {face.openInvested ? ` · ${fmtVol(face.openInvested, { signed: false })} open` : ''}
+            </>
+          ) : (
+            <>
+              {record || '—'}
+              {form ? <span style={{ color: heatColor(face.heat) }}>{record ? ` · ${form}` : form}</span> : null}
+            </>
+          )}
         </div>
-        {form ? (
-          <div style={{ ...T.meta, color: heatColor(row.heat), marginTop: 3 }}>{form}</div>
-        ) : null}
       </div>
-      <div style={{ ...T.figure, color: pnlColor(row.l30Pnl, B.textMuted), textAlign: isMobile ? 'right' : 'right' }}>
-        {Number.isFinite(row.l30Pnl) ? fmtVol(row.l30Pnl) : '—'}
+      {isMobile ? null : <WeightBar value={face.pnl} maxAbs={maxAbs} />}
+      <div style={{ ...T.figure, color: pnlColor(face.pnl), textAlign: 'right', fontSize: '1.02rem' }}>
+        {Number.isFinite(face.pnl) ? fmtVol(face.pnl) : '—'}
       </div>
-      {!isMobile ? (
-        <div style={{ ...T.figure, color: pnlColor(row.roi, B.textFaint), textAlign: 'right', fontSize: '0.88rem' }}>
-          {Number.isFinite(row.roi) ? `${row.roi}%` : '—'}
+      {isMobile ? null : (
+        <div style={{ ...T.figure, color: pnlColor(face.roi, B.textFaint), textAlign: 'right', fontSize: '0.82rem' }}>
+          {Number.isFinite(face.roi) ? `${face.roi}%` : '—'}
         </div>
-      ) : null}
-      {!isMobile ? (
-        <div style={{ ...T.figure, color: closeTone, textAlign: 'right', fontSize: '0.88rem' }}>{close}</div>
-      ) : null}
-      {!isMobile ? (
-        <div style={{ ...T.figure, color: row.openInvested ? B.goldSoft : B.textFaint, textAlign: 'right' }}>
-          {row.openInvested ? fmtVol(row.openInvested, { signed: false }) : '—'}
-          {row.openN > 1 ? <span style={{ ...T.meta, color: B.textFaint, marginLeft: 6 }}>{row.openN}</span> : null}
+      )}
+      {isMobile ? null : (
+        <div style={{ ...T.figure, color: closeTone, textAlign: 'right', fontSize: '0.82rem' }}>{close}</div>
+      )}
+      {isMobile ? null : (
+        <div style={{ ...T.figure, color: face.openInvested ? B.goldSoft : B.textFaint, textAlign: 'right', fontSize: '0.82rem' }}>
+          {face.openInvested ? fmtVol(face.openInvested, { signed: false }) : '—'}
+          {face.openN > 1 ? <span style={{ ...T.meta, color: B.textFaint, marginLeft: 4 }}>{face.openN}</span> : null}
         </div>
-      ) : null}
-      {isMobile ? (
-        <div style={{ ...T.meta, color: B.textMuted, gridColumn: '1 / -1', fontFeatureSettings: "'tnum'" }}>
-          {[
-            row.honest?.text,
-            form,
-            Number.isFinite(row.roi) ? `${row.roi}% ROI` : null,
-            Number.isFinite(row.clv?.pctPos) ? `close ${row.clv.pctPos}%` : null,
-            row.openInvested ? `${fmtVol(row.openInvested, { signed: false })} open` : null,
-          ].filter(Boolean).join('   ·   ') || '—'}
-        </div>
-      ) : null}
+      )}
+      {isMobile ? <div style={{ gridColumn: '1 / -1' }}><WeightBar value={face.pnl} maxAbs={maxAbs} /></div> : null}
     </div>
   );
 }
@@ -413,12 +433,13 @@ function sizeMark(ratio) {
   return `${n.toFixed(1)}×`;
 }
 
-function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets }) {
+function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets, sportFilter = null }) {
   const [openKey, setOpenKey] = useState(null);
   const label = holding.name || holding.tag;
   const groups = [];
   const bySport = new Map();
   for (const m of holding.markets || []) {
+    if (sportFilter && m.sport !== sportFilter) continue;
     if (!bySport.has(m.sport)) bySport.set(m.sport, []);
     bySport.get(m.sport).push(m);
   }
@@ -1353,11 +1374,43 @@ function WeightBar({ value, maxAbs, height = 10 }) {
   );
 }
 
-function PortfolioStage({ holdings, isMobile }) {
+function PortfolioStage({
+  holdings, isMobile, selected, nameFocus, onToggle, onOpen, onRename, onRemove,
+  walletProfiles, actionRows, onToggleBets,
+}) {
+  const [sport, setSport] = useState(null);
   const stage = useMemo(() => buildPortfolioStage(holdings), [holdings]);
-  if (!stage.path.length && !stage.sharps.length && !stage.sports.length) return null;
+  const markets = useMemo(
+    () => (sport ? buildPortfolioStage(holdings, sport).markets : stage.markets),
+    [holdings, sport, stage],
+  );
+  const people = useMemo(() => {
+    const rows = [];
+    for (const h of holdings || []) {
+      const line = sport ? (h.lines || []).find((l) => l.sport === sport) : null;
+      if (sport && !line) continue;
+      const open = openOnSport(h, sport, actionRows);
+      rows.push({
+        holding: h,
+        pnl: sport ? line.pnl : h.l30Pnl,
+        roi: sport ? line.roi : h.roi,
+        honest: sport ? line.honest : h.honest,
+        heat: sport ? line.heat : h.heat,
+        openN: open.n,
+        openInvested: open.invested,
+      });
+    }
+    rows.sort((a, b) => {
+      const ap = Number.isFinite(a.pnl) ? a.pnl : -Infinity;
+      const bp = Number.isFinite(b.pnl) ? b.pnl : -Infinity;
+      if (bp !== ap) return bp - ap;
+      return (b.openInvested || 0) - (a.openInvested || 0);
+    });
+    return rows;
+  }, [holdings, sport, actionRows]);
+  if (!stage.path.length && !people.length && !stage.sports.length) return null;
   const tone = pnlColor(stage.pathEnd ?? stage.bookPnl, B.text);
-  const maxSharp = Math.max(1, ...stage.sharps.map((h) => Math.abs(h.pnl) || 0));
+  const maxSharp = Math.max(1, ...people.map((h) => Math.abs(h.pnl) || 0));
   const maxSport = Math.max(1, ...stage.sports.map((s) => Math.abs(s.pnl) || 0));
   const rec = stage.honest;
   return (
@@ -1400,70 +1453,100 @@ function PortfolioStage({ holdings, isMobile }) {
             marginTop: 16,
           }}
           >
-            {stage.sports.slice(0, 4).map((row) => (
-              <div key={row.sport} style={{
-                borderRadius: 12,
-                border: `1px solid ${B.hair}`,
-                background: 'rgba(255,255,255,0.025)',
-                padding: '0.7rem 0.75rem 0.75rem',
-              }}
-              >
-                <div style={{ ...T.kicker, color: B.textFaint }}>{row.sport}</div>
-                <div style={{ ...T.figure, color: pnlColor(row.pnl), fontSize: '1.15rem', marginTop: 6 }}>{fmtVol(row.pnl)}</div>
-                <div style={{ marginTop: 8 }}><WeightBar value={row.pnl} maxAbs={maxSport} height={6} /></div>
-                <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
-                  {row.honest?.text && row.honest.text !== '—' ? row.honest.text : ''}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-        {stage.sharps.length ? (
-          <div style={{ marginTop: 18 }}>
-            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Who made it</div>
-            {stage.sharps.map((h) => {
-              const heat = h.heat?.key === 'hot' || h.heat?.key === 'cold'
-                ? `${h.heat.label} ${h.heat.window} ${h.heat.record}`
-                : null;
+            {stage.sports.slice(0, 4).map((row) => {
+              const on = sport === row.sport;
               return (
-                <div key={h.walletShort} style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : 'minmax(0, 0.9fr) minmax(140px, 1.5fr) 92px',
-                  gap: isMobile ? '6px 12px' : '0 16px',
-                  alignItems: 'center',
-                  padding: '0.72rem 0',
-                  borderTop: `1px solid ${B.hair}`,
-                  marginTop: 8,
-                }}
+                <button
+                  key={row.sport}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setSport(on ? null : row.sport)}
+                  style={{
+                    borderRadius: 12,
+                    border: `1px solid ${on ? B.goldBorder : B.hair}`,
+                    background: on ? B.goldDim : 'rgba(255,255,255,0.025)',
+                    padding: '0.7rem 0.75rem 0.75rem',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    color: 'inherit',
+                  }}
                 >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ ...T.name, color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.name}</div>
-                    <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>
-                      {[
-                        h.honest?.text && h.honest.text !== '—' ? h.honest.text : null,
-                        Number.isFinite(h.roi) ? `${h.roi}% ROI` : null,
-                        heat,
-                      ].filter(Boolean).join(' · ')}
-                    </div>
+                  <div style={{ ...T.kicker, color: on ? B.gold : B.textFaint }}>{row.sport}</div>
+                  <div style={{ ...T.figure, color: pnlColor(row.pnl), fontSize: '1.15rem', marginTop: 6 }}>{fmtVol(row.pnl)}</div>
+                  <div style={{ marginTop: 8 }}><WeightBar value={row.pnl} maxAbs={maxSport} height={6} /></div>
+                  <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
+                    {row.honest?.text && row.honest.text !== '—' ? row.honest.text : ''}
                   </div>
-                  {isMobile ? null : <WeightBar value={h.pnl} maxAbs={maxSharp} />}
-                  <div style={{ ...T.figure, color: pnlColor(h.pnl), textAlign: 'right', fontSize: '1.02rem' }}>{fmtVol(h.pnl)}</div>
-                  {isMobile ? <div style={{ gridColumn: '1 / -1' }}><WeightBar value={h.pnl} maxAbs={maxSharp} /></div> : null}
-                </div>
+                </button>
               );
             })}
           </div>
         ) : null}
-        {stage.markets.length ? (
+        <div style={{ marginTop: 18 }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : SHARP_GRID,
+            gap: '0 14px',
+            alignItems: 'end',
+            padding: '0 0.15rem 0.35rem 0.35rem',
+          }}
+          >
+            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>
+              Who made it{sport ? ` · ${sport}` : ''}
+            </div>
+            {isMobile ? <div /> : <div />}
+            {isMobile ? null : <Head align="right">30d</Head>}
+            {isMobile ? null : <Head align="right">ROI</Head>}
+            {isMobile ? null : <Head align="right">Close</Head>}
+            {isMobile ? null : <Head align="right">Open</Head>}
+          </div>
+          {people.length ? people.map((face) => {
+            const id = face.holding.walletShort;
+            const open = selected === id;
+            return (
+              <div key={id} style={{ borderTop: `1px solid ${B.hair}` }}>
+                <PortfolioSharp
+                  row={face.holding}
+                  face={face}
+                  maxAbs={maxSharp}
+                  selected={open}
+                  isMobile={isMobile}
+                  startEditing={nameFocus === id}
+                  onToggle={() => onToggle?.(id)}
+                  onOpen={() => onOpen?.(id)}
+                  onRename={(name) => onRename?.(id, name)}
+                />
+                {open ? (
+                  <MarketBook
+                    holding={face.holding}
+                    walletProfiles={walletProfiles}
+                    actionRows={actionRows}
+                    sportFilter={sport}
+                    onToggleBets={onToggleBets}
+                    onRemove={() => onRemove?.(id)}
+                  />
+                ) : null}
+              </div>
+            );
+          }) : (
+            <div style={{ ...T.body, color: B.textFaint, padding: '0.9rem 0.35rem' }}>
+              {sport ? `No one on this list has a ${sport} book.` : 'Nobody on the list.'}
+            </div>
+          )}
+        </div>
+        {markets.length ? (
           <div style={{ marginTop: 16 }}>
-            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em', marginBottom: 8 }}>Where</div>
+            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em', marginBottom: 8 }}>
+              Where{sport ? ` · ${sport}` : ''}
+            </div>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : `repeat(${Math.min(stage.markets.length, 3)}, minmax(0, 1fr))`,
+              gridTemplateColumns: isMobile ? '1fr' : `repeat(${Math.min(markets.length, 3)}, minmax(0, 1fr))`,
               gap: 10,
             }}
             >
-              {stage.markets.slice(0, 3).map((m) => (
+              {markets.slice(0, 3).map((m) => (
                 <div key={m.label} style={{
                   borderRadius: 12,
                   borderTop: `1px solid ${B.line}`,
@@ -1998,7 +2081,6 @@ export default function MySharpsDesk({
   );
 
   const focus = holdings.some((h) => h.walletShort === selected) ? selected : null;
-  const holding = holdings.find((h) => h.walletShort === focus) || null;
   const betCount = betBoard.tickets.length;
 
   const openDraft = (item, suggested, patch) => {
@@ -2051,59 +2133,31 @@ export default function MySharpsDesk({
       {room === 'book' ? (
         <>
           <Hero snapshot={snapshot} isMobile={isMobile} onOpenBets={() => setRoom('bets')} />
-          {holdings.length ? <PortfolioStage holdings={holdings} isMobile={isMobile} /> : null}
-          {!holdings.length ? (
+          {holdings.length ? (
+            <PortfolioStage
+              holdings={holdings}
+              isMobile={isMobile}
+              selected={focus}
+              nameFocus={nameFocus}
+              walletProfiles={walletProfiles}
+              actionRows={actionRows}
+              onToggleBets={onToggleBets}
+              onToggle={(id) => setSelected((cur) => (cur === id ? null : id))}
+              onOpen={(id) => setSelected(id)}
+              onRename={(id, name) => {
+                setNameFocus(null);
+                onRename?.(id, name);
+              }}
+              onRemove={(id) => {
+                setSelected(null);
+                onRemove?.(id);
+              }}
+            />
+          ) : (
             <div style={{ padding: '1.6rem 0 0.4rem' }}>
               <div style={{ ...T.hero, fontSize: '1.45rem', color: B.text }}>Nobody on the list</div>
               <button type="button" onClick={() => setRoom('find')} style={{ ...goldBtn, marginTop: 14 }}>Find sharps</button>
             </div>
-          ) : (
-            <>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : HOLD_GRID,
-                gap: '0 14px',
-                padding: '1.15rem 0.35rem 0.4rem 0.7rem',
-                borderBottom: `1px solid ${B.line}`,
-              }}
-              >
-                <Head>Sharp</Head>
-                {isMobile ? null : <Head>Record</Head>}
-                <Head align="right">30d</Head>
-                {isMobile ? null : <Head align="right">ROI</Head>}
-                {isMobile ? null : <Head align="right">Close</Head>}
-                {isMobile ? null : <Head align="right">Open</Head>}
-              </div>
-              {holdings.map((row) => (
-                <React.Fragment key={row.walletShort}>
-                  <HoldingRow
-                    row={row}
-                    selected={focus === row.walletShort}
-                    isMobile={isMobile}
-                    startEditing={nameFocus === row.walletShort}
-                    onToggle={() => setSelected((cur) => (cur === row.walletShort ? null : row.walletShort))}
-                    onOpen={() => setSelected(row.walletShort)}
-                    onRename={(name) => {
-                      setNameFocus(null);
-                      onRename?.(row.walletShort, name);
-                    }}
-                  />
-                  {focus === row.walletShort && holding ? (
-                    <MarketBook
-                      holding={holding}
-                      walletProfiles={walletProfiles}
-                      actionRows={actionRows}
-                      onToggleBets={onToggleBets}
-                      onRemove={() => {
-                        const id = holding.walletShort;
-                        setSelected(null);
-                        onRemove?.(id);
-                      }}
-                    />
-                  ) : null}
-                </React.Fragment>
-              ))}
-            </>
           )}
         </>
       ) : null}

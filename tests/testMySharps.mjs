@@ -783,6 +783,9 @@ assert.equal(stage.uncharted, null);
 assert.equal(stage.sports[0].sport, 'MLB');
 assert.equal(stage.sports[0].pnl, 90300);
 assert.equal(stage.markets.length, 2);
+assert.equal(buildPortfolioStage([
+  { walletShort: 'a', markets: [{ label: 'ML', sport: 'NFL', n: 4, wins: 3, losses: 1, roi: 18, l30: { pnl: 3800 } }, { label: 'Total', sport: 'MLB', n: 8, wins: 5, losses: 3, roi: 10, l30: { pnl: 900 } }] },
+], 'NFL').markets[0].label, 'ML');
 
 const lines = groupPortfolioBets([{
   id: 't1', split: false, shared: false, maxRatio: 2.1, invested: 6400,
