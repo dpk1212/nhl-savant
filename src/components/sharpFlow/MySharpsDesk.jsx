@@ -12,6 +12,8 @@ import {
   buildPortfolioSnapshot,
   buildPortfolioStage,
   buildSharpDossier,
+  portfolioWindowBook,
+  summarizeTape,
   blendRoi,
   groupPortfolioBets,
   marketTape,
@@ -433,6 +435,22 @@ function sizeMark(ratio) {
   return `${n.toFixed(1)}×`;
 }
 
+function relativeMultiple(invested, ratio, usual) {
+  const stored = Number(ratio);
+  if (Number.isFinite(stored) && stored > 0) return stored;
+  const u = Number(usual);
+  const inv = Number(invested);
+  if (u > 0 && inv > 0) return inv / u;
+  return null;
+}
+
+function relativeLabel(multiple) {
+  const n = Number(multiple);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n >= 0.95 && n < 1.05) return '1×';
+  return `${n >= 10 ? n.toFixed(0) : n.toFixed(1)}×`;
+}
+
 function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets, sportFilter = null }) {
   const [openKey, setOpenKey] = useState(null);
   const label = holding.name || holding.tag;
@@ -568,8 +586,25 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
   );
 }
 
+function SizeRail({ invested, maxInv, multiple }) {
+  const pct = maxInv > 0 && invested > 0 ? Math.min(100, (invested / maxInv) * 100) : 0;
+  const hot = Number(multiple) >= 1.15;
+  const color = hot ? B.goldSoft : B.textMuted;
+  if (!pct) return null;
+  return (
+    <div style={{ marginTop: 5, height: 3, borderRadius: 99, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+      <div style={{ width: `${Math.max(pct, 4)}%`, height: '100%', borderRadius: 99, background: color }} />
+    </div>
+  );
+}
+
 function MarketPlays({ openRows, tape, usual }) {
   const graded = tape?.plays || [];
+  const maxInv = Math.max(
+    1,
+    ...graded.map((g) => Number(g.invested) || 0),
+    ...openRows.map((r) => Number(r.invested) || 0),
+  );
   return (
     <div style={{ padding: '0 0 0.45rem 0.15rem' }}>
       <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', margin: '2px 0 4px' }}>
@@ -577,20 +612,25 @@ function MarketPlays({ openRows, tape, usual }) {
       </div>
       {openRows.length ? openRows.map((r, i) => {
         const ratio = Number(r.displaySizeRatio ?? r.sizeRatio);
-        const mark = sizeMark(ratio);
+        const multiple = relativeMultiple(r.invested, ratio, usual);
+        const label = relativeLabel(multiple);
         const pick = r.marketLabel || r.team || r.side || 'Open';
         const matchup = r.away && r.home ? `${r.away} @ ${r.home}` : null;
         return (
-          <div key={`${r.gameKey}-${r.side}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{pick}</div>
-              <div style={{ ...T.meta, color: B.textMuted }}>{matchup || 'Open ticket'}</div>
+          <div key={`${r.gameKey}-${r.side}-${i}`} style={{ padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{pick}</div>
+                <div style={{ ...T.meta, color: B.textMuted }}>{matchup || 'Open ticket'}</div>
+              </div>
+              <div style={{ ...T.figure, color: B.goldSoft, fontSize: '0.82rem', textAlign: 'right' }}>
+                {fmtVol(r.invested, { signed: false })}
+                {label ? (
+                  <span style={{ color: multiple >= 1.15 ? B.goldSoft : B.textFaint }}> · {label}</span>
+                ) : null}
+              </div>
             </div>
-            <div style={{ ...T.figure, color: B.goldSoft, fontSize: '0.82rem', textAlign: 'right' }}>
-              {fmtVol(r.invested, { signed: false })}
-              {mark ? <span style={{ color: B.textSec }}> · {mark}</span> : null}
-              {usual && !mark ? <span style={{ ...T.meta, color: B.textFaint }}> · usual</span> : null}
-            </div>
+            <SizeRail invested={r.invested} maxInv={maxInv} multiple={multiple} />
           </div>
         );
       }) : (
@@ -600,23 +640,38 @@ function MarketPlays({ openRows, tape, usual }) {
         {tape?.scope === 'recent' ? 'Older graded' : 'Graded'}
         {tape?.total > graded.length ? ` · ${graded.length} of ${tape.total}` : ''}
       </div>
-      {graded.length ? graded.map((leg) => (
-        <div key={leg.id} style={{ display: 'grid', gridTemplateColumns: '52px minmax(0, 1fr) auto', gap: '0 12px', alignItems: 'baseline', padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
-          <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>{leg.date ? leg.date.slice(5) : '—'}</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{leg.pick}</div>
-            <div style={{ ...T.meta, color: B.textMuted }}>
-              {[leg.matchup, leg.invested ? fmtVol(leg.invested, { signed: false }) : null].filter(Boolean).join(' · ') || '—'}
+      {graded.length ? graded.map((leg) => {
+        const multiple = relativeMultiple(leg.invested, leg.ratio, usual);
+        const label = relativeLabel(multiple);
+        return (
+          <div key={leg.id} style={{ padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '52px minmax(0, 1fr) auto', gap: '0 12px', alignItems: 'baseline' }}>
+              <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>{leg.date ? leg.date.slice(5) : '—'}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{leg.pick}</div>
+                <div style={{ ...T.meta, color: B.textMuted }}>
+                  {[
+                    leg.matchup,
+                    leg.invested ? fmtVol(leg.invested, { signed: false }) : null,
+                  ].filter(Boolean).join(' · ') || '—'}
+                  {label ? (
+                    <span style={{ color: multiple >= 1.15 ? B.goldSoft : B.textFaint }}> · {label}</span>
+                  ) : null}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ ...T.kicker, letterSpacing: '0.08em', color: leg.won ? B.green : B.red }}>{leg.won ? 'W' : 'L'}</div>
+                <div style={{ ...T.figure, color: pnlColor(leg.pnl, B.textFaint), fontSize: '0.82rem' }}>
+                  {Number.isFinite(leg.pnl) ? fmtVol(leg.pnl) : ''}
+                </div>
+              </div>
+            </div>
+            <div style={{ marginLeft: 64 }}>
+              <SizeRail invested={leg.invested} maxInv={maxInv} multiple={multiple} />
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ ...T.kicker, letterSpacing: '0.08em', color: leg.won ? B.green : B.red }}>{leg.won ? 'W' : 'L'}</div>
-            <div style={{ ...T.figure, color: pnlColor(leg.pnl, B.textFaint), fontSize: '0.82rem' }}>
-              {Number.isFinite(leg.pnl) ? fmtVol(leg.pnl) : ''}
-            </div>
-          </div>
-        </div>
-      )) : (
+        );
+      }) : (
         <div style={{ ...T.meta, color: B.textFaint, padding: '0.25rem 0' }}>No graded plays in this market yet.</div>
       )}
     </div>
@@ -1379,23 +1434,64 @@ function PortfolioStage({
   walletProfiles, actionRows, onToggleBets,
 }) {
   const [sport, setSport] = useState(null);
+  const [span, setSpan] = useState('30d');
   const stage = useMemo(() => buildPortfolioStage(holdings), [holdings]);
-  const markets = useMemo(
-    () => (sport ? buildPortfolioStage(holdings, sport).markets : stage.markets),
-    [holdings, sport, stage],
+  const alt = useMemo(
+    () => (span === '30d' ? null : portfolioWindowBook(holdings, span)),
+    [holdings, span],
   );
+  const markets = useMemo(() => {
+    if (alt) {
+      if (!sport) return alt.markets;
+      const legs = alt.wallets.flatMap((w) => (w.legs || []).filter((l) => l.sport === sport));
+      const by = new Map();
+      for (const leg of legs) {
+        const label = leg.market === 'SPREAD' ? 'Spread' : leg.market === 'TOTAL' ? 'Total' : (leg.market || 'Market');
+        const cur = by.get(label) || [];
+        cur.push(leg);
+        by.set(label, cur);
+      }
+      return [...by.entries()].map(([label, legsFor]) => {
+        const a = summarizeTape(legsFor);
+        return { label, ...a, n: a.wins + a.losses };
+      }).sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0));
+    }
+    return sport ? buildPortfolioStage(holdings, sport).markets : stage.markets;
+  }, [alt, holdings, sport, stage]);
   const people = useMemo(() => {
     const rows = [];
+    const altBy = alt ? new Map(alt.wallets.map((w) => [w.walletShort, w])) : null;
     for (const h of holdings || []) {
-      const line = sport ? (h.lines || []).find((l) => l.sport === sport) : null;
-      if (sport && !line) continue;
       const open = openOnSport(h, sport, actionRows);
+      let pnl = h.l30Pnl;
+      let roi = h.roi;
+      let honest = h.honest;
+      let heat = h.heat;
+      if (altBy) {
+        const entry = altBy.get(h.walletShort);
+        const legs = sport
+          ? (entry?.legs || []).filter((l) => l.sport === sport)
+          : (entry?.legs || []);
+        if (!legs.length) continue;
+        const a = sport ? summarizeTape(legs) : entry;
+        pnl = a.pnl;
+        roi = a.roi;
+        honest = a.honest;
+        heat = sport ? ((h.lines || []).find((l) => l.sport === sport)?.heat || h.heat) : h.heat;
+      } else if (sport) {
+        const line = (h.lines || []).find((l) => l.sport === sport);
+        if (!line) continue;
+        pnl = line.pnl;
+        roi = line.roi;
+        honest = line.honest;
+        heat = line.heat;
+      }
       rows.push({
         holding: h,
-        pnl: sport ? line.pnl : h.l30Pnl,
-        roi: sport ? line.roi : h.roi,
-        honest: sport ? line.honest : h.honest,
-        heat: sport ? line.heat : h.heat,
+        pnl,
+        roi,
+        honest,
+        heat,
         openN: open.n,
         openInvested: open.invested,
       });
@@ -1407,19 +1503,28 @@ function PortfolioStage({
       return (b.openInvested || 0) - (a.openInvested || 0);
     });
     return rows;
-  }, [holdings, sport, actionRows]);
-  if (!stage.path.length && !people.length && !stage.sports.length) return null;
-  const tone = pnlColor(stage.pathEnd ?? stage.bookPnl, B.text);
+  }, [holdings, sport, actionRows, alt]);
+  const viewSports = alt ? alt.sports : stage.sports;
+  const viewPath = alt ? alt.path : stage.path;
+  const viewEnd = alt ? alt.pathEnd : (stage.pathEnd ?? stage.bookPnl);
+  const viewRoi = alt ? alt.roi : stage.roi;
+  const rec = alt ? alt.honest : stage.honest;
+  if (!viewPath.length && !people.length && !viewSports.length && span === '30d') return null;
+  const tone = pnlColor(viewEnd, B.text);
   const maxSharp = Math.max(1, ...people.map((h) => Math.abs(h.pnl) || 0));
-  const maxSport = Math.max(1, ...stage.sports.map((s) => Math.abs(s.pnl) || 0));
-  const rec = stage.honest;
+  const maxSport = Math.max(1, ...viewSports.map((s) => Math.abs(s.pnl) || 0));
+  const spanLabel = span === 'yesterday' ? 'Yesterday' : span === 'l90' ? 'Last 90 days' : '30-day path';
+  const spanNote = span === 'l90' && alt?.partial && alt.from
+    ? ` · tape from ${Number(alt.from.slice(5, 7))}/${Number(alt.from.slice(8))}`
+    : '';
+  const colLabel = span === 'yesterday' ? 'Yest' : span === 'l90' ? 'L90' : '30d';
   return (
     <section style={{
       position: 'relative',
       margin: '12px 0 18px',
       borderRadius: 18,
       border: `1px solid ${B.goldBorder}`,
-      background: `radial-gradient(120% 80% at 80% 0%, ${(stage.pathEnd ?? stage.bookPnl ?? 0) >= 0 ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.12)'}, transparent 46%), #10141c`,
+      background: `radial-gradient(120% 80% at 80% 0%, ${(viewEnd ?? 0) >= 0 ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.12)'}, transparent 46%), #10141c`,
       overflow: 'hidden',
     }}
     >
@@ -1427,33 +1532,44 @@ function PortfolioStage({
       <div style={{ padding: isMobile ? '1rem 0.85rem 1.05rem' : '1.15rem 1.25rem 1.2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16 }}>
           <div>
-            <div style={{ ...T.kicker, color: B.gold }}>30-day path</div>
-            <div style={{ ...T.body, color: B.textSec, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
-              {rec?.record && rec.record !== '—' ? rec.record : '—'}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              {[
+                { id: 'yesterday', label: 'Yesterday' },
+                { id: '30d', label: '30D' },
+                { id: 'l90', label: 'L90' },
+              ].map((chip) => (
+                <FilterBtn key={chip.id} on={span === chip.id} onClick={() => setSpan(chip.id)}>{chip.label}</FilterBtn>
+              ))}
+            </div>
+            <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
+              {spanLabel}{spanNote}
+              {rec?.record && rec.record !== '—' ? ` · ${rec.record}` : ''}
               {rec?.showPct ? ` · ${rec.wr}%` : ''}
-              {Number.isFinite(stage.roi) ? ` · ${stage.roi}% ROI` : ''}
+              {Number.isFinite(viewRoi) ? ` · ${viewRoi}% ROI` : ''}
             </div>
           </div>
-          {stage.path.length ? (
+          {viewPath.length ? (
             <div style={{ ...T.hero, color: tone, fontSize: isMobile ? '1.85rem' : '2.35rem', textAlign: 'right' }}>
-              {fmtVol(stage.pathEnd)}
+              {fmtVol(viewEnd)}
             </div>
-          ) : null}
+          ) : (
+            <div style={{ ...T.hero, color: B.textFaint, fontSize: isMobile ? '1.4rem' : '1.7rem', textAlign: 'right' }}>—</div>
+          )}
         </div>
-        {stage.path.length ? (
+        {viewPath.length ? (
           <div style={{ marginTop: 4 }}>
-            <AreaChart points={stage.path} height={isMobile ? 168 : 214} />
+            <AreaChart points={viewPath} height={isMobile ? 168 : 214} />
           </div>
         ) : null}
-        {stage.sports.length ? (
+        {viewSports.length ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr 1fr' : `repeat(${Math.min(stage.sports.length, 4)}, minmax(0, 1fr))`,
+            gridTemplateColumns: isMobile ? '1fr 1fr' : `repeat(${Math.min(viewSports.length, 4)}, minmax(0, 1fr))`,
             gap: 10,
             marginTop: 16,
           }}
           >
-            {stage.sports.slice(0, 4).map((row) => {
+            {viewSports.slice(0, 4).map((row) => {
               const on = sport === row.sport;
               return (
                 <button
@@ -1496,7 +1612,7 @@ function PortfolioStage({
               Who made it{sport ? ` · ${sport}` : ''}
             </div>
             {isMobile ? <div /> : <div />}
-            {isMobile ? null : <Head align="right">30d</Head>}
+            {isMobile ? null : <Head align="right">{colLabel}</Head>}
             {isMobile ? null : <Head align="right">ROI</Head>}
             {isMobile ? null : <Head align="right">Close</Head>}
             {isMobile ? null : <Head align="right">Open</Head>}
@@ -1531,7 +1647,9 @@ function PortfolioStage({
             );
           }) : (
             <div style={{ ...T.body, color: B.textFaint, padding: '0.9rem 0.35rem' }}>
-              {sport ? `No one on this list has a ${sport} book.` : 'Nobody on the list.'}
+              {sport
+                ? `No one on this list has a ${sport} book${span === 'yesterday' ? ' yesterday' : ''}.`
+                : (span === 'yesterday' ? 'Nothing graded yesterday.' : 'Nobody on the list.')}
             </div>
           )}
         </div>
@@ -1568,7 +1686,7 @@ function PortfolioStage({
                   </div>
                   <div style={{ ...T.meta, color: B.textMuted, marginTop: 2 }}>
                     {Number.isFinite(m.roi) ? `${m.roi}% book` : ''}
-                    {Number.isFinite(m.pnl) ? ' · 30 days' : ''}
+                    {Number.isFinite(m.pnl) ? ` · ${colLabel === '30d' ? '30 days' : colLabel}` : ''}
                   </div>
                 </div>
               ))}

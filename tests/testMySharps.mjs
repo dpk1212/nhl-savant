@@ -31,6 +31,7 @@ import {
   buildFindCandidates,
   buildPortfolioSnapshot,
   buildPortfolioStage,
+  portfolioWindowBook,
   buildSharpDossier,
   gainsSplit,
   gradeTail,
@@ -783,6 +784,33 @@ assert.equal(stage.uncharted, null);
 assert.equal(stage.sports[0].sport, 'MLB');
 assert.equal(stage.sports[0].pnl, 90300);
 assert.equal(stage.markets.length, 2);
+
+const windowed = portfolioWindowBook([
+  {
+    walletShort: 'a',
+    tape: [
+      { date: '2026-09-28', sport: 'NFL', market: 'ML', pnl: 4000, won: 1, invested: 8000 },
+      { date: '2026-07-02', sport: 'NFL', market: 'ML', pnl: 1000, won: 1, invested: 2000 },
+      { date: '2026-06-01', sport: 'MLB', market: 'TOTAL', pnl: -500, won: 0, invested: 500 },
+    ],
+  },
+], 'yesterday', { today: '2026-09-29' });
+assert.equal(windowed.pathEnd, 4000);
+assert.equal(windowed.honest.record, '1–0');
+assert.equal(windowed.sports[0].sport, 'NFL');
+const last90 = portfolioWindowBook([
+  {
+    walletShort: 'a',
+    tape: [
+      { date: '2026-09-28', sport: 'NFL', market: 'ML', pnl: 4000, won: 1, invested: 8000 },
+      { date: '2026-08-15', sport: 'NFL', market: 'SPREAD', pnl: 1000, won: 0, invested: 2000 },
+    ],
+  },
+], 'l90', { today: '2026-09-29' });
+assert.equal(last90.wallets[0].wins + last90.wallets[0].losses, 2);
+assert.equal(last90.pathEnd, 5000);
+assert.equal(last90.partial, true);
+assert.equal(last90.from, '2026-08-15');
 assert.equal(buildPortfolioStage([
   { walletShort: 'a', markets: [{ label: 'ML', sport: 'NFL', n: 4, wins: 3, losses: 1, roi: 18, l30: { pnl: 3800 } }, { label: 'Total', sport: 'MLB', n: 8, wins: 5, losses: 3, roi: 10, l30: { pnl: 900 } }] },
 ], 'NFL').markets[0].label, 'ML');
