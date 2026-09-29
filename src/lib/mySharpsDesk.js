@@ -1968,10 +1968,11 @@ export function buildFindCandidates(walletProfiles, {
   return { total: rows.length, rows: rows.slice(0, limit) };
 }
 
-function marketRollup(holdings) {
+function marketRollup(holdings, sport = null) {
   const by = new Map();
   for (const h of holdings || []) {
     for (const m of h.markets || []) {
+      if (sport && m.sport !== sport) continue;
       const key = m.label || m.market || 'Market';
       const cur = by.get(key) || {
         label: key, n: 0, wins: 0, losses: 0, pnl: 0, havePnl: false, roiN: 0, roiSum: 0,
@@ -2005,7 +2006,7 @@ function marketRollup(holdings) {
  * The portfolio instrument. The path ends on the same 30-day total as the hero.
  * A short book is drawn as the last step so the headline is one number.
  */
-export function buildPortfolioStage(holdings) {
+export function buildPortfolioStage(holdings, sport = null) {
   const rows = holdings || [];
   const curves = rows.map((h) => h.spark).filter((c) => Array.isArray(c) && c.length >= 2);
   const path = [];
@@ -2074,7 +2075,7 @@ export function buildPortfolioStage(holdings) {
     honest: honestRecord(w, l),
     sharps,
     sports: sportRows,
-    markets: marketRollup(rows),
+    markets: marketRollup(rows, sport),
   };
 }
 
