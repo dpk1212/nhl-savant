@@ -53,9 +53,11 @@ import {
   sortRowsByRelativeSize,
   sharpFaceFromProfile,
   summarizeTails,
+  sizeTiersForWallet,
   tailLean,
   ticketPickLabel,
 } from '../src/lib/mySharpsDesk.js';
+import { sizeTierWinRates } from '../src/lib/sizeRatioBands.js';
 
 assert.equal(fmtWalletTag('0xABC162937'), '··162937');
 
@@ -964,5 +966,37 @@ assert.equal(faced.together[0].walletLines[1].tag, '··51176e');
 assert.equal(faced.split.length, 2);
 assert.equal(faced.split.find((t) => t.side === 'over').otherSide[0].pick, 'Under 7.5');
 assert.equal(faced.split.find((t) => t.side === 'over').otherSide[0].tags[0], '··51176e');
+
+const tiers = sizeTierWinRates({
+  usual: 745,
+  positions: {
+    usual: 745,
+    bands: {
+      light: { n: 6, wins: 2, losses: 4, wr: 33.3 },
+      lean: { n: 21, wins: 7, losses: 14, wr: 33.3 },
+      full: { n: 36, wins: 17, losses: 19, wr: 47.2 },
+      press: { n: 96, wins: 50, losses: 46, wr: 52.1 },
+    },
+  },
+});
+assert.equal(tiers.usual, 745);
+assert.equal(tiers.tiers.map((t) => t.kicker).join(','), '<0.5×,0.5×,1×,1.5×+');
+assert.equal(tiers.tiers[0].wr, null);
+assert.equal(tiers.tiers[0].record, '2–4');
+assert.equal(tiers.tiers[1].wr, 33);
+assert.equal(tiers.tiers[3].wr, 52);
+assert.equal(tiers.tiers[3].record, '50–46');
+const fromPicks = sizeTierWinRates({
+  picks: { bands: { press: { n: 10, wins: 8, losses: 2, wr: 80 } } },
+});
+assert.equal(fromPicks.tiers[3].wr, 80);
+assert.equal(fromPicks.tiers[0].record, null);
+assert.equal(sizeTierWinRates(null), null);
+assert.equal(sizeTierWinRates({ positions: { bands: { light: { n: 0, wins: 0, losses: 0 } } } }), null);
+const looked = sizeTiersForWallet(new Map([['abcd12', {
+  sizeRatioBands: { positions: { usual: 1000, bands: { full: { n: 12, wins: 9, losses: 3, wr: 75 } } } },
+}]]), 'abcd12');
+assert.equal(looked.usual, 1000);
+assert.equal(looked.tiers[2].wr, 75);
 
 console.log('testMySharps: ok');

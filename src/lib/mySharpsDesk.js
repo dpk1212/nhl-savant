@@ -4,7 +4,7 @@
  */
 import { CLV_SKILL_MIN_N, shortWalletId } from './walletClvSkill.js';
 import { sportBookForDisplay } from './walletSportBook.js';
-import { sportUsualBetFromProfile } from './sizeRatioBands.js';
+import { sizeTierWinRates, sportUsualBetFromProfile } from './sizeRatioBands.js';
 import { SIZED_UP_RATIO, betsFeedKey, fmtWalletTag, listMySharps, normalizeWalletShort, tailKey } from './mySharps.js';
 import { etDateKey } from './confirmedActionDesk.js';
 import { graderTailResult, tailGameDate, usableCommenceMs } from './tailGrade.js';
@@ -30,6 +30,11 @@ function profileFor(walletProfiles, short) {
     ? (walletProfiles.get(s) || walletProfiles.get(s.toUpperCase()) || walletProfiles.get(short) || null)
     : (walletProfiles[s] || walletProfiles[short] || null);
   return raw ? profileWithoutCopiedBets(raw) : null;
+}
+
+/** Wallet-level win rate by size tier. Display only. */
+export function sizeTiersForWallet(walletProfiles, walletShort) {
+  return sizeTierWinRates(profileFor(walletProfiles, walletShort)?.sizeRatioBands, { minPctN: HONEST_PCT_N });
 }
 
 /** Same game, same side, same stake, same dollars — one ticket. Scan dates clone soccer bets. */

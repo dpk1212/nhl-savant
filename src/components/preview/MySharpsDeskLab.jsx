@@ -49,6 +49,19 @@ function bookPath(end, n = 24) {
 const profiles = new Map([
   ['e4ec62', {
     clvSkill: { n: 22, pctPos: 61 },
+    sizeRatioBands: {
+      usual: 4667,
+      positions: {
+        usual: 4667,
+        total: 90,
+        bands: {
+          light: { id: 'light', n: 6, wins: 2, losses: 4, wr: 33.3 },
+          lean: { id: 'lean', n: 18, wins: 10, losses: 8, wr: 55.6 },
+          full: { id: 'full', n: 30, wins: 18, losses: 12, wr: 60 },
+          press: { id: 'press', n: 36, wins: 24, losses: 12, wr: 66.7 },
+        },
+      },
+    },
     bySport: {
       MLB: {
         whitelistTier: 'CONFIRMED',

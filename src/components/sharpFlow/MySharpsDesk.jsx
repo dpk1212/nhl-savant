@@ -18,6 +18,7 @@ import {
   groupPortfolioBets,
   marketTape,
   rowsForBetsFeed,
+  sizeTiersForWallet,
   suggestTailStake,
   summarizeTails,
 } from '../../lib/mySharpsDesk.js';
@@ -451,8 +452,80 @@ function relativeLabel(multiple) {
   return `${n >= 10 ? n.toFixed(0) : n.toFixed(1)}×`;
 }
 
+function tierWrColor(tier) {
+  if (tier?.wr == null) return B.textMuted;
+  if (tier.wr >= 55) return B.green;
+  if (tier.wr <= 45) return B.red;
+  return B.text;
+}
+
+function BetsSwitch({ on, onClick, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={onClick}
+      style={{
+        width: 46,
+        height: 26,
+        borderRadius: 999,
+        border: `1px solid ${on ? B.goldBorder : B.line}`,
+        background: on ? 'rgba(212,175,55,0.42)' : 'rgba(255,255,255,0.06)',
+        padding: 3,
+        cursor: onClick ? 'pointer' : 'default',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: on ? 'flex-end' : 'flex-start',
+      }}
+    >
+      <span style={{
+        width: 18,
+        height: 18,
+        borderRadius: 999,
+        background: on ? '#F3E3AC' : '#64748B',
+        boxShadow: on ? '0 0 8px rgba(212,175,55,0.7)' : 'none',
+      }}
+      />
+    </button>
+  );
+}
+
+function SizeTierStrip({ tiers }) {
+  if (!tiers?.tiers?.length) return null;
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>
+        Win rate by size{tiers.usual ? ` · usual ${fmtVol(tiers.usual, { signed: false })}` : ''}
+      </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+        gap: 10,
+        marginTop: 8,
+      }}
+      >
+        {tiers.tiers.map((tier) => (
+          <div key={tier.id}>
+            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{tier.kicker}</div>
+            <div style={{ ...T.figure, color: tierWrColor(tier), marginTop: 4, fontSize: '1.12rem' }}>
+              {tier.wr != null ? `${tier.wr}%` : (tier.record || '—')}
+            </div>
+            {tier.wr != null && tier.record ? (
+              <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>{tier.record}</div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets, sportFilter = null }) {
   const [openKey, setOpenKey] = useState(null);
+  const sizeTiers = sizeTiersForWallet(walletProfiles, holding.walletShort);
   const label = holding.name || holding.tag;
   const groups = [];
   const bySport = new Map();
@@ -490,6 +563,7 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
           {betsFollowLine(groups, holding.betsOff)}
         </div>
       ) : null}
+      <SizeTierStrip tiers={sizeTiers} />
       {groups.length ? groups.map((g) => (
         <div key={g.sport} style={{ marginTop: 10 }}>
           <div style={{ ...T.kicker, color: B.textSec, letterSpacing: '0.08em', marginBottom: 4 }}>{g.sport}</div>
@@ -546,29 +620,13 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
                     {mark ? <span style={{ color: B.goldSoft }}> · {mark}</span> : null}
                   </span>
                 </button>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={feedOn}
-                    aria-label={feedOn ? `Bets includes ${g.sport} ${m.label}` : `Bets skips ${g.sport} ${m.label}`}
+                  <BetsSwitch
+                    on={feedOn}
+                    label={feedOn ? `Bets includes ${g.sport} ${m.label}` : `Bets skips ${g.sport} ${m.label}`}
                     onClick={() => {
                       if (onToggleBets) onToggleBets(holding.walletShort, g.sport, m.market);
                     }}
-                    style={{
-                      ...T.kicker,
-                      letterSpacing: '0.08em',
-                      flexShrink: 0,
-                      padding: '0.18rem 0.5rem',
-                      borderRadius: 999,
-                      border: `1px solid ${feedOn ? B.goldBorder : B.line}`,
-                      color: feedOn ? '#0a0904' : B.textFaint,
-                      background: feedOn ? 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)' : 'transparent',
-                      cursor: onToggleBets ? 'pointer' : 'default',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    Bets
-                  </button>
+                  />
                 </div>
                 {open ? (
                   <MarketPlays openRows={mineOpen} tape={tape} usual={m.usual} />
