@@ -4,7 +4,7 @@
  */
 import { CLV_SKILL_MIN_N, shortWalletId } from './walletClvSkill.js';
 import { sportBookForDisplay } from './walletSportBook.js';
-import { sizeTierWinRates, sportUsualBetFromProfile } from './sizeRatioBands.js';
+import { sizeTierForRatio, sizeTierWinRates, sportUsualBetFromProfile } from './sizeRatioBands.js';
 import { SIZED_UP_RATIO, betsFeedKey, fmtWalletTag, listMySharps, normalizeWalletShort, tailKey } from './mySharps.js';
 import { etDateKey } from './confirmedActionDesk.js';
 import { graderTailResult, tailGameDate, usableCommenceMs } from './tailGrade.js';
@@ -2577,17 +2577,20 @@ function walletLinesFor(ticket, names, walletProfiles) {
     const short = shortWalletId(r?.walletShort) || normalizeWalletShort(r?.walletShort);
     const named = short && names?.[short];
     const ratio = Number(r?.displaySizeRatio ?? r?.sizeRatio);
-    const face = sharpFaceFromProfile(profileFor(walletProfiles, short), {
+    const prof = profileFor(walletProfiles, short);
+    const face = sharpFaceFromProfile(prof, {
       sport: ticket?.sport || r?.sport,
       market: ticket?.marketType || r?.marketType,
     });
+    const multiple = Number.isFinite(ratio) && ratio > 0 ? ratio : null;
     return {
       walletShort: short,
       tag: named || fmtWalletTag(short),
       invested: Number(r?.invested) || 0,
-      ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null,
+      ratio: multiple,
       price: r?.americanLabel || null,
       steam: steamStamp(r),
+      sizeTier: sizeTierForRatio(prof?.sizeRatioBands, multiple, { minPctN: HONEST_PCT_N }),
       ...face,
     };
   }).sort((a, b) => (b.invested || 0) - (a.invested || 0));

@@ -1089,11 +1089,23 @@ function SharpPlate({ lines, hideChips }) {
   );
 }
 
-const RECEIPT_COLS = 'minmax(72px, 1.15fr) 62px 96px 68px minmax(64px, 0.85fr) 96px';
+const RECEIPT_COLS = 'minmax(72px, 1.15fr) 58px 88px 64px 72px minmax(64px, 0.8fr) 92px';
 
 function ReceiptHead({ children }) {
   return (
     <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', textAlign: 'right' }}>{children}</div>
+  );
+}
+
+function SizeWr({ tier, align = 'left' }) {
+  const color = tierWrColor(tier);
+  const figure = tier?.wr != null ? `${tier.wr}%` : (tier?.record || '—');
+  const sub = tier?.wr != null ? tier.kicker : (tier?.n ? `${tier.n} bets` : null);
+  return (
+    <div style={{ textAlign: align }}>
+      <div style={{ ...T.figure, color, fontSize: '1rem', lineHeight: 1 }}>{figure}</div>
+      {sub ? <div style={{ ...T.kicker, color, marginTop: 4, letterSpacing: '0.06em' }}>{sub}</div> : null}
+    </div>
   );
 }
 
@@ -1120,11 +1132,12 @@ function SharpReceipt({ line, sport, isMobile }) {
             {line.price ? <span style={{ ...T.meta, color: B.text, marginLeft: 6 }}>{line.price}</span> : null}
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginTop: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8, marginTop: 8 }}>
           <div>
             <div style={{ ...T.figure, color: heatColor, fontSize: '0.95rem' }}>{l10}</div>
             <div style={{ ...T.kicker, color: heatColor, marginTop: 3 }}>{heat || 'L10'}</div>
           </div>
+          <SizeWr tier={line.sizeTier} />
           <div>
             <div style={{ ...T.figure, color: B.text, fontSize: '0.95rem' }}>{book}</div>
             <div style={{ ...T.kicker, color: bookRoi == null ? B.textFaint : pnlColor(bookRoi, B.textMuted), marginTop: 3 }}>{bookRoi == null ? 'Book' : `${bookRoi}% book`}</div>
@@ -1158,6 +1171,7 @@ function SharpReceipt({ line, sport, isMobile }) {
         <div style={{ ...T.figure, color: heatColor, fontSize: '1rem', lineHeight: 1 }}>{l10}</div>
         {heat ? <div style={{ ...T.kicker, color: heatColor, marginTop: 4, letterSpacing: '0.08em' }}>{heat}</div> : null}
       </div>
+      <SizeWr tier={line.sizeTier} align="right" />
       <div style={{ textAlign: 'right' }}>
         <div style={{ ...T.figure, color: B.text, fontSize: '1rem', lineHeight: 1 }}>{book}</div>
         {bookRoi != null ? (
@@ -1988,6 +2002,7 @@ function TicketContext({ item, isMobile }) {
           <ReceiptHead>Vs usual</ReceiptHead>
           <ReceiptHead>This bet</ReceiptHead>
           <ReceiptHead>L10</ReceiptHead>
+          <ReceiptHead>At size</ReceiptHead>
           <ReceiptHead>{bookLabel} book</ReceiptHead>
           <ReceiptHead>{bookLabel} 30d</ReceiptHead>
         </div>

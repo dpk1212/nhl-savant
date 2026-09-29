@@ -59,7 +59,7 @@ import {
   tailLean,
   ticketPickLabel,
 } from '../src/lib/mySharpsDesk.js';
-import { meanDecidedStake, sizeTierWinRates } from '../src/lib/sizeRatioBands.js';
+import { meanDecidedStake, sizeTierForRatio, sizeTierWinRates } from '../src/lib/sizeRatioBands.js';
 
 assert.equal(fmtWalletTag('0xABC162937'), '··162937');
 
@@ -1093,6 +1093,57 @@ const looked = sizeTiersForWallet(new Map([['abcd12', {
 }]]), 'abcd12');
 assert.equal(looked.usual, 1000);
 assert.equal(looked.tiers[2].wr, 75);
+
+const cardBands = {
+  usual: 4667,
+  positions: {
+    usual: 4667,
+    bands: {
+      light: { n: 6, wins: 2, losses: 4, wr: 33.3 },
+      lean: { n: 18, wins: 10, losses: 8, wr: 55.6 },
+      full: { n: 30, wins: 18, losses: 12, wr: 60 },
+      press: { n: 36, wins: 24, losses: 12, wr: 66.7 },
+    },
+  },
+};
+const pressTier = sizeTierForRatio(cardBands, 3);
+assert.equal(pressTier.id, 'press');
+assert.equal(pressTier.kicker, '1.5×+');
+assert.equal(pressTier.wr, 67);
+assert.equal(pressTier.record, '24–12');
+assert.equal(sizeTierForRatio(cardBands, 1.7).wr, 67);
+const fullTier = sizeTierForRatio(cardBands, 1);
+assert.equal(fullTier.id, 'full');
+assert.equal(fullTier.kicker, '1×');
+assert.equal(fullTier.wr, 60);
+const leanTier = sizeTierForRatio(cardBands, 0.9);
+assert.equal(leanTier.id, 'lean');
+assert.equal(leanTier.kicker, '0.5×');
+assert.equal(leanTier.wr, 56);
+const lightTier = sizeTierForRatio(cardBands, 0.3);
+assert.equal(lightTier.id, 'light');
+assert.equal(lightTier.wr, null);
+assert.equal(lightTier.record, '2–4');
+assert.equal(sizeTierForRatio(null, 1.7), null);
+assert.equal(sizeTierForRatio(cardBands, 0), null);
+assert.equal(sizeTierForRatio(cardBands, Number.NaN), null);
+
+const sizedCard = groupPortfolioBets([{
+  id: 'tor-under', split: false, shared: true, maxRatio: 3, invested: 18200,
+  sport: 'MLB', marketType: 'TOTAL', gameKey: 'tor_bal', side: 'under',
+  shorts: ['e4ec62', '51176e'],
+  rows: [
+    { walletShort: 'e4ec62', invested: 14000, displaySizeRatio: 3, americanLabel: '-154' },
+    { walletShort: '51176e', invested: 4200, displaySizeRatio: 1, americanLabel: '-100' },
+  ],
+}], {
+  names: { e4ec62: 'Bands' },
+  walletProfiles: new Map([['e4ec62', { sizeRatioBands: cardBands }]]),
+});
+assert.equal(sizedCard.together[0].walletLines[0].ratio, 3);
+assert.equal(sizedCard.together[0].walletLines[0].sizeTier.wr, 67);
+assert.equal(sizedCard.together[0].walletLines[0].sizeTier.kicker, '1.5×+');
+assert.equal(sizedCard.together[0].walletLines[1].sizeTier, null);
 
 const over = openPlayFace({
   marketType: 'TOTAL', side: 'over', entryLine: 7.5, marketLabel: 'TOTAL 7.5', cents: 62, americanOdds: -118,
