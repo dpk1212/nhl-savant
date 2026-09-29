@@ -91,6 +91,15 @@ function splitCopiedLegs(legs) {
   return { unique, dropped };
 }
 
+function subtractWindow(block, dropped) {
+  const next = subtractCopies(block, dropped);
+  if (!next || next === block || !Array.isArray(next.curve) || !next.curve.length) return next;
+  if (!Number.isFinite(Number(next.settledPnl))) return next;
+  const curve = next.curve.slice();
+  curve[curve.length - 1] = Math.round(Number(next.settledPnl));
+  return { ...next, curve };
+}
+
 function subtractCopies(block, dropped) {
   if (!block || !(dropped || []).length) return block;
   const n = Math.max(0, (Number(block.n) || 0) - dropped.length);
@@ -154,12 +163,14 @@ function dedupeSportRec(rec) {
       ...byMarket[m],
       positions: subtractCopies(byMarket[m].positions, legs),
       recentActionWindow: subtractCopies(byMarket[m].recentActionWindow, legs),
+      l90Window: subtractWindow(byMarket[m].l90Window, legs),
     };
   }
   return {
     ...rec,
     positions: subtractCopies(rec.positions, dropped),
     recentActionWindow: subtractCopies(rec.recentActionWindow, dropped),
+    l90Window: subtractWindow(rec.l90Window, dropped),
     byMarket,
     form: {
       ...form,
@@ -192,6 +203,25 @@ function confirmedSports(prof) {
   return Object.keys(by)
     .filter((s) => String(by[s]?.whitelistTier || '').toUpperCase() === 'CONFIRMED')
     .sort();
+}
+
+function stampWindow(win) {
+  if (!win || !(Number(win.n) > 0)) return null;
+  const wins = Number(win.wins);
+  const losses = Number(win.losses);
+  const spark = Array.isArray(win.curve)
+    ? win.curve.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+    : [];
+  return {
+    n: Number(win.n) || 0,
+    wins: Number.isFinite(wins) ? wins : 0,
+    losses: Number.isFinite(losses) ? losses : 0,
+    wr: Number.isFinite(Number(win.wr)) ? Math.round(Number(win.wr)) : null,
+    pnl: Number.isFinite(Number(win.settledPnl)) ? Math.round(Number(win.settledPnl)) : null,
+    roi: Number.isFinite(Number(win.dollarRoi)) ? Math.round(Number(win.dollarRoi)) : null,
+    from: win.from || null,
+    spark: spark.length >= 2 ? spark : null,
+  };
 }
 
 function l30FromRec(rec) {
@@ -450,6 +480,7 @@ export function marketBooksFromProfile(prof, sportFilter) {
         ...packed,
         usual,
         l30: l30FromRec(mRec),
+        l90: stampWindow(mRec?.l90Window),
         honest: honestRecord(packed.wins, packed.losses, packed.wr),
       });
     }
@@ -1475,6 +1506,15 @@ function sharpBook(prof) {
   const sparks = [];
   const tape = [];
   const roiParts = [];
+  let l90Seen = false;
+  let l90Have = false;
+  let l90Pnl = 0;
+  let l90w = 0;
+  let l90l = 0;
+  let l90From = null;
+  const l90Lines = [];
+  const l90Sparks = [];
+  const l90RoiParts = [];
   for (const sport of sports) {
     const rec = prof?.bySport?.[sport];
     const l30 = l30FromRec(rec);
@@ -1507,6 +1547,27 @@ function sharpBook(prof) {
       heat,
     };
     lines.push(line);
+    if (rec && Object.prototype.hasOwnProperty.call(rec, 'l90Window')) l90Seen = true;
+    const l90 = stampWindow(rec?.l90Window);
+    if (l90) {
+      l90Have = true;
+      if (Number.isFinite(l90.pnl)) l90Pnl += l90.pnl;
+      l90w += l90.wins;
+      l90l += l90.losses;
+      if (l90.from && (!l90From || l90.from < l90From)) l90From = l90.from;
+      if (l90.spark) l90Sparks.push(l90.spark);
+      if (Number.isFinite(l90.pnl) && Number.isFinite(l90.roi)) {
+        l90RoiParts.push({ pnl: l90.pnl, roi: l90.roi });
+      }
+      l90Lines.push({
+        sport,
+        pnl: l90.pnl,
+        roi: l90.roi,
+        wins: l90.wins,
+        losses: l90.losses,
+        honest: honestRecord(l90.wins, l90.losses, l90.wr),
+      });
+    }
     tape.push(...tapeFromRec(rec, sport));
     const path = sportPath(rec);
     if (path.scope === 'l30' && path.spark) sparks.push(path.spark);
@@ -1517,6 +1578,22 @@ function sharpBook(prof) {
     if (!best || rank > best.rank) best = { ...line, rank };
   }
   lines.sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0));
+  const markets = marketBooksFromProfile(prof);
+  const l90Markets = [];
+  for (const m of markets) {
+    if (!m.l90) continue;
+    l90Markets.push({
+      sport: m.sport,
+      market: m.market,
+      label: m.label,
+      n: m.l90.n,
+      wins: m.l90.wins,
+      losses: m.l90.losses,
+      pnl: m.l90.pnl,
+      roi: m.l90.roi,
+      honest: honestRecord(m.l90.wins, m.l90.losses, m.l90.wr),
+    });
+  }
   return {
     l30Pnl: have ? pnl : null,
     roi: blendRoi(roiParts),
@@ -1527,10 +1604,21 @@ function sharpBook(prof) {
     whereMarket: best?.market || null,
     heat: best?.heat || heatFromForm(null),
     clv: skillFromProfile(prof, null).clv,
-    markets: marketBooksFromProfile(prof),
+    markets,
     lines,
     sparks,
     tape,
+    l90: l90Seen ? {
+      pnl: l90Have ? Math.round(l90Pnl) : null,
+      roi: blendRoi(l90RoiParts),
+      wins: l90w,
+      losses: l90l,
+      honest: honestRecord(l90w, l90l),
+      from: l90From,
+      lines: l90Lines,
+      markets: l90Markets,
+      spark: blendDollarCurves(l90Sparks),
+    } : null,
   };
 }
 
@@ -1603,11 +1691,113 @@ export function summarizeTape(legs) {
   };
 }
 
+function packSum(row) {
+  return {
+    ...row,
+    pnl: row.have ? Math.round(row.pnl) : null,
+    roi: blendRoi(row.roiParts),
+    honest: honestRecord(row.wins, row.losses),
+    n: row.wins + row.losses,
+  };
+}
+
 /**
- * Yesterday and last-90 from the stored tape. 30 days stays on the
- * official month window. Last-90 only includes bets the profile still has.
+ * Official last-90 book. The saved ticket list is the last 30 days, capped,
+ * so summing it makes L90 smaller than L30.
+ */
+function portfolioL90Book(holdings) {
+  const wallets = [];
+  const sports = new Map();
+  const markets = new Map();
+  const bySportMarkets = new Map();
+  const sparks = [];
+  let seen = false;
+  let earliest = null;
+  for (const h of holdings || []) {
+    if (!h?.l90) continue;
+    seen = true;
+    const book = h.l90;
+    const n = (Number(book.wins) || 0) + (Number(book.losses) || 0);
+    if (!(n > 0) && !Number.isFinite(book.pnl)) continue;
+    if (book.from && (!earliest || book.from < earliest)) earliest = book.from;
+    if (Array.isArray(book.spark) && book.spark.length >= 2) sparks.push(book.spark);
+    wallets.push({
+      walletShort: h.walletShort,
+      pnl: Number.isFinite(book.pnl) ? book.pnl : null,
+      roi: Number.isFinite(book.roi) ? book.roi : null,
+      wins: Number(book.wins) || 0,
+      losses: Number(book.losses) || 0,
+      honest: book.honest || honestRecord(book.wins, book.losses),
+      lines: book.lines || [],
+      legs: [],
+    });
+    for (const line of book.lines || []) {
+      const cur = sports.get(line.sport) || { sport: line.sport, pnl: 0, have: false, wins: 0, losses: 0, roiParts: [] };
+      if (Number.isFinite(line.pnl)) { cur.have = true; cur.pnl += line.pnl; }
+      cur.wins += Number(line.wins) || 0;
+      cur.losses += Number(line.losses) || 0;
+      if (Number.isFinite(line.pnl) && Number.isFinite(line.roi)) cur.roiParts.push({ pnl: line.pnl, roi: line.roi });
+      sports.set(line.sport, cur);
+    }
+    for (const m of book.markets || []) {
+      const add = (map, key) => {
+        const cur = map.get(key) || { label: m.label, sport: m.sport, pnl: 0, have: false, wins: 0, losses: 0, roiParts: [] };
+        if (Number.isFinite(m.pnl)) { cur.have = true; cur.pnl += m.pnl; }
+        cur.wins += Number(m.wins) || 0;
+        cur.losses += Number(m.losses) || 0;
+        if (Number.isFinite(m.pnl) && Number.isFinite(m.roi)) cur.roiParts.push({ pnl: m.pnl, roi: m.roi });
+        map.set(key, cur);
+      };
+      add(markets, m.label || m.market || 'Market');
+      if (m.sport) {
+        if (!bySportMarkets.has(m.sport)) bySportMarkets.set(m.sport, new Map());
+        add(bySportMarkets.get(m.sport), m.label || m.market || 'Market');
+      }
+    }
+  }
+  const finish = (map) => [...map.values()]
+    .map(packSum)
+    .sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0) || (b.n || 0) - (a.n || 0));
+  let pnl = 0;
+  let have = false;
+  let w = 0;
+  let l = 0;
+  const roiParts = [];
+  for (const row of wallets) {
+    if (Number.isFinite(row.pnl)) { have = true; pnl += row.pnl; }
+    w += row.wins;
+    l += row.losses;
+    if (Number.isFinite(row.pnl) && Number.isFinite(row.roi)) roiParts.push({ pnl: row.pnl, roi: row.roi });
+  }
+  const total = have ? Math.round(pnl) : null;
+  let path = blendDollarCurves(sparks);
+  if (path.length && total != null) path[path.length - 1] = total;
+  if (!path.length && total != null) path = [0, total];
+  const marketsBySport = {};
+  for (const [sport, map] of bySportMarkets) marketsBySport[sport] = finish(map);
+  return {
+    window: 'l90',
+    ready: seen,
+    since: null,
+    from: earliest,
+    partial: false,
+    path,
+    pathEnd: path.length ? path[path.length - 1] : total,
+    roi: blendRoi(roiParts),
+    honest: honestRecord(w, l),
+    sports: finish(sports),
+    markets: finish(markets),
+    marketsBySport,
+    wallets,
+  };
+}
+
+/**
+ * Yesterday comes from the stored tape. Last-90 uses the official window
+ * stamped on the profile. 30 days stays on recentActionWindow.
  */
 export function portfolioWindowBook(holdings, window, { today = null } = {}) {
+  if (window === 'l90') return portfolioL90Book(holdings);
   const todayET = today || new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   const yesterday = ymdShift(todayET, -1);
   const since = window === 'l90' ? ymdShift(todayET, -89) : yesterday;
@@ -1661,11 +1851,24 @@ export function portfolioWindowBook(holdings, window, { today = null } = {}) {
     honest: overall.honest,
     sports: packMap(sports, 'sport'),
     markets: packMap(markets, 'label'),
-    wallets: [...byWallet.entries()].map(([walletShort, legs]) => ({
-      walletShort,
-      legs,
-      ...summarizeTape(legs),
-    })),
+    wallets: [...byWallet.entries()].map(([walletShort, legs]) => {
+      const bySport = new Map();
+      for (const leg of legs) {
+        const list = bySport.get(leg.sport) || [];
+        list.push(leg);
+        bySport.set(leg.sport, list);
+      }
+      const lines = [...bySport.entries()].map(([sport, sportLegs]) => {
+        const a = summarizeTape(sportLegs);
+        return { sport, pnl: a.pnl, roi: a.roi, wins: a.wins, losses: a.losses, honest: a.honest };
+      });
+      return {
+        walletShort,
+        legs,
+        lines,
+        ...summarizeTape(legs),
+      };
+    }),
   };
 }
 
@@ -2251,6 +2454,7 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
       markets: book.markets || [],
       tape: book.tape || [],
       spark: blendDollarCurves(book.sparks),
+      l90: book.l90 || null,
     };
   });
   rows.sort((a, b) => {

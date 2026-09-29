@@ -66,6 +66,10 @@ const profiles = new Map([
       MLB: {
         whitelistTier: 'CONFIRMED',
         recentActionWindow: { n: 40, wins: 26, losses: 14, wr: 65, settledPnl: 51000, dollarRoi: 14 },
+        l90Window: {
+          days: 90, n: 110, wins: 70, losses: 40, wr: 63.6, settledPnl: 90000, dollarRoi: 18,
+          from: '2026-07-05', curve: [0, 40000, 90000],
+        },
         positions: { n: 90, wins: 54, losses: 36, wr: 60, positionFlatRoi: 8, dollarRoi: 11, invested: 420000 },
         form: {
           actionL5: { w: 4, l: 1 },
@@ -79,13 +83,21 @@ const profiles = new Map([
         },
         byMarket: {
           ML: { positions: { n: 28, wins: 15, losses: 13, wr: 54, dollarRoi: 2, invested: 140000 }, recentActionWindow: { n: 10, wins: 6, losses: 4, wr: 60, settledPnl: 6400, dollarRoi: 8 } },
-          TOTAL: { positions: { n: 48, wins: 31, losses: 17, wr: 65, dollarRoi: 19, invested: 230400 }, recentActionWindow: { n: 16, wins: 11, losses: 5, wr: 69, settledPnl: 28000, dollarRoi: 22 } },
+          TOTAL: {
+            positions: { n: 48, wins: 31, losses: 17, wr: 65, dollarRoi: 19, invested: 230400 },
+            recentActionWindow: { n: 16, wins: 11, losses: 5, wr: 69, settledPnl: 28000, dollarRoi: 22 },
+            l90Window: { days: 90, n: 70, wins: 44, losses: 26, wr: 62.9, settledPnl: 48000, dollarRoi: 16, from: '2026-07-05' },
+          },
           SPREAD: { positions: { n: 14, wins: 6, losses: 8, wr: 43, dollarRoi: -8, invested: 42000 } },
         },
       },
       CFB: {
         whitelistTier: 'CONFIRMED',
         recentActionWindow: { n: 6, wins: 4, losses: 2, wr: 67, settledPnl: 8200, dollarRoi: 18 },
+        l90Window: {
+          days: 90, n: 14, wins: 10, losses: 4, wr: 71.4, settledPnl: 15000, dollarRoi: 16,
+          from: '2026-07-12', curve: [0, 8000, 15000],
+        },
         positions: { n: 12, wins: 8, losses: 4, wr: 67, dollarRoi: 15, invested: 96000 },
         form: {
           recentAction: [
@@ -106,6 +118,10 @@ const profiles = new Map([
       MLB: {
         whitelistTier: 'CONFIRMED',
         recentActionWindow: { n: 30, wins: 20, losses: 10, wr: 67, settledPnl: 39300, dollarRoi: 16 },
+        l90Window: {
+          days: 90, n: 80, wins: 48, losses: 32, wr: 60, settledPnl: 52000, dollarRoi: 12,
+          from: '2026-07-08', curve: [0, 22000, 52000],
+        },
         positions: { n: 73, wins: 48, losses: 25, wr: 66, positionFlatRoi: 9, dollarRoi: 12, invested: 310000 },
         form: {
           actionL10: { w: 4, l: 6 },
@@ -124,6 +140,10 @@ const profiles = new Map([
       NFL: {
         whitelistTier: 'CONFIRMED',
         recentActionWindow: { n: 4, wins: 3, losses: 1, wr: 75, settledPnl: 3800, dollarRoi: 18 },
+        l90Window: {
+          days: 90, n: 18, wins: 11, losses: 7, wr: 61.1, settledPnl: 6400, dollarRoi: 8,
+          from: '2026-07-20', curve: [0, 2000, 6400],
+        },
         positions: { n: 4, wins: 3, losses: 1, wr: 75, dollarRoi: 18, invested: 21000 },
         form: { actionL5: { w: 3, l: 1 } },
         byMarket: {
