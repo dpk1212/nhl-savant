@@ -1468,6 +1468,7 @@ function sharpBook(prof) {
   let best = null;
   const lines = [];
   const sparks = [];
+  const tape = [];
   const roiParts = [];
   for (const sport of sports) {
     const rec = prof?.bySport?.[sport];
@@ -1501,6 +1502,7 @@ function sharpBook(prof) {
       heat,
     };
     lines.push(line);
+    tape.push(...tapeFromRec(rec, sport));
     const path = sportPath(rec);
     if (path.scope === 'l30' && path.spark) sparks.push(path.spark);
     if (l30 && Number.isFinite(l30.pnl) && Number.isFinite(l30.roi)) {
@@ -1523,6 +1525,142 @@ function sharpBook(prof) {
     markets: marketBooksFromProfile(prof),
     lines,
     sparks,
+    tape,
+  };
+}
+
+function tapeFromRec(rec, sport) {
+  const form = rec?.form || {};
+  const raw = [
+    ...(Array.isArray(form.recentAction) ? form.recentAction : []),
+    ...(Array.isArray(form.curveLegs) ? form.curveLegs : []),
+  ];
+  const seen = new Set();
+  const out = [];
+  for (const leg of raw) {
+    const won = legWon(leg);
+    if (won == null || !leg?.date) continue;
+    const id = [sport, leg.date, leg.gameKey, leg.marketType, leg.side, leg.label].join('|');
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const pnl = legDollar(leg);
+    if (!Number.isFinite(pnl)) continue;
+    const market = String(leg.marketType || leg.market || '').toUpperCase();
+    out.push({
+      date: String(leg.date),
+      sport,
+      market,
+      pnl,
+      won,
+      invested: Number(leg.invested) > 0 ? Number(leg.invested) : 0,
+    });
+  }
+  return out;
+}
+
+function ymdShift(ymd, days) {
+  const [y, m, d] = String(ymd).split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.toISOString().slice(0, 10);
+}
+
+function downsamplePath(points, max = 48) {
+  if (points.length <= max) return points;
+  const out = [];
+  const last = points.length - 1;
+  for (let i = 0; i < max; i += 1) {
+    const idx = Math.round((i / (max - 1)) * last);
+    out.push(points[idx]);
+  }
+  out[out.length - 1] = points[last];
+  return out;
+}
+
+export function summarizeTape(legs) {
+  let pnl = 0;
+  let invested = 0;
+  let w = 0;
+  let l = 0;
+  for (const leg of legs) {
+    pnl += leg.pnl;
+    invested += leg.invested || 0;
+    if (leg.won === 1) w += 1;
+    else l += 1;
+  }
+  const n = w + l;
+  return {
+    pnl: n ? Math.round(pnl) : null,
+    invested: Math.round(invested),
+    wins: w,
+    losses: l,
+    roi: invested > 0 ? Math.round((100 * pnl) / invested) : null,
+    honest: honestRecord(w, l),
+  };
+}
+
+/**
+ * Yesterday and last-90 from the stored tape. 30 days stays on the
+ * official month window. Last-90 only includes bets the profile still has.
+ */
+export function portfolioWindowBook(holdings, window, { today = null } = {}) {
+  const todayET = today || new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const yesterday = ymdShift(todayET, -1);
+  const since = window === 'l90' ? ymdShift(todayET, -89) : yesterday;
+  const exact = window === 'yesterday';
+  const kept = [];
+  let earliest = null;
+  for (const h of holdings || []) {
+    for (const leg of h.tape || []) {
+      if (!leg?.date) continue;
+      if (!earliest || leg.date < earliest) earliest = leg.date;
+      if (exact ? leg.date === yesterday : (leg.date >= since && leg.date <= todayET)) {
+        kept.push({ ...leg, walletShort: h.walletShort });
+      }
+    }
+  }
+  kept.sort((a, b) => a.date.localeCompare(b.date) || String(a.walletShort).localeCompare(String(b.walletShort)));
+  let run = 0;
+  const path = downsamplePath(kept.map((leg) => {
+    run += leg.pnl;
+    return Math.round(run);
+  }));
+  if (path.length === 1) path.unshift(0);
+  const overall = summarizeTape(kept);
+  const sports = new Map();
+  const markets = new Map();
+  const byWallet = new Map();
+  for (const leg of kept) {
+    const s = sports.get(leg.sport) || [];
+    s.push(leg);
+    sports.set(leg.sport, s);
+    const label = MARKET_LABEL[leg.market] || leg.market || 'Market';
+    const m = markets.get(label) || [];
+    m.push(leg);
+    markets.set(label, m);
+    const w = byWallet.get(leg.walletShort) || [];
+    w.push(leg);
+    byWallet.set(leg.walletShort, w);
+  }
+  const packMap = (map, keyName) => [...map.entries()].map(([key, legs]) => {
+    const a = summarizeTape(legs);
+    return { [keyName]: key, ...a, n: a.wins + a.losses };
+  }).sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0));
+  return {
+    window,
+    since: exact ? yesterday : since,
+    from: earliest,
+    partial: window === 'l90' && !!earliest && earliest > since,
+    path,
+    pathEnd: path.length ? path[path.length - 1] : overall.pnl,
+    roi: overall.roi,
+    honest: overall.honest,
+    sports: packMap(sports, 'sport'),
+    markets: packMap(markets, 'label'),
+    wallets: [...byWallet.entries()].map(([walletShort, legs]) => ({
+      walletShort,
+      legs,
+      ...summarizeTape(legs),
+    })),
   };
 }
 
@@ -2106,6 +2244,7 @@ export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
       betsOff: Array.isArray(m.betsOff) ? m.betsOff : [],
       lines: book.lines,
       markets: book.markets || [],
+      tape: book.tape || [],
       spark: blendDollarCurves(book.sparks),
     };
   });
