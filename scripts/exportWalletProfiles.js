@@ -82,6 +82,7 @@ import {
   WALLET_PROFILES_META_DOC_ID,
 } from './lib/loadWalletProfiles.js';
 import { buildSizeRatioBands } from '../src/lib/sizeRatioBands.js';
+import { buildCalendarWindow, L90_DAYS } from '../src/lib/calendarWindow.js';
 import { mergeFeaturedIntoAction } from '../src/lib/actionLockPin.js';
 import {
   SIZE_SKILL_RESCUE,
@@ -746,6 +747,9 @@ function loadAvgSportBetByShort() {
 }
 
 function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = null) {
+  // Display-only. Not a whitelist input. Last-90 has to be the full
+  // position window — the ticket list is capped and cannot carry it.
+  const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   const latestPick = pickBets.length ? pickBets.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] : null;
   const latestPos = posBets.length ? posBets.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] : null;
 
@@ -861,6 +865,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
         picks: picksAgg(pp.filter((b) => b.market === market)),
         positions: positionsAgg(mPos),
         recentActionWindow: recentActionDollarWindow(mPos, { minN: 1 }),
+        l90Window: buildCalendarWindow(mPos, { days: L90_DAYS, today: todayET }),
       };
     }
     bySport[sport] = {
@@ -892,6 +897,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
         settledPnl: Number.isFinite(recentWindow.settledPnl)
           ? Math.round(recentWindow.settledPnl) : null,
       },
+      l90Window: buildCalendarWindow(ps, { days: L90_DAYS, today: todayET, withCurve: true }),
       ...(form ? { form } : {}),
     };
   }

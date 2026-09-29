@@ -581,8 +581,8 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
             }, 0);
             const mark = sizeMark(hot);
             const record = m.honest?.record
-              ? `${m.honest.record}${m.n ? ` · ${m.n} bets` : ''}`
-              : (m.n ? `${m.n} bets` : '—');
+              ? `All time ${m.honest.record}${m.n ? ` · ${m.n} bets` : ''}`
+              : (m.n ? `All time · ${m.n} bets` : '—');
             const tape = open ? marketTape(walletProfiles, holding.walletShort, g.sport, m.market) : null;
             return (
               <div key={key} style={{ borderTop: `1px solid ${B.hair}` }}>
@@ -1501,6 +1501,7 @@ function PortfolioStage({
   const markets = useMemo(() => {
     if (alt) {
       if (!sport) return alt.markets;
+      if (alt.marketsBySport) return alt.marketsBySport[sport] || [];
       const legs = alt.wallets.flatMap((w) => (w.legs || []).filter((l) => l.sport === sport));
       const by = new Map();
       for (const leg of legs) {
@@ -1527,14 +1528,18 @@ function PortfolioStage({
       let heat = h.heat;
       if (altBy) {
         const entry = altBy.get(h.walletShort);
-        const legs = sport
-          ? (entry?.legs || []).filter((l) => l.sport === sport)
-          : (entry?.legs || []);
-        if (!legs.length) continue;
-        const a = sport ? summarizeTape(legs) : entry;
-        pnl = a.pnl;
-        roi = a.roi;
-        honest = a.honest;
+        if (!entry) continue;
+        if (sport) {
+          const line = (entry.lines || []).find((l) => l.sport === sport);
+          if (!line) continue;
+          pnl = line.pnl;
+          roi = line.roi;
+          honest = line.honest;
+        } else {
+          pnl = entry.pnl;
+          roi = entry.roi;
+          honest = entry.honest;
+        }
         heat = sport ? ((h.lines || []).find((l) => l.sport === sport)?.heat || h.heat) : h.heat;
       } else if (sport) {
         const line = (h.lines || []).find((l) => l.sport === sport);
@@ -1572,9 +1577,11 @@ function PortfolioStage({
   const maxSharp = Math.max(1, ...people.map((h) => Math.abs(h.pnl) || 0));
   const maxSport = Math.max(1, ...viewSports.map((s) => Math.abs(s.pnl) || 0));
   const spanLabel = span === 'yesterday' ? 'Yesterday' : span === 'l90' ? 'Last 90 days' : '30-day path';
-  const spanNote = span === 'l90' && alt?.partial && alt.from
-    ? ` · tape from ${Number(alt.from.slice(5, 7))}/${Number(alt.from.slice(8))}`
-    : '';
+  const spanNote = span === 'l90' && alt && alt.ready === false
+    ? ''
+    : (span === 'l90' && alt?.partial && alt.from
+      ? ` · tape from ${Number(alt.from.slice(5, 7))}/${Number(alt.from.slice(8))}`
+      : '');
   const colLabel = span === 'yesterday' ? 'Yest' : span === 'l90' ? 'L90' : '30d';
   return (
     <section style={{
@@ -1705,9 +1712,11 @@ function PortfolioStage({
             );
           }) : (
             <div style={{ ...T.body, color: B.textFaint, padding: '0.9rem 0.35rem' }}>
-              {sport
-                ? `No one on this list has a ${sport} book${span === 'yesterday' ? ' yesterday' : ''}.`
-                : (span === 'yesterday' ? 'Nothing graded yesterday.' : 'Nobody on the list.')}
+              {span === 'l90' && alt && alt.ready === false
+                ? '90-day records rebuild with the wallet profiles. 30D is the full month.'
+                : (sport
+                  ? `No one on this list has a ${sport} book${span === 'yesterday' ? ' yesterday' : ''}.`
+                  : (span === 'yesterday' ? 'Nothing graded yesterday.' : 'Nobody on the list.'))}
             </div>
           )}
         </div>

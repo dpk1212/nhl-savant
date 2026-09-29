@@ -19,6 +19,7 @@ import {
   betsFeedOn,
   toggleBetsFeed,
 } from '../src/lib/mySharps.js';
+import { buildCalendarWindow } from '../src/lib/calendarWindow.js';
 import {
   americanProfit,
   blendRoi,
@@ -809,10 +810,103 @@ const last90 = portfolioWindowBook([
     ],
   },
 ], 'l90', { today: '2026-09-29' });
-assert.equal(last90.wallets[0].wins + last90.wallets[0].losses, 2);
-assert.equal(last90.pathEnd, 5000);
-assert.equal(last90.partial, true);
-assert.equal(last90.from, '2026-08-15');
+assert.equal(last90.ready, false);
+assert.equal(last90.wallets.length, 0);
+const official90 = portfolioWindowBook([
+  {
+    walletShort: 'a',
+    tape: [
+      { date: '2026-09-28', sport: 'MLB', market: 'TOTAL', pnl: -100, won: 0, invested: 1000 },
+    ],
+    l90: {
+      pnl: 53900,
+      roi: 27,
+      wins: 140,
+      losses: 90,
+      from: '2026-07-02',
+      spark: [0, 20000, 53900],
+      lines: [{ sport: 'MLB', pnl: 53900, roi: 27, wins: 140, losses: 90 }],
+      markets: [{ sport: 'MLB', label: 'Total', pnl: 53900, roi: 26, wins: 140, losses: 90, n: 230 }],
+    },
+  },
+], 'l90');
+assert.equal(official90.ready, true);
+assert.equal(official90.partial, false);
+assert.equal(official90.wallets[0].wins, 140);
+assert.equal(official90.wallets[0].losses, 90);
+assert.equal(official90.pathEnd, 53900);
+assert.equal(official90.sports[0].sport, 'MLB');
+assert.equal(official90.marketsBySport.MLB[0].label, 'Total');
+
+const heavy = [];
+for (let i = 0; i < 40; i += 1) heavy.push({ date: '2026-09-20', won: 1, settledPnl: 100, invested: 1000 });
+for (let i = 0; i < 60; i += 1) heavy.push({ date: '2026-09-05', won: 0, settledPnl: -50, invested: 1000 });
+for (let i = 0; i < 30; i += 1) heavy.push({ date: '2026-08-01', won: 1, settledPnl: 80, invested: 500 });
+for (let i = 0; i < 10; i += 1) heavy.push({ date: '2026-01-01', won: 1, settledPnl: 999, invested: 500 });
+const month = buildCalendarWindow(heavy, { days: 30, today: '2026-09-29' });
+const quarter = buildCalendarWindow(heavy, { days: 90, today: '2026-09-29', withCurve: true });
+assert.equal(month.n, 100);
+assert.equal(month.wins, 40);
+assert.equal(month.losses, 60);
+assert.equal(quarter.n, 130);
+assert.equal(quarter.wins, 70);
+assert.equal(quarter.losses, 60);
+assert.ok(quarter.wins >= month.wins && quarter.losses >= month.losses);
+assert.equal(quarter.settledPnl, 3400);
+assert.equal(quarter.curve[quarter.curve.length - 1], 3400);
+assert.equal(quarter.from, '2026-08-01');
+
+const cappedBook = buildDeskHoldings({
+  roster: [{ walletShort: '9214c2' }],
+  walletProfiles: new Map([['9214c2', {
+    bySport: {
+      MLB: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 177, wins: 104, losses: 73, wr: 58.8, settledPnl: 53900, dollarRoi: 27 },
+        l90Window: {
+          days: 90, n: 210, wins: 130, losses: 80, wr: 61.9, settledPnl: 61000, dollarRoi: 18,
+          from: '2026-07-04', curve: [0, 30000, 61000],
+        },
+        positions: { n: 198, wins: 115, losses: 83, wr: 58, dollarRoi: 26, invested: 198000 },
+        form: {
+          recentAction: Array.from({ length: 40 }, (_, i) => ({
+            date: '2026-09-20', marketType: 'TOTAL', gameKey: `g${i}`, side: 'over',
+            dollarPnl: i < 15 ? 10 : -10, won: i < 15 ? 1 : 0, invested: 1000,
+          })),
+        },
+        byMarket: {
+          TOTAL: {
+            positions: { n: 198, wins: 115, losses: 83, wr: 58, dollarRoi: 26, invested: 198000 },
+            recentActionWindow: { n: 177, wins: 104, losses: 73, settledPnl: 53900, dollarRoi: 27 },
+            l90Window: { days: 90, n: 210, wins: 130, losses: 80, wr: 61.9, settledPnl: 61000, dollarRoi: 18, from: '2026-07-04' },
+          },
+        },
+      },
+    },
+  }]]),
+});
+assert.equal(cappedBook[0].wins, 104);
+assert.equal(cappedBook[0].losses, 73);
+assert.equal(cappedBook[0].l90.wins, 130);
+assert.equal(cappedBook[0].l90.losses, 80);
+assert.ok(cappedBook[0].l90.wins >= cappedBook[0].wins);
+assert.equal(portfolioWindowBook(cappedBook, 'l90').wallets[0].wins, 130);
+const withoutL90 = buildDeskHoldings({
+  roster: [{ walletShort: '9214c2' }],
+  walletProfiles: new Map([['9214c2', {
+    bySport: {
+      MLB: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 177, wins: 104, losses: 73, wr: 59, settledPnl: 53900, dollarRoi: 27 },
+        form: {
+          recentAction: [{ date: '2026-09-28', marketType: 'TOTAL', gameKey: 'a', side: 'over', dollarPnl: -10, won: 0, invested: 1000 }],
+        },
+      },
+    },
+  }]]),
+});
+assert.equal(withoutL90[0].l90, null);
+assert.equal(portfolioWindowBook(withoutL90, 'l90').ready, false);
 assert.equal(buildPortfolioStage([
   { walletShort: 'a', markets: [{ label: 'ML', sport: 'NFL', n: 4, wins: 3, losses: 1, roi: 18, l30: { pnl: 3800 } }, { label: 'Total', sport: 'MLB', n: 8, wins: 5, losses: 3, roi: 10, l30: { pnl: 900 } }] },
 ], 'NFL').markets[0].label, 'ML');
