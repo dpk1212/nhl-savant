@@ -76,6 +76,7 @@ import {
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
+import { mergePositionPages, POSITION_PAGE_SIZE } from './lib/fetchPositionPages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -659,11 +660,24 @@ async function run() {
     return fullAddr && !mainScanned.has(fullAddr);
   });
   console.log(`Supplemental fetch: ${toFetch.length} wallet(s) need a network call (concurrency=${SCAN_CONCURRENCY})...`);
+  let secondPages = 0;
   await mapPool(toFetch, SCAN_CONCURRENCY, async (w) => {
     const fullAddr = addrBySuffix.get(w.walletShort);
-    const res = await fetchWithRetry(`${DATA_API}/positions?user=${fullAddr}&limit=500`);
+    const res = await fetchWithRetry(
+      `${DATA_API}/positions?user=${fullAddr}&limit=${POSITION_PAGE_SIZE}&offset=0`,
+    );
+    if (res?.ok && Array.isArray(res.data) && res.data.length >= POSITION_PAGE_SIZE) {
+      const res2 = await fetchWithRetry(
+        `${DATA_API}/positions?user=${fullAddr}&limit=${POSITION_PAGE_SIZE}&offset=${POSITION_PAGE_SIZE}`,
+      );
+      if (res2?.ok && Array.isArray(res2.data)) {
+        res.data = mergePositionPages(res.data, res2.data);
+        secondPages += 1;
+      }
+    }
     fetchedBySuffix.set(w.walletShort, res);
   });
+  if (secondPages > 0) console.log(`Position second page: ${secondPages} wallet(s)`);
   console.log('Processing supplemental scan results...\n');
 
   for (const w of whitelist) {
