@@ -42,9 +42,9 @@ Used by:
 |---------|------|------|-------------------|
 | Market-skill | **2026-09-24** | ML: ≥1 FOR with sport×ML `n≥6 WR≥52`. S/T: qual$ AGREE + HARD slip on FOR. | `ml-mkt-skill` / `st-qual-wipe` / `st-hard-slip` |
 | HARD mute-exception | **2026-09-24** | Rescue tape-weak / maxsr-sub4 / fools-gold-flat / top-crowded if ≥1 HARD FOR. Tape-weak **S/T stays muted**. | `rescuedBy=hard-mkt-hold` |
-| HARD 2+ FOR / 0 AG | **2026-09-28** | Unique HARD+ FOR ≥2 and HARD+ AG = 0 restores steam-tail / leftover / st-fat / tape-weak (incl S/T) at max(uPre, 3) capped 4u. Skip ev-drift / fav-juice / unstamped / fade. | `rescuedBy=hard-2for-hold` |
+| HARD 2+ FOR / 0 AG | **2026-09-28** | Unique HARD+ FOR ≥2 and HARD+ AG = 0 restores steam-tail / leftover / st-fat / tape-weak (incl S/T) at max(uPre, 3) capped 4u. Skip ev-drift / fav-juice / unstamped / fade. **2026-09-29+** margin (FOR−AG) ≥ +1 is enough (2-1 HOLDs, 2-2 stays muted). | `rescuedBy=hard-2for-hold` |
 | HARD S/T press | **2026-09-28** | SPREAD/TOTAL unique HARD+ FOR ≥1 sized ≥1.5× sport usual and HARD+ AG = 0 restores the same mute set at uPre capped 4u (no 3u floor). ML stays on 1-for / 2-for. Skip board-share / ev-drift / fav-juice / unstamped / fade. | `rescuedBy=hard-st-press-hold` |
-| HARD+ AG mute | **2026-09-25** | ≥1 HARD on the **other** side → 0u. 4u+ not exempt. | `hard-ag` |
+| HARD+ AG mute | **2026-09-25** | ≥1 HARD on the **other** side → 0u. 4u+ not exempt. **2026-09-29+** mute only when HARD AG ≥1 **and** margin (FOR−AG) ≤ 0. 2-1 HOLD. 1-1 MUTE. GOLD stays FOR-only. | `hard-ag` |
 | S/T HARD+ FOR require | **2026-09-26** | SPREAD/TOTAL with `hardFor < 1` → 0u. ML exempt. 4u+ not exempt. Last step after HARD+ AG. | `st-hard-for` |
 | GOLD-stack 4u cap | **2026-09-26** | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps fat. | `cappedBy=gold-stack-cap` |
 
@@ -198,9 +198,9 @@ Extra wallets in n6/$3 but not n5/$7 (the $3–7 veterans): `209728` MLB n=72 WR
 | `scripts/lib/hydrateLivePositionsFromScan.js` | Scan board only hydrates Door 2 Proven |
 | `src/lib/sportConfirmedUnlock.js` | NFL/CFB cap counts Door 2 CONFIRMED |
 | `src/lib/marketSkillMuteOverlay.js` | HARD+ definition + market-skill |
-| `src/lib/hardAgMuteOverlay.js` | HARD+ AG → 0u |
+| `src/lib/hardAgMuteOverlay.js` | HARD+ AG mute (binary 09-25; margin ≤0 from 09-29) |
 | `src/lib/hardStForRequireOverlay.js` | S/T needs HARD+ FOR |
-| `src/lib/hardMuteExceptionOverlay.js` | HARD FOR rescues listed mutes |
+| `src/lib/hardMuteExceptionOverlay.js` | HARD FOR rescues listed mutes; 2-for margin ≥+1 from 09-29 |
 | `tests/testWhitelistTier.mjs` | Door 2 unit tests |
 
 FOOLS “best FOR = FLAT → 0u” is now almost dead: FLAT is not Proven. Fail-open if no Proven FOR (v12 / no-CONFIRMED already 0u those).
@@ -224,8 +224,8 @@ If a future agent “finds” a better n/WR/$ cell, compare it to the tables in 
 |--------|-----|
 | Door 2 Proven | Revert `src/lib/whitelistTier.js` to v4. Next export restores A/FLAT/rescues. |
 | S/T HARD+ FOR | `HARD_ST_FOR_REQUIRE_FROM = '9999-01-01'` |
-| HARD+ AG | `HARD_AG_MUTE_FROM = '9999-01-01'` |
+| HARD+ AG | `HARD_AG_MUTE_FROM = '9999-01-01'` (off) · `HARD_AG_MARGIN_FROM = '9999-01-01'` (binary any-AG) |
 | HARD exception | `HARD_MUTE_EXCEPTION_FROM = '9999-01-01'` |
-| HARD 2+ FOR / 0 AG | `HARD_TWO_FOR_EXCEPTION_FROM = '9999-01-01'` |
+| HARD 2+ FOR / 0 AG | `HARD_TWO_FOR_EXCEPTION_FROM = '9999-01-01'` · `HARD_TWO_FOR_MARGIN_FROM = '9999-01-01'` (2-for requires 0 AG) |
 | HARD S/T press | `HARD_ST_PRESS_EXCEPTION_FROM = '9999-01-01'` |
 | Market-skill | `MARKET_SKILL_MUTE_FROM = '9999-01-01'` |

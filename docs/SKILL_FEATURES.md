@@ -53,8 +53,9 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **Board $ share mute** | 2026-09-17+: after unit-tier · mute all-$ FOR share in **[25%, 45%)** · &lt;25% keep only when proven $ share ≥ 50% (junk-against) · missing details fail-open · `mutedBy=board-share` · stamp `v8_boardShareAction` |
 | **Spread/total fat mute** | 2026-09-17+: after board-share · **SPREAD / TOTAL only** · leftover **BOTH** (EDGE≥10 ∧ tape BOOST) any current units → **0u** · arriving (off→on) **and** units ≥ 4 → **0u** · ML exempt · BOTH reason wins if both fire · missing BOTH + arriving unknown fail-open · `mutedBy=st-fat` · stamp `v8_stFatAction` |
 | **Fade proven-$ hold** | 2026-09-18+: fadeTop mute **skips** SHARP-LEAN **ML** when proven $ share ≥ 50% · missing proven still fades · SPREAD/TOTAL and Path A/RANK/SHARP still fade · later filters still run · stamp `v8_fadeProvenHoldAction` |
-| **HARD 2+ FOR / 0 AG hold** | 2026-09-28+: muted ticket with **≥2 unique HARD+ FOR** and **0 HARD+ AG** → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at **max(uPre, 3) capped 4u** · unique wallets not duplicate listings · skip ev-drift / fav-juice / unstamped 0u / fade · stamp `v8_rescuedBy=hard-2for-hold` |
+| **HARD 2+ FOR / 0 AG hold** | 2026-09-28+: muted ticket with **≥2 unique HARD+ FOR** and **0 HARD+ AG** → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at **max(uPre, 3) capped 4u** · unique wallets not duplicate listings · skip ev-drift / fav-juice / unstamped 0u / fade · stamp `v8_rescuedBy=hard-2for-hold` · **2026-09-29+** also when unique HARD margin (FOR−AG) ≥ +1 (2-1 HOLDs, 2-2 stays muted) |
 | **HARD S/T press hold** | 2026-09-28+: **SPREAD/TOTAL** muted ticket with **≥1 unique HARD+ FOR sized ≥1.5× sport usual** and **0 HARD+ AG** → restore the same mute set as 2-for at **uPre capped 4u** (no 3u floor) · ML stays on 1-for / 2-for · skip board-share / ev-drift / fav-juice / unstamped 0u / fade · 2-for still wins when ≥2 HARD · stamp `v8_rescuedBy=hard-st-press-hold` |
+| **HARD+ AG mute** | 2026-09-25+: ≥1 HARD+ on the other side → **0u** · `mutedBy=hard-ag` · **2026-09-29+** mute only when HARD AG ≥1 **and** margin (FOR−AG) ≤ 0 · 2-1 HOLD · 1-1 MUTE · GOLD stays FOR-only |
 
 ---
 
@@ -240,6 +241,7 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **23** | **2026-09-28** | Q1 floor + Policy T lean arriving 1→2 require HARD+ FOR |
 | **24** | **2026-09-28** | 2+ unique HARD+ FOR / 0 HARD+ AG unmute steam-tail + leftover at floor 3u cap 4u |
 | **25** | **2026-09-28** | S/T 1 HARD+ FOR press ≥1.5× sport usual / 0 AG unmute steam-tail + leftover at uPre cap 4u |
+| **26** | **2026-09-29** | HARD+ unique-wallet margin — AG mute if AG ≥1 and (FOR−AG) ≤ 0; 2-for rescue if ≥2 FOR and margin ≥ +1 |
 
 ---
 

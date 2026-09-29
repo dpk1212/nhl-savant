@@ -4,7 +4,8 @@
  * and a HARD FOR wallet backs the side. tape-weak S/T stays muted at 1 HARD
  * unless that HARD FOR is sized ≥1.5× sport usual (2026-09-28+).
  * 2026-09-28+: 2 unique HARD+ FOR / 0 HARD+ AG restores steam-tail and
- * leftover at max(uPre, 3) capped 4u.
+ * leftover at max(uPre, 3) capped 4u. 2026-09-29+: 2-for also rescues
+ * when unique HARD margin (FOR−AG) ≥ +1 (2-1 HOLD, 2-2 stays muted).
  * 2026-09-28+: S/T 1 HARD+ FOR press ≥1.5× / 0 AG restores the same mute
  * set at uPre capped 4 (no 3u floor). ML stays on 1-for / 2-for.
  * Usage: node tests/testHardMuteExceptionOverlay.mjs
@@ -15,6 +16,7 @@ import {
   lastAppliedMute,
   isHardMuteExceptionLive,
   isHardTwoForExceptionLive,
+  isHardTwoForMarginLive,
   isHardStPressExceptionLive,
   isHardExceptionRescueStamp,
   twoHardForRestoreUnits,
@@ -23,6 +25,7 @@ import {
   HARD_MUTE_EXCEPTION_RESCUED_BY,
   HARD_EXCEPTION_MUTES,
   HARD_TWO_FOR_EXCEPTION_FROM,
+  HARD_TWO_FOR_MARGIN_FROM,
   HARD_TWO_FOR_RESCUED_BY,
   HARD_TWO_FOR_EXCEPTION_MUTES,
   HARD_TWO_FOR_FLOOR_U,
@@ -88,6 +91,9 @@ ok(!HARD_TWO_FOR_EXCEPTION_MUTES.has('board-share'), 'board-share not excepted')
 ok(isHardTwoForExceptionLive('2026-09-28'), '2-for live on cutover');
 ok(!isHardTwoForExceptionLive('2026-09-27'), '2-for not live before');
 ok(HARD_TWO_FOR_EXCEPTION_FROM === '2026-09-28', '2-for cutover date');
+ok(HARD_TWO_FOR_MARGIN_FROM === '2026-09-29', '2-for margin cutover date');
+ok(isHardTwoForMarginLive('2026-09-29'), '2-for margin live on cutover');
+ok(!isHardTwoForMarginLive('2026-09-28'), '2-for margin not live 09-28');
 ok(isHardExceptionRescueStamp(HARD_MUTE_EXCEPTION_RESCUED_BY)
   && isHardExceptionRescueStamp(HARD_TWO_FOR_RESCUED_BY)
   && isHardExceptionRescueStamp(HARD_ST_PRESS_RESCUED_BY), 'rescue stamps');
@@ -363,10 +369,15 @@ function twoHold(args) {
   return applyHardMuteExceptionOverlay({ pickDate: '2026-09-28', ...args });
 }
 
+function twoHoldMargin(args) {
+  return applyHardMuteExceptionOverlay({ pickDate: '2026-09-29', ...args });
+}
+
 const twoHardProf = new Map([
   ['aaaaaa', prof('MLB', 'ML', pos(4, 62, 10))],
   ['cccccc', prof('MLB', 'ML', pos(12, 70, 20))],
   ['aghard', prof('MLB', 'ML', pos(8, 65, 15))],
+  ['aghard2', prof('MLB', 'ML', pos(6, 64, 12))],
   ['tot01', prof('MLB', 'TOTAL', pos(12, 67, 21))],
   ['tot02', prof('MLB', 'TOTAL', pos(8, 80, 18))],
 ]);
@@ -501,6 +512,47 @@ const twoHardProf = new Map([
   });
   ok(r.action === 'HOLD_MUTE' && r.reason === 'hard_ag' && r.units === 0,
     '2 HARD FOR + HARD AG stays muted');
+}
+
+{
+  const r = twoHoldMargin({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'ML',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [
+      { side: 'home', walletShort: 'aaaaaa', invested: 1000 },
+      { side: 'home', walletShort: 'cccccc', invested: 200 },
+      { side: 'away', walletShort: 'aghard', invested: 800 },
+    ],
+    walletProfiles: twoHardProf,
+  });
+  ok(r.action === 'RESCUE' && r.units === 3 && r.rescuedBy === HARD_TWO_FOR_RESCUED_BY,
+    '2-1 steam-tail rescues on 09-29');
+  ok(r.hardN === 2 && r.hardAgN === 1 && r.margin === 1, '2-1 unique margin +1');
+}
+
+{
+  const r = twoHoldMargin({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'ML',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [
+      { side: 'home', walletShort: 'aaaaaa', invested: 1000 },
+      { side: 'home', walletShort: 'cccccc', invested: 200 },
+      { side: 'away', walletShort: 'aghard', invested: 800 },
+      { side: 'away', walletShort: 'aghard2', invested: 400 },
+    ],
+    walletProfiles: twoHardProf,
+  });
+  ok(r.action === 'HOLD_MUTE' && r.reason === 'hard_ag' && r.units === 0,
+    '2-2 steam-tail stays muted on 09-29');
+  ok(r.margin === 0, '2-2 margin 0');
 }
 
 {
@@ -841,6 +893,24 @@ const pressSpreadProf = new Map([
   });
   ok(r.action === 'HOLD_MUTE' && r.reason === 'hard_ag' && r.units === 0,
     'S/T 1 HARD press + HARD AG stays muted');
+}
+
+{
+  const r = twoHoldMargin({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'SPREAD',
+    sport: 'MLB',
+    side: 'home',
+    walletDetails: [
+      { side: 'home', walletShort: 'press1', invested: 1500 },
+      { side: 'away', walletShort: 'aghard', invested: 2000 },
+    ],
+    walletProfiles: pressSpreadProf,
+  });
+  ok(r.action === 'HOLD_MUTE' && r.reason === 'hard_ag' && r.units === 0,
+    'S/T 1 HARD press + HARD AG still muted on 09-29');
 }
 
 {
