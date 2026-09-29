@@ -17,6 +17,7 @@ import {
   blendRoi,
   groupPortfolioBets,
   marketTape,
+  openPlayFace,
   rowsForBetsFeed,
   sizeTiersForWallet,
   suggestTailStake,
@@ -495,29 +496,61 @@ function BetsSwitch({ on, onClick, label }) {
 
 function SizeTierStrip({ tiers }) {
   if (!tiers?.tiers?.length) return null;
+  const rated = tiers.tiers.filter((t) => t.wr != null);
+  const bestWr = rated.reduce((m, t) => Math.max(m, t.wr), 0);
   return (
-    <div style={{ marginTop: 12 }}>
-      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>
-        Win rate by size{tiers.usual ? ` · usual ${fmtVol(tiers.usual, { signed: false })}` : ''}
+    <div style={{
+      marginTop: 14,
+      padding: '0.9rem 0.8rem 0.8rem',
+      borderRadius: 14,
+      border: `1px solid ${B.goldBorder}`,
+      background: 'linear-gradient(180deg, rgba(212,175,55,0.14) 0%, rgba(255,255,255,0.03) 46%, rgba(0,0,0,0.15) 100%)',
+    }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.14em' }}>Win rate by size</div>
+        {tiers.usual ? (
+          <div style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+            Usual {fmtVol(tiers.usual, { signed: false })}
+          </div>
+        ) : null}
       </div>
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-        gap: 10,
-        marginTop: 8,
+        gap: 8,
+        marginTop: 12,
       }}
       >
-        {tiers.tiers.map((tier) => (
-          <div key={tier.id}>
-            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{tier.kicker}</div>
-            <div style={{ ...T.figure, color: tierWrColor(tier), marginTop: 4, fontSize: '1.12rem' }}>
-              {tier.wr != null ? `${tier.wr}%` : (tier.record || '—')}
+        {tiers.tiers.map((tier) => {
+          const lead = tier.wr != null && tier.wr === bestWr && tier.wr >= 55;
+          const color = tierWrColor(tier);
+          return (
+            <div
+              key={tier.id}
+              style={{
+                borderRadius: 12,
+                padding: '0.62rem 0.45rem 0.7rem',
+                background: lead ? 'rgba(16,185,129,0.12)' : 'rgba(0,0,0,0.28)',
+                border: `1px solid ${lead ? 'rgba(16,185,129,0.5)' : 'rgba(255,255,255,0.06)'}`,
+                boxShadow: lead ? '0 0 18px rgba(16,185,129,0.16)' : 'none',
+              }}
+            >
+              <div style={{ ...T.kicker, color: lead ? B.green : B.goldSoft, letterSpacing: '0.08em' }}>{tier.kicker}</div>
+              <div style={{ ...T.hero, color, marginTop: 8, fontSize: '1.72rem' }}>
+                {tier.wr != null ? `${tier.wr}%` : (tier.record || '—')}
+              </div>
+              <div style={{ marginTop: 10, height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                {tier.wr != null ? (
+                  <div style={{ width: `${Math.max(tier.wr, 8)}%`, height: '100%', borderRadius: 99, background: color }} />
+                ) : null}
+              </div>
+              <div style={{ ...T.meta, color: tier.wr != null ? B.textSec : B.textFaint, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
+                {tier.wr != null && tier.record ? tier.record : (tier.n ? `${tier.n} bets` : '—')}
+              </div>
             </div>
-            {tier.wr != null && tier.record ? (
-              <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>{tier.record}</div>
-            ) : null}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -672,13 +705,18 @@ function MarketPlays({ openRows, tape, usual }) {
         const ratio = Number(r.displaySizeRatio ?? r.sizeRatio);
         const multiple = relativeMultiple(r.invested, ratio, usual);
         const label = relativeLabel(multiple);
-        const pick = r.marketLabel || r.team || r.side || 'Open';
+        const face = openPlayFace(r);
         const matchup = r.away && r.home ? `${r.away} @ ${r.home}` : null;
         return (
           <div key={`${r.gameKey}-${r.side}-${i}`} style={{ padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{pick}</div>
+                <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>
+                  {face.name}
+                  {face.price ? (
+                    <span style={{ color: B.textSec, fontWeight: 550 }}> {face.price}</span>
+                  ) : null}
+                </div>
                 <div style={{ ...T.meta, color: B.textMuted }}>{matchup || 'Open ticket'}</div>
               </div>
               <div style={{ ...T.figure, color: B.goldSoft, fontSize: '0.82rem', textAlign: 'right' }}>

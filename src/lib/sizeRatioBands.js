@@ -85,6 +85,23 @@ export const SIZE_RATIO_BAND_MIN_N = 30;
  * - When settledPnl is present, ~0 PnL (push/void) is excluded from n and WR.
  * - Band edges: [min, max) ; top band is [1.5×, ∞).
  */
+/** Mean stake of decided bets. Used when the roster has no cross-sport usual. */
+export function meanDecidedStake(bets) {
+  let sum = 0;
+  let n = 0;
+  for (const b of bets || []) {
+    const inv = Number(b?.invested);
+    if (!Number.isFinite(inv) || inv <= 0) continue;
+    if (Number.isFinite(b.settledPnl) && Math.abs(b.settledPnl) <= 1e-9) continue;
+    const win = b.won === 1 || b.won === true;
+    const loss = b.won === 0 || b.won === false;
+    if (!win && !loss) continue;
+    sum += inv;
+    n += 1;
+  }
+  return n ? sum / n : null;
+}
+
 export function buildSizeRatioBands(bets, avgSportBet) {
   const usual = Number(avgSportBet);
   if (!Number.isFinite(usual) || usual <= 0) return null;
