@@ -377,7 +377,7 @@ const twoHardProf = new Map([
   ['aaaaaa', prof('MLB', 'ML', pos(4, 62, 10))],
   ['cccccc', prof('MLB', 'ML', pos(12, 70, 20))],
   ['aghard', prof('MLB', 'ML', pos(8, 65, 15))],
-  ['aghard2', prof('MLB', 'ML', pos(6, 64, 12))],
+  ['hhhhhh', prof('MLB', 'ML', pos(6, 64, 12))],
   ['tot01', prof('MLB', 'TOTAL', pos(12, 67, 21))],
   ['tot02', prof('MLB', 'TOTAL', pos(8, 80, 18))],
 ]);
@@ -546,7 +546,7 @@ const twoHardProf = new Map([
       { side: 'home', walletShort: 'aaaaaa', invested: 1000 },
       { side: 'home', walletShort: 'cccccc', invested: 200 },
       { side: 'away', walletShort: 'aghard', invested: 800 },
-      { side: 'away', walletShort: 'aghard2', invested: 400 },
+      { side: 'away', walletShort: 'hhhhhh', invested: 400 },
     ],
     walletProfiles: twoHardProf,
   });
