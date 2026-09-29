@@ -1291,6 +1291,54 @@ export function buildDeskReport({
   };
 }
 
+/**
+ * Open ticket in the market book: Over/Under or spread points, then the
+ * prediction-market percent and American price.
+ */
+export function openPlayFace(row) {
+  const mkt = String(row?.marketType || '').toUpperCase();
+  const side = String(row?.side || '').toLowerCase();
+  const team = row?.team
+    || (side === 'over' ? 'Over' : side === 'under' ? 'Under' : '');
+  const line = Number(row?.entryLine);
+  const hasLine = Number.isFinite(line);
+  const overUnder = side === 'over' || side === 'under' || team === 'Over' || team === 'Under';
+  let name = 'Open';
+  if (overUnder) {
+    const word = (side === 'under' || team === 'Under') ? 'Under' : 'Over';
+    name = hasLine ? `${word} ${line}` : word;
+  } else if (mkt === 'SPREAD' && team && hasLine) {
+    const signed = line > 0 ? `+${line}` : `${line}`;
+    name = `${team} ${signed}`;
+  } else if (mkt === 'ML') {
+    name = team || 'ML';
+  } else if (team && hasLine) {
+    name = `${team} ${line}`;
+  } else {
+    name = team || row?.marketLabel || 'Open';
+  }
+  let cents = Number(row?.cents);
+  if (!Number.isFinite(cents)) {
+    const p = Number(row?.price);
+    if (p > 0 && p <= 1) cents = Math.round(p * 100);
+    else if (p > 1 && p <= 100) cents = Math.round(p);
+    else cents = null;
+  } else {
+    cents = Math.round(cents);
+  }
+  if (cents != null && (cents <= 0 || cents >= 100)) cents = null;
+  let american = row?.americanLabel || null;
+  if (!american && Number.isFinite(Number(row?.americanOdds)) && Number(row.americanOdds) !== 0) {
+    const o = Math.round(Number(row.americanOdds));
+    american = o > 0 ? `+${o}` : `${o}`;
+  }
+  const price = [
+    cents != null ? `${cents}%` : null,
+    american ? `(${american})` : null,
+  ].filter(Boolean).join(' ');
+  return { name, price };
+}
+
 export function ticketPickLabel(t) {
   const team = t?.team || '';
   const raw = String(t?.marketLabel || '');

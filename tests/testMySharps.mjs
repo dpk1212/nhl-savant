@@ -47,6 +47,7 @@ import {
   honestRecord,
   marketBooksFromProfile,
   marketTape,
+  openPlayFace,
   rowsForBetsFeed,
   pickDeskMovers,
   shortsForDeskSection,
@@ -58,7 +59,7 @@ import {
   tailLean,
   ticketPickLabel,
 } from '../src/lib/mySharpsDesk.js';
-import { sizeTierWinRates } from '../src/lib/sizeRatioBands.js';
+import { meanDecidedStake, sizeTierWinRates } from '../src/lib/sizeRatioBands.js';
 
 assert.equal(fmtWalletTag('0xABC162937'), '··162937');
 
@@ -1092,5 +1093,24 @@ const looked = sizeTiersForWallet(new Map([['abcd12', {
 }]]), 'abcd12');
 assert.equal(looked.usual, 1000);
 assert.equal(looked.tiers[2].wr, 75);
+
+const over = openPlayFace({
+  marketType: 'TOTAL', side: 'over', entryLine: 7.5, marketLabel: 'TOTAL 7.5', cents: 62, americanOdds: -118,
+});
+assert.equal(over.name, 'Over 7.5');
+assert.equal(over.price, '62% (-118)');
+const spread = openPlayFace({
+  marketType: 'SPREAD', side: 'home', team: 'Yankees', entryLine: -1.5, americanLabel: '-110', price: 0.52,
+});
+assert.equal(spread.name, 'Yankees -1.5');
+assert.equal(spread.price, '52% (-110)');
+const ml = openPlayFace({ marketType: 'ML', side: 'home', team: 'Pirates', americanLabel: '-149' });
+assert.equal(ml.name, 'Pirates');
+assert.equal(ml.price, '(-149)');
+assert.equal(meanDecidedStake([
+  { invested: 1000, won: 1, settledPnl: 400 },
+  { invested: 3000, won: 0, settledPnl: -3000 },
+  { invested: 50, won: 1, settledPnl: 0 },
+]), 2000);
 
 console.log('testMySharps: ok');

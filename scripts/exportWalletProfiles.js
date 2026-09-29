@@ -81,7 +81,7 @@ import {
   WALLET_PROFILES_META_COLLECTION,
   WALLET_PROFILES_META_DOC_ID,
 } from './lib/loadWalletProfiles.js';
-import { buildSizeRatioBands } from '../src/lib/sizeRatioBands.js';
+import { buildSizeRatioBands, meanDecidedStake } from '../src/lib/sizeRatioBands.js';
 import { buildCalendarWindow, L90_DAYS } from '../src/lib/calendarWindow.js';
 import { mergeFeaturedIntoAction } from '../src/lib/actionLockPin.js';
 import {
@@ -782,21 +782,28 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     };
   }
 
-  let sizeRatioBands = null;
-  if (Number.isFinite(avgSportBet) && avgSportBet > 0) {
-    const posBands = buildSizeRatioBands(posBets, avgSportBet);
-    const pickBands = buildSizeRatioBands(pickBets, avgSportBet);
-    if (posBands || pickBands) {
-      sizeRatioBands = {
-        usual: Math.round(avgSportBet),
-        minN: posBands?.minN ?? pickBands?.minN ?? 30,
-        positions: posBands,
-        picks: pickBands,
-      };
-    }
-  }
+  const packSizeBands = (usual) => {
+    const posBands = buildSizeRatioBands(posBets, usual);
+    const pickBands = buildSizeRatioBands(pickBets, usual);
+    if (!posBands && !pickBands) return null;
+    return {
+      usual: Math.round(usual),
+      minN: posBands?.minN ?? pickBands?.minN ?? 30,
+      positions: posBands,
+      picks: pickBands,
+    };
+  };
+  // Whitelist lift keeps the roster usual only. A missing roster usual
+  // still gets a display book off this wallet's own average stake.
+  let sizeRatioBands = (Number.isFinite(avgSportBet) && avgSportBet > 0)
+    ? packSizeBands(avgSportBet)
+    : null;
 
   const sizeLiftEval = evaluateSizeSkillLift(sizeSignal, sizeRatioBands);
+  if (!sizeRatioBands) {
+    const ownUsual = meanDecidedStake(posBets);
+    if (ownUsual > 0) sizeRatioBands = packSizeBands(ownUsual);
+  }
 
   // Sport + market breakdowns
   const bySport = {};
@@ -988,7 +995,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     positions,           // ALL graded positions (VAULT + SHADOW) — feeds dollarRoi / WR
     sizeSignal,          // VAULT-only conviction bucketing
     shadowSignal,        // SHADOW-only tracking aggregate (may be null)
-    sizeRatioBands,      // WR by size-vs-usual (avgSportBet); null when usual unknown
+    sizeRatioBands,      // WR by size. Roster usual, else this wallet's own average stake.
     sizeSkillLift: sizeLiftEval?.ok ? {
       source: sizeLiftEval.source,
       wrLift: sizeLiftEval.wrLift,

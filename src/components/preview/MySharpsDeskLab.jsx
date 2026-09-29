@@ -285,7 +285,7 @@ const profiles = new Map([
 const actionRows = [
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'tor_bal', marketType: 'TOTAL', side: 'under',
-    team: 'Under', marketLabel: 'U 8.5', away: 'TOR', home: 'BAL', americanLabel: '-154', americanOdds: -154,
+    team: 'Under', marketLabel: 'TOTAL 8.5', away: 'TOR', home: 'BAL', cents: 61, americanLabel: '-154', americanOdds: -154,
     invested: 14000, displaySizeRatio: 3.0, opposed: 'clear', pinMove: 'with', entryLine: 8.5,
     steam: { show: true, tier: 'gold', goldConfirmed: true, tag: 'GOLD 4.2%' },
     commenceMs: Date.parse('2026-09-22T18:36:00-04:00'),
@@ -298,19 +298,25 @@ const actionRows = [
   },
   {
     walletShort: '51176e', sport: 'MLB', gameKey: 'hou_sea', marketType: 'TOTAL', side: 'under',
-    team: 'Under', marketLabel: 'U 7.5', away: 'HOU', home: 'SEA', americanLabel: '-108', americanOdds: -108,
+    team: 'Under', marketLabel: 'TOTAL 7.5', away: 'HOU', home: 'SEA', cents: 52, americanLabel: '-108', americanOdds: -108, entryLine: 7.5,
     invested: 2200, displaySizeRatio: 1.1, opposed: 'clear',
     commenceMs: Date.parse('2026-09-22T21:41:00-04:00'),
   },
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'hou_sea', marketType: 'TOTAL', side: 'over',
-    team: 'Over', marketLabel: 'O 7.5', away: 'HOU', home: 'SEA', americanLabel: '-102', americanOdds: -102,
+    team: 'Over', marketLabel: 'TOTAL 7.5', away: 'HOU', home: 'SEA', cents: 51, americanLabel: '-102', americanOdds: -102, entryLine: 7.5,
     invested: 1800, displaySizeRatio: 0.9, opposed: 'contested',
     commenceMs: Date.parse('2026-09-22T21:41:00-04:00'),
   },
   {
+    walletShort: 'e4ec62', sport: 'MLB', gameKey: 'bos_nyy', marketType: 'SPREAD', side: 'home',
+    team: 'Yankees', marketLabel: 'SPREAD -1.5', away: 'BOS', home: 'NYY', cents: 52, americanLabel: '-110', americanOdds: -110,
+    invested: 6400, displaySizeRatio: 1.4, opposed: 'clear', entryLine: -1.5,
+    commenceMs: Date.parse('2026-09-22T19:05:00-04:00'),
+  },
+  {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'stl_pit', marketType: 'ML', side: 'home',
-    team: 'Pirates', marketLabel: 'ML', away: 'STL', home: 'PIT', americanLabel: '-149', americanOdds: -149,
+    team: 'Pirates', marketLabel: 'ML', away: 'STL', home: 'PIT', cents: 60, americanLabel: '-149', americanOdds: -149,
     invested: 9800, displaySizeRatio: 2.1, opposed: 'clear', pinMove: 'with',
     commenceMs: Date.parse('2026-09-22T18:41:00-04:00'),
   },
