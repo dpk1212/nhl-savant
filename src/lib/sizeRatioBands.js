@@ -162,3 +162,45 @@ export function matchSizeRatioBand(sizeRatio, sizeRatioBands) {
 
   return trySource('positions') || trySource('picks');
 }
+
+const SIZE_TIER_FACE = [
+  { id: 'light', kicker: '<0.5×' },
+  { id: 'lean', kicker: '0.5×' },
+  { id: 'full', kicker: '1×' },
+  { id: 'press', kicker: '1.5×+' },
+];
+
+/**
+ * Win rate by stake versus this wallet's usual bet.
+ * Positions first, picks if that is the only book.
+ * The percent stays off until the sample can carry it. The record still shows.
+ */
+export function sizeTierWinRates(sizeRatioBands, { minPctN = 8 } = {}) {
+  const positions = sizeRatioBands?.positions;
+  const picks = sizeRatioBands?.picks;
+  const block = positions?.bands ? positions : (picks?.bands ? picks : null);
+  if (!block) return null;
+  const tiers = SIZE_TIER_FACE.map((def) => {
+    const band = block.bands[def.id] || {};
+    const wins = Number(band.wins);
+    const losses = Number(band.losses);
+    const counted = (Number.isFinite(wins) ? wins : 0) + (Number.isFinite(losses) ? losses : 0);
+    const n = Number(band.n) > 0 ? Number(band.n) : counted;
+    const w = Number.isFinite(wins) ? wins : null;
+    const l = Number.isFinite(losses) ? losses : (w != null ? Math.max(0, n - w) : null);
+    const showPct = n >= minPctN && Number.isFinite(Number(band.wr));
+    return {
+      id: def.id,
+      kicker: def.kicker,
+      n,
+      record: (w != null && l != null && w + l > 0) ? `${w}\u2013${l}` : null,
+      wr: showPct ? Math.round(Number(band.wr)) : null,
+    };
+  });
+  if (!tiers.some((t) => t.n > 0)) return null;
+  const usual = Number(block.usual ?? sizeRatioBands.usual);
+  return {
+    usual: Number.isFinite(usual) && usual > 0 ? Math.round(usual) : null,
+    tiers,
+  };
+}
