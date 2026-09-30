@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-09-30T10:27:21.115Z",
-  "elapsedSec": 77.2,
+  "scannedAt": "2026-09-30T10:33:49.953Z",
+  "elapsedSec": 76.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 144,
   "summary": {
     "total": 431,
     "coveredByMain": 21,
     "recovered": 21,
-    "recoveredPositions": 349,
+    "recoveredPositions": 350,
     "noPositions": 389,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 32,
       "spread": 14,
       "total": 2,
-      "dropped_shadow_gate": 186,
+      "dropped_shadow_gate": 187,
       "dropped_excluded": 115,
       "dropped_duplicate": 0
     }
@@ -885,21 +885,21 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "phi_atl",
+          "marketType": "total",
+          "side": "under",
+          "invested": 600,
+          "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "chc_sdp",
           "marketType": "spread",
           "side": "home",
           "invested": 387,
           "entryLine": -1.5,
           "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "phi_atl",
-          "marketType": "total",
-          "side": "under",
-          "invested": 545,
-          "entryLine": 7.5,
-          "passesShadow": true
         },
         {
           "sport": "CFB",
@@ -6452,18 +6452,18 @@
       "sports": "CFB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 5,
+      "positionsCount": 6,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 34434,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 4,
+      "willDropAtShadowGate": 5,
       "positions": [
         {
           "sport": "MLB",
           "gameKey": "chc_sdp",
           "marketType": "ml",
           "side": "away",
-          "invested": 7343,
+          "invested": 9755,
           "entryLine": null,
           "passesShadow": true
         },
@@ -6492,6 +6492,15 @@
           "side": "over",
           "invested": 151,
           "entryLine": 6.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "phi_atl",
+          "marketType": "total",
+          "side": "over",
+          "invested": 45,
+          "entryLine": 7.5,
           "passesShadow": false
         },
         {
