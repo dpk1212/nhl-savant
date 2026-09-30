@@ -7888,9 +7888,10 @@ async function main() {
           } else if (result.reason === 'completed') stats.skipped_completed++;
           else if (result.reason === 'within_t_minus_15') {
             stats.skipped_t15++;
-            // One-shot ticket seal. From 2026-09-19: lock = best American
-            // odds on the fair book's main line. Flagged stays the vault/Poly
-            // peak. A notified Poly receipt is still replaced by that book.
+            // One-shot ticket seal. From 2026-09-19: lock = the pending hero.
+            // Spreads and totals keep that number and take the best American
+            // on it. Flagged stays the vault/Poly peak. A notified Poly
+            // receipt is still replaced by a book on the same number.
             // A number that already came from the shop stays put.
             const wantBestLock = isT15BestLockLive(pick.date || TARGET_DATE);
             const canSeal = !DRY_RUN && !sd.v8_ticketSealedAt && sd.peak

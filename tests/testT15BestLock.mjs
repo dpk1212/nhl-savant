@@ -1,5 +1,5 @@
 /**
- * T-15 lock takes the best available sportsbook number, not the flagged vault line.
+ * T-15 lock freezes the pending hero: same number, best price on that number.
  * Run: node tests/testT15BestLock.mjs
  */
 import assert from 'node:assert/strict';
@@ -34,9 +34,9 @@ const best = bestAvailableTicket({
   side: 'away',
   flagged: { line: 37.5, odds: 156, book: 'Polymarket', oddsSource: 'poly_avgPrice' },
 });
-assert.equal(best.line, 38.5);
-assert.equal(best.odds, -110);
-assert.equal(best.book, 'pinnacle');
+assert.equal(best.line, 37.5);
+assert.equal(best.odds, 103);
+assert.equal(best.book, 'DraftKings');
 assert.equal(best.oddsSource, 't15_best_available');
 
 const rail = snapshotBookRail({
@@ -130,9 +130,9 @@ const southern = bestAvailableTicket({
   side: 'home',
   flagged: { line: 18.5, odds: -109, book: 'Polymarket' },
 });
-assert.equal(southern.line, 17);
-assert.equal(southern.odds, 100);
-assert.equal(southern.book, 'Matchbook');
+assert.equal(southern.line, 18.5);
+assert.equal(southern.odds, -109);
+assert.equal(southern.source, 'flagged_fallback');
 
 const wisconsin = bestAvailableTicket({
   pinnGame: {
@@ -148,9 +148,9 @@ const wisconsin = bestAvailableTicket({
   side: 'under',
   flagged: { line: 44.5, odds: -110, book: 'Polymarket' },
 });
-assert.equal(wisconsin.line, 44);
-assert.equal(wisconsin.odds, -104);
-assert.equal(wisconsin.book, 'Matchbook');
+assert.equal(wisconsin.line, 44.5);
+assert.equal(wisconsin.odds, -110);
+assert.equal(wisconsin.source, 'flagged_fallback');
 
 const insaneOnly = bestAvailableTicket({
   pinnGame: {
@@ -212,7 +212,8 @@ assert.equal(flagged.odds, 156);
     side: 'under',
     pickDate: '2026-09-20',
   });
-  assert.equal(ticket.line, 11, 'unsealed alert still uses shop-best, not flagged 10.5');
+  assert.equal(ticket.line, 10.5, 'unsealed hero stays on the ticket number');
+  assert.equal(ticket.odds, -110);
 }
 
 {
@@ -244,7 +245,7 @@ assert.equal(
 );
 
 {
-  // Sox @ Astros 2026-09-29: push must shop Over 8 before it sends, and keep 7.5 flagged.
+  // Hero Over 7.5 stays 7.5 when the main has moved to 8 and no book is on 7.5.
   const sd = {
     peak: { line: 7.5, odds: -128, book: 'Polymarket', oddsSource: 'poly_avgPrice', team: 'Over 7.5' },
     lock: { line: 7.5, odds: -128, book: 'Polymarket', oddsSource: 'poly_avgPrice', team: 'Over 7.5' },
@@ -260,22 +261,37 @@ assert.equal(
   const plan = planLockAlertSeal({
     sd, pinnGame: board, marketType: 'TOTAL', side: 'over', pickDate: '2026-09-29',
   });
-  assert.equal(plan.write, true);
-  assert.equal(plan.line, 8);
-  assert.equal(plan.reason, 'shop');
-  const patch = lockAlertSealSidePatch(plan, sd, 1);
-  assert.equal(patch.lock.line, 8);
-  assert.equal(patch.lock.book, 'DraftKings');
-  assert.equal(patch.lock.oddsSource, 't15_best_available');
-  assert.equal(patch.flagged.line, 7.5);
-  assert.equal(patch.v8_lockBestAtT15, true);
+  assert.equal(plan.write, false);
+  assert.equal(plan.line, 7.5);
+  assert.equal(plan.reason, 'no_book');
   assert.equal(
     formatLockAlertPickText({
       market: 'TOTAL', sideKey: 'over', line: plan.line,
       away: 'Chicago White Sox', home: 'Houston Astros',
     }),
-    'Chicago White Sox @ Houston Astros Over 8',
+    'Chicago White Sox @ Houston Astros Over 7.5',
   );
+
+  const onHero = {
+    ...board,
+    allTotalBooks: {
+      ...board.allTotalBooks,
+      draftkings: { line: 7.5, over: -120, under: 100, name: 'DraftKings' },
+    },
+  };
+  const shop = planLockAlertSeal({
+    sd, pinnGame: onHero, marketType: 'TOTAL', side: 'over', pickDate: '2026-09-29',
+  });
+  assert.equal(shop.write, true);
+  assert.equal(shop.line, 7.5);
+  assert.equal(shop.odds, -120);
+  assert.equal(shop.book, 'DraftKings');
+  const patch = lockAlertSealSidePatch(shop, sd, 1);
+  assert.equal(patch.lock.line, 7.5);
+  assert.equal(patch.lock.book, 'DraftKings');
+  assert.equal(patch.lock.oddsSource, 't15_best_available');
+  assert.equal(patch.flagged.line, 7.5);
+  assert.equal(patch.v8_lockBestAtT15, true);
 
   const again = planLockAlertSeal({
     sd: { ...sd, v8_lockBestAtT15: true, lock: patch.lock },
@@ -283,7 +299,7 @@ assert.equal(
     marketType: 'TOTAL', side: 'over', pickDate: '2026-09-29',
   });
   assert.equal(again.write, false);
-  assert.equal(again.line, 8);
+  assert.equal(again.line, 7.5);
   assert.equal(again.reason, 'already_sealed');
 
   const late = planLockAlertSeal({
@@ -299,6 +315,43 @@ assert.equal(
   assert.equal(missing.write, false);
   assert.equal(missing.line, 7.5);
   assert.equal(missing.reason, 'no_book');
+}
+
+{
+  // Sox @ Yankees: hero Over 6.5 stays 6.5 when the main is 6.
+  const sd = {
+    peak: { line: 6.5, odds: 113, book: 'Polymarket', oddsSource: 'poly_avgPrice', team: 'Over 6.5' },
+    lock: { line: 6.5, odds: 113, book: 'Polymarket', oddsSource: 'poly_avgPrice', team: 'Over 6.5' },
+  };
+  const board = {
+    totalCurrent: { line: 6, overOdds: -107, underOdds: -105 },
+    fairTotalBook: 'pinnacle',
+    allTotalBooks: {
+      pinnacle: { line: 6, over: -107, under: -105, name: 'pinnacle' },
+      fanduel: { line: 6.5, over: 104, under: -120, name: 'FanDuel' },
+      matchbook: { line: 6.5, over: 116, under: -136, name: 'Matchbook' },
+      novig: { line: 6.5, over: 117, under: -140, name: 'Novig' },
+    },
+    totalLines: [
+      { line: 6, overOdds: -107, underOdds: -105, fairBook: 'pinnacle', isMain: true },
+      { line: 6.5, overOdds: 113, underOdds: -128, fairBook: 'pinnacle', isMain: false },
+    ],
+  };
+  const plan = planLockAlertSeal({
+    sd, pinnGame: board, marketType: 'TOTAL', side: 'over', pickDate: '2026-09-29',
+  });
+  assert.equal(plan.write, true);
+  assert.equal(plan.line, 6.5);
+  assert.equal(plan.odds, 117);
+  assert.equal(plan.book, 'Novig');
+  assert.equal(plan.pinnacleOdds, 113);
+  assert.equal(
+    formatLockAlertPickText({
+      market: 'TOTAL', sideKey: 'over', line: plan.line,
+      away: 'Boston Red Sox', home: 'New York Yankees',
+    }),
+    'Boston Red Sox @ New York Yankees Over 6.5',
+  );
 }
 
 console.log('testT15BestLock: all passed');
