@@ -24,6 +24,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **HARD+ last steps** | Overlay (2026-09-24…26) | Market-skill · HARD exception · HARD+ AG mute · S/T HARD+ FOR require · see week memo |
 | **Who-floor HARD+ FOR** | Q1 / T arriving (2026-09-28+) | Q1 and lean arriving 1→2 need ≥1 HARD+ FOR · fail-open if we cannot judge · mid 4u boost unchanged |
 | **GOLD-stack 4u cap** | Last size choke (2026-09-26+) | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps 5–6u. Fail-open if we cannot judge. |
+| **ML pin-against 4u cap** | After GOLD (2026-09-29+) | **ML only**. Live pin walked away ≥1pp or 3% lengthen → **4u**. GOLD stack still capped. S/T exempt. Not a mute. |
 | **Proven bag** | Who v12 scores (2026-09-26) | Source B n≥6 WR≥55 $ROI>3 · A-only out · FLAT gone |
 | **T-15** | Freeze | No further rewrite |
 
@@ -122,6 +123,11 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 12i. GOLD-stack size cap (2026-09-26+) — off-stack >4u → 4u
      └─ stack (HARD+ FOR only · proven ≥75%) keeps fat
      └─ fail-open HOLD if we cannot judge · cappedBy=gold-stack-cap
+12j. ML pin-against size cap (2026-09-29+) — ML only
+     └─ live pin walked away ≥1pp **or** juice lengthen ≥3% → **cap 4u**
+     └─ even GOLD in_stack (that is the hole: 6u into a walk)
+     └─ never mute · S/T exempt · fail-open HOLD if no pin
+     └─ cappedBy=ml-pin-against-cap
 13. T-15 → freeze
 ```
 
@@ -158,6 +164,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-09-26** | **S/T HARD+ FOR require** — spreads/totals need ≥1 HARD FOR. |
 | **2026-09-26** | **Door 2 Proven** — Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven. FLAT not assigned. See [`HARD_AND_PROVEN_WEEK_2026-09-26.md`](./HARD_AND_PROVEN_WEEK_2026-09-26.md). |
 | **2026-09-26** | **GOLD-stack 4u cap** — off-stack tickets cannot publish above 4u. EDGE + tape can still fatten the stack to 6u. Ball State ML hole. |
+| **2026-09-29** | **ML pin-against 4u cap** — ML only. Live Pinnacle walked away ≥1pp or 3% lengthen → cap 4u even if GOLD stack. Steam-era ML against still won (23-19); 6u ML against was n=0. Not a mute. S/T exempt. |
 | **2026-09-19** | **Featured → Action union** — a shipped featured lock that Source B missed is merged onto Their Action so the result counts. Do not hide Featured to paper over the miss. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |

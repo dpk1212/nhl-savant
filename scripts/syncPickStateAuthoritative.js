@@ -294,6 +294,13 @@ import {
   GOLD_STACK_SIZE_CAPPED_BY,
 } from '../src/lib/goldStackSizeCapOverlay.js';
 import {
+  applyMlPinAgainstSizeCapOverlay,
+  isMlPinAgainstCapLive,
+  ML_PIN_AGAINST_CAP_FROM,
+  ML_PIN_AGAINST_SIZE_CAP,
+  ML_PIN_AGAINST_CAPPED_BY,
+} from '../src/lib/mlPinAgainstSizeCapOverlay.js';
+import {
   evaluateFadeProvenHoldFromTicket,
 } from '../src/lib/fadeProvenHold.js';
 import {
@@ -1347,6 +1354,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreHardStForRequire = null,
   goldStackCapAction = null,
   unitsPreGoldStackCap = null,
+  mlPinAgainstCapAction = null,
+  unitsPreMlPinAgainstCap = null,
   fadeProvenHoldAction = null,
   fadeProvenHoldReason = null,
   fadeProvenShare = null,
@@ -1539,6 +1548,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreGoldStackCap != null && Number.isFinite(unitsPreGoldStackCap)) {
     target.v8_unitsPreGoldStackCap = unitsPreGoldStackCap;
   }
+  if (mlPinAgainstCapAction != null) target.v8_mlPinAgainstCapAction = mlPinAgainstCapAction;
+  if (unitsPreMlPinAgainstCap != null && Number.isFinite(unitsPreMlPinAgainstCap)) {
+    target.v8_unitsPreMlPinAgainstCap = unitsPreMlPinAgainstCap;
+  }
   if (fadeProvenHoldAction != null) target.v8_fadeProvenHoldAction = fadeProvenHoldAction;
   if (fadeProvenHoldReason != null) target.v8_fadeProvenHoldReason = fadeProvenHoldReason;
   if (fadeProvenShare != null && Number.isFinite(Number(fadeProvenShare))) {
@@ -1659,6 +1672,7 @@ function skillStampsDrifted(sd, bundle, {
   hardAgMuteAction = null,
   hardStForRequireAction = null,
   goldStackCapAction = null,
+  mlPinAgainstCapAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1714,6 +1728,7 @@ function skillStampsDrifted(sd, bundle, {
   if (hardAgMuteAction != null && (sd.v8_hardAgMuteAction || null) !== hardAgMuteAction) return true;
   if (hardStForRequireAction != null && (sd.v8_hardStForRequireAction || null) !== hardStForRequireAction) return true;
   if (goldStackCapAction != null && (sd.v8_goldStackCapAction || null) !== goldStackCapAction) return true;
+  if (mlPinAgainstCapAction != null && (sd.v8_mlPinAgainstCapAction || null) !== mlPinAgainstCapAction) return true;
   return false;
 }
 
@@ -3793,6 +3808,26 @@ async function createMissingLockedPicks({
         });
         peakUnitsApplied = goldStackCapPolicyCreate.units;
       }
+
+      // ML pin-against size cap — after GOLD stack, before operator kill.
+      // ML only. Live pin walked away ≥1pp / 3% lengthen → cap 4u.
+      // GOLD in_stack still capped. S/T exempt. Fail-open HOLD if no pin.
+      let mlPinAgainstCapPolicyCreate = null;
+      if (createV121Eligible) {
+        if (!tapeCreateCtxEarly) {
+          tapeCreateCtxEarly = pinnTapeFromMeta(
+            gameMeta, { sport, gameKey }, marketType, side, { peak: { line } }, { meta },
+          );
+        }
+        mlPinAgainstCapPolicyCreate = applyMlPinAgainstSizeCapOverlay({
+          units: peakUnitsApplied,
+          marketType,
+          side: tapeCreateCtxEarly?.sideNorm ?? side,
+          pinnGame: tapeCreateCtxEarly?.pinnGame ?? null,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = mlPinAgainstCapPolicyCreate.units;
+      }
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
       }
@@ -4069,6 +4104,10 @@ async function createMissingLockedPicks({
           goldStackCapAction: goldStackCapPolicyCreate?.action ?? null,
           unitsPreGoldStackCap: (goldStackCapPolicyCreate && Number.isFinite(goldStackCapPolicyCreate.unitsPrePolicy))
             ? goldStackCapPolicyCreate.unitsPrePolicy
+            : null,
+          mlPinAgainstCapAction: mlPinAgainstCapPolicyCreate?.action ?? null,
+          unitsPreMlPinAgainstCap: (mlPinAgainstCapPolicyCreate && Number.isFinite(mlPinAgainstCapPolicyCreate.unitsPrePolicy))
+            ? mlPinAgainstCapPolicyCreate.unitsPrePolicy
             : null,
           steamTailReason: steamTailPolicyCreate?.reason ?? null,
           steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
@@ -5654,6 +5693,25 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = goldStackCapPolicy.units;
   }
 
+  // ML pin-against size cap — after GOLD stack, before odds-cap.
+  // ML only. Live pin walked away ≥1pp / 3% lengthen → cap 4u even if
+  // GOLD in_stack. S/T exempt. Fail-open HOLD if we cannot read pin.
+  // Manual stake exempt. Does not mute.
+  let mlPinAgainstCapPolicy = null;
+  if (v121Eligible && !skipManualFlinch) {
+    if (!tapeCtxLive) {
+      tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    }
+    mlPinAgainstCapPolicy = applyMlPinAgainstSizeCapOverlay({
+      units: finalUnitsApplied,
+      marketType: mkt,
+      side: tapeCtxLive?.sideNorm ?? side,
+      pinnGame: tapeCtxLive?.pinnGame ?? null,
+      pickDate,
+    });
+    finalUnitsApplied = mlPinAgainstCapPolicy.units;
+  }
+
   // Last choke — RANK / EDGE floors cannot publish past the dog cap.
   let oddsCapClamped = false;
   if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
@@ -6282,6 +6340,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${goldStackCapPolicy.unitsPrePolicy}u → ${goldStackCapPolicy.units}u (${hcStakeTier})`
     );
   }
+  if (mlPinAgainstCapPolicy?.action === 'CAP') {
+    const dpp = mlPinAgainstCapPolicy.dpp == null ? '—' : `${mlPinAgainstCapPolicy.dpp}pp`;
+    changes.push(
+      `ML-PIN-AGAINST-CAP: ${mlPinAgainstCapPolicy.reason || 'pin_against'} `
+      + `dpp=${dpp} `
+      + `${mlPinAgainstCapPolicy.unitsPrePolicy}u → ${mlPinAgainstCapPolicy.units}u (${hcStakeTier})`
+    );
+  }
   if (sharpRescued) {
     if (pathCEdgeNet && sharpEdgeNetBucket) {
       changes.push(
@@ -6425,6 +6491,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreGoldStackCap: (goldStackCapPolicy && Number.isFinite(goldStackCapPolicy.unitsPrePolicy))
         ? goldStackCapPolicy.unitsPrePolicy
         : null,
+      mlPinAgainstCapAction: mlPinAgainstCapPolicy?.action ?? null,
+      unitsPreMlPinAgainstCap: (mlPinAgainstCapPolicy && Number.isFinite(mlPinAgainstCapPolicy.unitsPrePolicy))
+        ? mlPinAgainstCapPolicy.unitsPrePolicy
+        : null,
       fadeProvenHoldAction: fadeProvenHold?.action ?? null,
       fadeProvenHoldReason: fadeProvenHold?.reason ?? null,
       fadeProvenShare: fadeProvenHold?.shareP ?? null,
@@ -6472,6 +6542,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hardAgMuteAction: hardAgPolicy?.action ?? null,
       hardStForRequireAction: hardStForPolicy?.action ?? null,
       goldStackCapAction: goldStackCapPolicy?.action ?? null,
+      mlPinAgainstCapAction: mlPinAgainstCapPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -6497,7 +6568,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (hardExceptionPolicy && (sd.v8_hardMuteExceptionAction || null) !== hardExceptionPolicy.action)
         || (hardAgPolicy && (sd.v8_hardAgMuteAction || null) !== hardAgPolicy.action)
         || (hardStForPolicy && (sd.v8_hardStForRequireAction || null) !== hardStForPolicy.action)
-        || (goldStackCapPolicy && (sd.v8_goldStackCapAction || null) !== goldStackCapPolicy.action)) {
+        || (goldStackCapPolicy && (sd.v8_goldStackCapAction || null) !== goldStackCapPolicy.action)
+        || (mlPinAgainstCapPolicy && (sd.v8_mlPinAgainstCapAction || null) !== mlPinAgainstCapPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -6524,7 +6596,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (hardExceptionPolicy?.action ? ` hardHold=${hardExceptionPolicy.action}` : '')
         + (hardAgPolicy?.action ? ` hardAg=${hardAgPolicy.action}` : '')
         + (hardStForPolicy?.action ? ` stHardFor=${hardStForPolicy.action}` : '')
-        + (goldStackCapPolicy?.action ? ` goldCap=${goldStackCapPolicy.action}` : ''),
+        + (goldStackCapPolicy?.action ? ` goldCap=${goldStackCapPolicy.action}` : '')
+        + (mlPinAgainstCapPolicy?.action ? ` mlPinAgCap=${mlPinAgainstCapPolicy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -7510,6 +7583,16 @@ async function main() {
     );
   } else {
     console.log(`GOLD-stack size cap: not live before ${GOLD_STACK_SIZE_CAP_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isMlPinAgainstCapLive(TARGET_DATE)) {
+    console.log(
+      `ML pin-against size cap LIVE: ML live pin walked away ≥1pp or 3% lengthen`
+      + ` → cap ${ML_PIN_AGAINST_SIZE_CAP}u even if GOLD stack`
+      + ` · from ${ML_PIN_AGAINST_CAP_FROM} · after GOLD-stack cap · cappedBy=${ML_PIN_AGAINST_CAPPED_BY}`
+      + ` · S/T exempt · fail-open HOLD if no pin · no mute`,
+    );
+  } else {
+    console.log(`ML pin-against size cap: not live before ${ML_PIN_AGAINST_CAP_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   console.log(
     `Door 2 Proven bag v${WHITELIST_VERSION} from ${WHITELIST_FROM}: Source B n≥${PROVEN_B_MIN_N}`
