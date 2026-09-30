@@ -8,8 +8,9 @@ import {
   evPctVsConsensus,
   sharpConsensusFromBooks,
 } from './sharpConsensus.js';
+import { shopRailHidden } from './shopRailHidden.js';
 
-export { bookBeatsConsensus, evPctVsConsensus, sharpConsensusFromBooks };
+export { bookBeatsConsensus, evPctVsConsensus, sharpConsensusFromBooks, shopRailHidden };
 
 function shopBookKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -17,11 +18,6 @@ function shopBookKey(name) {
 
 /** Kept for callers that still import it. Gold is now any book on the line. */
 export const SHOP_GOLD_KEYS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
-
-export function shopRailHidden(name) {
-  const k = shopBookKey(name);
-  return k === 'lowvig' || k === 'lv' || k.includes('lowvig');
-}
 
 export function isPinnacleBook(name) {
   return shopBookKey(name) === 'pinnacle';
