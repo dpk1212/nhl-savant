@@ -5,7 +5,7 @@
  * An alt (Novig +38.5 -2339 while the main is +17) is not a candidate.
  * Flagged (vault / Poly) stays a separate Firestore snapshot.
  */
-import { shopRailHidden } from './shopRailHidden.js';
+import { shopRailHidden } from './shopRailHidden.mjs';
 
 export const T15_BEST_LOCK_FROM = '2026-09-19';
 

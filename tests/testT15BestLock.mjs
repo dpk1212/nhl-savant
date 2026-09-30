@@ -9,7 +9,9 @@ import {
   flaggedSnapshotFromPeakLock,
   formatLockAlertPickText,
   isT15BestLockLive,
+  lockAlertSealSidePatch,
   lockTicketTeamLabel,
+  planLockAlertSeal,
   resolveLockDisplayTicket,
 } from '../src/lib/t15BestLock.js';
 
@@ -240,5 +242,63 @@ assert.equal(
   lockTicketTeamLabel({ marketType: 'total', side: 'under', line: 11, fallbackTeam: 'Under 10.5' }),
   'Under 11',
 );
+
+{
+  // Sox @ Astros 2026-09-29: push must shop Over 8 before it sends, and keep 7.5 flagged.
+  const sd = {
+    peak: { line: 7.5, odds: -128, book: 'Polymarket', oddsSource: 'poly_avgPrice', team: 'Over 7.5' },
+    lock: { line: 7.5, odds: -128, book: 'Polymarket', oddsSource: 'poly_avgPrice', team: 'Over 7.5' },
+  };
+  const board = {
+    totalCurrent: { line: 8, overOdds: -115, underOdds: -105 },
+    fairTotalBook: 'pinnacle',
+    allTotalBooks: {
+      pinnacle: { line: 8, over: -115, under: -105, name: 'pinnacle' },
+      draftkings: { line: 8, over: -110, under: -110, name: 'DraftKings' },
+    },
+  };
+  const plan = planLockAlertSeal({
+    sd, pinnGame: board, marketType: 'TOTAL', side: 'over', pickDate: '2026-09-29',
+  });
+  assert.equal(plan.write, true);
+  assert.equal(plan.line, 8);
+  assert.equal(plan.reason, 'shop');
+  const patch = lockAlertSealSidePatch(plan, sd, 1);
+  assert.equal(patch.lock.line, 8);
+  assert.equal(patch.lock.book, 'DraftKings');
+  assert.equal(patch.lock.oddsSource, 't15_best_available');
+  assert.equal(patch.flagged.line, 7.5);
+  assert.equal(patch.v8_lockBestAtT15, true);
+  assert.equal(
+    formatLockAlertPickText({
+      market: 'TOTAL', sideKey: 'over', line: plan.line,
+      away: 'Chicago White Sox', home: 'Houston Astros',
+    }),
+    'Chicago White Sox @ Houston Astros Over 8',
+  );
+
+  const again = planLockAlertSeal({
+    sd: { ...sd, v8_lockBestAtT15: true, lock: patch.lock },
+    pinnGame: { totalCurrent: { line: 8.5, overOdds: -120, underOdds: 100 }, fairTotalBook: 'pinnacle' },
+    marketType: 'TOTAL', side: 'over', pickDate: '2026-09-29',
+  });
+  assert.equal(again.write, false);
+  assert.equal(again.line, 8);
+  assert.equal(again.reason, 'already_sealed');
+
+  const late = planLockAlertSeal({
+    sd, pinnGame: board, marketType: 'TOTAL', side: 'over', pickDate: '2026-09-29', gameStarted: true,
+  });
+  assert.equal(late.write, false);
+  assert.equal(late.line, 7.5);
+  assert.equal(late.reason, 'game_started');
+
+  const missing = planLockAlertSeal({
+    sd, pinnGame: null, marketType: 'TOTAL', side: 'over', pickDate: '2026-09-29',
+  });
+  assert.equal(missing.write, false);
+  assert.equal(missing.line, 7.5);
+  assert.equal(missing.reason, 'no_book');
+}
 
 console.log('testT15BestLock: all passed');

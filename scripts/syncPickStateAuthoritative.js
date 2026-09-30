@@ -210,6 +210,7 @@ import {
   snapshotBookRail,
   flaggedSnapshotFromPeakLock,
   isT15BestLockLive,
+  lockIsT15Shop,
   lockTicketTeamLabel,
 } from '../src/lib/t15BestLock.js';
 import {
@@ -7916,11 +7917,13 @@ async function main() {
                 && best.source === 't15_best_available'
                 && !/poly/i.test(best.book || ''));
               // A notified Poly receipt is not a shop. Take the book when
-              // one exists. A number that already came from the shop stays.
-              const useBest = wantBestLock && bestIsBook
+              // one exists. A number the alert already shopped stays —
+              // the push and the card named that line.
+              const alertShopped = lockIsT15Shop(lock);
+              const useBest = wantBestLock && bestIsBook && !alertShopped
                 && (Number.isFinite(best.line) || Number.isFinite(best.odds))
                 && (!alreadySent || lockIsPoly);
-              const sealPatch = (alreadySent && !useBest)
+              const sealPatch = (alertShopped || (alreadySent && !useBest))
                 ? {
                   v8_ticketSealedAt: sd.v8_ticketSealedAt || now,
                   ...(wantBestLock ? { v8_lockBestAtT15: true, flagged } : {}),
@@ -7960,17 +7963,26 @@ async function main() {
                   },
                 };
               const ref = db.collection(col).doc(pick._id);
-              await ref.set(
-                { sides: { [sideKey]: sealPatch }, lastWriteAt: now, lastAction: 'ticket_seal_at_t15' },
-                { merge: true },
-              );
+              const wroteSeal = await db.runTransaction(async (tx) => {
+                const freshSnap = await tx.get(ref);
+                const freshSd = freshSnap.data()?.sides?.[sideKey] || {};
+                if (freshSd.v8_ticketSealedAt || lockIsT15Shop(freshSd.lock)) return false;
+                tx.set(ref, {
+                  sides: { [sideKey]: sealPatch },
+                  lastWriteAt: now,
+                  lastAction: 'ticket_seal_at_t15',
+                }, { merge: true });
+                return true;
+              });
               console.log(
-                `  🔒 T-15 SEAL: ${col}/${pick._id} ${sideKey}`
-                + (useBest
-                  ? ` — flagged ${flagged.odds ?? '∅'}/${flagged.line ?? '∅'} → lock ${best.odds ?? '∅'}/${best.line ?? '∅'} (${best.book || 'best'})`
-                  : alreadySent
-                    ? ` — kept notified lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'}`
-                    : ` — lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'} → peak ${peak.odds ?? '∅'}/${peak.line ?? '∅'}`),
+                wroteSeal
+                  ? (`  🔒 T-15 SEAL: ${col}/${pick._id} ${sideKey}`
+                    + (useBest
+                      ? ` — flagged ${flagged.odds ?? '∅'}/${flagged.line ?? '∅'} → lock ${best.odds ?? '∅'}/${best.line ?? '∅'} (${best.book || 'best'})`
+                      : alreadySent
+                        ? ` — kept notified lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'}`
+                        : ` — lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'} → peak ${peak.odds ?? '∅'}/${peak.line ?? '∅'}`))
+                  : `  🔒 T-15 SEAL skipped ${col}/${pick._id} ${sideKey} — alert already wrote the shop`,
               );
             }
           } else if (result.reason === 'within_t_minus_15_needs_rescue') {

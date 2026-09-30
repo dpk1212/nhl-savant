@@ -43,7 +43,9 @@ import {
 import { UNIT_DISPLAY_SCALE, scaleUnits } from '../src/lib/unitDisplayScale.js';
 import {
   formatLockAlertPickText,
-  resolveLockDisplayTicket,
+  lockAlertSealSidePatch,
+  lockIsT15Shop,
+  planLockAlertSeal,
 } from '../src/lib/t15BestLock.js';
 import { lookupPinnGame } from './lib/ufcFighters.js';
 
@@ -137,26 +139,61 @@ function loadPinnHistory() {
   try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; }
 }
 
-function pickLabel(pick, sideKey, market, pinnHistory = null) {
+function alertTicket(pick, sideKey, market, pinnHistory, now) {
   const sd = pick.sides?.[sideKey] || {};
-  const ticket = resolveLockDisplayTicket({
+  const ct = commenceMs(pick.commenceTime);
+  return planLockAlertSeal({
     sd,
     pinnGame: lookupPinnGame(pinnHistory, pick.sport, pick.gameKey),
     marketType: market,
     side: sideKey,
     pickDate: pick.date || TARGET_DATE,
+    gameStarted: ct != null && now >= ct,
   });
-  const team =
-    sd.lock?.team ||
-    sd.peak?.team ||
-    (sideKey === 'away' ? pick.away : sideKey === 'home' ? pick.home : sideKey);
+}
+
+function alertPickText(pick, sideKey, market, ticket) {
+  const sd = pick.sides?.[sideKey] || {};
+  const team = ticket?.team
+    || sd.lock?.team
+    || sd.peak?.team
+    || (sideKey === 'away' ? pick.away : sideKey === 'home' ? pick.home : sideKey);
   return formatLockAlertPickText({
     market,
     sideKey,
-    line: ticket.line,
+    line: ticket?.line,
     team,
     away: pick.away,
     home: pick.home,
+  });
+}
+
+async function commitAlertShop(db, col, docId, sideKey, plan, now) {
+  const ref = db.collection(col).doc(docId);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const fresh = snap.data()?.sides?.[sideKey];
+    if (!fresh) return { ...plan, write: false, reason: 'missing_side' };
+    if (fresh.v8_ticketSealedAt || lockIsT15Shop(fresh.lock)) {
+      const lock = fresh.lock || {};
+      return {
+        write: false,
+        reason: 'already_sealed',
+        line: Number.isFinite(Number(lock.line)) ? Number(lock.line) : plan.line,
+        odds: Number.isFinite(Number(lock.odds)) ? Number(lock.odds) : plan.odds,
+        book: lock.book || plan.book || null,
+        team: lock.team || plan.team || null,
+      };
+    }
+    if (!plan.write) return plan;
+    const patch = lockAlertSealSidePatch(plan, fresh, now);
+    if (!patch) return { ...plan, write: false, reason: 'no_patch' };
+    tx.set(ref, {
+      sides: { [sideKey]: patch },
+      lastWriteAt: now,
+      lastAction: 'lock_alert_shop',
+    }, { merge: true });
+    return plan;
   });
 }
 
@@ -527,7 +564,8 @@ async function main() {
         }
 
         stats.candidates++;
-        const pickText = pickLabel(pick, sideKey, market, pinnHistory);
+        let ticket = alertTicket(pick, sideKey, market, pinnHistory, now);
+        const pickText = alertPickText(pick, sideKey, market, ticket);
         const edge = sideLockAlertEdge(sd);
         const fullTier = tierLineForSide(sd, tierStats, UNIT_DISPLAY_SCALE.FULL);
         const consTier = tierLineForSide(sd, tierStats, UNIT_DISPLAY_SCALE.CONSERVATIVE);
@@ -554,6 +592,13 @@ async function main() {
         }
 
         try {
+          if (!TEST_OWNER && ticket.write) {
+            ticket = await commitAlertShop(db, col, pick._id, sideKey, ticket, now);
+          }
+          const sentText = alertPickText(pick, sideKey, market, ticket);
+          if (sentText !== pickText) {
+            console.log(`     line: ${pickText} → ${sentText} (${ticket.reason})`);
+          }
           let ownerScale = UNIT_DISPLAY_SCALE.FULL;
           if (TEST_OWNER) {
             try {
@@ -574,7 +619,7 @@ async function main() {
             const tier = scale === UNIT_DISPLAY_SCALE.CONSERVATIVE ? consTier : fullTier;
             const detail = tier?.text ? ` ${tier.text}.` : ' Open Sharp Flow.';
             result = await sendOneSignal({
-              pickText,
+              pickText: sentText,
               detail,
               tier,
               edge,

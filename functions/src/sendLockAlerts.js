@@ -22,6 +22,7 @@ const LOCK_ICON = 'https://nhlsavant.com/icons/icon-192.png';
 const LOCK_ALERT_EDGE_MIN = 11;
 const APP_ID = process.env.ONESIGNAL_APP_ID || 'd8fcb504-8d29-4354-a9e4-8b612d3eafeb';
 const SITE_URL = 'https://nhlsavant.com/#/';
+const PINNACLE_URL = 'https://nhlsavant.com/pinnacle_history.json';
 const HEARTBEAT_PATH = { col: 'ops', id: 'lockAlertHeartbeat' };
 
 const COLLECTIONS = [
@@ -120,24 +121,56 @@ function onesignalFiltersForEdge(edge, scale = 'full') {
   return filters;
 }
 
-function pickLabel(pick, sideKey, market) {
-  const sd = pick.sides?.[sideKey] || {};
-  const team =
-    sd.lock?.team ||
-    sd.peak?.team ||
-    (sideKey === 'away' ? pick.away : sideKey === 'home' ? pick.home : sideKey);
-  // Same number as the locked card — never prefer flagged/peak over T-15 lock.
-  const line = sd.lock?.line ?? sd.peak?.line;
-  if (market === 'TOTAL' && (sideKey === 'over' || sideKey === 'under')) {
-    const mkt = sideKey === 'over' ? 'Over' : 'Under';
-    const lineStr = line != null ? ` ${line}` : '';
-    return `${pick.away || ''} @ ${pick.home || ''} ${mkt}${lineStr}`.replace(/\s+/g, ' ').trim();
-  }
-  if (market === 'SPREAD') {
-    const lineStr = line != null ? ` ${Number(line) > 0 ? '+' : ''}${line}` : '';
-    return `${team || sideKey}${lineStr}`.replace(/\s+/g, ' ').trim();
-  }
-  return `${team || sideKey} ML`.trim();
+let shopApiPromise = null;
+function shopApi() {
+  if (!shopApiPromise) shopApiPromise = import('./shop/t15BestLock.mjs');
+  return shopApiPromise;
+}
+
+function pinnGameFor(history, sport, gameKey) {
+  const bucket = history?.[sport];
+  if (!bucket || !gameKey || typeof bucket !== 'object') return null;
+  return bucket[gameKey] || null;
+}
+
+async function loadPublishedPinnacle() {
+  const res = await fetch(PINNACLE_URL, { signal: AbortSignal.timeout(20000) });
+  if (!res.ok) throw new Error(`pinnacle board ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Write the shop onto lock before the push, unless a seal already landed.
+ * Returns the ticket the push should name.
+ */
+async function commitLockAlertShop(db, col, docId, sideKey, plan, now) {
+  const { lockAlertSealSidePatch, lockIsT15Shop } = await shopApi();
+  const ref = db.collection(col).doc(docId);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const fresh = snap.data()?.sides?.[sideKey];
+    if (!fresh) return { ...plan, write: false, reason: 'missing_side' };
+    if (fresh.v8_ticketSealedAt || lockIsT15Shop(fresh.lock)) {
+      const lock = fresh.lock || {};
+      return {
+        write: false,
+        reason: 'already_sealed',
+        line: Number.isFinite(Number(lock.line)) ? Number(lock.line) : plan.line,
+        odds: Number.isFinite(Number(lock.odds)) ? Number(lock.odds) : plan.odds,
+        book: lock.book || plan.book || null,
+        team: lock.team || plan.team || null,
+      };
+    }
+    if (!plan.write) return plan;
+    const patch = lockAlertSealSidePatch(plan, fresh, now);
+    if (!patch) return { ...plan, write: false, reason: 'no_patch' };
+    tx.set(ref, {
+      sides: { [sideKey]: patch },
+      lastWriteAt: now,
+      lastAction: 'lock_alert_shop',
+    }, { merge: true });
+    return plan;
+  });
 }
 
 function formatUnits(u) {
@@ -300,6 +333,23 @@ async function runLockAlerts({ forceWindow = false } = {}) {
     throw new Error(stats.error);
   }
 
+  let pinnHistory = null;
+  let pinnLoad = null;
+  const board = () => {
+    if (pinnHistory) return Promise.resolve(pinnHistory);
+    if (!pinnLoad) {
+      pinnLoad = loadPublishedPinnacle()
+        .then((json) => { pinnHistory = json; return json; })
+        .catch((err) => {
+          logger.error(`pinnacle board unavailable: ${err.message || err}`);
+          stats.board = 'miss';
+          pinnHistory = {};
+          return pinnHistory;
+        });
+    }
+    return pinnLoad;
+  };
+
   for (const { name: col, market } of COLLECTIONS) {
     const snap = await db.collection(col).where('date', '==', date).get();
     for (const docSnap of snap.docs) {
@@ -335,7 +385,39 @@ async function runLockAlerts({ forceWindow = false } = {}) {
         }
         stats.claimed++;
 
-        const pickText = pickLabel(pick, sideKey, market);
+        const { formatLockAlertPickText, planLockAlertSeal } = await shopApi();
+        const gameStarted = now >= ct;
+        const history = gameStarted ? null : await board();
+        let ticket = planLockAlertSeal({
+          sd,
+          pinnGame: pinnGameFor(history, pick.sport, pick.gameKey),
+          marketType: market,
+          side: sideKey,
+          pickDate: pick.date || date,
+          gameStarted,
+        });
+        if (ticket.write) {
+          try {
+            ticket = await commitLockAlertShop(db, col, pick._id, sideKey, ticket, now);
+            if (ticket.write) stats.shopped = (stats.shopped || 0) + 1;
+          } catch (shopErr) {
+            logger.error(`shop write failed ${col}/${pick._id} ${sideKey}: ${shopErr.message || shopErr}`);
+            ticket = planLockAlertSeal({ sd, gameStarted: true });
+          }
+        }
+        const team = ticket.team
+          || sd.lock?.team
+          || sd.peak?.team
+          || (sideKey === 'away' ? pick.away : sideKey === 'home' ? pick.home : sideKey);
+        const pickText = formatLockAlertPickText({
+          market,
+          sideKey,
+          line: ticket.line,
+          team,
+          away: pick.away,
+          home: pick.home,
+        });
+        logger.info(`lock line ${col}/${pick._id} ${sideKey} ${ticket.reason} ${pickText}`);
         const units = sideStakeUnits(sd);
         const tier = typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : '';
         const edge = sideLockAlertEdge(sd);
@@ -413,7 +495,7 @@ exports.sendLockAlerts = onSchedule(
   {
     schedule: 'every 2 minutes',
     timeZone: 'America/New_York',
-    memory: '256MiB',
+    memory: '512MiB',
     timeoutSeconds: 300,
     maxInstances: 1,
   },
