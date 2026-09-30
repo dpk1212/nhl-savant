@@ -1,9 +1,10 @@
 /**
- * T-15 lock ticket = best available odds on the mainline.
- * The line is the fair book's main (`spreadCurrent` / `totalCurrent`).
+ * T-15 lock ticket = the pending hero.
+ * Spreads and totals keep the hero number (the ticket already on the card).
  * The price is the best American on that number.
- * An alt (Novig +38.5 -2339 while the main is +17) is not a candidate.
+ * A book on the fair book's main does not replace a different hero number.
  * Flagged (vault / Poly) stays a separate Firestore snapshot.
+ * Moneylines have no second number: best American on the ML.
  */
 import { shopRailHidden } from './shopRailHidden.mjs';
 
@@ -59,6 +60,29 @@ function quotesOnMainline(quotes, anchorLine) {
   return sane.filter((q) => !Number.isFinite(q.line) || Math.abs(q.line - mid) <= 2);
 }
 
+/** The number the pending card already shows. Missing means there is no hero line yet. */
+function heroAnchor(flagged) {
+  const n = Number(flagged?.line);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Best American on the hero number. A quote on another number does not compete. */
+function bestOnHeroLine(quotes, heroLine) {
+  const onLine = quotesOnMainline(quotes, heroLine);
+  let best = null;
+  for (const q of onLine) {
+    if (!best || q.odds > best.odds) best = q;
+  }
+  return best;
+}
+
+function pinOnLine(quotes, line) {
+  if (!Number.isFinite(line)) return null;
+  return quotes.find((q) => /pinn/i.test(String(q.book || ''))
+    && Number.isFinite(q.line)
+    && Math.abs(q.line - line) <= 0.051) || null;
+}
+
 function snapshotFromFlagged(flagged) {
   if (!flagged || typeof flagged !== 'object') return null;
   const line = Number.isFinite(Number(flagged.line)) ? Number(flagged.line) : null;
@@ -99,7 +123,8 @@ export function bestAvailableTicket({
       quotes.push({ line, odds, book: b.name || k, pinnacleOdds: null });
     }
     const stamped = s === 'away' ? pinnGame.bestAwaySpread : pinnGame.bestHomeSpread;
-    if (stamped && Number.isFinite(Number(stamped.line)) && finiteOdds(Number(stamped.odds))) {
+    if (stamped && Number.isFinite(Number(stamped.line)) && finiteOdds(Number(stamped.odds))
+        && !bookHidden(stamped.book, stamped.book)) {
       quotes.push({
         line: Number(stamped.line),
         odds: Number(stamped.odds),
@@ -120,14 +145,32 @@ export function bestAvailableTicket({
         });
       }
     }
-    const anchor = cur && Number.isFinite(Number(s === 'away' ? cur.awayLine : cur.homeLine))
-      ? Number(s === 'away' ? cur.awayLine : cur.homeLine)
-      : null;
+    for (const row of (Array.isArray(pinnGame.spreadLines) ? pinnGame.spreadLines : [])) {
+      const line = s === 'away' ? Number(row?.awayLine) : Number(row?.homeLine);
+      const odds = s === 'away' ? Number(row?.awayOdds) : Number(row?.homeOdds);
+      if (!Number.isFinite(line) || !finiteOdds(odds)) continue;
+      const book = row.fairBook || pinnGame.fairSpreadBook || 'Pinnacle';
+      if (bookHidden(book, book)) continue;
+      quotes.push({
+        line,
+        odds,
+        book,
+        pinnacleOdds: /pinn/i.test(String(book)) ? odds : null,
+      });
+    }
+    const heroLine = heroAnchor(flagged);
     let best = null;
-    for (const q of quotesOnMainline(quotes, anchor)) best = betterSpread(best, q);
-    if (!best) return fallback;
-    const pin = quotes.find((q) => String(q.book || '').toLowerCase().includes('pinn')
-      && Number.isFinite(q.line) && Math.abs(q.line - best.line) <= 0.051);
+    if (heroLine != null) {
+      best = bestOnHeroLine(quotes, heroLine);
+      if (!best) return fallback;
+    } else {
+      const anchor = cur && Number.isFinite(Number(s === 'away' ? cur.awayLine : cur.homeLine))
+        ? Number(s === 'away' ? cur.awayLine : cur.homeLine)
+        : null;
+      for (const q of quotesOnMainline(quotes, anchor)) best = betterSpread(best, q);
+      if (!best) return fallback;
+    }
+    const pin = pinOnLine(quotes, best.line);
     return {
       line: best.line,
       odds: best.odds,
@@ -149,7 +192,8 @@ export function bestAvailableTicket({
       quotes.push({ line, odds, book: b.name || k, pinnacleOdds: null });
     }
     const stamped = wantOver ? pinnGame.bestOver : pinnGame.bestUnder;
-    if (stamped && Number.isFinite(Number(stamped.line)) && finiteOdds(Number(stamped.odds))) {
+    if (stamped && Number.isFinite(Number(stamped.line)) && finiteOdds(Number(stamped.odds))
+        && !bookHidden(stamped.book, stamped.book)) {
       quotes.push({
         line: Number(stamped.line),
         odds: Number(stamped.odds),
@@ -169,15 +213,35 @@ export function bestAvailableTicket({
         });
       }
     }
-    const anchor = cur && Number.isFinite(Number(cur.line)) ? Number(cur.line) : null;
+    for (const row of (Array.isArray(pinnGame.totalLines) ? pinnGame.totalLines : [])) {
+      const line = Number(row?.line);
+      const odds = wantOver ? Number(row?.overOdds) : Number(row?.underOdds);
+      if (!Number.isFinite(line) || line < 1.5 || !finiteOdds(odds)) continue;
+      const book = row.fairBook || pinnGame.fairTotalBook || 'Pinnacle';
+      if (bookHidden(book, book)) continue;
+      quotes.push({
+        line,
+        odds,
+        book,
+        pinnacleOdds: /pinn/i.test(String(book)) ? odds : null,
+      });
+    }
+    const heroLine = heroAnchor(flagged);
     let best = null;
-    for (const q of quotesOnMainline(quotes, anchor)) best = betterTotal(best, q, wantOver ? 'over' : 'under');
-    if (!best) return fallback;
+    if (heroLine != null) {
+      best = bestOnHeroLine(quotes, heroLine);
+      if (!best) return fallback;
+    } else {
+      const anchor = cur && Number.isFinite(Number(cur.line)) ? Number(cur.line) : null;
+      for (const q of quotesOnMainline(quotes, anchor)) best = betterTotal(best, q, wantOver ? 'over' : 'under');
+      if (!best) return fallback;
+    }
+    const pin = pinOnLine(quotes, best.line);
     return {
       line: best.line,
       odds: best.odds,
       book: best.book || null,
-      pinnacleOdds: best.pinnacleOdds ?? null,
+      pinnacleOdds: pin?.odds ?? best.pinnacleOdds ?? null,
       oddsSource: 't15_best_available',
       source: 't15_best_available',
     };
@@ -312,9 +376,8 @@ export function isSealedT15Lock(sd = {}) {
 }
 
 /**
- * Same ticket the locked card paints: sealed T-15 shop line, else live
- * shop-best, else lock/peak. Alerts must not prefer peak (flagged 10.5)
- * when the hero is already Under 11.
+ * Same ticket the locked card paints: a shop already written, else the
+ * pending hero (that number, best price on it), else lock/peak.
  */
 export function resolveLockDisplayTicket({
   sd = {},

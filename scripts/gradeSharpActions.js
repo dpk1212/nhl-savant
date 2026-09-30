@@ -1027,6 +1027,7 @@ function pickSideNorm(side) {
   return s;
 }
 
+/** Grade the sealed hero. lock.line is that number once T-15 writes it. */
 function pickLine(sideData) {
   for (const v of [
     sideData?.lock?.line,
