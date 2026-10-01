@@ -65,5 +65,21 @@ check('NBA series-repeat also blocked',
   findMatchingGame({ sport: 'NBA', gameKey: 'bos_nyk', date: '2026-07-08', away: 'Boston Celtics', home: 'New York Knicks' },
     [], [], [], [nbaYesterday], []) === null);
 
+// NHL path used to return the first matching pair in the loaded week, with
+// no date. 2026-09-30 NYI@TOR (1–2) was graded with the 2026-03-17 final (3–1).
+const marchIslanders = {
+  dateET: '2026-03-17', awayTeam: 'NYI', homeTeam: 'TOR', awayScore: 3, homeScore: 1,
+};
+const sepIslanders = {
+  dateET: '2026-09-30', awayTeam: 'NYI', homeTeam: 'TOR', awayScore: 1, homeScore: 2,
+};
+const sepPos = { sport: 'NHL', gameKey: 'nyi_tor', date: '2026-09-30' };
+check('NHL: March Islanders final does not grade the September game',
+  findMatchingGame(sepPos, [marchIslanders]) === null);
+check('NHL: same-date final is chosen when both are loaded',
+  findMatchingGame(sepPos, [marchIslanders, sepIslanders]) === sepIslanders);
+check('NHL: a final with no date is rejected',
+  findMatchingGame(sepPos, [{ awayTeam: 'NYI', homeTeam: 'TOR', awayScore: 3, homeScore: 1 }]) === null);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);
