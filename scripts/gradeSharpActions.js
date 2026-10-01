@@ -227,11 +227,16 @@ async function fetchNHLFinalGames(dateStr) {
     const data = await res.json();
     const games = [];
     for (const day of data.gameWeek || []) {
+      // The schedule endpoint returns the whole week. Stamp the day's own
+      // date so a prior meeting (NYI@TOR 2026-03-17 3–1) cannot grade a
+      // later game of the same teams (2026-09-30, actually 1–2).
+      const dateET = typeof day.date === 'string' ? day.date.slice(0, 10) : null;
       for (const g of day.games || []) {
         if (g.gameState !== 'OFF' && g.gameState !== 'FINAL') continue;
         const away = ABBREV_MAP[g.awayTeam?.abbrev?.toLowerCase()] || g.awayTeam?.abbrev;
         const home = ABBREV_MAP[g.homeTeam?.abbrev?.toLowerCase()] || g.homeTeam?.abbrev;
         games.push({
+          dateET,
           awayTeam: away, homeTeam: home,
           awayScore: g.awayTeam?.score || 0, homeScore: g.homeTeam?.score || 0,
         });
@@ -819,7 +824,8 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
     if (parts.length < 2) return null;
     const awayAbbr = ABBREV_MAP[parts[0]] || parts[0].toUpperCase();
     const homeAbbr = ABBREV_MAP[parts[1]] || parts[1].toUpperCase();
-    return nhlFinals.find(g => g.awayTeam === awayAbbr && g.homeTeam === homeAbbr) || null;
+    const dated = nhlFinals.filter(g => finalDateMatches(g, pos));
+    return dated.find(g => g.awayTeam === awayAbbr && g.homeTeam === homeAbbr) || null;
   }
 
   if (pos.sport === 'MLB') {
