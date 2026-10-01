@@ -1,108 +1,36 @@
 # MLB Predictions
 
-MLB predictions for Wednesday, September 30, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 9/30, the Astros have the highest win probability at 61.9%.
+MLB predictions for Thursday, October 1, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 10/1, the Braves have the highest win probability at 52.9%.
 
-[![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Get 6 months of Dimers Pro for just $119.99 ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
+[![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Sep 30 2026Sep 30
+Date: Oct 1 2026Oct 1
 
-[Sep 30, 2:00 PM ET\\
+[Oct 1, 8:00 PM ET\\
 \\
 ![Phillies](https://cdn.ciphersports.io/images/MLB/official/PHI.svg)\\
 \\
-Phillies \\
+Phillies  A. Nola \\
 \\
-1 \\
+47.1% \\
 \\
-34.9% \\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+50¢\\
 \\
 ![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
 \\
-Braves \\
+Braves  R. Kerr \\
 \\
-1 \\
-\\
-65.1% \\
-\\
-0 Out\\
-\\
-LIVE\\
-\\
-Bot 6th \\
-\\
-In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_190_atl_phi) [Sep 30, 5:00 PM ET\\
-\\
-![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
-\\
-White Sox  S. Burke \\
-\\
-38.5% \\
+52.9% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-41¢\\
-\\
-![Astros](https://cdn.ciphersports.io/images/MLB/official/HOU.svg)\\
-\\
-Astros  H. Brown \\
-\\
-61.5% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-59¢\\
+50¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_190_hou_cws) [Sep 30, 8:00 PM ET\\
-\\
-![Red Sox](https://cdn.ciphersports.io/images/MLB/official/BOS.svg)\\
-\\
-Red Sox  S. Gray \\
-\\
-43.7% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-44¢\\
-\\
-![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
-\\
-Yankees  M. Fried \\
-\\
-56.3% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-56¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_190_nyy_bos) [Sep 30, 10:00 PM ET\\
-\\
-![Cubs](https://cdn.ciphersports.io/images/MLB/official/CHC.svg)\\
-\\
-Cubs  K. Gausman \\
-\\
-43.6% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-43¢\\
-\\
-![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
-\\
-Padres  N. Pivetta \\
-\\
-56.4% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-57¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_190_sd_chc)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_191_atl_phi)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -166,7 +94,7 @@ Get Dimers Pro
 
 ## Featured offers
 
-All  Sportsbooks  Prediction Markets
+All  Sportsbooks  Prediction Markets  DFS
 
 ![Swipe icon](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20)Swipe across to view more offers
 
@@ -228,6 +156,28 @@ Claim now
 
 How to claim
 
+![logo](https://imgix.cosmicjs.com/c263f0f0-a7a8-11f1-b05a-3f2735d232a4-UD26_PrimaryMark_OverDark.png?auto=format,compress&h=200)
+
+TRENDING
+
+T&Cs apply.
+
+Claim Now
+
+[Read review](https://www.dimers.com/dfs/underdog-fantasy)
+
+How to claim
+
+![logo](https://cdn.cosmicjs.com/efeb6ef0-bdaa-11f1-af12-19c569209b1c-FanDuel_Predicts_Logo_Vertical_White_NoBackground.svg?auto=format,compress&h=200)
+
+TRENDING
+
+T&Cs apply.
+
+Claim Now
+
+How to claim
+
 ![logo](https://cdn.cosmicjs.com/e9272ff0-877c-11f1-ac64-27ec44a0100e-tsb-color-DSIqtzlf.svg?auto=format,compress&h=200)
 
 HOTTEST
@@ -266,7 +216,7 @@ How to claim
 
 ![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
 
-LIMITED-TIME
+RECOMMENDED
 
 T&Cs apply.
 
@@ -286,39 +236,23 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/673e3170-1a24-11f1-912c-9d3f03b09963-OG-LOGO-1a-1.png?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/9d7e0a60-ceaa-11ef-ac4c-9fb95c248ff6-HorizontalPrimaryDark-1.png?auto=format,compress&h=200)
 
-RECOMMENDED
+DFS & PICKS
 
 T&Cs apply.
 
 Claim Now
 
-How to claim
-
-![logo](https://imgix.cosmicjs.com/1092c8d0-116c-11ef-911e-9f1d49670742-BetRivers-Big.png?auto=format,compress&h=200)
-
-NEW PLAYERS
-
-T&Cs apply.
-
-Claim now
-
-[Read review](https://www.dimers.com/betting/betrivers-sportsbook)
+[Read review](https://www.dimers.com/dfs/betr)
 
 How to claim
 
-## MLB predictions for Wednesday
+## MLB predictions for Thursday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Wednesday, the Astros lead all win probabilities with a 61.9% chance of beating the White Sox at Daikin Park. The Padres and Yankees also rank among the leading moneyline favorites.
-
-| Team | Prob. | Opponent | First pitch (ET) |
-| --- | --- | --- | --- |
-| Astros | 61.9% | vs. White Sox | 2:00pm |
-| Padres | 56.4% | vs. Cubs | 7:00pm |
-| Yankees | 56.1% | vs. Red Sox | 5:00pm |
+On Thursday, the Braves have a 52.9% chance of beating the Phillies at Truist Park.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
