@@ -123,9 +123,9 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
      └─ stack (HARD+ FOR only · proven ≥75%) keeps fat
      └─ fail-open HOLD if we cannot judge · cappedBy=gold-stack-cap
 12j. HARD+ margin floor (2026-09-30+) — unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR at ≥1.0× sport usual → 2u
-     └─ fills MONITORING / unstamped 0u so v12 ships size · also leftover / steam-tail / market-skill
+     └─ fills MONITORING / unstamped 0u so v12 ships size · also leftover / steam-tail / market-skill / **board-share**
      └─ 1-0 / 2-0 / 2-1 qualify · 1-1 / 0-1 / 1-2 stay 0u · live ≥2u not resized
-     └─ skip ev-drift / fav-juice / fade / board-share / operator · flooredBy=hard-unopp-hold
+     └─ skip ev-drift / fav-juice / fade / operator / ev-lt2 / hard-ag · flooredBy=hard-unopp-hold
      └─ MONITORING promote tier HARD-UNOPP · fail-open HOLD if schema missing
 13. T-15 → freeze
 ```
@@ -160,7 +160,8 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-09-24** | **Market-skill mute** — ML FOR n≥6 WR≥52 · S/T qual$ + HARD slip. **HARD mute-exception** after. |
 | **2026-09-25** | **HARD+ AG mute** — HARD wallet on the other side → 0u. |
 | **2026-09-29** | **HARD+ unique-wallet margin** — AG mute only when HARD AG ≥1 and (FOR−AG) ≤ 0. 2-1 HOLD, 1-1 MUTE. 2-for rescue if ≥2 HARD FOR and margin ≥ +1. GOLD stays FOR-only. S/T press stays 0 AG. Binary any-AG remains on 09-25…09-28 tickets. |
-| **2026-09-30** | **HARD+ margin floor** — unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥1.0× sport usual publishes 2u (MONITORING / listed leftover / steam-tail / market-skill). 1-1 stays 0u. Skip ev-drift / fav-juice / fade / board-share. `flooredBy=hard-unopp-hold`. |
+| **2026-09-30** | **HARD+ margin floor** — unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥1.0× sport usual publishes 2u (MONITORING / listed leftover / steam-tail / market-skill). 1-1 stays 0u. Skip ev-drift / fav-juice / fade. `flooredBy=hard-unopp-hold`. |
+| **2026-10-01** | **HARD+ margin floor punches board-share** — same ≥+1 × ≥1.0× 2u floor restores `mutedBy=board-share` (25–45% all-$ FOR). Steelers ML hole. Ev-lt2 / fav-juice / fade / hard-ag still skip. |
 | **2026-09-26** | **S/T HARD+ FOR require** — spreads/totals need ≥1 HARD FOR. |
 | **2026-09-26** | **Door 2 Proven** — Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven. FLAT not assigned. See [`HARD_AND_PROVEN_WEEK_2026-09-26.md`](./HARD_AND_PROVEN_WEEK_2026-09-26.md). |
 | **2026-09-26** | **GOLD-stack 4u cap** — off-stack tickets cannot publish above 4u. EDGE + tape can still fatten the stack to 6u. Ball State ML hole. |

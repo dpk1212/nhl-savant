@@ -1196,7 +1196,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 26; // v26: HARD+ margin ≥+1 × ≥1.0× → 2u floor (MONITORING / listed mutes)
+const SKILL_FEATURE_VERSION = 27; // v27: HARD+ margin floor also restores board-share
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
@@ -7647,9 +7647,9 @@ async function main() {
   if (isHardUnoppFloorLive(TARGET_DATE)) {
     console.log(
       `HARD+ margin floor LIVE: unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥${HARD_UNOPP_MIN_SR}× → ${HARD_UNOPP_FLOOR_U}u`
-      + ` · fills MONITORING 0u and listed leftover / steam-tail / market-skill`
+      + ` · fills MONITORING 0u and listed leftover / steam-tail / market-skill / board-share`
       + ` · from ${HARD_UNOPP_FLOOR_FROM} · after GOLD-stack · flooredBy=${HARD_UNOPP_FLOORED_BY}`
-      + ` · skip ev-drift / fav-juice / fade / board-share · fail-open HOLD if schema missing`,
+      + ` · skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag · fail-open HOLD if schema missing`,
     );
   } else {
     console.log(`HARD+ margin floor: not live before ${HARD_UNOPP_FLOOR_FROM} (TARGET_DATE=${TARGET_DATE})`);
