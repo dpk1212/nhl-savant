@@ -12,6 +12,8 @@ import {
   HARD_UNOPP_FLOOR_U,
   HARD_UNOPP_CAP_U,
   HARD_UNOPP_MIN_SR,
+  HARD_UNOPP_TWO_FOR_N,
+  HARD_UNOPP_TWO_FOR_MIN_SR,
   HARD_UNOPP_FLOORED_BY,
   HARD_UNOPP_STAKE_TIER,
   HARD_UNOPP_RESTORE_MUTES,
@@ -75,6 +77,7 @@ ok(!isHardUnoppFloorLive('2026-09-29'), 'not live before cutover');
 ok(HARD_UNOPP_FLOOR_FROM === '2026-09-30', 'cutover date');
 ok(HARD_UNOPP_FLOOR_U === 2 && HARD_UNOPP_CAP_U === 4, '2u floor / 4u cap');
 ok(HARD_UNOPP_MIN_SR === 1.0, 'full-size bar is 1.0×');
+ok(HARD_UNOPP_TWO_FOR_N === 2 && HARD_UNOPP_TWO_FOR_MIN_SR === 0.5, '2+ HARD FOR lean bar is 0.5×');
 ok(HARD_UNOPP_FLOORED_BY === 'hard-unopp-hold', 'flooredBy stamp');
 ok(HARD_UNOPP_STAKE_TIER === 'HARD-UNOPP', 'MONITORING promote tier');
 ok(HARD_UNOPP_RESTORE_MUTES.has('board-share'), 'board-share is on the restore set');
@@ -314,6 +317,85 @@ ok(hardUnoppFloorUnits(0, 6) === 4, 'muted 6 → 4 cap');
 {
   const r = floor({ marketType: 'PLAYER_PROP', walletDetails: under13() });
   ok(r.action === 'EXEMPT' && r.units === 0, 'non board market exempt');
+}
+
+{
+  const r = applyHardUnoppFloorOverlay({
+    pickDate: '2026-10-01',
+    marketType: 'ML',
+    sport: 'MLB',
+    side: 'away',
+    walletProfiles: profiles,
+    units: 0,
+    mutedBy: 'believed-cut',
+    unitsPreMute: 2,
+    walletDetails: [
+      { wallet: 'aaaaaa', side: 'away', invested: 435 },
+      { wallet: 'bbbbbb', side: 'away', invested: 480 },
+    ],
+  });
+  ok(r.action === 'FLOOR' && r.units === 2 && r.reason === 'hard_margin_two_lean',
+    'Steelers 2 HARD FOR at 0.87× / 0.96× floors');
+  ok(r.hardForN === 2 && r.fullN === 0 && r.leanN === 2 && r.margin === 2, '2-0 lean, no full');
+}
+
+{
+  const r = floor({
+    walletDetails: [
+      { wallet: 'aaaaaa', side: 'under', invested: 300 },
+      { wallet: 'bbbbbb', side: 'under', invested: 300 },
+    ],
+  });
+  ok(r.action === 'FLOOR' && r.reason === 'hard_margin_two_lean' && r.units === 2,
+    '2 HARD FOR at 0.6× / 0.6× floors');
+}
+
+{
+  const r = floor({
+    walletDetails: [
+      { wallet: 'aaaaaa', side: 'under', invested: 250 },
+      { wallet: 'bbbbbb', side: 'under', invested: 250 },
+    ],
+  });
+  ok(r.action === 'FLOOR' && r.leanN === 2, '2 HARD FOR at exactly 0.5× floors');
+}
+
+{
+  const r = floor({
+    walletDetails: [
+      { wallet: 'aaaaaa', side: 'under', invested: 200 },
+      { wallet: 'bbbbbb', side: 'under', invested: 450 },
+    ],
+  });
+  ok(r.action === 'HOLD' && r.reason === 'no_full_size' && r.leanN === 1,
+    '2 HARD FOR but only one ≥0.5× stays 0u');
+}
+
+{
+  const r = floor({
+    walletDetails: [{ wallet: 'aaaaaa', side: 'under', invested: 300 }],
+  });
+  ok(r.action === 'HOLD' && r.reason === 'no_full_size' && r.hardForN === 1,
+    '1 HARD FOR at 0.6× is not enough');
+}
+
+{
+  const r = applyHardUnoppFloorOverlay({
+    pickDate: '2026-10-01',
+    marketType: 'ML',
+    sport: 'MLB',
+    side: 'away',
+    walletProfiles: profiles,
+    units: 0,
+    mutedBy: 'board-share',
+    walletDetails: [
+      { wallet: 'aaaaaa', side: 'away', invested: 300 },
+      { wallet: 'dddddd', side: 'away', invested: 300 },
+      { wallet: 'bbbbbb', side: 'home', invested: 300 },
+    ],
+  });
+  ok(r.action === 'FLOOR' && r.margin === 1 && r.leanN === 2,
+    '2-1 both ≥0.5× floors through board-share');
 }
 
 console.log(`ok ${n} hard-unopp-floor checks`);

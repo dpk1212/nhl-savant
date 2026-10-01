@@ -56,7 +56,7 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **HARD 2+ FOR / 0 AG hold** | 2026-09-28+: muted ticket with **≥2 unique HARD+ FOR** and **0 HARD+ AG** → restore steam-tail / leftover / st-fat / tape-weak (incl S/T) at **max(uPre, 3) capped 4u** · unique wallets not duplicate listings · skip ev-drift / fav-juice / unstamped 0u / fade · stamp `v8_rescuedBy=hard-2for-hold` · **2026-09-29+** also when unique HARD margin (FOR−AG) ≥ +1 (2-1 HOLDs, 2-2 stays muted) |
 | **HARD S/T press hold** | 2026-09-28+: **SPREAD/TOTAL** muted ticket with **≥1 unique HARD+ FOR sized ≥1.5× sport usual** and **0 HARD+ AG** → restore the same mute set as 2-for at **uPre capped 4u** (no 3u floor) · ML stays on 1-for / 2-for · skip board-share / ev-drift / fav-juice / unstamped 0u / fade · 2-for still wins when ≥2 HARD · stamp `v8_rescuedBy=hard-st-press-hold` |
 | **HARD+ AG mute** | 2026-09-25+: ≥1 HARD+ on the other side → **0u** · `mutedBy=hard-ag` · **2026-09-29+** mute only when HARD AG ≥1 **and** margin (FOR−AG) ≤ 0 · 2-1 HOLD · 1-1 MUTE · GOLD stays FOR-only |
-| **HARD+ margin floor** | 2026-09-30+: unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥1.0× → **2u** · fills MONITORING 0u and leftover / steam-tail / market-skill · **2026-10-01+ also board-share** · skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag · `flooredBy=hard-unopp-hold` · MONITORING → `HARD-UNOPP` |
+| **HARD+ margin floor** | 2026-09-30+: unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥1.0× → **2u** · fills MONITORING 0u and leftover / steam-tail / market-skill · **2026-10-01+ also board-share** · **2026-10-01+ ≥2 HARD FOR each ≥0.5× also size-clears** · skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag · `flooredBy=hard-unopp-hold` · MONITORING → `HARD-UNOPP` |
 
 ---
 
@@ -140,7 +140,7 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_hardUnoppFloorAction` | `FLOOR` \| `HOLD` \| `EXEMPT` \| `PASS` — HARD+ margin ≥+1 × ≥1.0× 2u floor |
 | `v8_unitsPreHardUnoppFloor` | units entering HARD+ margin floor |
 | `v8_hardUnoppPromote` | `true` when HARD-UNOPP floor filled this side @ 2u |
-| `v8_skillFeatureVersion` | schema version (**27**) |
+| `v8_skillFeatureVersion` | schema version (**28**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
 
 Frozen at **T-15** (last scalar write sticks). **COMPLETED** docs never rewritten. The lifecycle log is appended on each due gate until that freeze (Locked) or until `grade` (Action).
