@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-10-01T08:52:40.853Z",
-  "elapsedSec": 58.9,
+  "scannedAt": "2026-10-01T08:58:42.321Z",
+  "elapsedSec": 55.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 145,
   "summary": {
     "total": 434,
-    "coveredByMain": 26,
+    "coveredByMain": 27,
     "recovered": 23,
-    "recoveredPositions": 412,
-    "noPositions": 385,
+    "recoveredPositions": 414,
+    "noPositions": 384,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 16,
+      "ml": 17,
       "spread": 1,
       "total": 1,
-      "dropped_shadow_gate": 218,
+      "dropped_shadow_gate": 219,
       "dropped_excluded": 176,
       "dropped_duplicate": 0
     }
@@ -165,12 +165,21 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
-      "avgSportBet": 1842,
-      "willPassShadowGate": 0,
+      "avgSportBet": 1914,
+      "willPassShadowGate": 1,
       "willDropAtShadowGate": 1,
       "positions": [
+        {
+          "sport": "NHL",
+          "gameKey": "edm_van",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 2443,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "UFC",
           "gameKey": "anthonywint_lucasarmand",
@@ -280,7 +289,7 @@
           "gameKey": "pit_cle",
           "marketType": "ml",
           "side": "away",
-          "invested": 1265,
+          "invested": 1276,
           "entryLine": null,
           "passesShadow": true
         },
@@ -3874,8 +3883,7 @@
       "tier": "WR50",
       "name": "8c82c4",
       "sports": "",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x755ab1b66743ec425157ef91e8b5b52f3e8c82c4"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "8ce2ce",
@@ -4252,11 +4260,11 @@
       "sports": "NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1976,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "UFC",
@@ -4283,6 +4291,15 @@
           "side": "home",
           "invested": 33,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "ind_lva",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 3,
+          "entryLine": -3.5,
           "passesShadow": false
         }
       ]
@@ -7083,7 +7100,7 @@
           "gameKey": "pit_cle",
           "marketType": "ml",
           "side": "home",
-          "invested": 1114,
+          "invested": 1122,
           "entryLine": null,
           "passesShadow": false
         }
