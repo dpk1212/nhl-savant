@@ -294,6 +294,15 @@ import {
   GOLD_STACK_SIZE_CAPPED_BY,
 } from '../src/lib/goldStackSizeCapOverlay.js';
 import {
+  applyHardUnoppFloorOverlay,
+  isHardUnoppFloorLive,
+  HARD_UNOPP_FLOOR_FROM,
+  HARD_UNOPP_FLOOR_U,
+  HARD_UNOPP_MIN_SR,
+  HARD_UNOPP_FLOORED_BY,
+  HARD_UNOPP_STAKE_TIER,
+} from '../src/lib/hardUnoppFloorOverlay.js';
+import {
   evaluateFadeProvenHoldFromTicket,
 } from '../src/lib/fadeProvenHold.js';
 import {
@@ -1187,7 +1196,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 25; // v25: S/T 1 HARD FOR press ≥1.5× / 0 AG unmute · uPre cap 4u
+const SKILL_FEATURE_VERSION = 26; // v26: HARD+ margin ≥+1 × ≥1.0× → 2u floor (MONITORING / listed mutes)
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
@@ -1347,6 +1356,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreHardStForRequire = null,
   goldStackCapAction = null,
   unitsPreGoldStackCap = null,
+  hardUnoppFloorAction = null,
+  unitsPreHardUnoppFloor = null,
   fadeProvenHoldAction = null,
   fadeProvenHoldReason = null,
   fadeProvenShare = null,
@@ -1539,6 +1550,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreGoldStackCap != null && Number.isFinite(unitsPreGoldStackCap)) {
     target.v8_unitsPreGoldStackCap = unitsPreGoldStackCap;
   }
+  if (hardUnoppFloorAction != null) target.v8_hardUnoppFloorAction = hardUnoppFloorAction;
+  if (unitsPreHardUnoppFloor != null && Number.isFinite(unitsPreHardUnoppFloor)) {
+    target.v8_unitsPreHardUnoppFloor = unitsPreHardUnoppFloor;
+  }
   if (fadeProvenHoldAction != null) target.v8_fadeProvenHoldAction = fadeProvenHoldAction;
   if (fadeProvenHoldReason != null) target.v8_fadeProvenHoldReason = fadeProvenHoldReason;
   if (fadeProvenShare != null && Number.isFinite(Number(fadeProvenShare))) {
@@ -1659,6 +1674,7 @@ function skillStampsDrifted(sd, bundle, {
   hardAgMuteAction = null,
   hardStForRequireAction = null,
   goldStackCapAction = null,
+  hardUnoppFloorAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1714,6 +1730,7 @@ function skillStampsDrifted(sd, bundle, {
   if (hardAgMuteAction != null && (sd.v8_hardAgMuteAction || null) !== hardAgMuteAction) return true;
   if (hardStForRequireAction != null && (sd.v8_hardStForRequireAction || null) !== hardStForRequireAction) return true;
   if (goldStackCapAction != null && (sd.v8_goldStackCapAction || null) !== goldStackCapAction) return true;
+  if (hardUnoppFloorAction != null && (sd.v8_hardUnoppFloorAction || null) !== hardUnoppFloorAction) return true;
   return false;
 }
 
@@ -3793,6 +3810,50 @@ async function createMissingLockedPicks({
         });
         peakUnitsApplied = goldStackCapPolicyCreate.units;
       }
+
+      // HARD+ margin floor — after GOLD cap, before operator kill.
+      // Unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR at ≥1.0× → 2u.
+      // Fills MONITORING 0u and listed leftover / steam-tail / market-skill
+      // holes so v12 can ship size. Fail-open HOLD if schema is missing.
+      let hardUnoppFloorPolicyCreate = null;
+      if (createV121Eligible && scoreV12 > 0) {
+        const lastMuteFloorCreate = stackLastMute({
+          marketSkillPolicy: marketSkillPolicyCreate,
+          stFatPolicy: stFatPolicyCreate,
+          boardSharePolicy: boardSharePolicyCreate,
+          unitTierPolicy: unitTierPolicyCreate,
+          favJuicePolicy: favJuicePolicyCreate,
+          steamTailPolicy: steamTailPolicyCreate,
+          evDriftPolicy: evDriftPolicyCreate,
+          topCrowdedPolicy: topCrowdedPolicyCreate,
+          noConfirmedPolicy: noConfirmedPolicyCreate,
+          maxSrSub4Policy: maxSrSub4PolicyCreate,
+          flinchFailOpenPolicy: flinchFailOpenPolicyCreate,
+          foolsGoldPolicy: foolsGoldPolicyCreate,
+          qConvPolicy: qConvPolicyCreate,
+          tapePolicy: clvPolicyCreate,
+        });
+        hardUnoppFloorPolicyCreate = applyHardUnoppFloorOverlay({
+          units: peakUnitsApplied,
+          mutedBy: lastMuteFloorCreate.mutedBy,
+          unitsPreMute: lastMuteFloorCreate.unitsPre,
+          marketType,
+          sport,
+          side,
+          walletDetails,
+          walletProfiles,
+          pickDate: TARGET_DATE,
+        });
+        if (hardUnoppFloorPolicyCreate.action === 'FLOOR') {
+          peakUnitsApplied = hardUnoppFloorPolicyCreate.units;
+          if (Number.isFinite(Number(odds))) {
+            peakUnitsApplied = Math.round(oddsCap(peakUnitsApplied, odds) * 100) / 100;
+          }
+          if (hcStakeTierCreate === 'MONITORING') {
+            hcStakeTierCreate = HARD_UNOPP_STAKE_TIER;
+          }
+        }
+      }
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
       }
@@ -4070,6 +4131,10 @@ async function createMissingLockedPicks({
           unitsPreGoldStackCap: (goldStackCapPolicyCreate && Number.isFinite(goldStackCapPolicyCreate.unitsPrePolicy))
             ? goldStackCapPolicyCreate.unitsPrePolicy
             : null,
+          hardUnoppFloorAction: hardUnoppFloorPolicyCreate?.action ?? null,
+          unitsPreHardUnoppFloor: (hardUnoppFloorPolicyCreate && Number.isFinite(hardUnoppFloorPolicyCreate.unitsPrePolicy))
+            ? hardUnoppFloorPolicyCreate.unitsPrePolicy
+            : null,
           steamTailReason: steamTailPolicyCreate?.reason ?? null,
           steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
           steamTailOnLock: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamOnLock : null,
@@ -4128,9 +4193,17 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
+      const hardUnoppFlooredCreate = hardUnoppFloorPolicyCreate?.action === 'FLOOR'
+        && Number.isFinite(hardUnoppFloorPolicyCreate.units)
+        && hardUnoppFloorPolicyCreate.units > 0;
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
+      } else if (hardUnoppFlooredCreate) {
+        delete v8Stamps.mutedBy;
+        v8Stamps.v8_rescuedBy = hardUnoppFloorPolicyCreate.flooredBy
+          || HARD_UNOPP_FLOORED_BY;
+        v8Stamps.v8_hardUnoppPromote = true;
       } else if (hardStForPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = hardStForPolicyCreate.mutedBy;
         if (isHardExceptionRescueStamp(v8Stamps.v8_rescuedBy)) {
@@ -4220,7 +4293,7 @@ async function createMissingLockedPicks({
       const hardStForMutedCreate = hardStForPolicyCreate?.action === 'MUTE'
         && Number.isFinite(hardStForPolicyCreate.unitsPrePolicy)
         && hardStForPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = hardStForMutedCreate || hardAgMutedCreate || (!hardExceptionRescuedCreate && (marketSkillMutedCreate || stFatMutedCreate || boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const createSizeMuted = !hardUnoppFlooredCreate && (hardStForMutedCreate || hardAgMutedCreate || (!hardExceptionRescuedCreate && (marketSkillMutedCreate || stFatMutedCreate || boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -4228,10 +4301,11 @@ async function createMissingLockedPicks({
           && Number.isFinite(qConvPolicyCreate.unitsPrePolicy)
           && qConvPolicyCreate.unitsPrePolicy > 0)
         || (!!clvPolicyCreate.mutedBy)
-      ))));
+      )))));
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(hardUnoppFloorPolicyCreate?.reason ? [hardUnoppFloorPolicyCreate.reason] : []),
           ...(hardStForPolicyCreate?.reason ? [hardStForPolicyCreate.reason] : []),
           ...(hardAgPolicyCreate?.reason ? [hardAgPolicyCreate.reason] : []),
           ...(hardExceptionPolicyCreate?.reason ? [hardExceptionPolicyCreate.reason] : []),
@@ -5654,6 +5728,46 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = goldStackCapPolicy.units;
   }
 
+  // HARD+ margin floor — after GOLD cap, before odds-cap / operator kill.
+  // Unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR at ≥1.0× → 2u.
+  // Fills MONITORING 0u so v12 can ship size. Manual stake exempt.
+  let hardUnoppFloorPolicy = null;
+  if (v121Eligible && !skipManualFlinch
+      && appliedStatus === 'ACTIVE'
+      && scoreV12Live != null && scoreV12Live > 0) {
+    const lastMuteFloor = stackLastMute({
+      marketSkillPolicy,
+      stFatPolicy,
+      boardSharePolicy,
+      unitTierPolicy,
+      favJuicePolicy,
+      steamTailPolicy,
+      evDriftPolicy,
+      topCrowdedPolicy,
+      noConfirmedPolicy,
+      maxSrSub4Policy: maxSrSub4Policy,
+      flinchFailOpenPolicy,
+      foolsGoldPolicy,
+      qConvPolicy,
+      tapePolicy: tapePolicy?.mutedBy ? tapePolicy : clvPolicy,
+    });
+    hardUnoppFloorPolicy = applyHardUnoppFloorOverlay({
+      units: finalUnitsApplied,
+      mutedBy: lastMuteFloor.mutedBy,
+      unitsPreMute: lastMuteFloor.unitsPre,
+      marketType: mkt,
+      sport: pick.sport,
+      side,
+      walletDetails: wd,
+      walletProfiles,
+      pickDate,
+    });
+    if (hardUnoppFloorPolicy.action === 'FLOOR') {
+      finalUnitsApplied = hardUnoppFloorPolicy.units;
+      if (hcStakeTier === 'MONITORING') hcStakeTier = HARD_UNOPP_STAKE_TIER;
+    }
+  }
+
   // Last choke — RANK / EDGE floors cannot publish past the dog cap.
   let oddsCapClamped = false;
   if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
@@ -5679,7 +5793,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   ) || (
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
-    && (confirmedQ1Rescued || confirmedUnoppRescued)
+    && (confirmedQ1Rescued || confirmedUnoppRescued || hardUnoppFloorPolicy?.action === 'FLOOR')
   );
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
@@ -5739,6 +5853,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (hardExceptionPolicy?.reason && !reasons.includes(hardExceptionPolicy.reason)) reasons.push(hardExceptionPolicy.reason);
   if (hardAgPolicy?.reason && !reasons.includes(hardAgPolicy.reason)) reasons.push(hardAgPolicy.reason);
   if (hardStForPolicy?.reason && !reasons.includes(hardStForPolicy.reason)) reasons.push(hardStForPolicy.reason);
+  if (hardUnoppFloorPolicy?.reason && !reasons.includes(hardUnoppFloorPolicy.reason)) reasons.push(hardUnoppFloorPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -5797,7 +5912,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const hardStForMuted = hardStForPolicy?.action === 'MUTE'
     && Number.isFinite(hardStForPolicy.unitsPrePolicy)
     && hardStForPolicy.unitsPrePolicy > 0;
-  // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
+  const hardUnoppFloored = hardUnoppFloorPolicy?.action === 'FLOOR'
+    && Number.isFinite(hardUnoppFloorPolicy.units)
+    && hardUnoppFloorPolicy.units > 0;
+  // Q1 / UNOPP / HARD+ margin floor wins — do not leave health MUTED when units were restored.
   // Later mutes (incl. market-skill) run AFTER those floors, so they still win if they cancelled.
   // HARD hold restores; HARD+ AG remutes if specialists faded us;
   // S/T HARD+ FOR require remutes if no specialist is with us; operator kill still wins.
@@ -5808,9 +5926,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const lateMuteCancelled = !confirmedQ1Floored && !confirmedUnoppFloored
     && (foolsMuted || qConvMuted || tapeClvMuted);
   const sizeMuted = operatorKilled
-    || hardStForMuted
+    || (!hardUnoppFloored && (hardStForMuted
     || hardAgMuted
-    || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled));
+    || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled))));
   const healthStatusOut = sizeMuted
     ? 'MUTED'
     : appliedStatus;
@@ -5862,6 +5980,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
+  } else if (hardUnoppFloored) {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+    patch.v8_rescuedBy = hardUnoppFloorPolicy.flooredBy || HARD_UNOPP_FLOORED_BY;
   } else if (hardStForPolicy?.mutedBy) {
     patch.mutedBy = hardStForPolicy.mutedBy;
   } else if (hardAgPolicy?.mutedBy) {
@@ -6043,6 +6164,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         patch.v8_confirmedUnoppPromote = true;
       } else if (sd.v8_confirmedUnoppPromote != null) {
         patch.v8_confirmedUnoppPromote = admin.firestore.FieldValue.delete();
+      }
+      if (hardUnoppFloored || hcStakeTier === HARD_UNOPP_STAKE_TIER) {
+        patch.v8_hardUnoppPromote = true;
+      } else if (sd.v8_hardUnoppPromote != null) {
+        patch.v8_hardUnoppPromote = admin.firestore.FieldValue.delete();
       }
     }
     // CANONICAL bet size — grader + dashboard read only this. Under v12.1
@@ -6425,6 +6551,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreGoldStackCap: (goldStackCapPolicy && Number.isFinite(goldStackCapPolicy.unitsPrePolicy))
         ? goldStackCapPolicy.unitsPrePolicy
         : null,
+      hardUnoppFloorAction: hardUnoppFloorPolicy?.action ?? null,
+      unitsPreHardUnoppFloor: (hardUnoppFloorPolicy && Number.isFinite(hardUnoppFloorPolicy.unitsPrePolicy))
+        ? hardUnoppFloorPolicy.unitsPrePolicy
+        : null,
       fadeProvenHoldAction: fadeProvenHold?.action ?? null,
       fadeProvenHoldReason: fadeProvenHold?.reason ?? null,
       fadeProvenShare: fadeProvenHold?.shareP ?? null,
@@ -6472,6 +6602,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hardAgMuteAction: hardAgPolicy?.action ?? null,
       hardStForRequireAction: hardStForPolicy?.action ?? null,
       goldStackCapAction: goldStackCapPolicy?.action ?? null,
+      hardUnoppFloorAction: hardUnoppFloorPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -6497,7 +6628,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (hardExceptionPolicy && (sd.v8_hardMuteExceptionAction || null) !== hardExceptionPolicy.action)
         || (hardAgPolicy && (sd.v8_hardAgMuteAction || null) !== hardAgPolicy.action)
         || (hardStForPolicy && (sd.v8_hardStForRequireAction || null) !== hardStForPolicy.action)
-        || (goldStackCapPolicy && (sd.v8_goldStackCapAction || null) !== goldStackCapPolicy.action)) {
+        || (goldStackCapPolicy && (sd.v8_goldStackCapAction || null) !== goldStackCapPolicy.action)
+        || (hardUnoppFloorPolicy && (sd.v8_hardUnoppFloorAction || null) !== hardUnoppFloorPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -6524,7 +6656,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (hardExceptionPolicy?.action ? ` hardHold=${hardExceptionPolicy.action}` : '')
         + (hardAgPolicy?.action ? ` hardAg=${hardAgPolicy.action}` : '')
         + (hardStForPolicy?.action ? ` stHardFor=${hardStForPolicy.action}` : '')
-        + (goldStackCapPolicy?.action ? ` goldCap=${goldStackCapPolicy.action}` : ''),
+        + (goldStackCapPolicy?.action ? ` goldCap=${goldStackCapPolicy.action}` : '')
+        + (hardUnoppFloorPolicy?.action ? ` hardUnopp=${hardUnoppFloorPolicy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -7510,6 +7643,16 @@ async function main() {
     );
   } else {
     console.log(`GOLD-stack size cap: not live before ${GOLD_STACK_SIZE_CAP_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isHardUnoppFloorLive(TARGET_DATE)) {
+    console.log(
+      `HARD+ margin floor LIVE: unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥${HARD_UNOPP_MIN_SR}× → ${HARD_UNOPP_FLOOR_U}u`
+      + ` · fills MONITORING 0u and listed leftover / steam-tail / market-skill`
+      + ` · from ${HARD_UNOPP_FLOOR_FROM} · after GOLD-stack · flooredBy=${HARD_UNOPP_FLOORED_BY}`
+      + ` · skip ev-drift / fav-juice / fade / board-share · fail-open HOLD if schema missing`,
+    );
+  } else {
+    console.log(`HARD+ margin floor: not live before ${HARD_UNOPP_FLOOR_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   console.log(
     `Door 2 Proven bag v${WHITELIST_VERSION} from ${WHITELIST_FROM}: Source B n≥${PROVEN_B_MIN_N}`

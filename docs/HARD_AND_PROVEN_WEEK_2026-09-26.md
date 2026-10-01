@@ -228,4 +228,5 @@ If a future agent “finds” a better n/WR/$ cell, compare it to the tables in 
 | HARD exception | `HARD_MUTE_EXCEPTION_FROM = '9999-01-01'` |
 | HARD 2+ FOR / 0 AG | `HARD_TWO_FOR_EXCEPTION_FROM = '9999-01-01'` · `HARD_TWO_FOR_MARGIN_FROM = '9999-01-01'` (2-for requires 0 AG) |
 | HARD S/T press | `HARD_ST_PRESS_EXCEPTION_FROM = '9999-01-01'` |
+| HARD+ margin floor | `HARD_UNOPP_FLOOR_FROM = '9999-01-01'` |
 | Market-skill | `MARKET_SKILL_MUTE_FROM = '9999-01-01'` |
