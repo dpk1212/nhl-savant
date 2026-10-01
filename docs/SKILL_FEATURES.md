@@ -137,7 +137,7 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_fadeProvenHoldReason` | `fade_proven_hold` \| `not_ml` \| `not_sharp_lean` \| `proven_missing` \| `proven_lt50` \| `pre_cutover` |
 | `v8_fadeProvenShare` | proven $ share used at the fade gate |
 | `v8_unitsPreStFat` | units entering spread/total fat mute |
-| `v8_hardUnoppFloorAction` | `FLOOR` \| `HOLD` \| `EXEMPT` \| `PASS` — HARD+ margin ≥+1 × ≥1.0× 2u floor |
+| `v8_hardUnoppFloorAction` | `FLOOR` \| `HOLD` \| `EXEMPT` \| `PASS` — HARD+ margin ≥+1 × (≥1.0× or 2+ FOR ≥0.5×) 2u floor |
 | `v8_unitsPreHardUnoppFloor` | units entering HARD+ margin floor |
 | `v8_hardUnoppPromote` | `true` when HARD-UNOPP floor filled this side @ 2u |
 | `v8_skillFeatureVersion` | schema version (**28**) |
