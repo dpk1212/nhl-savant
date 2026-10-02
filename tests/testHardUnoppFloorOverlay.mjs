@@ -1,6 +1,7 @@
 /**
  * HARD+ margin size floor (2026-09-30+).
  * Unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR at ≥1.0× → 2u floor.
+ * 2 HARD FOR all-lean (Steelers 0.87× / 0.96×) does not size-clear.
  * Usage: node tests/testHardUnoppFloorOverlay.mjs
  */
 import assert from 'node:assert/strict';
@@ -12,8 +13,6 @@ import {
   HARD_UNOPP_FLOOR_U,
   HARD_UNOPP_CAP_U,
   HARD_UNOPP_MIN_SR,
-  HARD_UNOPP_TWO_FOR_N,
-  HARD_UNOPP_TWO_FOR_MIN_SR,
   HARD_UNOPP_FLOORED_BY,
   HARD_UNOPP_STAKE_TIER,
   HARD_UNOPP_RESTORE_MUTES,
@@ -77,7 +76,6 @@ ok(!isHardUnoppFloorLive('2026-09-29'), 'not live before cutover');
 ok(HARD_UNOPP_FLOOR_FROM === '2026-09-30', 'cutover date');
 ok(HARD_UNOPP_FLOOR_U === 2 && HARD_UNOPP_CAP_U === 4, '2u floor / 4u cap');
 ok(HARD_UNOPP_MIN_SR === 1.0, 'full-size bar is 1.0×');
-ok(HARD_UNOPP_TWO_FOR_N === 2 && HARD_UNOPP_TWO_FOR_MIN_SR === 0.5, '2+ HARD FOR lean bar is 0.5×');
 ok(HARD_UNOPP_FLOORED_BY === 'hard-unopp-hold', 'flooredBy stamp');
 ok(HARD_UNOPP_STAKE_TIER === 'HARD-UNOPP', 'MONITORING promote tier');
 ok(HARD_UNOPP_RESTORE_MUTES.has('board-share'), 'board-share is on the restore set');
@@ -334,8 +332,8 @@ ok(hardUnoppFloorUnits(0, 6) === 4, 'muted 6 → 4 cap');
       { wallet: 'bbbbbb', side: 'away', invested: 480 },
     ],
   });
-  ok(r.action === 'FLOOR' && r.units === 2 && r.reason === 'hard_margin_two_lean',
-    'Steelers 2 HARD FOR at 0.87× / 0.96× floors');
+  ok(r.action === 'HOLD' && r.units === 0 && r.reason === 'no_full_size',
+    'Steelers 2 HARD FOR at 0.87× / 0.96× stays 0u');
   ok(r.hardForN === 2 && r.fullN === 0 && r.leanN === 2 && r.margin === 2, '2-0 lean, no full');
 }
 
@@ -346,8 +344,8 @@ ok(hardUnoppFloorUnits(0, 6) === 4, 'muted 6 → 4 cap');
       { wallet: 'bbbbbb', side: 'under', invested: 300 },
     ],
   });
-  ok(r.action === 'FLOOR' && r.reason === 'hard_margin_two_lean' && r.units === 2,
-    '2 HARD FOR at 0.6× / 0.6× floors');
+  ok(r.action === 'HOLD' && r.reason === 'no_full_size' && r.units === 0,
+    '2 HARD FOR at 0.6× / 0.6× stays 0u');
 }
 
 {
@@ -357,7 +355,8 @@ ok(hardUnoppFloorUnits(0, 6) === 4, 'muted 6 → 4 cap');
       { wallet: 'bbbbbb', side: 'under', invested: 250 },
     ],
   });
-  ok(r.action === 'FLOOR' && r.leanN === 2, '2 HARD FOR at exactly 0.5× floors');
+  ok(r.action === 'HOLD' && r.reason === 'no_full_size' && r.leanN === 2,
+    '2 HARD FOR at exactly 0.5× stays 0u');
 }
 
 {
@@ -394,8 +393,8 @@ ok(hardUnoppFloorUnits(0, 6) === 4, 'muted 6 → 4 cap');
       { wallet: 'bbbbbb', side: 'home', invested: 300 },
     ],
   });
-  ok(r.action === 'FLOOR' && r.margin === 1 && r.leanN === 2,
-    '2-1 both ≥0.5× floors through board-share');
+  ok(r.action === 'HOLD' && r.reason === 'no_full_size' && r.margin === 1 && r.leanN === 2,
+    '2-1 both ≥0.5× does not floor through board-share');
 }
 
 console.log(`ok ${n} hard-unopp-floor checks`);

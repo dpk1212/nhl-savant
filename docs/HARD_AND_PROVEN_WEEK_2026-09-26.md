@@ -47,7 +47,7 @@ Used by:
 | HARD+ AG mute | **2026-09-25** | ≥1 HARD on the **other** side → 0u. 4u+ not exempt. **2026-09-29+** mute only when HARD AG ≥1 **and** margin (FOR−AG) ≤ 0. 2-1 HOLD. 1-1 MUTE. GOLD stays FOR-only. | `hard-ag` |
 | S/T HARD+ FOR require | **2026-09-26** | SPREAD/TOTAL with `hardFor < 1` → 0u. ML exempt. 4u+ not exempt. Last step after HARD+ AG. | `st-hard-for` |
 | GOLD-stack 4u cap | **2026-09-26** | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps fat. | `cappedBy=gold-stack-cap` |
-| HARD+ margin floor | **2026-09-30** | Unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥1.0× → 2u. MONITORING / leftover / steam-tail / market-skill. **2026-10-01+ also board-share.** **≥2 HARD FOR each ≥0.5× also size-clears.** Skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag. | `flooredBy=hard-unopp-hold` |
+| HARD+ margin floor | **2026-09-30** | Unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥1.0× → 2u. MONITORING / leftover / steam-tail / market-skill. **2026-10-01+ also board-share.** **2026-10-02: ≥2 HARD FOR each ≥0.5× rolled back (Steelers ML).** Skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag. | `flooredBy=hard-unopp-hold` |
 
 The mutes fail-open (HOLD at exact units) if `byMarket` schema is missing. The 4u cap also fail-opens — never shrink a ticket we cannot judge. Mutes do not resize, repath, or flip. The cap only cuts size.
 
