@@ -204,7 +204,7 @@ import {
   positionSoftKey,
 } from './lib/hydrateLivePositionsFromScan.js';
 import { buildIsProvenFn, buildWalletPriorStatsFn } from '../src/lib/marketProvenCarve.js';
-import { resolveInstrument, ticketAmerican, coherentTicket } from '../src/lib/ticketInstrument.js';
+import { resolveInstrument, ticketAmerican, coherentTicket, walletsOnSide } from '../src/lib/ticketInstrument.js';
 import {
   bestAvailableTicket,
   snapshotBookRail,
@@ -6993,9 +6993,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ── SPREAD instrument repair (wallet entryLine vs sportsbook main) ─────
-  // Pre-T-15: if live sharp positions agree on a different line than lock
-  // (alt -1.5 vs main +1.5), rewrite lock/peak to the wallet instrument +
-  // Poly-implied odds so units/toWin/CLV match Action desk.
+  // Pre-T-15: one wallet on an alt rewrites lock/peak onto that number.
+  // Two or more wallets stay on the book main so an alt cannot freeze.
   if (pick.status !== 'COMPLETED' && mkt === 'SPREAD' && Array.isArray(group) && group.length) {
     const metaKey = `${sport}|${pick.gameKey}`;
     const meta = gameMeta?.get?.(metaKey) || null;
@@ -7003,40 +7002,42 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       ? (meta?.spreadCurrent?.homeLine ?? meta?.spreadOpener?.homeLine)
       : (meta?.spreadCurrent?.awayLine ?? meta?.spreadOpener?.awayLine);
     const walletLine = consensusLine(group, side, sport, 'SPREAD');
+    const multiWallet = walletsOnSide(group, side) > 1 && Number.isFinite(pinnLine);
+    const targetLine = multiWallet ? pinnLine : walletLine;
     const lockLn = Number.isFinite(sd.lock?.line) ? sd.lock.line
       : (Number.isFinite(sd.peak?.line) ? sd.peak.line : null);
-    if (Number.isFinite(walletLine)
-        && (lockLn == null || Math.abs(lockLn - walletLine) > 0.051)) {
-      const walletOdds = consensusOddsFromPoly(group, side, walletLine);
+    if (Number.isFinite(targetLine)
+        && (lockLn == null || Math.abs(lockLn - targetLine) > 0.051)) {
+      const walletOdds = consensusOddsFromPoly(group, side, targetLine);
       const pinnOdds = side === 'home'
         ? (meta?.spreadCurrent?.homeOdds ?? meta?.spreadOpener?.homeOdds)
         : (meta?.spreadCurrent?.awayOdds ?? meta?.spreadOpener?.awayOdds);
       const lineMatchesPinn = Number.isFinite(pinnLine)
-        && Math.abs(walletLine - pinnLine) <= 0.051;
-      const repairOdds = walletOdds;
+        && Math.abs(targetLine - pinnLine) <= 0.051;
+      const repairOdds = lineMatchesPinn && Number.isFinite(pinnOdds) ? pinnOdds : walletOdds;
       if (Number.isFinite(repairOdds) && repairOdds !== 0) {
         patch.lock = {
           ...(patch.lock || sd.lock || {}),
-          line: walletLine,
+          line: targetLine,
           odds: repairOdds,
           pinnacleOdds: Number.isFinite(pinnOdds) && lineMatchesPinn
             ? pinnOdds
             : (sd.lock?.pinnacleOdds ?? null),
-          book: 'Polymarket',
-          oddsSource: 'poly_avgPrice',
+          book: lineMatchesPinn ? 'Pinnacle' : 'Polymarket',
+          oddsSource: lineMatchesPinn ? 'pinnacle_main' : 'poly_avgPrice',
         };
         if (sd.peak) {
           patch.peak = {
             ...(patch.peak || sd.peak || {}),
-            line: walletLine,
+            line: targetLine,
             odds: repairOdds,
             updatedAt: now,
           };
         }
         changes.push(
-          `spreadInstrument repair: line ${lockLn ?? '∅'} → ${walletLine}`
+          `spreadInstrument repair: line ${lockLn ?? '∅'} → ${targetLine}`
           + ` odds → ${repairOdds}`
-          + (lineMatchesPinn ? ' (wallet=book main)' : ' (wallet alt / Poly)'),
+          + (multiWallet ? ' (multi-wallet main)' : (lineMatchesPinn ? ' (wallet=book main)' : ' (wallet alt / Poly)')),
         );
       }
     }
@@ -7049,41 +7050,43 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const meta = gameMeta?.get?.(metaKey) || null;
     const pinnLine = mainTotalLine(meta);
     const walletLine = consensusLine(group, side, sport, 'TOTAL');
+    const multiWallet = walletsOnSide(group, side) > 1 && Number.isFinite(pinnLine);
+    const targetLine = multiWallet ? pinnLine : walletLine;
     const lockLn = Number.isFinite(sd.lock?.line) ? sd.lock.line
       : (Number.isFinite(sd.peak?.line) ? sd.peak.line : null);
-    if (Number.isFinite(walletLine)
-        && (lockLn == null || Math.abs(lockLn - walletLine) > 0.051)) {
-      const walletOdds = consensusOddsFromPoly(group, side, walletLine);
+    if (Number.isFinite(targetLine)
+        && (lockLn == null || Math.abs(lockLn - targetLine) > 0.051)) {
+      const walletOdds = consensusOddsFromPoly(group, side, targetLine);
       const pinnOdds = mainTotalOdds(meta, side);
       const lineMatchesPinn = Number.isFinite(pinnLine)
-        && Math.abs(walletLine - pinnLine) <= 0.051;
-      const repairOdds = walletOdds;
+        && Math.abs(targetLine - pinnLine) <= 0.051;
+      const repairOdds = lineMatchesPinn && Number.isFinite(pinnOdds) ? pinnOdds : walletOdds;
       if (Number.isFinite(repairOdds) && repairOdds !== 0) {
         const dir = side === 'under' ? 'Under' : 'Over';
         patch.lock = {
           ...(patch.lock || sd.lock || {}),
-          line: walletLine,
-          team: `${dir} ${walletLine}`,
+          line: targetLine,
+          team: `${dir} ${targetLine}`,
           odds: repairOdds,
           pinnacleOdds: Number.isFinite(pinnOdds) && lineMatchesPinn
             ? pinnOdds
             : (sd.lock?.pinnacleOdds ?? null),
-          book: 'Polymarket',
-          oddsSource: 'poly_avgPrice',
+          book: lineMatchesPinn ? 'Pinnacle' : 'Polymarket',
+          oddsSource: lineMatchesPinn ? 'pinnacle_main' : 'poly_avgPrice',
         };
         if (sd.peak) {
           patch.peak = {
             ...(patch.peak || sd.peak || {}),
-            line: walletLine,
-            team: `${dir} ${walletLine}`,
+            line: targetLine,
+            team: `${dir} ${targetLine}`,
             odds: repairOdds,
             updatedAt: now,
           };
         }
         changes.push(
-          `totalInstrument repair: line ${lockLn ?? '∅'} → ${walletLine}`
+          `totalInstrument repair: line ${lockLn ?? '∅'} → ${targetLine}`
           + ` odds → ${repairOdds}`
-          + (lineMatchesPinn ? ' (wallet=book main)' : ' (wallet alt / Poly)'),
+          + (multiWallet ? ' (multi-wallet main)' : (lineMatchesPinn ? ' (wallet=book main)' : ' (wallet alt / Poly)')),
         );
       }
     }
