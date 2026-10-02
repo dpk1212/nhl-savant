@@ -4,15 +4,14 @@
  * Unique HARD+ margin (FOR−AG) ≥ +1 publishes a 2u floor when
  * ≥1 HARD FOR is sized ≥1.0× sport usual. Mute-exception only
  * restores tickets that already had size; this fills MONITORING /
- * never-staked 0u and listed leftover / steam-tail / market-skill
- * holes so v12 can ship size.
+ * never-staked 0u and listed leftover / steam-tail / market-skill /
+ * board-share holes so v12 can ship size.
  *
  * 1-0 / 2-0 / 2-1 qualify. 1-1 / 0-1 / 1-2 do not. Does not restore
- * ev-drift, fav-juice, fade, operator, hard-ag, ev-lt2-no-steam,
- * or board-share. Does not resize a live ≥2u ticket. GOLD stays
- * FOR-only (this is 2u, not fat).
- * 2026-10-02: rolled back ≥2 HARD FOR each ≥0.5× and the 2026-10-01
- * board-share punch-through (Steelers ML).
+ * ev-drift, fav-juice, fade, operator, hard-ag, or ev-lt2-no-steam.
+ * Board-share (25–45%) punches through when the HARD+ gates hold.
+ * Does not resize a live ≥2u ticket. GOLD stays FOR-only (this is 2u, not fat).
+ * 2026-10-02: rolled back ≥2 HARD FOR each ≥0.5×. Board-share restore stays.
  *
  * Fail-open HOLD (do not invent) when the sport×byMarket schema is
  * missing. Size unknown is not full — do not invent.
@@ -49,6 +48,7 @@ export const HARD_UNOPP_RESTORE_MUTES = new Set([
   'st-hard-for',
   'ml-mkt-skill',
   'no-confirmed',
+  'board-share',
 ]);
 
 export function isHardUnoppFloorLive(pickDate) {
