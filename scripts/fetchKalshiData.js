@@ -705,10 +705,13 @@ function extractSpreadData(markets) {
     const last = parseFloat(m.last_price_dollars || '0');
     const vol = parseFloat(m.volume_24h_fp || '0');
     const mid = bid > 0 && ask > 0 ? (bid + ask) / 2 : last || bid || ask;
+    const lineMatch = String(sub).match(/(\d+(?:\.\d+)?)/);
     spreads.push({
       label: sub,
       prob: Number((mid * 100).toFixed(1)),
       volume: Math.round(vol),
+      ticker: m.ticker || null,
+      line: lineMatch ? Number(lineMatch[1]) : null,
     });
   }
   spreads.sort((a, b) => b.prob - a.prob);
@@ -1090,6 +1093,8 @@ async function run() {
         whales: kalshiWhales,
         spreads: spreadData,
         totals: totalData,
+        awayTicker: gameProbs?.awayTicker ?? null,
+        homeTicker: gameProbs?.homeTicker ?? null,
         awayTeam: awayRaw,
         homeTeam: homeRaw,
         eventTicker: gameEvent?.event_ticker || spreadEvent?.event_ticker || totalEvent?.event_ticker || null,

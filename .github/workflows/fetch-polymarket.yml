@@ -128,7 +128,7 @@ jobs:
           cycles=12
           scan_fail_count=0
           GHP=/tmp/gh-pages-live
-          DATA_JSON="polymarket_data.json pinnacle_history.json sharp_positions.json sharp_spread_positions.json sharp_total_positions.json sharp_intel_excluded_wallets.json whitelist_scan_diagnostics.json scan_heartbeat.json sharp_scan_supplement.json sharp-flow-pnl.json kalshi_data.json"
+          DATA_JSON="polymarket_data.json pinnacle_history.json sharp_positions.json sharp_spread_positions.json sharp_total_positions.json sharp_intel_excluded_wallets.json whitelist_scan_diagnostics.json scan_heartbeat.json sharp_scan_supplement.json sharp-flow-pnl.json kalshi_data.json orderbook_liquidity.json"
           echo "--- clone gh-pages for JSON-only data deploys ---"
           rm -rf "$GHP"
           if git clone --depth 1 --branch gh-pages \

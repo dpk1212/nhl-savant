@@ -8,6 +8,7 @@ import { Check, Lock, Flag, ChevronDown, Clock, X, Star } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
 import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
+import LockTapeSwitch from './LockTapeSwitch';
 import LockedCollapsedStrength from './LockedCollapsedStrength';
 import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
@@ -2497,6 +2498,7 @@ function TierPerfStrip({ tierPerf, compact }) {
 
 function CollapsedSpark({ f, gid, bleed = false }) {
   return (
+    <LockTapeSwitch f={f}>
     <OddsLimitSpark
       bleed={bleed}
       pinPath={f.pinPath}
@@ -2522,6 +2524,7 @@ function CollapsedSpark({ f, gid, bleed = false }) {
       chartLineLabel={f.chartLineLabel}
       ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
     />
+    </LockTapeSwitch>
   );
 }
 
