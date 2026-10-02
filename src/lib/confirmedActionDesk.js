@@ -18,6 +18,7 @@ import { steamForGame } from './steamMove.js';
 import { signedSpreadEntryLine } from './spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
 import { mergeFeaturedIntoAction } from './actionLockPin.js';
+import { walletIsHardMarket } from './marketSpecialistDisplay.js';
 import { rejectNonFullGameBoardPosition } from '../../scripts/lib/totalMarketFilter.js';
 import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
 import { BOARD_SPORT_SLUG, slugLeague, SOC_SLUG_LEAGUES } from './sportSlug.js';
@@ -158,6 +159,31 @@ const SKILL_BAND = {
 const SKILL_THIN = { key: 'thin', label: 'Thin sample', weight: 1.5 };
 
 const SIZE_WEIGHT = { press: 4, full: 3, lean: 2, light: 1 };
+
+const OPP_SIDE = {
+  away: 'home', home: 'away', over: 'under', under: 'over', draw: null,
+};
+
+function addHardWallet(map, sport, gameKey, marketType, side, short) {
+  const k = `${sport}|${gameKey}|${marketType}`;
+  let bySide = map.get(k);
+  if (!bySide) {
+    bySide = new Map();
+    map.set(k, bySide);
+  }
+  let set = bySide.get(side);
+  if (!set) {
+    set = new Set();
+    bySide.set(side, set);
+  }
+  set.add(short);
+}
+
+function hardAgCount(map, sport, gameKey, marketType, side) {
+  const opp = OPP_SIDE[side];
+  if (!opp) return 0;
+  return map.get(`${sport}|${gameKey}|${marketType}`)?.get(opp)?.size || 0;
+}
 
 export function skillBandFromQ(q) {
   if (q === 1 || q === 2 || q === 3 || q === 4) return SKILL_BAND[q];
@@ -691,6 +717,7 @@ export function buildConfirmedActionRows({
   ];
 
   const rows = [];
+  const hardByCluster = new Map();
   for (const { sport: feedSport, gameKey, gd, marketType, pos } of raw) {
     const sport = resolveActionSport(feedSport, pos);
     if (!actionSportMatches(sport, sportFilter)) continue;
@@ -717,12 +744,17 @@ export function buildConfirmedActionRows({
     const short = shortWalletId(pos.walletShort || pos.wallet);
     if (!short) continue;
     const prof = profileFor(walletProfiles, short);
-    const tier = String(prof?.bySport?.[sport]?.whitelistTier || '').toUpperCase();
-    if (!ACTION_TIERS.has(tier)) continue;
     if (pos.status && pos.status !== 'PENDING') continue;
-
     const side = pos.side;
     if (!side) continue;
+
+    // HARD+ census from the full live board (not CONFIRMED-only).
+    // A non-CONFIRMED HARD+ fade still blocks Top play.
+    const hardMarket = walletIsHardMarket(prof, sport, marketType);
+    if (hardMarket) addHardWallet(hardByCluster, sport, gameKey, marketType, side, short);
+
+    const tier = String(prof?.bySport?.[sport]?.whitelistTier || '').toUpperCase();
+    if (!ACTION_TIERS.has(tier)) continue;
     const qMap = qBySport.get(sport) || new Map();
     const q = qMap.get(short) || qMap.get(String(short).toLowerCase()) || null;
     const skill = skillBandFromQ(q);
@@ -827,7 +859,9 @@ export function buildConfirmedActionRows({
       ...contextRollupsFromProfile(prof, sport, marketType),
       pinMove: pin, // 'with' | 'against' | null
       steam,
-      opposed: null, // filled below
+      hardMarket,
+      hardAgN: 0, // filled below — unique HARD+ wallets on the other side
+      opposed: null, // filled below — counted CONFIRMED on the other side
       opposedBy: 0,
       ts,
       firstSeen: pos.firstSeen || null,
@@ -844,12 +878,10 @@ export function buildConfirmedActionRows({
     if (!byCluster.has(k)) byCluster.set(k, []);
     byCluster.get(k).push(r);
   }
-  const oppSide = {
-    away: 'home', home: 'away', over: 'under', under: 'over', draw: null,
-  };
   for (const list of byCluster.values()) {
     for (const r of list) {
-      const opp = oppSide[r.side];
+      const opp = OPP_SIDE[r.side];
+      r.hardAgN = hardAgCount(hardByCluster, r.sport, r.gameKey, r.marketType, r.side);
       if (!opp) {
         r.opposed = 'clear';
         r.opposedBy = 0;
@@ -1025,12 +1057,16 @@ export function isActionT13(r) {
 }
 
 /**
- * Top play tag: T1–3 × unopposed × 1×+ usual.
- * Unopposed matches the Action "Sharp contested" chip (other counted
- * CONFIRMED on the opposite side, ≥0.10×). Size uses the card meter.
+ * Top play tag: HARD+ on this sport×market, unopposed by another HARD+.
+ * HARD+ = Source B byMarket positions n≥4 WR≥62 $ROI≥10.
+ * Opposition is unique HARD+ wallets on the other side of this cluster
+ * (full live board — not CONFIRMED-only, not the Sharp contested chip).
+ * Size and Sharp A/B/C do not gate the badge.
  */
 export function isActionTopPlay(r) {
-  return isActionT13(r) && r?.opposed === 'clear' && actionSizeAtLeast1x(r);
+  if (!r?.hardMarket) return false;
+  const ag = Number(r.hardAgN);
+  return Number.isFinite(ag) && ag === 0;
 }
 
 function lineWithTicket(r) {
