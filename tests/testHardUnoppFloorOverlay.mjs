@@ -78,7 +78,7 @@ ok(HARD_UNOPP_FLOOR_U === 2 && HARD_UNOPP_CAP_U === 4, '2u floor / 4u cap');
 ok(HARD_UNOPP_MIN_SR === 1.0, 'full-size bar is 1.0×');
 ok(HARD_UNOPP_FLOORED_BY === 'hard-unopp-hold', 'flooredBy stamp');
 ok(HARD_UNOPP_STAKE_TIER === 'HARD-UNOPP', 'MONITORING promote tier');
-ok(HARD_UNOPP_RESTORE_MUTES.has('board-share'), 'board-share is on the restore set');
+ok(!HARD_UNOPP_RESTORE_MUTES.has('board-share'), 'board-share stays muted');
 ok(!HARD_UNOPP_RESTORE_MUTES.has('ev-lt2-no-steam'), 'EV mute still skipped');
 ok(hardUnoppFloorUnits(0, 0) === 2, 'native 0 → 2');
 ok(hardUnoppFloorUnits(1, 0) === 2, 'live 1 → 2');
@@ -242,8 +242,8 @@ ok(hardUnoppFloorUnits(0, 6) === 4, 'muted 6 → 4 cap');
     unitsPreMute: 2,
     walletDetails: [{ wallet: 'aaaaaa', side: 'away', invested: 650 }],
   });
-  ok(r.action === 'FLOOR' && r.units === 2 && r.flooredBy === 'hard-unopp-hold',
-    'Steelers ML board-share 1-0 full punches through');
+  ok(r.action === 'HOLD' && r.units === 0 && r.reason === 'mute_not_excepted',
+    'Steelers ML board-share 1-0 full stays muted');
 }
 
 {
