@@ -9,6 +9,7 @@ import {
   appendInsideTape,
   gapPp,
   OFF_GAP_PP,
+  pickCardBook,
 } from '../src/lib/orderBookLiquidity.js';
 
 let pass = 0, fail = 0;
@@ -50,6 +51,36 @@ const now = 1_700_000_000_000;
 const first = appendInsideTape([], { t: now - 70 * 60 * 1000, insideProb: 0.5 }, now);
 const second = appendInsideTape(first.tape, { t: now, insideProb: 0.56 }, now);
 check('hour-ago inside is the earlier print', second.hourAgoProb === 0.5);
+
+const pitt = {
+  games: {
+    'CFB|pitt_vt': {
+      spreads: [
+        {
+          line: 2.5,
+          label: 'Pittsburgh wins by over 2.5 points',
+          yesSide: 'away',
+          pinAmerican: -107,
+          venues: { kalshi: { levels: [{ american: 138, prob: 0.42, sizeUsd: 1800 }] } },
+          noVenues: { kalshi: { levels: [{ american: -144, prob: 0.59, sizeUsd: 1000 }] } },
+        },
+        {
+          line: 2.5,
+          label: 'Virginia Tech wins by over 2.5 points',
+          yesSide: 'home',
+          pinAmerican: -105,
+          venues: { kalshi: { levels: [{ american: -100, prob: 0.5, sizeUsd: 5000 }] } },
+          noVenues: { kalshi: { levels: [{ american: -104, prob: 0.51, sizeUsd: 9000 }] } },
+        },
+      ],
+    },
+  },
+};
+const plus = pickCardBook(pitt, { sport: 'CFB', gameKey: 'pitt_vt', marketType: 'spread', side: 'away', line: 2.5 });
+check('plus spread uses the opponent No book', plus.ours.venues.kalshi.levels[0].american === -104);
+check('plus spread keeps this side’s Pinnacle price', plus.ours.pinAmerican === -107);
+const minus = pickCardBook(pitt, { sport: 'CFB', gameKey: 'pitt_vt', marketType: 'spread', side: 'home', line: -2.5 });
+check('minus spread uses this team’s Yes book', minus.ours.venues.kalshi.levels[0].american === -100);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);
