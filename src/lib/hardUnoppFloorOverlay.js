@@ -1,18 +1,17 @@
 /**
  * HARD+ margin size floor — last step after GOLD-stack cap, before odds-cap.
  *
- * Unique HARD+ margin (FOR−AG) ≥ +1 publishes a 2u floor when size clears:
- *   • ≥1 HARD FOR at ≥1.0× sport usual, or
- *   • ≥2 HARD FOR each at ≥0.5× (Steelers ML 2026-10-01 — 0.87 / 0.96).
- * Mute-exception only restores tickets that already had size; this fills
- * MONITORING / never-staked 0u and listed leftover / steam-tail /
- * market-skill / board-share holes so v12 can ship size.
+ * Unique HARD+ margin (FOR−AG) ≥ +1 publishes a 2u floor when
+ * ≥1 HARD FOR is sized ≥1.0× sport usual. Mute-exception only
+ * restores tickets that already had size; this fills MONITORING /
+ * never-staked 0u and listed leftover / steam-tail / market-skill /
+ * board-share holes so v12 can ship size.
  *
  * 1-0 / 2-0 / 2-1 qualify. 1-1 / 0-1 / 1-2 do not. Does not restore
  * ev-drift, fav-juice, fade, operator, hard-ag, or ev-lt2-no-steam.
- * Board-share (25–45%) punches through when the HARD+ gates hold
- * (Steelers ML 2026-10-01). Does not resize a live ≥2u ticket.
- * GOLD stays FOR-only (this is 2u, not fat).
+ * Board-share (25–45%) punches through when the HARD+ gates hold.
+ * Does not resize a live ≥2u ticket. GOLD stays FOR-only (this is 2u, not fat).
+ * 2026-10-02: rolled back ≥2 HARD FOR each ≥0.5× (Steelers ML 2026-10-01).
  *
  * Fail-open HOLD (do not invent) when the sport×byMarket schema is
  * missing. Size unknown is not full — do not invent.
@@ -31,8 +30,6 @@ export const HARD_UNOPP_FLOOR_FROM = '2026-09-30';
 export const HARD_UNOPP_FLOOR_U = 2;
 export const HARD_UNOPP_CAP_U = 4;
 export const HARD_UNOPP_MIN_SR = 1.0;
-export const HARD_UNOPP_TWO_FOR_N = 2;
-export const HARD_UNOPP_TWO_FOR_MIN_SR = 0.5;
 export const HARD_UNOPP_FLOORED_BY = 'hard-unopp-hold';
 export const HARD_UNOPP_STAKE_TIER = 'HARD-UNOPP';
 
@@ -80,11 +77,8 @@ function hardForSizedN(hardFor, sport, walletProfiles, minSr) {
   return n;
 }
 
-function sizeClears({ hardForN, fullN, leanN }) {
+function sizeClears({ fullN }) {
   if (fullN >= 1) return { ok: true, via: 'full' };
-  if (hardForN >= HARD_UNOPP_TWO_FOR_N && leanN >= HARD_UNOPP_TWO_FOR_N) {
-    return { ok: true, via: 'two_lean' };
-  }
   return { ok: false, via: null };
 }
 
@@ -185,7 +179,7 @@ export function applyHardUnoppFloorOverlay({
   extra.hardAgN = hardAg.length;
   extra.margin = extra.hardForN - extra.hardAgN;
   extra.fullN = hardForSizedN(hardFor, sport, walletProfiles, HARD_UNOPP_MIN_SR);
-  extra.leanN = hardForSizedN(hardFor, sport, walletProfiles, HARD_UNOPP_TWO_FOR_MIN_SR);
+  extra.leanN = hardForSizedN(hardFor, sport, walletProfiles, 0.5);
   const sized = sizeClears(extra);
 
   if (extra.hardForN < 1) {
@@ -209,7 +203,7 @@ export function applyHardUnoppFloorOverlay({
   return pack({
     units: next,
     action: 'FLOOR',
-    reason: sized.via === 'two_lean' ? 'hard_margin_two_lean' : 'hard_margin_full',
+    reason: 'hard_margin_full',
     flooredBy: HARD_UNOPP_FLOORED_BY,
     unitsPrePolicy: pre,
     ...extra,

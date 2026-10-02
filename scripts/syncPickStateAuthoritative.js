@@ -299,8 +299,6 @@ import {
   HARD_UNOPP_FLOOR_FROM,
   HARD_UNOPP_FLOOR_U,
   HARD_UNOPP_MIN_SR,
-  HARD_UNOPP_TWO_FOR_N,
-  HARD_UNOPP_TWO_FOR_MIN_SR,
   HARD_UNOPP_FLOORED_BY,
   HARD_UNOPP_STAKE_TIER,
 } from '../src/lib/hardUnoppFloorOverlay.js';
@@ -1198,7 +1196,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 28; // v28: HARD+ floor 2+ FOR each ≥0.5×
+const SKILL_FEATURE_VERSION = 29; // v29: HARD+ floor size-clear is ≥1 FOR ≥1.0× only (Steelers lean 2-for rolled back)
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
@@ -7648,7 +7646,7 @@ async function main() {
   }
   if (isHardUnoppFloorLive(TARGET_DATE)) {
     console.log(
-      `HARD+ margin floor LIVE: unique HARD margin (FOR−AG) ≥ +1 and (≥1 HARD FOR sized ≥${HARD_UNOPP_MIN_SR}× or ≥${HARD_UNOPP_TWO_FOR_N} HARD FOR each ≥${HARD_UNOPP_TWO_FOR_MIN_SR}×) → ${HARD_UNOPP_FLOOR_U}u`
+      `HARD+ margin floor LIVE: unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥${HARD_UNOPP_MIN_SR}× → ${HARD_UNOPP_FLOOR_U}u`
       + ` · fills MONITORING 0u and listed leftover / steam-tail / market-skill / board-share`
       + ` · from ${HARD_UNOPP_FLOOR_FROM} · after GOLD-stack · flooredBy=${HARD_UNOPP_FLOORED_BY}`
       + ` · skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag · fail-open HOLD if schema missing`,
