@@ -1,6 +1,6 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 25` from **2026-09-28**_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 32` from **2026-10-02**_  
 _Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
@@ -140,7 +140,7 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_hardUnoppFloorAction` | `FLOOR` \| `HOLD` \| `EXEMPT` \| `PASS` — HARD+ margin ≥+1 × ≥1 HARD FOR ≥1.0× 2u floor |
 | `v8_unitsPreHardUnoppFloor` | units entering HARD+ margin floor |
 | `v8_hardUnoppPromote` | `true` when HARD-UNOPP floor filled this side @ 2u |
-| `v8_skillFeatureVersion` | schema version (**31**) |
+| `v8_skillFeatureVersion` | schema version (**32**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
 
 Frozen at **T-15** (last scalar write sticks). **COMPLETED** docs never rewritten. The lifecycle log is appended on each due gate until that freeze (Locked) or until `grade` (Action).
@@ -246,6 +246,8 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **24** | **2026-09-28** | 2+ unique HARD+ FOR / 0 HARD+ AG unmute steam-tail + leftover at floor 3u cap 4u |
 | **25** | **2026-09-28** | S/T 1 HARD+ FOR press ≥1.5× sport usual / 0 AG unmute steam-tail + leftover at uPre cap 4u |
 | **26** | **2026-09-29** | HARD+ unique-wallet margin — AG mute if AG ≥1 and (FOR−AG) ≤ 0; 2-for rescue if ≥2 FOR and margin ≥ +1 |
+| **31** | **2026-10-02** | HARD+ margin floor punches board-share again (lean 2-for stays rolled back) |
+| **32** | **2026-10-02** | HARD+ on this market hydrates / holds no-CONFIRMED / v11 Proven — not sport CONFIRMED |
 
 ---
 

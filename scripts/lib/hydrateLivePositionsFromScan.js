@@ -11,8 +11,10 @@
  * 2026-08-29 wallet …4417bc (CONFIRMED, ~1.9× sport-usual) missing from
  * peak.walletDetails while FLAT $30K led the side.
  *
- * This module rehydrates scan-board proven tickets into the live bag and
- * stamps sport-local sizeRatio so HC / v12 quality match Action sizing.
+ * This module rehydrates scan-board Door 2 Proven tickets, plus HARD+
+ * wallets on that scan market, into the live bag and stamps sport-local
+ * sizeRatio so HC / v12 quality match Action sizing. HARD+ does not
+ * become sport CONFIRMED (v12 quality / HC / Q1 stay Door 2).
  */
 
 import { resolveSportUsualBet } from './sportUsualBet.js';
@@ -22,7 +24,7 @@ import {
   acceptFullGameSidePosition,
   acceptFullGameTotalPosition,
 } from './totalMarketFilter.js';
-import { isProvenSportRec } from '../../src/lib/whitelistTier.js';
+import { walletHydratesOnScanMarket } from '../../src/lib/marketProvenCarve.js';
 
 /** Same floor as writeSharpActions SHADOW_MIN_MULTIPLIER. */
 export const SCAN_BOARD_SHADOW_MIN = 0.10;
@@ -76,8 +78,8 @@ export function collectScanSoftKeys(posFiles) {
 }
 
 /**
- * Proven (CONFIRMED|FLAT) scan-board positions that clear the SHADOW size
- * floor — same population writeSharpActions is willing to upsert.
+ * Scan-board positions that clear the SHADOW size floor and belong in
+ * the live bag: Door 2 Proven, or HARD+ on this scan file's market.
  *
  * @returns {object[]} Firestore-shaped position rows (not yet written)
  */
@@ -117,7 +119,7 @@ export function collectScanBoardProvenPositions({
           if (!fgOk) continue;
 
           const profile = profileFor(walletProfiles, wallet);
-          if (!isProvenSportRec(profile?.bySport?.[sport])) continue;
+          if (!walletHydratesOnScanMarket(profile, sport, mkt)) continue;
 
           const { usual: avgBet } = resolveSportUsualBet({
             sport,
@@ -196,12 +198,13 @@ export function mergeScanBoardIntoLive(livePositions, scanPositions) {
  * Fixes cross-sport avgSportBet / v8_sizeRatio starving HC (≥1.5×) for
  * wallets that Action shows as Press on sport-usual.
  */
-export function mapPositionsToStakeWalletDetails(positions, sport, walletProfiles) {
+export function mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType = null) {
   if (!Array.isArray(positions)) return [];
   const out = [];
   for (const p of positions) {
     const d = positionToWalletDetail(p);
     if (!d) continue;
+    if (!d.marketType && marketType) d.marketType = marketType;
     const profile = profileFor(walletProfiles, d.wallet || p.wallet);
     const sp = sport || p.sport;
     const sr = stakeSizeRatio(d, profile, sp);

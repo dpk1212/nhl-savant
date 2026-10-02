@@ -203,7 +203,7 @@ import {
   mergeScanBoardIntoLive,
   positionSoftKey,
 } from './lib/hydrateLivePositionsFromScan.js';
-import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
+import { buildIsProvenFn } from '../src/lib/marketProvenCarve.js';
 import { resolveInstrument, ticketAmerican, coherentTicket } from '../src/lib/ticketInstrument.js';
 import {
   bestAvailableTicket,
@@ -626,22 +626,8 @@ async function loadAgsCalibration(db) {
   }
 }
 
-// Builds an `isProven(walletShort, sport, walletDetail?)` predicate from the
-// loaded sharpWalletProfiles map. Walletshort is the last-6 hex of the wallet
-// (matches walletDetails entries). CONFIRMED + FLAT only.
-// Size-skill CONFIRMED additionally requires sizeRatio ≥ 1.0 when detail is
-// provided (AGS / peak stats); without detail, size-skill fails closed.
-function buildIsProvenFn(walletProfiles) {
-  return (walletShort, sport, w = null) => {
-    if (!walletShort || !sport) return false;
-    const key = String(walletShort).toLowerCase();
-    const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
-    const bs = profile?.bySport?.[sport];
-    if (!isProvenSportRec(bs)) return false;
-    const sr = w?.sizeRatio ?? w?.v8_sizeRatio ?? null;
-    return passesSizeSkillLiveGate(bs, sr);
-  };
-}
+// isProvenFn lives in src/lib/marketProvenCarve.js — Door 2 sport, or
+// HARD+ on walletDetail.marketType. HC / v12 quality stay Door 2.
 
 // HC eligibility — CONFIRMED tier only. The sizeRatio ≥ HC_RATIO threshold
 // is enforced inside aggregateSideProven. This is strictly stricter than
@@ -750,11 +736,12 @@ function refreshClimateBySport({ groups = null, pickDocs = null, walletProfiles 
         if (!bySide.has(side)) bySide.set(side, []);
         bySide.get(side).push(p);
       }
+      const marketType = String(key || '').split('|')[2] || null;
       for (const [side, posList] of bySide) {
         rows.push({
           sport,
           side,
-          walletDetails: mapPositionsToStakeWalletDetails(posList, sport, walletProfiles),
+          walletDetails: mapPositionsToStakeWalletDetails(posList, sport, walletProfiles, marketType),
         });
       }
     }
@@ -1196,7 +1183,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 31; // v31: HARD+ floor punches board-share again (lean 2-for stays rolled back)
+const SKILL_FEATURE_VERSION = 32; // v32: HARD+ on this market counts for hydrate / no-CONFIRMED / v11 Proven (not sport CONFIRMED)
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
@@ -2792,14 +2779,14 @@ function buildPeakStatsFromPositions(positions, side, isProvenFn, sport) {
 function computeSideAnalytics(
   positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
   walletStatsFn = null, walletPriorStatsFn = null,
-  { sportWinnerBoards = null, clvLedger = null, pickDate = null } = {},
+  { sportWinnerBoards = null, clvLedger = null, pickDate = null, marketType = null } = {},
 ) {
   if (!Array.isArray(positions) || positions.length === 0) return null;
   const live = computeWalletConsensus(positions, side, sport, walletProfiles);
   if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) {
     return null;
   }
-  const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles);
+  const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType);
   const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
   const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
   const aggV12 = walletPriorStatsFn ? aggregateSideV12(walletDetails, side, sport, walletPriorStatsFn) : null;
@@ -2875,7 +2862,7 @@ function computeBothSidesAnalytics(
     const stamp = computeSideAnalytics(
       positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
       walletStatsFn, walletPriorStatsFn,
-      { sportWinnerBoards, clvLedger, pickDate },
+      { sportWinnerBoards, clvLedger, pickDate, marketType },
     );
     if (stamp) {
       out[side] = stamp;
@@ -2917,7 +2904,7 @@ async function createMissingLockedPicks({
   /** True if any side in this group has PENDING CONFIRMED×Q1×sized≥0.5. */
   function groupHasConfirmedQ1Sized(positions, sport, marketType) {
     if (!isConfirmedQ1PromoteLive(TARGET_DATE)) return false;
-    const wd = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles);
+    const wd = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType);
     const trialSides = marketType === 'TOTAL' ? ['over', 'under']
       : sport === 'SOC' ? ['away', 'home', 'draw']
       : ['away', 'home'];
@@ -3029,7 +3016,7 @@ async function createMissingLockedPicks({
       if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) continue;
 
       // Build walletDetails for AGS-U (sport-local size — Action parity).
-      const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles);
+      const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType);
       const q1Early = isConfirmedQ1PromoteLive(TARGET_DATE)
         ? computeConfirmedQ1Sized(
           walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
@@ -3499,7 +3486,7 @@ async function createMissingLockedPicks({
       // no-CONFIRMED mute — after maxSR. Cuts remaining tickets with zero
       // CONFIRMED on FOR. Never resizes or repaths.
       let noConfirmedPolicyCreate = null;
-      const nConfirmedCreate = countConfirmedOnSide(walletDetails, side, sport, walletProfiles);
+      const nConfirmedCreate = countConfirmedOnSide(walletDetails, side, sport, walletProfiles, marketType);
       if (createV121Eligible && peakUnitsApplied > 0) {
         noConfirmedPolicyCreate = applyNoConfirmedMuteOverlay({
           units: peakUnitsApplied,
@@ -4557,7 +4544,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Does NOT touch units, lockStage, health, or stake tier.
   if (!isStakeSide) {
     const liveWdMeta = Array.isArray(group) && group.length > 0
-      ? mapPositionsToStakeWalletDetails(group, sport, walletProfiles)
+      ? mapPositionsToStakeWalletDetails(group, sport, walletProfiles, mkt)
       : null;
     const frozenWdMeta = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
     const wdMeta = (liveWdMeta && liveWdMeta.length > 0) ? liveWdMeta : frozenWdMeta;
@@ -4662,7 +4649,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // prior behavior for that edge. The T-15 freeze above still applies, so the
   // last pre-T-15 live re-score is what locks in near game time.
   const liveWd = Array.isArray(group) && group.length > 0
-    ? mapPositionsToStakeWalletDetails(group, sport, walletProfiles)
+    ? mapPositionsToStakeWalletDetails(group, sport, walletProfiles, mkt)
     : null;
   const frozenWd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
   const wd = (liveWd && liveWd.length > 0) ? liveWd : frozenWd;
@@ -5416,7 +5403,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Remaining tickets with zero CONFIRMED on FOR → 0u. Never resizes /
   // repaths. Manual stake exempt. Date-gated inside the overlay.
   let noConfirmedPolicy = null;
-  const nConfirmedLive = countConfirmedOnSide(wd, side, pick.sport, walletProfiles);
+  const nConfirmedLive = countConfirmedOnSide(wd, side, pick.sport, walletProfiles, mkt);
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
     noConfirmedPolicy = applyNoConfirmedMuteOverlay({
       units: finalUnitsApplied,

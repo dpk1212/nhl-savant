@@ -250,6 +250,9 @@ export function positionToWalletDetail(p) {
     rankNorm: Number(p.v8_walletRankNorm || 0),
     topShare: Number(p.v8_topShare || 0),
     contribTier: 'TBD',
+    // Ticket market — v11 Proven carve (Door 2 OR HARD+ on THIS market)
+    // reads this. Fail-closed when missing.
+    marketType: p.marketType || p.market || null,
   };
 }
 
@@ -282,8 +285,9 @@ export function computeAgsFromPositions(positions, sideKey, sport, calibration, 
 //   walletDetails: peak.v8Scoring.walletDetails[] frozen at scoring time
 //   sideKey:       'home' | 'away' | 'over' | 'under' (the FOR side)
 //   sport:         e.g. 'NBA' / 'MLB' — used for tier lookup
-//   isProvenFn:    fn(walletShort, sport) => boolean
-//                  (true if wallet is CONFIRMED or FLAT for sport)
+//   isProvenFn:    fn(walletShort, sport, walletDetail?) => boolean
+//                  Door 2 sport Proven, or HARD+ on walletDetail.marketType.
+//                  HC / v12 quality / Q1 / UNOPP stay Door 2 only.
 //   isHcEligibleFn:fn(walletShort, sport) => boolean
 //                  (true if wallet is CONFIRMED for sport — strictly stricter
 //                   than isProvenFn). HC additionally requires
