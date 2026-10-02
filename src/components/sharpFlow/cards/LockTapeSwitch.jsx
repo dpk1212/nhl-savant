@@ -131,7 +131,10 @@ export default function LockTapeSwitch({ f, children }) {
   const btn = (id, label) => (
     <button
       type="button"
-      onClick={() => setTab(id)}
+      onClick={(e) => {
+        e.stopPropagation();
+        setTab(id);
+      }}
       style={{
         border: 0,
         background: 'transparent',
@@ -155,7 +158,9 @@ export default function LockTapeSwitch({ f, children }) {
         {btn('book', 'BOOK')}
       </div>
       {tab === 'book' ? (
-        <BookView slice={slice} oursLabel={f?.pickLabel} oppLabel={f?.oppMarketLabel} />
+        <div onClick={(e) => e.stopPropagation()}>
+          <BookView slice={slice} oursLabel={f?.pickLabel} oppLabel={f?.oppMarketLabel} />
+        </div>
       ) : children}
     </div>
   );
