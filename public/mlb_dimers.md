@@ -1,36 +1,60 @@
 # MLB Predictions
 
-MLB predictions for Thursday, October 1, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 10/1, the Braves have the highest win probability at 52.9%.
+MLB predictions for Friday, October 2, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. As of 10/2, the Guardians have the highest win probability at 57.4%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 1 2026Oct 1
+Date: Oct 3 2026Oct 3
 
-[Oct 1, 8:00 PM ET\\
+[Oct 3, 1:00 PM ET\\
 \\
-![Phillies](https://cdn.ciphersports.io/images/MLB/official/PHI.svg)\\
+![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
 \\
-Phillies  A. Nola \\
+White Sox  H. Smith \\
 \\
-47.1% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-50¢\\
-\\
-![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
-\\
-Braves  R. Kerr \\
-\\
-52.9% \\
+42.3% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-50¢\\
+42¢\\
+\\
+![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
+\\
+Guardians  P. Messick \\
+\\
+57.7% \\
+\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
+\\
+58¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_191_atl_phi)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_193_cle_cws) [Oct 3, 6:30 PM ET\\
+\\
+![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
+\\
+Yankees  G. Cole \\
+\\
+46.3% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+45¢\\
+\\
+![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
+\\
+Rays  D. Rasmussen \\
+\\
+53.7% \\
+\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
+\\
+55¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_193_tb_nyy)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -92,167 +116,14 @@ Get Dimers Pro
 
 "This site is a game-changer you didn't know you needed"
 
-## Featured offers
+## MLB predictions
 
-All  Sportsbooks  Prediction Markets  DFS
+Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.the Guardians lead all win probabilities with a 57.4% chance of beating the White Sox at Progressive Field. The Rays also ranks among the leading moneyline favorites.
 
-![Swipe icon](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20)Swipe across to view more offers
-
-![logo](https://cdn.cosmicjs.com/c5917820-16b6-11f1-a07f-ffa45b2cae93-Draftkings-TCIY-White.svg?auto=format,compress&h=200)
-
-FEATURED
-
-T&Cs apply.
-
-Claim now
-
-[Read review](https://www.dimers.com/betting/draftkings-sportsbook)
-
-How to claim
-
-![logo](https://cdn.cosmicjs.com/d4897680-a873-11f1-b019-0b1f647f397d-Kalshi-Logo_White.svg?auto=format,compress&h=200)
-
-HOTTEST
-
-T&Cs apply.
-
-Claim Now
-
-[Read review](https://www.dimers.com/prediction-betting/kalshi)
-
-How to claim
-
-![logo](https://cdn.cosmicjs.com/bcdfb080-441e-11f1-9f85-e7af420a77a5-logo-blue.svg?auto=format,compress&h=200)
-
-RECOMMENDED
-
-T&Cs apply.
-
-Claim Now
-
-How to claim
-
-![logo](https://cdn.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
-
-TRENDING
-
-T&Cs apply.
-
-Claim Now
-
-[Read review](https://www.dimers.com/betting/bet365-sportsbook)
-
-How to claim
-
-![logo](https://cdn.cosmicjs.com/92be3e40-5ea9-11ef-ba22-5b7a9f51630c-HardRockBet-bigg.svg?auto=format,compress&h=200)
-
-NEW PLAYERS
-
-T&Cs apply.
-
-Claim now
-
-[Read review](https://www.dimers.com/betting/hardrock-sportsbook)
-
-How to claim
-
-![logo](https://imgix.cosmicjs.com/c263f0f0-a7a8-11f1-b05a-3f2735d232a4-UD26_PrimaryMark_OverDark.png?auto=format,compress&h=200)
-
-TRENDING
-
-T&Cs apply.
-
-Claim Now
-
-[Read review](https://www.dimers.com/dfs/underdog-fantasy)
-
-How to claim
-
-![logo](https://cdn.cosmicjs.com/efeb6ef0-bdaa-11f1-af12-19c569209b1c-FanDuel_Predicts_Logo_Vertical_White_NoBackground.svg?auto=format,compress&h=200)
-
-TRENDING
-
-T&Cs apply.
-
-Claim Now
-
-How to claim
-
-![logo](https://cdn.cosmicjs.com/e9272ff0-877c-11f1-ac64-27ec44a0100e-tsb-color-DSIqtzlf.svg?auto=format,compress&h=200)
-
-HOTTEST
-
-T&Cs apply.
-
-Claim Now!
-
-[Read review](https://www.dimers.com/betting/espn-bet-sportsbook)
-
-How to claim
-
-![logo](https://imgix.cosmicjs.com/b0dbfa50-9401-11f0-91b7-43b80d803b75-logo-prophetx-ac-v5-1.png?auto=format,compress&h=200)
-
-NEW
-
-T&Cs apply.
-
-Claim Now!
-
-[Read review](https://www.dimers.com/social-sportsbooks/get-prophet-x)
-
-How to claim
-
-![logo](https://imgix.cosmicjs.com/bcef7040-118f-11f1-bd1a-5344fff0f60b-fanduel.png?auto=format,compress&h=200)
-
-NEW PLAYERS
-
-T&Cs apply.
-
-Claim Now
-
-[Read review](https://www.dimers.com/betting/fanduel-sportsbook)
-
-How to claim
-
-![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
-
-RECOMMENDED
-
-T&Cs apply.
-
-Claim now
-
-[Read review](https://www.dimers.com/betting/betmgm-sportsbook)
-
-How to claim
-
-![logo](https://cdn.cosmicjs.com/e878d130-26c9-11f1-9754-d7196a81e564-Novig_idUhBcMR4r_1.svg?auto=format,compress&h=200)
-
-FEATURED
-
-T&Cs apply.
-
-Claim Now
-
-How to claim
-
-![logo](https://imgix.cosmicjs.com/9d7e0a60-ceaa-11ef-ac4c-9fb95c248ff6-HorizontalPrimaryDark-1.png?auto=format,compress&h=200)
-
-DFS & PICKS
-
-T&Cs apply.
-
-Claim Now
-
-[Read review](https://www.dimers.com/dfs/betr)
-
-How to claim
-
-## MLB predictions for Thursday
-
-Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
-
-On Thursday, the Braves have a 52.9% chance of beating the Phillies at Truist Park.
+| Team | Prob. | Opponent | First pitch (ET) |
+| --- | --- | --- | --- |
+| Guardians | 57.4% | vs. White Sox | 10:00am |
+| Rays | 53.5% | vs. Yankees | 3:30pm |
 
 ## MLB predictions today: Data-driven outcomes for every game
 
