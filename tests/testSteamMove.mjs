@@ -282,4 +282,28 @@ assert.equal(policySteamOn({ tier: 'steam' }), true, 'unmeasured steam fail-open
 assert.equal(policySteamOn({ juiceSteam: false, tier: 'steam' }), false);
 assert.equal(policySteamOn({ juiceSteam: true, tier: 'watch' }), true);
 
+// Over 45.5 juiced while the main walked one point toward the over (46.5).
+// That juice still confirms. A walk the other way does not.
+{
+  const favor = {
+    commence: new Date((now + 4 * 3600) * 1000).toISOString(),
+    totalOpener: { t: now - 8 * 3600, line: 48.5, overOdds: -105, underOdds: -115, isMain: true },
+    totalCurrent: { line: 46.5, overOdds: -110, underOdds: -110, max: 4000, isMain: true },
+    totalHistory: [
+      { t: now - 8 * 3600, line: 45.5, overOdds: -114, underOdds: -106, isMain: true },
+      { t: now - 4000, line: 45.5, overOdds: -114, underOdds: -106, max: 4000, isMain: true },
+      { t: now - 60, line: 45.5, overOdds: -131, underOdds: 108, max: 4000, isMain: false },
+      { t: now - 60, line: 46.5, overOdds: -110, underOdds: -110, max: 4000, isMain: true },
+    ],
+  };
+  const over = summarizeSteam(favor, { marketType: 'total', sideNorm: 'over', line: 45.5, nowSec: now });
+  assert.equal(over.juiceSteam, true, 'ticket juice holds across a 1pt favorable walk');
+  assert.equal(policySteamOn(compactSteam(over)), true);
+  const against = summarizeSteam({
+    ...favor,
+    totalCurrent: { line: 43.5, overOdds: -110, underOdds: -110, max: 4000, isMain: true },
+  }, { marketType: 'total', sideNorm: 'over', line: 45.5, nowSec: now });
+  assert.equal(against.juiceSteam, false, 'a walk against the over drops confirming steam');
+}
+
 console.log('testSteamMove: ok');

@@ -17,6 +17,7 @@ import HeroShopPrice from './HeroShopPrice.jsx';
 import {
   pinPostedOdds,
   shopRailHidden,
+  shopLineMatchesPlay,
   sharpConsensusFromBooks,
   bookBeatsConsensus,
 } from '../../../lib/shopTicketLine.js';
@@ -2838,23 +2839,41 @@ const SHOP_PREFER = [
 ];
 const SHOP_EXCHANGE = new Set(EXCHANGE_BOOK_KEYS);
 
-function shopLineMatch(bookLine, ticketLine) {
+function shopLineMatch(bookLine, ticketLine, f) {
   if (ticketLine == null || !Number.isFinite(ticketLine)) return true;
-  return Number.isFinite(bookLine) && Math.abs(bookLine - ticketLine) <= 0.051;
+  return shopLineMatchesPlay(bookLine, ticketLine, {
+    marketType: f?.marketType,
+    sideNorm: f?.side,
+  });
 }
 
-/** Chip rail under the tape. Same line as the hero. Gold = best on that line. Green = beats sharp consensus. */
+function shopBoardLabel(f, books, ticketLine) {
+  const line = books.find((b) => Number.isFinite(Number(b?.line)))?.line;
+  const base = f?.ourMarketLabel || f?.pickLabel || null;
+  if (!Number.isFinite(Number(line)) || !Number.isFinite(ticketLine)) return base;
+  if (Math.abs(Number(line) - ticketLine) <= 0.051) return base;
+  const mt = String(f?.marketType || '');
+  if (mt === 'total') {
+    const over = f?.side !== 'away' && f?.side !== 'under';
+    return `${over ? 'Over' : 'Under'} ${line}`;
+  }
+  const n = Number(line);
+  const signed = n > 0 ? `+${n}` : `${n}`;
+  return base ? `${base.split(' ').slice(0, -1).join(' ')} ${signed}`.trim() : signed;
+}
+
+/** Chip rail under the tape. Gold = best on that line. Green = beats sharp consensus. */
 function CollapsedShopStrip({ f }) {
   const fair = Number.isFinite(f?.fairLine) ? f.fairLine
     : (Number.isFinite(f?.liveFair) ? f.liveFair : null);
   const ticketLine = Number.isFinite(f?.ticketLine) ? f.ticketLine : null;
-  const lineName = f?.ourMarketLabel || f?.pickLabel || null;
   const raw = Array.isArray(f?.books) ? f.books : [];
   const usable = raw.filter((b) => (
     Number.isFinite(b?.odds)
-    && shopLineMatch(b.line, ticketLine)
+    && shopLineMatch(b.line, ticketLine, f)
     && !shopRailHidden(b.name)
   ));
+  const lineName = shopBoardLabel(f, usable, ticketLine);
   const isPinn = (b) => shopBookKey(b.name) === 'pinnacle';
   const isBetfair = (b) => shopBookKey(b.name).includes('betfair');
   const isMatchbook = (b) => shopBookKey(b.name).includes('matchbook');

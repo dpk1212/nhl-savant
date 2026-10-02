@@ -47,7 +47,8 @@ import { shortTeamNick as shortTeam } from '../../../utils/teamIdentity.js';
 import { shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
 import {
   bookOnTicketLine,
-  keepTicketLineBooks,
+  keepPlayBooks,
+  nearFavorableMain,
   markGoldFromTicketBooks,
   shopRailHidden,
 } from '../../../lib/shopTicketLine.js';
@@ -413,7 +414,8 @@ function appendExchangeQuotes(books, {
     for (const k of EXCHANGE_BOOK_KEYS) {
       const b = bag[k];
       if (!b) continue;
-      if (!bookOnTicketLine(b.line, stakedLine)) continue;
+      if (!bookOnTicketLine(b.line, stakedLine)
+          && !nearFavorableMain(stakedLine, b.line, { marketType: 'total', sideNorm: sideKey })) continue;
       add(b.name || k, sideKey === 'under' ? b.under : b.over, b.line);
     }
     return;
@@ -425,7 +427,8 @@ function appendExchangeQuotes(books, {
       const b = bag[k];
       if (!b) continue;
       const ln = sideKey === 'away' ? b.awayLine : b.homeLine;
-      if (!bookOnTicketLine(ln, stakedLine)) continue;
+      if (!bookOnTicketLine(ln, stakedLine)
+          && !nearFavorableMain(stakedLine, ln, { marketType: 'spread', sideNorm: sideKey })) continue;
       add(b.name || k, sideKey === 'away' ? b.away : b.home, ln);
     }
     return;
@@ -876,7 +879,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       for (const k of keys) {
         const b = allT[k];
         if (!b) continue;
-        if (!bookOnTicketLine(b.line, stakedLine)) continue;
+        if (!bookOnTicketLine(b.line, stakedLine)
+            && !nearFavorableMain(stakedLine, b.line, { marketType: 'total', sideNorm: sideKey })) continue;
         const o = sideKey === 'under' ? b.under : b.over;
         if (!Number.isFinite(o)) continue;
         const name = b.name || k;
@@ -1056,7 +1060,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         const b = allS[k];
         if (!b) continue;
         const ln = sideKey === 'away' ? b.awayLine : b.homeLine;
-        if (!bookOnTicketLine(ln, stakedLine)) continue;
+        if (!bookOnTicketLine(ln, stakedLine)
+            && !nearFavorableMain(stakedLine, ln, { marketType: 'spread', sideNorm: sideKey })) continue;
         const o = sideKey === 'away' ? b.away : b.home;
         if (!Number.isFinite(o)) continue;
         const name = b.name || k;
@@ -1182,7 +1187,10 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
 
   // Hero line only. Snapshot bestOver/bestSpread can be another book's main.
   if ((isTotal || isSpread) && stakedLine != null) {
-    const kept = keepTicketLineBooks(books, stakedLine);
+    const kept = keepPlayBooks(books, stakedLine, {
+      marketType: isTotal ? 'total' : 'spread',
+      sideNorm: sideKey,
+    });
     books.length = 0;
     books.push(...kept);
   } else {
@@ -1192,7 +1200,9 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
   }
   if (!sealed) {
     const gold = markGoldFromTicketBooks(books);
-    if (gold.bestOdds != null) {
+    const shopLine = books.find((b) => Number.isFinite(Number(b?.line)))?.line;
+    const shopOnTicket = stakedLine == null || bookOnTicketLine(shopLine, stakedLine);
+    if (shopOnTicket && gold.bestOdds != null) {
       bestOdds = gold.bestOdds;
       bestBook = gold.bestBook;
     }

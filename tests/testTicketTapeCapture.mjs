@@ -64,7 +64,7 @@ ok(snap.fairOdds === -113, `fair stamped ${snap.fairOdds}`);
 ok(snap.offerOdds === -100, 'offer is the flagged ticket');
 ok(snap.steam?.sinceOpenPct >= 6.3 && snap.steam.sinceOpenPct <= 6.5, `steam open ${snap.steam?.sinceOpenPct}%`);
 ok(snap.steam?.tier === 'gold' || snap.steam?.tier === 'steam', `steam tier ${snap.steam?.tier}`);
-ok(snap.steam?.juiceSteam === false, '8.5→9 walk keeps display steam but juiceSteam is off');
+ok(snap.steam?.juiceSteam === true, '8.5 juice holds when the main walks 0.5 toward the over');
 ok(snap.steam?.steamPinLine === 8.5, 'first-write pin stays 8.5');
 
 const doc = {};
@@ -139,8 +139,8 @@ ok(fat[0].gate === 'first', 'trim keeps first');
 ok(fat.some((e) => e.gate === 't15'), 'trim keeps t15');
 
 const ax = analyzeTicketTapeLog(life);
-ok(ax.steamOnFirst === false, 'walk-off-pin juice is not policy steamOn');
-ok(life[0].juiceSteam === false, 'first log row stores juiceSteam false');
+ok(ax.steamOnFirst === true, '8.5 juice across a 0.5 favorable walk is steamOn');
+ok(life[0].juiceSteam === true, 'first log row stores juiceSteam true');
 ok(life[0].steamPinLine === 8.5, 'first log row stores steamPinLine');
 ok(ax.evFirst === 3.1 && ax.evLock === 1.2, `first vs lock EV ${ax.evFirst} → ${ax.evLock}`);
 ok(ax.dEvFirstToLock === -1.9, 'EV faded from first to t15');

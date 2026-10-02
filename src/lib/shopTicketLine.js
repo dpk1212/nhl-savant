@@ -10,6 +10,37 @@ import {
 } from './sharpConsensus.js';
 import { shopRailHidden } from './shopRailHidden.js';
 
+/** Main may walk this far toward the ticket and still keep juice + the book row. */
+export const ST_NEAR_MAIN_PTS = 2;
+const LINE_GAP_EPS = 0.001;
+
+/**
+ * Points the current main sits toward this side versus the ticket number.
+ * Over: a higher main is toward the over. A home spread: a more negative
+ * main is toward the home. Positive means the move is in our favor.
+ */
+export function mainGapTowardSide(ticketLine, mainLine, { marketType, sideNorm } = {}) {
+  const ticket = Number(ticketLine);
+  const main = Number(mainLine);
+  if (!Number.isFinite(ticket) || !Number.isFinite(main)) return null;
+  const mt = String(marketType || '').toLowerCase();
+  const side = String(sideNorm || '').toLowerCase();
+  if (mt === 'total' || mt === 'totals') {
+    const towardOver = main - ticket;
+    const under = side === 'under' || side === 'away';
+    return +(under ? -towardOver : towardOver).toFixed(3);
+  }
+  if (mt === 'spread' || mt === 'sp') return +(ticket - main).toFixed(3);
+  return null;
+}
+
+/** True when the main is the ticket, or up to 2 points toward this side. */
+export function nearFavorableMain(ticketLine, mainLine, ctx) {
+  const pts = mainGapTowardSide(ticketLine, mainLine, ctx);
+  if (!Number.isFinite(pts)) return false;
+  return pts >= -LINE_GAP_EPS && pts <= ST_NEAR_MAIN_PTS + LINE_GAP_EPS;
+}
+
 export { bookBeatsConsensus, evPctVsConsensus, sharpConsensusFromBooks, shopRailHidden };
 
 function shopBookKey(name) {
@@ -37,6 +68,29 @@ export function keepTicketLineBooks(books, stakedLine) {
     ? (books || [])
     : (books || []).filter((b) => bookOnTicketLine(b?.line, stakedLine));
   return onLine.filter((b) => !shopRailHidden(b?.name));
+}
+
+/**
+ * Shop row for a spread/total. Same number as the ticket, or the current
+ * main when it has moved at most 2 points toward this side. One line per
+ * row — a favorable main replaces the stranded ticket quotes.
+ */
+export function keepPlayBooks(books, stakedLine, { marketType, sideNorm } = {}) {
+  const list = (books || []).filter((b) => b && !shopRailHidden(b.name));
+  if (stakedLine == null || !Number.isFinite(Number(stakedLine))) return list;
+  const near = list.filter((b) => (
+    Number.isFinite(Number(b.line))
+    && !linesClose(Number(b.line), Number(stakedLine))
+    && nearFavorableMain(stakedLine, b.line, { marketType, sideNorm })
+  ));
+  if (!near.length) return list.filter((b) => bookOnTicketLine(b.line, stakedLine));
+  const line = Number(near[0].line);
+  return list.filter((b) => linesClose(Number(b.line), line));
+}
+
+export function shopLineMatchesPlay(bookLine, ticketLine, { marketType, sideNorm } = {}) {
+  if (bookOnTicketLine(bookLine, ticketLine)) return true;
+  return nearFavorableMain(ticketLine, bookLine, { marketType, sideNorm });
 }
 
 export function pinPostedOdds(books) {
