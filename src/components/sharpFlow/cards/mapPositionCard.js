@@ -1888,6 +1888,7 @@ export function mapLockedPickToCardFixture(pick, {
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
     sport: pick.sport,
+    gameKey: pick.gameKey || null,
     away: pick.away || '',
     home: pick.home || '',
     awayShort,

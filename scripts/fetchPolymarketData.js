@@ -1501,6 +1501,7 @@ async function run() {
         if (typeof sTokenIds === 'string') try { sTokenIds = JSON.parse(sTokenIds || '[]').filter(Boolean); } catch { sTokenIds = []; }
         else if (spreadMarket.tokens) sTokenIds = spreadMarket.tokens.map(t => t.token_id);
         if (Array.isArray(sTokenIds) && sTokenIds.length > 0) {
+          polySpread.tokenIds = sTokenIds.slice(0, 2);
           const sHist = await getPriceHistory(sTokenIds[0], '1d');
           if (sHist && sHist.length >= 2) {
             const step = Math.max(1, Math.floor(sHist.length / 12));
@@ -1536,6 +1537,7 @@ async function run() {
         if (typeof tTokenIds === 'string') try { tTokenIds = JSON.parse(tTokenIds || '[]').filter(Boolean); } catch { tTokenIds = []; }
         else if (totalMarket.tokens) tTokenIds = totalMarket.tokens.map(t => t.token_id);
         if (Array.isArray(tTokenIds) && tTokenIds.length > 0) {
+          polyTotal.tokenIds = tTokenIds.slice(0, 2);
           const tHist = await getPriceHistory(tTokenIds[0], '1d');
           if (tHist && tHist.length >= 2) {
             const step = Math.max(1, Math.floor(tHist.length / 12));
@@ -1558,6 +1560,8 @@ async function run() {
         slug: mlMarket.slug || null,
         conditionId: mlMarket.conditionId || null,
         title: (mlMarket.question || mlMarket.groupItemTitle || '').substring(0, 80),
+        tokenIds: Array.isArray(tokenIds) ? tokenIds.slice(0, 2) : null,
+        token0IsAway: token0IsAway !== false,
       } : null;
       bucket[key] = {
         volume24h: Number(vol24),

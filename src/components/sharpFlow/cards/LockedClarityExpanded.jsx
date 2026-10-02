@@ -21,6 +21,7 @@ import {
   walletDisplaySizeRatio,
 } from '../../../lib/marketSpecialistDisplay.js';
 import OddsLimitSpark from './OddsLimitSpark';
+import LockTapeSwitch from './LockTapeSwitch';
 import LockedSignalsRow from './LockedSignalsRow';
 import SteamTag from './SteamTag';
 import HeroShopPrice from './HeroShopPrice.jsx';
@@ -1848,6 +1849,7 @@ export default function LockedClarityExpanded({
           <div className="lc-in-2" style={{ margin: '0 0 12px' }}>
             <LockedSignalsRow signals={f.marketSignals} />
             <div style={{ marginTop: 10 }}>
+              <LockTapeSwitch f={f}>
               <OddsLimitSpark
                 pinPath={f.pinPath}
                 flagged={f.gotOdds ?? f.lockOdds}
@@ -1865,6 +1867,7 @@ export default function LockedClarityExpanded({
                 chartLineLabel={f.chartLineLabel}
                 ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
               />
+              </LockTapeSwitch>
             </div>
           </div>
         )}
