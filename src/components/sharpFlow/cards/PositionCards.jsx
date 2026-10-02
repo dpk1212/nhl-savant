@@ -3038,10 +3038,9 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
         </>
       )}
       {order === 'brokerage' && (
-        <>
-          {hero}{board}{trust}{perf}{tape}{shop}
-          {bookOn ? null : <><SectionRule />{money}</>}
-        </>
+        bookOn
+          ? <>{hero}{board}{trust}{perf}{tape}{shop}</>
+          : <>{hero}{board}{trust}{perf}{money}<SectionRule />{tape}{shop}</>
       )}
     </CollapsedCardFrame>
   );
@@ -3111,8 +3110,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
       accent, edgeAura, cardBorder, muteTip, ticketFrozen, setExpanded, contextLine,
     };
 
-    // Shipped collapsed face — variant 3 (brokerage order): hero, The Board,
-    // verdict + rail, perf, the price tape, then qualified-money splits.
+    // Shipped collapsed face. Limit keeps qualified money above the tape.
+    // Book hides those bars so the ladder can use the room.
     return (
       <CollapsedTicketFace
         live={liveFace}
