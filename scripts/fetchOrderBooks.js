@@ -121,6 +121,25 @@ async function kalshiBook(ticker) {
   };
 }
 
+// Boards written before the ticker fields existed still carry the event
+// ticker. The two moneyline markets hang off that event.
+async function kalshiEventMarkets(eventTicker) {
+  if (!eventTicker) return [];
+  const data = await getJson(`${KALSHI}/markets?event_ticker=${encodeURIComponent(eventTicker)}&limit=100`);
+  return Array.isArray(data?.markets) ? data.markets : [];
+}
+
+function tickerForTeam(markets, team) {
+  const want = String(team || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+  if (!want) return null;
+  const named = markets.find((m) => String(m.yes_sub_title || '').toLowerCase().includes(want));
+  if (named?.ticker) return named.ticker;
+  const last = want.split(' ').filter((w) => w.length > 2).pop();
+  if (!last) return null;
+  const loose = markets.find((m) => String(m.yes_sub_title || '').toLowerCase().includes(last));
+  return loose?.ticker || null;
+}
+
 async function polyAsks(tokenId) {
   if (!tokenId) return [];
   const data = await getJson(`${CLOB}/book?token_id=${encodeURIComponent(tokenId)}`);
@@ -173,12 +192,25 @@ async function main() {
     // Moneyline books, one venue at a time.
     row.ml = {};
     const mlVenues = { away: {}, home: {} };
-    if (k?.awayTicker) {
-      const book = await take(`kalshi ${id} ML away`, () => kalshiBook(k.awayTicker));
+    let awayTicker = k?.awayTicker || null;
+    let homeTicker = k?.homeTicker || null;
+    if (k?.eventTicker && (!awayTicker || !homeTicker)) {
+      try {
+        const markets = await kalshiEventMarkets(k.eventTicker);
+        awayTicker = awayTicker || tickerForTeam(markets, away);
+        homeTicker = homeTicker || tickerForTeam(markets, home);
+        if (awayTicker && awayTicker === homeTicker) homeTicker = null;
+        await sleep(60);
+      } catch (err) {
+        console.warn(`  kalshi ${id} event: ${err.message}`);
+      }
+    }
+    if (awayTicker) {
+      const book = await take(`kalshi ${id} ML away`, () => kalshiBook(awayTicker));
       mlVenues.away.kalshi = book?.yes || [];
     }
-    if (k?.homeTicker) {
-      const book = await take(`kalshi ${id} ML home`, () => kalshiBook(k.homeTicker));
+    if (homeTicker) {
+      const book = await take(`kalshi ${id} ML home`, () => kalshiBook(homeTicker));
       mlVenues.home.kalshi = book?.yes || [];
     }
     const tokens = p?.polyMl?.tokenIds;
