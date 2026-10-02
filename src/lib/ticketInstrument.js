@@ -94,6 +94,18 @@ function sameSide(p, side) {
   return String(p?.side || '').toLowerCase() === String(side || '').toLowerCase();
 }
 
+/** Distinct wallets on this side. Rows with no wallet id do not count. */
+export function walletsOnSide(positions, side) {
+  const ids = new Set();
+  for (const p of positions || []) {
+    if (!sameSide(p, side)) continue;
+    const raw = String(p?.wallet || p?.walletShort || '').trim().toLowerCase();
+    if (!raw) continue;
+    ids.add(raw.length > 6 ? raw.slice(-6) : raw);
+  }
+  return ids.size;
+}
+
 /** Invested-weight vault line on this side (spreads / totals). */
 export function vaultConsensusLine(positions, side, family, ctx = {}) {
   if (family === 'ML') return null;
@@ -414,13 +426,19 @@ export function resolveInstrument({
   // At/after T-15: sealed stamp is the ticket. Live JSON can keep
   // shifting after freeze — chasing it flips a LOCKED hero (SDP/CIN
   // Under 9.5 ↔ 8.5, 2026-08-31).
+  // Two or more wallets on a spread/total: the ticket is the book main.
+  // One wallet can still sit on their alt. The heaviest alt must not
+  // become the number we freeze (Liberty −3.5 vs main −6.5, 2026-10-02).
   const frozen = Number.isFinite(freezeAtMs);
+  const multiWallet = fam !== 'ML' && walletsOnSide(pos, side) > 1;
   const line = fam === 'ML'
     ? null
     : (frozen && Number.isFinite(stampedLine)
       ? stampedLine
-      : (Number.isFinite(vaultLine) ? vaultLine
-        : (Number.isFinite(stampedLine) ? stampedLine : mainLine)));
+      : (multiWallet && Number.isFinite(mainLine)
+        ? mainLine
+        : (Number.isFinite(vaultLine) ? vaultLine
+          : (Number.isFinite(stampedLine) ? stampedLine : mainLine))));
   const variant = classifyVariant(fam, line, mainLine);
   const ticket = vaultTicket(pos, { side, line, family: fam, sport, ...signCtx });
   const tape = pinnGame

@@ -10,6 +10,7 @@ import {
   classifyVariant,
   vaultTicket,
   vaultConsensusLine,
+  walletsOnSide,
   tapeOnLine,
   tapeFromMeta,
   resolveInstrument,
@@ -361,5 +362,39 @@ const sdpLive = resolveInstrument({
   },
 });
 assert.equal(sdpLive.line, 8.5, 'pre-freeze vault still wins so Engine can move');
+
+// Liberty 2026-10-02: two wallets, heaviest money on −3.5, book main −6.5.
+// The ticket is the main. One wallet on an alt still keeps that alt.
+const libertyPinn = {
+  spreadCurrent: { awayLine: -6.5, homeLine: 6.5, awayOdds: -110, homeOdds: -110, isMain: true },
+  spreadLines: [{ awayLine: -6.5, homeLine: 6.5, awayOdds: -110, homeOdds: -110, isMain: true }],
+};
+const liberty = resolveInstrument({
+  family: 'SPREAD',
+  side: 'away',
+  positions: [
+    { side: 'away', wallet: '0xaaa111', entryLine: -3.5, avgPrice: 0.53, invested: 4100 },
+    { side: 'away', wallet: '0xbbb222', entryLine: -6.5, avgPrice: 0.52, invested: 800 },
+  ],
+  pinnGame: libertyPinn,
+  stampedLine: -6.5,
+});
+assert.equal(walletsOnSide([
+  { side: 'away', wallet: '0xaaa111' },
+  { side: 'away', wallet: '0xbbb222' },
+  { side: 'away', wallet: '0xaaa111' },
+], 'away'), 2);
+assert.equal(liberty.line, -6.5, 'two wallets use the main, not the heavier alt');
+assert.equal(liberty.variant, 'MAIN');
+const oneAlt = resolveInstrument({
+  family: 'SPREAD',
+  side: 'away',
+  positions: [
+    { side: 'away', wallet: '0xaaa111', entryLine: -3.5, avgPrice: 0.53, invested: 4100 },
+  ],
+  pinnGame: libertyPinn,
+  stampedLine: -6.5,
+});
+assert.equal(oneAlt.line, -3.5, 'one wallet keeps their alt');
 
 console.log('testTicketInstrument: ok');
