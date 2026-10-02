@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import {
   bookOnTicketLine,
   keepTicketLineBooks,
+  keepPlayBooks,
+  nearFavorableMain,
   markGoldFromTicketBooks,
   shopRailHidden,
   pinPostedOdds,
@@ -107,5 +109,21 @@ const pinBest = resolveHeroShop({
 });
 assert.equal(pinBest.odds, -152);
 assert.equal(pinBest.evPct, null);
+
+assert.equal(nearFavorableMain(45.5, 46.5, { marketType: 'total', sideNorm: 'over' }), true);
+assert.equal(nearFavorableMain(45.5, 43.5, { marketType: 'total', sideNorm: 'over' }), false);
+assert.equal(nearFavorableMain(45.5, 48.5, { marketType: 'total', sideNorm: 'over' }), false);
+const followed = keepPlayBooks([
+  { name: 'Pinnacle', odds: -131, line: 45.5 },
+  { name: 'Pinnacle', odds: -110, line: 46.5 },
+  { name: 'DraftKings', odds: -112, line: 46.5 },
+  { name: 'FanDuel', odds: -108, line: 46.5 },
+], 45.5, { marketType: 'total', sideNorm: 'over' });
+assert.deepEqual(followed.map((b) => b.line), [46.5, 46.5, 46.5]);
+const stuck = keepPlayBooks([
+  { name: 'Pinnacle', odds: -131, line: 45.5 },
+], 45.5, { marketType: 'total', sideNorm: 'over' });
+assert.equal(stuck.length, 1);
+assert.equal(stuck[0].line, 45.5);
 
 console.log('testHeroRailSameLine: ok', gold, gold2, lsu);

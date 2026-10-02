@@ -6,9 +6,10 @@
  * Positive = steam toward this side (favorite getting more expensive).
  *
  * Spreads / totals still PAINT a main-line walk toward the ticket
- * (−3 → −3.5, 47.5 → 48.5). Walk does not set policy steamOn (arriving /
- * Policy T / leftover arriving-HOLD). juiceSteam is a 3%+ drop on the
- * first-write pin while |main−pin| < 0.5. lineWalkPts is paint-only.
+ * (−3 → −3.5, 47.5 → 48.5). A walk with no juice on the ticket line does
+ * not set policy steamOn. juiceSteam is a 3%+ drop on the ticket line.
+ * It still counts when the main has moved at most 2 points toward this
+ * side (45.5 → 46.5). A walk the other way, or bigger than 2, stays paint.
  * Do not compare alt lines for juice (7.5 vs 9.5) or invent a main
  * from |hdp| → 0.
  *
@@ -26,6 +27,7 @@ import {
   pickMainSpreadFromBoard,
   pickMainTotalFromBoard,
 } from './pinnacleMain.js';
+import { nearFavorableMain } from './shopTicketLine.js';
 import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
 
 export const STEAM_WATCH_PCT = 2;
@@ -540,12 +542,17 @@ export function summarizeSteam(pinnGame, {
     ? (Number.isFinite(lineMove.nowLine) ? lineMove.nowLine : null)
     : null;
   // Fail-open when we cannot see pin vs main — do not invent a walk.
+  // A couple points toward this side does not erase juice on the ticket.
   const pinStillMain = !isSpread && !isTotal
     ? true
     : (!Number.isFinite(steamPinLine) || !Number.isFinite(mainNow)
       ? true
       : Math.abs(mainNow - steamPinLine) < STEAM_LINE_MOVE_PTS - LINE_STEAM_EPS);
-  const juiceSteam = juiceEvent && pinStillMain;
+  const nearMain = (isSpread || isTotal) && nearFavorableMain(pinLine, mainNow, {
+    marketType: mt,
+    sideNorm,
+  });
+  const juiceSteam = juiceEvent && (pinStillMain || nearMain);
   // Paint only. Walk still shows −3 → −3.5 on the card; policy reads juiceSteam.
   if (lineMove.steam && (tier == null || tier === 'watch')) tier = 'steam';
 
