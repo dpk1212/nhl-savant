@@ -2496,9 +2496,9 @@ function TierPerfStrip({ tierPerf, compact }) {
   );
 }
 
-function CollapsedSpark({ f, gid, bleed = false }) {
+function CollapsedSpark({ f, gid, bleed = false, onTab }) {
   return (
-    <LockTapeSwitch f={f}>
+    <LockTapeSwitch f={f} onTab={onTab}>
     <OddsLimitSpark
       bleed={bleed}
       pinPath={f.pinPath}
@@ -2995,6 +2995,7 @@ function CollapsedShopStrip({ f }) {
  */
 function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) {
   const { f } = live;
+  const [bookOn, setBookOn] = useState(false);
   const mine = portfolioWalletsOnCard(f, mySharps?.shorts);
   const hero = <CollapsedHero live={live} pickClass="live-pick" />;
   const trust = (
@@ -3005,7 +3006,7 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
     // The tape bleeds through the card — part of the surface, not an
     // exhibit in a box. The ledger row carries the takeaway; no caption.
     <div style={{ margin: '2px -22px 0' }}>
-      <CollapsedSpark f={f} gid={gid} bleed />
+      <CollapsedSpark f={f} gid={gid} bleed onTab={setBookOn} />
     </div>
   );
   const shop = <CollapsedShopStrip f={f} />;
@@ -3037,7 +3038,10 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
         </>
       )}
       {order === 'brokerage' && (
-        <>{hero}{board}{trust}{perf}{tape}{shop}<SectionRule />{money}</>
+        <>
+          {hero}{board}{trust}{perf}{tape}{shop}
+          {bookOn ? null : <><SectionRule />{money}</>}
+        </>
       )}
     </CollapsedCardFrame>
   );
