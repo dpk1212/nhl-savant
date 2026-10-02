@@ -245,6 +245,7 @@ async function main() {
         label: s.label,
         yesSide,
         pinAmerican: yesPin,
+        noPin,
         venues: book.yes?.length ? { kalshi: packSide(book.yes, yesPin, null, now) } : {},
         noVenues: book.no?.length ? { kalshi: packSide(book.no, noPin, null, now) } : {},
       });

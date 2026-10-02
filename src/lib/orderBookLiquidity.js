@@ -147,6 +147,30 @@ export function pickCardBook(doc, { sport, gameKey, marketType, side, line } = {
   const want = Number(line);
   const close = (r) => Number.isFinite(r?.line) && Number.isFinite(want)
     && Math.abs(Math.abs(r.line) - Math.abs(want)) < 0.26;
+  // "Team wins by over 2.5" is that team laying 2.5, not getting 2.5.
+  // A plus card is the No on the opponent's market. A minus card is the Yes.
+  if (mt === 'spread') {
+    const margin = rows.filter((r) => /wins by over/i.test(r?.label || ''));
+    if (margin.length && Number.isFinite(want) && want !== 0) {
+      const own = margin.find((r) => close(r) && r.yesSide === side);
+      const opp = margin.find((r) => close(r) && r.yesSide && r.yesSide !== side);
+      if (want > 0 && opp) {
+        const pin = Number.isFinite(opp.noPin) ? opp.noPin : (own?.pinAmerican ?? null);
+        return {
+          ours: { pinAmerican: pin, venues: opp.noVenues || {} },
+          other: null,
+          single: true,
+        };
+      }
+      if (want < 0 && own) {
+        return {
+          ours: { pinAmerican: own.pinAmerican ?? null, venues: own.venues || {} },
+          other: null,
+          single: true,
+        };
+      }
+    }
+  }
   const hit = rows.find((r) => close(r) && r.yesSide === side)
     || rows.find((r) => close(r) && r.yesSide && r.yesSide !== side)
     || rows.find(close);
