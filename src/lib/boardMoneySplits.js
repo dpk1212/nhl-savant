@@ -98,10 +98,12 @@ export const MAP_TRACKED_LOSER_CAP = 3;
  *   keepShorts = shorts that should remain on the map after loser cap
  *   addRaw     = up to N loser position stubs to enrich + append (not already kept)
  */
-export function planTrackedLosersForMap(mapRows, walletRows, { limit = MAP_TRACKED_LOSER_CAP } = {}) {
+export function planTrackedLosersForMap(mapRows, walletRows, { limit = MAP_TRACKED_LOSER_CAP, sourceMkt = null } = {}) {
   const cap = Math.max(0, Number(limit) || 0);
   const rows = Array.isArray(mapRows) ? mapRows : [];
+  const market = sourceMkt ? String(sourceMkt).toUpperCase() : null;
   const pool = (Array.isArray(walletRows) ? walletRows : [])
+    .filter((r) => !market || String(r.sourceMkt || '').toUpperCase() === market)
     .filter(isTrackedLoserRow)
     .slice()
     .sort((a, b) => (b.invested || 0) - (a.invested || 0));
