@@ -280,6 +280,7 @@ async function main() {
         label: t.label,
         yesSide,
         pinAmerican: yesPin,
+        noPin,
         venues: book.yes?.length ? { kalshi: packSide(book.yes, yesPin, oldTotal?.venues?.kalshi?.tape, now) } : {},
         noVenues: book.no?.length ? { kalshi: packSide(book.no, noPin, oldTotal?.noVenues?.kalshi?.tape, now) } : {},
       });
