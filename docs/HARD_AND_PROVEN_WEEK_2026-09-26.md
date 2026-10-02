@@ -63,6 +63,23 @@ Code: `src/lib/whitelistTier.js` (`WHITELIST_VERSION = 5`, `WHITELIST_FROM = 202
 
 Roll-back: revert that file to v4.
 
+### HARD+ market feed carve (2026-10-02)
+
+HARD+ wallets that are **not** Door 2 still win **that market**. Counting them sport-wide as CONFIRMED would dump losing sport books (n≥6 soft / red $) into v12 quality on every market. Do not do that.
+
+Instead, on **this ticket's market only**:
+
+| Counts | Does not count |
+|--------|----------------|
+| Hydrate into the live bag | v12 quality (`agsV12WalletQuality` still CONFIRMED/FLAT sport) |
+| no-CONFIRMED FOR hold | HC / Q1 / UNOPP / NFL-CFB unlock |
+| v11 Proven bag / dCount | Action desk CONFIRMED filter |
+| | GOLD proven $ share / calibration isProven |
+
+Fail-closed if `marketType` is missing. An MLB-ML HARD+ book does not count on a SPREAD/TOTAL ticket.
+
+Code: `src/lib/marketProvenCarve.js`.
+
 ---
 
 ## What shipped this week (staking / skill)

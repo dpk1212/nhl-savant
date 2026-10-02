@@ -24,7 +24,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **HARD+ last steps** | Overlay (2026-09-24…26) | Market-skill · HARD exception · HARD+ AG mute · S/T HARD+ FOR require · see week memo |
 | **Who-floor HARD+ FOR** | Q1 / T arriving (2026-09-28+) | Q1 and lean arriving 1→2 need ≥1 HARD+ FOR · fail-open if we cannot judge · mid 4u boost unchanged |
 | **GOLD-stack 4u cap** | Last size choke (2026-09-26+) | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps 5–6u. Fail-open if we cannot judge. |
-| **Proven bag** | Who v12 scores (2026-09-26) | Source B n≥6 WR≥55 $ROI>3 · A-only out · FLAT gone |
+| **Proven bag** | Who v12 scores (2026-09-26) | Source B n≥6 WR≥55 $ROI>3 · A-only out · FLAT gone · **2026-10-02:** HARD+ on **this market** also hydrates / holds no-CONFIRMED / v11 dCount. Not sport CONFIRMED. v12 quality / HC / Q1 / UNOPP / unlock / Action stay Door 2. |
 | **T-15** | Freeze | No further rewrite |
 
 **Paths pick who. EDGE band sizes A/C. Tape dials size. qConv cuts the Path C Q1 tail (Path A + RANK + UNOPP/Q1 exempt). FOOLS cancels FLAT-led. Leftover mute cancels believed-then-cut stubs and sub-4 FAIL_OPEN. CONFIRMED-UNOPP fills sized unopposed CONFIRMED left at 0u, including after mutes — leftover mute still wins after that restore.**
@@ -167,6 +167,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-10-02** | **HARD+ floor board-share punches through** — `mutedBy=board-share` restores at ≥+1 × ≥1.0×. Lean 2-for stays rolled back. Ev-lt2 / fav-juice / fade / hard-ag still skip. |
 | **2026-09-26** | **S/T HARD+ FOR require** — spreads/totals need ≥1 HARD FOR. |
 | **2026-09-26** | **Door 2 Proven** — Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven. FLAT not assigned. See [`HARD_AND_PROVEN_WEEK_2026-09-26.md`](./HARD_AND_PROVEN_WEEK_2026-09-26.md). |
+| **2026-10-02** | **HARD+ market Proven carve** — Door 2 **or** HARD+ on this ticket market for hydrate / no-CONFIRMED / v11 Proven bag. Fail-closed if market missing. Does **not** sport-confirm HARD+ (v12 quality, HC, Q1, UNOPP, unlock, Action, GOLD proven $, calibration unchanged). |
 | **2026-09-26** | **GOLD-stack 4u cap** — off-stack tickets cannot publish above 4u. EDGE + tape can still fatten the stack to 6u. Ball State ML hole. |
 | **2026-09-19** | **Featured → Action union** — a shipped featured lock that Source B missed is merged onto Their Action so the result counts. Do not hide Featured to paper over the miss. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |

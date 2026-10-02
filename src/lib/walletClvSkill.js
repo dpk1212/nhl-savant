@@ -22,6 +22,7 @@
 import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
 import { stakeSizeRatio } from './sizeRatioBands.js';
 import { isConfirmedSportRec, isProvenSportRec } from './whitelistTier.js';
+import { walletHoldsNoConfirmedOnMarket } from './marketProvenCarve.js';
 
 export const CLV_HIST_FROM = '2026-04-01';
 export const CLV_SKILL_MIN_N = 5;
@@ -1300,11 +1301,12 @@ export function isNoConfirmedMuteLive(pickDate) {
 }
 
 /**
- * Count distinct CONFIRMED wallets on the ticket side (FOR).
- * Dedupes last-6. Missing profiles / empty details → 0.
- * Does not require size-skill — any CONFIRMED on FOR holds the ticket.
+ * Count distinct wallets that hold no-CONFIRMED on the ticket side (FOR).
+ * Door 2 sport CONFIRMED, or HARD+ on this market. Dedupes last-6.
+ * Missing profiles / empty details → 0. No size-skill.
+ * Fail-closed on HARD+ when marketType is missing (arg or detail).
  */
-export function countConfirmedOnSide(walletDetails, sideKey, sport, walletProfiles) {
+export function countConfirmedOnSide(walletDetails, sideKey, sport, walletProfiles, marketType = null) {
   if (sideKey == null || sideKey === '' || !sport) return 0;
   const list = Array.isArray(walletDetails)
     ? walletDetails
@@ -1332,7 +1334,8 @@ export function countConfirmedOnSide(walletDetails, sideKey, sport, walletProfil
     if (!short || seen.has(short)) continue;
     seen.add(short);
     const profile = getProfile(short);
-    if (isConfirmedSportRec(profile?.bySport?.[sport])) n++;
+    const mkt = marketType || w.marketType || w.market || null;
+    if (walletHoldsNoConfirmedOnMarket(profile, sport, mkt)) n++;
   }
   return n;
 }
