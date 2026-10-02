@@ -3038,9 +3038,16 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
         </>
       )}
       {order === 'brokerage' && (
-        bookOn
-          ? <>{hero}{board}{trust}{perf}{tape}{shop}</>
-          : <>{hero}{board}{trust}{perf}{money}<SectionRule />{tape}{shop}</>
+        <>
+          {hero}{board}{trust}{perf}
+          {/* Keep the tape mounted. Swapping it with the money bars remounts
+              the switch, so the first Book click only hid the bars. */}
+          <div style={bookOn ? { display: 'none' } : undefined}>
+            {money}
+            <SectionRule />
+          </div>
+          {tape}{shop}
+        </>
       )}
     </CollapsedCardFrame>
   );
