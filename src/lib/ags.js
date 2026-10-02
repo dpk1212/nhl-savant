@@ -287,7 +287,8 @@ export function computeAgsFromPositions(positions, sideKey, sport, calibration, 
 //   sport:         e.g. 'NBA' / 'MLB' — used for tier lookup
 //   isProvenFn:    fn(walletShort, sport, walletDetail?) => boolean
 //                  Door 2 sport Proven, or HARD+ on walletDetail.marketType.
-//                  HC / v12 quality / Q1 / UNOPP stay Door 2 only.
+//                  HC / Q1 / UNOPP stay Door 2 only. v12 quality may
+//                  use the HARD+ market book via walletPriorStatsFn.
 //   isHcEligibleFn:fn(walletShort, sport) => boolean
 //                  (true if wallet is CONFIRMED for sport — strictly stricter
 //                   than isProvenFn). HC additionally requires
@@ -677,29 +678,27 @@ export function failsAgsConfirmationGate(ags) {
 //         + scripts/_agsu_v12_LOCK_above_zero.mjs + AGSU_V12_LOCK_ABOVE_ZERO.md
 // ────────────────────────────────────────────────────────────────────────
 
-// Tier weight in the quality formula. CONFIRMED gets 3× weight, FLAT gets 2×,
-// WR50 gets 1× — but the wallet must be CONFIRMED or FLAT to contribute at
-// all (the WR50 tier was tested and reduced overall ROI by 4-13pp, so it's
-// gated out). This matches the validated "Q_hcCap" candidate.
+// Tier weight in the quality formula. CONFIRMED and HARD+ (this market)
+// get 3×, FLAT gets 2×, WR50 gets 1× — but WR50 is gated out of the
+// pool (tested, reduced ROI 4-13pp). HARD+ is not sport CONFIRMED.
 export function agsV12TierWeight(tier) {
-  if (tier === 'CONFIRMED') return 3;
+  if (tier === 'CONFIRMED' || tier === 'HARD+') return 3;
   if (tier === 'FLAT')      return 2;
   if (tier === 'WR50')      return 1;
   return 0;
 }
 
 // Per-wallet quality score (continuous, leak-proof, bounded).
-// Returns 0 when the wallet doesn't qualify for the HC_BASE pool
-// (CONFIRMED or FLAT tier on this sport).
+// Returns 0 when the wallet doesn't qualify for the quality pool
+// (Door 2 CONFIRMED/FLAT on this sport, or HARD+ on THIS market).
 //
 // Inputs (all REQUIRED to be point-in-time leak-proof):
-//   tier      : 'CONFIRMED' | 'FLAT' | 'WR50' | null/other
-//   priorN    : wallet's prior pick count in this sport (BEFORE this pick)
-//   priorRoi  : wallet's prior flat ROI % in this sport
+//   tier      : 'CONFIRMED' | 'FLAT' | 'HARD+' | 'WR50' | null/other
+//   priorN    : Door 2 = sport Source B n; HARD+ = this-market n
+//   priorRoi  : matching book flat ROI % (dollar ROI if flat ≤ 0)
 //   sizeRatio : wallet's bet size on THIS pick / their avg sport bet
 export function agsV12WalletQuality({ tier, priorN, priorRoi, sizeRatio }) {
-  // Pool gate: HC_BASE only (CONFIRMED or FLAT).
-  if (tier !== 'CONFIRMED' && tier !== 'FLAT') return 0;
+  if (tier !== 'CONFIRMED' && tier !== 'FLAT' && tier !== 'HARD+') return 0;
   const tw = agsV12TierWeight(tier);
   const roi = Math.max(0, Math.min(30, Number(priorRoi || 0)));      // cap at 30%
   const size = Math.max(0.5, Math.min(2.5, Number(sizeRatio || 0))); // bound to [0.5, 2.5]
@@ -760,9 +759,12 @@ export function collapseHedgedWalletsV12(walletDetails) {
 //   walletDetails    : peak.v8Scoring.walletDetails[] frozen at scoring time
 //   sideKey          : 'home' | 'away' | 'over' | 'under' (the FOR side)
 //   sport            : 'MLB' | 'NBA' | 'NHL'
-//   walletPriorStatsFn: fn(walletShort, sport) => { tier, priorN, priorRoi }
-//                       MUST be point-in-time (no future leakage). When omitted
-//                       all wallets contribute 0 and the score will be 0/MUTE.
+//   walletPriorStatsFn: fn(walletShort, sport, walletDetail?) =>
+//                       { tier, priorN, priorRoi }
+//                       MUST be point-in-time (no future leakage). Third arg
+//                       is the ticket walletDetail (marketType) so HARD+ can
+//                       score from THIS market book. When omitted all wallets
+//                       contribute 0 and the score will be 0/MUTE.
 //
 // Returns null when walletDetails is empty.
 export function aggregateSideV12(walletDetails, sideKey, sport, walletPriorStatsFn) {
@@ -773,7 +775,7 @@ export function aggregateSideV12(walletDetails, sideKey, sport, walletPriorStats
   let provenContributors = 0;
   for (const w of collapsed) {
     if (!w || !w.wallet || !w.side) continue;
-    const stats = walletPriorStatsFn ? walletPriorStatsFn(w.wallet, sport) : null;
+    const stats = walletPriorStatsFn ? walletPriorStatsFn(w.wallet, sport, w) : null;
     if (!stats) continue;
     const q = agsV12WalletQuality({
       tier: stats.tier,

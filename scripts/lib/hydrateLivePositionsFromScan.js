@@ -14,7 +14,8 @@
  * This module rehydrates scan-board Door 2 Proven tickets, plus HARD+
  * wallets on that scan market, into the live bag and stamps sport-local
  * sizeRatio so HC / v12 quality match Action sizing. HARD+ does not
- * become sport CONFIRMED (v12 quality / HC / Q1 stay Door 2).
+ * become sport CONFIRMED (HC / Q1 stay Door 2). v12 quality may then
+ * read that wallet's THIS-market book.
  */
 
 import { resolveSportUsualBet } from './sportUsualBet.js';

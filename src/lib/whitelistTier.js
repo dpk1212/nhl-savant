@@ -8,8 +8,8 @@
  *
  * Recent-dollar and size-skill rescues do not grant CONFIRMED.
  * HARD+ (sport×market n≥4 WR≥62 $ROI≥10) is a separate overlay.
- * Hydrate / no-CONFIRMED / v11 Proven may OR HARD+ on THIS market
- * (`src/lib/marketProvenCarve.js`) — that is not sport CONFIRMED.
+ * Hydrate / no-CONFIRMED / v11 Proven / v12 quality may OR HARD+ on
+ * THIS market (`src/lib/marketProvenCarve.js`) — that is not sport CONFIRMED.
  *
  * Roll-back: revert this file / WHITELIST_VERSION to 4.
  */

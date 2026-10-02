@@ -1,18 +1,25 @@
 /**
- * HARD+ counts in v12 presence on THIS market only.
- * Door 2 sport OR HARD+ on ticket market → hydrate / no-CONFIRMED / v11 Proven.
- * Not sport CONFIRMED (v12 quality / HC / Q1 stay Door 2).
+ * HARD+ counts in v12 on THIS market only.
+ * Door 2 sport OR HARD+ on ticket market → hydrate / no-CONFIRMED / v11 Proven /
+ * v12 quality (market book). Not sport CONFIRMED (HC / Q1 stay Door 2).
  * Usage: node tests/testMarketProvenCarve.mjs
  */
 import assert from 'assert';
 import {
   buildIsProvenFn,
+  buildWalletPriorStatsFn,
   walletHoldsNoConfirmedOnMarket,
   walletHydratesOnScanMarket,
+  walletPriorStatsForV12,
 } from '../src/lib/marketProvenCarve.js';
 import { countConfirmedOnSide } from '../src/lib/walletClvSkill.js';
 import { isConfirmedSportRec, isProvenSportRec } from '../src/lib/whitelistTier.js';
-import { agsV12WalletQuality, aggregateSideProven, positionToWalletDetail } from '../src/lib/ags.js';
+import {
+  agsV12WalletQuality,
+  aggregateSideProven,
+  aggregateSideV12,
+  positionToWalletDetail,
+} from '../src/lib/ags.js';
 import { collectScanBoardProvenPositions } from '../scripts/lib/hydrateLivePositionsFromScan.js';
 
 let n = 0;
@@ -165,7 +172,7 @@ eq(
     sizeRatio: 1.2,
   }),
   0,
-  'v12 quality still 0 for non-CONFIRMED/FLAT (HARD+ does not enter the score)',
+  'WR50 sport still scores 0 v12 quality',
 );
 ok(
   agsV12WalletQuality({
@@ -176,6 +183,66 @@ ok(
   }) > 0,
   'Door 2 CONFIRMED still scores v12 quality',
 );
+ok(
+  agsV12WalletQuality({
+    tier: 'HARD+',
+    priorN: 5,
+    priorRoi: 18,
+    sizeRatio: 1.2,
+  }) > 0,
+  'HARD+ tier scores v12 quality from the market book',
+);
+
+const priorFn = buildWalletPriorStatsFn(profiles);
+const hardMlStats = walletPriorStatsForV12(hardMlNotDoor2(), 'MLB', 'ML');
+eq(hardMlStats?.tier, 'HARD+', 'HARD+ ML kid gets HARD+ prior tier');
+eq(hardMlStats?.priorN, 5, 'HARD+ quality n is the market book, not the sport 8');
+eq(hardMlStats?.priorSource, 'B-market', 'HARD+ quality source is B-market');
+ok(hardMlStats?.priorRoi > 0, 'HARD+ quality ROI comes from the market book');
+eq(
+  walletPriorStatsForV12(hardMlNotDoor2(), 'MLB', 'SPREAD')?.tier,
+  'WR50',
+  'HARD+ ML does not lend quality to SPREAD',
+);
+eq(
+  walletPriorStatsForV12(hardMlNotDoor2(), 'MLB', null)?.tier,
+  'WR50',
+  'HARD+ quality fail-closed without marketType',
+);
+eq(
+  walletPriorStatsForV12(door2NoHard(), 'MLB', 'ML')?.tier,
+  'CONFIRMED',
+  'Door 2 still uses the sport book',
+);
+eq(
+  priorFn('hardml', 'MLB', { marketType: 'ML' })?.tier,
+  'HARD+',
+  'prior fn third-arg marketType selects HARD+',
+);
+eq(
+  priorFn('hardml', 'MLB')?.tier,
+  'WR50',
+  'prior fn without detail stays sport WR50 (quality 0)',
+);
+
+{
+  const aggHard = aggregateSideV12(
+    [{ wallet: 'hardml', side: 'home', marketType: 'ML', sizeRatio: 1.2 }],
+    'home',
+    'MLB',
+    priorFn,
+  );
+  ok(aggHard && aggHard.score > 0 && aggHard.provenContributors === 1,
+    'HARD+-only side scores v12 quality > 0 on ML');
+  const aggSp = aggregateSideV12(
+    [{ wallet: 'hardml', side: 'home', marketType: 'SPREAD', sizeRatio: 1.2 }],
+    'home',
+    'MLB',
+    priorFn,
+  );
+  eq(aggSp?.provenContributors || 0, 0, 'HARD+ ML wallet contributes 0 quality on SPREAD');
+  ok((aggSp?.score || 0) <= 0, 'HARD+ on the wrong market does not print a +score');
+}
 
 {
   const scan = collectScanBoardProvenPositions({

@@ -73,24 +73,15 @@ import { isSportSlateActive } from '../lib/sportSlateActive.js';
 import { lookupPinnGame, flipUFCGameKey, isUFCFlipAlias } from '../../scripts/lib/ufcFighters.js';
 import { bestAvailableTicket, isT15BestLockLive } from '../lib/t15BestLock.js';
 import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
-import { walletPriorStatsPreferB } from '../lib/actionLockPin.js';
+import { buildWalletPriorStatsFn } from '../lib/marketProvenCarve.js';
 import { oddsCap } from '../lib/oddsCap.js';
-// Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
-// — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
-// historical pick count, flat ROI) that the v12 quality calc weighs. Used
-// by SharpPositionCard to compute a v12 tier for UNLOCKED game cards so
-// the chip/banner speak v12 vocabulary before the cron stamps the doc.
+// Browser-side mirror of cron v12 priors (marketProvenCarve.buildWalletPriorStatsFn).
+// Door 2 sport book, or HARD+ on ticket marketType. Used by SharpPositionCard
+// for UNLOCKED game cards so the chip/banner match cron before the stamp.
 // LOCKED cards continue to mirror the cron's authoritative v12 stamp.
 function buildWalletPriorStatsFnForUI(walletProfiles) {
   if (!walletProfiles || typeof walletProfiles.get !== 'function') return null;
-  return (walletShort, sport) => {
-    if (!walletShort || !sport) return null;
-    const key = String(walletShort).toLowerCase();
-    const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
-    const sportRec = profile?.bySport?.[sport];
-    if (!sportRec) return null;
-    return walletPriorStatsPreferB(sportRec);
-  };
+  return buildWalletPriorStatsFn(walletProfiles);
 }
 
 // ─── Brand Design System ──────────────────────────────────────────────────────

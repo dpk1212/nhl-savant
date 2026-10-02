@@ -1,22 +1,25 @@
 /**
- * Market-scoped HARD+ feed into v12 presence — not sport CONFIRMED.
+ * Market-scoped HARD+ feed into v12 — not sport CONFIRMED.
  *
  * Door 2 (sport B n≥6 WR≥55 $ROI>3) still owns:
- *   v12 quality · HC · Q1 · UNOPP · unlock · Action · GOLD proven $ · calibration
+ *   HC · Q1 · UNOPP · unlock · Action · GOLD proven $ · calibration isProven
  *
- * This carve only ORs HARD+ (sport×THIS market n≥4 WR≥62 $ROI≥10) into:
+ * This carve ORs HARD+ (sport×THIS market n≥4 WR≥62 $ROI≥10) into:
  *   hydrate (scan → live bag)
  *   no-CONFIRMED (FOR hold)
  *   v11 isProvenFn / AGS-U sidecar dCount
+ *   v12 quality (agsV12WalletQuality) from THIS market book only
  *
  * Fail-closed when marketType is missing — a ML HARD+ book must not
  * count on a SPREAD/TOTAL ticket. Losing sport rollups stay out of
- * v12 quality (agsV12WalletQuality still requires CONFIRMED/FLAT).
+ * quality; overlays still size / mute after the score.
  */
 
 import { isConfirmedSportRec, isProvenSportRec } from './whitelistTier.js';
 import { walletIsHardMarket } from './marketSpecialistDisplay.js';
+import { marketPositions } from './marketSkillMuteOverlay.js';
 import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
+import { walletPriorStatsPreferB } from './actionLockPin.js';
 
 function profileFromMap(walletProfiles, walletShort) {
   if (!walletProfiles || !walletShort) return null;
@@ -61,4 +64,39 @@ export function buildIsProvenFn(walletProfiles) {
 export function walletHydratesOnScanMarket(profile, sport, marketType) {
   if (isProvenSportRec(profile?.bySport?.[sport])) return true;
   return walletIsHardMarket(profile, sport, marketType);
+}
+
+/**
+ * v12 quality priors. Door 2 / FLAT keep the sport Source B book.
+ * HARD+ on THIS market (and not sport CONFIRMED) uses the market book
+ * n + ROI — never the losing sport rollup. Fail-closed without marketType.
+ */
+export function walletPriorStatsForV12(profile, sport, marketType) {
+  const sportRec = profile?.bySport?.[sport];
+  const sportStats = walletPriorStatsPreferB(sportRec);
+  if (sportStats && (sportStats.tier === 'CONFIRMED' || sportStats.tier === 'FLAT')) {
+    return sportStats;
+  }
+  if (walletIsHardMarket(profile, sport, marketType)) {
+    const mBook = marketPositions(profile, sport, marketType);
+    const fromMkt = walletPriorStatsPreferB({
+      whitelistTier: 'HARD+',
+      positions: mBook.pos,
+    });
+    if (fromMkt) return { ...fromMkt, priorSource: 'B-market' };
+  }
+  return sportStats;
+}
+
+/**
+ * Cron + UI `walletPriorStatsFn(walletShort, sport, walletDetail?)`.
+ * Third arg carries ticket marketType for the HARD+ quality carve.
+ */
+export function buildWalletPriorStatsFn(walletProfiles) {
+  return (walletShort, sport, w = null) => {
+    if (!walletShort || !sport) return null;
+    const profile = profileFromMap(walletProfiles, walletShort);
+    if (!profile) return null;
+    return walletPriorStatsForV12(profile, sport, ticketMarket(w));
+  };
 }

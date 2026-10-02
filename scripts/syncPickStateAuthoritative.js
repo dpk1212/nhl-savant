@@ -203,7 +203,7 @@ import {
   mergeScanBoardIntoLive,
   positionSoftKey,
 } from './lib/hydrateLivePositionsFromScan.js';
-import { buildIsProvenFn } from '../src/lib/marketProvenCarve.js';
+import { buildIsProvenFn, buildWalletPriorStatsFn } from '../src/lib/marketProvenCarve.js';
 import { resolveInstrument, ticketAmerican, coherentTicket } from '../src/lib/ticketInstrument.js';
 import {
   bestAvailableTicket,
@@ -329,7 +329,6 @@ import {
   resolveSteamLifecycle,
 } from '../src/lib/steamTailPolicy.js';
 import {
-  walletPriorStatsPreferB,
   isRankEligibleOnSourceB,
 } from '../src/lib/actionLockPin.js';
 import { oddsCap } from '../src/lib/oddsCap.js';
@@ -627,7 +626,8 @@ async function loadAgsCalibration(db) {
 }
 
 // isProvenFn lives in src/lib/marketProvenCarve.js — Door 2 sport, or
-// HARD+ on walletDetail.marketType. HC / v12 quality stay Door 2.
+// HARD+ on walletDetail.marketType. HC stays Door 2. v12 quality uses
+// the sport book for Door 2 / FLAT, else THIS market book for HARD+.
 
 // HC eligibility — CONFIRMED tier only. The sizeRatio ≥ HC_RATIO threshold
 // is enforced inside aggregateSideProven. This is strictly stricter than
@@ -660,27 +660,9 @@ function buildWalletStatsFn(walletProfiles) {
   };
 }
 
-// v12 — returns the wallet's per-sport prior stats { tier, priorN, priorRoi }
-// from profile.bySport[sport]. Drives the agsV12 quality formula. Same
-// near-causal property as v11's walletStatsFn (lag = time since last
-// exportWalletProfiles cron cycle, ~8 min).
-function buildWalletPriorStatsFn(walletProfiles) {
-  return (walletShort, sport) => {
-    if (!walletShort || !sport) return null;
-    const key = String(walletShort).toLowerCase();
-    const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
-    const sportRec = profile?.bySport?.[sport];
-    if (!sportRec) return null;
-    return walletPriorStatsFromSportRec(sportRec);
-  };
-}
-
-// v12 prior stats — Source B (on-chain Action) is the book. Source A
-// (featured-pick history) is fallback only when B is thin. Shared with
-// SharpFlow UI + calibration via walletPriorStatsPreferB.
-function walletPriorStatsFromSportRec(sportRec) {
-  return walletPriorStatsPreferB(sportRec);
-}
+// v12 prior stats — buildWalletPriorStatsFn lives in marketProvenCarve.js
+// (Door 2 sport book, or HARD+ on walletDetail.marketType). Same near-causal
+// lag as v11 (~8 min since last exportWalletProfiles).
 
 // ── RANK-RESCUE (2-for-0 wallet slice) ──────────────────────────────────────
 // A side "qualifies" when ≥2 ELIGIBLE whitelist wallets back it and 0 back the
@@ -1183,7 +1165,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 32; // v32: HARD+ on this market counts for hydrate / no-CONFIRMED / v11 Proven (not sport CONFIRMED)
+const SKILL_FEATURE_VERSION = 33; // v33: HARD+ on this market scores v12 quality from the market book (not sport CONFIRMED)
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
