@@ -79,8 +79,33 @@ const pitt = {
 const plus = pickCardBook(pitt, { sport: 'CFB', gameKey: 'pitt_vt', marketType: 'spread', side: 'away', line: 2.5 });
 check('plus spread uses the opponent No book', plus.ours.venues.kalshi.levels[0].american === -104);
 check('plus spread keeps this side’s Pinnacle price', plus.ours.pinAmerican === -107);
+check('plus spread shows the laying side beside it', plus.other.venues.kalshi.levels[0].american === -100);
+check('plus spread other pin is the yes price', plus.other.pinAmerican === -105);
 const minus = pickCardBook(pitt, { sport: 'CFB', gameKey: 'pitt_vt', marketType: 'spread', side: 'home', line: -2.5 });
 check('minus spread uses this team’s Yes book', minus.ours.venues.kalshi.levels[0].american === -100);
+check('minus spread shows the plus side beside it', minus.other.venues.kalshi.levels[0].american === -104);
+
+const total = {
+  games: {
+    'CFB|pitt_vt': {
+      totals: [{
+        line: 45.5,
+        label: 'Over 45.5',
+        yesSide: 'home',
+        pinAmerican: -114,
+        noPin: -106,
+        venues: { kalshi: { levels: [{ american: -113, prob: 0.53, sizeUsd: 55000 }] } },
+        noVenues: { kalshi: { levels: [{ american: -105, prob: 0.51, sizeUsd: 40000 }] } },
+      }],
+    },
+  },
+};
+const over = pickCardBook(total, { sport: 'CFB', gameKey: 'pitt_vt', marketType: 'total', side: 'home', line: 45.5 });
+check('over shows the under beside it', over.other.venues.kalshi.levels[0].american === -105);
+check('over keeps the under Pinnacle price', over.other.pinAmerican === -106);
+const under = pickCardBook(total, { sport: 'CFB', gameKey: 'pitt_vt', marketType: 'total', side: 'away', line: 45.5 });
+check('under leads with the No book', under.ours.venues.kalshi.levels[0].american === -105);
+check('under shows the over beside it', under.other.pinAmerican === -114);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);

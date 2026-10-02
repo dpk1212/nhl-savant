@@ -158,17 +158,31 @@ export function pickCardBook(doc, { sport, gameKey, marketType, side, line } = {
         const pin = Number.isFinite(opp.noPin) ? opp.noPin : (own?.pinAmerican ?? null);
         return {
           ours: { pinAmerican: pin, venues: opp.noVenues || {} },
-          other: null,
-          single: true,
+          other: { pinAmerican: opp.pinAmerican ?? null, venues: opp.venues || {} },
         };
       }
       if (want < 0 && own) {
+        const otherPin = Number.isFinite(own.noPin) ? own.noPin : (opp?.pinAmerican ?? null);
         return {
           ours: { pinAmerican: own.pinAmerican ?? null, venues: own.venues || {} },
-          other: null,
-          single: true,
+          other: { pinAmerican: otherPin, venues: own.noVenues || {} },
         };
       }
+    }
+  }
+  if (mt === 'total') {
+    const over = rows.find((r) => close(r) && (r.yesSide === 'home' || /^over/i.test(r.label || '')));
+    if (over) {
+      const onOver = side !== 'away';
+      return onOver
+        ? {
+          ours: { pinAmerican: over.pinAmerican ?? null, venues: over.venues || {} },
+          other: { pinAmerican: over.noPin ?? null, venues: over.noVenues || {} },
+        }
+        : {
+          ours: { pinAmerican: over.noPin ?? null, venues: over.noVenues || {} },
+          other: { pinAmerican: over.pinAmerican ?? null, venues: over.venues || {} },
+        };
     }
   }
   const hit = rows.find((r) => close(r) && r.yesSide === side)
@@ -176,11 +190,9 @@ export function pickCardBook(doc, { sport, gameKey, marketType, side, line } = {
     || rows.find(close);
   if (!hit) return null;
   const onYes = !hit.yesSide || hit.yesSide === side;
-  return {
-    ours: { pinAmerican: onYes ? hit.pinAmerican : null, venues: onYes ? hit.venues : (hit.noVenues || {}) },
-    other: null,
-    single: true,
-  };
+  const yesNode = { pinAmerican: hit.pinAmerican ?? null, venues: hit.venues || {} };
+  const noNode = { pinAmerican: hit.noPin ?? null, venues: hit.noVenues || {} };
+  return onYes ? { ours: yesNode, other: noNode } : { ours: noNode, other: yesNode };
 }
 
 export function liquidityCaption(side) {
