@@ -56,4 +56,19 @@ function assert(cond, msg) {
   assert(!keepShorts.has('bbbbbb'), '4th loser not kept');
 }
 
+// ML map must not adopt a spread bleeder's dollars.
+{
+  const mapRows = [
+    { short: 'ba8492', invested: 3749, whitelist: 'CONFIRMED' },
+  ];
+  const walletRows = [
+    { wallet: 'fcc12b', invested: 231211, whitelist: 'CONFIRMED', verdict: 'CONFIRMED_BLEEDER', marketSide: 'away', sourceMkt: 'SPREAD' },
+    { wallet: 'loser1', invested: 800, whitelist: null, verdict: null, marketSide: 'away', sourceMkt: 'ML' },
+  ];
+  const ml = planTrackedLosersForMap(mapRows, walletRows, { sourceMkt: 'ML' });
+  assert(ml.addRaw.length === 1 && ml.addRaw[0].wallet === 'loser1', 'spread dollars stay off the ML map');
+  const sp = planTrackedLosersForMap(mapRows, walletRows, { sourceMkt: 'SPREAD' });
+  assert(sp.addRaw.length === 1 && sp.addRaw[0].wallet === 'fcc12b', 'same bet still pins on the spread card');
+}
+
 console.log('testMapTrackedLosers: ok');

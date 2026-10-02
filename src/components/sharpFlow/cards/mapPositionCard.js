@@ -1623,12 +1623,15 @@ export function mapLockedPickToCardFixture(pick, {
     enrichOpts,
   ).map(tagMapWallet);
 
-  // Pin up to 3 tracked losers from the same raw pool as the Losing bar.
-  // Stamp-only boards drop these whenever browser sync thins walletDetails.
+  // Pin up to 3 tracked losers from this market only. The wide board
+  // pools ML and spread for the money bars; a spread bleeder must not
+  // land on the ML map as money "on this play" (fcc12b +2.5 on Pitt ML).
   {
+    const cardMkt = isTotal ? 'TOTAL' : isSpread ? 'SPREAD' : 'ML';
     const { keepShorts, addRaw } = planTrackedLosersForMap(
       mapWallets,
       boardMoney?.walletRows || [],
+      { sourceMkt: cardMkt },
     );
     mapWallets = mapWallets.filter((w) => keepShorts.has(w.short));
     if (addRaw.length) {
