@@ -627,7 +627,8 @@ async function loadAgsCalibration(db) {
 
 // isProvenFn lives in src/lib/marketProvenCarve.js — Door 2 sport, or
 // HARD+ on walletDetail.marketType. HC stays Door 2. v12 quality uses
-// the sport book for Door 2 / FLAT, else THIS market book for HARD+.
+// THIS market book when HARD+ on the ticket market (even if Door 2),
+// else the sport book for Door 2 / FLAT.
 
 // HC eligibility — CONFIRMED tier only. The sizeRatio ≥ HC_RATIO threshold
 // is enforced inside aggregateSideProven. This is strictly stricter than
@@ -661,8 +662,8 @@ function buildWalletStatsFn(walletProfiles) {
 }
 
 // v12 prior stats — buildWalletPriorStatsFn lives in marketProvenCarve.js
-// (Door 2 sport book, or HARD+ on walletDetail.marketType). Same near-causal
-// lag as v11 (~8 min since last exportWalletProfiles).
+// (HARD+ on ticket market → market book; else Door 2 sport book).
+// Same near-causal lag as v11 (~8 min since last exportWalletProfiles).
 
 // ── RANK-RESCUE (2-for-0 wallet slice) ──────────────────────────────────────
 // A side "qualifies" when ≥2 ELIGIBLE whitelist wallets back it and 0 back the
@@ -1165,7 +1166,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 33; // v33: HARD+ on this market scores v12 quality from the market book (not sport CONFIRMED)
+const SKILL_FEATURE_VERSION = 34; // v34: HARD+ on this market uses the market book for v12 quality even if Door 2; CONFIRMED-not-HARD+ stays sport
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {
