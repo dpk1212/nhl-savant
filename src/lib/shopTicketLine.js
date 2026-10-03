@@ -71,21 +71,34 @@ export function keepTicketLineBooks(books, stakedLine) {
 }
 
 /**
- * Shop row for a spread/total. Same number as the ticket, or the current
- * main when it has moved at most 2 points toward this side. One line per
- * row — a favorable main replaces the stranded ticket quotes.
+ * Shop row for a spread/total. One number per row.
+ * Keep the ticket when that number has the board. A line up to 2 points
+ * toward this side replaces it only when that line has more books — a
+ * one-book alt must not discard the ticket board or the real main.
  */
 export function keepPlayBooks(books, stakedLine, { marketType, sideNorm } = {}) {
   const list = (books || []).filter((b) => b && !shopRailHidden(b.name));
-  if (stakedLine == null || !Number.isFinite(Number(stakedLine))) return list;
-  const near = list.filter((b) => (
-    Number.isFinite(Number(b.line))
-    && !linesClose(Number(b.line), Number(stakedLine))
-    && nearFavorableMain(stakedLine, b.line, { marketType, sideNorm })
-  ));
-  if (!near.length) return list.filter((b) => bookOnTicketLine(b.line, stakedLine));
-  const line = Number(near[0].line);
-  return list.filter((b) => linesClose(Number(b.line), line));
+  const ticket = Number(stakedLine);
+  if (!Number.isFinite(ticket)) return list;
+  const groups = new Map();
+  for (const b of list) {
+    const line = Number(b.line);
+    if (!Number.isFinite(line)) continue;
+    const onTicket = linesClose(line, ticket);
+    if (!onTicket && !nearFavorableMain(ticket, line, { marketType, sideNorm })) continue;
+    const key = onTicket ? 'ticket' : line.toFixed(3);
+    const group = groups.get(key) || { onTicket, books: [] };
+    group.books.push(b);
+    groups.set(key, group);
+  }
+  let best = null;
+  for (const group of groups.values()) {
+    if (!best || group.books.length > best.books.length
+      || (group.books.length === best.books.length && group.onTicket && !best.onTicket)) {
+      best = group;
+    }
+  }
+  return best ? best.books : [];
 }
 
 export function shopLineMatchesPlay(bookLine, ticketLine, { marketType, sideNorm } = {}) {

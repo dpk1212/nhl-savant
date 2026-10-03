@@ -126,4 +126,26 @@ const stuck = keepPlayBooks([
 assert.equal(stuck.length, 1);
 assert.equal(stuck[0].line, 45.5);
 
+// Clemson +15.5 is the main. One BetMGM quote at +15 must not discard it.
+const clemson = keepPlayBooks([
+  { name: 'Pinnacle', odds: -107, line: 15.5 },
+  { name: 'Matchbook', odds: -102, line: 15.5 },
+  { name: 'DraftKings', odds: -110, line: 15.5 },
+  { name: 'FanDuel', odds: -114, line: 15.5 },
+  { name: 'Novig', odds: -104, line: 15.5 },
+  { name: 'BetMGM', odds: -108, line: 15 },
+], 15.5, { marketType: 'spread', sideNorm: 'home' });
+assert.deepEqual(clemson.map((b) => b.line), [15.5, 15.5, 15.5, 15.5, 15.5]);
+
+// Auburn +7.5 is empty. Matchbook alone at +7 must not hide the +6.5 board.
+const auburn = keepPlayBooks([
+  { name: 'Pinnacle', odds: -137, line: 7.5 },
+  { name: 'Matchbook', odds: -114, line: 7 },
+  { name: 'DraftKings', odds: -105, line: 6.5 },
+  { name: 'FanDuel', odds: -110, line: 6.5 },
+  { name: 'BetMGM', odds: -108, line: 6.5 },
+  { name: 'Novig', odds: 102, line: 6.5 },
+], 7.5, { marketType: 'spread', sideNorm: 'away' });
+assert.deepEqual(auburn.map((b) => b.name), ['DraftKings', 'FanDuel', 'BetMGM', 'Novig']);
+
 console.log('testHeroRailSameLine: ok', gold, gold2, lsu);
