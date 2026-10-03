@@ -1,89 +1,65 @@
-# Twitter Loop — 2026-07-12 wipe to ride
-**7/12/2026, 12:32:40 PM ET** · 3 drafts
+# Twitter — 2026-09-27 · HERO GIVE · three 1:00 ET flagged plays
+**Pathway:** Hormozi. One idea. Give. No ask.
 
-> wipe-to-ride Dale spine. Single hero (Dale override + Coach single-hero recommendation) — confront 0-5/-18u cold, one named detail (Nats), hard pivot to Brewers continuity receipt, forced sizing/timing take. Full 5-loss ledger lives in a 2-part self-reply thread (plain English, no jargon tiers) since it cannot fit one 280-char tweet without becoming a ✅/❌ table. Outbound (angle_4/iq_wtr06) intentionally skipped this run — no live high-velocity parent post pulled via MCP this cycle; distribution hunt still owed. Never auto-publish.
+| | |
+|--|--|
+| WHO | Sunday NFL room about to bet the side with the most logos on it. |
+| PURPOSE | **Give.** |
+| ONE | A proven wallet is sized on three 1:00 games, and on the Giants most of the tracked money is on the other side. |
+| SPCL | **S + C.** Giants $174K vs $546K is the open. Jaguars $83K at 2.7× and the under number are the proof. |
+| Ask | **None.** |
 
-**Live receipts:** Jul 11: 0-5 · -18.00u · -100% ROI on 18u stake. Losses (self-reply only, no ✅/❌ table): Mets ML 4u -137 · Rangers ML 3u -117 · Nats ML 4u +178 (blew a lead) · Argentina ML 4u -145 · Over 8.5 3u -108. Brewers TODAY LOCKED: ML +106 (stamp-preferred over export +110) · 2.5u · $6,449 · 1.72x this wallet's average · 1 against (honestly omitted from hero rather than faked to zero) · wallet crown same profile ~64% WR / +20% ROI cited only if needed in a short beat (not used in hero — kept single-tension).
+**Attach (walk order):** Giants ML → Jaguars ML → Steelers under. The Giants chart is the one that shows the against-money.  
+**All flagged.** Locks **12:45 ET.** Do not say locked. Do not say gold. Do not say HC.
 
----
+### Spine
+- Three games worth talking about at 1pm
+- Look for Pinnacle limits rising, odds moving our way, proven sharp money, big money
+- He says all three have that
 
-## 1 · HERO — hero a wipe to ride
-**When:** NOW — Jul 12, day after the Jul 11 wipe. Brewers locked pre-game tonight.
-**Attach:** Brewers lock card — $6,449 / +106 / 1.72x sizeRatio readable
-**Bet:** OVER vs hero baseline ~1235.5 impr, target ~1400-2200; >=3 replies to clear the ATG reply-bar floor (2075936032676053436, 3r) — because a real, disclosed -18u carries more trust-testing weight than any confession we've shipped, and this is a Coach-named gap (zero prior 'real loss -> forward trust' example in our timeline); untested high-stakes moments over-index on curiosity and reply currency.
-**Arsenal:** #confront #costly_signal #forced_take #clock
-**Improves on:** Weekend menu death 2076035931661046149 (1201v/0r — confession without a forced take, dual-play menu, triple vibe-ask) + scoreboard QT 2075762415539527896 (1376v/0r — reach without replies, W/L ledger). Budgets the pain to ONE aggregate (0-5/-18u) + ONE named detail (Nats), keeps the full 5-loss ledger to self-reply, and closes on a genuine sizing/timing take instead of a soft statement or a fake fade/ride binary on one-sided proof.
-**Felt:** A real, no-excuses bad day landed the morning before a lock I trust exactly as much as I did before it happened.
-**Spine:** Yesterday wrecked the board and I'm not going to dress it up. Nats blowing a lead is the one that actually stings — at least we weren't the ones on McGregor. Tonight the same process is still running, sizing up like nothing happened. Too much conviction the morning after, or exactly the point?
-**Scroll-stop:** Opens by naming a real wipeout cold — no hedge, no ledger, no softened number — which is a confession this account has never had to post before, so a stranger has to see what's coming next.
-**Job A · Engage:** Forces a take on Brewers' size/timing the morning after a real loss — a sizing/conviction question a stranger can actually argue ('too much conviction, or exactly the point?'), never a fade/ride binary on proof that's already one-sided.
-**Job B · Convert:** Plants the desire (the same process sizing up live, unprompted by yesterday) with zero CTA language in the hero — conversion completes only in the self-reply.
-**Why / context:** The why-sized block: $6,449 at 1.72x this wallet's average is the observable reason tonight's play matters — not just that it's locked, but how much more than usual this wallet is trusting it, the day after it got run over.
-**Convert job:** Desire = watch tonight's process live after a real loss -> soft trial completed in self-reply only
-**Convert plant:** Hero — Brewers continuity receipt ($6,449 at 1.72x this wallet's average) IS the desire beat, zero CTA verbs, no link
-**Convert ask:** Self-reply — first week free + nhlsavant.com/?ref=wipe0711
-**Strategist:** passed
-**Product frame:** We track hundreds of sharp bettors for months and post where their money moves before the games start
-**Editor:** passed
-**Length:** 271/280 · long-band ✓
+### What the cards actually show (~12:08 ET)
+- **Giants ML -127** · flagged -127 · **3.0u** · Pin **-134** · Kalshi -127
+- **$175K** Giants / **$546K** Titans · card: **most of the tracked money is against this**
+- Proven **$174K** at **2.0×** · `…28658e` · NFL **13-3** · 81% · **L30 +$1,037,000**
+- His NFL moneylines in that window are **2-3**, +$211K, 40%. Say it. This is a moneyline.
+- **Jaguars ML -149** · flagged **-144** · **5.4u** · Pin **-157**
+- **$418K** on Jacksonville · **nothing against** · proven **$83K** at **2.7×** · 4-3 · 57% · +54% ROI
+- Since the flag, Jacksonville juice got a little worse (-144 to -149). We still beat Pinnacle. Do not say the price improved from the flag.
+- Losing money $432K Patriots / $77K on Jacksonville. Not "losers only on New England."
+- **Under 43.5 -124** · flagged **Under 42.5 -102** · **3.0u**
+- The total moved **42.5 → 43.5**. That is the number moving the under's way. The juice got worse.
+- Tracked sharp money is **$13K** under / $785 over. Proven ticket is **$2,000 at 1×**, not a press. L30 **+$6,700**. Totals **6-2**.
+- All-money on the total is **$212K under / $69K over**. That is the big pile. Do not call the $2,000 bet big.
+- Pinnacle history file is still Sep 18. **No from-to limit climb is in the file.** Chart shows current max labels $75K / $50K / $20K. Do not invent "limits just rose."
 
-### Copy this ↓
-
-```
-Yesterday wrecked the board. 0-5. -18 units.
-
-Nats blew a lead we should've banked. At least we weren't on McGregor.
-
-Same process: Brewers +106 · $6,449 at 1.72× this wallet's average.
-
-Too much conviction, morning after. Or exactly the point? We'll know by first pitch.
-```
-
-[Open in X →](https://x.com/intent/tweet?text=Yesterday+wrecked+the+board.+0-5.+-18+units.%0A%0ANats+blew+a+lead+we+should%27ve+banked.+At+least+we+weren%27t+on+McGregor.%0A%0ASame+process%3A+Brewers+%2B106+%C2%B7+%246%2C449+at+1.72%C3%97+this+wallet%27s+average.%0A%0AToo+much+conviction%2C+morning+after.+Or+exactly+the+point%3F+We%27ll+know+by+first+pitch.)
+### Hook
+Not three `$N ON THE TEAM` lines. The interesting fact is the Giants split.
 
 ---
 
-## 2 · SELF-REPLY — self reply a ledger
-**When:** Reply 1 under hero_a_wipe_to_ride — full plain-English Jul 11 ledger, no jargon tiers, no ✅/❌ table.
-**Attach:** none
-**Bet:** Proof-of-work for repliers who want the full board; supports the hero's reply floor rather than competing with it.
-**Arsenal:** #costly_signal #proof
-**Improves on:** Keeps the five-loss body count entirely out of the hero (Coach hard law: recap -> self-reply only, prose, never a checklist) while still giving anyone who scrolls into replies the receipts.
-
-### Copy this ↓
+## COPY THIS
 
 ```
-No dressing it up, here's the full board: Mets moneyline lost 4u. Rangers moneyline lost 3u. Nationals moneyline lost 4u — the blown lead is the one that actually stings. Argentina moneyline lost 4u. Over 8.5 lost 3u. Five for five. Minus 18 units.
+$174,000 ON THE GIANTS
+$546,000 is on the Titans.
+
+He's 13-3 in the NFL the last 30 days. Up $1,037,000.
+This bet is 2× his usual. His moneylines in that stretch are 2-3.
+We're -127. Pinnacle is -134. 3 units.
+
+Jaguars are the clean one.
+$83,000 from a proven winner at 2.7× his usual. 4-3. Up 54%.
+$418,000 on Jacksonville. Nothing against him.
+We're -149. Pinnacle is -157. 5.4 units.
+
+Steelers under 43.5. We flagged it at 42.5.
+One proven winner, 6-2 on totals, up $6,700 the last 30 days.
+That's a normal bet for him. $2,000.
+$212,000 on the under. $69,000 on the over. 3 units.
+
+We don't handicap these. We post where the proven money is before the game.
+
+12:45. All three are flagged.
 ```
 
-[Open in X →](https://x.com/intent/tweet?text=No+dressing+it+up%2C+here%27s+the+full+board%3A+Mets+moneyline+lost+4u.+Rangers+moneyline+lost+3u.+Nationals+moneyline+lost+4u+%E2%80%94+the+blown+lead+is+the+one+that+actually+stings.+Argentina+moneyline+lost+4u.+Over+8.5+lost+3u.+Five+for+five.+Minus+18+units.)
-
----
-
-## 3 · SELF-REPLY — self reply b convert
-**When:** Reply 2 under self_reply_a_ledger — Brewers echo (closes the loop for reply-only scrollers) + soft trial ask + link.
-**Attach:** none
-**Bet:** profile -> trial; soft ask carries zero $ / promo-price language
-**Arsenal:** #soft_ask #convert
-**Improves on:** Convert ask stays entirely in self-reply per convert law; echoes the hero's Brewers receipt so a reader who only sees the recap still gets the forward pivot before the ask.
-
-### Copy this ↓
-
-```
-Brewers is the same process, running like nothing happened: +106, $6,449 at 1.72× this wallet's average.
-
-First week's free if you want to watch it grade itself instead of taking my word for it.
-
-nhlsavant.com/?ref=wipe0711
-```
-
-[Open in X →](https://x.com/intent/tweet?text=Brewers+is+the+same+process%2C+running+like+nothing+happened%3A+%2B106%2C+%246%2C449+at+1.72%C3%97+this+wallet%27s+average.%0A%0AFirst+week%27s+free+if+you+want+to+watch+it+grade+itself+instead+of+taking+my+word+for+it.%0A%0Anhlsavant.com%2F%3Fref%3Dwipe0711)
-
----
-
-## Order of operations
-1. **HERO** hero_a_wipe_to_ride — NOW — Jul 12, day after the Jul 11 wipe. Brewers locked pre-game tonight.
-2. **SELF-REPLY** self_reply_a_ledger — Reply 1 under hero_a_wipe_to_ride — full plain-English Jul 11 ledger, no jargon tiers, no ✅/❌ table.
-3. **SELF-REPLY** self_reply_b_convert — Reply 2 under self_reply_a_ledger — Brewers echo (closes the loop for reply-only scrollers) + soft trial ask + link.
-
-**Never auto-publish.** No site link in outbound replies. PRE-LOCK language until T−15.
+**Do not post from here.** Stage only. Never auto-publish.
