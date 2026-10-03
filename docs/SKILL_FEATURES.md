@@ -1,6 +1,6 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 33` from **2026-10-02**_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 34` from **2026-10-03**_  
 _Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
@@ -249,6 +249,7 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **31** | **2026-10-02** | HARD+ margin floor punches board-share again (lean 2-for stays rolled back) |
 | **32** | **2026-10-02** | HARD+ on this market hydrates / holds no-CONFIRMED / v11 Proven — not sport CONFIRMED |
 | **33** | **2026-10-02** | HARD+ on this market scores v12 quality from the market book (not sport CONFIRMED; overlays still mute/size after) |
+| **34** | **2026-10-03** | HARD+ on this market uses the market book for v12 quality even if Door 2; CONFIRMED and not HARD+ here stays sport |
 
 ---
 

@@ -74,9 +74,9 @@ Instead, on **this ticket's market only**:
 | Hydrate into the live bag | HC / Q1 / UNOPP / NFL-CFB unlock |
 | no-CONFIRMED FOR hold | Action desk CONFIRMED filter |
 | v11 Proven bag / dCount | GOLD proven $ share / calibration isProven |
-| v12 quality from **this market book** | sport CONFIRMED / Door 2 rollup |
+| v12 quality from **this market book** (HARD+ here, including Door 2+HARD+) | Door 2 sport rollup when **not** HARD+ on this market |
 
-Fail-closed if `marketType` is missing. An MLB-ML HARD+ book does not count on a SPREAD/TOTAL ticket. v12 quality for those wallets reads **this market's** n + ROI. Overlays still mute and size after the score.
+Fail-closed if `marketType` is missing. An MLB-ML HARD+ book does not count on a SPREAD/TOTAL ticket. v12 quality: HARD+ on this market → market n + ROI (even if Door 2); CONFIRMED and not HARD+ here → sport book. Overlays still mute and size after the score.
 
 Code: `src/lib/marketProvenCarve.js`.
 

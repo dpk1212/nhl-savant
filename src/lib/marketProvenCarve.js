@@ -8,11 +8,12 @@
  *   hydrate (scan → live bag)
  *   no-CONFIRMED (FOR hold)
  *   v11 isProvenFn / AGS-U sidecar dCount
- *   v12 quality (agsV12WalletQuality) from THIS market book only
+ *   v12 quality (agsV12WalletQuality) from THIS market book
+ *     (HARD+ on the ticket market wins over the Door 2 sport rollup)
  *
  * Fail-closed when marketType is missing — a ML HARD+ book must not
- * count on a SPREAD/TOTAL ticket. Losing sport rollups stay out of
- * quality; overlays still size / mute after the score.
+ * count on a SPREAD/TOTAL ticket. Door 2 and not HARD+ here still
+ * uses the sport book. Overlays still size / mute after the score.
  */
 
 import { isConfirmedSportRec, isProvenSportRec } from './whitelistTier.js';
@@ -67,16 +68,15 @@ export function walletHydratesOnScanMarket(profile, sport, marketType) {
 }
 
 /**
- * v12 quality priors. Door 2 / FLAT keep the sport Source B book.
- * HARD+ on THIS market (and not sport CONFIRMED) uses the market book
- * n + ROI — never the losing sport rollup. Fail-closed without marketType.
+ * v12 quality priors.
+ *   HARD+ on THIS ticket market → that market book (even if Door 2).
+ *   else Door 2 / FLAT           → sport Source B book.
+ *   else                         → sport stats (quality 0 unless CONFIRMED/FLAT/HARD+).
+ * Fail-closed without marketType — ML HARD+ does not score a SPREAD ticket.
  */
 export function walletPriorStatsForV12(profile, sport, marketType) {
   const sportRec = profile?.bySport?.[sport];
   const sportStats = walletPriorStatsPreferB(sportRec);
-  if (sportStats && (sportStats.tier === 'CONFIRMED' || sportStats.tier === 'FLAT')) {
-    return sportStats;
-  }
   if (walletIsHardMarket(profile, sport, marketType)) {
     const mBook = marketPositions(profile, sport, marketType);
     const fromMkt = walletPriorStatsPreferB({
