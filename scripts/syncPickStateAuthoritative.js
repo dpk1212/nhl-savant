@@ -1166,7 +1166,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 34; // v34: HARD+ on this market uses the market book for v12 quality even if Door 2; CONFIRMED-not-HARD+ stays sport
+const SKILL_FEATURE_VERSION = 35; // v35: HARD+ mute-exception / 2-for / S/T require need ≥1 HARD FOR at ≥1.0× (do not stake lights as the 74% book)
 
 /** Q1 floor options — HARD+ FOR gate from 2026-09-28. Fail-open when the book cannot be judged. */
 function q1HardForOpts(walletDetails, side, sport, marketType, pickDate, profiles) {

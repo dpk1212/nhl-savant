@@ -397,4 +397,23 @@ ok(hardUnoppFloorUnits(0, 6) === 4, 'muted 6 → 4 cap');
     '2-1 both ≥0.5× does not floor through board-share');
 }
 
+{
+  const r = floor({
+    walletDetails: [{ wallet: 'aaaaaa', side: 'under', invested: 90 }],
+  });
+  ok(r.action === 'HOLD' && r.reason === 'no_full_size' && r.units === 0,
+    '0.18× 1 HARD does not invent 2u');
+  ok(r.hardForN === 1 && r.fullN === 0, '1 HARD light, 0 full');
+}
+
+{
+  const r = floor({
+    mutedBy: 'maxsr-sub4',
+    unitsPreMute: 3,
+    walletDetails: [{ wallet: 'aaaaaa', side: 'under', invested: 90 }],
+  });
+  ok(r.action === 'HOLD' && r.reason === 'no_full_size' && r.units === 0,
+    'muted 0.18× 1 HARD does not floor to 2–3u');
+}
+
 console.log(`ok ${n} hard-unopp-floor checks`);
