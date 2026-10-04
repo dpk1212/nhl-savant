@@ -1,68 +1,28 @@
 # MLB Predictions
 
-MLB predictions for Saturday, October 3, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 10/3, the Brewers have the highest win probability at 60.6%.
+MLB predictions for Sunday, October 4, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 10/4, the Brewers have the highest win probability at 53.9%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 3 2026Oct 3
+Date: Oct 4 2026Oct 4
 
-[Oct 3, 1:00 PM ET\\
+[Oct 4, 4:00 PM ET\\
 \\
-![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
+![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
 \\
-White Sox \\
+Padres  M. King \\
 \\
-2 \\
-\\
-73.2% \\
-\\
-![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
-\\
-Guardians \\
-\\
-0 \\
-\\
-26.8% \\
-\\
-1 Out\\
-\\
-LIVE\\
-\\
-Top 5th \\
-\\
-In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_193_cle_cws) [Oct 3, 4:00 PM ET\\
-\\
-![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
-\\
-Braves  D. Dodd \\
-\\
-32.7% \\
-\\
-![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
-\\
-Dodgers  T. Skubal \\
-\\
-67.3% \\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_193_lad_atl) [Oct 3, 6:30 PM ET\\
-\\
-![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
-\\
-Yankees  G. Cole \\
-\\
-46.8% \\
+46.2% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
 45¢\\
 \\
-![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
+![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
 \\
-Rays  D. Rasmussen \\
+Brewers  L. Henderson \\
 \\
-53.2% \\
+53.8% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -70,31 +30,7 @@ Rays  D. Rasmussen \\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_193_tb_nyy) [Oct 3, 8:30 PM ET\\
-\\
-![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
-\\
-Padres  R. Ray \\
-\\
-38.8% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-35¢\\
-\\
-![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
-\\
-Brewers  J. Misiorowski \\
-\\
-61.2% \\
-\\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
-\\
-65¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_193_mil_sd)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_194_mil_sd)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -312,17 +248,11 @@ Claim Now
 
 How to claim
 
-## MLB predictions for Saturday
+## MLB predictions for Sunday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Saturday, the Brewers lead all win probabilities with a 60.6% chance of beating the Padres at American Family Field. The Guardians and Rays also rank among the leading moneyline favorites.
-
-| Team | Prob. | Opponent | First pitch (ET) |
-| --- | --- | --- | --- |
-| Brewers | 60.6% | vs. Padres | 5:30pm |
-| Guardians | 56.6% | vs. White Sox | 10:00am |
-| Rays | 53.5% | vs. Yankees | 3:30pm |
+On Sunday, the Brewers have a 53.9% chance of beating the Padres at American Family Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 

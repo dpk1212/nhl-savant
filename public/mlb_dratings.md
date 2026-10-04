@@ -40,46 +40,40 @@ Close
 
 # MLB Baseball Predictions
 
-Updated 1 min ago
+Updated 38 sec ago
 
 All ConferencesALNL
 
-- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#scroll-upcoming)
-- [In Progress](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#scroll-in-progress)
-- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#scroll-completed)
-- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#scroll-season)
-- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#scroll-simulation)
-- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#scroll-completed)
+- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#scroll-season)
+- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#scroll-simulation)
+- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#scroll-related)
 
-## Upcoming Games for October 3, 2026
+## Upcoming Games for October 4, 2026
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#)
 
 | Time | Teams | Pitchers | Win | Best<br>ML | Best<br>Spread | Runs | Total<br>Runs | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [10/03/2026\<br>\<br>04:00 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/78cd0e80-cec9-5e9b-98fb-6458fe9aa797) | [Atlanta Braves](https://www.dratings.com/teams/mlb-baseball-ratings/16-atlanta-braves)(94-68)<br>[Los Angeles Dodgers](https://www.dratings.com/teams/mlb-baseball-ratings/28-los-angeles-dodgers)(100-62) | Dylan Dodd<br>Tarik Skubal | 36.0%<br>64.0% | +205<br>-217<br>+205<br>-220 | +1½-105<br>-1½-106<br>+1½-105<br>-1½-115 | 3.50<br>4.98 | 8.48 | o8-115<br>u8+105<br>o8½-105<br>u8½-115 |  |  |
-| [10/03/2026\<br>\<br>06:38 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/d687ab37-ee8b-5cdb-af9e-66eff9e82da0) | [New York Yankees](https://www.dratings.com/teams/mlb-baseball-ratings/3-new-york-yankees)(93-68)<br>[Tampa Bay Rays](https://www.dratings.com/teams/mlb-baseball-ratings/4-tampa-bay-rays)(98-64) | Gerrit Cole<br>Drew Rasmussen | 40.6%<br>59.4% | +119<br>-127<br>+120<br>-130 | +1½-189<br>-1½+170<br>+1½-190<br>-1½+172 | 2.83<br>3.82 | 6.65 | o7+100<br>u7-112<br>o7+100<br>u7-120 |  |  |
-| [10/03/2026\<br>\<br>08:30 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/a2657dc0-cb7a-5a1b-ae7d-4b15564e3035) | [San Diego Padres](https://www.dratings.com/teams/mlb-baseball-ratings/29-san-diego-padres)(91-71)<br>[Milwaukee Brewers](https://www.dratings.com/teams/mlb-baseball-ratings/23-milwaukee-brewers)(103-59) | Robbie Ray<br>Jacob Misiorowski | 35.1%<br>64.9% | +187<br>-196<br>+185<br>-195 | +1½-120<br>-1½+109<br>+1½-125<br>-1½+105 | 2.85<br>4.40 | 7.25 | o7-103<br>u7-109<br>o7-105<br>u7-115 |  |  |
+| [10/04/2026\<br>\<br>04:00 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/2c40fd59-c810-55b1-8519-f5ab58e8293b) | [San Diego Padres](https://www.dratings.com/teams/mlb-baseball-ratings/29-san-diego-padres)(91-71)<br>[Milwaukee Brewers](https://www.dratings.com/teams/mlb-baseball-ratings/23-milwaukee-brewers)(103-59) | Michael King<br>Logan Henderson | 41.4%<br>58.6% | +121<br>-128<br>+121<br>-130 | +1½-190<br>-1½+170<br>+1½-190<br>-1½+170 | 3.14<br>4.05 | 7.19 | o7-115<br>u7+103<br>o7-110<br>u7-105 |  |  |
+| [10/04/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/5927c24e-9a5a-53bc-866d-a903548c023d) | [Atlanta Braves](https://www.dratings.com/teams/mlb-baseball-ratings/16-atlanta-braves)(94-68)<br>[Los Angeles Dodgers](https://www.dratings.com/teams/mlb-baseball-ratings/28-los-angeles-dodgers)(100-62) | Ray Kerr<br>Blake Snell | 38.9%<br>61.1% | +200<br>-210<br>+194<br>-210 | +1½-114<br>-1½+103<br>+1½-115<br>-1½+100 | 3.00<br>4.17 | 7.17 | o8-101<br>u8-111<br>o7½-115<br>u7½+100 |  |  |
 
-Games for Oct 2, 2026
+Games for Oct 3, 2026
 
-[Games for Oct 4, 2026](https://www.dratings.com/predictor/mlb-baseball-predictions/upcoming/2#scroll-upcoming)
-
-## Games In Progress
-
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#)
-
-| Time | Teams | Orig.<br>Win % | Closing<br>ML | Closing<br>Spread | Orig. Total<br>Runs | Closing<br>O/U | Period | Current<br>Score |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [10/03/2026\<br>\<br>01:07 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/4857f7a1-0106-5aae-997e-f1dea3740d62) | Chicago White Sox (84-78)<br>Cleveland Guardians (85-77) | 39.9%<br>60.1% | +130<br>-139<br>+130<br>-140 | +1½-175<br>-1½+156<br>+1½-175<br>-1½+160 | 7.03 | o6½-122<br>u6½+108<br>o7+110<br>u7-125 | 5th <br>TOP | 2<br>0 |
+[Games for Oct 5, 2026](https://www.dratings.com/predictor/mlb-baseball-predictions/upcoming/2#scroll-upcoming)
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Runs | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| [10/03/2026\<br>\<br>08:38 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/a2657dc0-cb7a-5a1b-ae7d-4b15564e3035) | [San Diego Padres](https://www.dratings.com/teams/mlb-baseball-ratings/29-san-diego-padres)<br>[Milwaukee Brewers](https://www.dratings.com/teams/mlb-baseball-ratings/23-milwaukee-brewers) | 35.1%<br>64.9% | +178<br>-191<br>+182<br>-197 | +1½-123<br>-1½+111<br>+1½-120<br>-1½+105 | 2<br>3 | -0.43699-0.42828 | -0.43232 |
+| [10/03/2026\<br>\<br>06:38 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/d687ab37-ee8b-5cdb-af9e-66eff9e82da0) | [New York Yankees](https://www.dratings.com/teams/mlb-baseball-ratings/3-new-york-yankees)<br>[Tampa Bay Rays](https://www.dratings.com/teams/mlb-baseball-ratings/4-tampa-bay-rays) | 40.6%<br>59.4% | +126<br>-135<br>+121<br>-130 | +1½-182<br>-1½+165<br>+1½-190<br>-1½+170 | 0<br>1 | -0.57111-0.58810 | -0.52019 |
+| [10/03/2026\<br>\<br>04:08 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/78cd0e80-cec9-5e9b-98fb-6458fe9aa797) | [Atlanta Braves](https://www.dratings.com/teams/mlb-baseball-ratings/16-atlanta-braves)<br>[Los Angeles Dodgers](https://www.dratings.com/teams/mlb-baseball-ratings/28-los-angeles-dodgers) | 36.0%<br>64.0% | +200<br>-220<br>+210<br>-218 | +1½-105<br>-1½-105<br>+1½-105<br>-1½-110 | 3<br>5 | -0.39531-0.38563 | -0.44705 |
+| [10/03/2026\<br>\<br>01:07 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/4857f7a1-0106-5aae-997e-f1dea3740d62) | [Chicago White Sox](https://www.dratings.com/teams/mlb-baseball-ratings/6-chicago-white-sox)<br>[Cleveland Guardians](https://www.dratings.com/teams/mlb-baseball-ratings/7-cleveland-guardians) | 39.9%<br>60.1% | +130<br>-139<br>+130<br>-140 | +1½-175<br>-1½+156<br>+1½-175<br>-1½+160 | 3<br>0 | -0.84915-0.85085 | -0.91892 |
 | [10/01/2026\<br>\<br>08:15 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/1e8c1a5e-77f6-574b-9784-ae8a4c82be64) | [Philadelphia Phillies](https://www.dratings.com/teams/mlb-baseball-ratings/19-philadelphia-phillies)<br>[Atlanta Braves](https://www.dratings.com/teams/mlb-baseball-ratings/16-atlanta-braves) | 47.2%<br>52.8% | +101<br>-107<br>+105<br>-110 | -1½+180<br>+1½-190 | 2<br>6 | -0.67421-0.65817 | -0.63887 |
 | [09/30/2026\<br>\<br>10:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/ea4a19f3-5e27-51b0-adfe-ff5f9d90a112) | [Chicago Cubs](https://www.dratings.com/teams/mlb-baseball-ratings/21-chicago-cubs)<br>[San Diego Padres](https://www.dratings.com/teams/mlb-baseball-ratings/29-san-diego-padres) | 43.5%<br>56.5% | +127<br>-137<br>+133<br>-135 | +1½-175<br>-1½+161<br>+1½-175<br>-1½+160 | 1<br>4 | -0.56650-0.55795 | -0.57176 |
 | [09/30/2026\<br>\<br>08:15 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/c0f88d9e-56a8-5fc6-8ea1-6ed024043124) | [Boston Red Sox](https://www.dratings.com/teams/mlb-baseball-ratings/2-boston-red-sox)<br>[New York Yankees](https://www.dratings.com/teams/mlb-baseball-ratings/3-new-york-yankees) | 43.3%<br>56.7% | +123<br>-127<br>+123<br>-129 | +1½-182<br>-1½+165<br>+1½-185<br>-1½+170 | 2<br>9 | -0.58864-0.58559 | -0.56800 |
@@ -92,10 +86,6 @@ Games for Oct 2, 2026
 | [09/27/2026\<br>\<br>03:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/19b57f16-dcde-5352-a32e-8b322e5f27a8) | [Pittsburgh Pirates](https://www.dratings.com/teams/mlb-baseball-ratings/24-pittsburgh-pirates)<br>[Detroit Tigers](https://www.dratings.com/teams/mlb-baseball-ratings/8-detroit-tigers) | 48.9%<br>51.1% | +108<br>-117<br>+110<br>-115 | -1½+175<br>+1½-185 | 4<br>2 | -0.75211-0.75294 | -0.71580 |
 | [09/27/2026\<br>\<br>03:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/d877776c-c1d2-5fd5-b9d4-e5dbf22fde07) | [Colorado Rockies](https://www.dratings.com/teams/mlb-baseball-ratings/27-colorado-rockies)<br>[Chicago White Sox](https://www.dratings.com/teams/mlb-baseball-ratings/6-chicago-white-sox) | 35.4%<br>64.6% | +143<br>-149<br>+146<br>-155 | +1½-145<br>-1½+133<br>+1½-145<br>-1½+130 | 2<br>4 | -0.52337-0.51208 | -0.43697 |
 | [09/27/2026\<br>\<br>03:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/e36e9a0f-cf8b-5e9b-9ea5-4add177ac918) | [Los Angeles Angels](https://www.dratings.com/teams/mlb-baseball-ratings/12-los-angeles-angels)<br>[Seattle Mariners](https://www.dratings.com/teams/mlb-baseball-ratings/14-seattle-mariners) | 36.2%<br>63.8% | +145<br>-152<br>+145<br>-155 | +1½-155<br>-1½+141<br>+1½-155<br>-1½+140 | 3<br>7 | -0.51683-0.51371 | -0.44921 |
-| [09/27/2026\<br>\<br>03:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/7e7f5e44-016a-5722-886c-c6255f6a48d2) | [Texas Rangers](https://www.dratings.com/teams/mlb-baseball-ratings/15-texas-rangers)<br>[Minnesota Twins](https://www.dratings.com/teams/mlb-baseball-ratings/10-minnesota-twins) | 47.8%<br>52.2% | -110<br>+107<br>-110<br>+104 | -1½+147<br>+1½-164<br>-1½+145<br>+1½-160 | 4<br>6 | -0.73443-0.72685 | -0.65099 |
-| [09/27/2026\<br>\<br>03:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/037a6438-dccd-5340-934a-1ba7dc8c36c0) | [Cleveland Guardians](https://www.dratings.com/teams/mlb-baseball-ratings/7-cleveland-guardians)<br>[Kansas City Royals](https://www.dratings.com/teams/mlb-baseball-ratings/9-kansas-city-royals) | 57.6%<br>42.4% | -104<br>-103<br>-105<br>-105 | -1½+150<br>+1½-165 | 2<br>3 | -0.69551-0.69315 | -0.85835 |
-| [09/27/2026\<br>\<br>03:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/47adeefb-34e1-5e01-876a-47caf48aa712) | [Atlanta Braves](https://www.dratings.com/teams/mlb-baseball-ratings/16-atlanta-braves)<br>[Miami Marlins](https://www.dratings.com/teams/mlb-baseball-ratings/17-miami-marlins) | 48.9%<br>51.1% | +107<br>-115<br>+110<br>-115 | +1½-185<br>-1½+170 | 3<br>5 | -0.64352-0.63673 | -0.67186 |
-| [09/27/2026\<br>\<br>03:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/b7d31981-45c2-5d7c-a1ed-67e7bc985bd8) | [Arizona Diamondbacks](https://www.dratings.com/teams/mlb-baseball-ratings/26-arizona-diamondbacks)<br>[San Diego Padres](https://www.dratings.com/teams/mlb-baseball-ratings/29-san-diego-padres) | 51.1%<br>48.9% | -149<br>+142<br>-144<br>+137 | -1½+113<br>+1½-125<br>-1½+112<br>+1½-130 | 4<br>9 | -0.89531-0.87491 | -0.71443 |
 
 [Load More Games](https://www.dratings.com/predictor/mlb-baseball-predictions/completed/2#scroll-completed)
 
@@ -103,13 +93,13 @@ Games for Oct 2, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791052595414#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1791138876385#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
-| **Sportsbooks** | 0 | 0-0 (0.000) | 0 |  |  |
-| **Sportsbooks** | 0 | 0-0 (0.000) | 0 |  |  |
-| **DRatings** | 0 | 0-0 (0.000) | 0 |  |  |
+| **Sportsbooks** | 3 | 3-0 (1.000) | 0 | -0.46780 |  |
+| **Sportsbooks** | 3 | 3-0 (1.000) | 0 | -0.46734 |  |
+| **DRatings** | 3 | 3-0 (1.000) | 0 | -0.46652 | 0.00128<br>0.00082 |
 
 ## Predictions Methodology
 
