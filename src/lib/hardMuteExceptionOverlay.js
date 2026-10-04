@@ -8,6 +8,8 @@
  *
  * 1. 2026-09-24+  ≥1 HARD FOR restores uPre when last mute is tape-weak /
  *    maxsr-sub4 / fools-gold-flat / top-crowded. tape-weak S/T stays muted.
+ *    2026-10-04+: that HARD FOR must be sized ≥1.0× sport usual
+ *    (Source B ≥1.0× book, not a 0.18× sprinkle floored to 2–4u).
  *
  * 2. 2026-09-28+  ≥2 unique HARD+ FOR restores a wider mute set
  *    (steam-tail / leftover / st-fat / tape-weak including S/T,
@@ -16,6 +18,7 @@
  *    fav-juice, unstamped 0u, or fade.
  *    2026-09-28: also requires 0 HARD+ AG.
  *    2026-09-29+: margin (FOR−AG) ≥ +1 is enough (2-1 rescues, 2-2 stays muted).
+ *    2026-10-04+: ≥1 of those HARD+ FOR must be sized ≥1.0×.
  *
  * 3. 2026-09-28+  SPREAD/TOTAL, ≥1 unique HARD+ FOR sized ≥1.5× sport
  *    usual, 0 HARD+ AG, same mute set as (2). Restore uPre capped at 4
@@ -27,6 +30,7 @@
  *   HARD_TWO_FOR_EXCEPTION_FROM = '9999-01-01'
  *   HARD_TWO_FOR_MARGIN_FROM = '9999-01-01'   (2-for requires 0 AG again)
  *   HARD_ST_PRESS_EXCEPTION_FROM = '9999-01-01'
+ *   HARD_FULL_SIZE_GATE_FROM = '9999-01-01'   (lights can rescue again)
  */
 import {
   attachMarketBooks,
@@ -51,6 +55,11 @@ export const HARD_ST_PRESS_RESCUED_BY = 'hard-st-press-hold';
 export const HARD_ST_PRESS_MIN_N = 1;
 export const HARD_ST_PRESS_MIN_SR = 1.5;
 export const HARD_ST_PRESS_CAP_U = 4;
+
+/** Oct 3 hole: 1 HARD at 0.18× restored 3u. Same 1.0× bar as the floor. */
+export const HARD_FULL_SIZE_GATE_FROM = '2026-10-04';
+export const HARD_MKT_HOLD_MIN_SR = 1.0;
+export const HARD_TWO_FOR_MIN_SR = 1.0;
 
 export const HARD_EXCEPTION_RESCUE_STAMPS = new Set([
   HARD_MUTE_EXCEPTION_RESCUED_BY,
@@ -99,6 +108,10 @@ export function isHardStPressExceptionLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= HARD_ST_PRESS_EXCEPTION_FROM;
 }
 
+export function isHardFullSizeGateLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= HARD_FULL_SIZE_GATE_FROM;
+}
+
 export function isHardExceptionRescueStamp(value) {
   return HARD_EXCEPTION_RESCUE_STAMPS.has(value);
 }
@@ -133,14 +146,18 @@ export function stPressRestoreUnits(unitsPreMute) {
   return Math.min(HARD_ST_PRESS_CAP_U, pre);
 }
 
-function hardForPressN(hardFor, sport, walletProfiles) {
+function hardForSizedN(hardFor, sport, walletProfiles, minSr) {
   let n = 0;
   for (const w of hardFor || []) {
     const profile = getWalletProfile(walletProfiles, w.short);
     const sr = stakeSizeRatio(w, profile, sport);
-    if (Number.isFinite(sr) && sr >= HARD_ST_PRESS_MIN_SR) n += 1;
+    if (Number.isFinite(sr) && sr >= minSr) n += 1;
   }
   return n;
+}
+
+function hardForPressN(hardFor, sport, walletProfiles) {
+  return hardForSizedN(hardFor, sport, walletProfiles, HARD_ST_PRESS_MIN_SR);
 }
 
 function identity(units, action, reason, extra = {}) {
@@ -165,6 +182,7 @@ function packExtra(mutedBy, mkt, extra = {}) {
     hardAgN: extra.hardAgN ?? 0,
     margin: extra.margin ?? 0,
     pressN: extra.pressN ?? 0,
+    fullN: extra.fullN ?? 0,
     mutedBy: mutedBy || null,
   };
 }
@@ -222,6 +240,7 @@ export function applyHardMuteExceptionOverlay({
   extra.hardAgN = hardAg.length;
   extra.margin = extra.hardN - extra.hardAgN;
   extra.pressN = hardForPressN(hardFor, sport, walletProfiles);
+  extra.fullN = hardForSizedN(hardFor, sport, walletProfiles, HARD_MKT_HOLD_MIN_SR);
 
   if (
     isHardTwoForExceptionLive(pickDate)
@@ -230,6 +249,9 @@ export function applyHardMuteExceptionOverlay({
   ) {
     if (twoForAgBlocks(extra.hardN, extra.hardAgN, pickDate)) {
       return identity(current, 'HOLD_MUTE', 'hard_ag', extra);
+    }
+    if (isHardFullSizeGateLive(pickDate) && extra.fullN < 1) {
+      return identity(current, 'HOLD_MUTE', 'no_full_size', extra);
     }
     const sized = twoHardForRestoreUnits(restore);
     return {
@@ -247,6 +269,7 @@ export function applyHardMuteExceptionOverlay({
       hardAgN: extra.hardAgN,
       margin: extra.margin,
       pressN: extra.pressN,
+      fullN: extra.fullN,
     };
   }
 
@@ -276,6 +299,7 @@ export function applyHardMuteExceptionOverlay({
       hardAgN: extra.hardAgN,
       margin: extra.margin,
       pressN: extra.pressN,
+      fullN: extra.fullN,
     };
   }
 
@@ -287,6 +311,9 @@ export function applyHardMuteExceptionOverlay({
   }
   if (extra.hardN < 1) {
     return identity(current, 'HOLD_MUTE', 'no_hard_for', extra);
+  }
+  if (isHardFullSizeGateLive(pickDate) && extra.fullN < 1) {
+    return identity(current, 'HOLD_MUTE', 'no_full_size', extra);
   }
 
   return {
@@ -304,5 +331,6 @@ export function applyHardMuteExceptionOverlay({
     hardAgN: extra.hardAgN,
     margin: extra.margin,
     pressN: extra.pressN,
+    fullN: extra.fullN,
   };
 }

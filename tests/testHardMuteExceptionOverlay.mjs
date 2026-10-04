@@ -8,6 +8,7 @@
  * when unique HARD margin (FOR−AG) ≥ +1 (2-1 HOLD, 2-2 stays muted).
  * 2026-09-28+: S/T 1 HARD+ FOR press ≥1.5× / 0 AG restores the same mute
  * set at uPre capped 4 (no 3u floor). ML stays on 1-for / 2-for.
+ * 2026-10-04+: 1-HARD and 2-for need ≥1 HARD FOR at ≥1.0× (Oct 3 lights).
  * Usage: node tests/testHardMuteExceptionOverlay.mjs
  */
 import assert from 'assert';
@@ -34,6 +35,10 @@ import {
   HARD_ST_PRESS_RESCUED_BY,
   HARD_ST_PRESS_MIN_SR,
   HARD_ST_PRESS_CAP_U,
+  HARD_FULL_SIZE_GATE_FROM,
+  HARD_MKT_HOLD_MIN_SR,
+  HARD_TWO_FOR_MIN_SR,
+  isHardFullSizeGateLive,
 } from '../src/lib/hardMuteExceptionOverlay.js';
 import {
   isHardMarketWallet,
@@ -1003,6 +1008,147 @@ const pressSpreadProf = new Map([
   });
   ok(r.action === 'EXEMPT' && r.units === 0,
     'unknown size is not a press — keep muted');
+}
+
+function fullGate(args) {
+  return applyHardMuteExceptionOverlay({ pickDate: '2026-10-04', ...args });
+}
+
+ok(HARD_FULL_SIZE_GATE_FROM === '2026-10-04', 'full-size gate cutover');
+ok(HARD_MKT_HOLD_MIN_SR === 1.0 && HARD_TWO_FOR_MIN_SR === 1.0, '1-HARD and 2-for share 1.0×');
+ok(isHardFullSizeGateLive('2026-10-04'), 'full-size gate live on cutover');
+ok(!isHardFullSizeGateLive('2026-10-03'), 'full-size gate not live Oct 3');
+
+{
+  const r = fullGate({
+    units: 0,
+    mutedBy: 'maxsr-sub4',
+    unitsPreMute: 3,
+    marketType: 'TOTAL',
+    sport: 'CFB',
+    side: 'over',
+    walletDetails: [{ side: 'over', walletShort: 'light1', invested: 180 }],
+    walletProfiles: new Map([
+      ['light1', pressProf('CFB', 'TOTAL', pos(12, 67, 21), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'HOLD_MUTE' && r.reason === 'no_full_size' && r.units === 0,
+    'UL Over 0.18× 1 HARD does not restore');
+  ok(r.hardN === 1 && r.fullN === 0, '1 HARD light, 0 full');
+}
+
+{
+  const r = applyHardMuteExceptionOverlay({
+    pickDate: '2026-10-03',
+    units: 0,
+    mutedBy: 'maxsr-sub4',
+    unitsPreMute: 3,
+    marketType: 'TOTAL',
+    sport: 'CFB',
+    side: 'over',
+    walletDetails: [{ side: 'over', walletShort: 'light1', invested: 180 }],
+    walletProfiles: new Map([
+      ['light1', pressProf('CFB', 'TOTAL', pos(12, 67, 21), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'RESCUE' && r.units === 3,
+    'Oct 3 0.18× 1 HARD still restored (pre-gate)');
+}
+
+{
+  const r = fullGate({
+    units: 0,
+    mutedBy: 'maxsr-sub4',
+    unitsPreMute: 1.5,
+    marketType: 'SPREAD',
+    sport: 'CFB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'full01', invested: 1000 }],
+    walletProfiles: new Map([
+      ['full01', pressProf('CFB', 'SPREAD', pos(4, 62, 10), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'RESCUE' && r.units === 1.5 && r.rescuedBy === HARD_MUTE_EXCEPTION_RESCUED_BY,
+    '1 HARD at exactly 1.0× still restores');
+  ok(r.fullN === 1, 'fullN 1');
+}
+
+{
+  const r = fullGate({
+    units: 0,
+    mutedBy: 'tape-weak',
+    unitsPreMute: 2.5,
+    marketType: 'ML',
+    sport: 'CFB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'unknwn', invested: 5000 }],
+    walletProfiles: new Map([
+      ['unknwn', prof('CFB', 'ML', pos(4, 62, 10))],
+    ]),
+  });
+  ok(r.action === 'HOLD_MUTE' && r.reason === 'no_full_size' && r.units === 0,
+    'unknown size is not full — 1 HARD stays muted');
+}
+
+{
+  const r = fullGate({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 2.5,
+    marketType: 'ML',
+    sport: 'CFB',
+    side: 'home',
+    walletDetails: [
+      { side: 'home', walletShort: 'twol01', invested: 180 },
+      { side: 'home', walletShort: 'twol02', invested: 400 },
+    ],
+    walletProfiles: new Map([
+      ['twol01', pressProf('CFB', 'ML', pos(4, 62, 10), 10, 10000)],
+      ['twol02', pressProf('CFB', 'ML', pos(12, 70, 20), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'HOLD_MUTE' && r.reason === 'no_full_size' && r.units === 0,
+    '2-for both lights does not restore');
+  ok(r.hardN === 2 && r.fullN === 0, '2 HARD, 0 full');
+}
+
+{
+  const r = fullGate({
+    units: 0,
+    mutedBy: 'steam-tail',
+    unitsPreMute: 1,
+    marketType: 'ML',
+    sport: 'CFB',
+    side: 'home',
+    walletDetails: [
+      { side: 'home', walletShort: 'twof01', invested: 1000 },
+      { side: 'home', walletShort: 'twof02', invested: 180 },
+    ],
+    walletProfiles: new Map([
+      ['twof01', pressProf('CFB', 'ML', pos(4, 62, 10), 10, 10000)],
+      ['twof02', pressProf('CFB', 'ML', pos(12, 70, 20), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'RESCUE' && r.units === 3 && r.rescuedBy === HARD_TWO_FOR_RESCUED_BY,
+    '2-for with one ≥1.0× still floors to 3');
+  ok(r.hardN === 2 && r.fullN === 1, '2 HARD, 1 full');
+}
+
+{
+  const r = fullGate({
+    units: 0,
+    mutedBy: 'tape-weak',
+    unitsPreMute: 1.5,
+    marketType: 'ML',
+    sport: 'CFB',
+    side: 'home',
+    walletDetails: [{ side: 'home', walletShort: 'lean01', invested: 770 }],
+    walletProfiles: new Map([
+      ['lean01', pressProf('CFB', 'ML', pos(4, 62, 10), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'HOLD_MUTE' && r.reason === 'no_full_size' && r.units === 0,
+    '1 HARD at 0.77× lean does not restore');
 }
 
 console.log(`ok ${n}`);

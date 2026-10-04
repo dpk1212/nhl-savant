@@ -108,8 +108,10 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
      └─ mutedBy=no-confirmed | ml-mkt-skill | st-qual-wipe | st-hard-slip
 12f. HARD mute-exception (2026-09-24+) — restore listed mutes if ≥1 HARD FOR
      └─ tape-weak **S/T stays muted** · rescuedBy=hard-mkt-hold
+     └─ **2026-10-04+** 1-HARD restore needs that HARD FOR sized **≥1.0×** (0.18× stays muted)
      └─ **2026-09-28+** 2+ unique HARD+ FOR and 0 HARD+ AG also restores steam-tail / leftover / st-fat / tape-weak S/T
      └─ **2026-09-29+** 2+ unique HARD+ FOR and margin (FOR−AG) ≥ +1 (2-1 HOLDs, 2-2 stays muted)
+     └─ **2026-10-04+** 2-for also needs ≥1 of those HARD+ FOR sized **≥1.0×**
      └─ size = max(uPre, 3) capped 4u · unique wallets not duplicate listings
      └─ skip ev-drift / fav-juice / unstamped 0u / fade · rescuedBy=hard-2for-hold
      └─ **2026-09-28+** S/T 1 HARD+ FOR sized ≥1.5× sport usual and 0 HARD+ AG restores the same mute set at uPre capped 4u (no 3u floor)
@@ -118,6 +120,7 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
      └─ **2026-09-29+** mute only when HARD AG ≥1 **and** margin (FOR−AG) ≤ 0
      └─ 2-1 / 3-2 HOLD · 1-1 / 0-1 / 1-2 MUTE · GOLD stays FOR-only
 12h. S/T HARD+ FOR require (2026-09-26+) — SPREAD/TOTAL needs ≥1 HARD FOR else 0u
+     └─ **2026-10-04+** that HARD FOR must be sized **≥1.0×** (lights remute)
      └─ ML exempt · 4u+ not exempt · mutedBy=st-hard-for
 12i. GOLD-stack size cap (2026-09-26+) — off-stack >4u → 4u
      └─ stack (HARD+ FOR only · proven ≥75%) keeps fat
@@ -170,6 +173,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-10-02** | **HARD+ market Proven carve** — Door 2 **or** HARD+ on this ticket market for hydrate / no-CONFIRMED / v11 Proven bag. Fail-closed if market missing. Does **not** sport-confirm HARD+ (v12 quality, HC, Q1, UNOPP, unlock, Action, GOLD proven $, calibration unchanged). |
 | **2026-10-02** | **HARD+ market v12 quality** — HARD+ specialists score v12 quality from **this market book** (n + ROI), not the sport rollup. Missing market fail-closed. HC / Q1 / UNOPP / unlock / Action / GOLD / calibration isProven stay Door 2. Overlays still mute/size after. |
 | **2026-10-03** | **HARD+ market prior wins Door 2 sport rollup** — if HARD+ on this ticket market, v12 quality uses that market book even when the wallet is sport CONFIRMED. CONFIRMED and not HARD+ here stays sport. |
+| **2026-10-04** | **HARD+ full-size gate** — mute-exception 1-for / 2-for and S/T HARD+ FOR require need ≥1 HARD FOR sized **≥1.0×** sport usual. Floor already had this bar. Lights (0.18× / 0.08×) stay muted — do not treat them as the Source B ≥1.0× 74% book. Size unknown is not full. |
 | **2026-09-26** | **GOLD-stack 4u cap** — off-stack tickets cannot publish above 4u. EDGE + tape can still fatten the stack to 6u. Ball State ML hole. |
 | **2026-09-19** | **Featured → Action union** — a shipped featured lock that Source B missed is merged onto Their Action so the result counts. Do not hide Featured to paper over the miss. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |

@@ -1,6 +1,7 @@
 /**
  * S/T HARD+ FOR require overlay (2026-09-26+).
  * Last-step 0u on spreads/totals with no HARD wallet on our side.
+ * 2026-10-04+: that HARD FOR must be ≥1.0× sport usual.
  * Usage: node tests/testHardStForRequireOverlay.mjs
  */
 import assert from 'assert';
@@ -9,6 +10,8 @@ import {
   isHardStForRequireLive,
   HARD_ST_FOR_REQUIRE_FROM,
   HARD_ST_FOR_MUTED_BY,
+  HARD_ST_FOR_FULL_FROM,
+  HARD_ST_FOR_MIN_SR,
 } from '../src/lib/hardStForRequireOverlay.js';
 import { isHardMarketWallet, countHardMarketFor } from '../src/lib/marketSkillMuteOverlay.js';
 import {
@@ -282,6 +285,104 @@ const books = new Map([
     walletProfiles: books,
   });
   ok(remute.action === 'MUTE' && remute.units === 0, 'last-step remutes S/T with no HARD FOR');
+}
+
+ok(HARD_ST_FOR_FULL_FROM === '2026-10-04', 'S/T full-size cutover');
+ok(HARD_ST_FOR_MIN_SR === 1.0, 'S/T require shares 1.0× bar');
+
+function pressProf(sport, market, bookPos, usualN, usualInvested) {
+  return {
+    bySport: {
+      [sport]: {
+        positions: { n: usualN, invested: usualInvested },
+        byMarket: {
+          [market]: { positions: bookPos },
+        },
+      },
+    },
+  };
+}
+
+function muteFull(args) {
+  return applyHardStForRequireOverlay({ pickDate: '2026-10-04', ...args });
+}
+
+{
+  const r = muteFull({
+    units: 3,
+    marketType: 'TOTAL',
+    sport: 'CFB',
+    side: 'over',
+    walletDetails: [{ wallet: 'light1', side: 'over', invested: 180 }],
+    walletProfiles: new Map([
+      ['light1', pressProf('CFB', 'TOTAL', pos(12, 67, 21), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'MUTE' && r.units === 0 && r.mutedBy === 'st-hard-for',
+    '0.18× HARD FOR remutes S/T');
+  ok(r.reason === 'st_no_full_hard_for' && r.hardForN === 1 && r.fullN === 0,
+    'light HARD is not full');
+}
+
+{
+  const r = applyHardStForRequireOverlay({
+    units: 3,
+    marketType: 'TOTAL',
+    sport: 'CFB',
+    side: 'over',
+    walletDetails: [{ wallet: 'light1', side: 'over', invested: 180 }],
+    walletProfiles: new Map([
+      ['light1', pressProf('CFB', 'TOTAL', pos(12, 67, 21), 10, 10000)],
+    ]),
+    pickDate: '2026-10-03',
+  });
+  ok(r.action === 'HOLD' && r.units === 3,
+    'Oct 3 0.18× HARD FOR still holds (pre-gate)');
+}
+
+{
+  const r = muteFull({
+    units: 2.8,
+    marketType: 'SPREAD',
+    sport: 'CFB',
+    side: 'home',
+    walletDetails: [{ wallet: 'lean01', side: 'home', invested: 770 }],
+    walletProfiles: new Map([
+      ['lean01', pressProf('CFB', 'SPREAD', pos(10, 70, 20), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'MUTE' && r.reason === 'st_no_full_hard_for' && r.units === 0,
+    '0.77× lean HARD FOR remutes S/T');
+}
+
+{
+  const r = muteFull({
+    units: 3,
+    marketType: 'TOTAL',
+    sport: 'CFB',
+    side: 'under',
+    walletDetails: [{ wallet: 'full01', side: 'under', invested: 1000 }],
+    walletProfiles: new Map([
+      ['full01', pressProf('CFB', 'TOTAL', pos(4, 62, 10), 10, 10000)],
+    ]),
+  });
+  ok(r.action === 'HOLD' && r.units === 3 && r.fullN === 1,
+    '1.0× HARD FOR still holds S/T');
+}
+
+{
+  const r = muteFull({
+    units: 4,
+    marketType: 'TOTAL',
+    sport: 'CFB',
+    side: 'under',
+    walletDetails: [{ wallet: 'unknwn', side: 'under', invested: 5000 }],
+    walletProfiles: new Map([
+      ['unknwn', prof('CFB', 'TOTAL', pos(4, 62, 10))],
+    ]),
+  });
+  ok(r.action === 'MUTE' && r.reason === 'st_no_full_hard_for' && r.units === 0,
+    'unknown size is not full — remute S/T');
 }
 
 console.log(`testHardStForRequireOverlay: ${n} passed`);

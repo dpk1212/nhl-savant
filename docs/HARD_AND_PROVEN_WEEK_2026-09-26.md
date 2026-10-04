@@ -41,11 +41,11 @@ Used by:
 | Overlay | From | Rule | `mutedBy` / stamp |
 |---------|------|------|-------------------|
 | Market-skill | **2026-09-24** | ML: ≥1 FOR with sport×ML `n≥6 WR≥52`. S/T: qual$ AGREE + HARD slip on FOR. | `ml-mkt-skill` / `st-qual-wipe` / `st-hard-slip` |
-| HARD mute-exception | **2026-09-24** | Rescue tape-weak / maxsr-sub4 / fools-gold-flat / top-crowded if ≥1 HARD FOR. Tape-weak **S/T stays muted**. | `rescuedBy=hard-mkt-hold` |
-| HARD 2+ FOR / 0 AG | **2026-09-28** | Unique HARD+ FOR ≥2 and HARD+ AG = 0 restores steam-tail / leftover / st-fat / tape-weak (incl S/T) at max(uPre, 3) capped 4u. Skip ev-drift / fav-juice / unstamped / fade. **2026-09-29+** margin (FOR−AG) ≥ +1 is enough (2-1 HOLDs, 2-2 stays muted). | `rescuedBy=hard-2for-hold` |
+| HARD mute-exception | **2026-09-24** | Rescue tape-weak / maxsr-sub4 / fools-gold-flat / top-crowded if ≥1 HARD FOR. Tape-weak **S/T stays muted**. **2026-10-04+** that HARD FOR must be sized **≥1.0×**. | `rescuedBy=hard-mkt-hold` |
+| HARD 2+ FOR / 0 AG | **2026-09-28** | Unique HARD+ FOR ≥2 and HARD+ AG = 0 restores steam-tail / leftover / st-fat / tape-weak (incl S/T) at max(uPre, 3) capped 4u. Skip ev-drift / fav-juice / unstamped / fade. **2026-09-29+** margin (FOR−AG) ≥ +1 is enough (2-1 HOLDs, 2-2 stays muted). **2026-10-04+** ≥1 of those HARD+ FOR sized **≥1.0×**. | `rescuedBy=hard-2for-hold` |
 | HARD S/T press | **2026-09-28** | SPREAD/TOTAL unique HARD+ FOR ≥1 sized ≥1.5× sport usual and HARD+ AG = 0 restores the same mute set at uPre capped 4u (no 3u floor). ML stays on 1-for / 2-for. Skip board-share / ev-drift / fav-juice / unstamped / fade. | `rescuedBy=hard-st-press-hold` |
 | HARD+ AG mute | **2026-09-25** | ≥1 HARD on the **other** side → 0u. 4u+ not exempt. **2026-09-29+** mute only when HARD AG ≥1 **and** margin (FOR−AG) ≤ 0. 2-1 HOLD. 1-1 MUTE. GOLD stays FOR-only. | `hard-ag` |
-| S/T HARD+ FOR require | **2026-09-26** | SPREAD/TOTAL with `hardFor < 1` → 0u. ML exempt. 4u+ not exempt. Last step after HARD+ AG. | `st-hard-for` |
+| S/T HARD+ FOR require | **2026-09-26** | SPREAD/TOTAL with `hardFor < 1` → 0u. ML exempt. 4u+ not exempt. Last step after HARD+ AG. **2026-10-04+** that HARD FOR must be sized **≥1.0×**. | `st-hard-for` |
 | GOLD-stack 4u cap | **2026-09-26** | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps fat. | `cappedBy=gold-stack-cap` |
 | HARD+ margin floor | **2026-09-30** | Unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥1.0× → 2u. MONITORING / leftover / steam-tail / market-skill. **Board-share punches through.** **2026-10-02: ≥2 HARD FOR each ≥0.5× rolled back.** Skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag. | `flooredBy=hard-unopp-hold` |
 
