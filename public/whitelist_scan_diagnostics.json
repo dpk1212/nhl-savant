@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-10-04T21:53:24.941Z",
-  "elapsedSec": 65.9,
+  "scannedAt": "2026-10-04T21:59:26.684Z",
+  "elapsedSec": 65,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 126,
   "summary": {
     "total": 451,
-    "coveredByMain": 66,
+    "coveredByMain": 64,
     "recovered": 32,
-    "recoveredPositions": 221,
-    "noPositions": 353,
+    "recoveredPositions": 226,
+    "noPositions": 355,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 17,
       "spread": 4,
       "total": 13,
-      "dropped_shadow_gate": 75,
+      "dropped_shadow_gate": 80,
       "dropped_excluded": 107,
       "dropped_duplicate": 5
     }
@@ -63,7 +63,7 @@
           "gameKey": "uta_nyr",
           "marketType": "ml",
           "side": "home",
-          "invested": 747,
+          "invested": 774,
           "entryLine": null,
           "passesShadow": true
         }
@@ -757,7 +757,8 @@
       "tier": "WR50",
       "name": "roltonmeow",
       "sports": "",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x21f107e4dec0006c79d660f88ebae943631fa9c7"
     },
     {
       "walletShort": "20286a",
@@ -927,11 +928,11 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xcd84d7f9262516865553555751609fb6f52abec6",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "none",
       "avgSportBet": 0,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "MLB",
@@ -939,6 +940,15 @@
           "marketType": "ml",
           "side": "away",
           "invested": 20000,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "NHL",
+          "gameKey": "uta_nyr",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 10833,
           "entryLine": null,
           "passesShadow": false
         },
@@ -1163,11 +1173,11 @@
       "sports": "WNBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 50,
+      "positionsCount": 51,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 3957,
       "willPassShadowGate": 18,
-      "willDropAtShadowGate": 32,
+      "willDropAtShadowGate": 33,
       "positions": [
         {
           "sport": "MLB",
@@ -1449,6 +1459,15 @@
           "passesShadow": false
         },
         {
+          "sport": "NHL",
+          "gameKey": "vgk_van",
+          "marketType": "total",
+          "side": "over",
+          "invested": 24,
+          "entryLine": 6.5,
+          "passesShadow": false
+        },
+        {
           "sport": "NFL",
           "gameKey": "atl_no",
           "marketType": "spread",
@@ -1477,6 +1496,15 @@
         },
         {
           "sport": "NHL",
+          "gameKey": "uta_nyr",
+          "marketType": "total",
+          "side": "under",
+          "invested": 19,
+          "entryLine": 5.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "NHL",
           "gameKey": "fla_ana",
           "marketType": "ml",
           "side": "away",
@@ -1500,15 +1528,6 @@
           "side": "over",
           "invested": 16,
           "entryLine": 7.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "NHL",
-          "gameKey": "vgk_van",
-          "marketType": "total",
-          "side": "over",
-          "invested": 15,
-          "entryLine": 6.5,
           "passesShadow": false
         },
         {
@@ -1768,7 +1787,8 @@
       "tier": "CONFIRMED",
       "name": "0x021C7Df18153E2636e368e85F0Cedb34C245232f-1767207000808",
       "sports": "CFB",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x021c7df18153e2636e368e85f0cedb34c245232f"
     },
     {
       "walletShort": "452618",
@@ -1929,7 +1949,7 @@
           "gameKey": "atl_lad",
           "marketType": "ml",
           "side": "away",
-          "invested": 239431,
+          "invested": 239574,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2506,11 +2526,11 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
-      "positionsCount": 6,
+      "positionsCount": 8,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 317,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 5,
+      "willDropAtShadowGate": 7,
       "positions": [
         {
           "sport": "NFL",
@@ -2549,11 +2569,29 @@
           "passesShadow": false
         },
         {
+          "sport": "NHL",
+          "gameKey": "fla_ana",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 10,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
           "sport": "MLB",
           "gameKey": "atl_lad",
           "marketType": "ml",
           "side": "home",
           "invested": 13,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "NHL",
+          "gameKey": "uta_nyr",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 11,
           "entryLine": null,
           "passesShadow": false
         },
@@ -2762,6 +2800,15 @@
         {
           "sport": "NHL",
           "gameKey": "uta_nyr",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 2984,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "NHL",
+          "gameKey": "uta_nyr",
           "marketType": "total",
           "side": "over",
           "invested": 3231,
@@ -2784,15 +2831,6 @@
           "side": "under",
           "invested": 1806,
           "entryLine": 6.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "NHL",
-          "gameKey": "uta_nyr",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 1955,
-          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -5729,11 +5767,11 @@
       "sports": "SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe5241830e8876c115d7dc8311ad9f43d85fdd34f",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 11253,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "NHL",
@@ -5743,6 +5781,15 @@
           "invested": 2340,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "NHL",
+          "gameKey": "uta_nyr",
+          "marketType": "total",
+          "side": "under",
+          "invested": 19,
+          "entryLine": 7.5,
+          "passesShadow": false
         }
       ]
     },
