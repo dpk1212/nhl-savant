@@ -1,36 +1,60 @@
 # MLB Predictions
 
-MLB predictions for Sunday, October 4, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 10/4, the Brewers have the highest win probability at 53.9%.
+MLB predictions for Monday, October 5, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 10/5, the Guardians have the highest win probability at 57.0%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 4 2026Oct 4
+Date: Oct 5 2026Oct 5
 
-[Oct 4, 4:00 PM ET\\
+[Oct 5, 5:00 PM ET\\
 \\
-![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
+![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
 \\
-Padres  M. King \\
+White Sox \\
 \\
-46.2% \\
+0 \\
+\\
+23.3% \\
+\\
+![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
+\\
+Guardians \\
+\\
+2 \\
+\\
+76.7% \\
+\\
+1 Out\\
+\\
+LIVE\\
+\\
+Top 3rd \\
+\\
+In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_195_cle_cws) [Oct 5, 8:00 PM ET\\
+\\
+![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
+\\
+Yankees  C. Schlittler \\
+\\
+52.4% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-45¢\\
+53¢\\
 \\
-![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
+![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
-Brewers  L. Henderson \\
+Rays  F. Peralta \\
 \\
-53.8% \\
+47.6% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-56¢\\
+47¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_194_mil_sd)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_195_tb_nyy)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -248,11 +272,16 @@ Claim Now
 
 How to claim
 
-## MLB predictions for Sunday
+## MLB predictions for Monday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Sunday, the Brewers have a 53.9% chance of beating the Padres at American Family Field.
+On Monday, the Guardians lead all win probabilities with a 57.0% chance of beating the White Sox at Progressive Field. The Yankees also ranks among the leading moneyline favorites.
+
+| Team | Prob. | Opponent | First pitch (ET) |
+| --- | --- | --- | --- |
+| Guardians | 57.0% | vs. White Sox | 2:00pm |
+| Yankees | 52.1% | @ Rays | 5:00pm |
 
 ## MLB predictions today: Data-driven outcomes for every game
 
