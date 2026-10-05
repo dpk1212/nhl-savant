@@ -24,7 +24,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **HARD+ last steps** | Overlay (2026-09-24…26) | Market-skill · HARD exception · HARD+ AG mute · S/T HARD+ FOR require · see week memo |
 | **Who-floor HARD+ FOR** | Q1 / T arriving (2026-09-28+) | Q1 and lean arriving 1→2 need ≥1 HARD+ FOR · fail-open if we cannot judge · mid 4u boost unchanged |
 | **GOLD-stack 4u cap** | Last size choke (2026-09-26+) | Off-stack **>4u → 4u**. Stack (HARD+ FOR only · proven ≥75%) keeps 5–6u. Fail-open if we cannot judge. |
-| **Proven bag** | Who v12 scores (2026-09-26) | Source B n≥6 WR≥55 $ROI>3 · A-only out · FLAT gone · **2026-10-03:** HARD+ on **this market** hydrates / holds no-CONFIRMED / v11 dCount **and** scores v12 quality from **this market book** (even if Door 2). CONFIRMED and not HARD+ here still uses the sport book. Not sport CONFIRMED. HC / Q1 / UNOPP / unlock / Action stay Door 2. |
+| **Proven bag** | Who v12 scores (2026-09-26) | Source B n≥6 WR≥55 $ROI>3 · A-only out · FLAT gone · **2026-10-05:** HARD+ v12 presence and market-prior quality **rolled back**. Hydrate / no-CONFIRMED / v11 / v12 quality are Door 2 sport book only. HARD+ is overlay (floor / mute-exception / AG / S/T require / Action Top). HC / Q1 / UNOPP / unlock / Action stay Door 2. |
 | **T-15** | Freeze | No further rewrite |
 
 **Paths pick who. EDGE band sizes A/C. Tape dials size. qConv cuts the Path C Q1 tail (Path A + RANK + UNOPP/Q1 exempt). FOOLS cancels FLAT-led. Leftover mute cancels believed-then-cut stubs and sub-4 FAIL_OPEN. CONFIRMED-UNOPP fills sized unopposed CONFIRMED left at 0u, including after mutes — leftover mute still wins after that restore.**
@@ -174,6 +174,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-10-02** | **HARD+ market v12 quality** — HARD+ specialists score v12 quality from **this market book** (n + ROI), not the sport rollup. Missing market fail-closed. HC / Q1 / UNOPP / unlock / Action / GOLD / calibration isProven stay Door 2. Overlays still mute/size after. |
 | **2026-10-03** | **HARD+ market prior wins Door 2 sport rollup** — if HARD+ on this ticket market, v12 quality uses that market book even when the wallet is sport CONFIRMED. CONFIRMED and not HARD+ here stays sport. |
 | **2026-10-04** | **HARD+ full-size gate** — mute-exception 1-for / 2-for and S/T HARD+ FOR require need ≥1 HARD FOR sized **≥1.0×** sport usual. Floor already had this bar. Lights (0.18× / 0.08×) stay muted — do not treat them as the Source B ≥1.0× 74% book. Size unknown is not full. |
+| **2026-10-05** | **HARD+ v12 feed rolled back** — hydrate / no-CONFIRMED / v11 Proven / v12 quality are Door 2 sport book only. HARD+-only wallets do not count in v12. Door 2 + HARD+ uses the **sport** rollup, not the market book. Overlays unchanged. |
 | **2026-09-26** | **GOLD-stack 4u cap** — off-stack tickets cannot publish above 4u. EDGE + tape can still fatten the stack to 6u. Ball State ML hole. |
 | **2026-09-19** | **Featured → Action union** — a shipped featured lock that Source B missed is merged onto Their Action so the result counts. Do not hide Featured to paper over the miss. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |

@@ -11,11 +11,10 @@
  * 2026-08-29 wallet …4417bc (CONFIRMED, ~1.9× sport-usual) missing from
  * peak.walletDetails while FLAT $30K led the side.
  *
- * This module rehydrates scan-board Door 2 Proven tickets, plus HARD+
- * wallets on that scan market, into the live bag and stamps sport-local
- * sizeRatio so HC / v12 quality match Action sizing. HARD+ does not
- * become sport CONFIRMED (HC / Q1 stay Door 2). v12 quality may then
- * read that wallet's THIS-market book.
+ * This module rehydrates scan-board Door 2 Proven tickets into the live
+ * bag and stamps sport-local sizeRatio so HC / v12 quality match Action
+ * sizing. HARD+ specialists that are not Door 2 stay out of the bag
+ * (rolled back 2026-10-05).
  */
 
 import { resolveSportUsualBet } from './sportUsualBet.js';
