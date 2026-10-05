@@ -123,7 +123,9 @@ jobs:
       # Self-chain: keep Kalshi refreshing 5am–11pm ET. Must run even if the
       # loop warned — a failed chain step leaves a multi-hour hole.
       - name: Chain next Kalshi (5am–11pm ET)
-        if: ${{ always() && !cancelled() }}
+        # always() — not !cancelled(). Same 2026-10-05 runner-cancel hole
+        # as order books: skipped chain left a coverage gap.
+        if: ${{ always() }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
