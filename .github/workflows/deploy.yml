@@ -1,7 +1,11 @@
-name: pages-build-deployment
+name: Manual Vite gh-pages deploy
 
 # DISABLED: Deploy manually from local with `npm run deploy`
 # Re-enable by uncommenting the push trigger below
+#
+# Do NOT name this pages-build-deployment — that is GitHub's built-in
+# Pages workflow (event=dynamic). Sharing the name made Actions UI / gh
+# run list unusable during the 2026-10-05 CDN freeze.
 on:
   # push:
   #   branches:
@@ -14,7 +18,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: manual-vite-pages
   cancel-in-progress: false
 
 jobs:

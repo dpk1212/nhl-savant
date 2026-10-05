@@ -125,7 +125,9 @@ jobs:
       # Self-chain: keep Order book refreshing 5am–11pm ET. Must run even if the
       # loop warned — a failed chain step leaves a multi-hour hole.
       - name: Chain next Order book (5am–11pm ET)
-        if: ${{ always() && !cancelled() }}
+        # always() — not !cancelled(). 2026-10-05: two chained runs never
+        # got a runner, cancelled ~15m, chain skipped, 15-min board died.
+        if: ${{ always() }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}

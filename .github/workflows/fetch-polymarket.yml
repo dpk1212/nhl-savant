@@ -20,6 +20,9 @@ name: Fetch Market Data (Polymarket + scan)
 # the old 4-min budget; most cycles JSON-patch gh-pages (same files the
 # site already serves). Cycle 1 and every 4th still full-build so UI
 # commits on main still land. Scan / write / sync are unchanged.
+# Skip the gh-pages push when GitHub Pages is already deploying — the
+# built-in pages-build-deployment (event=dynamic) cancels in-flight
+# deploys, which wedged nhlsavant.com on 2026-10-05 (CDN frozen at 19:14).
 # Kalshi native board lives in fetch-kalshi.yml (every 15 min). Wallet/odds
 # scan does not read kalshi_data.json. This loop never fetches or overwrites
 # that file — reset --hard origin/main carries the last 15-min Kalshi write
@@ -51,7 +54,8 @@ jobs:
   fetch-market-data:
     runs-on: ubuntu-latest
     # 100m clears 12× ~7m daytime cycles + setup. 58m timed out mid-loop on
-    # 2026-07-29 (job cancelled → chain step skipped via !cancelled()).
+    # 2026-07-29. Chain step is always() so a timeout/cancel still dispatches
+    # (queued/in_progress guards prevent a double chain).
     timeout-minutes: 100
     permissions:
       contents: write
@@ -315,8 +319,21 @@ jobs:
               do_full_build=1
             fi
 
+            # Do not push gh-pages on top of an in-flight Pages deploy.
+            # GitHub's branch-source workflow cancels the previous deploy;
+            # overlapping pushes freeze the CDN on the last success.
+            skip_pages=0
+            if [ ! -f scripts/pagesDeployIdle.js ]; then
+              echo "::warning::pagesDeployIdle.js missing after reset — pushing gh-pages this cycle"
+            elif ! node scripts/pagesDeployIdle.js --check; then
+              echo "::warning::GitHub Pages deploy in flight — skipping gh-pages push this cycle so the live CDN can publish"
+              skip_pages=1
+            fi
+
             deploy_ok=0
-            if [ "$do_full_build" -eq 1 ]; then
+            if [ "$skip_pages" -eq 1 ]; then
+              echo "--- gh-pages push skipped (Pages busy) ---"
+            elif [ "$do_full_build" -eq 1 ]; then
               echo "--- npm run build (cycle $i) ---"
               rm -rf dist
               if npm run build; then
@@ -436,7 +453,11 @@ jobs:
       # chain step on 2026-07-20 killed coverage from ~9pm→7am ET.
       # Skips if another run is already queued (safety cron / prior dispatch).
       - name: Chain next fetch (5am–11pm ET)
-        if: ${{ always() && !cancelled() }}
+        # always() — not !cancelled(). 2026-10-05 order-book/poly holes:
+        # jobs cancelled with no runner (or 100m timeout) skipped the chain
+        # and coverage died until a safety cron. queued/in_progress checks
+        # below still skip when a sibling is already going.
+        if: ${{ always() }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
