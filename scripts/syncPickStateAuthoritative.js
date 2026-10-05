@@ -303,6 +303,21 @@ import {
   HARD_UNOPP_STAKE_TIER,
 } from '../src/lib/hardUnoppFloorOverlay.js';
 import {
+  applyFormTierOverlay,
+  isFormTierLive,
+  isFormMuteStamp,
+  isFormRescueStamp,
+  FORM_TIER_FROM,
+  FORM_BOOST_FLOOR_U,
+  FORM_BOOST_CAP_U,
+  FORM_RESCUE_U,
+  FORM_PRESS_MIN_SR,
+  FORM_OUT_MUTED_BY,
+  FORM_CONTESTED_MUTED_BY,
+  FORM_PRESS_BOOSTED_BY,
+  FORM_PRESS_RESCUED_BY,
+} from '../src/lib/formTierOverlay.js';
+import {
   evaluateFadeProvenHoldFromTicket,
 } from '../src/lib/fadeProvenHold.js';
 import {
@@ -1325,6 +1340,15 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreGoldStackCap = null,
   hardUnoppFloorAction = null,
   unitsPreHardUnoppFloor = null,
+  formTierAction = null,
+  unitsPreFormTier = null,
+  formTierFrom = null,
+  formTierTier = null,
+  formTierForm = null,
+  formTierOppo = null,
+  formTierPerfForN = null,
+  formTierPerfAgN = null,
+  formTierInPressN = null,
   fadeProvenHoldAction = null,
   fadeProvenHoldReason = null,
   fadeProvenShare = null,
@@ -1521,6 +1545,17 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreHardUnoppFloor != null && Number.isFinite(unitsPreHardUnoppFloor)) {
     target.v8_unitsPreHardUnoppFloor = unitsPreHardUnoppFloor;
   }
+  if (formTierAction != null) target.v8_formTierAction = formTierAction;
+  if (unitsPreFormTier != null && Number.isFinite(unitsPreFormTier)) {
+    target.v8_unitsPreFormTier = unitsPreFormTier;
+  }
+  if (formTierFrom != null) target.v8_formTierFrom = formTierFrom;
+  if (formTierTier != null) target.v8_formTierTier = formTierTier;
+  if (formTierForm != null) target.v8_formTierForm = formTierForm;
+  if (formTierOppo != null) target.v8_formTierOppo = formTierOppo;
+  if (formTierPerfForN != null && Number.isFinite(formTierPerfForN)) target.v8_formTierPerfForN = formTierPerfForN;
+  if (formTierPerfAgN != null && Number.isFinite(formTierPerfAgN)) target.v8_formTierPerfAgN = formTierPerfAgN;
+  if (formTierInPressN != null && Number.isFinite(formTierInPressN)) target.v8_formTierInPressN = formTierInPressN;
   if (fadeProvenHoldAction != null) target.v8_fadeProvenHoldAction = fadeProvenHoldAction;
   if (fadeProvenHoldReason != null) target.v8_fadeProvenHoldReason = fadeProvenHoldReason;
   if (fadeProvenShare != null && Number.isFinite(Number(fadeProvenShare))) {
@@ -1642,6 +1677,7 @@ function skillStampsDrifted(sd, bundle, {
   hardStForRequireAction = null,
   goldStackCapAction = null,
   hardUnoppFloorAction = null,
+  formTierAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1698,6 +1734,7 @@ function skillStampsDrifted(sd, bundle, {
   if (hardStForRequireAction != null && (sd.v8_hardStForRequireAction || null) !== hardStForRequireAction) return true;
   if (goldStackCapAction != null && (sd.v8_goldStackCapAction || null) !== goldStackCapAction) return true;
   if (hardUnoppFloorAction != null && (sd.v8_hardUnoppFloorAction || null) !== hardUnoppFloorAction) return true;
+  if (formTierAction != null && (sd.v8_formTierAction || null) !== formTierAction) return true;
   return false;
 }
 
@@ -3821,6 +3858,55 @@ async function createMissingLockedPicks({
           }
         }
       }
+
+      // Form × tier layer — last policy before operator kill. Performing
+      // FOR wallet (PROVEN / ESTABLISHED / RISING on the sport book) read
+      // through its own trailing form: OUT → 0u; IN-form performing AG → 0u;
+      // IN + pressing + 0 performing AG → max(u, 4) capped 5; same cell at
+      // 0u from board-share / st-fat / ev-drift-edge → 3u. Fail-open HOLD.
+      let formTierPolicyCreate = null;
+      if (createV121Eligible) {
+        const lastMuteFormCreate = stackLastMute({
+          marketSkillPolicy: marketSkillPolicyCreate,
+          stFatPolicy: stFatPolicyCreate,
+          boardSharePolicy: boardSharePolicyCreate,
+          unitTierPolicy: unitTierPolicyCreate,
+          favJuicePolicy: favJuicePolicyCreate,
+          steamTailPolicy: steamTailPolicyCreate,
+          evDriftPolicy: evDriftPolicyCreate,
+          topCrowdedPolicy: topCrowdedPolicyCreate,
+          noConfirmedPolicy: noConfirmedPolicyCreate,
+          maxSrSub4Policy: maxSrSub4PolicyCreate,
+          flinchFailOpenPolicy: flinchFailOpenPolicyCreate,
+          foolsGoldPolicy: foolsGoldPolicyCreate,
+          qConvPolicy: qConvPolicyCreate,
+          tapePolicy: clvPolicyCreate,
+        });
+        // A HARD+ AG / S/T HARD+ FOR mute after the stack is not one of the
+        // three rescue-able mutes — pass it so the rescue path sees it and holds.
+        const lateMuteCreate = hardStForPolicyCreate?.mutedBy
+          || hardAgPolicyCreate?.mutedBy
+          || null;
+        formTierPolicyCreate = applyFormTierOverlay({
+          units: peakUnitsApplied,
+          mutedBy: lateMuteCreate || lastMuteFormCreate.mutedBy,
+          unitsPreMute: lastMuteFormCreate.unitsPre,
+          marketType,
+          sport,
+          side,
+          walletDetails,
+          walletProfiles,
+          pickDate: TARGET_DATE,
+        });
+        if (formTierPolicyCreate.action === 'MUTE') {
+          peakUnitsApplied = 0;
+        } else if (formTierPolicyCreate.action === 'BOOST' || formTierPolicyCreate.action === 'RESCUE') {
+          peakUnitsApplied = formTierPolicyCreate.units;
+          if (Number.isFinite(Number(odds))) {
+            peakUnitsApplied = Math.round(oddsCap(peakUnitsApplied, odds) * 100) / 100;
+          }
+        }
+      }
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
       }
@@ -4102,6 +4188,17 @@ async function createMissingLockedPicks({
           unitsPreHardUnoppFloor: (hardUnoppFloorPolicyCreate && Number.isFinite(hardUnoppFloorPolicyCreate.unitsPrePolicy))
             ? hardUnoppFloorPolicyCreate.unitsPrePolicy
             : null,
+          formTierAction: formTierPolicyCreate?.action ?? null,
+          unitsPreFormTier: (formTierPolicyCreate && Number.isFinite(formTierPolicyCreate.unitsPrePolicy))
+            ? formTierPolicyCreate.unitsPrePolicy
+            : null,
+          formTierFrom: formTierPolicyCreate?.rescuedFrom ?? null,
+          formTierTier: formTierPolicyCreate?.tier ?? null,
+          formTierForm: formTierPolicyCreate?.form ?? null,
+          formTierOppo: formTierPolicyCreate?.oppo ?? null,
+          formTierPerfForN: formTierPolicyCreate?.perfForN ?? null,
+          formTierPerfAgN: formTierPolicyCreate?.perfAgN ?? null,
+          formTierInPressN: formTierPolicyCreate?.inPressN ?? null,
           steamTailReason: steamTailPolicyCreate?.reason ?? null,
           steamTailArriving: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamArriving : null,
           steamTailOnLock: steamTailPolicyCreate ? !!steamTailPolicyCreate.steamOnLock : null,
@@ -4163,9 +4260,22 @@ async function createMissingLockedPicks({
       const hardUnoppFlooredCreate = hardUnoppFloorPolicyCreate?.action === 'FLOOR'
         && Number.isFinite(hardUnoppFloorPolicyCreate.units)
         && hardUnoppFloorPolicyCreate.units > 0;
+      const formTierMutedCreate = formTierPolicyCreate?.action === 'MUTE'
+        && Number.isFinite(formTierPolicyCreate.unitsPrePolicy)
+        && formTierPolicyCreate.unitsPrePolicy > 0;
+      const formTierRescuedCreate = formTierPolicyCreate?.action === 'RESCUE'
+        && Number.isFinite(formTierPolicyCreate.units)
+        && formTierPolicyCreate.units > 0;
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
+      } else if (formTierMutedCreate) {
+        v8Stamps.mutedBy = formTierPolicyCreate.mutedBy;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
+        if (v8Stamps.v8_hardUnoppPromote != null) delete v8Stamps.v8_hardUnoppPromote;
+      } else if (formTierRescuedCreate) {
+        delete v8Stamps.mutedBy;
+        v8Stamps.v8_rescuedBy = formTierPolicyCreate.rescuedBy || FORM_PRESS_RESCUED_BY;
       } else if (hardUnoppFlooredCreate) {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = hardUnoppFloorPolicyCreate.flooredBy
@@ -4260,7 +4370,7 @@ async function createMissingLockedPicks({
       const hardStForMutedCreate = hardStForPolicyCreate?.action === 'MUTE'
         && Number.isFinite(hardStForPolicyCreate.unitsPrePolicy)
         && hardStForPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = !hardUnoppFlooredCreate && (hardStForMutedCreate || hardAgMutedCreate || (!hardExceptionRescuedCreate && (marketSkillMutedCreate || stFatMutedCreate || boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const createSizeMuted = formTierMutedCreate || (!formTierRescuedCreate && !hardUnoppFlooredCreate && (hardStForMutedCreate || hardAgMutedCreate || (!hardExceptionRescuedCreate && (marketSkillMutedCreate || stFatMutedCreate || boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -4268,10 +4378,11 @@ async function createMissingLockedPicks({
           && Number.isFinite(qConvPolicyCreate.unitsPrePolicy)
           && qConvPolicyCreate.unitsPrePolicy > 0)
         || (!!clvPolicyCreate.mutedBy)
-      )))));
+      ))))));
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(formTierPolicyCreate?.reason ? [formTierPolicyCreate.reason] : []),
           ...(hardUnoppFloorPolicyCreate?.reason ? [hardUnoppFloorPolicyCreate.reason] : []),
           ...(hardStForPolicyCreate?.reason ? [hardStForPolicyCreate.reason] : []),
           ...(hardAgPolicyCreate?.reason ? [hardAgPolicyCreate.reason] : []),
@@ -5735,6 +5846,47 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // Form × tier layer — last policy before odds-cap / operator kill.
+  // OUT-form performing FOR → 0u; IN-form performing AG → 0u;
+  // IN + pressing + 0 performing AG → max(u, 4) capped 5; same cell at 0u
+  // from board-share / st-fat / ev-drift-edge → 3u. Manual stake exempt.
+  let formTierPolicy = null;
+  if (v121Eligible && !skipManualFlinch && appliedStatus === 'ACTIVE') {
+    const lastMuteForm = stackLastMute({
+      marketSkillPolicy,
+      stFatPolicy,
+      boardSharePolicy,
+      unitTierPolicy,
+      favJuicePolicy,
+      steamTailPolicy,
+      evDriftPolicy,
+      topCrowdedPolicy,
+      noConfirmedPolicy,
+      maxSrSub4Policy: maxSrSub4Policy,
+      flinchFailOpenPolicy,
+      foolsGoldPolicy,
+      qConvPolicy,
+      tapePolicy: tapePolicy?.mutedBy ? tapePolicy : clvPolicy,
+    });
+    const lateMute = hardStForPolicy?.mutedBy || hardAgPolicy?.mutedBy || null;
+    formTierPolicy = applyFormTierOverlay({
+      units: finalUnitsApplied,
+      mutedBy: lateMute || lastMuteForm.mutedBy,
+      unitsPreMute: lastMuteForm.unitsPre,
+      marketType: mkt,
+      sport: pick.sport,
+      side,
+      walletDetails: wd,
+      walletProfiles,
+      pickDate,
+    });
+    if (formTierPolicy.action === 'MUTE') {
+      finalUnitsApplied = 0;
+    } else if (formTierPolicy.action === 'BOOST' || formTierPolicy.action === 'RESCUE') {
+      finalUnitsApplied = formTierPolicy.units;
+    }
+  }
+
   // Last choke — RANK / EDGE floors cannot publish past the dog cap.
   let oddsCapClamped = false;
   if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
@@ -5821,6 +5973,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (hardAgPolicy?.reason && !reasons.includes(hardAgPolicy.reason)) reasons.push(hardAgPolicy.reason);
   if (hardStForPolicy?.reason && !reasons.includes(hardStForPolicy.reason)) reasons.push(hardStForPolicy.reason);
   if (hardUnoppFloorPolicy?.reason && !reasons.includes(hardUnoppFloorPolicy.reason)) reasons.push(hardUnoppFloorPolicy.reason);
+  if (formTierPolicy?.reason && !reasons.includes(formTierPolicy.reason)) reasons.push(formTierPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -5882,6 +6035,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const hardUnoppFloored = hardUnoppFloorPolicy?.action === 'FLOOR'
     && Number.isFinite(hardUnoppFloorPolicy.units)
     && hardUnoppFloorPolicy.units > 0;
+  const formTierMuted = formTierPolicy?.action === 'MUTE'
+    && Number.isFinite(formTierPolicy.unitsPrePolicy)
+    && formTierPolicy.unitsPrePolicy > 0;
+  const formTierRescued = formTierPolicy?.action === 'RESCUE'
+    && Number.isFinite(formTierPolicy.units)
+    && formTierPolicy.units > 0;
   // Q1 / UNOPP / HARD+ margin floor wins — do not leave health MUTED when units were restored.
   // Later mutes (incl. market-skill) run AFTER those floors, so they still win if they cancelled.
   // HARD hold restores; HARD+ AG remutes if specialists faded us;
@@ -5893,7 +6052,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const lateMuteCancelled = !confirmedQ1Floored && !confirmedUnoppFloored
     && (foolsMuted || qConvMuted || tapeClvMuted);
   const sizeMuted = operatorKilled
-    || (!hardUnoppFloored && (hardStForMuted
+    || formTierMuted
+    || (!formTierRescued && !hardUnoppFloored && (hardStForMuted
     || hardAgMuted
     || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled))));
   const healthStatusOut = sizeMuted
@@ -5947,6 +6107,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
+  } else if (formTierMuted) {
+    patch.mutedBy = formTierPolicy.mutedBy;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  } else if (formTierRescued) {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+    patch.v8_rescuedBy = formTierPolicy.rescuedBy || FORM_PRESS_RESCUED_BY;
   } else if (hardUnoppFloored) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = hardUnoppFloorPolicy.flooredBy || HARD_UNOPP_FLOORED_BY;
@@ -6014,12 +6180,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || ST_FAT_MUTE_VALUES.has(sd.mutedBy)
       || MARKET_SKILL_MUTE_VALUES.has(sd.mutedBy)
       || HARD_AG_MUTE_VALUES.has(sd.mutedBy)
-      || HARD_ST_FOR_MUTE_VALUES.has(sd.mutedBy)) {
+      || HARD_ST_FOR_MUTE_VALUES.has(sd.mutedBy)
+      || isFormMuteStamp(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
-  if ((!hardExceptionRescued || hardAgMuted || hardStForMuted)
+  if ((!hardExceptionRescued || hardAgMuted || hardStForMuted || formTierMuted)
       && isHardExceptionRescueStamp(sd.v8_rescuedBy)) {
+    patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  }
+  if (!formTierRescued && isFormRescueStamp(sd.v8_rescuedBy)) {
     patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== healthStatusOut) {
@@ -6522,6 +6692,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreHardUnoppFloor: (hardUnoppFloorPolicy && Number.isFinite(hardUnoppFloorPolicy.unitsPrePolicy))
         ? hardUnoppFloorPolicy.unitsPrePolicy
         : null,
+      formTierAction: formTierPolicy?.action ?? null,
+      unitsPreFormTier: (formTierPolicy && Number.isFinite(formTierPolicy.unitsPrePolicy))
+        ? formTierPolicy.unitsPrePolicy
+        : null,
+      formTierFrom: formTierPolicy?.rescuedFrom ?? null,
+      formTierTier: formTierPolicy?.tier ?? null,
+      formTierForm: formTierPolicy?.form ?? null,
+      formTierOppo: formTierPolicy?.oppo ?? null,
+      formTierPerfForN: formTierPolicy?.perfForN ?? null,
+      formTierPerfAgN: formTierPolicy?.perfAgN ?? null,
+      formTierInPressN: formTierPolicy?.inPressN ?? null,
       fadeProvenHoldAction: fadeProvenHold?.action ?? null,
       fadeProvenHoldReason: fadeProvenHold?.reason ?? null,
       fadeProvenShare: fadeProvenHold?.shareP ?? null,
@@ -6570,6 +6751,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hardStForRequireAction: hardStForPolicy?.action ?? null,
       goldStackCapAction: goldStackCapPolicy?.action ?? null,
       hardUnoppFloorAction: hardUnoppFloorPolicy?.action ?? null,
+      formTierAction: formTierPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -6596,7 +6778,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (hardAgPolicy && (sd.v8_hardAgMuteAction || null) !== hardAgPolicy.action)
         || (hardStForPolicy && (sd.v8_hardStForRequireAction || null) !== hardStForPolicy.action)
         || (goldStackCapPolicy && (sd.v8_goldStackCapAction || null) !== goldStackCapPolicy.action)
-        || (hardUnoppFloorPolicy && (sd.v8_hardUnoppFloorAction || null) !== hardUnoppFloorPolicy.action)) {
+        || (hardUnoppFloorPolicy && (sd.v8_hardUnoppFloorAction || null) !== hardUnoppFloorPolicy.action)
+        || (formTierPolicy && (sd.v8_formTierAction || null) !== formTierPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -6624,7 +6807,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (hardAgPolicy?.action ? ` hardAg=${hardAgPolicy.action}` : '')
         + (hardStForPolicy?.action ? ` stHardFor=${hardStForPolicy.action}` : '')
         + (goldStackCapPolicy?.action ? ` goldCap=${goldStackCapPolicy.action}` : '')
-        + (hardUnoppFloorPolicy?.action ? ` hardUnopp=${hardUnoppFloorPolicy.action}` : ''),
+        + (hardUnoppFloorPolicy?.action ? ` hardUnopp=${hardUnoppFloorPolicy.action}` : '')
+        + (formTierPolicy?.action
+          ? ` formTier=${formTierPolicy.action}/${formTierPolicy.tier || '—'}/${formTierPolicy.form || '—'}/${formTierPolicy.oppo || '—'}`
+          : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -7621,7 +7807,19 @@ async function main() {
       + ` · from ${HARD_UNOPP_FLOOR_FROM} · after GOLD-stack · flooredBy=${HARD_UNOPP_FLOORED_BY}`
       + ` · skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag · fail-open HOLD if schema missing`,
     );
+  }
+  if (isFormTierLive(TARGET_DATE)) {
+    console.log(
+      `FORM×TIER layer LIVE: performing FOR (PROVEN/ESTABLISHED/RISING on sport book) read through own form`
+      + ` · OUT form → 0u (${FORM_OUT_MUTED_BY}) · IN-form performing AG → 0u (${FORM_CONTESTED_MUTED_BY})`
+      + ` · IN + pressing ≥${FORM_PRESS_MIN_SR}× + 0 performing AG → max(u, ${FORM_BOOST_FLOOR_U}) cap ${FORM_BOOST_CAP_U} (${FORM_PRESS_BOOSTED_BY})`
+      + ` · same cell at 0u from board-share / st-fat / ev-drift-edge → ${FORM_RESCUE_U}u (${FORM_PRESS_RESCUED_BY})`
+      + ` · from ${FORM_TIER_FROM} · last policy before operator kill · fail-open HOLD if schema missing`,
+    );
   } else {
+    console.log(`FORM×TIER layer: not live before ${FORM_TIER_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (!isHardUnoppFloorLive(TARGET_DATE)) {
     console.log(`HARD+ margin floor: not live before ${HARD_UNOPP_FLOOR_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   console.log(
