@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-10-05T03:33:07.665Z",
-  "elapsedSec": 84.3,
+  "scannedAt": "2026-10-05T03:39:48.323Z",
+  "elapsedSec": 82.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 121,
   "summary": {
     "total": 451,
-    "coveredByMain": 28,
+    "coveredByMain": 26,
     "recovered": 19,
-    "recoveredPositions": 122,
-    "noPositions": 404,
+    "recoveredPositions": 124,
+    "noPositions": 406,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,8 +16,8 @@
       "ml": 3,
       "spread": 1,
       "total": 1,
-      "dropped_shadow_gate": 57,
-      "dropped_excluded": 59,
+      "dropped_shadow_gate": 58,
+      "dropped_excluded": 60,
       "dropped_duplicate": 1
     }
   },
@@ -487,11 +487,11 @@
       "sports": "SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x821dab0565ebf5b327f51db06223fdcfe01acf16",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 18485,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
         {
           "sport": "SOC",
@@ -499,6 +499,15 @@
           "marketType": "ml",
           "side": "away",
           "invested": 114,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "epy_mlg",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 43,
           "entryLine": null,
           "passesShadow": false
         }
@@ -773,7 +782,8 @@
       "tier": "WR50",
       "name": "Cold-Palms",
       "sports": "",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x689f7d0a49d2646dc199848ffbdb4757242e259c"
     },
     {
       "walletShort": "2e8da5",
@@ -909,10 +919,10 @@
       "sports": "WNBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 27,
+      "positionsCount": 28,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 3957,
-      "willPassShadowGate": 8,
+      "willPassShadowGate": 9,
       "willDropAtShadowGate": 19,
       "positions": [
         {
@@ -975,6 +985,15 @@
           "marketType": "ml",
           "side": "away",
           "invested": 163,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "NHL",
+          "gameKey": "car_mtl",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 207,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2922,7 +2941,8 @@
       "tier": "CONFIRMED",
       "name": "dinimami",
       "sports": "NFL",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x5331121e9f2f206d8c06ae6235761b1a3f8d3672"
     },
     {
       "walletShort": "8d63fa",
