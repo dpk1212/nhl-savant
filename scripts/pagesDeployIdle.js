@@ -10,7 +10,11 @@
  *
  * A Pages deploy is "in flight" when:
  *   - any event=dynamic Actions run is pending/queued/in_progress/waiting, OR
- *   - /pages/builds/latest status is queued or building
+ *   - /pages/builds/latest status is queued or building AND younger than
+ *     PAGES_BUILDING_STALE_SEC (default 180). A "building" status with no
+ *     dynamic run and age >= that is a wedged Pages API ghost (2026-10-05
+ *     after merge: latest=building since 21:04, no Actions run, CDN still
+ *     frozen). Treat that as idle so the next push can recover.
  *
  * API errors fail closed (busy) so one skipped cycle is preferred over
  * another cancel-storm. Override with PAGES_IDLE_FAIL_OPEN=1.
@@ -22,17 +26,28 @@ import { execFileSync } from 'child_process';
 import { pathToFileURL } from 'url';
 import { resolve } from 'path';
 
+export const STALE_BUILDING_SEC = Number(
+  process.env.PAGES_BUILDING_STALE_SEC || 180,
+);
+
 export function pagesBusyFromSnapshot({
   inProgress = 0,
   queued = 0,
   pending = 0,
   waiting = 0,
   latestStatus = '',
+  latestAgeSec = 0,
 } = {}) {
   const n =
     toCount(inProgress) + toCount(queued) + toCount(pending) + toCount(waiting);
   const st = String(latestStatus || '').toLowerCase();
-  return n > 0 || st === 'queued' || st === 'building';
+  const building = st === 'queued' || st === 'building';
+  // Ghost: Pages API left status=building after the Actions run cancelled.
+  // No dynamic run is actually deploying, so skipping forever freezes the CDN.
+  if (building && n === 0 && toCount(latestAgeSec) >= STALE_BUILDING_SEC) {
+    return false;
+  }
+  return n > 0 || building;
 }
 
 function toCount(v) {
@@ -61,11 +76,16 @@ function runCount(status) {
   return toCount(parsed.total_count);
 }
 
-function latestBuildStatus() {
+function latestBuildInfo() {
   const r = repo();
   const raw = ghApi(`repos/${r}/pages/builds/latest`);
   const parsed = JSON.parse(raw);
-  return parsed.status || '';
+  const ts = parsed.updated_at || parsed.created_at;
+  const age = ts ? Math.max(0, (Date.now() - Date.parse(ts)) / 1000) : 0;
+  return {
+    status: parsed.status || '',
+    latestAgeSec: Number.isFinite(age) ? Math.round(age) : 0,
+  };
 }
 
 function probe(label, fn, fallback) {
@@ -82,18 +102,23 @@ export function readPagesSnapshot() {
   const queued = probe('queued', () => runCount('queued'), 0);
   const pending = probe('pending', () => runCount('pending'), 0);
   const waiting = probe('waiting', () => runCount('waiting'), 0);
-  const latest = probe('pages/builds/latest', () => latestBuildStatus(), '');
+  const latest = probe('pages/builds/latest', () => latestBuildInfo(), {
+    status: '',
+    latestAgeSec: 0,
+  });
   const ok =
     inProgress.ok || queued.ok || pending.ok || waiting.ok || latest.ok;
   if (!ok) {
     throw new Error('all Pages probes failed');
   }
+  const latestVal = latest.value || {};
   return {
     inProgress: inProgress.value,
     queued: queued.value,
     pending: pending.value,
     waiting: waiting.value,
-    latestStatus: latest.value,
+    latestStatus: latestVal.status || '',
+    latestAgeSec: toCount(latestVal.latestAgeSec),
   };
 }
 
@@ -115,13 +140,26 @@ function snapshotOrBusy() {
 }
 
 function logSnapshot(snapshot, busy) {
-  const { inProgress = 0, queued = 0, pending = 0, waiting = 0, latestStatus } =
-    snapshot;
+  const {
+    inProgress = 0,
+    queued = 0,
+    pending = 0,
+    waiting = 0,
+    latestStatus,
+    latestAgeSec = 0,
+  } = snapshot;
+  const age = toCount(latestAgeSec);
+  const ghost =
+    !busy &&
+    (String(latestStatus || '').toLowerCase() === 'building' ||
+      String(latestStatus || '').toLowerCase() === 'queued');
   console.log(
     `pagesDeployIdle: ${busy ? 'BUSY' : 'idle'} ` +
       `dynamic in_progress=${toCount(inProgress)} queued=${toCount(queued)} ` +
       `pending=${toCount(pending)} waiting=${toCount(waiting)} ` +
-      `latest=${latestStatus || '?'}`,
+      `latest=${latestStatus || '?'}` +
+      (age ? ` age=${age}s` : '') +
+      (ghost ? ' (stale Pages ghost — pushing to recover)' : ''),
   );
 }
 
