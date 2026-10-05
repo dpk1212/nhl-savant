@@ -424,6 +424,8 @@ function sportForm(bets) {
   };
   const l5 = ordered.length >= 1 ? lastN(Math.min(5, ordered.length)) : null;
   const l10 = ordered.length >= 1 ? lastN(Math.min(10, ordered.length)) : null;
+  // L20 feeds the ESTABLISHED form read in formTierOverlay (IN = 13+ of 20).
+  const l20 = ordered.length >= 1 ? lastN(Math.min(20, ordered.length)) : null;
 
   const cutoff = etDateMinusDays(FORM_CURVE_DAYS);
   const inWindow = ordered.filter((b) => b.date && String(b.date) >= cutoff);
@@ -451,6 +453,7 @@ function sportForm(bets) {
   return {
     l5,
     l10,
+    l20,
     flatCurve: flatCurve.length >= 5 ? flatCurve : [],
     flatEnd: flatCurve.length ? flatCurve[flatCurve.length - 1] : null,
     dollarCurve: dollarCurve.length >= 5 ? dollarCurve : [],
@@ -851,6 +854,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
         form.actionDollarEnd = actionForm.dollarEnd;
         form.actionL5 = actionForm.l5;
         form.actionL10 = actionForm.l10;
+        form.actionL20 = actionForm.l20;
       }
       const curve = curveSource(ps);
       if (curve.scope) {
