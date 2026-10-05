@@ -1,6 +1,6 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 35` from **2026-10-04**_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 36` from **2026-10-05**_  
 _Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
@@ -142,7 +142,7 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_hardUnoppFloorAction` | `FLOOR` \| `HOLD` \| `EXEMPT` \| `PASS` — HARD+ margin ≥+1 × ≥1 HARD FOR ≥1.0× 2u floor |
 | `v8_unitsPreHardUnoppFloor` | units entering HARD+ margin floor |
 | `v8_hardUnoppPromote` | `true` when HARD-UNOPP floor filled this side @ 2u |
-| `v8_skillFeatureVersion` | schema version (**32**) |
+| `v8_skillFeatureVersion` | schema version (**36**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
 
 Frozen at **T-15** (last scalar write sticks). **COMPLETED** docs never rewritten. The lifecycle log is appended on each due gate until that freeze (Locked) or until `grade` (Action).
@@ -253,6 +253,7 @@ Helpers: `analyzeTicketTapeLog` / `enrichTicketTapeFromSide` / `steamGoldLockLab
 | **33** | **2026-10-02** | HARD+ on this market scores v12 quality from the market book (not sport CONFIRMED; overlays still mute/size after) |
 | **34** | **2026-10-03** | HARD+ on this market uses the market book for v12 quality even if Door 2; CONFIRMED and not HARD+ here stays sport |
 | **35** | **2026-10-04** | HARD+ mute-exception 1-for / 2-for and S/T HARD+ FOR require need ≥1 HARD FOR sized ≥1.0× sport usual — do not stake lights as the Source B ≥1.0× book |
+| **36** | **2026-10-05** | Roll back HARD+ v12 presence (#276/#277) and HARD+ market-prior over Door 2 sport (#290). Hydrate / no-CONFIRMED / v11 Proven / v12 quality are Door 2 sport book only. HARD+ stays overlay. |
 
 ---
 

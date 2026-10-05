@@ -63,22 +63,16 @@ Code: `src/lib/whitelistTier.js` (`WHITELIST_VERSION = 5`, `WHITELIST_FROM = 202
 
 Roll-back: revert that file to v4.
 
-### HARD+ market feed carve (2026-10-02)
+### HARD+ market feed carve — rolled back 2026-10-05
 
-HARD+ wallets that are **not** Door 2 still win **that market**. Counting them sport-wide as CONFIRMED would dump losing sport books (n≥6 soft / red $) into v12 quality on every market. Do not do that.
+#276 / #277 / #290 put HARD+ into v12 presence and then scored them (and Door 2+HARD+) from the market book. Day-of Source B did not support that. **Rolled back:**
 
-Instead, on **this ticket's market only**:
-
-| Counts | Does not count |
+| Counts (Door 2 sport) | Does not count |
 |--------|----------------|
-| Hydrate into the live bag | HC / Q1 / UNOPP / NFL-CFB unlock |
-| no-CONFIRMED FOR hold | Action desk CONFIRMED filter |
-| v11 Proven bag / dCount | GOLD proven $ share / calibration isProven |
-| v12 quality from **this market book** (HARD+ here, including Door 2+HARD+) | Door 2 sport rollup when **not** HARD+ on this market |
+| Hydrate / no-CONFIRMED / v11 Proven / v12 quality from the **sport** book | HARD+-only wallets in any of those |
+| HC / Q1 / UNOPP / unlock / Action / GOLD | Market-book prior when Door 2 + HARD+ |
 
-Fail-closed if `marketType` is missing. An MLB-ML HARD+ book does not count on a SPREAD/TOTAL ticket. v12 quality: HARD+ on this market → market n + ROI (even if Door 2); CONFIRMED and not HARD+ here → sport book. Overlays still mute and size after the score.
-
-Code: `src/lib/marketProvenCarve.js`.
+HARD+ remains overlay (floor / mute-exception / AG mute / S/T require / Action Top). Code: `src/lib/marketProvenCarve.js`.
 
 ---
 

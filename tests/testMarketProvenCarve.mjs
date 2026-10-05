@@ -1,7 +1,6 @@
 /**
- * HARD+ counts in v12 on THIS market only.
- * Door 2 sport OR HARD+ on ticket market → hydrate / no-CONFIRMED / v11 Proven /
- * v12 quality (market book). Not sport CONFIRMED (HC / Q1 stay Door 2).
+ * HARD+ does not feed v12. Door 2 sport book only.
+ * Rolled back 2026-10-05 (#276/#277 presence, #290 market prior).
  * Usage: node tests/testMarketProvenCarve.mjs
  */
 import assert from 'assert';
@@ -90,21 +89,24 @@ ok(!isProvenSportRec(hardMlNotDoor2().bySport.MLB), 'losing sport book is not Do
 ok(!isConfirmedSportRec(hardMlNotDoor2().bySport.MLB), 'HARD+ ML kid is not sport CONFIRMED');
 ok(isProvenSportRec(door2NoHard().bySport.MLB), 'Door 2 still Proven');
 
-ok(walletHoldsNoConfirmedOnMarket(hardMlNotDoor2(), 'MLB', 'ML'), 'HARD+ ML holds no-CONFIRMED on ML');
-ok(!walletHoldsNoConfirmedOnMarket(hardMlNotDoor2(), 'MLB', 'SPREAD'), 'HARD+ ML does not hold SPREAD');
-ok(!walletHoldsNoConfirmedOnMarket(hardMlNotDoor2(), 'MLB', null), 'missing market fail-closed');
+ok(!walletHoldsNoConfirmedOnMarket(hardMlNotDoor2(), 'MLB', 'ML'),
+  'HARD+ ML does not hold no-CONFIRMED');
+ok(!walletHoldsNoConfirmedOnMarket(hardMlNotDoor2(), 'MLB', 'SPREAD'),
+  'HARD+ ML does not hold SPREAD');
+ok(!walletHoldsNoConfirmedOnMarket(hardMlNotDoor2(), 'MLB', null),
+  'HARD+ without market still does not hold');
 ok(walletHoldsNoConfirmedOnMarket(door2NoHard(), 'MLB', 'SPREAD'), 'Door 2 holds any market');
 ok(walletHoldsNoConfirmedOnMarket(door2NoHard(), 'MLB', null), 'Door 2 holds even without market');
 
-ok(walletHydratesOnScanMarket(hardMlNotDoor2(), 'MLB', 'ML'), 'hydrate HARD+ on ML scan');
-ok(!walletHydratesOnScanMarket(hardMlNotDoor2(), 'MLB', 'SPREAD'), 'do not hydrate HARD+ ML onto SPREAD scan');
+ok(!walletHydratesOnScanMarket(hardMlNotDoor2(), 'MLB', 'ML'), 'do not hydrate HARD+ on ML scan');
+ok(!walletHydratesOnScanMarket(hardMlNotDoor2(), 'MLB', 'SPREAD'), 'do not hydrate HARD+ on SPREAD');
 ok(walletHydratesOnScanMarket(door2NoHard(), 'MLB', 'SPREAD'), 'hydrate Door 2 on every market');
 
 const isProven = buildIsProvenFn(profiles);
 ok(isProven('door2x', 'MLB', { marketType: 'ML', sizeRatio: 0.4 }), 'Door 2 Proven without HARD');
-ok(isProven('hardml', 'MLB', { marketType: 'ML', sizeRatio: 0.4 }), 'HARD+ ML is Proven on ML');
+ok(!isProven('hardml', 'MLB', { marketType: 'ML', sizeRatio: 0.4 }), 'HARD+ ML is not Proven on ML');
 ok(!isProven('hardml', 'MLB', { marketType: 'SPREAD' }), 'HARD+ ML is not Proven on SPREAD');
-ok(!isProven('hardml', 'MLB', {}), 'HARD+ fail-closed without marketType');
+ok(!isProven('hardml', 'MLB', {}), 'HARD+ is not Proven without marketType');
 ok(!isProven('hardml', 'NBA', { marketType: 'ML' }), 'wrong sport');
 
 eq(
@@ -112,32 +114,16 @@ eq(
     [{ side: 'home', walletShort: 'hardml', marketType: 'ML' }],
     'home', 'MLB', profiles,
   ),
-  1,
-  'no-CONFIRMED counts HARD+ from detail.marketType',
-);
-eq(
-  countConfirmedOnSide(
-    [{ side: 'home', walletShort: 'hardml', marketType: 'SPREAD' }],
-    'home', 'MLB', profiles,
-  ),
   0,
-  'no-CONFIRMED ignores HARD+ on the other market',
+  'no-CONFIRMED ignores HARD+ even with marketType on the detail',
 );
 eq(
   countConfirmedOnSide(
     [{ side: 'home', walletShort: 'hardml' }],
     'home', 'MLB', profiles, 'ML',
   ),
-  1,
-  'no-CONFIRMED 5th-arg marketType counts HARD+',
-);
-eq(
-  countConfirmedOnSide(
-    [{ side: 'home', walletShort: 'hardml' }],
-    'home', 'MLB', profiles,
-  ),
   0,
-  'no-CONFIRMED fail-closed when neither arg nor detail has market',
+  'no-CONFIRMED 5th-arg marketType does not count HARD+',
 );
 eq(
   countConfirmedOnSide(
@@ -155,8 +141,8 @@ const stamped = positionToWalletDetail({
   avgSportBet: 50,
   marketType: 'ML',
 });
-eq(stamped.marketType, 'ML', 'positionToWalletDetail stamps marketType');
-ok(isProven(stamped.wallet, 'MLB', stamped), 'stamped ML detail is Proven via HARD+');
+eq(stamped.marketType, 'ML', 'positionToWalletDetail still stamps marketType for overlays');
+ok(!isProven(stamped.wallet, 'MLB', stamped), 'stamped ML HARD+ detail is not Proven');
 
 const aggMl = aggregateSideProven(
   [
@@ -167,7 +153,7 @@ const aggMl = aggregateSideProven(
   'MLB',
   isProven,
 );
-eq(aggMl.forCount, 2, 'v11 dCount includes Door 2 + HARD+ on this market');
+eq(aggMl.forCount, 1, 'v11 dCount is Door 2 only — HARD+ on this market is out');
 
 const aggSpread = aggregateSideProven(
   [
@@ -178,7 +164,7 @@ const aggSpread = aggregateSideProven(
   'MLB',
   isProven,
 );
-eq(aggSpread.forCount, 1, 'v11 dCount on SPREAD is Door 2 only — not the ML HARD+ wallet');
+eq(aggSpread.forCount, 1, 'v11 dCount on SPREAD is Door 2 only');
 
 eq(
   agsV12WalletQuality({
@@ -199,62 +185,61 @@ ok(
   }) > 0,
   'Door 2 CONFIRMED still scores v12 quality',
 );
-ok(
+eq(
   agsV12WalletQuality({
     tier: 'HARD+',
     priorN: 5,
     priorRoi: 18,
     sizeRatio: 1.2,
-  }) > 0,
-  'HARD+ tier scores v12 quality from the market book',
+  }),
+  0,
+  'HARD+ tier does not score v12 quality',
 );
 
 const priorFn = buildWalletPriorStatsFn(profiles);
 const hardMlStats = walletPriorStatsForV12(hardMlNotDoor2(), 'MLB', 'ML');
-eq(hardMlStats?.tier, 'HARD+', 'HARD+ ML kid gets HARD+ prior tier');
-eq(hardMlStats?.priorN, 5, 'HARD+ quality n is the market book, not the sport 8');
-eq(hardMlStats?.priorSource, 'B-market', 'HARD+ quality source is B-market');
-ok(hardMlStats?.priorRoi > 0, 'HARD+ quality ROI comes from the market book');
+eq(hardMlStats?.tier, 'WR50', 'HARD+ ML kid stays sport WR50, not HARD+');
+eq(hardMlStats?.priorN, 8, 'HARD+ quality n is the sport book, not market 5');
+ok(hardMlStats?.priorSource !== 'B-market', 'HARD+ does not switch to B-market');
 eq(
   walletPriorStatsForV12(hardMlNotDoor2(), 'MLB', 'SPREAD')?.tier,
   'WR50',
-  'HARD+ ML does not lend quality to SPREAD',
+  'wrong market still sport WR50',
 );
 eq(
   walletPriorStatsForV12(hardMlNotDoor2(), 'MLB', null)?.tier,
   'WR50',
-  'HARD+ quality fail-closed without marketType',
+  'missing market stays sport WR50',
 );
 eq(
   walletPriorStatsForV12(door2NoHard(), 'MLB', 'ML')?.tier,
   'CONFIRMED',
-  'Door 2 and not HARD+ here still uses the sport book',
+  'Door 2 uses the sport book',
 );
 eq(
   walletPriorStatsForV12(door2NoHard(), 'MLB', 'ML')?.priorN,
   20,
-  'Door 2-not-HARD+ priorN is the sport book',
+  'Door 2 priorN is the sport book',
 );
 
 {
   const both = walletPriorStatsForV12(door2AndHardMl(), 'MLB', 'ML');
-  eq(both?.tier, 'HARD+', 'Door 2 + HARD+ on ML uses HARD+ prior tier');
-  eq(both?.priorN, 6, 'Door 2 + HARD+ on ML uses market n, not sport 20');
-  eq(both?.priorSource, 'B-market', 'Door 2 + HARD+ prior source is B-market');
-  ok((both?.priorRoi || 0) >= 22, 'Door 2 + HARD+ ROI comes from the market book');
+  eq(both?.tier, 'CONFIRMED', 'Door 2 + HARD+ on ML uses CONFIRMED sport tier');
+  eq(both?.priorN, 20, 'Door 2 + HARD+ on ML uses sport n, not market 6');
+  ok(both?.priorSource !== 'B-market', 'Door 2 + HARD+ is not B-market');
   const sp = walletPriorStatsForV12(door2AndHardMl(), 'MLB', 'SPREAD');
-  eq(sp?.tier, 'CONFIRMED', 'Door 2 + HARD+ ML stays sport book on SPREAD');
+  eq(sp?.tier, 'CONFIRMED', 'Door 2 + HARD+ on SPREAD stays sport');
   eq(sp?.priorN, 20, 'non-HARD+ market keeps sport n');
   eq(
     walletPriorStatsForV12(door2AndHardMl(), 'MLB', null)?.tier,
     'CONFIRMED',
-    'Door 2 + HARD+ fail-closed to sport book without marketType',
+    'Door 2 + HARD+ without marketType stays sport',
   );
 }
 eq(
   priorFn('hardml', 'MLB', { marketType: 'ML' })?.tier,
-  'HARD+',
-  'prior fn third-arg marketType selects HARD+',
+  'WR50',
+  'prior fn ignores marketType for HARD+-only',
 );
 eq(
   priorFn('hardml', 'MLB')?.tier,
@@ -263,8 +248,8 @@ eq(
 );
 eq(
   priorFn('d2hard', 'MLB', { marketType: 'ML' })?.tier,
-  'HARD+',
-  'prior fn Door 2 + HARD+ on ML uses market book',
+  'CONFIRMED',
+  'prior fn Door 2 + HARD+ on ML stays sport',
 );
 eq(
   priorFn('d2hard', 'MLB', { marketType: 'SPREAD' })?.tier,
@@ -284,16 +269,8 @@ eq(
     'MLB',
     priorFn,
   );
-  ok(aggHard && aggHard.score > 0 && aggHard.provenContributors === 1,
-    'HARD+-only side scores v12 quality > 0 on ML');
-  const aggSp = aggregateSideV12(
-    [{ wallet: 'hardml', side: 'home', marketType: 'SPREAD', sizeRatio: 1.2 }],
-    'home',
-    'MLB',
-    priorFn,
-  );
-  eq(aggSp?.provenContributors || 0, 0, 'HARD+ ML wallet contributes 0 quality on SPREAD');
-  ok((aggSp?.score || 0) <= 0, 'HARD+ on the wrong market does not print a +score');
+  eq(aggHard?.provenContributors || 0, 0, 'HARD+-only side contributes 0 v12 quality');
+  ok((aggHard?.score || 0) <= 0, 'HARD+-only does not print a +score');
 
   const aggD2Hard = aggregateSideV12(
     [{ wallet: 'd2hard', side: 'home', marketType: 'ML', sizeRatio: 1.2 }],
@@ -302,16 +279,16 @@ eq(
     priorFn,
   );
   ok(aggD2Hard && aggD2Hard.score > 0 && aggD2Hard.provenContributors === 1,
-    'Door 2 + HARD+ on ML still scores from the market book');
-  const qMkt = agsV12WalletQuality({
-    tier: 'HARD+', priorN: 6, priorRoi: 22, sizeRatio: 1.2,
-  });
+    'Door 2 + HARD+ still scores from the sport book');
   const qSport = agsV12WalletQuality({
     tier: 'CONFIRMED', priorN: 20, priorRoi: 8, sizeRatio: 1.2,
   });
-  ok(Math.abs((aggD2Hard.forQualities?.[0] || 0) - qMkt) < 1e-9,
-    'Door 2 + HARD+ quality magnitude is the market book, not sport');
-  ok(qMkt !== qSport, 'market and sport quality differ so the assertion is real');
+  const qMkt = agsV12WalletQuality({
+    tier: 'HARD+', priorN: 6, priorRoi: 22, sizeRatio: 1.2,
+  });
+  ok(Math.abs((aggD2Hard.forQualities?.[0] || 0) - qSport) < 1e-9,
+    'Door 2 + HARD+ quality magnitude is the sport book, not market');
+  eq(qMkt, 0, 'HARD+ tier weight is 0 so market book cannot sneak in');
 }
 
 {
@@ -326,6 +303,7 @@ eq(
               home: 'B',
               positions: [
                 { wallet: '0xhardml', side: 'home', invested: 500, avgSportBet: 100 },
+                { wallet: '0xdoor2x', side: 'home', invested: 500, avgSportBet: 100 },
               ],
             },
           },
@@ -349,10 +327,12 @@ eq(
     walletProfiles: profiles,
     date: '2026-10-02',
   });
-  const ml = scan.filter((r) => r.marketType === 'ML');
+  const mlHard = scan.filter((r) => r.marketType === 'ML' && r.walletShort === 'hardml');
+  const mlDoor = scan.filter((r) => r.marketType === 'ML' && r.walletShort === 'door2x');
   const sp = scan.filter((r) => r.marketType === 'SPREAD');
-  eq(ml.length, 1, 'hydrate collects HARD+ on ML scan');
-  eq(sp.length, 0, 'hydrate skips HARD+ ML wallet on SPREAD scan');
+  eq(mlHard.length, 0, 'hydrate skips HARD+ on ML scan');
+  eq(mlDoor.length, 1, 'hydrate still collects Door 2 on ML scan');
+  eq(sp.length, 0, 'hydrate skips HARD+ on SPREAD scan');
 }
 
 console.log(`ok ${n} market Proven carve tests`);

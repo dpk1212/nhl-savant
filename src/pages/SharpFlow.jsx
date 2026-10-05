@@ -75,10 +75,10 @@ import { bestAvailableTicket, isT15BestLockLive } from '../lib/t15BestLock.js';
 import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
 import { buildWalletPriorStatsFn } from '../lib/marketProvenCarve.js';
 import { oddsCap } from '../lib/oddsCap.js';
-// Browser-side mirror of cron v12 priors (marketProvenCarve.buildWalletPriorStatsFn).
-// HARD+ on ticket marketType → market book; else Door 2 sport. Used by SharpPositionCard
-// for UNLOCKED game cards so the chip/banner match cron before the stamp.
-// LOCKED cards continue to mirror the cron's authoritative v12 stamp.
+// Browser-side mirror of cron v12 priors (Door 2 sport book).
+// Used by SharpPositionCard for UNLOCKED game cards so the chip/banner
+// match cron before the stamp. LOCKED cards continue to mirror the
+// cron's authoritative v12 stamp.
 function buildWalletPriorStatsFnForUI(walletProfiles) {
   if (!walletProfiles || typeof walletProfiles.get !== 'function') return null;
   return buildWalletPriorStatsFn(walletProfiles);
