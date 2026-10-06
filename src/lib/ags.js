@@ -1072,6 +1072,7 @@ export const AGS_V12_STAKE_PATH = {
   // Press ladder (2026-10-06+): seasoned wallet pressing + money + Door-2
   // for + no Door-2 against → 1-5u by press size minus price step.
   PRESS:         'press ladder',
+  'PRESS-X':     'press ladder · informed dissent under size',
   'PRESS-R6':    'press ladder · two veterans',
   MONITORING:    'watch',
   FADE:          'muted',
@@ -1085,7 +1086,7 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
   { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'PRESS-R6'] },
 ];
@@ -1172,6 +1173,7 @@ export const AGS_V12_STAKE_TIER_META = {
   // Press ladder — units are 1-5 by press band; `units` here is the ladder
   // midpoint for pathBase readers, the card shows cron finalUnits.
   PRESS:         { label: 'SHARP PLAY', short: 'PRESS', color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 3,                     ribbon: null, stars: 3 },
+  'PRESS-X':     { label: 'SHARP PLAY', short: 'PRESS-X', color: '#A855F7', bg: 'rgba(168,85,247,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   'PRESS-R6':    { label: 'LEAN',      short: 'VETS',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
   // CONFIRMED / MINI- / DISSENT all roll up to the LEAN path-display band
