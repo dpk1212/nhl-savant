@@ -6,11 +6,11 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 
 ---
 
-## PRESS LADDER — authoritative stake from 2026-10-07
+## PRESS LADDER — authoritative stake from 2026-10-06
 
 _Code: `src/lib/pressLadderOverlay.js` · wired in `scripts/syncPickStateAuthoritative.js` (create + reconcile) · tests `tests/testPressLadderOverlay.mjs`_
 
-From `PRESS_LADDER_FROM = 2026-10-07` the press ladder is the **only** thing that sets `finalUnits` and `v8_hcStakeTier` on a side. AGS v12 still selects the side (`score > 0` or 0u). The legacy chain below (Paths A–E, EDGE, tape, qConv, FOOLS, flinch, climate, steam-tail, HARD+, form×tier) keeps running and keeps writing its stamps as diagnostics, and its unit decision is overwritten right before the odds-cap choke. Manual stake (`manualStake`) still wins. Operator kill still wins. T-15 freeze unchanged.
+From `PRESS_LADDER_FROM = 2026-10-06` the press ladder is the **only** thing that sets `finalUnits` and `v8_hcStakeTier` on a side. AGS v12 still selects the side (`score > 0` or 0u). The legacy chain below (Paths A–E, EDGE, tape, qConv, FOOLS, flinch, climate, steam-tail, HARD+, form×tier) keeps running and keeps writing its stamps as diagnostics, and its unit decision is overwritten right before the odds-cap choke. Manual stake (`manualStake`) still wins. Operator kill still wins. T-15 freeze unchanged.
 
 **Inputs (all day-of, from the live sync):** `wd` = live hydrated wallet details on the side (`mapPositionsToStakeWalletDetails`), each wallet's `sizeRatio` = this bet ÷ that wallet's **sport-local** mean graded stake (`stakeSizeRatio`), the wallet's sport book `bySport[sport].positions` (`n`, `wr`, `dollarRoi`) from `data/wallet-profiles.json`, Door 2 = `isConfirmedSportRec` (n≥6 · WR≥55 · $ROI>3), Pinnacle side odds, steam from the ticket tape (`isSteamOn`).
 
@@ -29,7 +29,7 @@ From `PRESS_LADDER_FROM = 2026-10-07` the press ladder is the **only** thing tha
 
 **Otherwise 0u.** `health.status = MUTED`, `mutedBy = press-gate` (or `ags-quality-veto` when the v12 score is ≤ 0), `v8_hcStakeTier = MONITORING`.
 
-**Stamps (every cycle from `PRESS_STAMP_FROM = 2026-10-06`, shadow on 10-06, live from 10-07):** `v8_pressGate {money, seasPress, noDoor2Ag, door2For, pass}` · `v8_pressMoneyShare` · `v8_pressDoor2Ag` · `v8_pressDoor2For` · `v8_pressPresser {wallet, ratio, n, wr}` · `v8_pressVeterans[]` · `v8_pressBand` · `v8_pressPriceStep` · `v8_pressEdge` · `v8_pressSteamOn` · `v8_pressHeavyFav` · `v8_pressRung` · `v8_pressUnits` · `v8_pressReason` · `v8_pressAt` · `v8_pressApplied` (true when the ladder set the stake).
+**Stamps (every cycle from `PRESS_STAMP_FROM = 2026-10-06`, live from the 2026-10-06 midday cycle):** `v8_pressGate {money, seasPress, noDoor2Ag, door2For, pass}` · `v8_pressMoneyShare` · `v8_pressDoor2Ag` · `v8_pressDoor2For` · `v8_pressPresser {wallet, ratio, n, wr}` · `v8_pressVeterans[]` · `v8_pressBand` · `v8_pressPriceStep` · `v8_pressEdge` · `v8_pressSteamOn` · `v8_pressHeavyFav` · `v8_pressRung` · `v8_pressUnits` · `v8_pressReason` · `v8_pressAt` · `v8_pressApplied` (true when the ladder set the stake).
 
 **Retired for live dates:** Q1 / UNOPP / HARD+ floors and rescues, RANK / SHARP / DISSENT / WINNER rescues, EDGE band, EDGE/net, tape dial, qConv, FOOLS, flinch, maxSR, no-CONFIRMED, TOP-crowded, Ev-drift, climate, sport unlock, steam-tail, fav-juice, unit-tier, board share, st-fat, market-skill, HARD exception / AG / S-T require, GOLD stack cap, form×tier. Their stamps still write; their units do not ship.
 
@@ -37,7 +37,7 @@ From `PRESS_LADDER_FROM = 2026-10-07` the press ladder is the **only** thing tha
 
 ---
 
-## Where we are (2026-07-22) — legacy chain, diagnostic for 2026-10-07+
+## Where we are (2026-07-22) — legacy chain, diagnostic for 2026-10-06+
 
 | Layer | Role | Live rule |
 |-------|------|-----------|

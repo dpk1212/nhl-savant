@@ -1,5 +1,5 @@
 /**
- * Press ladder (2026-10-07+ stakes; 2026-10-06+ stamps).
+ * Press ladder (2026-10-06+ stakes and stamps).
  * Usage: node tests/testPressLadderOverlay.mjs
  */
 import assert from 'assert';
@@ -154,9 +154,9 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(pressPriceStep({ steamOn: true, heavyFav: false, edge: null }), 2, 'moved with unknown edge is −2');
   const e = pressEdge([{ dir: 'FOR', n: 12, wr: 60 }, { dir: 'FOR', n: 5, wr: 90 }, { dir: 'AG', n: 50, wr: 70 }], 'TOTAL', -110);
   ok(Math.abs(e - (60 - 52.4)) < 1e-9, 'edge uses FOR n≥10 only vs 52.4');
-  eq(PRESS_LADDER_FROM, '2026-10-07', 'live from Oct 7');
+  eq(PRESS_LADDER_FROM, '2026-10-06', 'live from Oct 6');
   eq(PRESS_STAMP_FROM, '2026-10-06', 'stamps from Oct 6');
-  ok(isPressLadderLive('2026-10-07') && !isPressLadderLive('2026-10-06'), 'live gate');
+  ok(isPressLadderLive('2026-10-06') && !isPressLadderLive('2026-10-05'), 'live gate');
   ok(isPressStampLive('2026-10-06') && !isPressStampLive('2026-10-05'), 'stamp gate');
   ok(!isPressLadderLive(null) && !isPressLadderLive(undefined), 'null dates are not live');
 }

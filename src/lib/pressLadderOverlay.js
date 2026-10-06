@@ -37,7 +37,7 @@ import { isConfirmedSportRec } from './whitelistTier.js';
 import { stakeSizeRatio } from './sizeRatioBands.js';
 
 /** Stakes follow the press ladder for pick dates on/after this. */
-export const PRESS_LADDER_FROM = '2026-10-07';
+export const PRESS_LADDER_FROM = '2026-10-06';
 /** Shadow stamps (v8_press*) are written from this date regardless. */
 export const PRESS_STAMP_FROM = '2026-10-06';
 
