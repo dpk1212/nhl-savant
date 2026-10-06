@@ -34,7 +34,7 @@ export const PINNAPI_SPORT_ID = {
 const LEAGUE_FILTER = {
   NHL: [/^\s*NHL\s*$/i, /National Hockey/i],
   MLB: [/^\s*MLB\s*$/i, /Major League Baseball/i],
-  NBA: [/^\s*NBA\s*$/i],
+  NBA: [/^\s*NBA\s*$/i, /^\s*NBA\s*Pre-?season\s*$/i],
   WNBA: [/^\s*WNBA\s*$/i],
   CBB: [/NCAA/i, /College/i, /NCAAB/i],
   NFL: [/^\s*NFL\s*$/i, /National Football/i],

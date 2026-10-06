@@ -482,28 +482,37 @@ async function loadTodaysSchedule(cbbMap) {
       console.warn('Could not load NHL schedule:', e.message);
     }
   }
-  // NBA: use Odds API
+  // NBA: Odds API preseason + regular season (mirrors fetchPolymarketData).
   const validNBA = new Set();
   if (ODDS_API_KEY) {
-    try {
-      const url = `https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
-      const res = await httpFetch(url);
-      if (res.ok) {
-        const games = await res.json();
-        for (const g of games) {
-          const away = resolveNBATeam(g.away_team);
-          const home = resolveNBATeam(g.home_team);
-          if (away && home) {
-            validNBA.add(`${normalize(away)}_${normalize(home)}`);
+    const nbaWindowLo = Date.now() - 6 * 3600 * 1000;
+    const nbaWindowHi = Date.now() + 72 * 3600 * 1000;
+    for (const oddsKey of ['basketball_nba_preseason', 'basketball_nba']) {
+      const windowed = oddsKey === 'basketball_nba_preseason';
+      try {
+        const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+        const res = await httpFetch(url);
+        if (res.ok) {
+          const games = await res.json();
+          let added = 0;
+          for (const g of games) {
+            const t = g.commence_time ? Date.parse(g.commence_time) : NaN;
+            if (windowed && (!Number.isFinite(t) || t < nbaWindowLo || t > nbaWindowHi)) continue;
+            const away = resolveNBATeam(g.away_team);
+            const home = resolveNBATeam(g.home_team);
+            if (away && home) {
+              validNBA.add(`${normalize(away)}_${normalize(home)}`);
+              added++;
+            }
           }
+          const remaining = res.headers.get('x-requests-remaining');
+          console.log(`📋 Today's NBA (${oddsKey}): +${added} → ${validNBA.size} cumulative [credits left: ${remaining}]`);
+        } else {
+          console.warn(`Odds API NBA error (${oddsKey}): ${res.status}`);
         }
-        const remaining = res.headers.get('x-requests-remaining');
-        console.log(`📋 Today's NBA (Odds API): ${validNBA.size} games [credits left: ${remaining}]`);
-      } else {
-        console.warn(`Odds API NBA error: ${res.status}`);
+      } catch (e) {
+        console.warn(`Could not load NBA schedule from Odds API (${oddsKey}):`, e.message);
       }
-    } catch (e) {
-      console.warn('Could not load NBA schedule from Odds API:', e.message);
     }
   }
 
