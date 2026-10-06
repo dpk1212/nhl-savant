@@ -1570,6 +1570,7 @@ function starsFromAgsuTier(tier, units = null) {
   if (tier === 'PRESS-X') return 2.5;     // informed dissent under size (2u)
   if (tier === 'PRESS-N') return units != null && units >= 2 ? 2.5 : 2.0; // deep-book press, no Door-2 (2u clean / 1u moved)
   if (tier === 'PRESS-U') return 2.0;     // dissent under size, no press (1u)
+  if (tier === 'STEAM-C') return 2.0;     // steam overrules a small dissent (1u)
   if (tier === 'PRESS-R6') return 2.0;    // two veterans (1u)
   if (tier === 'SUPER') return 5.0;       // MAX PLAY (6u)
   if (tier === 'TOP+') return 5.0;        // TOP PLAY (5u)

@@ -7983,7 +7983,7 @@ async function main() {
     console.log(
       `PRESS LADDER LIVE: authoritative stake · gate = money ≥60% + seasoned (n≥15) press ≥1.5× + 0 Door-2 against + ≥1 Door-2 for`
       + ` · band ≥3×→5u ≥2×→4u else 3u · price step 0 clean / −1 moved edge≥0 / −2 moved edge<0 (floor 1u)`
-      + ` · PRESS-X Door-2 margin ≥1 with every Door-2 against under size → 2u · PRESS-N deep-book (n≥50) press with no Door-2 either side → 2u clean / 1u moved · PRESS-U same shape with no press → 1u · R6 two veterans ≥1.0× no press → 1u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
+      + ` · PRESS-X Door-2 margin ≥1 with every Door-2 against under size → 2u · PRESS-N deep-book (n≥50) press with no Door-2 either side → 2u clean / 1u moved · PRESS-U same shape with no press → 1u · STEAM-C steam on with proven wallets net against, all under size, no press against → 1u · R6 two veterans ≥1.0× no press → 1u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
       + ` · from ${PRESS_LADDER_FROM} · legacy chain runs for stamps only · manual stake wins`,
     );
   } else if (isPressStampLive(TARGET_DATE)) {
