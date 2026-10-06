@@ -43,8 +43,33 @@ function formatLockCountdown(ms) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+/**
+ * Press-ladder gate failure → subscriber copy. `v8_pressReason` is
+ * `gate_fail:<a>,<b>` listing every gate that failed; the first failure in
+ * veto order (informed money against → no press → money → no Door-2 for)
+ * is the one worth saying.
+ */
+function pressGateCopy(pressReason, { long = false } = {}) {
+  const failed = String(pressReason || '').startsWith('gate_fail:')
+    ? String(pressReason).slice('gate_fail:'.length).split(',')
+    : [];
+  if (failed.includes('door2_against')) {
+    return long ? 'A proven wallet is on the other side — no ticket' : 'A proven wallet is on the other side';
+  }
+  if (failed.includes('no_seasoned_press')) {
+    return long ? 'No seasoned wallet sizing up — no ticket' : 'No seasoned wallet sizing up';
+  }
+  if (failed.includes('money')) {
+    return long ? 'Sharp money is split — under 60% on our side' : 'Sharp money is split';
+  }
+  if (failed.includes('no_door2_for')) {
+    return long ? 'No proven wallet on our side — no ticket' : 'No proven wallet on our side';
+  }
+  return long ? 'No seasoned press with the money — no ticket' : 'No seasoned press with the money';
+}
+
 /** Audit tooltip for a 0u / NO PLAY card — technical mute reason. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, unitsPreHardAg, unitsPreHardStFor, steamTailReason, stakePath } = {}) {
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, unitsPreHardAg, unitsPreHardStFor, steamTailReason, pressReason, stakePath } = {}) {
   const preU = [
     unitsPreHardStFor, unitsPreHardAg, unitsPreMarketSkill, unitsPreStFat, unitsPreFavJuice, unitsPreSteamTail,
     unitsPreNoConfirmed, unitsPreMaxSrSub4, unitsPreFlinchFailOpen, unitsPreTape,
@@ -94,7 +119,7 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
     return pre ? `Best wallet against us · ${pre}` : 'Best wallet against us';
   }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
-  if (mutedBy === 'press-gate') return 'No seasoned press with the money — no ticket';
+  if (mutedBy === 'press-gate') return pressGateCopy(pressReason, { long: true });
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
   if (stakePath === 'MONITORING') return 'Monitoring — never sized';
   if (mutedBy) return String(mutedBy).replace(/-/g, ' ');
@@ -102,7 +127,7 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
 }
 
 /** Subscriber line under NO PLAY — why this is not a lock. */
-function noPlayReason({ mutedBy, tapeAction, stakePath } = {}) {
+function noPlayReason({ mutedBy, tapeAction, stakePath, pressReason } = {}) {
   if (mutedBy === 'tape-weak' || tapeAction === 'mute' || tapeAction === 'MUTE') {
     return 'Muted on tape';
   }
@@ -115,7 +140,7 @@ function noPlayReason({ mutedBy, tapeAction, stakePath } = {}) {
   if (mutedBy === 'st-qual-wipe') return 'Qualified spread/total money not on our side';
   if (mutedBy === 'st-hard-slip' || mutedBy === 'st-hard-for') return 'No tracked sharp on our side';
   if (mutedBy === 'hard-ag') return 'Best wallet on the other side';
-  if (mutedBy === 'press-gate') return 'No seasoned press with the money';
+  if (mutedBy === 'press-gate') return pressGateCopy(pressReason);
   if (stakePath === 'FADE') return "Didn't meet the size bar";
   return "Didn't meet the size bar";
 }
@@ -3111,6 +3136,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
     unitsPreHardAg: f.unitsPreHardAg,
     unitsPreHardStFor: f.unitsPreHardStFor,
     steamTailReason: f.steamTailReason || f.v8_steamTailReason || null,
+    pressReason: f.pressReason || f.v8_pressReason || null,
     stakePath: f.stakePath,
   };
   const muteTip = trackedMuteLabel(muteArgs);
