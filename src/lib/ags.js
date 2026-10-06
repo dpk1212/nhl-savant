@@ -1069,7 +1069,7 @@ export const AGS_V12_STAKE_PATH = {
   'MINI-':       'gate-cut',
   DISSENT:       'Path D CM≤0',
   WINNER:        'winner-align EDGE',
-  // Press ladder (2026-10-07+): seasoned wallet pressing + money + Door-2
+  // Press ladder (2026-10-06+): seasoned wallet pressing + money + Door-2
   // for + no Door-2 against → 1-5u by press size minus price step.
   PRESS:         'press ladder',
   'PRESS-R6':    'press ladder · two veterans',

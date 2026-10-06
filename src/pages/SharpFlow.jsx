@@ -1554,7 +1554,7 @@ function starsFromAgsuTier(tier, units = null) {
   // v12.1 product stake tiers.
   // Conviction scale (matches AGS_V12_STAKE_TIER_META.stars): MAX/TOP=5,
   // STRONG=4, SOLID=3, LEAN=2 — keyed to bet size, not the internal path.
-  // Press ladder (2026-10-07+) ships 1-5u on one path, so stars follow the
+  // Press ladder (2026-10-06+) ships 1-5u on one path, so stars follow the
   // shipped size when the caller has it.
   if (tier === 'PRESS') {
     const u = Number(units);
