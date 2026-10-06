@@ -47,6 +47,20 @@
  * on 29 plays — directional, not period-confirmed; shipped at 1u on the R6
  * contract (promote after 60 stamped plays positive, remove if 60 negative).
  *
+ * Rescue rung STEAM-C (1u) — the market overrules a small dissent. Pinnacle
+ * steam is ON toward this side (the same steamOn the price step reads),
+ * ≥1 Door-2 AG wallet, Door-2 margin (FOR − AG) ≤ 0, every Door-2 AG wallet
+ * under 1.0× its usual size, and no seasoned press against (AG n ≥ 15 at
+ * ≥ 1.5×). No money gate. Research on the steam era (Aug 19 → Oct 5, 2,352
+ * sides at 0u): 57-27 +31.6% flat, positive in all four half-months
+ * (+16.8 · +51.5 · +28.6 · +21.3), ML 27-14 / spread 8-3 / total 22-10,
+ * already-on 27-14 / arriving 30-13, 28 of 39 days positive; p 0.0001 vs
+ * the 0u pile. The same wallet shape with steam OFF is 134-167 −17.6%, and
+ * steam toward a side the proven wallets are FOR is negative (margin ≥ +1
+ * with steam 88-101 −16.0%) — steam only matters as the book disagreeing
+ * with a proven wallet. A Door-2 AG at/over 1.0× (43-49 −3.5%) or a press
+ * against (35-41 −6.4%) kills it. Same promotion contract as R6.
+ *
  * Everything else between the v12 score gate and the odds cap (HC ladder,
  * rescues, floors, tape, EDGE bands, the mute chain, HARD+ layer, form×tier)
  * is retired for pickDate ≥ PRESS_LADDER_FROM. The v12 score > 0 gate,
@@ -86,12 +100,16 @@ export const PRESS_N_UNITS_CLEAN = 2;
 export const PRESS_N_UNITS_MOVED = 1;
 /** PRESS-U: the same shape with no seasoned press, rescued at 1u. */
 export const PRESS_U_UNITS = 1;
+/** STEAM-C: Door-2 margin (FOR − AG) must be at most this. */
+export const STEAM_C_MAX_MARGIN = 0;
+export const STEAM_C_UNITS = 1;
 
 export const PRESS_STAKE_TIER = 'PRESS';
 export const PRESS_R6_STAKE_TIER = 'PRESS-R6';
 export const PRESS_X_STAKE_TIER = 'PRESS-X';
 export const PRESS_U_STAKE_TIER = 'PRESS-U';
 export const PRESS_N_STAKE_TIER = 'PRESS-N';
+export const STEAM_C_STAKE_TIER = 'STEAM-C';
 export const PRESS_GATE_MUTED_BY = 'press-gate';
 
 export function isPressLadderLive(pickDate) {
@@ -214,7 +232,7 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'PRESS-R6'|null, units: number, reason: string
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|null, units: number, reason: string
  * }}
  */
 export function evaluatePressLadder({
@@ -335,6 +353,27 @@ export function evaluatePressLadder({
       dissenters: dissenters.map(strip),
       rung: PRESS_U_STAKE_TIER, units: PRESS_U_UNITS,
       reason: `press_u_margin${margin}_ag_under_size_no_press`,
+    };
+  }
+
+  // STEAM-C — the market overrules a small dissent: Pinnacle steam toward
+  // this side, proven wallets net against (margin ≤ 0) but every one of
+  // them under its own normal size, and nobody seasoned pressing against.
+  const pressAg = agRows.some((r) => r.n >= PRESS_SEASONED_N && Number.isFinite(r.ratio) && r.ratio >= PRESS_RATIO_MIN);
+  const steamC = !!steamOn && !gate.noDoor2Ag
+    && margin <= STEAM_C_MAX_MARGIN
+    && dissenters.length > 0
+    && dissenters.every((r) => Number.isFinite(r.ratio) && r.ratio < PRESS_X_AG_RATIO_MAX)
+    && !pressAg;
+  if (steamC) {
+    return {
+      gate, moneyShare, door2Ag, door2For,
+      presser: presser ? strip(presser) : null, maxRatio, band: null, priceStep: null, edge,
+      steamOn: !!steamOn, heavyFav,
+      veterans: [],
+      dissenters: dissenters.map(strip),
+      rung: STEAM_C_STAKE_TIER, units: STEAM_C_UNITS,
+      reason: `steam_c_margin${margin}_ag_under_size_steam_on`,
     };
   }
 

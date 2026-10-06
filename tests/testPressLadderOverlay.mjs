@@ -23,6 +23,8 @@ import {
   PRESS_N_STAKE_TIER,
   PRESS_N_UNITS_CLEAN,
   PRESS_N_UNITS_MOVED,
+  STEAM_C_STAKE_TIER,
+  STEAM_C_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -186,6 +188,65 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -120,
   });
   ok(!r4.gate.money, 'money fails'); eq(r4.rung, null, 'money gate still required'); eq(r4.units, 0, '0u');
+}
+
+// 4g. STEAM-C: steam on toward us, proven wallets net against (margin ≤ 0),
+// every Door-2 against under 1.0×, no seasoned press against → 1u, no money gate
+{
+  // margin 0: aaaaaa FOR $1000 (1.0×) vs cccccc AG $120 (0.6×) · steam on
+  const r = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 1000), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -120, steamOn: true,
+  });
+  eq(r.door2For - r.door2Ag, 0, 'margin 0');
+  eq(r.rung, STEAM_C_STAKE_TIER, 'STEAM-C fires on steam with margin 0');
+  eq(r.units, STEAM_C_UNITS, '1u');
+  ok(r.steamOn, 'steamOn stamped');
+  eq(r.dissenters[0].wallet, 'cccccc', 'dissenter recorded');
+  ok(r.reason.startsWith('steam_c_margin0'), r.reason);
+  // same wallets, steam off → 0u (gate_fail door2_against)
+  const off = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 1000), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -120, steamOn: false,
+  });
+  eq(off.rung, null, 'no steam → no STEAM-C'); eq(off.units, 0, '0u'); ok(off.reason.includes('door2_against'), off.reason);
+  // margin −1, money under 60%, pure proven against (no Door-2 FOR) → still fires
+  const neg = evaluatePressLadder({
+    walletDetails: [wd('bbbbbb', 'home', 400), wd('cccccc', 'away', 120), wd('aaaaaa', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'TOTAL', walletProfiles: profiles, sideOdds: -110, steamOn: true,
+  });
+  ok(!neg.gate.money, 'money under 60%'); eq(neg.door2For, 0, 'no Door-2 FOR'); eq(neg.door2Ag, 2, 'two Door-2 against');
+  eq(neg.rung, STEAM_C_STAKE_TIER, 'STEAM-C has no money gate'); eq(neg.units, STEAM_C_UNITS, '1u');
+  ok(neg.reason.startsWith('steam_c_margin-2'), neg.reason);
+  // a Door-2 against at 1.0× → not under size → 0u
+  const full = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 1000), wd('cccccc', 'away', 200)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -120, steamOn: true,
+  });
+  eq(full.rung, null, 'full-size dissenter blocks STEAM-C'); eq(full.units, 0, '0u');
+  // seasoned press against (aaaaaa $1500 = 1.5× AG) → 0u
+  const pressed = evaluatePressLadder({
+    walletDetails: [wd('bbbbbb', 'home', 400), wd('cccccc', 'away', 120), wd('aaaaaa', 'away', 1500)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -120, steamOn: true,
+  });
+  eq(pressed.rung, null, 'press against blocks STEAM-C'); eq(pressed.units, 0, '0u');
+  // margin +1 with steam is PRESS-U / PRESS-X territory, never STEAM-C
+  const withG = new Map([...profiles, profile('gggggg', SPORT, { n: 20, wr: 58, dollarRoi: 6, usual: 1000 })]);
+  const pos = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 1000), wd('gggggg', 'home', 1000), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -120, steamOn: true,
+  });
+  eq(pos.rung, PRESS_U_STAKE_TIER, 'margin +1 stays PRESS-U with steam on');
+  // no Door-2 against at all → not STEAM-C (steam alone is nothing)
+  const none = evaluatePressLadder({
+    walletDetails: [wd('bbbbbb', 'home', 400), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -120, steamOn: true,
+  });
+  eq(none.rung, null, 'steam with no proven dissent is 0u'); eq(none.units, 0, '0u');
+  // stamp shape
+  const st = pressStamp(r, 7);
+  for (const [k, v] of Object.entries(st)) ok(v !== undefined, `${k} defined`);
+  eq(st.v8_pressRung, 'STEAM-C', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units'); eq(st.v8_pressSteamOn, true, 'stamp steam');
 }
 
 // 4f. PRESS-N: deep-book press (n≥50, not Door 2), money, no Door-2 wallet anywhere
