@@ -16,6 +16,8 @@ import {
   PRESS_STAMP_FROM,
   PRESS_STAKE_TIER,
   PRESS_R6_STAKE_TIER,
+  PRESS_X_STAKE_TIER,
+  PRESS_X_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -89,6 +91,60 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(r.units, 0, '0u');
   eq(r.rung, null, 'no rung');
   ok(r.reason.includes('door2_against'), r.reason);
+}
+
+// 4b. PRESS-X: Door-2 against under its usual size, margin +1 → 2u flat
+{
+  const withG = new Map([...profiles, profile('gggggg', SPORT, { n: 20, wr: 58, dollarRoi: 6, usual: 1000 })]);
+  const r = evaluatePressLadder({
+    // for: aaaaaa press + gggggg (both Door 2) · against: cccccc $120 vs usual $200 → 0.6×
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('gggggg', 'home', 1000), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -300, steamOn: true,
+  });
+  ok(!r.gate.noDoor2Ag, 'gate 3 still fails');
+  eq(r.door2For - r.door2Ag, 1, 'margin +1');
+  // Same shape with only one Door-2 for → margin 0 → no exception
+  const tied = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -120,
+  });
+  eq(tied.rung, null, 'margin 0 is not PRESS-X'); eq(tied.units, 0, '0u');
+  eq(r.rung, PRESS_X_STAKE_TIER, 'PRESS-X fires');
+  eq(r.units, PRESS_X_UNITS, '2u, no price step even when moved');
+  eq(r.dissenters.length, 1, 'dissenter recorded');
+  eq(r.dissenters[0].wallet, 'cccccc', 'dissenter wallet');
+  ok(r.reason.startsWith('press_x_margin1'), r.reason);
+}
+
+// 4c. PRESS-X needs margin ≥ +1: one Door-2 for vs one Door-2 against at under size... margin 0 → no
+{
+  const r = evaluatePressLadder({
+    // aaaaaa for (Door 2), cccccc against under size (Door 2), plus a second Door-2 against under size → margin −1
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('cccccc', 'away', 120), wd('ffffff', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: new Map([...profiles, profile('ffffff', SPORT, { n: 10, wr: 60, dollarRoi: 8, usual: 400 })]), sideOdds: -120,
+  });
+  eq(r.door2For, 1, 'one Door-2 for'); eq(r.door2Ag, 2, 'two Door-2 against');
+  eq(r.rung, null, 'margin −1 is not PRESS-X');
+  eq(r.units, 0, '0u');
+}
+
+// 4d. PRESS-X needs every against under size: one under, one at normal → no
+{
+  const twoFor = new Map([...profiles, profile('ffffff', SPORT, { n: 10, wr: 60, dollarRoi: 8, usual: 400 }), profile('gggggg', SPORT, { n: 20, wr: 58, dollarRoi: 6, usual: 1000 })]);
+  const r = evaluatePressLadder({
+    // for: aaaaaa (press), gggggg; against: cccccc 0.6×, ffffff 1.0× → margin 0 anyway; make it margin +1 with bbbbbb? bbbbbb is not Door 2.
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('gggggg', 'home', 1000), wd('cccccc', 'away', 120), wd('ffffff', 'away', 400)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: twoFor, sideOdds: -120,
+  });
+  eq(r.door2For, 2, 'two Door-2 for'); eq(r.door2Ag, 2, 'two Door-2 against');
+  eq(r.rung, null, 'margin 0 blocks');
+  const r2 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('gggggg', 'home', 1000), wd('ffffff', 'away', 400)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: twoFor, sideOdds: -120,
+  });
+  eq(r2.door2For - r2.door2Ag, 1, 'margin +1');
+  eq(r2.rung, null, 'against at exactly 1.0× usual is not under size → vetoed');
+  eq(r2.units, 0, '0u');
 }
 
 // 5. Press from a seasoned non-Door-2 wallet with no Door-2 FOR fails gate 4

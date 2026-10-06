@@ -26,6 +26,14 @@
  * sizeRatio ≥ 1.0, zero Door-2 AG, money ≥ 0.60. Promotion to 2u only after
  * 60 stamped R6 plays with positive flat ROI; removed if 60 are negative.
  *
+ * Exception rung PRESS-X (2u) when ONLY gate 3 fails: gates 1, 2, 4 pass,
+ * Door-2 margin (FOR − AG) ≥ 1, and every Door-2 AG wallet is betting under
+ * its own sport-local usual size (sizeRatio < 1.0). Research on the 99
+ * gate-3-only failures: 18-5 +32.5% (P2 +33.5%, P3 +31.5%), fourteen
+ * different lead pressers. Tied/negative margin −2.4%; AG at/over normal
+ * size −4.8%; more presses FOR did not rescue (−7.5%). Flat 2u, no price
+ * step (clean 8-3, moved 10-2). Judged in the stamp record like R6.
+ *
  * Everything else between the v12 score gate and the odds cap (HC ladder,
  * rescues, floors, tape, EDGE bands, the mute chain, HARD+ layer, form×tier)
  * is retired for pickDate ≥ PRESS_LADDER_FROM. The v12 score > 0 gate,
@@ -54,8 +62,15 @@ export const R6_MIN_VETERANS = 2;
 export const R6_RATIO_MIN = 1.0;
 export const R6_UNITS = 1;
 
+/** PRESS-X: Door-2 margin (FOR − AG) must be at least this. */
+export const PRESS_X_MIN_MARGIN = 1;
+/** PRESS-X: every Door-2 AG wallet must be under this × its usual size. */
+export const PRESS_X_AG_RATIO_MAX = 1.0;
+export const PRESS_X_UNITS = 2;
+
 export const PRESS_STAKE_TIER = 'PRESS';
 export const PRESS_R6_STAKE_TIER = 'PRESS-R6';
+export const PRESS_X_STAKE_TIER = 'PRESS-X';
 export const PRESS_GATE_MUTED_BY = 'press-gate';
 
 export function isPressLadderLive(pickDate) {
@@ -177,7 +192,8 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   band: number|null, priceStep: number|null, edge: number|null,
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-R6'|null, units: number, reason: string
+ *   dissenters: Array<{ wallet, ratio, n, wr }>,
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-R6'|null, units: number, reason: string
  * }}
  */
 export function evaluatePressLadder({
@@ -194,7 +210,7 @@ export function evaluatePressLadder({
     moneyShare: null, door2Ag: 0, door2For: 0,
     presser: null, maxRatio: 0, band: null, priceStep: null, edge: null,
     steamOn: !!steamOn, heavyFav: isHeavyFavorite(marketType, sideOdds),
-    veterans: [], rung: null, units: 0, reason: 'no_wallet_details',
+    veterans: [], dissenters: [], rung: null, units: 0, reason: 'no_wallet_details',
   };
   if (!Array.isArray(walletDetails) || walletDetails.length === 0 || !side || !sport) return empty;
   if (!walletProfiles) return { ...empty, reason: 'no_wallet_profiles' };
@@ -239,8 +255,29 @@ export function evaluatePressLadder({
       presser: strip(presser), maxRatio, band, priceStep, edge,
       steamOn: !!steamOn, heavyFav,
       veterans: [],
+      dissenters: [],
       rung: PRESS_STAKE_TIER, units,
       reason: `press_${band}_${priceStep === 0 ? 'clean' : (priceStep === 1 ? 'moved_edge_pos' : 'moved_edge_neg')}`,
+    };
+  }
+
+  // PRESS-X — only gate 3 failed, informed FOR outnumber informed AG, and
+  // every informed AG wallet is under its own normal size.
+  const dissenters = agRows.filter((r) => r.door2).sort((a, b) => b.ratio - a.ratio);
+  const margin = door2For - door2Ag;
+  const pressX = gate.money && gate.seasPress && gate.door2For && !gate.noDoor2Ag
+    && margin >= PRESS_X_MIN_MARGIN
+    && dissenters.length > 0
+    && dissenters.every((r) => Number.isFinite(r.ratio) && r.ratio < PRESS_X_AG_RATIO_MAX);
+  if (pressX) {
+    return {
+      gate, moneyShare, door2Ag, door2For,
+      presser: strip(presser), maxRatio, band: pressBand(maxRatio), priceStep: null, edge,
+      steamOn: !!steamOn, heavyFav,
+      veterans: [],
+      dissenters: dissenters.map(strip),
+      rung: PRESS_X_STAKE_TIER, units: PRESS_X_UNITS,
+      reason: `press_x_margin${margin}_ag_under_size`,
     };
   }
 
@@ -256,6 +293,7 @@ export function evaluatePressLadder({
       presser: null, maxRatio, band: null, priceStep: null, edge,
       steamOn: !!steamOn, heavyFav,
       veterans: veterans.map(strip),
+      dissenters: [],
       rung: PRESS_R6_STAKE_TIER, units: R6_UNITS,
       reason: 'r6_two_veterans',
     };
@@ -271,6 +309,7 @@ export function evaluatePressLadder({
     presser: presser ? strip(presser) : null, maxRatio, band: null, priceStep: null, edge,
     steamOn: !!steamOn, heavyFav,
     veterans: veterans.map(strip),
+    dissenters: dissenters.map(strip),
     rung: null, units: 0,
     reason: `gate_fail:${failed.join(',')}`,
   };
@@ -293,6 +332,7 @@ export function pressStamp(evalResult, now) {
     v8_pressDoor2For: e.door2For,
     v8_pressPresser: e.presser,
     v8_pressVeterans: e.veterans.length ? e.veterans.slice(0, 4) : null,
+    v8_pressDissenters: Array.isArray(e.dissenters) && e.dissenters.length ? e.dissenters.slice(0, 4) : null,
     v8_pressBand: e.band,
     v8_pressPriceStep: e.priceStep,
     v8_pressEdge: e.edge == null ? null : Math.round(e.edge * 10) / 10,

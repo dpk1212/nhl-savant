@@ -5959,7 +5959,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // ─── PRESS LADDER — authoritative stake from PRESS_LADDER_FROM ─────────
   // Research (Aug 1 → Oct 5): seasoned wallet sizing up + money with it +
   // no Door-2 wallet against + Door-2 wallet for. Units 1–5 from press size
-  // minus a price step. R6 (two veterans at normal size) = 1u. Everything
+  // minus a price step. PRESS-X (only gate 3 fails, Door-2 margin ≥1, every
+  // Door-2 against under its usual size) = 2u. R6 (two veterans) = 1u. Everything
   // the legacy chain above decided is overridden for live dates; the chain
   // still runs so its diagnostic stamps keep flowing. Manual stake wins.
   // Stamps (v8_press*) are written from PRESS_STAMP_FROM as the shadow /
@@ -7982,7 +7983,7 @@ async function main() {
     console.log(
       `PRESS LADDER LIVE: authoritative stake · gate = money ≥60% + seasoned (n≥15) press ≥1.5× + 0 Door-2 against + ≥1 Door-2 for`
       + ` · band ≥3×→5u ≥2×→4u else 3u · price step 0 clean / −1 moved edge≥0 / −2 moved edge<0 (floor 1u)`
-      + ` · R6 two veterans ≥1.0× no press → 1u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
+      + ` · PRESS-X Door-2 margin ≥1 with every Door-2 against under size → 2u · R6 two veterans ≥1.0× no press → 1u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
       + ` · from ${PRESS_LADDER_FROM} · legacy chain runs for stamps only · manual stake wins`,
     );
   } else if (isPressStampLive(TARGET_DATE)) {
