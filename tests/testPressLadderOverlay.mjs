@@ -20,6 +20,9 @@ import {
   PRESS_X_UNITS,
   PRESS_U_STAKE_TIER,
   PRESS_U_UNITS,
+  PRESS_N_STAKE_TIER,
+  PRESS_N_UNITS_CLEAN,
+  PRESS_N_UNITS_MOVED,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -183,6 +186,48 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -120,
   });
   ok(!r4.gate.money, 'money fails'); eq(r4.rung, null, 'money gate still required'); eq(r4.units, 0, '0u');
+}
+
+// 4f. PRESS-N: deep-book press (n≥50, not Door 2), money, no Door-2 wallet anywhere
+{
+  const deep = new Map([...profiles, profile('hhhhhh', SPORT, { n: 60, wr: 50, dollarRoi: 0, usual: 1000 })]);
+  const clean = evaluatePressLadder({
+    walletDetails: [wd('hhhhhh', 'home', 2000), wd('bbbbbb', 'away', 300)],   // 2.0× press · bbbbbb not Door 2
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -120,
+  });
+  ok(!clean.gate.door2For && clean.gate.noDoor2Ag, 'no Door-2 either side');
+  eq(clean.rung, PRESS_N_STAKE_TIER, 'PRESS-N fires clean'); eq(clean.units, PRESS_N_UNITS_CLEAN, '2u clean');
+  eq(clean.presser.wallet, 'hhhhhh', 'presser stamped'); eq(clean.priceStep, 0, 'clean step 0');
+  ok(clean.reason === 'press_n_deep60_clean', clean.reason);
+  const moved = evaluatePressLadder({
+    walletDetails: [wd('hhhhhh', 'home', 2000), wd('bbbbbb', 'away', 300)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -120, steamOn: true,
+  });
+  eq(moved.rung, PRESS_N_STAKE_TIER, 'PRESS-N fires moved'); eq(moved.units, PRESS_N_UNITS_MOVED, '1u moved'); eq(moved.priceStep, 1, 'moved step 1');
+  const heavy = evaluatePressLadder({
+    walletDetails: [wd('hhhhhh', 'home', 2000), wd('bbbbbb', 'away', 300)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -250,
+  });
+  eq(heavy.units, PRESS_N_UNITS_MOVED, 'heavy favourite counts as moved → 1u');
+  // presser with a shallow book (eeeeee n=30) → no PRESS-N, gate-4 fail
+  const shallow = evaluatePressLadder({
+    walletDetails: [wd('eeeeee', 'home', 1600), wd('bbbbbb', 'away', 300)],   // 2.0× press from n=30
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -120,
+  });
+  eq(shallow.rung, null, 'shallow presser does not qualify'); eq(shallow.units, 0, '0u');
+  ok(shallow.reason.includes('no_door2_for'), shallow.reason);
+  // a Door-2 against present → not PRESS-N
+  const against = evaluatePressLadder({
+    walletDetails: [wd('hhhhhh', 'home', 2000), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -120,
+  });
+  eq(against.rung, null, 'Door-2 against blocks PRESS-N'); eq(against.units, 0, '0u');
+  // a Door-2 FOR present → this is the normal ladder, not PRESS-N
+  const withD2 = evaluatePressLadder({
+    walletDetails: [wd('hhhhhh', 'home', 2000), wd('cccccc', 'home', 200), wd('bbbbbb', 'away', 300)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -120,
+  });
+  eq(withD2.rung, 'PRESS', 'Door-2 FOR → full ladder');
 }
 
 // 5. Press from a seasoned non-Door-2 wallet with no Door-2 FOR fails gate 4

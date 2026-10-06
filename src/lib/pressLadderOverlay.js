@@ -34,6 +34,13 @@
  * size −4.8%; more presses FOR did not rescue (−7.5%). Flat 2u, no price
  * step (clean 8-3, moved 10-2). Judged in the stamp record like R6.
  *
+ * Rung PRESS-N when gate 4 fails with nothing informed on either side:
+ * money ≥ 0.60, seasoned press ≥ 1.5×, zero Door-2 FOR and zero Door-2 AG,
+ * and the biggest presser's sport book has ≥ 50 bets → 2u clean / 1u moved.
+ * Research: 66-32 +20.6% flat (P1 +20.7%, P2 +13.3%, P3 +26.7%), 21 lead
+ * pressers; clean 42-18 +32.7%, moved 24-14 +1.6%; presser with 30-49 bets
+ * was 10-11 −25.0%, so the depth line is part of the rule.
+ *
  * Rescue rung PRESS-U (1u) when gate 2 fails for the same shape: money ≥ 0.60,
  * Door-2 FOR ≥ 1, Door-2 margin ≥ 1, every Door-2 AG wallet under 1.0× its
  * usual size, no seasoned press. Research 18-11 +11.9% (P2 −15.5%, P3 +26.4%)
@@ -73,6 +80,10 @@ export const PRESS_X_MIN_MARGIN = 1;
 /** PRESS-X: every Door-2 AG wallet must be under this × its usual size. */
 export const PRESS_X_AG_RATIO_MAX = 1.0;
 export const PRESS_X_UNITS = 2;
+/** PRESS-N: no Door-2 wallet on either side; presser book must be this deep. */
+export const PRESS_N_MIN_PRESSER_N = 50;
+export const PRESS_N_UNITS_CLEAN = 2;
+export const PRESS_N_UNITS_MOVED = 1;
 /** PRESS-U: the same shape with no seasoned press, rescued at 1u. */
 export const PRESS_U_UNITS = 1;
 
@@ -80,6 +91,7 @@ export const PRESS_STAKE_TIER = 'PRESS';
 export const PRESS_R6_STAKE_TIER = 'PRESS-R6';
 export const PRESS_X_STAKE_TIER = 'PRESS-X';
 export const PRESS_U_STAKE_TIER = 'PRESS-U';
+export const PRESS_N_STAKE_TIER = 'PRESS-N';
 export const PRESS_GATE_MUTED_BY = 'press-gate';
 
 export function isPressLadderLive(pickDate) {
@@ -202,7 +214,7 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-U'|'PRESS-R6'|null, units: number, reason: string
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'PRESS-R6'|null, units: number, reason: string
  * }}
  */
 export function evaluatePressLadder({
@@ -287,6 +299,24 @@ export function evaluatePressLadder({
       dissenters: dissenters.map(strip),
       rung: PRESS_X_STAKE_TIER, units: PRESS_X_UNITS,
       reason: `press_x_margin${margin}_ag_under_size`,
+    };
+  }
+
+  // PRESS-N — a deep-book press with the money and no informed wallet on
+  // either side. Without a Door-2 wallet to vouch, the press itself must
+  // come from a long record; price moved halves it.
+  const pressN = gate.money && gate.seasPress && !gate.door2For && gate.noDoor2Ag
+    && presser && presser.n >= PRESS_N_MIN_PRESSER_N;
+  if (pressN) {
+    const moved = !!steamOn || heavyFav;
+    return {
+      gate, moneyShare, door2Ag, door2For,
+      presser: strip(presser), maxRatio, band: pressBand(maxRatio), priceStep: moved ? 1 : 0, edge,
+      steamOn: !!steamOn, heavyFav,
+      veterans: [],
+      dissenters: [],
+      rung: PRESS_N_STAKE_TIER, units: moved ? PRESS_N_UNITS_MOVED : PRESS_N_UNITS_CLEAN,
+      reason: `press_n_deep${presser.n}_${moved ? 'moved' : 'clean'}`,
     };
   }
 
