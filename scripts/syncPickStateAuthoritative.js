@@ -226,6 +226,7 @@ import {
 } from '../src/lib/ticketTapeCapture.js';
 import {
   applyUnitTierEvSteamOverlay,
+  isSteamOn,
   UNIT_TIER_EV_MUTED_BY,
 } from '../src/lib/unitTierEvSteamOverlay.js';
 import {
@@ -347,6 +348,14 @@ import {
   isRankEligibleOnSourceB,
 } from '../src/lib/actionLockPin.js';
 import { oddsCap } from '../src/lib/oddsCap.js';
+import {
+  evaluatePressLadder,
+  pressStamp,
+  isPressLadderLive,
+  isPressStampLive,
+  PRESS_LADDER_FROM,
+  PRESS_GATE_MUTED_BY,
+} from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -3907,6 +3916,47 @@ async function createMissingLockedPicks({
           }
         }
       }
+      // ─── PRESS LADDER on create (mirrors reconcile) ───────────────────
+      let pressEvalCreate = null;
+      let pressAppliedCreate = false;
+      if (isPressStampLive(TARGET_DATE) && Array.isArray(walletDetails) && walletDetails.length > 0) {
+        if (!liveTapeCreate) {
+          const tapeCtxPress = pinnTapeFromMeta(
+            gameMeta, { sport, gameKey }, marketType, side, { peak: { line } }, { meta },
+          );
+          liveTapeCreate = captureTicketTape({
+            pinnGame: tapeCtxPress.pinnGame,
+            marketType: tapeCtxPress.marketType,
+            sideNorm: tapeCtxPress.sideNorm,
+            line: tapeCtxPress.ticketLine,
+            offerOdds: odds ?? null,
+            commenceMs: tapeCtxPress.commenceMs,
+            nowMs: now,
+          });
+        }
+        pressEvalCreate = evaluatePressLadder({
+          walletDetails,
+          side,
+          sport,
+          marketType,
+          walletProfiles,
+          sideOdds: odds ?? null,
+          steamOn: isSteamOn(steamInputsForOverlay(liveTapeCreate, null)),
+        });
+      }
+      if (isPressLadderLive(TARGET_DATE)) {
+        const pressScoreOkCreate = scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0;
+        const pressUnitsCreate = pressScoreOkCreate && pressEvalCreate && pressEvalCreate.units > 0
+          ? pressEvalCreate.units
+          : 0;
+        peakUnitsApplied = pressUnitsCreate > 0 && Number.isFinite(Number(odds))
+          ? Math.round(oddsCap(pressUnitsCreate, odds) * 100) / 100
+          : pressUnitsCreate;
+        if (pressScoreOkCreate) {
+          hcStakeTierCreate = peakUnitsApplied > 0 ? pressEvalCreate.rung : 'MONITORING';
+        }
+        pressAppliedCreate = true;
+      }
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
       }
@@ -4059,6 +4109,11 @@ async function createMissingLockedPicks({
         if (hcStakeTierCreate === 'CONFIRMED-UNOPP') {
           v8Stamps.v8_confirmedUnoppPromote = true;
         }
+      }
+      // Press ladder stamps (shadow from PRESS_STAMP_FROM, live from PRESS_LADDER_FROM).
+      if (pressEvalCreate) {
+        Object.assign(v8Stamps, pressStamp(pressEvalCreate, now));
+        v8Stamps.v8_pressApplied = pressAppliedCreate;
       }
       // EDGE + netCLV + tape — full skill bundle from first write (no rebuild later).
       if (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0) {
@@ -4269,6 +4324,16 @@ async function createMissingLockedPicks({
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
+      } else if (pressAppliedCreate) {
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
+        if (v8Stamps.v8_hardUnoppPromote != null) delete v8Stamps.v8_hardUnoppPromote;
+        if (peakUnitsApplied > 0) {
+          delete v8Stamps.mutedBy;
+        } else if (scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0) {
+          v8Stamps.mutedBy = PRESS_GATE_MUTED_BY;
+        } else {
+          v8Stamps.mutedBy = 'ags-quality-veto';
+        }
       } else if (formTierMutedCreate) {
         v8Stamps.mutedBy = formTierPolicyCreate.mutedBy;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
@@ -4370,7 +4435,7 @@ async function createMissingLockedPicks({
       const hardStForMutedCreate = hardStForPolicyCreate?.action === 'MUTE'
         && Number.isFinite(hardStForPolicyCreate.unitsPrePolicy)
         && hardStForPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = formTierMutedCreate || (!formTierRescuedCreate && !hardUnoppFlooredCreate && (hardStForMutedCreate || hardAgMutedCreate || (!hardExceptionRescuedCreate && (marketSkillMutedCreate || stFatMutedCreate || boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const createSizeMutedLegacy = formTierMutedCreate || (!formTierRescuedCreate && !hardUnoppFlooredCreate && (hardStForMutedCreate || hardAgMutedCreate || (!hardExceptionRescuedCreate && (marketSkillMutedCreate || stFatMutedCreate || boardShareMutedCreate || unitTierMutedCreate || favJuiceMutedCreate || steamTailMutedCreate || evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -4379,9 +4444,13 @@ async function createMissingLockedPicks({
           && qConvPolicyCreate.unitsPrePolicy > 0)
         || (!!clvPolicyCreate.mutedBy)
       ))))));
+      const createSizeMuted = pressAppliedCreate
+        ? peakUnitsApplied === 0
+        : createSizeMutedLegacy;
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(pressAppliedCreate && pressEvalCreate?.reason ? [`press:${pressEvalCreate.reason}`] : []),
           ...(formTierPolicyCreate?.reason ? [formTierPolicyCreate.reason] : []),
           ...(hardUnoppFloorPolicyCreate?.reason ? [hardUnoppFloorPolicyCreate.reason] : []),
           ...(hardStForPolicyCreate?.reason ? [hardStForPolicyCreate.reason] : []),
@@ -5887,6 +5956,65 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ─── PRESS LADDER — authoritative stake from PRESS_LADDER_FROM ─────────
+  // Research (Aug 1 → Oct 5): seasoned wallet sizing up + money with it +
+  // no Door-2 wallet against + Door-2 wallet for. Units 1–5 from press size
+  // minus a price step. R6 (two veterans at normal size) = 1u. Everything
+  // the legacy chain above decided is overridden for live dates; the chain
+  // still runs so its diagnostic stamps keep flowing. Manual stake wins.
+  // Stamps (v8_press*) are written from PRESS_STAMP_FROM as the shadow /
+  // live record even when the ladder is not yet authoritative.
+  let pressEval = null;
+  let pressApplied = false;
+  if (isPressStampLive(pickDate) && Array.isArray(wd) && wd.length > 0) {
+    if (!tapeCtxLive) tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    if (!liveTapeSnap) {
+      liveTapeSnap = captureTicketTape({
+        pinnGame: tapeCtxLive.pinnGame,
+        marketType: tapeCtxLive.marketType,
+        sideNorm: tapeCtxLive.sideNorm,
+        line: tapeCtxLive.ticketLine,
+        offerOdds: sideOdds,
+        commenceMs: tapeCtxLive.commenceMs,
+        nowMs: now,
+      });
+    }
+    const steamPress = steamInputsForOverlay(liveTapeSnap, sd);
+    pressEval = evaluatePressLadder({
+      walletDetails: wd,
+      side,
+      sport: pick.sport,
+      marketType: mkt,
+      walletProfiles,
+      sideOdds,
+      steamOn: isSteamOn(steamPress),
+    });
+  }
+  const pressLive = isPressLadderLive(pickDate);
+  if (pressLive && !skipManualFlinch) {
+    const pressScoreOk = appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0;
+    const pressUnitsRaw = pressScoreOk && pressEval && pressEval.units > 0 ? pressEval.units : 0;
+    finalUnitsApplied = pressUnitsRaw > 0
+      ? Math.round(oddsCap(pressUnitsRaw, sideOdds) * 100) / 100
+      : 0;
+    if (pressScoreOk) {
+      hcStakeTier = finalUnitsApplied > 0 ? pressEval.rung : 'MONITORING';
+    }
+    // Legacy rescue / floor flags no longer ship or stamp a side.
+    confirmedQ1Rescued = false;
+    confirmedUnoppRescued = false;
+    confirmedQ1Floored = false;
+    confirmedUnoppFloored = false;
+    rankRescued = false;
+    sharpRescued = false;
+    pathDRescued = false;
+    winnerRescued = false;
+    hardUnoppFloorPolicy = null;
+    hardExceptionPolicy = null;
+    formTierPolicy = null;
+    pressApplied = true;
+  }
+
   // Last choke — RANK / EDGE floors cannot publish past the dog cap.
   let oddsCapClamped = false;
   if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
@@ -5952,6 +6080,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // truth. UI reads `health.status` to decide lock display state.
   const reasons = [];
   if (appliedReason) reasons.push(appliedReason);
+  if (pressApplied && pressEval?.reason) reasons.push(`press:${pressEval.reason}`);
   if (clvPolicy.reason && !reasons.includes(clvPolicy.reason)) reasons.push(clvPolicy.reason);
   if (tapePolicy?.reason && !reasons.includes(tapePolicy.reason)) reasons.push(tapePolicy.reason);
   if (qConvPolicy?.reason && !reasons.includes(qConvPolicy.reason)) reasons.push(qConvPolicy.reason);
@@ -6051,11 +6180,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0);
   const lateMuteCancelled = !confirmedQ1Floored && !confirmedUnoppFloored
     && (foolsMuted || qConvMuted || tapeClvMuted);
-  const sizeMuted = operatorKilled
+  const sizeMuted = pressApplied
+    ? (operatorKilled || finalUnitsApplied === 0)
+    : (operatorKilled
     || formTierMuted
     || (!formTierRescued && !hardUnoppFloored && (hardStForMuted
     || hardAgMuted
-    || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled))));
+    || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled)))));
   const healthStatusOut = sizeMuted
     ? 'MUTED'
     : appliedStatus;
@@ -6107,6 +6238,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
+  } else if (pressApplied) {
+    // Press ladder is authoritative: one gate, one reason. Legacy rescue
+    // stamps from pre-cutover syncs are cleared so the card reads clean.
+    if (finalUnitsApplied > 0) {
+      if (sd.mutedBy != null) patch.mutedBy = admin.firestore.FieldValue.delete();
+      if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    } else if (mutedByAgs) {
+      patch.mutedBy = 'ags-quality-veto';
+      if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    } else {
+      patch.mutedBy = PRESS_GATE_MUTED_BY;
+      if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    }
   } else if (formTierMuted) {
     patch.mutedBy = formTierPolicy.mutedBy;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
@@ -6193,7 +6337,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== healthStatusOut) {
-    const reasonNote = (appliedReason || clvPolicy.reason) ? ` (${appliedReason || clvPolicy.reason})` : '';
+    const statusReason = (pressApplied && finalUnitsApplied === 0 && pressEval?.reason)
+      ? `press:${pressEval.reason}`
+      : (appliedReason || clvPolicy.reason);
+    const reasonNote = statusReason ? ` (${statusReason})` : '';
     changes.push(`status: ${stampedStatus || '∅'} → ${healthStatusOut}${reasonNote}`);
   }
 
@@ -6271,6 +6418,18 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_agsTierV11 = admin.firestore.FieldValue.delete();
     patch.v8_agsQuintile = admin.firestore.FieldValue.delete();
     patch.v8_agsComponents = admin.firestore.FieldValue.delete();
+  }
+
+  // Press ladder stamps — shadow from PRESS_STAMP_FROM, authoritative from
+  // PRESS_LADDER_FROM. Written every cycle so the record is day-of.
+  if (pressEval) {
+    Object.assign(patch, pressStamp(pressEval, now));
+    patch.v8_pressApplied = pressApplied;
+    const prevRung = sd.v8_pressRung ?? null;
+    const prevUnits = sd.v8_pressUnits ?? null;
+    if (prevRung !== pressEval.rung || prevUnits !== pressEval.units) {
+      changes.push(`PRESS${pressApplied ? '' : ' (shadow)'}: ${prevRung || '∅'}/${prevUnits ?? '∅'}u → ${pressEval.rung || '∅'}/${pressEval.units}u (${pressEval.reason})`);
+    }
   }
 
   // v12 AGS stamps — AUTHORITATIVE. v8_agsTier and finalUnits are the
@@ -7818,6 +7977,18 @@ async function main() {
     );
   } else {
     console.log(`FORM×TIER layer: not live before ${FORM_TIER_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isPressLadderLive(TARGET_DATE)) {
+    console.log(
+      `PRESS LADDER LIVE: authoritative stake · gate = money ≥60% + seasoned (n≥15) press ≥1.5× + 0 Door-2 against + ≥1 Door-2 for`
+      + ` · band ≥3×→5u ≥2×→4u else 3u · price step 0 clean / −1 moved edge≥0 / −2 moved edge<0 (floor 1u)`
+      + ` · R6 two veterans ≥1.0× no press → 1u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
+      + ` · from ${PRESS_LADDER_FROM} · legacy chain runs for stamps only · manual stake wins`,
+    );
+  } else if (isPressStampLive(TARGET_DATE)) {
+    console.log(`PRESS LADDER shadow: stamping v8_press* only; authoritative from ${PRESS_LADDER_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  } else {
+    console.log(`PRESS LADDER: not live before ${PRESS_LADDER_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (!isHardUnoppFloorLive(TARGET_DATE)) {
     console.log(`HARD+ margin floor: not live before ${HARD_UNOPP_FLOOR_FROM} (TARGET_DATE=${TARGET_DATE})`);

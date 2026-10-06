@@ -1550,10 +1550,24 @@ function calculateSpreadTotalUnits(_stars, _consensusPenalty = 0, odds = null, _
 // cron stamps the tier with the live Firestore calibration — that's the
 // number we shipped on, the number we sized at, and the number the user
 // sees on the card.
-function starsFromAgsuTier(tier) {
+function starsFromAgsuTier(tier, units = null) {
   // v12.1 product stake tiers.
   // Conviction scale (matches AGS_V12_STAKE_TIER_META.stars): MAX/TOP=5,
   // STRONG=4, SOLID=3, LEAN=2 — keyed to bet size, not the internal path.
+  // Press ladder (2026-10-07+) ships 1-5u on one path, so stars follow the
+  // shipped size when the caller has it.
+  if (tier === 'PRESS') {
+    const u = Number(units);
+    if (Number.isFinite(u) && u > 0) {
+      if (u >= 5) return 5.0;
+      if (u >= 4) return 4.0;
+      if (u >= 3) return 3.0;
+      if (u >= 2) return 2.5;
+      return 2.0;
+    }
+    return 3.0;
+  }
+  if (tier === 'PRESS-R6') return 2.0;    // two veterans (1u)
   if (tier === 'SUPER') return 5.0;       // MAX PLAY (6u)
   if (tier === 'TOP+') return 5.0;        // TOP PLAY (5u)
   if (tier === 'TOP') return 4.0;         // STRONG PLAY (4u)
@@ -1606,7 +1620,7 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
   // stamped it as LEAN).
   if (cronTier && cronUnits != null && Number.isFinite(cronUnits)) {
     return {
-      liveStars: starsFromAgsuTier(cronTier),
+      liveStars: starsFromAgsuTier(cronTier, cronUnits),
       liveUnits: cronUnits,
       liveTier: cronTier,
       isDownsized: cronUnits < (peakUnits || 0) && cronUnits > 0,
