@@ -18,6 +18,8 @@ import {
   PRESS_R6_STAKE_TIER,
   PRESS_X_STAKE_TIER,
   PRESS_X_UNITS,
+  PRESS_U_STAKE_TIER,
+  PRESS_U_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -145,6 +147,42 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(r2.door2For - r2.door2Ag, 1, 'margin +1');
   eq(r2.rung, null, 'against at exactly 1.0× usual is not under size → vetoed');
   eq(r2.units, 0, '0u');
+}
+
+// 4e. PRESS-U: same shape as 4b with NO seasoned press → 1u
+{
+  const withG = new Map([...profiles, profile('gggggg', SPORT, { n: 20, wr: 58, dollarRoi: 6, usual: 1000 })]);
+  const r = evaluatePressLadder({
+    // for: aaaaaa $1000 (1.0×, not a press) + gggggg $1000 (1.0×) · against: cccccc $120 (0.6×)
+    walletDetails: [wd('aaaaaa', 'home', 1000), wd('gggggg', 'home', 1000), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -120,
+  });
+  ok(!r.gate.seasPress, 'no seasoned press');
+  ok(!r.gate.noDoor2Ag, 'gate 3 fails');
+  eq(r.door2For - r.door2Ag, 1, 'margin +1');
+  eq(r.rung, PRESS_U_STAKE_TIER, 'PRESS-U fires');
+  eq(r.units, PRESS_U_UNITS, '1u');
+  eq(r.presser, null, 'no presser stamped');
+  eq(r.dissenters[0].wallet, 'cccccc', 'dissenter recorded');
+  ok(r.reason.startsWith('press_u_margin1'), r.reason);
+  // against at 1.0× → not under size → 0u
+  const r2 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 1000), wd('gggggg', 'home', 1000), wd('cccccc', 'away', 200)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -120,
+  });
+  eq(r2.rung, null, 'against at normal size blocks PRESS-U'); eq(r2.units, 0, '0u');
+  // margin 0 → 0u (R6 needs 0 Door-2 against so it does not fire either)
+  const r3 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 1000), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -120,
+  });
+  eq(r3.rung, null, 'margin 0 blocks PRESS-U'); eq(r3.units, 0, '0u');
+  // money under 60% → 0u
+  const r4 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 1000), wd('gggggg', 'home', 1000), wd('cccccc', 'away', 120), wd('bbbbbb', 'away', 5000)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -120,
+  });
+  ok(!r4.gate.money, 'money fails'); eq(r4.rung, null, 'money gate still required'); eq(r4.units, 0, '0u');
 }
 
 // 5. Press from a seasoned non-Door-2 wallet with no Door-2 FOR fails gate 4
