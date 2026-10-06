@@ -13138,6 +13138,10 @@ export default function SharpFlow() {
                           v8_edgeNetSizeAction: sd.v8_edgeNetSizeAction || null,
                           // Mute audit — why this side is TRACKED / 0u
                           mutedBy: sd.mutedBy || null,
+                          // Press ladder — which gate failed drives the NO PLAY copy.
+                          pressReason: sd.v8_pressReason || null,
+                          v8_pressReason: sd.v8_pressReason || null,
+                          v8_pressRung: sd.v8_pressRung || null,
                           unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
                           unitsPreSteamTail: Number.isFinite(sd.v8_unitsPreSteamTail) ? sd.v8_unitsPreSteamTail : null,
                           steamTailReason: sd.v8_steamTailReason || null,
