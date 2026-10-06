@@ -1069,6 +1069,10 @@ export const AGS_V12_STAKE_PATH = {
   'MINI-':       'gate-cut',
   DISSENT:       'Path D CM≤0',
   WINNER:        'winner-align EDGE',
+  // Press ladder (2026-10-07+): seasoned wallet pressing + money + Door-2
+  // for + no Door-2 against → 1-5u by press size minus price step.
+  PRESS:         'press ladder',
+  'PRESS-R6':    'press ladder · two veterans',
   MONITORING:    'watch',
   FADE:          'muted',
 };
@@ -1081,9 +1085,9 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
-  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT'] },
+  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'PRESS-R6'] },
 ];
 
 // Reverse lookup: internal stake-tier key → display-tier key.
@@ -1165,6 +1169,10 @@ export const AGS_V12_STAKE_TIER_META = {
   SHARP:         { label: 'SHARP PLAY', short: 'SHARP', color: '#A855F7', bg: 'rgba(168,85,247,0.12)',  units: 3,                     ribbon: null, stars: 3 },
   'SHARP-LEAN':  { label: 'SHARP PLAY', short: 'LEAN',  color: '#A855F7', bg: 'rgba(168,85,247,0.10)',  units: 1.5,                   ribbon: null, stars: 2 },
   'HARD-UNOPP':  { label: 'SHARP PLAY', short: 'HARD',  color: '#A855F7', bg: 'rgba(168,85,247,0.12)',  units: 2,                     ribbon: null, stars: 2 },
+  // Press ladder — units are 1-5 by press band; `units` here is the ladder
+  // midpoint for pathBase readers, the card shows cron finalUnits.
+  PRESS:         { label: 'SHARP PLAY', short: 'PRESS', color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 3,                     ribbon: null, stars: 3 },
+  'PRESS-R6':    { label: 'LEAN',      short: 'VETS',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
   // CONFIRMED / MINI- / DISSENT all roll up to the LEAN path-display band
   // (AGS_V12_DISPLAY_TIERS) so cards / L30 / daily report share vocabulary.

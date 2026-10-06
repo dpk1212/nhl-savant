@@ -119,6 +119,7 @@ const PATH_SHORT = {
   SUPER: 'HC-2', 'TOP+': 'HC-1+$', TOP: 'HC-1', RANK: '2-for-0',
   'SHARP-PRIME': 'SHARP+', SHARP: 'SHARP', 'SHARP-LEAN': 'SHARP~', MINI: 'MINI', 'MINI-': 'MINI-',
   CONFIRMED: 'CONF', DISSENT: 'PATH-D', WINNER: 'WIN-E', MONITORING: 'WATCH', FADE: 'PASS',
+  PRESS: 'PRESS', 'PRESS-R6': 'VETS',
 };
 const pathShort = (k) => PATH_SHORT[k] || k || '—';
 

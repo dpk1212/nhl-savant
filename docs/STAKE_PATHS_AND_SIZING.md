@@ -6,7 +6,38 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 
 ---
 
-## Where we are (2026-07-22)
+## PRESS LADDER — authoritative stake from 2026-10-07
+
+_Code: `src/lib/pressLadderOverlay.js` · wired in `scripts/syncPickStateAuthoritative.js` (create + reconcile) · tests `tests/testPressLadderOverlay.mjs`_
+
+From `PRESS_LADDER_FROM = 2026-10-07` the press ladder is the **only** thing that sets `finalUnits` and `v8_hcStakeTier` on a side. AGS v12 still selects the side (`score > 0` or 0u). The legacy chain below (Paths A–E, EDGE, tape, qConv, FOOLS, flinch, climate, steam-tail, HARD+, form×tier) keeps running and keeps writing its stamps as diagnostics, and its unit decision is overwritten right before the odds-cap choke. Manual stake (`manualStake`) still wins. Operator kill still wins. T-15 freeze unchanged.
+
+**Inputs (all day-of, from the live sync):** `wd` = live hydrated wallet details on the side (`mapPositionsToStakeWalletDetails`), each wallet's `sizeRatio` = this bet ÷ that wallet's **sport-local** mean graded stake (`stakeSizeRatio`), the wallet's sport book `bySport[sport].positions` (`n`, `wr`, `dollarRoi`) from `data/wallet-profiles.json`, Door 2 = `isConfirmedSportRec` (n≥6 · WR≥55 · $ROI>3), Pinnacle side odds, steam from the ticket tape (`isSteamOn`).
+
+**Gate (all four):**
+
+| # | Gate | Rule |
+|---|------|------|
+| 1 | Money | FOR dollars ÷ all dollars on the market **≥ 60%** |
+| 2 | Seasoned press | ≥1 FOR wallet with sport `n ≥ 15` and `sizeRatio ≥ 1.5×` |
+| 3 | No Door-2 against | 0 Door-2 wallets on the other side |
+| 4 | Door-2 for | ≥1 Door-2 wallet on our side |
+
+**Ladder (gate passes):** band from the largest press — `≥3.0× → 5` · `≥2.0× → 4` · else `3`. Price step — **0** when clean (no steam, not a heavy ML favorite ≥ 60% implied), **−1** when moved and edge ≥ 0, **−2** when moved and edge < 0. Edge = mean WR of FOR wallets with `n ≥ 10` minus implied (ML) or 52.4 (spread / total). Floor 1u. Odds cap applies after. Stamp tier **`PRESS`**.
+
+**R6 rung (gate 2 fails):** no seasoned press, but **≥2** seasoned FOR wallets at `sizeRatio ≥ 1.0×`, 0 Door-2 against, money ≥ 60% → **1u**, tier **`PRESS-R6`**. Promotion rule (decided 2026-10-06): R6 moves to 2u only after 60 stamped `PRESS-R6` plays with positive flat ROI; it is removed if 60 stamped plays are negative.
+
+**Otherwise 0u.** `health.status = MUTED`, `mutedBy = press-gate` (or `ags-quality-veto` when the v12 score is ≤ 0), `v8_hcStakeTier = MONITORING`.
+
+**Stamps (every cycle from `PRESS_STAMP_FROM = 2026-10-06`, shadow on 10-06, live from 10-07):** `v8_pressGate {money, seasPress, noDoor2Ag, door2For, pass}` · `v8_pressMoneyShare` · `v8_pressDoor2Ag` · `v8_pressDoor2For` · `v8_pressPresser {wallet, ratio, n, wr}` · `v8_pressVeterans[]` · `v8_pressBand` · `v8_pressPriceStep` · `v8_pressEdge` · `v8_pressSteamOn` · `v8_pressHeavyFav` · `v8_pressRung` · `v8_pressUnits` · `v8_pressReason` · `v8_pressAt` · `v8_pressApplied` (true when the ladder set the stake).
+
+**Retired for live dates:** Q1 / UNOPP / HARD+ floors and rescues, RANK / SHARP / DISSENT / WINNER rescues, EDGE band, EDGE/net, tape dial, qConv, FOOLS, flinch, maxSR, no-CONFIRMED, TOP-crowded, Ev-drift, climate, sport unlock, steam-tail, fav-juice, unit-tier, board share, st-fat, market-skill, HARD exception / AG / S-T require, GOLD stack cap, form×tier. Their stamps still write; their units do not ship.
+
+**Research basis:** V12 sides Aug 1 → Oct 5, 2026, day-of wallet state. Door-2-anchored BASE 213 sides +8.3% ROI (P2 +3.7, P3 +16.1), ladder +75.9u on 639u, OOS Aug 1 – Sep 10 +5.7u / 325u; with R6 at 1u 244 plays, +82.0u / 670u. Caveats recorded in the press-ladder critique: no clean holdout, top-3 presser wallets carry 85u of 154u, 60% MLB.
+
+---
+
+## Where we are (2026-07-22) — legacy chain, diagnostic for 2026-10-07+
 
 | Layer | Role | Live rule |
 |-------|------|-----------|
