@@ -52,6 +52,8 @@ const SPORTS = [
   { key: 'icehockey_nhl', label: 'NHL' },
   { key: 'basketball_ncaab', label: 'CBB' },
   { key: 'baseball_mlb', label: 'MLB' },
+  // NBA — preseason + regular season (same label, closer commence wins).
+  { key: 'basketball_nba_preseason', label: 'NBA' },
   { key: 'basketball_nba', label: 'NBA' },
   // UFC fight cards — h2h only (no spreads/totals on Odds API for MMA).
   { key: 'mma_mixed_martial_arts', label: 'UFC', markets: 'h2h' },

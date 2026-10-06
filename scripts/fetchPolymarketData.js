@@ -456,6 +456,20 @@ function resolveNBATeam(raw) {
   return null;
 }
 
+// Polymarket main-game slugs: `nba-<away>-<home>-YYYY-MM-DD` with Poly's own
+// three-letter codes. Everything maps 1:1 to ours except Utah (uta → UTH).
+const NBA_CODES = new Set(Object.values(NBA_NAME_TO_CODE));
+const NBA_POLY_SLUG_CODE = { uta: 'UTH', gs: 'GSW', ny: 'NYK', no: 'NOP', sa: 'SAS' };
+/** [awayCode, homeCode] for a dated NBA game slug, else null. */
+function nbaCodesFromMainSlug(slug) {
+  const m = String(slug || '').toLowerCase().match(/^nba-([a-z]{2,3})-([a-z]{2,3})-\d{4}-\d{2}-\d{2}$/);
+  if (!m) return null;
+  const away = NBA_POLY_SLUG_CODE[m[1]] || m[1].toUpperCase();
+  const home = NBA_POLY_SLUG_CODE[m[2]] || m[2].toUpperCase();
+  if (!NBA_CODES.has(away) || !NBA_CODES.has(home) || away === home) return null;
+  return [away, home];
+}
+
 // ─── Extract team names from Polymarket title ───────────────────────────────
 function extractTeamsFromTitle(title) {
   const t = stripPlayerPropsSuffix((title || '').trim());
@@ -659,31 +673,79 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
-  // NBA: use Odds API
+  // NBA: Odds API preseason + regular season. `basketball_nba` only lists
+  // regular-season games (opening night onward), so early-October preseason
+  // was invisible even though Polymarket had the markets (2026-10-06). The
+  // preseason feed is window-gated like NHL / NFL; the regular-season feed
+  // keeps its historical ungated behaviour. Closer commence wins on a clash.
   const validNBA = new Set();
+  const nbaWindowLo = Date.now() - 6 * 3600 * 1000;
+  const nbaWindowHi = Date.now() + 72 * 3600 * 1000;
   if (ODDS_API_KEY) {
-    try {
-      const url = `https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const games = await res.json();
-        for (const g of games) {
-          const away = resolveNBATeam(g.away_team);
-          const home = resolveNBATeam(g.home_team);
-          if (away && home) {
+    for (const oddsKey of ['basketball_nba_preseason', 'basketball_nba']) {
+      const windowed = oddsKey === 'basketball_nba_preseason';
+      try {
+        const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const games = await res.json();
+          let added = 0;
+          for (const g of games) {
+            const t = g.commence_time ? Date.parse(g.commence_time) : NaN;
+            if (windowed && (!Number.isFinite(t) || t < nbaWindowLo || t > nbaWindowHi)) continue;
+            const away = resolveNBATeam(g.away_team);
+            const home = resolveNBATeam(g.home_team);
+            if (!away || !home) {
+              console.warn(`NBA team resolution miss (${oddsKey}): "${g.away_team}" / "${g.home_team}"`);
+              continue;
+            }
             const gk = `${normalize(away)}_${normalize(home)}`;
             validNBA.add(gk);
-            if (g.commence_time && !commenceTimes[`NBA:${gk}`]) commenceTimes[`NBA:${gk}`] = g.commence_time;
+            added++;
+            const slot = `NBA:${gk}`;
+            const prev = commenceTimes[slot] ? Date.parse(commenceTimes[slot]) : NaN;
+            if (g.commence_time && (!Number.isFinite(prev)
+              || (Number.isFinite(t) && Math.abs(t - Date.now()) < Math.abs(prev - Date.now())))) {
+              commenceTimes[slot] = g.commence_time;
+            }
           }
+          const remaining = res.headers.get('x-requests-remaining');
+          console.log(`📋 Today's NBA (${oddsKey}): +${added}${windowed ? ' in window' : ''} → ${validNBA.size} cumulative [credits left: ${remaining}]`);
+        } else {
+          console.warn(`Odds API NBA error (${oddsKey}): ${res.status}`);
         }
-        const remaining = res.headers.get('x-requests-remaining');
-        console.log(`📋 Today's NBA (Odds API): ${validNBA.size} games [credits left: ${remaining}]`);
-      } else {
-        console.warn(`Odds API NBA error: ${res.status}`);
+      } catch (e) {
+        console.warn(`Could not load NBA schedule from Odds API (${oddsKey}):`, e.message);
       }
-    } catch (e) {
-      console.warn('Could not load NBA schedule from Odds API:', e.message);
     }
+  }
+  // NBA Poly seed: dated `nba-<away>-<home>-YYYY-MM-DD` main-game slugs in the
+  // same window. Preseason games US books have not priced yet (e.g. the
+  // Abu Dhabi / overseas games) exist on Polymarket before Odds API lists
+  // them; without a seed the schedule gate drops the whole market.
+  try {
+    const list = await listEvents('nba', 300);
+    let seeded = 0;
+    for (const ev of list) {
+      const codes = nbaCodesFromMainSlug(ev.slug);
+      if (!codes) continue;
+      const startMs = ev.startTime ? Date.parse(ev.startTime) : NaN;
+      const slugDate = (ev.slug || '').match(/(\d{4}-\d{2}-\d{2})$/);
+      const slugMs = slugDate ? Date.parse(`${slugDate[1]}T23:00:00Z`) : NaN;
+      const t = Number.isFinite(startMs) ? startMs : slugMs;
+      if (!Number.isFinite(t) || t < nbaWindowLo || t > nbaWindowHi) continue;
+      const gk = `${normalize(codes[0])}_${normalize(codes[1])}`;
+      if (!validNBA.has(gk)) {
+        seeded++;
+        console.log(`NBA poly-only (no Odds API row): ${gk} — ${ev.title || ev.slug}`);
+      }
+      validNBA.add(gk);
+      const commence = ev.startTime || (slugDate ? `${slugDate[1]}T23:00:00Z` : null);
+      if (commence && !commenceTimes[`NBA:${gk}`]) commenceTimes[`NBA:${gk}`] = commence;
+    }
+    console.log(`📋 NBA Poly seed (nba): +${seeded} → ${validNBA.size} cumulative`);
+  } catch (e) {
+    console.warn('Could not seed NBA from Polymarket tag nba:', e.message);
   }
 
   // SOC: EPL + La Liga (club soccer). World Cup Odds API key is gone.
