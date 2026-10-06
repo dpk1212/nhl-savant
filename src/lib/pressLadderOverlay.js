@@ -34,6 +34,12 @@
  * size −4.8%; more presses FOR did not rescue (−7.5%). Flat 2u, no price
  * step (clean 8-3, moved 10-2). Judged in the stamp record like R6.
  *
+ * Rescue rung PRESS-U (1u) when gate 2 fails for the same shape: money ≥ 0.60,
+ * Door-2 FOR ≥ 1, Door-2 margin ≥ 1, every Door-2 AG wallet under 1.0× its
+ * usual size, no seasoned press. Research 18-11 +11.9% (P2 −15.5%, P3 +26.4%)
+ * on 29 plays — directional, not period-confirmed; shipped at 1u on the R6
+ * contract (promote after 60 stamped plays positive, remove if 60 negative).
+ *
  * Everything else between the v12 score gate and the odds cap (HC ladder,
  * rescues, floors, tape, EDGE bands, the mute chain, HARD+ layer, form×tier)
  * is retired for pickDate ≥ PRESS_LADDER_FROM. The v12 score > 0 gate,
@@ -67,10 +73,13 @@ export const PRESS_X_MIN_MARGIN = 1;
 /** PRESS-X: every Door-2 AG wallet must be under this × its usual size. */
 export const PRESS_X_AG_RATIO_MAX = 1.0;
 export const PRESS_X_UNITS = 2;
+/** PRESS-U: the same shape with no seasoned press, rescued at 1u. */
+export const PRESS_U_UNITS = 1;
 
 export const PRESS_STAKE_TIER = 'PRESS';
 export const PRESS_R6_STAKE_TIER = 'PRESS-R6';
 export const PRESS_X_STAKE_TIER = 'PRESS-X';
+export const PRESS_U_STAKE_TIER = 'PRESS-U';
 export const PRESS_GATE_MUTED_BY = 'press-gate';
 
 export function isPressLadderLive(pickDate) {
@@ -193,7 +202,7 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-R6'|null, units: number, reason: string
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-U'|'PRESS-R6'|null, units: number, reason: string
  * }}
  */
 export function evaluatePressLadder({
@@ -278,6 +287,24 @@ export function evaluatePressLadder({
       dissenters: dissenters.map(strip),
       rung: PRESS_X_STAKE_TIER, units: PRESS_X_UNITS,
       reason: `press_x_margin${margin}_ag_under_size`,
+    };
+  }
+
+  // PRESS-U — the PRESS-X shape with no seasoned press: proven FOR outnumber
+  // proven AG and every proven AG wallet is under its own normal size. 1u.
+  const pressU = gate.money && !gate.seasPress && gate.door2For && !gate.noDoor2Ag
+    && margin >= PRESS_X_MIN_MARGIN
+    && dissenters.length > 0
+    && dissenters.every((r) => Number.isFinite(r.ratio) && r.ratio < PRESS_X_AG_RATIO_MAX);
+  if (pressU) {
+    return {
+      gate, moneyShare, door2Ag, door2For,
+      presser: null, maxRatio, band: null, priceStep: null, edge,
+      steamOn: !!steamOn, heavyFav,
+      veterans: [],
+      dissenters: dissenters.map(strip),
+      rung: PRESS_U_STAKE_TIER, units: PRESS_U_UNITS,
+      reason: `press_u_margin${margin}_ag_under_size_no_press`,
     };
   }
 
