@@ -1,60 +1,60 @@
 # MLB Predictions
 
-MLB predictions for Monday, October 5, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 10/5, the Guardians have the highest win probability at 57.0%.
+MLB predictions for Tuesday, October 6, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 5 2026Oct 5
+Date: Oct 6 2026Oct 6
 
-[Oct 5, 5:00 PM ET\\
+[Oct 6, 6:00 PM ET\\
 \\
-![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
+![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
 \\
-White Sox \\
+Dodgers  Y. Yamamoto \\
 \\
-0 \\
-\\
-23.3% \\
-\\
-![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
-\\
-Guardians \\
-\\
-2 \\
-\\
-76.7% \\
-\\
-1 Out\\
-\\
-LIVE\\
-\\
-Top 3rd \\
-\\
-In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_195_cle_cws) [Oct 5, 8:00 PM ET\\
-\\
-![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
-\\
-Yankees  C. Schlittler \\
-\\
-52.4% \\
+48.1% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-53¢\\
+50¢\\
 \\
-![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
+![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
 \\
-Rays  F. Peralta \\
+Braves  C. Sale \\
 \\
-47.6% \\
+51.9% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-47¢\\
+50¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_195_tb_nyy)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_196_atl_lad) [Oct 6, 9:30 PM ET\\
+\\
+![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
+\\
+Brewers  D. May \\
+\\
+43.2% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+44¢\\
+\\
+![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
+\\
+Padres  N. Pivetta \\
+\\
+56.8% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+56¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_196_sd_mil)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -272,16 +272,16 @@ Claim Now
 
 How to claim
 
-## MLB predictions for Monday
+## MLB predictions for Tuesday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Monday, the Guardians lead all win probabilities with a 57.0% chance of beating the White Sox at Progressive Field. The Yankees also ranks among the leading moneyline favorites.
+On Tuesday, the Padres lead all win probabilities with a 56.0% chance of beating the Brewers at Petco Park. The Braves also ranks among the leading moneyline favorites.
 
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
-| Guardians | 57.0% | vs. White Sox | 2:00pm |
-| Yankees | 52.1% | @ Rays | 5:00pm |
+| Padres | 56.0% | vs. Brewers | 6:30pm |
+| Braves | 51.8% | vs. Dodgers | 3:00pm |
 
 ## MLB predictions today: Data-driven outcomes for every game
 
