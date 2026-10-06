@@ -2044,6 +2044,7 @@ export function mapLockedPickToCardFixture(pick, {
       : Number.isFinite(pick.v8_unitsPreHardStForRequire) ? pick.v8_unitsPreHardStForRequire
       : null,
     steamTailReason: pick.steamTailReason || pick.v8_steamTailReason || null,
+    pressReason: pick.pressReason || pick.v8_pressReason || null,
     marketAgreement: sma,
     marketSignals,
     pinnMax: sma?.path?.maxNow
