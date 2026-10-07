@@ -61,6 +61,24 @@
  * with a proven wallet. A Door-2 AG at/over 1.0× (43-49 −3.5%) or a press
  * against (35-41 −6.4%) kills it. Same promotion contract as R6.
  *
+ * Rescue rung STEAM-S (1u, from STEAM_S_FROM) — the market overrules a
+ * seasoned wallet's ordinary bet. Pinnacle steam is ON toward this side,
+ * no seasoned press on either side, ≥1 AG wallet with the biggest AG at
+ * 1.0–1.5× its usual (a normal-size bet, not a press and not dust),
+ * seasoned (n ≥ 15) wallets AG ≥ seasoned FOR with at least one seasoned
+ * AG, money FOR 0.20–0.60 (the 50/50 book the ladder has no rung for), and
+ * the side is not a long dog (implied ≥ 0.40; fail-closed without odds).
+ * Research on the steam era (Aug 19 → Oct 5, every V12 side): 27-6 +55.2%
+ * flat (P2 10-2 · P3 17-4), positive in all four half-months, 0u part
+ * 19-5 +48.5%, ML 11-3 / spread 5-2 / total 11-1, MLB 20-4 / other 7-2,
+ * already-on 14-5 / arriving 13-1. The same wallet shape with steam OFF is
+ * 18-28 −24.4%; with the AG under 1.0× 8-5 (0u 4-4, STEAM-C's territory);
+ * when our seasoned wallets outnumber theirs (margin ≥ 1) steam confirming
+ * the lean is 45-36 with the 0u part 25-27 — so the rung stops at even.
+ * One wallet (…4b912c) is the seasoned AG on 17 of 30 open plays; without
+ * it 12-1. Same promotion contract as R6. Sits after STEAM-C and R6 in
+ * the ladder; never overlaps a money-gated rung (money < 0.60 here).
+ *
  * Rescue rung PRESS-M (1u, from PRESS_M_FROM) — the mirror. When the V12
  * side of a market is at 0u under this ladder and the OTHER side carries the
  * shape (money ≥ 0.60, seasoned press ≥ 1.5×, zero Door-2 against; Door-2
@@ -112,6 +130,21 @@ export const STEAM_C_MAX_MARGIN = 0;
 export const STEAM_C_UNITS = 1;
 
 /**
+ * STEAM-S (1u, from STEAM_S_FROM) — steam toward this side against a
+ * seasoned wallet's normal-size bet, on the no-press 50/50 book.
+ */
+export const STEAM_S_FROM = '2026-10-07';
+export const STEAM_S_UNITS = 1;
+/** STEAM-S: biggest AG wallet's size ratio must sit in [MIN, MAX). */
+export const STEAM_S_AG_RATIO_MIN = 1.0;
+export const STEAM_S_AG_RATIO_MAX = 1.5;
+/** STEAM-S: money share FOR must sit in [MIN, MAX). */
+export const STEAM_S_MONEY_MIN = 0.2;
+export const STEAM_S_MONEY_MAX = 0.6;
+/** STEAM-S: side implied win % must be at least this (no long dogs). */
+export const STEAM_S_IMPLIED_MIN = 0.40;
+
+/**
  * PRESS-M (mirror, 1u) — the ladder's shape on the side V12 did not promote.
  * Fires only when the V12 side of the same market sits at 0u and the other
  * side carries money ≥ 0.60, a seasoned press ≥ 1.5× and zero Door-2 wallet
@@ -133,7 +166,12 @@ export const PRESS_X_STAKE_TIER = 'PRESS-X';
 export const PRESS_U_STAKE_TIER = 'PRESS-U';
 export const PRESS_N_STAKE_TIER = 'PRESS-N';
 export const STEAM_C_STAKE_TIER = 'STEAM-C';
+export const STEAM_S_STAKE_TIER = 'STEAM-S';
 export const PRESS_GATE_MUTED_BY = 'press-gate';
+
+export function isSteamSLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= STEAM_S_FROM && isPressLadderLive(pickDate);
+}
 
 export function isPressLadderLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= PRESS_LADDER_FROM;
@@ -345,8 +383,9 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|null, units: number, reason: string
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|null, units: number, reason: string
  * }}
+ * pickDate gates the dated rungs (STEAM-S from STEAM_S_FROM); null → those rungs stay off.
  */
 export function evaluatePressLadder({
   walletDetails,
@@ -356,6 +395,7 @@ export function evaluatePressLadder({
   walletProfiles,
   sideOdds = null,
   steamOn = false,
+  pickDate = null,
 } = {}) {
   const empty = {
     gate: { money: false, seasPress: false, noDoor2Ag: false, door2For: false, pass: false },
@@ -505,6 +545,41 @@ export function evaluatePressLadder({
       dissenters: [],
       rung: PRESS_R6_STAKE_TIER, units: R6_UNITS,
       reason: 'r6_two_veterans',
+    };
+  }
+
+  // STEAM-S — the market overrules a seasoned wallet's ordinary bet. Steam
+  // toward this side, nobody pressing on either side, the biggest AG at a
+  // normal size (1.0–1.5×), seasoned wallets AG ≥ seasoned FOR, money FOR
+  // in the 50/50 band (0.20–0.60), and not a long dog. Dated rung.
+  const seasonedForN = forRows.filter((r) => r.n >= PRESS_SEASONED_N).length;
+  const seasonedAgN = agRows.filter((r) => r.n >= PRESS_SEASONED_N).length;
+  const agMaxRatio = agRows.length
+    ? Math.max(...agRows.map((r) => (Number.isFinite(r.ratio) ? r.ratio : 0)))
+    : null;
+  const implied = impliedFromAmerican(sideOdds);
+  const steamS = isSteamSLive(pickDate)
+    && !!steamOn
+    && !gate.seasPress
+    && !pressAg
+    && agRows.length >= 1
+    && agMaxRatio != null && agMaxRatio >= STEAM_S_AG_RATIO_MIN && agMaxRatio < STEAM_S_AG_RATIO_MAX
+    && seasonedAgN >= 1
+    && seasonedForN <= seasonedAgN
+    && moneyShare != null && moneyShare >= STEAM_S_MONEY_MIN && moneyShare < STEAM_S_MONEY_MAX
+    && implied != null && implied >= STEAM_S_IMPLIED_MIN;
+  if (steamS) {
+    const opponents = agRows
+      .filter((r) => r.n >= PRESS_SEASONED_N)
+      .sort((a, b) => (b.ratio || 0) - (a.ratio || 0));
+    return {
+      gate, moneyShare, door2Ag, door2For,
+      presser: null, maxRatio, band: null, priceStep: null, edge,
+      steamOn: !!steamOn, heavyFav,
+      veterans: veterans.map(strip),
+      dissenters: opponents.map((r) => ({ wallet: r.wallet, ratio: Math.round((r.ratio || 0) * 100) / 100, n: r.n, wr: r.wr })),
+      rung: STEAM_S_STAKE_TIER, units: STEAM_S_UNITS,
+      reason: `steam_s_seas${seasonedForN}v${seasonedAgN}_ag${Math.round(agMaxRatio * 100) / 100}x_money${Math.round(moneyShare * 100)}_steam_on`,
     };
   }
 

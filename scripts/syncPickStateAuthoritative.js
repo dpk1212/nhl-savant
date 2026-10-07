@@ -364,6 +364,9 @@ import {
   PRESS_M_UNITS,
   PRESS_M_STAKE_TIER,
   PRESS_M_SUPERSEDED_REASON,
+  isSteamSLive,
+  STEAM_S_FROM,
+  STEAM_S_STAKE_TIER,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -4018,6 +4021,7 @@ async function createMissingLockedPicks({
           walletProfiles,
           sideOdds: odds ?? null,
           steamOn: isSteamOn(steamInputsForOverlay(liveTapeCreate, null)),
+          pickDate: TARGET_DATE,
         });
       }
       if (isPressLadderLive(TARGET_DATE)) {
@@ -6119,6 +6123,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       walletProfiles,
       sideOdds,
       steamOn: isSteamOn(steamPress),
+      pickDate,
     });
   }
   const pressLive = isPressLadderLive(pickDate);
@@ -8183,6 +8188,11 @@ async function main() {
       + ` · PRESS-X Door-2 margin ≥1 with every Door-2 against under size → 2u · PRESS-N deep-book (n≥50) press with no Door-2 either side → 2u clean / 1u moved · PRESS-U same shape with no press → 1u · STEAM-C steam on with proven wallets net against, all under size, no press against → 1u · R6 two veterans ≥1.0× no press → 1u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
       + ` · from ${PRESS_LADDER_FROM} · legacy chain runs for stamps only · manual stake wins`,
     );
+    if (isSteamSLive(TARGET_DATE)) {
+      console.log(
+        `STEAM-S LIVE: steam on + no press either side + biggest AG 1.0–1.5× + seasoned AG ≥ seasoned FOR (≥1 seasoned AG) + money FOR 20–60% + implied ≥40% → 1u (${STEAM_S_STAKE_TIER}) · from ${STEAM_S_FROM}`,
+      );
+    }
     if (isPressMirrorLive(TARGET_DATE)) {
       console.log(
         `PRESS-M LIVE: V12 side at 0u + other side money ≥60% + seasoned press ≥1.5× + 0 Door-2 against (Door-2 for either way) + own score ≤0`
