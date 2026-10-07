@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-10-07T03:34:58.311Z",
-  "elapsedSec": 80.6,
+  "scannedAt": "2026-10-07T03:41:41.441Z",
+  "elapsedSec": 80.3,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 160,
   "summary": {
     "total": 458,
-    "coveredByMain": 49,
+    "coveredByMain": 48,
     "recovered": 25,
     "recoveredPositions": 252,
-    "noPositions": 384,
+    "noPositions": 385,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 35,
       "spread": 31,
-      "total": 7,
-      "dropped_shadow_gate": 136,
+      "total": 6,
+      "dropped_shadow_gate": 137,
       "dropped_excluded": 30,
       "dropped_duplicate": 13
     }
@@ -2044,7 +2044,8 @@
       "tier": "CONFIRMED",
       "name": "digitalnomad85",
       "sports": "UFC",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x300b4292912c123066a380a344b505b0f353f636"
     },
     {
       "walletShort": "544654",
@@ -2694,8 +2695,8 @@
       "positionsCount": 115,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 349,
-      "willPassShadowGate": 69,
-      "willDropAtShadowGate": 46,
+      "willPassShadowGate": 68,
+      "willDropAtShadowGate": 47,
       "positions": [
         {
           "sport": "CFB",
@@ -3055,15 +3056,6 @@
           "side": "home",
           "invested": 78,
           "entryLine": -20.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "CFB",
-          "gameKey": "nmsu_fiu",
-          "marketType": "total",
-          "side": "under",
-          "invested": 87,
-          "entryLine": 49.5,
           "passesShadow": true
         },
         {
@@ -3730,6 +3722,15 @@
           "side": "home",
           "invested": 3,
           "entryLine": -6.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "NBA",
+          "gameKey": "sac_lal",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 2,
+          "entryLine": null,
           "passesShadow": false
         }
       ]
