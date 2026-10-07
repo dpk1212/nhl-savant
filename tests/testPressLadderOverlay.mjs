@@ -33,6 +33,10 @@ import {
   PRESS_M_FROM,
   PRESS_M_UNITS,
   PRESS_M_STAKE_TIER,
+  isSteamSLive,
+  STEAM_S_FROM,
+  STEAM_S_STAKE_TIER,
+  STEAM_S_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -434,6 +438,77 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
 
   eq(PRESS_M_FROM, '2026-10-07', 'mirror live from Oct 7');
   ok(isPressMirrorLive('2026-10-07') && !isPressMirrorLive('2026-10-06') && !isPressMirrorLive(null), 'mirror date gate');
+}
+
+// 13. STEAM-S — steam toward us against a seasoned wallet's ordinary bet on
+// the no-press 50/50 book. Dated rung, sits after STEAM-C and R6.
+{
+  const withF = new Map([...profiles, profile('ffffff', SPORT, { n: 25, wr: 50, dollarRoi: 0, usual: 1000 })]);
+  const LIVE = '2026-10-07';
+  const base = (over = {}) => evaluatePressLadder({
+    // FOR: an early wallet (n=3) with $400; AG: bbbbbb (seasoned, not Door-2) at 1.2× its $500 usual.
+    walletDetails: [wd('dddddd', 'home', 400), wd('bbbbbb', 'away', 600)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withF, sideOdds: -110, steamOn: true, pickDate: LIVE,
+    ...over,
+  });
+  const r = base();
+  eq(r.rung, STEAM_S_STAKE_TIER, 'STEAM-S fires: steam on, no press, AG 1.2×, seasoned 0v1, money 0.40'); eq(r.units, STEAM_S_UNITS, '1u');
+  ok(!r.gate.money && !r.gate.seasPress, 'money and press gates both fail (that is the shape)');
+  ok(Math.abs(r.moneyShare - 0.4) < 1e-9, 'money share 0.40');
+  eq(r.dissenters.length, 1, 'the seasoned AG wallet is recorded'); eq(r.dissenters[0].wallet, 'bbbbbb', 'bbbbbb'); eq(r.dissenters[0].ratio, 1.2, 'at 1.2×');
+  ok(r.reason.startsWith('steam_s_seas0v1_ag1.2x_money40'), r.reason);
+  eq(r.band, null, 'no band'); eq(r.priceStep, null, 'no price step');
+
+  // Date gate: off before STEAM_S_FROM and with no pickDate.
+  eq(base({ pickDate: '2026-10-06' }).rung, null, 'not live before Oct 7');
+  eq(base({ pickDate: null }).rung, null, 'no pickDate → rung stays off');
+  eq(STEAM_S_FROM, '2026-10-07', 'live from Oct 7');
+  ok(isSteamSLive('2026-10-07') && !isSteamSLive('2026-10-06') && !isSteamSLive(null), 'date gate helper');
+
+  // Steam is the trigger.
+  const off = base({ steamOn: false });
+  eq(off.rung, null, 'steam off → nothing'); eq(off.units, 0, '0u'); ok(off.reason.startsWith('gate_fail:'), off.reason);
+
+  // The opposition has to be a normal-size bet: under 1.0× is STEAM-C's wallet, 1.5×+ is a press.
+  eq(base({ walletDetails: [wd('dddddd', 'home', 400), wd('bbbbbb', 'away', 400)] }).rung, null, 'AG at 0.8× → no');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 400), wd('bbbbbb', 'away', 800)] }).rung, null, 'AG at 1.6× (press against) → no');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 400), wd('bbbbbb', 'away', 745)] }).rung, STEAM_S_STAKE_TIER, 'AG at 1.49× → yes');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 400), wd('bbbbbb', 'away', 500)] }).rung, STEAM_S_STAKE_TIER, 'AG at exactly 1.0× → yes');
+
+  // Money band 0.20–0.60.
+  eq(base({ walletDetails: [wd('dddddd', 'home', 1200), wd('bbbbbb', 'away', 600)] }).rung, null, 'money 0.67 → no (gate 1 passes, no press, no veterans → 0u)');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 100), wd('bbbbbb', 'away', 600)] }).rung, null, 'money 0.14 → no');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 150), wd('bbbbbb', 'away', 600)] }).rung, STEAM_S_STAKE_TIER, 'money 0.20 → yes');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 890), wd('bbbbbb', 'away', 600)] }).rung, STEAM_S_STAKE_TIER, 'money 0.597 → yes');
+
+  // Seasoned count: AG ≥ FOR, at least one seasoned AG.
+  const even = base({ walletDetails: [wd('eeeeee', 'home', 400), wd('bbbbbb', 'away', 600)] });
+  eq(even.rung, STEAM_S_STAKE_TIER, 'seasoned 1v1 (even) → yes'); ok(even.reason.startsWith('steam_s_seas1v1'), even.reason);
+  eq(base({ walletDetails: [wd('eeeeee', 'home', 200), wd('aaaaaa', 'home', 200), wd('bbbbbb', 'away', 600)] }).rung, null, 'seasoned 2v1 (we are ahead) → no');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 400), wd('cccccc', 'away', 250)] }).rung, null, 'only an unseasoned (Door-2, n=8) AG at 1.25× → no seasoned AG → no');
+
+  // A seasoned press FOR is a different book (the ladder's), never STEAM-S.
+  const pressed = base({ walletDetails: [wd('eeeeee', 'home', 1300), wd('ffffff', 'away', 1200), wd('bbbbbb', 'away', 600)] });
+  ok(pressed.gate.seasPress, 'press FOR present'); eq(pressed.rung, null, 'press FOR with money 0.42 → no STEAM-S');
+
+  // Long dogs and missing odds fail closed; spreads at −110 pass.
+  eq(base({ sideOdds: +200 }).rung, null, 'implied 0.33 → no');
+  eq(base({ sideOdds: +150 }).rung, STEAM_S_STAKE_TIER, 'implied 0.40 → yes');
+  eq(base({ sideOdds: null }).rung, null, 'no odds → fail closed');
+  eq(base({ marketType: 'TOTAL', sideOdds: -110 }).rung, STEAM_S_STAKE_TIER, 'total at −110 → yes');
+
+  // Unopposed is not STEAM-S.
+  eq(base({ walletDetails: [wd('dddddd', 'home', 400)] }).rung, null, 'no AG wallet → no');
+
+  // Ordering: a Door-2 AG under size with steam on is STEAM-C first.
+  const c = base({ walletDetails: [wd('dddddd', 'home', 400), wd('bbbbbb', 'away', 600), wd('cccccc', 'away', 100)] });
+  eq(c.rung, STEAM_C_STAKE_TIER, 'STEAM-C takes precedence when a Door-2 AG under size is present');
+
+  // Stamp.
+  const st = pressStamp(r, 9);
+  eq(st.v8_pressRung, 'STEAM-S', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units'); eq(st.v8_pressSteamOn, true, 'stamp steam');
+  eq(st.v8_pressDissenters[0].wallet, 'bbbbbb', 'stamp records the seasoned AG'); eq(st.v8_pressPresser, null, 'no presser');
+  for (const [k, v] of Object.entries(st)) ok(v !== undefined, `stamp ${k} defined`);
 }
 
 console.log(`testPressLadderOverlay: ${n} assertions passed`);
