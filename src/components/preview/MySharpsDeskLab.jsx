@@ -80,6 +80,9 @@ const profiles = new Map([
             { date: '2026-09-19', marketType: 'ML', side: 'home', team: 'Yankees', gameKey: 'bos_nyy', away: 'BOS', home: 'NYY', invested: 3200, dollarPnl: -1400, won: 0 },
             { date: '2026-09-18', marketType: 'TOTAL', side: 'over', line: 9, gameKey: 'laa_oak', away: 'LAA', home: 'OAK', invested: 1800, dollarPnl: 900, won: 1 },
           ],
+          exited: [
+            { date: '2026-09-26', marketType: 'TOTAL', side: 'over', line: 8.5, gameKey: 'col_cws', away: 'COL', home: 'CWS', invested: 154, sizeRatio: 0.2, minutesBeforeLock: 18 },
+          ],
         },
         byMarket: {
           ML: { positions: { n: 28, wins: 15, losses: 13, wr: 54, dollarRoi: 2, invested: 140000 }, recentActionWindow: { n: 10, wins: 6, losses: 4, wr: 60, settledPnl: 6400, dollarRoi: 8 } },
@@ -108,6 +111,27 @@ const profiles = new Map([
         byMarket: {
           ML: { positions: { n: 8, wins: 6, losses: 2, wr: 75, dollarRoi: 21, invested: 64000 }, recentActionWindow: { n: 4, wins: 3, losses: 1, settledPnl: 6100, dollarRoi: 19 } },
           SPREAD: { positions: { n: 4, wins: 2, losses: 2, wr: 50, dollarRoi: -4, invested: 32000 } },
+        },
+      },
+      NHL: {
+        whitelistTier: 'WR50',
+        recentActionWindow: { n: 20, wins: 10, losses: 10, wr: 50, settledPnl: 4696, dollarRoi: 16 },
+        positions: { n: 20, wins: 10, losses: 10, wr: 50, dollarRoi: 16, invested: 29575 },
+        form: {
+          recentAction: [
+            { date: '2026-10-06', marketType: 'ML', side: 'home', team: 'Devils', gameKey: 'uta_njd', away: 'UTA', home: 'NJD', invested: 2730, dollarPnl: -2732, won: 0, sizeRatio: 2.2 },
+            { date: '2026-10-06', marketType: 'ML', side: 'away', team: 'Predators', gameKey: 'nsh_tor', away: 'NSH', home: 'TOR', invested: 2459, dollarPnl: -2460, won: 0, sizeRatio: 2.0 },
+            { date: '2026-10-06', marketType: 'ML', side: 'away', team: 'Blues', gameKey: 'stl_chi', away: 'STL', home: 'CHI', invested: 1940, dollarPnl: -1942, won: 0, sizeRatio: 1.6 },
+          ],
+          exited: [
+            { date: '2026-10-05', marketType: 'ML', side: 'away', team: 'Stars', gameKey: 'dal_col', away: 'DAL', home: 'COL', invested: 1200, sizeRatio: 1.0, minutesBeforeLock: 35 },
+          ],
+        },
+        byMarket: {
+          ML: {
+            positions: { n: 10, wins: 6, losses: 4, wr: 60, dollarRoi: 24, invested: 17757 },
+            recentActionWindow: { n: 10, wins: 6, losses: 4, wr: 60, settledPnl: 4223, dollarRoi: 24 },
+          },
         },
       },
     },

@@ -4,6 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { shouldGradeExited, isLaterAssetClone } from '../scripts/gradeSharpActions.js';
+import { isPreLockExit, minutesBeforeLock } from '../src/lib/actionLockPin.js';
 
 const sdp = {
   status: 'EXITED',
@@ -101,5 +102,18 @@ assert.equal(shouldGradeExited({
     wallet: 'abc', asset: 'token1', date: '2026-08-10',
   }, earliest), false, 'earliest date is the keeper');
 }
+
+assert.equal(isPreLockExit({
+  status: 'EXITED', exitReason: 'asset_absent', minutesToCommence: 40,
+}), true, 'sold 40m before pitch is a pre-lock exit');
+assert.equal(minutesBeforeLock({ minutesToCommence: 40 }), 25);
+assert.equal(isPreLockExit({
+  status: 'EXITED', exitReason: 'asset_absent', minutesToCommence: 10,
+}), false, 'inside T−15 still grades');
+assert.equal(isPreLockExit(sdp), false, 'after pitch still grades');
+assert.equal(isPreLockExit({
+  status: 'EXITED', exitReason: 'date_calendar_retag', minutesToCommence: 40,
+}), false, 'retag is not an exit row');
+assert.equal(minutesBeforeLock({}), null);
 
 console.log('testGradeExitedHeld: ok');

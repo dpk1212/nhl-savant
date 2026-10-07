@@ -83,7 +83,7 @@ import {
 } from './lib/loadWalletProfiles.js';
 import { buildSizeRatioBands, meanDecidedStake } from '../src/lib/sizeRatioBands.js';
 import { buildCalendarWindow, L90_DAYS } from '../src/lib/calendarWindow.js';
-import { mergeFeaturedIntoAction } from '../src/lib/actionLockPin.js';
+import { isPreLockExit, mergeFeaturedIntoAction, minutesBeforeLock } from '../src/lib/actionLockPin.js';
 import {
   SIZE_SKILL_RESCUE,
   evaluateSizeSkillLift,
@@ -339,6 +339,43 @@ async function loadPositions() {
       closingPinnacleOdds: d.closingPinnacleOdds ?? null,
       entryPinnacleOdds: d.entryPinnacleOdds ?? d.pinnacleOdds ?? null,
       entryAvgPrice: d.entryAvgPrice ?? d.avgPrice ?? null,
+    });
+  });
+  return rows;
+}
+
+/** Pre-lock sells. Display only — never folded into the graded book or the tier. */
+async function loadExitedCloses() {
+  const snap = await db.collection('sharp_action_positions').where('status', '==', 'EXITED').get();
+  const cutoff = etDateMinusDays(RECENT_LEGS_DAYS);
+  const rows = [];
+  snap.forEach((doc) => {
+    const d = doc.data() || {};
+    if (!isPreLockExit(d)) return;
+    if (!d.date || String(d.date) < cutoff) return;
+    const invested = Number(d.invested ?? d.size ?? 0);
+    if (!(invested > 0)) return;
+    const walletShort = d.walletShort || shortWalletId(d.wallet);
+    if (!walletShort) return;
+    const sizeRatio = Number.isFinite(Number(d.betMultiplier))
+      ? Number(d.betMultiplier)
+      : (Number.isFinite(Number(d.v8_sizeRatio)) ? Number(d.v8_sizeRatio) : null);
+    rows.push({
+      date: d.date,
+      sport: d.sport,
+      market: d.marketType,
+      gameKey: d.gameKey || null,
+      side: d.side || null,
+      teamName: d.teamName || null,
+      away: d.away || d.awayTeam || null,
+      home: d.home || d.homeTeam || null,
+      entryLine: d.entryLine ?? d.spreadLine ?? d.totalLine ?? null,
+      sizeRatio,
+      minutesToCommence: Number.isFinite(Number(d.minutesToCommence)) ? Number(d.minutesToCommence) : null,
+      walletShort,
+      invested,
+      avgPrice: d.avgPrice,
+      odds: d.odds ?? null,
     });
   });
   return rows;
@@ -602,6 +639,27 @@ function viewActionLeg(b, sportUsualBet = null) {
   };
 }
 
+function exitedLegs(rows, sportUsualBet = null, { maxLegs = RECENT_LEGS_MAX } = {}) {
+  return (rows || [])
+    .filter((b) => b && b.date)
+    .slice()
+    .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
+    .slice(-maxLegs)
+    .map((b) => {
+      const leg = viewActionLeg(b, sportUsualBet);
+      const before = minutesBeforeLock(b);
+      delete leg.won;
+      delete leg.settledPnl;
+      delete leg.dollarPnl;
+      delete leg.flat;
+      return {
+        ...leg,
+        minutesToCommence: Number.isFinite(Number(b.minutesToCommence)) ? Number(b.minutesToCommence) : null,
+        minutesBeforeLock: before,
+      };
+    });
+}
+
 function recentActionLegs(posBets, sportUsualBet = null, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
   const cutoff = etDateMinusDays(days);
   const ordered = (posBets || [])
@@ -749,7 +807,7 @@ function loadAvgSportBetByShort() {
   return out;
 }
 
-function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = null) {
+function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = null, exitBets = []) {
   // Display-only. Not a whitelist input. Last-90 has to be the full
   // position window — the ticket list is capped and cannot carry it.
   const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -867,6 +925,8 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
           ? curve.bets.slice(-RECENT_LEGS_MAX).map((b) => viewActionLeg(b, sportUsual))
           : [];
       }
+      const sportExits = exitedLegs(exitBets.filter((b) => b.sport === sport), sportUsual);
+      if (sportExits.length) form.exited = sportExits;
     }
     // Sport × market rollups for Action expand (MLB TOTAL, MLB ML, …).
     const byMarketInSport = {};
@@ -1030,6 +1090,8 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
   console.log(`  → ${walletBets.length} graded wallet-bets`);
   console.log('Loading sharp_action_positions…');
   const positions = await loadPositions();
+  const exitedCloses = await loadExitedCloses();
+  console.log(`  → ${exitedCloses.length} pre-lock exits in the last ${RECENT_LEGS_DAYS} days`);
   const vaultCt = positions.filter(p => p.vaultQualified).length;
   const shadowCt = positions.length - vaultCt;
   console.log(`  → ${positions.length} graded positions (VAULT=${vaultCt}, SHADOW=${shadowCt})`);
@@ -1053,8 +1115,9 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
   for (const walletShort of allWallets) {
     const pickBets = walletBets.filter(b => b.wallet === walletShort);
     const posBets = dedupePositionCopies(positions.filter(p => p.walletShort === walletShort));
+    const exitBets = exitedCloses.filter((p) => p.walletShort === walletShort);
     profiles[walletShort] = buildProfile(
-      walletShort, pickBets, posBets, clvLedger, avgByShort.get(walletShort) ?? null,
+      walletShort, pickBets, posBets, clvLedger, avgByShort.get(walletShort) ?? null, exitBets,
     );
   }
 

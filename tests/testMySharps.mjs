@@ -276,6 +276,20 @@ const books = marketBooksFromProfile({
 assert.equal(books.length, 1);
 assert.equal(books[0].market, 'ML');
 
+const keptBook = marketBooksFromProfile({
+  bySport: {
+    MLB: {
+      whitelistTier: 'CONFIRMED',
+      byMarket: { TOTAL: { positions: { n: 8, wins: 5, losses: 3, wr: 62, dollarRoi: 10 } } },
+    },
+    NHL: {
+      whitelistTier: 'WR50',
+      byMarket: { ML: { positions: { n: 10, wins: 6, losses: 4, wr: 60, dollarRoi: 24 } } },
+    },
+  },
+});
+assert.deepEqual(keptBook.map((b) => `${b.sport}:${b.market}`), ['MLB:TOTAL', 'NHL:ML']);
+
 const boardRows = [
   { walletShort: '162937', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over', team: 'Over', marketLabel: 'O 47.5', invested: 122100, displaySizeRatio: 2.1, opposed: 'clear' },
   { walletShort: 'e4ec62', sport: 'NFL', gameKey: 'sea_ari', marketType: 'TOTAL', side: 'over', team: 'Over', marketLabel: 'O 47.5', invested: 80000, displaySizeRatio: 1.2, opposed: 'clear' },
@@ -520,6 +534,27 @@ const holdings = buildDeskHoldings({
 assert.equal(holdings[0].walletShort, 'e4ec62');
 assert.equal(holdings[0].name, 'Bands');
 assert.equal(holdings[0].l30Pnl, 38000);
+const keptHold = buildDeskHoldings({
+  roster: [{ walletShort: '9214c2' }],
+  walletProfiles: new Map([['9214c2', {
+    bySport: {
+      MLB: {
+        whitelistTier: 'CONFIRMED',
+        recentActionWindow: { n: 10, wins: 6, losses: 4, settledPnl: 1000 },
+        byMarket: { TOTAL: { positions: { n: 8, wins: 5, losses: 3, wr: 62, dollarRoi: 10 } } },
+      },
+      NHL: {
+        whitelistTier: 'WR50',
+        recentActionWindow: { n: 20, wins: 10, losses: 10, settledPnl: 4696 },
+        byMarket: { ML: { positions: { n: 10, wins: 6, losses: 4, wr: 60, dollarRoi: 24 } } },
+      },
+    },
+  }]]),
+});
+assert.equal(keptHold[0].l30Pnl, 5696);
+assert.equal(keptHold[0].wins, 16);
+assert.equal(keptHold[0].losses, 14);
+assert.ok(keptHold[0].markets.some((m) => m.sport === 'NHL' && m.market === 'ML'));
 assert.equal(holdings[0].whereSport, 'MLB');
 assert.equal(holdings[0].whereMarket, 'ML');
 assert.equal(holdings[1].l30Pnl, -5000);
@@ -1163,5 +1198,29 @@ assert.equal(meanDecidedStake([
   { invested: 3000, won: 0, settledPnl: -3000 },
   { invested: 50, won: 1, settledPnl: 0 },
 ]), 2000);
+
+const exitTape = marketTape(new Map([['9214c2', {
+  bySport: {
+    MLB: {
+      form: {
+        recentAction: [
+          { date: '2026-10-05', marketType: 'TOTAL', side: 'over', line: 6.5, gameKey: 'cws_cle', away: 'CWS', home: 'CLE', invested: 780, dollarPnl: 720, won: 1 },
+        ],
+        exited: [
+          { date: '2026-10-04', marketType: 'TOTAL', side: 'over', line: 8.5, gameKey: 'col_cws', away: 'COL', home: 'CWS', invested: 2200, sizeRatio: 2.3, minutesBeforeLock: 22 },
+          { date: '2026-10-04', marketType: 'ML', side: 'home', team: 'Yankees', gameKey: 'bos_nyy', invested: 900, minutesBeforeLock: 40 },
+        ],
+      },
+    },
+  },
+}]]), '9214c2', 'MLB', 'TOTAL');
+assert.equal(exitTape.plays.length, 1);
+assert.equal(exitTape.plays[0].won, true);
+assert.equal(exitTape.exits.length, 1);
+assert.equal(exitTape.exits[0].pick, 'Over 8.5');
+assert.equal(exitTape.exits[0].exited, true);
+assert.equal(exitTape.exits[0].won, null);
+assert.equal(exitTape.exits[0].minutesBeforeLock, 22);
+assert.equal(exitTape.exits[0].invested, 2200);
 
 console.log('testMySharps: ok');
