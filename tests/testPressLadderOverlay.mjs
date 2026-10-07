@@ -18,6 +18,8 @@ import {
   PRESS_R6_STAKE_TIER,
   PRESS_X_STAKE_TIER,
   PRESS_X_UNITS,
+  PRESS_X_UNITS_STEAM_ON,
+  R6_UNITS,
   PRESS_U_STAKE_TIER,
   PRESS_U_UNITS,
   PRESS_N_STAKE_TIER,
@@ -142,10 +144,18 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   });
   eq(tied.rung, null, 'margin 0 is not PRESS-X'); eq(tied.units, 0, '0u');
   eq(r.rung, PRESS_X_STAKE_TIER, 'PRESS-X fires');
-  eq(r.units, PRESS_X_UNITS, '2u, no price step even when moved');
+  eq(r.units, PRESS_X_UNITS_STEAM_ON, 'steam on → 2u, no price step');
+  eq(r.priceStep, null, 'no price step');
   eq(r.dissenters.length, 1, 'dissenter recorded');
   eq(r.dissenters[0].wallet, 'cccccc', 'dissenter wallet');
-  ok(r.reason.startsWith('press_x_margin1'), r.reason);
+  ok(r.reason.startsWith('press_x_margin1') && r.reason.endsWith('_steam_on'), r.reason);
+  const off = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('gggggg', 'home', 1000), wd('cccccc', 'away', 120)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withG, sideOdds: -300, steamOn: false,
+  });
+  eq(off.rung, PRESS_X_STAKE_TIER, 'PRESS-X fires steam off'); eq(off.units, PRESS_X_UNITS, 'steam off → 3u');
+  eq(off.units, 3, 'PRESS-X steam off is 3u'); eq(r.units, 2, 'PRESS-X steam on is 2u');
+  ok(off.reason.endsWith('_steam_off'), off.reason);
 }
 
 // 4c. PRESS-X needs margin ≥ +1: one Door-2 for vs one Door-2 against at under size... margin 0 → no
@@ -191,7 +201,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   ok(!r.gate.noDoor2Ag, 'gate 3 fails');
   eq(r.door2For - r.door2Ag, 1, 'margin +1');
   eq(r.rung, PRESS_U_STAKE_TIER, 'PRESS-U fires');
-  eq(r.units, PRESS_U_UNITS, '1u');
+  eq(r.units, PRESS_U_UNITS, '1u'); eq(PRESS_U_UNITS, 1, 'PRESS-U stays 1u');
   eq(r.presser, null, 'no presser stamped');
   eq(r.dissenters[0].wallet, 'cccccc', 'dissenter recorded');
   ok(r.reason.startsWith('press_u_margin1'), r.reason);
@@ -225,7 +235,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   });
   eq(r.door2For - r.door2Ag, 0, 'margin 0');
   eq(r.rung, STEAM_C_STAKE_TIER, 'STEAM-C fires on steam with margin 0');
-  eq(r.units, STEAM_C_UNITS, '1u');
+  eq(r.units, STEAM_C_UNITS, '2u'); eq(STEAM_C_UNITS, 2, 'STEAM-C is 2u');
   ok(r.steamOn, 'steamOn stamped');
   eq(r.dissenters[0].wallet, 'cccccc', 'dissenter recorded');
   ok(r.reason.startsWith('steam_c_margin0'), r.reason);
@@ -241,7 +251,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     side: 'home', sport: SPORT, marketType: 'TOTAL', walletProfiles: profiles, sideOdds: -110, steamOn: true,
   });
   ok(!neg.gate.money, 'money under 60%'); eq(neg.door2For, 0, 'no Door-2 FOR'); eq(neg.door2Ag, 2, 'two Door-2 against');
-  eq(neg.rung, STEAM_C_STAKE_TIER, 'STEAM-C has no money gate'); eq(neg.units, STEAM_C_UNITS, '1u');
+  eq(neg.rung, STEAM_C_STAKE_TIER, 'STEAM-C has no money gate'); eq(neg.units, STEAM_C_UNITS, '2u');
   ok(neg.reason.startsWith('steam_c_margin-2'), neg.reason);
   // a Door-2 against at 1.0× → not under size → 0u
   const full = evaluatePressLadder({
@@ -271,7 +281,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   // stamp shape
   const st = pressStamp(r, 7);
   for (const [k, v] of Object.entries(st)) ok(v !== undefined, `${k} defined`);
-  eq(st.v8_pressRung, 'STEAM-C', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units'); eq(st.v8_pressSteamOn, true, 'stamp steam');
+  eq(st.v8_pressRung, 'STEAM-C', 'stamp rung'); eq(st.v8_pressUnits, STEAM_C_UNITS, 'stamp units'); eq(st.v8_pressSteamOn, true, 'stamp steam');
 }
 
 // 4f. PRESS-N: deep-book press (n≥50, not Door 2), money, no Door-2 wallet anywhere
@@ -282,14 +292,14 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -120,
   });
   ok(!clean.gate.door2For && clean.gate.noDoor2Ag, 'no Door-2 either side');
-  eq(clean.rung, PRESS_N_STAKE_TIER, 'PRESS-N fires clean'); eq(clean.units, PRESS_N_UNITS_CLEAN, '2u clean');
+  eq(clean.rung, PRESS_N_STAKE_TIER, 'PRESS-N fires clean'); eq(clean.units, PRESS_N_UNITS_CLEAN, '3u clean'); eq(PRESS_N_UNITS_CLEAN, 3, 'PRESS-N clean is 3u');
   eq(clean.presser.wallet, 'hhhhhh', 'presser stamped'); eq(clean.priceStep, 0, 'clean step 0');
   ok(clean.reason === 'press_n_deep60_clean', clean.reason);
   const moved = evaluatePressLadder({
     walletDetails: [wd('hhhhhh', 'home', 2000), wd('bbbbbb', 'away', 300)],
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -120, steamOn: true,
   });
-  eq(moved.rung, PRESS_N_STAKE_TIER, 'PRESS-N fires moved'); eq(moved.units, PRESS_N_UNITS_MOVED, '1u moved'); eq(moved.priceStep, 1, 'moved step 1');
+  eq(moved.rung, PRESS_N_STAKE_TIER, 'PRESS-N fires moved'); eq(moved.units, PRESS_N_UNITS_MOVED, '1u moved'); eq(PRESS_N_UNITS_MOVED, 1, 'PRESS-N moved stays 1u'); eq(moved.priceStep, 1, 'moved step 1');
   const heavy = evaluatePressLadder({
     walletDetails: [wd('hhhhhh', 'home', 2000), wd('bbbbbb', 'away', 300)],
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -250,
@@ -337,7 +347,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(r.units, 0, '0u');
 }
 
-// 7. R6: two seasoned FOR at ≥1.0×, no press, no Door-2 AG, money ≥ 60% → 1u PRESS-R6
+// 7. R6: two seasoned FOR at ≥1.0×, no press, no Door-2 AG, money ≥ 60% → 2u PRESS-R6
 {
   const r = evaluatePressLadder({
     walletDetails: [wd('bbbbbb', 'over', 600), wd('eeeeee', 'over', 900), wd('dddddd', 'under', 100)],
@@ -345,7 +355,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   });
   ok(!r.gate.seasPress, 'no press (1.2× and 1.125×)');
   eq(r.rung, PRESS_R6_STAKE_TIER, 'R6 fires');
-  eq(r.units, 1, '1u');
+  eq(r.units, R6_UNITS, '2u'); eq(R6_UNITS, 2, 'R6 is 2u');
   eq(r.veterans.length, 2, 'two veterans listed');
 }
 
@@ -465,7 +475,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     ...over,
   });
   const r = base();
-  eq(r.rung, STEAM_S_STAKE_TIER, 'STEAM-S fires: steam on, no press, AG 1.2×, seasoned 0v1, money 0.40'); eq(r.units, STEAM_S_UNITS, '1u');
+  eq(r.rung, STEAM_S_STAKE_TIER, 'STEAM-S fires: steam on, no press, AG 1.2×, seasoned 0v1, money 0.40'); eq(r.units, STEAM_S_UNITS, '2u'); eq(STEAM_S_UNITS, 2, 'STEAM-S is 2u');
   ok(!r.gate.money && !r.gate.seasPress, 'money and press gates both fail (that is the shape)');
   ok(Math.abs(r.moneyShare - 0.4) < 1e-9, 'money share 0.40');
   eq(r.dissenters.length, 1, 'the seasoned AG wallet is recorded'); eq(r.dissenters[0].wallet, 'bbbbbb', 'bbbbbb'); eq(r.dissenters[0].ratio, 1.2, 'at 1.2×');
@@ -519,7 +529,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
 
   // Stamp.
   const st = pressStamp(r, 9);
-  eq(st.v8_pressRung, 'STEAM-S', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units'); eq(st.v8_pressSteamOn, true, 'stamp steam');
+  eq(st.v8_pressRung, 'STEAM-S', 'stamp rung'); eq(st.v8_pressUnits, STEAM_S_UNITS, 'stamp units'); eq(st.v8_pressSteamOn, true, 'stamp steam');
   eq(st.v8_pressDissenters[0].wallet, 'bbbbbb', 'stamp records the seasoned AG'); eq(st.v8_pressPresser, null, 'no presser');
   for (const [k, v] of Object.entries(st)) ok(v !== undefined, `stamp ${k} defined`);
 }
@@ -545,7 +555,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     ...over,
   });
   const r = base();
-  eq(r.rung, SOLO_Q_STAKE_TIER, 'SOLO-Q fires: unopposed dust, steam off, −120'); eq(r.units, SOLO_Q_UNITS, '1u');
+  eq(r.rung, SOLO_Q_STAKE_TIER, 'SOLO-Q fires: unopposed dust, steam off, −120'); eq(r.units, SOLO_Q_UNITS, '1u'); eq(SOLO_Q_UNITS, 1, 'SOLO-Q stays 1u');
   ok(r.gate.money && !r.gate.seasPress, 'money gate passes trivially (share 1.0), press gate fails');
   eq(r.moneyShare, 1, 'money share 1.0 on an unopposed side');
   eq(r.dissenters.length, 0, 'nobody against'); eq(r.veterans.length, 1, 'the dust FOR wallet is named'); eq(r.veterans[0].wallet, 'dddddd', 'dddddd'); eq(r.veterans[0].ratio, 0.5, 'at 0.5×');
@@ -665,7 +675,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     ...over,
   });
   const r = base();
-  eq(r.rung, FADE_F_STAKE_TIER, 'FADE-F fires: floor wallet against, 0u core (steam on kills SOLO-Q)'); eq(r.units, FADE_F_UNITS, '1u');
+  eq(r.rung, FADE_F_STAKE_TIER, 'FADE-F fires: floor wallet against, 0u core (steam on kills SOLO-Q)'); eq(r.units, FADE_F_UNITS, '2u'); eq(FADE_F_UNITS, 2, 'FADE-F is 2u');
   eq(r.floorFade.status, 'BOOST', 'status BOOST'); eq(r.floorFade.wallet, 'ffffff', 'floor wallet named'); eq(r.floorFade.dir, 'AG', 'against');
   eq(r.floorFade.streak, 3, 'streak 3'); eq(r.floorFade.ratio, 1, '1.0×'); eq(r.floorFade.floorImplied, 0.455, 'floor side implied .455');
   ok(r.reason.startsWith('fade_f_floor_against_ffffff_n25_wr40_streak3_1x_floor45'), r.reason);
@@ -743,7 +753,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
 
   // Stamp.
   const st = pressStamp(r, 5);
-  eq(st.v8_pressRung, 'FADE-F', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units');
+  eq(st.v8_pressRung, 'FADE-F', 'stamp rung'); eq(st.v8_pressUnits, FADE_F_UNITS, 'stamp units');
   eq(st.v8_pressFloorFade.status, 'BOOST', 'stamp floor status'); eq(st.v8_pressFloorFade.wallet, 'ffffff', 'stamp floor wallet'); eq(st.v8_pressFloorFade.streak, 3, 'stamp streak');
   for (const [k, val] of Object.entries(st)) ok(val !== undefined, `stamp ${k} defined`);
   for (const [k, val] of Object.entries(st.v8_pressFloorFade)) ok(val !== undefined, `stamp floorFade.${k} defined`);

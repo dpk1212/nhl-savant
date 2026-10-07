@@ -1567,15 +1567,15 @@ function starsFromAgsuTier(tier, units = null) {
     }
     return 3.0;
   }
-  if (tier === 'PRESS-X') return 2.5;     // informed dissent under size (2u)
-  if (tier === 'PRESS-N') return units != null && units >= 2 ? 2.5 : 2.0; // deep-book press, no Door-2 (2u clean / 1u moved)
+  if (tier === 'PRESS-X') return units != null && units >= 3 ? 3.0 : 2.5; // informed dissent under size (3u steam off / 2u on)
+  if (tier === 'PRESS-N') return units != null && units >= 3 ? 3.0 : 2.0; // deep-book press, no Door-2 (3u clean / 1u moved)
   if (tier === 'PRESS-U') return 2.0;     // dissent under size, no press (1u)
-  if (tier === 'STEAM-C') return 2.0;     // steam overrules a small dissent (1u)
-  if (tier === 'STEAM-S') return 2.0;     // steam overrules a seasoned ordinary bet (1u)
+  if (tier === 'STEAM-C') return 2.5;     // steam overrules a small dissent (2u)
+  if (tier === 'STEAM-S') return 2.5;     // steam overrules a seasoned ordinary bet (2u)
   if (tier === 'SOLO-Q') return 2.0;      // quiet unopposed favourite (1u)
-  if (tier === 'FADE-F') return 2.0;      // streaking floor wallet on the other side (1u)
+  if (tier === 'FADE-F') return 2.5;      // streaking floor wallet on the other side (2u)
   if (tier === 'PRESS-M') return 2.0;     // mirror of a muted V12 side (1u)
-  if (tier === 'PRESS-R6') return 2.0;    // two veterans (1u)
+  if (tier === 'PRESS-R6') return 2.5;    // two veterans (2u)
   if (tier === 'SUPER') return 5.0;       // MAX PLAY (6u)
   if (tier === 'TOP+') return 5.0;        // TOP PLAY (5u)
   if (tier === 'TOP') return 4.0;         // STRONG PLAY (4u)

@@ -22,21 +22,23 @@
  *   edge = mean sport WR of FOR wallets with n ≥ 10, minus the implied win %
  *          of the ticket price (ML) or 52.4 (spreads / totals at −110).
  *
- * Rescue rung R6 (1u) when gate 2 fails: ≥2 FOR wallets with n ≥ 15 each at
- * sizeRatio ≥ 1.0, zero Door-2 AG, money ≥ 0.60. Promotion to 2u only after
- * 60 stamped R6 plays with positive flat ROI; removed if 60 are negative.
+ * Rescue rung R6 (2u, re-sized 2026-10-07 from 1u on 20-9 +27.9%) when gate 2
+ * fails: ≥2 FOR wallets with n ≥ 15 each at sizeRatio ≥ 1.0, zero Door-2 AG,
+ * money ≥ 0.60. Removed if 60 stamped R6 plays are negative.
  *
- * Exception rung PRESS-X (2u) when ONLY gate 3 fails: gates 1, 2, 4 pass,
+ * Exception rung PRESS-X (3u steam off / 2u steam on) when ONLY gate 3 fails: gates 1, 2, 4 pass,
  * Door-2 margin (FOR − AG) ≥ 1, and every Door-2 AG wallet is betting under
  * its own sport-local usual size (sizeRatio < 1.0). Research on the 99
  * gate-3-only failures: 18-5 +32.5% (P2 +33.5%, P3 +31.5%), fourteen
  * different lead pressers. Tied/negative margin −2.4%; AG at/over normal
- * size −4.8%; more presses FOR did not rescue (−7.5%). Flat 2u, no price
- * step (clean 8-3, moved 10-2). Judged in the stamp record like R6.
+ * size −4.8%; more presses FOR did not rescue (−7.5%). No price step; the
+ * audit split is steam off 13-3 +46.5% (3u) / steam on 5-2 +0.5% (2u).
+ * Judged in the stamp record like R6.
  *
  * Rung PRESS-N when gate 4 fails with nothing informed on either side:
  * money ≥ 0.60, seasoned press ≥ 1.5×, zero Door-2 FOR and zero Door-2 AG,
- * and the biggest presser's sport book has ≥ 50 bets → 2u clean / 1u moved.
+ * and the biggest presser's sport book has ≥ 50 bets → 3u clean / 1u moved
+ * (clean re-sized 2026-10-07 from 2u on 43-21 +27.4%).
  * Research: 66-32 +20.6% flat (P1 +20.7%, P2 +13.3%, P3 +26.7%), 21 lead
  * pressers; clean 42-18 +32.7%, moved 24-14 +1.6%; presser with 30-49 bets
  * was 10-11 −25.0%, so the depth line is part of the rule.
@@ -47,7 +49,7 @@
  * on 29 plays — directional, not period-confirmed; shipped at 1u on the R6
  * contract (promote after 60 stamped plays positive, remove if 60 negative).
  *
- * Rescue rung STEAM-C (1u) — the market overrules a small dissent. Pinnacle
+ * Rescue rung STEAM-C (2u, re-sized 2026-10-07 from 1u) — the market overrules a small dissent. Pinnacle
  * steam is ON toward this side (the same steamOn the price step reads),
  * ≥1 Door-2 AG wallet, Door-2 margin (FOR − AG) ≤ 0, every Door-2 AG wallet
  * under 1.0× its usual size, and no seasoned press against (AG n ≥ 15 at
@@ -59,9 +61,9 @@
  * steam toward a side the proven wallets are FOR is negative (margin ≥ +1
  * with steam 88-101 −16.0%) — steam only matters as the book disagreeing
  * with a proven wallet. A Door-2 AG at/over 1.0× (43-49 −3.5%) or a press
- * against (35-41 −6.4%) kills it. Same promotion contract as R6.
+ * against (35-41 −6.4%) kills it. Removed if 60 stamped plays are negative.
  *
- * Rescue rung STEAM-S (1u, from STEAM_S_FROM) — the market overrules a
+ * Rescue rung STEAM-S (2u, from STEAM_S_FROM) — the market overrules a
  * seasoned wallet's ordinary bet. Pinnacle steam is ON toward this side,
  * no seasoned press on either side, ≥1 AG wallet with the biggest AG at
  * 1.0–1.5× its usual (a normal-size bet, not a press and not dust),
@@ -107,7 +109,7 @@
  * market and the floor side loses. Two policies, both fail-closed:
  *   veto  — our side IS the floor side → 0u whatever rung fired
  *           (reason fade_f_veto_of_<rung>:...; mutedBy FADE_F_VETO_MUTED_BY)
- *   rescue — our side is AGAINST the floor side and no rung fired → 1u
+ *   rescue — our side is AGAINST the floor side and no rung fired → 2u
  *           (tier FADE-F). A side already staked keeps its stake (3-4 on
  *           the staked part; the lift is in the 0u part).
  * Research, market level (Source B, Apr 19 → Oct 4, 340 clean markets):
@@ -151,31 +153,47 @@ export const PRESS_EDGE_MIN_N = 10;
 export const PRESS_HEAVY_FAV_IMPLIED = 0.60;
 export const PRESS_ST_IMPLIED_PCT = 52.4;
 
+/**
+ * Rung sizing (re-sized 2026-10-07 from the Aug 1 → Oct 5 audit, every
+ * rung re-run on the live wallet rows with the live oddsCap; yardstick is
+ * PRESS band 3 clean, 3u for 31-22 +8.9% flat):
+ *   STEAM-C 1u → 2u     57-27 +31.6%, +18.5pp, 4/4 half-months positive
+ *   PRESS-N clean 2u → 3u   43-21 +27.4%; moved stays 1u (23-11 +8.0%)
+ *   PRESS-X 2u → 3u steam off (13-3 +46.5%); steam on stays 2u (5-2 +0.5%)
+ *   STEAM-S 1u → 2u     17-5 +45.5% (27-6 in its research)
+ *   PRESS-R6 1u → 2u    20-9 +27.9%
+ *   FADE-F 1u → 2u      29-14 +24.0%
+ * PRESS-U, SOLO-Q and PRESS-M stay 1u. Locked sides keep the units they
+ * were sealed with (the T-15 freeze), so the new sizes reach unlocked
+ * sides on the next sync.
+ */
 export const R6_MIN_VETERANS = 2;
 export const R6_RATIO_MIN = 1.0;
-export const R6_UNITS = 1;
+export const R6_UNITS = 2;
 
 /** PRESS-X: Door-2 margin (FOR − AG) must be at least this. */
 export const PRESS_X_MIN_MARGIN = 1;
 /** PRESS-X: every Door-2 AG wallet must be under this × its usual size. */
 export const PRESS_X_AG_RATIO_MAX = 1.0;
-export const PRESS_X_UNITS = 2;
+/** PRESS-X: 3u with steam off, 2u with steam on (the only split it has). */
+export const PRESS_X_UNITS = 3;
+export const PRESS_X_UNITS_STEAM_ON = 2;
 /** PRESS-N: no Door-2 wallet on either side; presser book must be this deep. */
 export const PRESS_N_MIN_PRESSER_N = 50;
-export const PRESS_N_UNITS_CLEAN = 2;
+export const PRESS_N_UNITS_CLEAN = 3;
 export const PRESS_N_UNITS_MOVED = 1;
 /** PRESS-U: the same shape with no seasoned press, rescued at 1u. */
 export const PRESS_U_UNITS = 1;
 /** STEAM-C: Door-2 margin (FOR − AG) must be at most this. */
 export const STEAM_C_MAX_MARGIN = 0;
-export const STEAM_C_UNITS = 1;
+export const STEAM_C_UNITS = 2;
 
 /**
- * STEAM-S (1u, from STEAM_S_FROM) — steam toward this side against a
+ * STEAM-S (2u, from STEAM_S_FROM) — steam toward this side against a
  * seasoned wallet's normal-size bet, on the no-press 50/50 book.
  */
 export const STEAM_S_FROM = '2026-10-07';
-export const STEAM_S_UNITS = 1;
+export const STEAM_S_UNITS = 2;
 /** STEAM-S: biggest AG wallet's size ratio must sit in [MIN, MAX). */
 export const STEAM_S_AG_RATIO_MIN = 1.0;
 export const STEAM_S_AG_RATIO_MAX = 1.5;
@@ -225,10 +243,10 @@ export const PRESS_M_SUPERSEDED_REASON = 'press_m_mirror';
  * book n ≥ PRESS_SEASONED_N at WR ≤ FADE_F_FLOOR_WR_MAX. Exactly one floor
  * wallet in the market, on a losing streak ≥ FADE_F_STREAK_MIN, bet under
  * FADE_F_RATIO_MAX of its usual, its side under FADE_F_FLOOR_IMPLIED_MAX.
- * Against us at 0u → 1u rescue; for us → veto (0u).
+ * Against us at 0u → 2u rescue; for us → veto (0u).
  */
 export const FADE_F_FROM = '2026-10-07';
-export const FADE_F_UNITS = 1;
+export const FADE_F_UNITS = 2;
 export const FADE_F_STAKE_TIER = 'FADE-F';
 export const FADE_F_VETO_MUTED_BY = 'fade-f-veto';
 export const FADE_F_FLOOR_WR_MAX = 45;
@@ -664,8 +682,8 @@ function evaluatePressLadderCore({
       steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: [],
       dissenters: dissenters.map(strip),
-      rung: PRESS_X_STAKE_TIER, units: PRESS_X_UNITS,
-      reason: `press_x_margin${margin}_ag_under_size`,
+      rung: PRESS_X_STAKE_TIER, units: steamOn ? PRESS_X_UNITS_STEAM_ON : PRESS_X_UNITS,
+      reason: `press_x_margin${margin}_ag_under_size_steam_${steamOn ? 'on' : 'off'}`,
     };
   }
 

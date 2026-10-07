@@ -374,6 +374,14 @@ import {
   FADE_F_FROM,
   FADE_F_STAKE_TIER,
   FADE_F_VETO_MUTED_BY,
+  FADE_F_UNITS,
+  STEAM_S_UNITS,
+  STEAM_C_UNITS,
+  PRESS_X_UNITS,
+  PRESS_X_UNITS_STEAM_ON,
+  PRESS_N_UNITS_CLEAN,
+  PRESS_N_UNITS_MOVED,
+  R6_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -8197,12 +8205,12 @@ async function main() {
     console.log(
       `PRESS LADDER LIVE: authoritative stake · gate = money ≥60% + seasoned (n≥15) press ≥1.5× + 0 Door-2 against + ≥1 Door-2 for`
       + ` · band ≥3×→5u ≥2×→4u else 3u · price step 0 clean / −1 moved edge≥0 / −2 moved edge<0 (floor 1u)`
-      + ` · PRESS-X Door-2 margin ≥1 with every Door-2 against under size → 2u · PRESS-N deep-book (n≥50) press with no Door-2 either side → 2u clean / 1u moved · PRESS-U same shape with no press → 1u · STEAM-C steam on with proven wallets net against, all under size, no press against → 1u · R6 two veterans ≥1.0× no press → 1u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
+      + ` · PRESS-X Door-2 margin ≥1 with every Door-2 against under size → ${PRESS_X_UNITS}u steam off / ${PRESS_X_UNITS_STEAM_ON}u steam on · PRESS-N deep-book (n≥50) press with no Door-2 either side → ${PRESS_N_UNITS_CLEAN}u clean / ${PRESS_N_UNITS_MOVED}u moved · PRESS-U same shape with no press → 1u · STEAM-C steam on with proven wallets net against, all under size, no press against → ${STEAM_C_UNITS}u · R6 two veterans ≥1.0× no press → ${R6_UNITS}u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
       + ` · from ${PRESS_LADDER_FROM} · legacy chain runs for stamps only · manual stake wins`,
     );
     if (isSteamSLive(TARGET_DATE)) {
       console.log(
-        `STEAM-S LIVE: steam on + no press either side + biggest AG 1.0–1.5× + seasoned AG ≥ seasoned FOR (≥1 seasoned AG) + money FOR 20–60% + implied ≥40% → 1u (${STEAM_S_STAKE_TIER}) · from ${STEAM_S_FROM}`,
+        `STEAM-S LIVE: steam on + no press either side + biggest AG 1.0–1.5× + seasoned AG ≥ seasoned FOR (≥1 seasoned AG) + money FOR 20–60% + implied ≥40% → ${STEAM_S_UNITS}u (${STEAM_S_STAKE_TIER}) · from ${STEAM_S_FROM}`,
       );
     }
     if (isSoloQLive(TARGET_DATE)) {
@@ -8212,7 +8220,7 @@ async function main() {
     }
     if (isFadeFLive(TARGET_DATE)) {
       console.log(
-        `FADE-F LIVE: exactly one floor wallet (n≥15, WR≤45) in the market + career losing streak ≥3 + under 1.5× usual + floor side implied <65% → against us at 0u = 1u (${FADE_F_STAKE_TIER}); for us = 0u whatever rung (${FADE_F_VETO_MUTED_BY}); staked sides keep their stake · from ${FADE_F_FROM}`,
+        `FADE-F LIVE: exactly one floor wallet (n≥15, WR≤45) in the market + career losing streak ≥3 + under 1.5× usual + floor side implied <65% → against us at 0u = ${FADE_F_UNITS}u (${FADE_F_STAKE_TIER}); for us = 0u whatever rung (${FADE_F_VETO_MUTED_BY}); staked sides keep their stake · from ${FADE_F_FROM}`,
       );
     }
     if (isPressMirrorLive(TARGET_DATE)) {
