@@ -205,6 +205,27 @@ function confirmedSports(prof) {
     .sort();
 }
 
+function sportHasBook(rec) {
+  if ((Number(rec?.positions?.n) || 0) > 0) return true;
+  if ((Number(rec?.picks?.n) || 0) > 0) return true;
+  if (rec?.recentActionWindow) return true;
+  if ((Number(rec?.l90Window?.n) || 0) > 0) return true;
+  const markets = rec?.byMarket;
+  if (!markets || typeof markets !== 'object') return false;
+  return Object.values(markets).some((m) => (
+    (Number(m?.positions?.n) || 0) > 0
+    || (Number(m?.picks?.n) || 0) > 0
+    || (Number(m?.recentActionWindow?.n) || 0) > 0
+  ));
+}
+
+/** Every sport with a book. A saved sharp keeps this record until the user removes them. */
+function bookedSports(prof) {
+  const by = prof?.bySport;
+  if (!by || typeof by !== 'object') return [];
+  return Object.keys(by).filter((s) => sportHasBook(by[s])).sort();
+}
+
 function stampWindow(win) {
   if (!win || !(Number(win.n) > 0)) return null;
   const wins = Number(win.wins);
@@ -459,7 +480,7 @@ export function marketBooksFromProfile(prof, sportFilter) {
   const want = sportFilter && sportFilter !== 'All' && sportFilter !== 'ALL'
     ? sportFilter
     : null;
-  const sports = (want ? [want] : confirmedSports(prof))
+  const sports = (want ? [want] : bookedSports(prof))
     .filter((s) => by[s]);
   const out = [];
   for (const sport of sports) {
@@ -495,7 +516,8 @@ function pickSportRec(prof, sportFilter) {
     : null;
   if (want && by[want]) return { sport: want, rec: by[want] };
   const confirmed = confirmedSports(prof);
-  const sport = confirmed[0] || Object.keys(by)[0] || null;
+  const booked = bookedSports(prof);
+  const sport = confirmed[0] || booked[0] || Object.keys(by)[0] || null;
   return sport ? { sport, rec: by[sport] } : { sport: null, rec: null };
 }
 
@@ -520,14 +542,28 @@ export function rowsForBetsFeed(rows, roster = []) {
   });
 }
 
-/** Graded plays for one sport × market. This month first, then the older tape. */
+function tapeRow(leg, sport) {
+  const row = resultFromLeg(leg, sport);
+  const invested = Number(leg?.invested);
+  const ratio = Number(leg?.sizeRatio ?? leg?.displaySizeRatio);
+  const before = Number(leg?.minutesBeforeLock);
+  return {
+    ...row,
+    invested: Number.isFinite(invested) && invested > 0 ? Math.round(invested) : null,
+    ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null,
+    minutesBeforeLock: Number.isFinite(before) ? Math.round(before) : null,
+  };
+}
+
+/** Graded plays for one sport × market. Exits stay beside them until the switch is on. */
 export function marketTape(walletProfiles, walletShort, sport, market, { limit = 8 } = {}) {
   const prof = profileFor(walletProfiles, walletShort);
   const rec = prof?.bySport?.[sport];
   const want = String(market || '').toUpperCase();
+  const sameMarket = (leg) => String(leg?.marketType || leg?.market || '').toUpperCase() === want;
   const take = (legs) => (Array.isArray(legs) ? legs : []).filter((leg) => {
     if (legWon(leg) == null) return false;
-    return String(leg?.marketType || leg?.market || '').toUpperCase() === want;
+    return sameMarket(leg);
   });
   let legs = take(rec?.form?.recentAction);
   let scope = legs.length ? 'l30' : null;
@@ -536,17 +572,15 @@ export function marketTape(walletProfiles, walletShort, sport, market, { limit =
     scope = legs.length ? 'recent' : null;
   }
   legs = [...legs].sort((a, b) => String(b?.date || '').localeCompare(String(a?.date || '')));
-  const shown = legs.slice(0, limit).map((leg) => {
-    const row = resultFromLeg(leg, sport);
-    const invested = Number(leg?.invested);
-    const ratio = Number(leg?.sizeRatio ?? leg?.displaySizeRatio);
-    return {
-      ...row,
-      invested: Number.isFinite(invested) && invested > 0 ? Math.round(invested) : null,
-      ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null,
-    };
-  });
-  return { scope, plays: shown, total: legs.length };
+  const shown = legs.slice(0, limit).map((leg) => tapeRow(leg, sport));
+  const exits = (Array.isArray(rec?.form?.exited) ? rec.form.exited : [])
+    .filter(sameMarket)
+    .sort((a, b) => String(b?.date || '').localeCompare(String(a?.date || '')))
+    .map((leg) => {
+      const row = tapeRow(leg, sport);
+      return { ...row, exited: true, won: null, lost: false, pnl: null };
+    });
+  return { scope, plays: shown, exits, total: legs.length };
 }
 
 export function filterRowsToMySharps(rows, shorts, focusShort = null) {
@@ -581,7 +615,7 @@ export function collectRecentLegs(walletProfiles, shorts, {
   for (const short of shorts || []) {
     if (focusShort && short !== focusShort) continue;
     const prof = profileFor(walletProfiles, short);
-    const sports = want ? [want] : confirmedSports(prof);
+    const sports = want ? [want] : bookedSports(prof);
     for (const sport of sports.length ? sports : [want].filter(Boolean)) {
       const rec = prof?.bySport?.[sport];
       const legs = rec?.form?.recentAction;
@@ -622,7 +656,7 @@ export function buildMySharpsRoster(state, {
     return {
       ...m,
       tag: fmtWalletTag(m.walletShort),
-      sports: confirmedSports(prof),
+      sports: bookedSports(prof),
       focusSport: sport,
       l30,
       l30Honest: l30
@@ -1201,7 +1235,7 @@ export function buildDeskReport({
 
   for (const short of ids) {
     const prof = profileFor(walletProfiles, short);
-    const sports = confirmedSports(prof);
+    const sports = bookedSports(prof);
     for (const sport of sports) {
       const rec = prof?.bySport?.[sport];
       const l30 = l30FromRec(rec);
@@ -1544,7 +1578,7 @@ export function buildDeskLedger({
 }
 
 function sharpBook(prof) {
-  const sports = confirmedSports(prof);
+  const sports = bookedSports(prof);
   let pnl = 0;
   let w = 0;
   let l = 0;
@@ -1979,7 +2013,7 @@ export function buildSharpDossier(walletProfiles, walletShort, { sport = 'All', 
   const short = normalizeWalletShort(walletShort);
   const prof = scopedProfile(profileFor(walletProfiles, short), sport);
   const book = sharpBook(prof);
-  const sports = confirmedSports(prof);
+  const sports = bookedSports(prof);
   const results = [];
   const l30Sparks = [];
   const recentSparks = [];
@@ -2474,8 +2508,8 @@ export function buildPortfolioStage(holdings, sport = null) {
 }
 
 /**
- * One row per sharp. Last 30 days is every confirmed sport, not the first.
- * Sorted by that dollar, so the table reads like the hero.
+ * One row per sharp. Last 30 days is every sport with a book, not the first
+ * and not only the Proven ones. Sorted by that dollar, so the table reads like the hero.
  */
 export function buildDeskHoldings({ roster = [], walletProfiles = null } = {}) {
   const rows = (roster || []).map((m) => {

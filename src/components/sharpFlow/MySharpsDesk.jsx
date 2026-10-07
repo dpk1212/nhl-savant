@@ -558,6 +558,7 @@ function SizeTierStrip({ tiers }) {
 
 function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets, sportFilter = null }) {
   const [openKey, setOpenKey] = useState(null);
+  const [showExits, setShowExits] = useState(false);
   const sizeTiers = sizeTiersForWallet(walletProfiles, holding.walletShort);
   const label = holding.name || holding.tag;
   const groups = [];
@@ -597,6 +598,21 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
         </div>
       ) : null}
       <SizeTierStrip tiers={sizeTiers} />
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginTop: 12,
+      }}
+      >
+        <div style={{ ...T.kicker, color: B.textSec, letterSpacing: '0.08em' }}>Exits</div>
+        <BetsSwitch
+          on={showExits}
+          label={showExits ? 'Hide exits' : 'Show exits'}
+          onClick={() => setShowExits((v) => !v)}
+        />
+      </div>
       {groups.length ? groups.map((g) => (
         <div key={g.sport} style={{ marginTop: 10 }}>
           <div style={{ ...T.kicker, color: B.textSec, letterSpacing: '0.08em', marginBottom: 4 }}>{g.sport}</div>
@@ -662,7 +678,7 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
                   />
                 </div>
                 {open ? (
-                  <MarketPlays openRows={mineOpen} tape={tape} usual={m.usual} />
+                  <MarketPlays openRows={mineOpen} tape={tape} usual={m.usual} showExits={showExits} />
                 ) : null}
               </div>
             );
@@ -689,11 +705,16 @@ function SizeRail({ invested, maxInv, multiple }) {
   );
 }
 
-function MarketPlays({ openRows, tape, usual }) {
+function MarketPlays({ openRows, tape, usual, showExits = false }) {
   const graded = tape?.plays || [];
+  const exits = showExits ? (tape?.exits || []) : [];
+  const plays = [
+    ...graded.map((leg) => ({ ...leg, kind: 'graded' })),
+    ...exits.map((leg) => ({ ...leg, kind: 'exit' })),
+  ].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
   const maxInv = Math.max(
     1,
-    ...graded.map((g) => Number(g.invested) || 0),
+    ...plays.map((g) => Number(g.invested) || 0),
     ...openRows.map((r) => Number(r.invested) || 0),
   );
   return (
@@ -736,11 +757,13 @@ function MarketPlays({ openRows, tape, usual }) {
         {tape?.scope === 'recent' ? 'Older graded' : 'Graded'}
         {tape?.total > graded.length ? ` · ${graded.length} of ${tape.total}` : ''}
       </div>
-      {graded.length ? graded.map((leg) => {
+      {plays.length ? plays.map((leg) => {
         const multiple = relativeMultiple(leg.invested, leg.ratio, usual);
         const label = relativeLabel(multiple);
+        const exited = leg.kind === 'exit';
+        const before = Number.isFinite(leg.minutesBeforeLock) ? `${leg.minutesBeforeLock}m before lock` : null;
         return (
-          <div key={leg.id} style={{ padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
+          <div key={`${leg.kind}-${leg.id}`} style={{ padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
             <div style={{ display: 'grid', gridTemplateColumns: '52px minmax(0, 1fr) auto', gap: '0 12px', alignItems: 'baseline' }}>
               <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>{leg.date ? leg.date.slice(5) : '—'}</div>
               <div style={{ minWidth: 0 }}>
@@ -749,6 +772,7 @@ function MarketPlays({ openRows, tape, usual }) {
                   {[
                     leg.matchup,
                     leg.invested ? fmtVol(leg.invested, { signed: false }) : null,
+                    exited ? before : null,
                   ].filter(Boolean).join(' · ') || '—'}
                   {label ? (
                     <span style={{ color: multiple >= 1.15 ? B.goldSoft : B.textFaint }}> · {label}</span>
@@ -756,10 +780,14 @@ function MarketPlays({ openRows, tape, usual }) {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ ...T.kicker, letterSpacing: '0.08em', color: leg.won ? B.green : B.red }}>{leg.won ? 'W' : 'L'}</div>
-                <div style={{ ...T.figure, color: pnlColor(leg.pnl, B.textFaint), fontSize: '0.82rem' }}>
-                  {Number.isFinite(leg.pnl) ? fmtVol(leg.pnl) : ''}
+                <div style={{ ...T.kicker, letterSpacing: '0.08em', color: exited ? B.goldSoft : (leg.won ? B.green : B.red) }}>
+                  {exited ? 'EXIT' : (leg.won ? 'W' : 'L')}
                 </div>
+                {exited ? null : (
+                  <div style={{ ...T.figure, color: pnlColor(leg.pnl, B.textFaint), fontSize: '0.82rem' }}>
+                    {Number.isFinite(leg.pnl) ? fmtVol(leg.pnl) : ''}
+                  </div>
+                )}
               </div>
             </div>
             <div style={{ marginLeft: 64 }}>

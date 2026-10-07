@@ -87,6 +87,28 @@ function etDateMinusDays(days) {
     .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
+const PRELOCK_EXIT_REASONS = new Set([
+  'asset_absent',
+  'soft_key_absent_legacy',
+]);
+
+/**
+ * A real sell before the T−15 lock. These stay EXITED and off the graded book.
+ * Held-through exits, calendar retags, and wrong-game stamps are not this list.
+ */
+export function isPreLockExit(pos) {
+  if (!pos || pos.status !== 'EXITED') return false;
+  if (!PRELOCK_EXIT_REASONS.has(String(pos.exitReason || ''))) return false;
+  return !shouldGradeExited(pos);
+}
+
+/** Minutes before the T−15 lock. Positive means he was out early. */
+export function minutesBeforeLock(pos) {
+  const mtc = asFinite(pos?.minutesToCommence);
+  if (mtc == null) return null;
+  return Math.round(mtc - ACTION_LOCK_PIN_MIN);
+}
+
 /**
  * EXITED tickets that were still on at T−15 (or after first pitch) still
  * grade onto Their Action. Pre-lock sells and calendar retags do not.
