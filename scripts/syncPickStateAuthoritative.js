@@ -355,6 +355,15 @@ import {
   isPressStampLive,
   PRESS_LADDER_FROM,
   PRESS_GATE_MUTED_BY,
+  isPressMirrorLive,
+  isPressMirrorShape,
+  evaluatePressMirror,
+  pressMirrorEval,
+  pressMirrorStamp,
+  PRESS_M_FROM,
+  PRESS_M_UNITS,
+  PRESS_M_STAKE_TIER,
+  PRESS_M_SUPERSEDED_REASON,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -1668,6 +1677,39 @@ function steamInputsForOverlay(snap, sd) {
   };
 }
 
+/** Every side key a market can carry (mirrors the create / flip side lists). */
+function marketSideKeys(sport, mkt) {
+  return mkt === 'TOTAL' ? ['over', 'under']
+    : sport === 'SOC' ? ['away', 'home', 'draw']
+    : ['away', 'home'];
+}
+
+/**
+ * PRESS-M sibling view for one side: every other side of the market with its
+ * live v12 score, its own ladder result on the same walletDetails (odds
+ * from its stored snapshot when it has one, steam off — steam never creates
+ * units on a side the money and press are against) and the units it carries
+ * in Firestore today (manual stake included). Superseded siblings carry 0u.
+ */
+function pressMirrorSiblings({ wd, side, sport, mkt, walletProfiles, walletPriorStatsFn, sideDocs }) {
+  const out = [];
+  for (const s of marketSideKeys(sport, mkt)) {
+    if (s === side) continue;
+    const agg = walletPriorStatsFn ? aggregateSideV12(wd, s, sport, walletPriorStatsFn) : null;
+    const scoreV12 = agg && Number.isFinite(agg.score) ? agg.score : null;
+    const doc = sideDocs && sideDocs[s] ? sideDocs[s] : null;
+    const docLive = doc && !doc.superseded;
+    const docOdds = docLive ? (doc.peak?.odds ?? doc.lock?.odds ?? null) : null;
+    const ladder = evaluatePressLadder({
+      walletDetails: wd, side: s, sport, marketType: mkt, walletProfiles, sideOdds: docOdds, steamOn: false,
+    });
+    const ladderUnits = Number.isFinite(scoreV12) && scoreV12 > 0 && ladder ? (ladder.units || 0) : 0;
+    const stakedUnits = docLive && Number.isFinite(Number(doc.finalUnits)) ? Number(doc.finalUnits) : 0;
+    out.push({ side: s, scoreV12, ladderUnits, stakedUnits, docLive: !!docLive, shape: isPressMirrorShape(ladder) });
+  }
+  return out;
+}
+
 function skillStampsDrifted(sd, bundle, {
   tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null,
   flinchFailOpenAction = null, maxSrSub4Action = null, noConfirmedAction = null,
@@ -2920,6 +2962,7 @@ async function createMissingLockedPicks({
   qConvMuteThr = null,
   pathBlendPriors = null,
   expWinPriors = null,
+  skipSides = null, // Set of `${col}|${docId}|${side}` — sides a PRESS-M flip keeps superseded
 }) {
   const created = []; // { col, docId, side, ags, agsTotal }
   const skipped = []; // { reason, ... }
@@ -3069,9 +3112,42 @@ async function createMissingLockedPicks({
           { minSize: CONFIRMED_UNOPP_MIN_SIZE },
         )
         : { qualifies: false, forSized: 0, agConfirmed: 0, bestSize: null, wallets: [] };
+      // A side a PRESS-M flip superseded this cycle (or earlier) stays as it
+      // is — the mirror side is the one this pass is here to build.
+      if (skipSides && skipSides.has(`${col}|${docId}|${side}`)) {
+        skipped.push({ docId, side, reason: 'press_m_superseded_v12_side' });
+        continue;
+      }
+      // ─── PRESS-M on create — the ladder shape on the side V12 muted ───
+      // Score ≤ 0 here, a V12 side (score > 0) among the siblings that the
+      // ladder leaves at 0u, and this side carries money + seasoned press
+      // with no Door-2 wallet against → force-create at 1u (PRESS-M).
+      let pressMirrorCreate = null;
+      let pressMirrorShapeCreate = null;
+      let pressMirrorForceCreate = false;
+      if (isPressMirrorLive(TARGET_DATE) && !(Number.isFinite(scoreV12) && scoreV12 > 0)) {
+        pressMirrorShapeCreate = evaluatePressLadder({
+          walletDetails, side, sport, marketType, walletProfiles, sideOdds: null, steamOn: false,
+        });
+        pressMirrorCreate = evaluatePressMirror({
+          shapeEval: pressMirrorShapeCreate,
+          scoreV12,
+          siblings: pressMirrorSiblings({
+            wd: walletDetails, side, sport, mkt: marketType, walletProfiles, walletPriorStatsFn, sideDocs: null,
+          }),
+        });
+        if (pressMirrorCreate.fires) {
+          pressMirrorForceCreate = true;
+          console.log(
+            `  PRESS-M bypass: ${docId} ${side} (score=${scoreV12 ?? '∅'} · ${pressMirrorCreate.reason} → force create ${PRESS_M_UNITS}u)`,
+          );
+        }
+      }
       let q1ForceBypassAgs = false;
       let unoppForceBypassAgs = false;
-      if (scoreV12 == null) {
+      if (pressMirrorForceCreate) {
+        // handled above — falls through to build the side
+      } else if (scoreV12 == null) {
         if (confirmedQ1BypassesAgsCreateGate(q1Early.qualifies, scoreV12)) {
           q1ForceBypassAgs = true;
           console.log(`  Q1 AGS bypass: ${docId} ${side} (agsv12_no_signal → force create)`);
@@ -3948,12 +4024,14 @@ async function createMissingLockedPicks({
         const pressScoreOkCreate = scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0;
         const pressUnitsCreate = pressScoreOkCreate && pressEvalCreate && pressEvalCreate.units > 0
           ? pressEvalCreate.units
-          : 0;
+          : (pressMirrorForceCreate ? PRESS_M_UNITS : 0);
         peakUnitsApplied = pressUnitsCreate > 0 && Number.isFinite(Number(odds))
           ? Math.round(oddsCap(pressUnitsCreate, odds) * 100) / 100
           : pressUnitsCreate;
         if (pressScoreOkCreate) {
           hcStakeTierCreate = peakUnitsApplied > 0 ? pressEvalCreate.rung : 'MONITORING';
+        } else if (pressMirrorForceCreate) {
+          hcStakeTierCreate = peakUnitsApplied > 0 ? PRESS_M_STAKE_TIER : 'MONITORING';
         }
         pressAppliedCreate = true;
       }
@@ -4112,8 +4190,15 @@ async function createMissingLockedPicks({
       }
       // Press ladder stamps (shadow from PRESS_STAMP_FROM, live from PRESS_LADDER_FROM).
       if (pressEvalCreate) {
-        Object.assign(v8Stamps, pressStamp(pressEvalCreate, now));
+        Object.assign(v8Stamps, pressStamp(
+          pressMirrorForceCreate ? pressMirrorEval(pressEvalCreate, pressMirrorCreate) : pressEvalCreate,
+          now,
+        ));
         v8Stamps.v8_pressApplied = pressAppliedCreate;
+      }
+      if (pressMirrorCreate) {
+        Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
+        if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
       }
       // EDGE + netCLV + tape — full skill bundle from first write (no rebuild later).
       if (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0) {
@@ -4450,7 +4535,9 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
-          ...(pressAppliedCreate && pressEvalCreate?.reason ? [`press:${pressEvalCreate.reason}`] : []),
+          ...(pressAppliedCreate && pressEvalCreate?.reason
+            ? [`press:${pressMirrorForceCreate ? pressMirrorCreate.reason : pressEvalCreate.reason}`]
+            : []),
           ...(formTierPolicyCreate?.reason ? [formTierPolicyCreate.reason] : []),
           ...(hardUnoppFloorPolicyCreate?.reason ? [hardUnoppFloorPolicyCreate.reason] : []),
           ...(hardStForPolicyCreate?.reason ? [hardStForPolicyCreate.reason] : []),
@@ -4521,6 +4608,24 @@ async function createMissingLockedPicks({
       });
     }
     if (Object.keys(newSides).length === 0) continue;
+
+    // One side per market: when PRESS-M built the mirror side, the V12 side
+    // it mirrors is written superseded (0u record kept, card hidden) — the
+    // same shape the reconcile flip leaves behind on an existing doc.
+    {
+      const mirrorSide = Object.entries(newSides)
+        .find(([, s]) => s.v8_pressMirror?.fires === true && Number(s.finalUnits) > 0);
+      if (mirrorSide) {
+        for (const [k, s] of Object.entries(newSides)) {
+          if (k === mirrorSide[0] || Number(s.finalUnits) > 0) continue;
+          s.superseded = true;
+          s.supersededAt = now;
+          s.supersededReason = PRESS_M_SUPERSEDED_REASON;
+          s.supersededFlipTo = mirrorSide[0];
+          console.log(`  PRESS-M: ${docId} ${k} written superseded (${PRESS_M_SUPERSEDED_REASON} → ${mirrorSide[0]})`);
+        }
+      }
+    }
 
     // Both-sides analytical sidecar — purely documentary. Lets us later
     // analyze "we locked side A with AGS=+X; what was side B's AGS?"
@@ -4837,9 +4942,30 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Conservative by design (no flapping): only fires when this side is ≤ 0
   // AND a different side is > 0, and only when we actually have live
   // positions to trust. We're already past the T-15 freeze gate here.
+  // ─── PRESS-M — this side as the mirror of a muted V12 side ─────────────
+  // Evaluated before the flip so a live mirror is not superseded by the
+  // very V12 side it mirrors. Siblings read from the doc (units they carry)
+  // and from the same live walletDetails (what their ladder would give).
+  let pressMirror = null;
+  let pressMirrorShape = null;
+  const pressMirrorEligible = isPressMirrorLive(pickDate) && Array.isArray(wd) && wd.length > 0;
+  if (pressMirrorEligible && !(Number.isFinite(scoreV12Live) && scoreV12Live > 0)) {
+    pressMirrorShape = evaluatePressLadder({
+      walletDetails: wd, side, sport: pick.sport, marketType: mkt, walletProfiles, sideOdds: null, steamOn: false,
+    });
+    pressMirror = evaluatePressMirror({
+      shapeEval: pressMirrorShape,
+      scoreV12: scoreV12Live,
+      siblings: pressMirrorSiblings({
+        wd, side, sport: pick.sport, mkt, walletProfiles, walletPriorStatsFn, sideDocs: pick.sides || null,
+      }),
+    });
+  }
+  const pressMirrorFires = !!(pressMirror && pressMirror.fires);
+
   let flipSupersede = false;
   let flipToSide = null;
-  if (liveWd && liveWd.length > 0 && (scoreV12Live == null || scoreV12Live <= 0)) {
+  if (!pressMirrorFires && liveWd && liveWd.length > 0 && (scoreV12Live == null || scoreV12Live <= 0)) {
     const flipSides = mkt === 'TOTAL' ? ['over', 'under']
       : pick.sport === 'SOC' ? ['away', 'home', 'draw'] : ['away', 'home'];
     let bestOtherScore = -Infinity;
@@ -4886,7 +5012,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let mutedByAgs = appliedReason === 'agsv12_mute_below_zero'
                   || appliedReason === 'no_agsv12_signal';
   if (mutedByAgs && !flipSupersede) {
-    if (confirmedQ1BypassesAgsCreateGate(confirmedQ1SliceEarly.qualifies, scoreV12Live)) {
+    if (pressMirrorFires) {
+      appliedStatus = 'ACTIVE';
+      appliedReason = 'press_m_ags_bypass';
+      mutedByAgs = false;
+    } else if (confirmedQ1BypassesAgsCreateGate(confirmedQ1SliceEarly.qualifies, scoreV12Live)) {
       appliedStatus = 'ACTIVE';
       appliedReason = 'confirmed_q1_ags_bypass';
       mutedByAgs = false;
@@ -5992,14 +6122,21 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     });
   }
   const pressLive = isPressLadderLive(pickDate);
+  let pressMirrorApplied = false;
   if (pressLive && !skipManualFlinch) {
     const pressScoreOk = appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0;
-    const pressUnitsRaw = pressScoreOk && pressEval && pressEval.units > 0 ? pressEval.units : 0;
+    const pressMirrorOk = !pressScoreOk && appliedStatus === 'ACTIVE' && pressMirrorFires;
+    const pressUnitsRaw = pressScoreOk && pressEval && pressEval.units > 0
+      ? pressEval.units
+      : (pressMirrorOk ? PRESS_M_UNITS : 0);
     finalUnitsApplied = pressUnitsRaw > 0
       ? Math.round(oddsCap(pressUnitsRaw, sideOdds) * 100) / 100
       : 0;
     if (pressScoreOk) {
       hcStakeTier = finalUnitsApplied > 0 ? pressEval.rung : 'MONITORING';
+    } else if (pressMirrorOk) {
+      hcStakeTier = finalUnitsApplied > 0 ? PRESS_M_STAKE_TIER : 'MONITORING';
+      pressMirrorApplied = finalUnitsApplied > 0;
     }
     // Legacy rescue / floor flags no longer ship or stamp a side.
     confirmedQ1Rescued = false;
@@ -6042,13 +6179,18 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && (confirmedQ1Rescued || confirmedUnoppRescued || hardUnoppFloorPolicy?.action === 'FLOOR')
+  ) || (
+    appliedStatus === 'ACTIVE'
+    && finalUnitsApplied > 0
+    && pressMirrorApplied
   );
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
       appliedLockStage = 'LOCKED';
       lockStageReason = (scoreV12Live != null && scoreV12Live > 0)
         ? 'agsv12_positive_score'
-        : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass');
+        : (pressMirrorApplied ? PRESS_M_SUPERSEDED_REASON
+          : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass'));
     } else {
       appliedLockStage = 'LOCKED';
     }
@@ -6081,7 +6223,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // truth. UI reads `health.status` to decide lock display state.
   const reasons = [];
   if (appliedReason) reasons.push(appliedReason);
-  if (pressApplied && pressEval?.reason) reasons.push(`press:${pressEval.reason}`);
+  if (pressApplied && pressEval?.reason) {
+    reasons.push(`press:${pressMirrorApplied ? pressMirror.reason : pressEval.reason}`);
+  }
   if (clvPolicy.reason && !reasons.includes(clvPolicy.reason)) reasons.push(clvPolicy.reason);
   if (tapePolicy?.reason && !reasons.includes(tapePolicy.reason)) reasons.push(tapePolicy.reason);
   if (qConvPolicy?.reason && !reasons.includes(qConvPolicy.reason)) reasons.push(qConvPolicy.reason);
@@ -6393,7 +6537,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (passesShipFloor && sd.promotedBy !== 'ags-unified-v12') {
     const stampedPromotedBy = sd.promotedBy || null;
     patch.promotedBy = 'ags-unified-v12';
-    changes.push(`promotedBy: ${stampedPromotedBy || '∅'} → ags-unified-v12 (v12=${scoreV12Live.toFixed(3)})`);
+    changes.push(`promotedBy: ${stampedPromotedBy || '∅'} → ags-unified-v12 (v12=${scoreV12Live == null ? '∅' : scoreV12Live.toFixed(3)}${pressMirrorApplied ? ' · PRESS-M' : ''})`);
   }
 
   // v11 AGS stamp (informational only — still recorded every cycle so
@@ -6424,13 +6568,24 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Press ladder stamps — shadow from PRESS_STAMP_FROM, authoritative from
   // PRESS_LADDER_FROM. Written every cycle so the record is day-of.
   if (pressEval) {
-    Object.assign(patch, pressStamp(pressEval, now));
+    const pressRecord = pressMirrorApplied ? pressMirrorEval(pressEval, pressMirror) : pressEval;
+    Object.assign(patch, pressStamp(pressRecord, now));
     patch.v8_pressApplied = pressApplied;
     const prevRung = sd.v8_pressRung ?? null;
     const prevUnits = sd.v8_pressUnits ?? null;
-    if (prevRung !== pressEval.rung || prevUnits !== pressEval.units) {
-      changes.push(`PRESS${pressApplied ? '' : ' (shadow)'}: ${prevRung || '∅'}/${prevUnits ?? '∅'}u → ${pressEval.rung || '∅'}/${pressEval.units}u (${pressEval.reason})`);
+    if (prevRung !== pressRecord.rung || prevUnits !== pressRecord.units) {
+      changes.push(`PRESS${pressApplied ? '' : ' (shadow)'}: ${prevRung || '∅'}/${prevUnits ?? '∅'}u → ${pressRecord.rung || '∅'}/${pressRecord.units}u (${pressRecord.reason})`);
     }
+  }
+  if (pressMirror) {
+    Object.assign(patch, pressMirrorStamp(pressMirror, pressMirrorShape, now));
+    const prevFires = sd.v8_pressMirror?.fires === true;
+    if (prevFires !== pressMirrorFires) {
+      changes.push(`PRESS-M: ${prevFires ? 'on' : 'off'} → ${pressMirrorFires ? 'on' : 'off'} (${pressMirror.reason})`);
+    }
+  } else if (sd.v8_pressMirror != null && Number.isFinite(scoreV12Live) && scoreV12Live > 0) {
+    // This side became a V12 side — the mirror record no longer applies.
+    patch.v8_pressMirror = admin.firestore.FieldValue.delete();
   }
 
   // v12 AGS stamps — AUTHORITATIVE. v8_agsTier and finalUnits are the
@@ -7560,6 +7715,42 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (stampedHc !== live.hcMargin) changes.push(`HC_m: ${stampedHc ?? '∅'} → ${live.hcMargin}`);
   if (stampedTier && stampedTier !== liveTier) changes.push(`tier: ${stampedTier} → ${liveTier}`);
 
+  // ─── PRESS-M flip — this V12 side sits at 0u and the other side has the
+  // ladder shape (money + seasoned press + no Door-2 against) with no live
+  // doc of its own. Supersede this side so the doc goes ghost and the
+  // create-missing pass builds the mirror side at 1u this cycle; while that
+  // mirror side carries units this side stays superseded (one side per
+  // market). The 0u record on this side is untouched.
+  let mirrorFlipTo = null;
+  let mirrorHold = false;
+  if (pressMirrorEligible && pressLive && Number.isFinite(scoreV12Live) && scoreV12Live > 0
+      && finalUnitsApplied === 0 && !operatorKilled && !skipManualFlinch) {
+    const sibs = pressMirrorSiblings({
+      wd, side, sport: pick.sport, mkt, walletProfiles, walletPriorStatsFn, sideDocs: pick.sides || null,
+    });
+    const mirrorLive = sibs.find((s) => s.docLive && s.stakedUnits > 0
+      && pick.sides?.[s.side]?.v8_pressRung === PRESS_M_STAKE_TIER) || null;
+    const anyUnits = sibs.some((s) => s.stakedUnits > 0 || s.ladderUnits > 0);
+    if (mirrorLive) {
+      // The mirror side already carries PRESS-M units — this side stays hidden.
+      mirrorHold = true;
+      mirrorFlipTo = mirrorLive.side;
+    } else if (!anyUnits) {
+      // A sibling with the shape and no V12 score: either it has no live doc
+      // (create-missing builds it once this doc goes ghost) or it is a stake
+      // side the reconcile promotes itself this cycle.
+      const sibStakeSide = (k) => {
+        const d = pick.sides?.[k];
+        return !!d && (d.lockStage === 'LOCKED' || d.lockStage === 'LEAN'
+          || (d.lockStage === 'SHADOW' && (d.lock || d.peak)));
+      };
+      const target = sibs.find((s) => s.shape
+        && !(Number.isFinite(s.scoreV12) && s.scoreV12 > 0)
+        && (!s.docLive || sibStakeSide(s.side)));
+      if (target) mirrorFlipTo = target.side;
+    }
+  }
+
   // ─── v12 live side-flip — supersede the wrong side ─────────────────────
   // Mark this side superseded so the main loop can demote the doc to "ghost"
   // and let createMissingLockedPicks rebuild the live-best side this cycle.
@@ -7571,7 +7762,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.supersededReason = 'v12_live_side_flip';
     patch.supersededFlipTo = flipToSide;
     changes.push(`superseded: live side-flip → ${flipToSide} (this side ${scoreV12Live == null ? '∅' : scoreV12Live.toFixed(2)} ≤ 0)`);
-  } else if (!flipSupersede && appliedLockStage === 'LOCKED' && sd.superseded) {
+  } else if (mirrorFlipTo && !sd.superseded) {
+    patch.superseded = true;
+    patch.supersededAt = now;
+    patch.supersededReason = PRESS_M_SUPERSEDED_REASON;
+    patch.supersededFlipTo = mirrorFlipTo;
+    changes.push(`superseded: PRESS-M mirror → ${mirrorFlipTo} (this V12 side ${scoreV12Live.toFixed(2)} at 0u; shape on ${mirrorFlipTo})`);
+  } else if (!flipSupersede && !mirrorFlipTo && !mirrorHold && appliedLockStage === 'LOCKED' && sd.superseded) {
     // Money flipped back onto this side — clear the stale supersede so the
     // Locked list can show it again. Without this, a SHADOW+superseded side
     // that re-scores > 0 stays invisible forever even at TOP units.
@@ -7986,6 +8183,14 @@ async function main() {
       + ` · PRESS-X Door-2 margin ≥1 with every Door-2 against under size → 2u · PRESS-N deep-book (n≥50) press with no Door-2 either side → 2u clean / 1u moved · PRESS-U same shape with no press → 1u · STEAM-C steam on with proven wallets net against, all under size, no press against → 1u · R6 two veterans ≥1.0× no press → 1u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
       + ` · from ${PRESS_LADDER_FROM} · legacy chain runs for stamps only · manual stake wins`,
     );
+    if (isPressMirrorLive(TARGET_DATE)) {
+      console.log(
+        `PRESS-M LIVE: V12 side at 0u + other side money ≥60% + seasoned press ≥1.5× + 0 Door-2 against (Door-2 for either way) + own score ≤0`
+        + ` → other side ${PRESS_M_UNITS}u (${PRESS_M_STAKE_TIER}) · never while any sibling carries units · V12 side superseded (${PRESS_M_SUPERSEDED_REASON}) while the mirror is live · from ${PRESS_M_FROM}`,
+      );
+    } else {
+      console.log(`PRESS-M: not live before ${PRESS_M_FROM} (TARGET_DATE=${TARGET_DATE})`);
+    }
   } else if (isPressStampLive(TARGET_DATE)) {
     console.log(`PRESS LADDER shadow: stamping v8_press* only; authoritative from ${PRESS_LADDER_FROM} (TARGET_DATE=${TARGET_DATE})`);
   } else {
@@ -8281,6 +8486,9 @@ async function main() {
   // sides:{} after a writer race; the cron silently skipped it for hours
   // and the LOCKED pick disappeared from the dashboard right before tip.
   const ghostDocIds = new Set();
+  // Sides a PRESS-M flip left superseded — the create-missing pass must not
+  // rebuild them while it adds the mirror side (`${col}|${docId}|${side}`).
+  const pressMirrorSkipSides = new Set();
   for (const { col, pick } of todayPickDocsForClimate) {
       const mkt = col === 'sharpFlowSpreads' ? 'SPREAD' : col === 'sharpFlowTotals' ? 'TOTAL' : 'ML';
       const sides = pick.sides || {};
@@ -8290,6 +8498,11 @@ async function main() {
       // re-evaluate by NOT adding it to existingDocIds.
       const sideEntries = Object.entries(sides);
       const liveSides = sideEntries.filter(([, sd]) => sd && !sd.superseded);
+      for (const [k, sd] of sideEntries) {
+        if (sd && sd.superseded && sd.supersededReason === PRESS_M_SUPERSEDED_REASON) {
+          pressMirrorSkipSides.add(`${col}|${pick._id}|${k}`);
+        }
+      }
       // An exited false doubleheader is not an empty doc to rebuild.
       // Ghost recovery was minting 2026-09-24_MLB_sdp_lad__2 back onto
       // tonight's board after we retired last night's $525 Dodgers ticket.
@@ -8506,7 +8719,14 @@ async function main() {
           expectedLockStage: result.expectedLockStage,
           expected: { status: result.expectedStatus, reason: result.expectedReason, tier: result.expectedTier, units: result.expectedUnits },
         });
-        if (result.patch?.superseded === true) newlySuperseded.add(sideKey);
+        if (result.patch?.superseded === true) {
+          newlySuperseded.add(sideKey);
+          if (result.patch.supersededReason === PRESS_M_SUPERSEDED_REASON) {
+            pressMirrorSkipSides.add(`${col}|${pick._id}|${sideKey}`);
+          }
+        } else if (result.patch?.superseded === false) {
+          pressMirrorSkipSides.delete(`${col}|${pick._id}|${sideKey}`);
+        }
         // Build write payload — always merge: true on the side.
         if (!collectionWrites.has(col)) collectionWrites.set(col, []);
         collectionWrites.get(col).push({
@@ -8529,7 +8749,8 @@ async function main() {
         if (remainingLive.length === 0 && existingDocIds.has(`${col}|${pick._id}`)) {
           existingDocIds.delete(`${col}|${pick._id}`);
           ghostDocIds.add(`${col}|${pick._id}`);
-          console.warn(`  ↻ v12 side-flip: ${col}/${pick._id} — superseded [${[...newlySuperseded].join(', ')}]; create-missing will add the live-best side this cycle`);
+          const mirrorFlip = [...newlySuperseded].some((k) => pressMirrorSkipSides.has(`${col}|${pick._id}|${k}`));
+          console.warn(`  ↻ ${mirrorFlip ? 'PRESS-M flip' : 'v12 side-flip'}: ${col}/${pick._id} — superseded [${[...newlySuperseded].join(', ')}]; create-missing will add the ${mirrorFlip ? 'mirror' : 'live-best'} side this cycle`);
         }
       }
 
@@ -8682,6 +8903,7 @@ async function main() {
     qConvMuteThr,
     pathBlendPriors,
     expWinPriors,
+    skipSides: pressMirrorSkipSides,
   });
   stats.created_missing = cm.created.length;
   if (cm.created.length === 0) {
