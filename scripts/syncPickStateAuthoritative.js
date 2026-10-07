@@ -370,6 +370,10 @@ import {
   isSoloQLive,
   SOLO_Q_FROM,
   SOLO_Q_STAKE_TIER,
+  isFadeFLive,
+  FADE_F_FROM,
+  FADE_F_STAKE_TIER,
+  FADE_F_VETO_MUTED_BY,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -4422,7 +4426,9 @@ async function createMissingLockedPicks({
         if (peakUnitsApplied > 0) {
           delete v8Stamps.mutedBy;
         } else if (scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0) {
-          v8Stamps.mutedBy = PRESS_GATE_MUTED_BY;
+          v8Stamps.mutedBy = (pressEvalCreate?.floorFade?.status === 'VETO' && isFadeFLive(TARGET_DATE))
+            ? FADE_F_VETO_MUTED_BY
+            : PRESS_GATE_MUTED_BY;
         } else {
           v8Stamps.mutedBy = 'ags-quality-veto';
         }
@@ -6400,6 +6406,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     } else if (mutedByAgs) {
       patch.mutedBy = 'ags-quality-veto';
       if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    } else if (pressEval?.floorFade?.status === 'VETO' && isFadeFLive(pickDate)) {
+      patch.mutedBy = FADE_F_VETO_MUTED_BY;
+      if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
     } else {
       patch.mutedBy = PRESS_GATE_MUTED_BY;
       if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
@@ -8199,6 +8208,11 @@ async function main() {
     if (isSoloQLive(TARGET_DATE)) {
       console.log(
         `SOLO-Q LIVE: zero wallets against + steam off + implied 50–60% + (every FOR under 0.75× usual, or biggest FOR 1.0–1.5× from a wallet with a hot sport last-10 ≥8 decided ≥70%) → 1u (${SOLO_Q_STAKE_TIER}) · from ${SOLO_Q_FROM}`,
+      );
+    }
+    if (isFadeFLive(TARGET_DATE)) {
+      console.log(
+        `FADE-F LIVE: exactly one floor wallet (n≥15, WR≤45) in the market + career losing streak ≥3 + under 1.5× usual + floor side implied <65% → against us at 0u = 1u (${FADE_F_STAKE_TIER}); for us = 0u whatever rung (${FADE_F_VETO_MUTED_BY}); staked sides keep their stake · from ${FADE_F_FROM}`,
       );
     }
     if (isPressMirrorLive(TARGET_DATE)) {

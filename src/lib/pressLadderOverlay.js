@@ -99,6 +99,27 @@
  * passes trivially on an unopposed side so it must stay below every
  * money-gated rung. Fails closed without lock odds.
  *
+ * FADE-F (from FADE_F_FROM) — the lone streaking loser. A floor wallet is a
+ * wallet whose sport book is n ≥ 15 at WR ≤ 45 (the mirror of Door 2). When
+ * exactly one floor wallet is in the market (both sides), it is on a 3+
+ * bet losing streak across its recent action, it bet under 1.5× its usual,
+ * and its side is priced under 65% implied, the market is a FLOOR-FADE
+ * market and the floor side loses. Two policies, both fail-closed:
+ *   veto  — our side IS the floor side → 0u whatever rung fired
+ *           (reason fade_f_veto_of_<rung>:...; mutedBy FADE_F_VETO_MUTED_BY)
+ *   rescue — our side is AGAINST the floor side and no rung fired → 1u
+ *           (tier FADE-F). A side already staked keeps its stake (3-4 on
+ *           the staked part; the lift is in the 0u part).
+ * Research, market level (Source B, Apr 19 → Oct 4, 340 clean markets):
+ * floor side 89-251 −12.5pp, fade +18.0% at the inferred price and
+ * 70-139 +22.9% at the other side's real paid odds; every period negative;
+ * the same shape with streak 0–2 is −1.0pp. On V12 sides (Aug 1 → Oct 5):
+ * pick against the floor side 34-19 +17.9%, 0u part 31-15 +24.2% (era
+ * 22-14, pre 9-1, steam off 23-8), control without the streak 99-82 +1.1%;
+ * pick is the floor side 17-33 −33.2% (0u 16-29, staked 1-4), control
+ * 109-107. Streak read from the merged bySport[*].form.recentAction
+ * (career, pushes skipped). Same promotion contract as R6.
+ *
  * Rescue rung PRESS-M (1u, from PRESS_M_FROM) — the mirror. When the V12
  * side of a market is at 0u under this ladder and the OTHER side carries the
  * shape (money ≥ 0.60, seasoned press ≥ 1.5×, zero Door-2 against; Door-2
@@ -199,6 +220,22 @@ export const PRESS_M_UNITS = 1;
 export const PRESS_M_STAKE_TIER = 'PRESS-M';
 export const PRESS_M_SUPERSEDED_REASON = 'press_m_mirror';
 
+/**
+ * FADE-F (from FADE_F_FROM) — the lone streaking loser. Floor wallet = sport
+ * book n ≥ PRESS_SEASONED_N at WR ≤ FADE_F_FLOOR_WR_MAX. Exactly one floor
+ * wallet in the market, on a losing streak ≥ FADE_F_STREAK_MIN, bet under
+ * FADE_F_RATIO_MAX of its usual, its side under FADE_F_FLOOR_IMPLIED_MAX.
+ * Against us at 0u → 1u rescue; for us → veto (0u).
+ */
+export const FADE_F_FROM = '2026-10-07';
+export const FADE_F_UNITS = 1;
+export const FADE_F_STAKE_TIER = 'FADE-F';
+export const FADE_F_VETO_MUTED_BY = 'fade-f-veto';
+export const FADE_F_FLOOR_WR_MAX = 45;
+export const FADE_F_STREAK_MIN = 3;
+export const FADE_F_RATIO_MAX = 1.5;
+export const FADE_F_FLOOR_IMPLIED_MAX = 0.65;
+
 export const PRESS_STAKE_TIER = 'PRESS';
 export const PRESS_R6_STAKE_TIER = 'PRESS-R6';
 export const PRESS_X_STAKE_TIER = 'PRESS-X';
@@ -215,6 +252,80 @@ export function isSteamSLive(pickDate) {
 
 export function isSoloQLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= SOLO_Q_FROM && isPressLadderLive(pickDate);
+}
+
+export function isFadeFLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= FADE_F_FROM && isPressLadderLive(pickDate);
+}
+
+/**
+ * Career losing streak from the profile's recent action: every
+ * bySport[*].form.recentAction row merged and sorted by date (stable, so
+ * same-day rows keep export order), pushes (settledPnl 0) skipped, trailing
+ * consecutive losses counted. 0 when there is no decided action.
+ */
+export function careerLossStreak(profile) {
+  const bySport = profile?.bySport;
+  if (!bySport || typeof bySport !== 'object') return 0;
+  const rows = [];
+  for (const rec of Object.values(bySport)) {
+    const ra = rec?.form?.recentAction;
+    if (!Array.isArray(ra)) continue;
+    for (const r of ra) {
+      if (!r || typeof r !== 'object') continue;
+      const pnl = Number(r.settledPnl);
+      const won = Number(r.won) === 1;
+      if (!won && Number.isFinite(pnl) && pnl === 0) continue; // push
+      rows.push({ date: String(r.date || ''), won });
+    }
+  }
+  if (rows.length === 0) return 0;
+  rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  let streak = 0;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (rows[i].won) break;
+    streak++;
+  }
+  return streak;
+}
+
+/** Floor 2: the mirror of Door 2 — a seasoned sport book at WR ≤ FADE_F_FLOOR_WR_MAX. */
+export function isFloor2Row(row) {
+  return !!row && (Number(row.n) || 0) >= PRESS_SEASONED_N
+    && Number.isFinite(row.wr) && row.wr <= FADE_F_FLOOR_WR_MAX;
+}
+
+/**
+ * FLOOR-FADE read for one side from its wallet rows (both directions) and
+ * the side's implied win probability.
+ *   status 'BOOST'  the market's only floor wallet is AGAINST this side
+ *   status 'VETO'   it is FOR this side
+ *   status null     not a FLOOR-FADE market (reason says which leg failed)
+ * Fail-closed: unknown size ratio or missing odds → null.
+ */
+export function evaluateFloorFade(rows, implied) {
+  const floors = (rows || []).filter(isFloor2Row);
+  const base = { status: null, floorCount: floors.length, wallet: null, dir: null, n: null, wr: null, streak: null, ratio: null, floorImplied: null };
+  if (floors.length !== 1) return { ...base, reason: floors.length === 0 ? 'no_floor_wallet' : `floor_wallets_${floors.length}` };
+  const f = floors[0];
+  const streak = Number(f.streak) || 0;
+  const ratio = Number.isFinite(f.ratio) ? f.ratio : null;
+  const floorImplied = implied == null ? null : (f.dir === 'FOR' ? implied : 1 - implied);
+  const info = {
+    ...base,
+    wallet: f.wallet, dir: f.dir, n: f.n, wr: f.wr, streak,
+    ratio: ratio == null ? null : Math.round(ratio * 100) / 100,
+    floorImplied: floorImplied == null ? null : Math.round(floorImplied * 1000) / 1000,
+  };
+  if (streak < FADE_F_STREAK_MIN) return { ...info, reason: `streak_${streak}` };
+  if (ratio == null) return { ...info, reason: 'ratio_unknown' };
+  if (ratio >= FADE_F_RATIO_MAX) return { ...info, reason: `pressing_${info.ratio}x` };
+  if (floorImplied == null) return { ...info, reason: 'no_odds' };
+  if (floorImplied >= FADE_F_FLOOR_IMPLIED_MAX) return { ...info, reason: `floor_fav_${Math.round(floorImplied * 100)}` };
+  const tag = `${f.wallet}_n${f.n}_wr${Math.round(f.wr)}_streak${streak}_${info.ratio}x_floor${Math.round(floorImplied * 100)}`;
+  return f.dir === 'AG'
+    ? { ...info, status: 'BOOST', reason: `floor_against_${tag}` }
+    : { ...info, status: 'VETO', reason: `floor_for_${tag}` };
 }
 
 /**
@@ -392,6 +503,7 @@ export function pressWalletRows(walletDetails, side, sport, walletProfiles) {
       wr: book?.wr ?? null,
       door2: book?.door2 === true,
       l10: book?.l10 ?? null,
+      streak: careerLossStreak(profile),
     });
   }
   return rows;
@@ -443,11 +555,32 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|null, units: number, reason: string
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|'FADE-F'|null, units: number, reason: string,
+ *   floorFade: { status: 'BOOST'|'VETO'|null, floorCount, wallet, dir, n, wr, streak, ratio, floorImplied, reason }|null
  * }}
- * pickDate gates the dated rungs (STEAM-S from STEAM_S_FROM, SOLO-Q from SOLO_Q_FROM); null → those rungs stay off.
+ * pickDate gates the dated rungs (STEAM-S from STEAM_S_FROM, SOLO-Q from
+ * SOLO_Q_FROM, FADE-F from FADE_F_FROM); null → those rungs stay off.
+ *
+ * FADE-F sits over the whole ladder: a VETO zeroes any rung the core chose
+ * (reason fade_f_veto_of_<rung>:…); a BOOST stakes FADE_F_UNITS only when the
+ * core left the side at 0u. Staked sides keep their rung and units.
  */
-export function evaluatePressLadder({
+export function evaluatePressLadder(args = {}) {
+  const core = evaluatePressLadderCore(args);
+  const { pickDate = null } = args;
+  const floorFade = core.floorFade ?? null;
+  if (!floorFade || !isFadeFLive(pickDate)) return core;
+  if (floorFade.status === 'VETO') {
+    const of = core.units > 0 ? core.rung : 'none';
+    return { ...core, rung: null, units: 0, reason: `fade_f_veto_of_${of}:${floorFade.reason}` };
+  }
+  if (floorFade.status === 'BOOST' && core.units === 0) {
+    return { ...core, rung: FADE_F_STAKE_TIER, units: FADE_F_UNITS, reason: `fade_f_${floorFade.reason}` };
+  }
+  return core;
+}
+
+function evaluatePressLadderCore({
   walletDetails,
   side,
   sport,
@@ -462,13 +595,16 @@ export function evaluatePressLadder({
     moneyShare: null, door2Ag: 0, door2For: 0,
     presser: null, maxRatio: 0, band: null, priceStep: null, edge: null,
     steamOn: !!steamOn, heavyFav: isHeavyFavorite(marketType, sideOdds),
-    veterans: [], dissenters: [], rung: null, units: 0, reason: 'no_wallet_details',
+    veterans: [], dissenters: [], rung: null, units: 0, reason: 'no_wallet_details', floorFade: null,
   };
   if (!Array.isArray(walletDetails) || walletDetails.length === 0 || !side || !sport) return empty;
   if (!walletProfiles) return { ...empty, reason: 'no_wallet_profiles' };
 
   const rows = pressWalletRows(walletDetails, side, sport, walletProfiles);
   if (rows.length === 0) return { ...empty, reason: 'no_wallet_rows' };
+  // FLOOR-FADE read is computed on every evaluated side so the stamp carries
+  // it even where the policy is not live yet or the side is already staked.
+  empty.floorFade = evaluateFloorFade(rows, impliedFromAmerican(sideOdds));
 
   const forRows = rows.filter((r) => r.dir === 'FOR');
   const agRows = rows.filter((r) => r.dir === 'AG');
@@ -505,7 +641,7 @@ export function evaluatePressLadder({
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: strip(presser), maxRatio, band, priceStep, edge,
-      steamOn: !!steamOn, heavyFav,
+      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: [],
       dissenters: [],
       rung: PRESS_STAKE_TIER, units,
@@ -525,7 +661,7 @@ export function evaluatePressLadder({
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: strip(presser), maxRatio, band: pressBand(maxRatio), priceStep: null, edge,
-      steamOn: !!steamOn, heavyFav,
+      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: [],
       dissenters: dissenters.map(strip),
       rung: PRESS_X_STAKE_TIER, units: PRESS_X_UNITS,
@@ -543,7 +679,7 @@ export function evaluatePressLadder({
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: strip(presser), maxRatio, band: pressBand(maxRatio), priceStep: moved ? 1 : 0, edge,
-      steamOn: !!steamOn, heavyFav,
+      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: [],
       dissenters: [],
       rung: PRESS_N_STAKE_TIER, units: moved ? PRESS_N_UNITS_MOVED : PRESS_N_UNITS_CLEAN,
@@ -561,7 +697,7 @@ export function evaluatePressLadder({
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: null, maxRatio, band: null, priceStep: null, edge,
-      steamOn: !!steamOn, heavyFav,
+      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: [],
       dissenters: dissenters.map(strip),
       rung: PRESS_U_STAKE_TIER, units: PRESS_U_UNITS,
@@ -582,7 +718,7 @@ export function evaluatePressLadder({
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: presser ? strip(presser) : null, maxRatio, band: null, priceStep: null, edge,
-      steamOn: !!steamOn, heavyFav,
+      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: [],
       dissenters: dissenters.map(strip),
       rung: STEAM_C_STAKE_TIER, units: STEAM_C_UNITS,
@@ -600,7 +736,7 @@ export function evaluatePressLadder({
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: null, maxRatio, band: null, priceStep: null, edge,
-      steamOn: !!steamOn, heavyFav,
+      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: veterans.map(strip),
       dissenters: [],
       rung: PRESS_R6_STAKE_TIER, units: R6_UNITS,
@@ -635,7 +771,7 @@ export function evaluatePressLadder({
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: null, maxRatio, band: null, priceStep: null, edge,
-      steamOn: !!steamOn, heavyFav,
+      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: veterans.map(strip),
       dissenters: opponents.map((r) => ({ wallet: r.wallet, ratio: Math.round((r.ratio || 0) * 100) / 100, n: r.n, wr: r.wr })),
       rung: STEAM_S_STAKE_TIER, units: STEAM_S_UNITS,
@@ -667,7 +803,7 @@ export function evaluatePressLadder({
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: null, maxRatio, band: null, priceStep: null, edge,
-      steamOn: !!steamOn, heavyFav,
+      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: named.map((r) => ({ wallet: r.wallet, ratio: Math.round((r.ratio || 0) * 100) / 100, n: r.n, wr: r.wr })),
       dissenters: [],
       rung: SOLO_Q_STAKE_TIER, units: SOLO_Q_UNITS,
@@ -683,7 +819,7 @@ export function evaluatePressLadder({
   return {
     gate, moneyShare, door2Ag, door2For,
     presser: presser ? strip(presser) : null, maxRatio, band: null, priceStep: null, edge,
-    steamOn: !!steamOn, heavyFav,
+    steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
     veterans: veterans.map(strip),
     dissenters: dissenters.map(strip),
     rung: null, units: 0,
@@ -717,6 +853,17 @@ export function pressStamp(evalResult, now) {
     v8_pressRung: e.rung,
     v8_pressUnits: e.units,
     v8_pressReason: e.reason,
+    v8_pressFloorFade: e.floorFade ? {
+      status: e.floorFade.status ?? null,
+      wallet: e.floorFade.wallet ?? null,
+      dir: e.floorFade.dir ?? null,
+      n: e.floorFade.n ?? null,
+      wr: e.floorFade.wr ?? null,
+      streak: e.floorFade.streak ?? null,
+      ratio: e.floorFade.ratio ?? null,
+      floorImplied: e.floorFade.floorImplied ?? null,
+      reason: e.floorFade.reason ?? null,
+    } : null,
     v8_pressAt: now,
   };
 }

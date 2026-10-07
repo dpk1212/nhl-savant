@@ -43,6 +43,13 @@ import {
   SOLO_Q_FROM,
   SOLO_Q_STAKE_TIER,
   SOLO_Q_UNITS,
+  isFadeFLive,
+  careerLossStreak,
+  isFloor2Row,
+  evaluateFloorFade,
+  FADE_F_FROM,
+  FADE_F_STAKE_TIER,
+  FADE_F_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -609,6 +616,140 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(st.v8_pressRung, 'SOLO-Q', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units'); eq(st.v8_pressSteamOn, false, 'stamp steam off');
   ok(st.v8_pressDissenters == null || st.v8_pressDissenters.length === 0, 'no dissenters'); eq(st.v8_pressVeterans[0].wallet, 'dddddd', 'stamp names the FOR wallet'); eq(st.v8_pressPresser, null, 'no presser');
   for (const [k, v] of Object.entries(st)) ok(v !== undefined, `stamp ${k} defined`);
+}
+
+// 15. FADE-F — the lone streaking loser. Floor wallet (n ≥ 15, WR ≤ 45),
+// exactly one in the market, losing streak ≥ 3, under 1.5× its usual, its
+// side under .65 implied. Against us at 0u → 1u; for us → veto any rung.
+{
+  const LIVE = '2026-10-07';
+  const act = (date, won, extra = {}) => ({ date, won, settledPnl: won ? 90 : -100, ...extra });
+  // Floor wallet with action spread over two sports; career streak = 3 (last MLB win on 09-28, then L L L across NFL/MLB).
+  const floorProfile = (short, { streak = 3, usual = 500, wr = 40, n: bets = 25, pushTail = false } = {}) => {
+    const [k, p] = profile(short, SPORT, { n: bets, wr, dollarRoi: -12, usual });
+    const mlb = [act('2026-09-28', 1), act('2026-10-02', 0)];
+    const nfl = [act('2026-09-30', 0), act('2026-10-04', 0)];
+    // streak 2 fixture merges to L (09-28) W (09-30) L (10-02) L (10-04).
+    const rows = streak >= 3 ? { mlb, nfl } : { mlb: [act('2026-09-28', 0), act('2026-10-02', 0)], nfl: [act('2026-09-30', 1), act('2026-10-04', 0)] };
+    if (pushTail) rows.mlb.push({ date: '2026-10-05', won: 0, settledPnl: 0 });
+    p.bySport[SPORT].form = { recentAction: rows.mlb };
+    p.bySport.NFL = { positions: { n: 10, wr: 50, dollarRoi: 0, invested: 5000, wins: 5, settledPnl: 0 }, form: { recentAction: rows.nfl } };
+    return [k, p];
+  };
+  const profilesF = new Map([
+    ...profiles,
+    floorProfile('ffffff'),                              // floor, streak 3
+    floorProfile('gggggg', { streak: 3, usual: 500 }),   // second floor wallet (for the "exactly one" leg)
+    floorProfile('nnnnnn', { streak: 2 }),               // floor, streak 2 (L W L L)
+    floorProfile('pppppp', { pushTail: true }),          // floor, streak 3 with a trailing push
+    floorProfile('qqqqqq', { wr: 46 }),                  // n 25 at WR 46 → not a floor wallet
+  ]);
+
+  // Streak helper: merges sports by date, skips pushes, counts trailing losses.
+  eq(careerLossStreak(profilesF.get('ffffff')), 3, 'career streak 3 across MLB+NFL');
+  eq(careerLossStreak(profilesF.get('nnnnnn')), 2, 'L W L L → 2');
+  eq(careerLossStreak(profilesF.get('pppppp')), 3, 'trailing push is skipped');
+  eq(careerLossStreak(profiles.get('aaaaaa')), 0, 'no recentAction → 0');
+  eq(careerLossStreak(null), 0, 'null profile → 0');
+  eq(careerLossStreak({ bySport: { MLB: { form: { recentAction: [act('2026-10-01', 1)] } } } }), 0, 'last was a win → 0');
+  eq(careerLossStreak({ bySport: { MLB: { form: { recentAction: [act('2026-10-03', 0), act('2026-10-01', 0), act('2026-10-02', 1)] } } } }), 1, 'unsorted input is sorted by date');
+
+  // Floor-2 row helper.
+  ok(isFloor2Row({ n: 15, wr: 45 }), 'n15 wr45 is floor'); ok(!isFloor2Row({ n: 14, wr: 40 }), 'n14 is not seasoned');
+  ok(!isFloor2Row({ n: 25, wr: 46 }), 'wr46 is not floor'); ok(!isFloor2Row({ n: 25, wr: null }), 'wr null is not floor');
+
+  // Market: dust FOR from an early wallet, floor wallet AGAINST at 1.0× (its usual $500). Our side −120 → implied .545; floor side .455.
+  const base = (over = {}) => evaluatePressLadder({
+    walletDetails: [wd('dddddd', 'home', 50), wd('ffffff', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesF, sideOdds: -120, steamOn: true, pickDate: LIVE,
+    ...over,
+  });
+  const r = base();
+  eq(r.rung, FADE_F_STAKE_TIER, 'FADE-F fires: floor wallet against, 0u core (steam on kills SOLO-Q)'); eq(r.units, FADE_F_UNITS, '1u');
+  eq(r.floorFade.status, 'BOOST', 'status BOOST'); eq(r.floorFade.wallet, 'ffffff', 'floor wallet named'); eq(r.floorFade.dir, 'AG', 'against');
+  eq(r.floorFade.streak, 3, 'streak 3'); eq(r.floorFade.ratio, 1, '1.0×'); eq(r.floorFade.floorImplied, 0.455, 'floor side implied .455');
+  ok(r.reason.startsWith('fade_f_floor_against_ffffff_n25_wr40_streak3_1x_floor45'), r.reason);
+  ok(!r.gate.pass, 'gate failed underneath');
+
+  // Date gate.
+  eq(base({ pickDate: '2026-10-06' }).rung, null, 'not live before Oct 7');
+  eq(base({ pickDate: null }).rung, null, 'no pickDate → off');
+  eq(FADE_F_FROM, '2026-10-07', 'live from Oct 7');
+  ok(isFadeFLive('2026-10-07') && !isFadeFLive('2026-10-06') && !isFadeFLive(null), 'date gate helper');
+  // The read is still stamped when the policy is not live.
+  eq(base({ pickDate: '2026-10-06' }).floorFade.status, 'BOOST', 'read computed regardless of date');
+
+  // Legs, each fail-closed.
+  eq(base({ walletDetails: [wd('dddddd', 'home', 50), wd('nnnnnn', 'away', 500)] }).rung, null, 'streak 2 → no');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 50), wd('nnnnnn', 'away', 500)] }).floorFade.reason, 'streak_2', 'reason streak_2');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 50), wd('pppppp', 'away', 500)] }).rung, FADE_F_STAKE_TIER, 'trailing push does not break the streak');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 50), wd('ffffff', 'away', 749)] }).rung, FADE_F_STAKE_TIER, '1.498× → yes');
+  const pressing = base({ walletDetails: [wd('dddddd', 'home', 50), wd('ffffff', 'away', 750)] });
+  eq(pressing.rung, null, '1.5× → the floor wallet is pressing, no'); eq(pressing.floorFade.reason, 'pressing_1.5x', 'reason');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 50), wd('qqqqqq', 'away', 500)] }).floorFade.reason, 'no_floor_wallet', 'WR 46 is not a floor wallet');
+  const two = base({ walletDetails: [wd('dddddd', 'home', 50), wd('ffffff', 'away', 500), wd('gggggg', 'away', 500)] });
+  eq(two.rung, null, 'two floor wallets → no'); eq(two.floorFade.reason, 'floor_wallets_2', 'reason');
+  const twoSplit = base({ walletDetails: [wd('gggggg', 'home', 500), wd('ffffff', 'away', 500)] });
+  eq(twoSplit.floorFade.reason, 'floor_wallets_2', 'one floor each side → still two');
+  // Floor side price: ours −120 → floor .455 yes; ours +200 → floor .667 no; ours +180 → floor .643 yes.
+  eq(base({ sideOdds: 200 }).rung, null, 'floor side at .667 → no'); eq(base({ sideOdds: 200 }).floorFade.reason, 'floor_fav_67', 'reason');
+  eq(base({ sideOdds: 180 }).rung, FADE_F_STAKE_TIER, 'floor side at .643 → yes');
+  eq(base({ sideOdds: -400 }).rung, FADE_F_STAKE_TIER, 'floor side a big dog (.20) → yes');
+  const noOdds = base({ sideOdds: null });
+  eq(noOdds.rung, null, 'no odds → no'); eq(noOdds.floorFade.reason, 'no_odds', 'reason');
+  // Unknown ratio (no profile would not be a floor wallet; force via a profile with no invested).
+  const noUsual = new Map([...profilesF]);
+  { const [k, p] = floorProfile('rrrrrr'); p.bySport[SPORT].positions.invested = 0; noUsual.set(k, p); }
+  const unk = base({ walletDetails: [wd('dddddd', 'home', 50), wd('rrrrrr', 'away', 500)], walletProfiles: noUsual });
+  eq(unk.rung, null, 'ratio unknown → no'); eq(unk.floorFade.reason, 'ratio_unknown', 'reason');
+
+  // Steam does not matter to FADE-F; with steam off and unopposed dust it would be SOLO-Q, but the AG wallet breaks unopposed.
+  eq(base({ steamOn: false }).rung, FADE_F_STAKE_TIER, 'steam off, floor AG → FADE-F');
+
+  // Staked sides keep their stake (no boost). Seasoned Door-2 press FOR 3.5×, floor AG.
+  const staked = base({ walletDetails: [wd('aaaaaa', 'home', 3500), wd('ffffff', 'away', 500)], steamOn: false });
+  eq(staked.rung, PRESS_STAKE_TIER, 'PRESS keeps its rung'); eq(staked.units, 5, 'PRESS keeps 5u'); eq(staked.floorFade.status, 'BOOST', 'read says BOOST but no boost applied');
+
+  // VETO: we are the floor side. Floor wallet FOR us at 1.0×, our side −120 → floor implied .545.
+  const vetoBase = (over = {}) => evaluatePressLadder({
+    walletDetails: [wd('ffffff', 'home', 500), wd('dddddd', 'away', 50)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesF, sideOdds: -120, steamOn: false, pickDate: LIVE,
+    ...over,
+  });
+  const v = vetoBase();
+  eq(v.rung, null, 'veto → no rung'); eq(v.units, 0, '0u'); eq(v.floorFade.status, 'VETO', 'status VETO'); eq(v.floorFade.dir, 'FOR', 'for');
+  eq(v.floorFade.floorImplied, 0.545, 'floor implied is our implied');
+  ok(v.reason.startsWith('fade_f_veto_of_none:floor_for_ffffff_n25_wr40_streak3_1x_floor55'), v.reason);
+  // Veto overrides a rung: seasoned Door-2 press FOR alongside the floor wallet FOR → PRESS would fire.
+  const vetoPress = vetoBase({ walletDetails: [wd('aaaaaa', 'home', 3500), wd('ffffff', 'home', 500), wd('dddddd', 'away', 50)] });
+  eq(vetoPress.rung, null, 'PRESS vetoed'); eq(vetoPress.units, 0, '0u'); ok(vetoPress.reason.startsWith('fade_f_veto_of_PRESS:'), vetoPress.reason);
+  eq(vetoPress.gate.pass, true, 'gate still recorded as passed underneath'); eq(vetoPress.presser.wallet, 'aaaaaa', 'presser still named');
+  eq(vetoBase({ pickDate: '2026-10-06' }).rung, null, 'before live: no rung anyway (gate fail)');
+  const prePress = vetoBase({ walletDetails: [wd('aaaaaa', 'home', 3500), wd('ffffff', 'home', 500), wd('dddddd', 'away', 50)], pickDate: '2026-10-06' });
+  eq(prePress.rung, PRESS_STAKE_TIER, 'before live the PRESS stands'); eq(prePress.floorFade.status, 'VETO', 'read still VETO');
+  // Veto legs fail-closed the same way: floor side at .65+ → no veto, PRESS stands.
+  const favPress = vetoBase({ walletDetails: [wd('aaaaaa', 'home', 3500), wd('ffffff', 'home', 500), wd('dddddd', 'away', 50)], sideOdds: -200 });
+  eq(favPress.rung, PRESS_STAKE_TIER, 'floor side at .667 → no veto'); eq(favPress.floorFade.reason, 'floor_fav_67', 'reason');
+
+  // Rows carry the streak.
+  const rows = pressWalletRows([wd('ffffff', 'away', 500)], 'home', SPORT, profilesF);
+  eq(rows[0].streak, 3, 'row streak'); eq(rows[0].dir, 'AG', 'row dir');
+  eq(pressWalletRows([wd('dddddd', 'home', 50)], 'home', SPORT, profilesF)[0].streak, 0, 'no form → streak 0');
+
+  // Direct read helper.
+  const ff = evaluateFloorFade(rows, 0.545);
+  eq(ff.status, 'BOOST', 'direct BOOST'); eq(ff.floorImplied, 0.455, 'direct floor implied');
+  eq(evaluateFloorFade([], 0.5).reason, 'no_floor_wallet', 'empty rows'); eq(evaluateFloorFade(null, 0.5).status, null, 'null rows');
+
+  // Stamp.
+  const st = pressStamp(r, 5);
+  eq(st.v8_pressRung, 'FADE-F', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units');
+  eq(st.v8_pressFloorFade.status, 'BOOST', 'stamp floor status'); eq(st.v8_pressFloorFade.wallet, 'ffffff', 'stamp floor wallet'); eq(st.v8_pressFloorFade.streak, 3, 'stamp streak');
+  for (const [k, val] of Object.entries(st)) ok(val !== undefined, `stamp ${k} defined`);
+  for (const [k, val] of Object.entries(st.v8_pressFloorFade)) ok(val !== undefined, `stamp floorFade.${k} defined`);
+  const stV = pressStamp(v, 5);
+  eq(stV.v8_pressRung, null, 'veto stamp rung null'); eq(stV.v8_pressUnits, 0, 'veto stamp 0u'); eq(stV.v8_pressFloorFade.status, 'VETO', 'veto stamp status');
+  eq(pressStamp(evaluatePressLadder({ walletDetails: [], side: 'home', sport: SPORT }), 1).v8_pressFloorFade, null, 'empty eval → floorFade null');
 }
 
 console.log(`testPressLadderOverlay: ${n} assertions passed`);
