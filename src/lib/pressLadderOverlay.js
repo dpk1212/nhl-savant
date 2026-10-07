@@ -79,6 +79,26 @@
  * it 12-1. Same promotion contract as R6. Sits after STEAM-C and R6 in
  * the ladder; never overlaps a money-gated rung (money < 0.60 here).
  *
+ * Rescue rung SOLO-Q (1u, from SOLO_Q_FROM) — the quiet unopposed favourite.
+ * Zero wallets against, Pinnacle steam OFF toward the side, implied in
+ * [0.50, 0.60), and the FOR side is either dust (every FOR wallet under
+ * 0.75× its usual) or one ordinary bet (biggest FOR 1.0–1.5×) from a wallet
+ * whose sport last-10 is hot (≥ 8 decided, ≥ 70% won). Research on the
+ * steam era (Aug 19 → Oct 5, all 590 unopposed V12 sides): 61-26 +31.1%
+ * flat, 0u part 59-25 +31.3%, P2 22-10 · P3 39-16, every half positive,
+ * 7 of 8 weeks positive, max drawdown 4.0u, calibration +17pp; ML 18-4 /
+ * spread 18-9 / total 25-13; MLB 29-9, football/hockey/WNBA 29-16; without
+ * the two busiest wallets 40-15. Dust 47-23, ordinary+hot 14-3. Every
+ * neighbour fails: steam ON 10-10, implied .60–.70 18-16, .40–.50 15-35
+ * −41.9%, light band (.75–1×) 9-15, ordinary without hot form 7-15, a single
+ * dust wallet against 33-28. Pre-steam weeks (Aug 1–18, no steam tape) were
+ * 19-23 for the shape — the one control against it. Price comes first on the
+ * unopposed book (under 50% implied 60-109 −28%); steam toward a lonely side
+ * reads the opposite way from the opposed book (market caught up, price
+ * gone). Same promotion contract as R6. Sits after STEAM-S; the money gate
+ * passes trivially on an unopposed side so it must stay below every
+ * money-gated rung. Fails closed without lock odds.
+ *
  * Rescue rung PRESS-M (1u, from PRESS_M_FROM) — the mirror. When the V12
  * side of a market is at 0u under this ladder and the OTHER side carries the
  * shape (money ≥ 0.60, seasoned press ≥ 1.5×, zero Door-2 against; Door-2
@@ -145,6 +165,25 @@ export const STEAM_S_MONEY_MAX = 0.6;
 export const STEAM_S_IMPLIED_MIN = 0.40;
 
 /**
+ * SOLO-Q (1u, from SOLO_Q_FROM) — the quiet unopposed favourite. Zero wallets
+ * against, steam off, implied in [MIN, MAX), and the FOR side is either dust
+ * (every FOR under DUST_MAX of usual) or one ordinary bet (biggest FOR in
+ * [ORD_MIN, ORD_MAX)) from a wallet whose sport last-10 is hot.
+ */
+export const SOLO_Q_FROM = '2026-10-07';
+export const SOLO_Q_UNITS = 1;
+export const SOLO_Q_IMPLIED_MIN = 0.50;
+export const SOLO_Q_IMPLIED_MAX = 0.60;
+/** SOLO-Q dust: biggest FOR size ratio under this (unknown ratio counts as dust). */
+export const SOLO_Q_DUST_MAX = 0.75;
+/** SOLO-Q ordinary bet: biggest FOR size ratio in [MIN, MAX). */
+export const SOLO_Q_ORD_MIN = 1.0;
+export const SOLO_Q_ORD_MAX = 1.5;
+/** SOLO-Q hot form: sport last-10 with at least HOT_N decided and HOT_WR win share. */
+export const SOLO_Q_HOT_N = 8;
+export const SOLO_Q_HOT_WR = 0.70;
+
+/**
  * PRESS-M (mirror, 1u) — the ladder's shape on the side V12 did not promote.
  * Fires only when the V12 side of the same market sits at 0u and the other
  * side carries money ≥ 0.60, a seasoned press ≥ 1.5× and zero Door-2 wallet
@@ -167,10 +206,28 @@ export const PRESS_U_STAKE_TIER = 'PRESS-U';
 export const PRESS_N_STAKE_TIER = 'PRESS-N';
 export const STEAM_C_STAKE_TIER = 'STEAM-C';
 export const STEAM_S_STAKE_TIER = 'STEAM-S';
+export const SOLO_Q_STAKE_TIER = 'SOLO-Q';
 export const PRESS_GATE_MUTED_BY = 'press-gate';
 
 export function isSteamSLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= STEAM_S_FROM && isPressLadderLive(pickDate);
+}
+
+export function isSoloQLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= SOLO_Q_FROM && isPressLadderLive(pickDate);
+}
+
+/**
+ * Hot sport form for SOLO-Q: last-10 decided positions in the sport, at least
+ * SOLO_Q_HOT_N of them, won at SOLO_Q_HOT_WR or better. Reads the profile's
+ * bySport[sport].form.actionL10 ({ w, l }); null/thin → false.
+ */
+export function isHotL10(l10) {
+  if (!l10 || typeof l10 !== 'object') return false;
+  const w = Number(l10.w) || 0;
+  const l = Number(l10.l) || 0;
+  const n = w + l;
+  return n >= SOLO_Q_HOT_N && w / n >= SOLO_Q_HOT_WR;
 }
 
 export function isPressLadderLive(pickDate) {
@@ -304,10 +361,12 @@ export function sportBook(profile, sport) {
   if (!pos || typeof pos !== 'object') return null;
   const n = Number(pos.n) || 0;
   const wr = Number(pos.wr);
+  const l10 = rec?.form?.actionL10;
   return {
     n,
     wr: Number.isFinite(wr) ? wr : null,
     door2: isConfirmedSportRec(rec),
+    l10: l10 && typeof l10 === 'object' ? { w: Number(l10.w) || 0, l: Number(l10.l) || 0 } : null,
   };
 }
 
@@ -332,6 +391,7 @@ export function pressWalletRows(walletDetails, side, sport, walletProfiles) {
       n: book?.n ?? 0,
       wr: book?.wr ?? null,
       door2: book?.door2 === true,
+      l10: book?.l10 ?? null,
     });
   }
   return rows;
@@ -383,9 +443,9 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|null, units: number, reason: string
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|null, units: number, reason: string
  * }}
- * pickDate gates the dated rungs (STEAM-S from STEAM_S_FROM); null → those rungs stay off.
+ * pickDate gates the dated rungs (STEAM-S from STEAM_S_FROM, SOLO-Q from SOLO_Q_FROM); null → those rungs stay off.
  */
 export function evaluatePressLadder({
   walletDetails,
@@ -580,6 +640,38 @@ export function evaluatePressLadder({
       dissenters: opponents.map((r) => ({ wallet: r.wallet, ratio: Math.round((r.ratio || 0) * 100) / 100, n: r.n, wr: r.wr })),
       rung: STEAM_S_STAKE_TIER, units: STEAM_S_UNITS,
       reason: `steam_s_seas${seasonedForN}v${seasonedAgN}_ag${Math.round(agMaxRatio * 100) / 100}x_money${Math.round(moneyShare * 100)}_steam_on`,
+    };
+  }
+
+  // SOLO-Q — the quiet unopposed favourite. Nobody against, steam off, the
+  // price a slight favourite (implied .50–.60), and the FOR side is either
+  // dust (every FOR under 0.75× usual; unknown ratio counts as dust, as in
+  // the research) or one ordinary bet (biggest FOR 1.0–1.5×) from a wallet
+  // whose sport last-10 is hot. Any seasoned press FOR is PRESS land and
+  // never reaches here (biggest FOR < 1.5× by construction). Dated rung.
+  const forMaxRatio = forRows.length
+    ? Math.max(...forRows.map((r) => (Number.isFinite(r.ratio) ? r.ratio : 0)))
+    : null;
+  const hotFor = forRows.filter((r) => isHotL10(r.l10));
+  const soloDust = forMaxRatio != null && forMaxRatio < SOLO_Q_DUST_MAX;
+  const soloOrdinary = forMaxRatio != null && forMaxRatio >= SOLO_Q_ORD_MIN && forMaxRatio < SOLO_Q_ORD_MAX && hotFor.length >= 1;
+  const soloQ = isSoloQLive(pickDate)
+    && !steamOn
+    && agRows.length === 0
+    && forRows.length >= 1
+    && implied != null && implied >= SOLO_Q_IMPLIED_MIN && implied < SOLO_Q_IMPLIED_MAX
+    && (soloDust || soloOrdinary);
+  if (soloQ) {
+    const shape = soloDust ? 'dust' : 'ordinary_hot';
+    const named = (soloDust ? forRows : hotFor).slice().sort((a, b) => (b.ratio || 0) - (a.ratio || 0));
+    return {
+      gate, moneyShare, door2Ag, door2For,
+      presser: null, maxRatio, band: null, priceStep: null, edge,
+      steamOn: !!steamOn, heavyFav,
+      veterans: named.map((r) => ({ wallet: r.wallet, ratio: Math.round((r.ratio || 0) * 100) / 100, n: r.n, wr: r.wr })),
+      dissenters: [],
+      rung: SOLO_Q_STAKE_TIER, units: SOLO_Q_UNITS,
+      reason: `solo_q_${shape}_for${Math.round(forMaxRatio * 100) / 100}x_imp${Math.round(implied * 100)}_steam_off_unopposed`,
     };
   }
 

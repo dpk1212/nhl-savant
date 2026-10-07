@@ -37,6 +37,12 @@ import {
   STEAM_S_FROM,
   STEAM_S_STAKE_TIER,
   STEAM_S_UNITS,
+  isSoloQLive,
+  isHotL10,
+  pressWalletRows,
+  SOLO_Q_FROM,
+  SOLO_Q_STAKE_TIER,
+  SOLO_Q_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -508,6 +514,100 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const st = pressStamp(r, 9);
   eq(st.v8_pressRung, 'STEAM-S', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units'); eq(st.v8_pressSteamOn, true, 'stamp steam');
   eq(st.v8_pressDissenters[0].wallet, 'bbbbbb', 'stamp records the seasoned AG'); eq(st.v8_pressPresser, null, 'no presser');
+  for (const [k, v] of Object.entries(st)) ok(v !== undefined, `stamp ${k} defined`);
+}
+
+// 14. SOLO-Q — the quiet unopposed favourite. Zero AG, steam off, implied
+// .50–.60, dust FOR or one ordinary FOR from a hot-form wallet. Dated rung.
+{
+  const LIVE = '2026-10-07';
+  const profileL10 = (short, sport, { n: bets, wr, dollarRoi, usual, l10 }) => {
+    const [k, p] = profile(short, sport, { n: bets, wr, dollarRoi, usual });
+    p.bySport[sport].form = { actionL10: l10 };
+    return [k, p];
+  };
+  const withHot = new Map([
+    ...profiles,
+    profileL10('hhhhhh', SPORT, { n: 12, wr: 58, dollarRoi: 5, usual: 100, l10: { w: 7, l: 3 } }),   // hot last-10, unseasoned
+    profileL10('kkkkkk', SPORT, { n: 12, wr: 50, dollarRoi: 0, usual: 100, l10: { w: 5, l: 5 } }),   // not hot
+  ]);
+  const base = (over = {}) => evaluatePressLadder({
+    // FOR: an early wallet (usual $100) with $50 → 0.5× (dust). Nobody against. −120 → implied .545.
+    walletDetails: [wd('dddddd', 'home', 50)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: withHot, sideOdds: -120, steamOn: false, pickDate: LIVE,
+    ...over,
+  });
+  const r = base();
+  eq(r.rung, SOLO_Q_STAKE_TIER, 'SOLO-Q fires: unopposed dust, steam off, −120'); eq(r.units, SOLO_Q_UNITS, '1u');
+  ok(r.gate.money && !r.gate.seasPress, 'money gate passes trivially (share 1.0), press gate fails');
+  eq(r.moneyShare, 1, 'money share 1.0 on an unopposed side');
+  eq(r.dissenters.length, 0, 'nobody against'); eq(r.veterans.length, 1, 'the dust FOR wallet is named'); eq(r.veterans[0].wallet, 'dddddd', 'dddddd'); eq(r.veterans[0].ratio, 0.5, 'at 0.5×');
+  ok(r.reason.startsWith('solo_q_dust_for0.5x_imp55_steam_off_unopposed'), r.reason);
+  eq(r.band, null, 'no band'); eq(r.priceStep, null, 'no price step'); eq(r.steamOn, false, 'steam off recorded');
+
+  // Date gate.
+  eq(base({ pickDate: '2026-10-06' }).rung, null, 'not live before Oct 7');
+  eq(base({ pickDate: null }).rung, null, 'no pickDate → rung stays off');
+  eq(SOLO_Q_FROM, '2026-10-07', 'live from Oct 7');
+  ok(isSoloQLive('2026-10-07') && !isSoloQLive('2026-10-06') && !isSoloQLive(null), 'date gate helper');
+
+  // Steam toward the side kills it.
+  const on = base({ steamOn: true });
+  eq(on.rung, null, 'steam on → nothing'); eq(on.units, 0, '0u'); ok(on.reason.startsWith('gate_fail:'), on.reason);
+
+  // Any wallet against — even dust — and it is no longer unopposed.
+  eq(base({ walletDetails: [wd('dddddd', 'home', 50), wd('cccccc', 'away', 20)] }).rung, null, 'a 0.1× AG wallet → no');
+
+  // Price band [.50, .60): fail-closed without odds.
+  eq(base({ sideOdds: 100 }).rung, SOLO_Q_STAKE_TIER, '+100 (implied .50) → yes');
+  eq(base({ sideOdds: 105 }).rung, null, '+105 (implied .488) → no');
+  eq(base({ sideOdds: -149 }).rung, SOLO_Q_STAKE_TIER, '−149 (implied .598) → yes');
+  eq(base({ sideOdds: -150 }).rung, null, '−150 (implied .60) → no');
+  eq(base({ sideOdds: -200 }).rung, null, '−200 → no');
+  eq(base({ sideOdds: null }).rung, null, 'no odds → no');
+
+  // Size: dust under 0.75×; the light band (0.75–1×) is out; ordinary needs hot form.
+  eq(base({ walletDetails: [wd('dddddd', 'home', 74)] }).rung, SOLO_Q_STAKE_TIER, '0.74× → dust, yes');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 75)] }).rung, null, '0.75× → light band, no');
+  eq(base({ walletDetails: [wd('dddddd', 'home', 99)] }).rung, null, '0.99× → light band, no');
+  eq(base({ walletDetails: [wd('kkkkkk', 'home', 120)] }).rung, null, '1.2× from a wallet not in form → no');
+  const ord = base({ walletDetails: [wd('hhhhhh', 'home', 120)] });
+  eq(ord.rung, SOLO_Q_STAKE_TIER, '1.2× from a hot-form wallet → yes');
+  ok(ord.reason.startsWith('solo_q_ordinary_hot_for1.2x_imp55'), ord.reason);
+  eq(ord.veterans[0].wallet, 'hhhhhh', 'the hot wallet is named');
+  eq(base({ walletDetails: [wd('hhhhhh', 'home', 100)] }).rung, SOLO_Q_STAKE_TIER, '1.0× hot → yes');
+  eq(base({ walletDetails: [wd('hhhhhh', 'home', 149)] }).rung, SOLO_Q_STAKE_TIER, '1.49× hot → yes');
+  eq(base({ walletDetails: [wd('hhhhhh', 'home', 150)] }).rung, null, '1.5× hot (unseasoned press) → no');
+  eq(base({ walletDetails: [wd('hhhhhh', 'home', 80)] }).rung, null, '0.8× hot → light band, no');
+  // Hot form anywhere on the FOR side counts, matching the research (any FOR wallet hot).
+  const mixed = base({ walletDetails: [wd('kkkkkk', 'home', 120), wd('hhhhhh', 'home', 30)] });
+  eq(mixed.rung, SOLO_Q_STAKE_TIER, 'biggest FOR 1.2× not hot, a 0.3× hot wallet alongside → yes');
+  eq(mixed.veterans.length, 1, 'only the hot wallet is named'); eq(mixed.veterans[0].wallet, 'hhhhhh', 'hhhhhh');
+  // Two dust wallets: all named, biggest first.
+  const two = base({ walletDetails: [wd('dddddd', 'home', 30), wd('kkkkkk', 'home', 60)] });
+  eq(two.rung, SOLO_Q_STAKE_TIER, 'two dust wallets → yes'); eq(two.veterans.length, 2, 'both named'); eq(two.veterans[0].wallet, 'kkkkkk', 'biggest first');
+  // Unknown size ratio (no profile) counts as dust, as in the research.
+  eq(base({ walletDetails: [wd('zzzzzz', 'home', 300)] }).rung, SOLO_Q_STAKE_TIER, 'wallet with no profile → ratio unknown → dust, yes');
+
+  // Hot-form helper.
+  ok(isHotL10({ w: 7, l: 3 }), '7-3 is hot'); ok(isHotL10({ w: 6, l: 2 }), '6-2 is hot (8 decided, 75%)');
+  ok(!isHotL10({ w: 5, l: 2 }), '5-2 is thin (7 decided)'); ok(!isHotL10({ w: 6, l: 4 }), '6-4 is not hot'); ok(!isHotL10(null), 'null → not hot');
+
+  // Precedence: a seasoned press FOR unopposed is PRESS; two veterans at size is R6.
+  const press = base({ walletDetails: [wd('aaaaaa', 'home', 2000)], sideOdds: -110 });
+  eq(press.rung, PRESS_STAKE_TIER, 'seasoned Door-2 press unopposed → PRESS, never SOLO-Q');
+  const vets = base({ walletDetails: [wd('aaaaaa', 'home', 1100), wd('eeeeee', 'home', 900)], sideOdds: -110 });
+  eq(vets.rung, PRESS_R6_STAKE_TIER, 'two veterans at ≥1.0×, no press → R6 keeps precedence');
+
+  // Row carries the sport last-10.
+  const rows = pressWalletRows([wd('hhhhhh', 'home', 120)], 'home', SPORT, withHot);
+  eq(rows[0].l10.w, 7, 'row l10 w'); eq(rows[0].l10.l, 3, 'row l10 l');
+  eq(pressWalletRows([wd('dddddd', 'home', 50)], 'home', SPORT, withHot)[0].l10, null, 'no form → l10 null');
+
+  // Stamp.
+  const st = pressStamp(r, 4);
+  eq(st.v8_pressRung, 'SOLO-Q', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units'); eq(st.v8_pressSteamOn, false, 'stamp steam off');
+  ok(st.v8_pressDissenters == null || st.v8_pressDissenters.length === 0, 'no dissenters'); eq(st.v8_pressVeterans[0].wallet, 'dddddd', 'stamp names the FOR wallet'); eq(st.v8_pressPresser, null, 'no presser');
   for (const [k, v] of Object.entries(st)) ok(v !== undefined, `stamp ${k} defined`);
 }
 

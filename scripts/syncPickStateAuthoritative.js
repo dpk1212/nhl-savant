@@ -367,6 +367,9 @@ import {
   isSteamSLive,
   STEAM_S_FROM,
   STEAM_S_STAKE_TIER,
+  isSoloQLive,
+  SOLO_Q_FROM,
+  SOLO_Q_STAKE_TIER,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -8191,6 +8194,11 @@ async function main() {
     if (isSteamSLive(TARGET_DATE)) {
       console.log(
         `STEAM-S LIVE: steam on + no press either side + biggest AG 1.0–1.5× + seasoned AG ≥ seasoned FOR (≥1 seasoned AG) + money FOR 20–60% + implied ≥40% → 1u (${STEAM_S_STAKE_TIER}) · from ${STEAM_S_FROM}`,
+      );
+    }
+    if (isSoloQLive(TARGET_DATE)) {
+      console.log(
+        `SOLO-Q LIVE: zero wallets against + steam off + implied 50–60% + (every FOR under 0.75× usual, or biggest FOR 1.0–1.5× from a wallet with a hot sport last-10 ≥8 decided ≥70%) → 1u (${SOLO_Q_STAKE_TIER}) · from ${SOLO_Q_FROM}`,
       );
     }
     if (isPressMirrorLive(TARGET_DATE)) {
