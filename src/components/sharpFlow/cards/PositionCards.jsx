@@ -50,6 +50,9 @@ function formatLockCountdown(ms) {
  * is the one worth saying.
  */
 function pressGateCopy(pressReason, { long = false } = {}) {
+  if (String(pressReason || '').startsWith('fade_f_veto_of_')) {
+    return long ? 'A cold wallet on a losing streak is on our side — no ticket' : 'A cold wallet on a losing streak is on our side';
+  }
   const failed = String(pressReason || '').startsWith('gate_fail:')
     ? String(pressReason).slice('gate_fail:'.length).split(',')
     : [];
@@ -119,7 +122,7 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
     return pre ? `Best wallet against us · ${pre}` : 'Best wallet against us';
   }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
-  if (mutedBy === 'press-gate') return pressGateCopy(pressReason, { long: true });
+  if (mutedBy === 'press-gate' || mutedBy === 'fade-f-veto') return pressGateCopy(pressReason, { long: true });
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
   if (stakePath === 'MONITORING') return 'Monitoring — never sized';
   if (mutedBy) return String(mutedBy).replace(/-/g, ' ');
@@ -140,7 +143,7 @@ function noPlayReason({ mutedBy, tapeAction, stakePath, pressReason } = {}) {
   if (mutedBy === 'st-qual-wipe') return 'Qualified spread/total money not on our side';
   if (mutedBy === 'st-hard-slip' || mutedBy === 'st-hard-for') return 'No tracked sharp on our side';
   if (mutedBy === 'hard-ag') return 'Best wallet on the other side';
-  if (mutedBy === 'press-gate') return pressGateCopy(pressReason);
+  if (mutedBy === 'press-gate' || mutedBy === 'fade-f-veto') return pressGateCopy(pressReason);
   if (stakePath === 'FADE') return "Didn't meet the size bar";
   return "Didn't meet the size bar";
 }

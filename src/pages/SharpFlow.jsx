@@ -1573,6 +1573,7 @@ function starsFromAgsuTier(tier, units = null) {
   if (tier === 'STEAM-C') return 2.0;     // steam overrules a small dissent (1u)
   if (tier === 'STEAM-S') return 2.0;     // steam overrules a seasoned ordinary bet (1u)
   if (tier === 'SOLO-Q') return 2.0;      // quiet unopposed favourite (1u)
+  if (tier === 'FADE-F') return 2.0;      // streaking floor wallet on the other side (1u)
   if (tier === 'PRESS-M') return 2.0;     // mirror of a muted V12 side (1u)
   if (tier === 'PRESS-R6') return 2.0;    // two veterans (1u)
   if (tier === 'SUPER') return 5.0;       // MAX PLAY (6u)
