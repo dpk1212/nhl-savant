@@ -25,6 +25,14 @@ import {
   PRESS_N_UNITS_MOVED,
   STEAM_C_STAKE_TIER,
   STEAM_C_UNITS,
+  isPressMirrorLive,
+  isPressMirrorShape,
+  evaluatePressMirror,
+  pressMirrorEval,
+  pressMirrorStamp,
+  PRESS_M_FROM,
+  PRESS_M_UNITS,
+  PRESS_M_STAKE_TIER,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -370,6 +378,62 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const st = pressStamp(r, 123);
   for (const [k, v] of Object.entries(st)) ok(v !== undefined, `${k} defined`);
   eq(st.v8_pressUnits, 5, 'stamp units'); eq(st.v8_pressRung, 'PRESS', 'stamp rung'); eq(st.v8_pressAt, 123, 'stamp at');
+}
+
+// 12. PRESS-M — the mirror of a muted V12 side
+{
+  // Home carries the shape: seasoned Door-2 wallet pressing 3.5×, money with it,
+  // only an early wallet against. Evaluated FROM the home side.
+  const bag = [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)];
+  const homeShape = evaluatePressLadder({ walletDetails: bag, side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles });
+  const awayShape = evaluatePressLadder({ walletDetails: bag, side: 'away', sport: SPORT, marketType: 'ML', walletProfiles: profiles });
+  ok(isPressMirrorShape(homeShape), 'home has the shape');
+  ok(!isPressMirrorShape(awayShape), 'away does not');
+  eq(awayShape.units, 0, 'away ladder is 0u (money and press against it)');
+
+  // Fires: home score ≤ 0, away is the V12 side (score > 0) at 0u.
+  const m = evaluatePressMirror({ shapeEval: homeShape, scoreV12: -0.2, siblings: [{ side: 'away', scoreV12: 0.4, ladderUnits: 0, stakedUnits: 0 }] });
+  ok(m.fires, 'mirror fires'); eq(m.rung, PRESS_M_STAKE_TIER, 'rung'); eq(m.units, PRESS_M_UNITS, '1u');
+  eq(m.v12Side, 'away', 'names the V12 side'); ok(m.reason.startsWith('press_m_mirror_of_away'), m.reason);
+  ok(m.reason.endsWith('_door2'), 'Door-2 FOR noted');
+  const mNull = evaluatePressMirror({ shapeEval: homeShape, scoreV12: null, siblings: [{ side: 'away', scoreV12: 0.4, ladderUnits: 0, stakedUnits: 0 }] });
+  ok(mNull.fires, 'no-signal score fires too');
+
+  // Never when the V12 side carries or would carry units.
+  eq(evaluatePressMirror({ shapeEval: homeShape, scoreV12: -0.2, siblings: [{ side: 'away', scoreV12: 0.4, ladderUnits: 1, stakedUnits: 0 }] }).fires, false, 'sibling ladder units block');
+  const manual = evaluatePressMirror({ shapeEval: homeShape, scoreV12: -0.2, siblings: [{ side: 'away', scoreV12: 0.4, ladderUnits: 0, stakedUnits: 2 }] });
+  eq(manual.fires, false, 'sibling manual stake blocks'); eq(manual.siblingStaked, 'away', 'names the staked sibling');
+  // Never when this side is itself a V12 side, or when no V12 side exists.
+  eq(evaluatePressMirror({ shapeEval: homeShape, scoreV12: 0.3, siblings: [{ side: 'away', scoreV12: -0.1, ladderUnits: 0, stakedUnits: 0 }] }).reason, 'mirror_side_is_v12', 'own score > 0');
+  eq(evaluatePressMirror({ shapeEval: homeShape, scoreV12: -0.2, siblings: [{ side: 'away', scoreV12: -0.1, ladderUnits: 0, stakedUnits: 0 }] }).reason, 'mirror_no_v12_side', 'both ≤ 0 is not the studied shape');
+  eq(evaluatePressMirror({ shapeEval: homeShape, scoreV12: -0.2, siblings: [{ side: 'away', scoreV12: null, ladderUnits: 0, stakedUnits: 0 }] }).fires, false, 'no-signal sibling is not a V12 side');
+  // Shape must hold on this side.
+  ok(evaluatePressMirror({ shapeEval: awayShape, scoreV12: -0.2, siblings: [{ side: 'home', scoreV12: 0.4, ladderUnits: 0, stakedUnits: 0 }] }).reason.startsWith('mirror_shape_fail'), 'shape fail');
+  eq(evaluatePressMirror({ shapeEval: null, scoreV12: -0.2, siblings: [] }).reason, 'mirror_no_inputs', 'fail-closed');
+
+  // Door-2 against on the pressed side kills it (gate 3), unseasoned press too (gate 2).
+  const d2Ag = evaluatePressLadder({ walletDetails: [wd('aaaaaa', 'home', 3500), wd('cccccc', 'away', 200)], side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles });
+  ok(!isPressMirrorShape(d2Ag), 'Door-2 against breaks the shape');
+  const unseasoned = evaluatePressLadder({ walletDetails: [wd('cccccc', 'home', 700), wd('dddddd', 'away', 100)], side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles });
+  ok(!isPressMirrorShape(unseasoned), 'unseasoned press is not the shape');
+  // No Door-2 FOR is fine (PRESS-N shape): seasoned non-Door-2 presser with the money.
+  const noD2 = evaluatePressLadder({ walletDetails: [wd('bbbbbb', 'home', 1500), wd('dddddd', 'away', 100)], side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles });
+  ok(isPressMirrorShape(noD2), 'shape holds without Door-2 FOR');
+  const mN = evaluatePressMirror({ shapeEval: noD2, scoreV12: -0.1, siblings: [{ side: 'away', scoreV12: 0.2, ladderUnits: 0, stakedUnits: 0 }] });
+  ok(mN.fires && mN.reason.endsWith('_no_door2'), 'fires, no Door-2 noted');
+
+  // Stamp record re-labels the rung and is Firestore-safe.
+  const rec = pressMirrorEval(homeShape, m);
+  eq(rec.rung, PRESS_M_STAKE_TIER, 'record rung'); eq(rec.units, 1, 'record units'); eq(rec.band, null, 'no band');
+  const st = pressStamp(rec, 5);
+  eq(st.v8_pressRung, 'PRESS-M', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units');
+  const ms = pressMirrorStamp(m, homeShape, 7).v8_pressMirror;
+  for (const [k, v] of Object.entries(ms)) ok(v !== undefined, `mirror stamp ${k} defined`);
+  eq(ms.fires, true, 'mirror stamp fires'); eq(ms.shapeRung, 'PRESS', 'underlying shape rung kept'); eq(ms.at, 7, 'at');
+  eq(pressMirrorEval(homeShape, manual), homeShape, 'non-firing mirror leaves the eval alone');
+
+  eq(PRESS_M_FROM, '2026-10-07', 'mirror live from Oct 7');
+  ok(isPressMirrorLive('2026-10-07') && !isPressMirrorLive('2026-10-06') && !isPressMirrorLive(null), 'mirror date gate');
 }
 
 console.log(`testPressLadderOverlay: ${n} assertions passed`);

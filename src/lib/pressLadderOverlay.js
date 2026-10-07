@@ -61,6 +61,13 @@
  * with a proven wallet. A Door-2 AG at/over 1.0× (43-49 −3.5%) or a press
  * against (35-41 −6.4%) kills it. Same promotion contract as R6.
  *
+ * Rescue rung PRESS-M (1u, from PRESS_M_FROM) — the mirror. When the V12
+ * side of a market is at 0u under this ladder and the OTHER side carries the
+ * shape (money ≥ 0.60, seasoned press ≥ 1.5×, zero Door-2 against; Door-2
+ * FOR either way) while its own v12 score is ≤ 0, that other side is staked
+ * 1u. Never while any sibling side carries units; the V12 side is
+ * superseded while the mirror is live. See evaluatePressMirror().
+ *
  * Everything else between the v12 score gate and the odds cap (HC ladder,
  * rescues, floors, tape, EDGE bands, the mute chain, HARD+ layer, form×tier)
  * is retired for pickDate ≥ PRESS_LADDER_FROM. The v12 score > 0 gate,
@@ -104,6 +111,22 @@ export const PRESS_U_UNITS = 1;
 export const STEAM_C_MAX_MARGIN = 0;
 export const STEAM_C_UNITS = 1;
 
+/**
+ * PRESS-M (mirror, 1u) — the ladder's shape on the side V12 did not promote.
+ * Fires only when the V12 side of the same market sits at 0u and the other
+ * side carries money ≥ 0.60, a seasoned press ≥ 1.5× and zero Door-2 wallet
+ * against it (Door-2 FOR either way). Research Aug 1 → Oct 5 on 0u V12
+ * sides whose opposite side had this shape: V12 side 30-66 flat; the mirror
+ * 66-30 +20.4% (P1 13-7 · P2 23-13 · P3 30-10), 36 distinct pressers;
+ * no Door-2 on either side 36-14, full PRESS shape 30-16. One side per
+ * market: the V12 side is superseded while the mirror is live and the
+ * mirror never fires when any sibling side carries units.
+ */
+export const PRESS_M_FROM = '2026-10-07';
+export const PRESS_M_UNITS = 1;
+export const PRESS_M_STAKE_TIER = 'PRESS-M';
+export const PRESS_M_SUPERSEDED_REASON = 'press_m_mirror';
+
 export const PRESS_STAKE_TIER = 'PRESS';
 export const PRESS_R6_STAKE_TIER = 'PRESS-R6';
 export const PRESS_X_STAKE_TIER = 'PRESS-X';
@@ -118,6 +141,96 @@ export function isPressLadderLive(pickDate) {
 
 export function isPressStampLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= PRESS_STAMP_FROM;
+}
+
+export function isPressMirrorLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= PRESS_M_FROM && isPressLadderLive(pickDate);
+}
+
+/** The pressed-side shape PRESS-M needs: money, seasoned press, zero Door-2 against. */
+export function isPressMirrorShape(evalResult) {
+  const g = evalResult && evalResult.gate;
+  return !!(g && g.money && g.seasPress && g.noDoor2Ag);
+}
+
+/**
+ * PRESS-M decision for one side.
+ *   shapeEval  evaluatePressLadder() for THIS side (the pressed side)
+ *   scoreV12   this side's live v12 score (null = no signal)
+ *   siblings   [{ side, scoreV12, ladderUnits, stakedUnits }] for every other
+ *              side of the market: ladderUnits = that side's own ladder result
+ *              on the same walletDetails, stakedUnits = units it currently
+ *              carries in Firestore (manual stake included).
+ * Fires when the shape holds here, this side is not a V12 side (score ≤ 0 or
+ * null), a V12 side exists among the siblings (score > 0) and no sibling
+ * carries or would carry units. Fail-closed on missing inputs.
+ */
+export function evaluatePressMirror({ shapeEval, scoreV12, siblings = [] }) {
+  const base = { fires: false, rung: null, units: 0, v12Side: null, v12Score: null, siblingStaked: null };
+  if (!shapeEval || !Array.isArray(siblings) || siblings.length === 0) {
+    return { ...base, reason: 'mirror_no_inputs' };
+  }
+  if (!isPressMirrorShape(shapeEval)) {
+    return { ...base, reason: `mirror_shape_fail:${shapeEval.reason || 'gate'}` };
+  }
+  if (Number.isFinite(scoreV12) && scoreV12 > 0) {
+    return { ...base, reason: 'mirror_side_is_v12' };
+  }
+  const v12 = siblings
+    .filter((s) => Number.isFinite(s.scoreV12) && s.scoreV12 > 0)
+    .sort((a, b) => b.scoreV12 - a.scoreV12)[0] || null;
+  if (!v12) {
+    return { ...base, reason: 'mirror_no_v12_side' };
+  }
+  const staked = siblings.find((s) => (Number(s.ladderUnits) || 0) > 0 || (Number(s.stakedUnits) || 0) > 0) || null;
+  if (staked) {
+    return {
+      ...base,
+      v12Side: v12.side,
+      v12Score: v12.scoreV12,
+      siblingStaked: staked.side,
+      reason: `mirror_sibling_staked:${staked.side}`,
+    };
+  }
+  return {
+    fires: true,
+    rung: PRESS_M_STAKE_TIER,
+    units: PRESS_M_UNITS,
+    v12Side: v12.side,
+    v12Score: v12.scoreV12,
+    siblingStaked: null,
+    reason: `press_m_mirror_of_${v12.side}${shapeEval.gate.door2For ? '_door2' : '_no_door2'}`,
+  };
+}
+
+/** The ladder eval re-labelled as PRESS-M so pressStamp() records the rung we staked. */
+export function pressMirrorEval(shapeEval, mirror) {
+  if (!shapeEval || !mirror || !mirror.fires) return shapeEval;
+  return {
+    ...shapeEval,
+    rung: PRESS_M_STAKE_TIER,
+    units: PRESS_M_UNITS,
+    band: null,
+    priceStep: null,
+    reason: mirror.reason,
+  };
+}
+
+/** Compact Firestore stamp for the mirror decision (null-safe for Firestore). */
+export function pressMirrorStamp(mirror, shapeEval, now) {
+  if (!mirror) return null;
+  return {
+    v8_pressMirror: {
+      fires: !!mirror.fires,
+      v12Side: mirror.v12Side ?? null,
+      v12Score: Number.isFinite(mirror.v12Score) ? Math.round(mirror.v12Score * 1000) / 1000 : null,
+      siblingStaked: mirror.siblingStaked ?? null,
+      shapeRung: shapeEval?.rung ?? null,
+      shapeUnits: Number.isFinite(shapeEval?.units) ? shapeEval.units : 0,
+      reason: mirror.reason || null,
+      at: now,
+    },
+  };
 }
 
 function shortId(wallet) {
