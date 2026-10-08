@@ -1,108 +1,36 @@
 # MLB Predictions
 
-MLB predictions for Wednesday, October 7, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
+MLB predictions for Thursday, October 8, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 7 2026Oct 7
+Date: Oct 8 2026Oct 8
 
-[Oct 7, 4:00 PM ET\\
+[Oct 8, 8:00 PM ET\\
 \\
 ![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
 \\
-Guardians \\
+Guardians  P. Messick \\
 \\
-0 \\
+50.3% \\
 \\
-34.2% \\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+52¢\\
 \\
 ![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
 \\
-White Sox \\
+White Sox  H. Smith \\
 \\
-1 \\
-\\
-65.8% \\
-\\
-3 Out\\
-\\
-LIVE\\
-\\
-Bot 1st \\
-\\
-In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_197_cws_cle) [Oct 7, 6:00 PM ET\\
-\\
-![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
-\\
-Dodgers  T. Glasnow \\
-\\
-58.1% \\
+49.7% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-59¢\\
-\\
-![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
-\\
-Braves  T. Mahle \\
-\\
-41.9% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-42¢\\
+49¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_197_atl_lad) [Oct 7, 8:00 PM ET\\
-\\
-![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
-\\
-Rays  N. Martinez \\
-\\
-37.8% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-40¢\\
-\\
-![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
-\\
-Yankees  M. Fried \\
-\\
-62.2% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-61¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_197_nyy_tb) [Oct 7, 10:00 PM ET\\
-\\
-![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
-\\
-Brewers  R. Gasser \\
-\\
-49.3% \\
-\\
-![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
-\\
-+100\\
-\\
-![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
-\\
-Padres  W. Buehler \\
-\\
-50.7% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-51¢\\
-\\
-MLB\\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_197_sd_mil)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_198_cws_cle)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -166,7 +94,7 @@ Get Dimers Pro
 
 ## Featured offers
 
-All  Sportsbooks  Prediction Markets
+All  Sportsbooks  Prediction Markets  DFS
 
 ![Swipe icon](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20)Swipe across to view more offers
 
@@ -238,6 +166,18 @@ Claim now
 
 How to claim
 
+![logo](https://imgix.cosmicjs.com/c263f0f0-a7a8-11f1-b05a-3f2735d232a4-UD26_PrimaryMark_OverDark.png?auto=format,compress&h=200)
+
+TRENDING
+
+T&Cs apply.
+
+Claim Now
+
+[Read review](https://www.dimers.com/dfs/underdog-fantasy)
+
+How to claim
+
 ![logo](https://imgix.cosmicjs.com/682438f0-bde9-11f1-af12-19c569209b1c-fd-predicts.png?auto=format,compress&h=200)
 
 TRENDING
@@ -286,7 +226,7 @@ How to claim
 
 ![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
 
-LIMITED-TIME
+RECOMMENDED
 
 T&Cs apply.
 
@@ -306,39 +246,23 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/673e3170-1a24-11f1-912c-9d3f03b09963-OG-LOGO-1a-1.png?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/9d7e0a60-ceaa-11ef-ac4c-9fb95c248ff6-HorizontalPrimaryDark-1.png?auto=format,compress&h=200)
 
-RECOMMENDED
+DFS & PICKS
 
 T&Cs apply.
 
 Claim Now
 
-How to claim
-
-![logo](https://imgix.cosmicjs.com/1092c8d0-116c-11ef-911e-9f1d49670742-BetRivers-Big.png?auto=format,compress&h=200)
-
-NEW PLAYERS
-
-T&Cs apply.
-
-Claim now
-
-[Read review](https://www.dimers.com/betting/betrivers-sportsbook)
+[Read review](https://www.dimers.com/dfs/betr)
 
 How to claim
 
-## MLB predictions for Wednesday
+## MLB predictions for Thursday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Wednesday, the Yankees lead all win probabilities with a 61.6% chance of beating the Rays at Yankee Stadium. The Dodgers and White Sox also rank among the leading moneyline favorites.
-
-| Team | Prob. | Opponent | First pitch (ET) |
-| --- | --- | --- | --- |
-| Yankees | 61.6% | vs. Rays | 5:00pm |
-| Dodgers | 57.5% | @ Braves | 3:00pm |
-| White Sox | 53.8% | vs. Guardians | 1:00pm |
+On Thursday, the Guardians have a 50.3% chance of beating the White Sox at Rate Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
