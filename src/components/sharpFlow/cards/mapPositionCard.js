@@ -27,6 +27,7 @@ import {
 import {
   americanFromPolyPrice,
   coherentTicket,
+  repairCrossedLineOdds,
   resolveInstrument,
 } from '../../../lib/ticketInstrument.js';
 import { resolvePayOdds } from '../../../lib/payOdds.js';
@@ -44,7 +45,7 @@ import {
   americanFromProb,
 } from '../../../lib/oddsEv.js';
 import { shortTeamNick as shortTeam } from '../../../utils/teamIdentity.js';
-import { shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
+import { shopBookKey, EXCHANGE_BOOK_KEYS } from './bookKeys.js';
 import {
   bookOnTicketLine,
   keepPlayBooks,
@@ -1540,7 +1541,7 @@ export function mapLockedPickToCardFixture(pick, {
     : null;
   const flaggedOffHero = Number.isFinite(flaggedLine) && Number.isFinite(ticketHeroLine)
     && !linesClose(flaggedLine, ticketHeroLine);
-  const flaggedAtLabel = (flaggedOffHero || sharpOffTicket)
+  let flaggedAtLabel = (flaggedOffHero || sharpOffTicket)
     ? fmtFlaggedAtLabel(
       Number.isFinite(flaggedOddsStored) ? flaggedOddsStored
         : (Number.isFinite(sharpOdds) ? sharpOdds : polyEntryOdds),
@@ -1855,13 +1856,46 @@ export function mapLockedPickToCardFixture(pick, {
     ),
   });
   if (Number.isFinite(pay.polyReceipt)) polyEntryOdds = pay.polyReceipt;
-  const payOdds = Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds;
+  let payOdds = Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds;
   const polyForLabel = Number.isFinite(pay.polyReceipt) ? pay.polyReceipt
     : (Number.isFinite(polyEntryOdds) ? polyEntryOdds : null);
   if (!flaggedAtLabel && Number.isFinite(polyForLabel) && Number.isFinite(payOdds)
       && Math.round(polyForLabel) !== Math.round(payOdds)) {
     const lbl = fmtFlaggedAtLabel(polyForLabel);
     if (lbl) mainNowLabel = lbl;
+  }
+  // Inverted alt: books do not quote JSU +4.5. Keep the vault line; uncross
+  // juice so hero/flagged each stay on one instrument (Liberty −3.5 unchanged).
+  if (isSpread || isTotal) {
+    const mainBookOdds = isSpread && mainSpread
+      ? (instSide === 'away' ? mainSpread.awayOdds : mainSpread.homeOdds)
+      : (isTotal && mainTotal
+        ? (sideIsUnderEarly ? mainTotal.underOdds : mainTotal.overOdds)
+        : null);
+    const paired = repairCrossedLineOdds({
+      heroLine: ticketHeroLine,
+      heroOdds: payOdds,
+      mainLine: Number.isFinite(inst.mainLine) ? inst.mainLine : playableLine,
+      mainOdds: Number.isFinite(mainBookOdds) ? mainBookOdds : null,
+      vaultLine: sharpLine,
+      vaultOdds: Number.isFinite(sharpOdds) ? sharpOdds : polyForLabel,
+      sameLineBookOdds: Number.isFinite(tapeNow) ? tapeNow : null,
+      flaggedLine,
+      flaggedOdds: flaggedOddsStored,
+    });
+    if (paired.repaired) {
+      if (Number.isFinite(paired.heroOdds)) payOdds = paired.heroOdds;
+      if (Number.isFinite(paired.flaggedOdds)) {
+        const lbl = fmtFlaggedAtLabel(
+          paired.flaggedOdds,
+          fmtLineLabel(paired.flaggedLine) || paired.flaggedLine,
+        );
+        if (lbl) {
+          flaggedAtLabel = lbl;
+          mainNowLabel = lbl;
+        }
+      }
+    }
   }
 
   // Beating Close = ticket vs same-line NOW. Never MAIN closingOdds vs an alt.
