@@ -386,6 +386,13 @@ import {
   PRESS_DOG_IMPLIED_MAX,
   PRESS_DOG_UNITS,
   R6_UNITS,
+  isTrustLive,
+  TRUST_FROM,
+  TRUST_G_STAKE_TIER,
+  TRUST_G_UNITS,
+  TRUST_TIER_MIN,
+  ML_FLOOR_UNITS,
+  ST_CAP_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -4032,6 +4039,13 @@ async function createMissingLockedPicks({
             nowMs: now,
           });
         }
+        // TRUST-G yields the market to PRESS-M (see reconcile): a sibling with
+        // the mirror shape and no V12 score keeps this side at 0u.
+        const trustMirrorYieldCreate = isTrustLive(TARGET_DATE) && marketType === 'ML' && peakUnitsApplied > 0
+          && isPressMirrorLive(TARGET_DATE) && Number.isFinite(scoreV12) && scoreV12 > 0
+          && pressMirrorSiblings({
+            wd: walletDetails, side, sport, mkt: marketType, walletProfiles, walletPriorStatsFn, sideDocs: null,
+          }).some((s) => s.shape && !(Number.isFinite(s.scoreV12) && s.scoreV12 > 0));
         pressEvalCreate = evaluatePressLadder({
           walletDetails,
           side,
@@ -4041,6 +4055,8 @@ async function createMissingLockedPicks({
           sideOdds: odds ?? null,
           steamOn: isSteamOn(steamInputsForOverlay(liveTapeCreate, null)),
           pickDate: TARGET_DATE,
+          // Legacy chain's stake before the ladder overrides — TRUST-G input.
+          legacyUnits: trustMirrorYieldCreate ? 0 : peakUnitsApplied,
         });
       }
       if (isPressLadderLive(TARGET_DATE)) {
@@ -6136,6 +6152,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       });
     }
     const steamPress = steamInputsForOverlay(liveTapeSnap, sd);
+    // TRUST-G yields the market to PRESS-M: when a sibling carries the mirror
+    // shape with no V12 score of its own, the legacy stake goes in as 0 so
+    // this side stays at 0u and the mirror builds exactly as it does today
+    // (one side per market, no same-cycle overlap through the T-15 freeze).
+    const trustMirrorYield = isTrustLive(pickDate) && mkt === 'ML' && finalUnitsApplied > 0
+      && isPressMirrorLive(pickDate) && Number.isFinite(scoreV12Live) && scoreV12Live > 0
+      && pressMirrorSiblings({
+        wd, side, sport: pick.sport, mkt, walletProfiles, walletPriorStatsFn, sideDocs: pick.sides || null,
+      }).some((s) => s.shape && !(Number.isFinite(s.scoreV12) && s.scoreV12 > 0));
     pressEval = evaluatePressLadder({
       walletDetails: wd,
       side,
@@ -6145,6 +6170,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       sideOdds,
       steamOn: isSteamOn(steamPress),
       pickDate,
+      // Legacy chain's stake before the ladder overrides — TRUST-G input.
+      legacyUnits: trustMirrorYield ? 0 : finalUnitsApplied,
     });
   }
   const pressLive = isPressLadderLive(pickDate);
@@ -8226,6 +8253,16 @@ async function main() {
       console.log(
         `FADE-F LIVE: exactly one floor wallet (n≥15, WR≤45) in the market + career losing streak ≥3 + under 1.5× usual + floor side implied <65% → against us at 0u = ${FADE_F_UNITS}u (${FADE_F_STAKE_TIER}); for us = 0u whatever rung (${FADE_F_VETO_MUTED_BY}); staked sides keep their stake · from ${FADE_F_FROM}`,
       );
+    }
+    if (isTrustLive(TARGET_DATE)) {
+      console.log(
+        `TRUST LIVE: wallet trust status (tier ≥${TRUST_TIER_MIN} on running edge vs own prices + last-10 form ON, per wallet × sport) stamped FOR/AG on every side (v8_trust*)`
+        + ` · TRUST-G: moneyline at gate_fail + legacy V12 stake > 0 + trusted wallet for → ${TRUST_G_UNITS}u (${TRUST_G_STAKE_TIER})`
+        + ` · ML floor: staked moneyline rung (TRUST-G exempt) at implied ≥${Math.round(PRESS_DOG_IMPLIED_MAX * 100)}% → ≥${ML_FLOOR_UNITS}u (oddsCap still rules)`
+        + ` · spreads / totals cap ${ST_CAP_UNITS}u · gated moneyline rungs flagged v8_trustLift (shadow) · from ${TRUST_FROM}`,
+      );
+    } else {
+      console.log(`TRUST: not live before ${TRUST_FROM} (TARGET_DATE=${TARGET_DATE})`);
     }
     if (isPressMirrorLive(TARGET_DATE)) {
       console.log(

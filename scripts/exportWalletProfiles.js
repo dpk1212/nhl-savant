@@ -82,6 +82,7 @@ import {
   WALLET_PROFILES_META_DOC_ID,
 } from './lib/loadWalletProfiles.js';
 import { buildSizeRatioBands, meanDecidedStake } from '../src/lib/sizeRatioBands.js';
+import { buildTrustState, trustSummary } from '../src/lib/walletTrustStatus.js';
 import { buildCalendarWindow, L90_DAYS } from '../src/lib/calendarWindow.js';
 import { isPreLockExit, mergeFeaturedIntoAction, minutesBeforeLock } from '../src/lib/actionLockPin.js';
 import {
@@ -807,6 +808,30 @@ function loadAvgSportBetByShort() {
   return out;
 }
 
+// Trust status (src/lib/walletTrustStatus.js) — Source B decided positions at
+// their own entry price. Same row filter as the research set (priced
+// 0.02–0.98, money down, ~0 settledPnl = push and skipped). Walked forward to
+// the day after the last graded bet, so the stamp holds everything settled
+// and nothing from today.
+function trustRows(posBets) {
+  return posBets
+    .filter((b) => b.date && b.invested > 0
+      && Number.isFinite(Number(b.avgPrice)) && Number(b.avgPrice) > 0.02 && Number(b.avgPrice) < 0.98)
+    .map((b) => ({
+      date: b.date,
+      price: Number(b.avgPrice),
+      won: Number(b.settledPnl) > 0,
+      push: Math.abs(Number(b.settledPnl) || 0) <= 1e-9,
+      key: `${b.gameKey || ''}|${b.market || ''}|${b.side || ''}`,
+    }));
+}
+
+function trustFor(posBets) {
+  const rows = trustRows(posBets);
+  if (!rows.length) return null;
+  return trustSummary(buildTrustState(rows));
+}
+
 function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = null, exitBets = []) {
   // Display-only. Not a whitelist input. Last-90 has to be the full
   // position window — the ticket list is capped and cannot carry it.
@@ -937,12 +962,16 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
         positions: positionsAgg(mPos),
         recentActionWindow: recentActionDollarWindow(mPos, { minN: 1 }),
         l90Window: buildCalendarWindow(mPos, { days: L90_DAYS, today: todayET }),
+        // Market-level trust — shadow stamp for spreads / totals.
+        trust: trustFor(mPos),
       };
     }
     bySport[sport] = {
       picks: picksInSport,
       positions: positionsInSport,
       byMarket: byMarketInSport,
+      // Sport-level trust status — the live moneyline gate input (TRUST-G).
+      trust: trustFor(ps),
       isFlatProfitable:   picksInSport.n >= WHITELIST_MIN_BETS && picksInSport.flatRoi > 0,
       isDollarProfitable: positionsInSport.n >= WHITELIST_MIN_BETS
                           && positionsInSport.dollarRoi != null
