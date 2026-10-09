@@ -395,6 +395,12 @@ import {
   ML_FLOOR_IMPLIED_MIN,
   ML_FLOOR_IMPLIED_MAX,
   ST_CAP_UNITS,
+  SPREAD_CAP_UNITS,
+  TRUST_S_STAKE_TIER,
+  TRUST_S_UNITS,
+  TRUST_S_PRESS_UNITS,
+  TRUST_S_IMPLIED_MIN,
+  TRUST_S_IMPLIED_MAX,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -8261,7 +8267,8 @@ async function main() {
         `TRUST LIVE: wallet trust status (tier ≥${TRUST_TIER_MIN} on running edge vs own prices + last-10 form ON, per wallet × sport) stamped FOR/AG on every side (v8_trust*)`
         + ` · TRUST-G: moneyline at gate_fail + legacy V12 stake > 0 + trusted wallet for → ${TRUST_G_UNITS}u (${TRUST_G_STAKE_TIER})`
         + ` · gated ML floor: staked moneyline rung (TRUST-G included) + trusted wallet for + implied ${Math.round(ML_FLOOR_IMPLIED_MIN * 100)}–${Math.round(ML_FLOOR_IMPLIED_MAX * 100)}% → ≥${ML_FLOOR_UNITS}u (oddsCap still rules)`
-        + ` · spreads / totals cap ${ST_CAP_UNITS}u · gated moneyline rungs flagged v8_trustLift (shadow) · from ${TRUST_FROM}`,
+        + ` · TRUST-S: spread with a wallet trusted in this sport's spread market for + none against + implied ${Math.round(TRUST_S_IMPLIED_MIN * 100)}–${Math.round(TRUST_S_IMPLIED_MAX * 100)}% → ${TRUST_S_UNITS}u, ${TRUST_S_PRESS_UNITS}u with conviction or two trusted for (${TRUST_S_STAKE_TIER}); a trusted wallet against vetoes the spread`
+        + ` · spreads cap ${SPREAD_CAP_UNITS}u, totals cap ${ST_CAP_UNITS}u · gated moneyline rungs flagged v8_trustLift (shadow) · from ${TRUST_FROM}`,
       );
     } else {
       console.log(`TRUST: not live before ${TRUST_FROM} (TARGET_DATE=${TARGET_DATE})`);
