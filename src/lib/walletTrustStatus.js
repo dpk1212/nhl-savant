@@ -1,6 +1,6 @@
 /**
  * Wallet trust status — tier floors on a wallet's running edge vs its own
- * prices, plus last-10 form, walked forward day by day (2026-10-10).
+ * prices, plus last-10 form, walked forward day by day (2026-10-09).
  *
  * Research (Source B, 39k graded positions Apr 17 → Oct 4, walk-forward):
  * tier-4+ form-ON wallets beat their prices by +2.8pp on V12 sides,

@@ -133,7 +133,7 @@
  * 1u. Never while any sibling side carries units; the V12 side is
  * superseded while the mirror is live. See evaluatePressMirror().
  *
- * TRUST layer (from TRUST_FROM, 2026-10-10) — wallet trust status
+ * TRUST layer (from TRUST_FROM, 2026-10-09) — wallet trust status
  * (src/lib/walletTrustStatus.js: tier floors on the wallet's running edge
  * vs its own prices + last-10 form, walked forward per wallet × sport, read
  * from profile.bySport[sport].trust). Live book Jun 1 → Oct 9, moneylines:
@@ -298,7 +298,7 @@ export const PRESS_GATE_MUTED_BY = 'press-gate';
 
 // TRUST layer — see header. Sport-level status feeds the moneyline gate;
 // market-level status is a shadow stamp for spreads / totals.
-export const TRUST_FROM = '2026-10-10';
+export const TRUST_FROM = '2026-10-09';
 export const TRUST_G_STAKE_TIER = 'TRUST-G';
 export const TRUST_G_UNITS = 1;
 /** Staked moneyline rungs floor here when the side is not a dog (TRUST-G exempt). */
