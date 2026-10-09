@@ -8,29 +8,35 @@ Date: Oct 8 2026Oct 8
 
 [Oct 8, 8:00 PM ET\\
 \\
+R\\
+\\
+H\\
+\\
+E\\
+\\
 ![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
 \\
-Guardians  P. Messick \\
+Guardians \\
 \\
-50.3% \\
+9 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+10 \\
 \\
-52¢\\
+0 \\
 \\
 ![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
 \\
-White Sox  H. Smith \\
+White Sox \\
 \\
-49.7% \\
+5 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+8 \\
 \\
-49¢\\
+0 \\
 \\
-MLB\\
+FINAL\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_198_cws_cle)
+See Game Recap](https://www.dimers.com/mlb/predictions/2026_198_cws_cle)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -262,7 +268,7 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Thursday, the Guardians have a 50.3% chance of beating the White Sox at Rate Field.
+On Thursday, the Guardians have a 50.9% chance of beating the White Sox at Rate Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
