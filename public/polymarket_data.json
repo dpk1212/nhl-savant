@@ -3,7 +3,7 @@
   "NHL": {
     "pit_cbj": {
       "volume24h": 37883.926408,
-      "liveVolume": 37883.926407,
+      "liveVolume": 37883.926408,
       "awayMoneyPct": 4.8,
       "homeMoneyPct": 95.2,
       "awayTicketPct": 51.5,
@@ -24,6 +24,7 @@
           47.5,
           47.5,
           47.5,
+          46.5,
           46.5
         ],
         "open": 49.5,
@@ -182,8 +183,163 @@
       "polyGameDate": "2026-10-09",
       "enrichmentFailed": false
     },
+    "nyr_wsh": {
+      "volume24h": 12532.249656999998,
+      "liveVolume": 12560.249656000002,
+      "awayMoneyPct": 25.7,
+      "homeMoneyPct": 74.3,
+      "awayTicketPct": 58.7,
+      "homeTicketPct": 41.3,
+      "tradeCount": 63,
+      "sampleCash": 6269,
+      "priceMove1h": -2.2,
+      "priceHistory": {
+        "points": [
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          43.5
+        ],
+        "open": 44.5,
+        "current": 43.5,
+        "high": 44.5,
+        "low": 43.5,
+        "change": -1
+      },
+      "whales": {
+        "count": 2,
+        "totalCash": 3804,
+        "largest": 2715,
+        "buyCount": 2,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 2715,
+            "side": "BUY",
+            "outcome": "Capitals",
+            "price": 56,
+            "ts": 1791550501000,
+            "wallet": "0x3e04fbc51adb75418129f6ce2091ae633070564d",
+            "traderName": "roldy"
+          },
+          {
+            "amount": 1089,
+            "side": "BUY",
+            "outcome": "Capitals",
+            "price": 56,
+            "ts": 1791550137000,
+            "wallet": "0x43ab003afaf0fcc815934078e701b4e494b8b6ff",
+            "traderName": "jeffbyrne11"
+          }
+        ]
+      },
+      "awayProb": 43.5,
+      "homeProb": 56.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polyMl": {
+        "slug": "nhl-nyr-wsh-2026-10-09",
+        "conditionId": "0x481eee0eeca12f3c6bb7169bfb9f63bdd056162766546bffc5818a88f0787761",
+        "title": "Rangers vs. Capitals",
+        "tokenIds": [
+          "16137705858163686921872724294674650707922059481921279764419113742470452680935",
+          "48813482488855768389775117408275711296098218555462123230735856482469261168040"
+        ],
+        "token0IsAway": true
+      },
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Capitals",
+          "Rangers"
+        ],
+        "probs": [
+          33.5,
+          66.5
+        ],
+        "tokenIds": [
+          "49835944159901559549596138581874743484974921975677502780431289365003551839480",
+          "67515736329421116733537732249165743133826201438236234562440920645047387076558"
+        ],
+        "priceHistory": {
+          "points": [
+            33,
+            33,
+            33,
+            33,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            33.5,
+            33.5,
+            33.5
+          ],
+          "open": 33,
+          "current": 33.5,
+          "change": 0.5
+        }
+      },
+      "polyTotal": {
+        "line": 5.5,
+        "title": "Rangers vs. Capitals: O/U 5.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          51.5,
+          48.5
+        ],
+        "tokenIds": [
+          "42535074955724684815356364166767481187353181688192494648794068105300446948421",
+          "34603368350786283482861270446268125624097602080674003561008369068759566146751"
+        ],
+        "priceHistory": {
+          "points": [
+            52.5,
+            52.5,
+            53.5,
+            53.5,
+            53.5,
+            53.5,
+            53.5,
+            52.5,
+            52.5,
+            52.5,
+            53.5,
+            51.5,
+            51.5
+          ],
+          "open": 52.5,
+          "current": 51.5,
+          "change": -1
+        }
+      },
+      "awayTeam": "Rangers",
+      "homeTeam": "Capitals",
+      "eventId": "1011242",
+      "title": "Rangers vs. Capitals",
+      "commence": "2026-10-09T23:10:00Z",
+      "polyGameTime": "2026-10-09T23:00:00Z",
+      "polyGameDate": "2026-10-09",
+      "enrichmentFailed": false
+    },
     "sea_det": {
-      "volume24h": 11177.265506000002,
+      "volume24h": 11177.265506,
       "liveVolume": 11177.265506,
       "awayMoneyPct": 78.2,
       "homeMoneyPct": 21.8,
@@ -318,7 +474,7 @@
         ],
         "priceHistory": {
           "points": [
-            44.5,
+            45,
             44.5,
             45.5,
             45.5,
@@ -332,9 +488,9 @@
             44.5,
             44.5
           ],
-          "open": 44.5,
+          "open": 45,
           "current": 44.5,
-          "change": 0
+          "change": -0.5
         }
       },
       "awayTeam": "Kraken",
@@ -346,172 +502,16 @@
       "polyGameDate": "2026-10-09",
       "enrichmentFailed": false
     },
-    "nyr_wsh": {
-      "volume24h": 7584.112637000001,
-      "liveVolume": 12532.249656000002,
-      "awayMoneyPct": 25.5,
-      "homeMoneyPct": 74.5,
-      "awayTicketPct": 57.4,
-      "homeTicketPct": 42.6,
-      "tradeCount": 61,
-      "sampleCash": 6249,
-      "priceMove1h": -2.2,
-      "priceHistory": {
-        "points": [
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          43.5
-        ],
-        "open": 44.5,
-        "current": 43.5,
-        "high": 44.5,
-        "low": 43.5,
-        "change": -1
-      },
-      "whales": {
-        "count": 2,
-        "totalCash": 3804,
-        "largest": 2715,
-        "buyCount": 2,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 2715,
-            "side": "BUY",
-            "outcome": "Capitals",
-            "price": 56,
-            "ts": 1791550501000,
-            "wallet": "0x3e04fbc51adb75418129f6ce2091ae633070564d",
-            "traderName": "roldy"
-          },
-          {
-            "amount": 1089,
-            "side": "BUY",
-            "outcome": "Capitals",
-            "price": 56,
-            "ts": 1791550137000,
-            "wallet": "0x43ab003afaf0fcc815934078e701b4e494b8b6ff",
-            "traderName": "jeffbyrne11"
-          }
-        ]
-      },
-      "awayProb": 43.5,
-      "homeProb": 56.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polyMl": {
-        "slug": "nhl-nyr-wsh-2026-10-09",
-        "conditionId": "0x481eee0eeca12f3c6bb7169bfb9f63bdd056162766546bffc5818a88f0787761",
-        "title": "Rangers vs. Capitals",
-        "tokenIds": [
-          "16137705858163686921872724294674650707922059481921279764419113742470452680935",
-          "48813482488855768389775117408275711296098218555462123230735856482469261168040"
-        ],
-        "token0IsAway": true
-      },
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Capitals",
-          "Rangers"
-        ],
-        "probs": [
-          33.5,
-          66.5
-        ],
-        "tokenIds": [
-          "49835944159901559549596138581874743484974921975677502780431289365003551839480",
-          "67515736329421116733537732249165743133826201438236234562440920645047387076558"
-        ],
-        "priceHistory": {
-          "points": [
-            33,
-            33,
-            33,
-            33,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            33.5,
-            33.5,
-            33.5
-          ],
-          "open": 33,
-          "current": 33.5,
-          "change": 0.5
-        }
-      },
-      "polyTotal": {
-        "line": 5.5,
-        "title": "Rangers vs. Capitals: O/U 5.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          51.5,
-          48.5
-        ],
-        "tokenIds": [
-          "42535074955724684815356364166767481187353181688192494648794068105300446948421",
-          "34603368350786283482861270446268125624097602080674003561008369068759566146751"
-        ],
-        "priceHistory": {
-          "points": [
-            53,
-            52.5,
-            53,
-            53.5,
-            53.5,
-            53.5,
-            53.5,
-            52.5,
-            52.5,
-            52.5,
-            53.5,
-            51.5,
-            51.5
-          ],
-          "open": 53,
-          "current": 51.5,
-          "change": -1.5
-        }
-      },
-      "awayTeam": "Rangers",
-      "homeTeam": "Capitals",
-      "eventId": "1011242",
-      "title": "Rangers vs. Capitals",
-      "commence": "2026-10-09T23:10:00Z",
-      "polyGameTime": "2026-10-09T23:00:00Z",
-      "polyGameDate": "2026-10-09",
-      "enrichmentFailed": false
-    },
     "ana_wpg": {
-      "volume24h": 4789.66016,
-      "liveVolume": 4789.66016,
-      "awayMoneyPct": 61.4,
-      "homeMoneyPct": 38.6,
-      "awayTicketPct": 60,
-      "homeTicketPct": 40,
-      "tradeCount": 40,
-      "sampleCash": 2226,
-      "priceMove1h": 0,
+      "volume24h": 5550.43016,
+      "liveVolume": 5550.430159999999,
+      "awayMoneyPct": 52,
+      "homeMoneyPct": 48,
+      "awayTicketPct": 58.5,
+      "homeTicketPct": 41.5,
+      "tradeCount": 41,
+      "sampleCash": 2629,
+      "priceMove1h": -2.1,
       "priceHistory": {
         "points": [
           46.5,
@@ -526,13 +526,13 @@
           47.5,
           47.5,
           47.5,
-          47.5
+          46.5
         ],
         "open": 46.5,
-        "current": 47.5,
+        "current": 46.5,
         "high": 47.5,
         "low": 46.5,
-        "change": 1
+        "change": 0
       },
       "whales": {
         "count": 1,
@@ -552,8 +552,8 @@
           }
         ]
       },
-      "awayProb": 47.5,
-      "homeProb": 52.5,
+      "awayProb": 46.5,
+      "homeProb": 53.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -588,7 +588,7 @@
             31,
             30.5,
             30.5,
-            30,
+            30.5,
             30.5,
             30.5,
             30.5,
@@ -650,13 +650,13 @@
     },
     "min_fla": {
       "volume24h": 1640.595531,
-      "liveVolume": 1640.595531,
-      "awayMoneyPct": 62.8,
-      "homeMoneyPct": 37.2,
-      "awayTicketPct": 38.2,
-      "homeTicketPct": 61.8,
-      "tradeCount": 34,
-      "sampleCash": 813,
+      "liveVolume": 1659.595531,
+      "awayMoneyPct": 62,
+      "homeMoneyPct": 38,
+      "awayTicketPct": 37.1,
+      "homeTicketPct": 62.9,
+      "tradeCount": 35,
+      "sampleCash": 823,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -733,40 +733,39 @@
         }
       },
       "polyTotal": {
-        "line": 6.5,
-        "title": "Wild vs. Panthers: O/U 6.5",
+        "line": 7.5,
+        "title": "Wild vs. Panthers: O/U 7.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          44,
-          56
+          24,
+          76
         ],
         "tokenIds": [
-          "45430789640818463910636673590547189603974011192800636641004340296581780263366",
-          "65805183966955504428776587470541556784619359653323743841329382045772205264837"
+          "28515521745523786942112476666175596873637785389149442714469464169600721202148",
+          "51590559926153667068859331618247296456191836406963980564829958321373300043903"
         ],
         "priceHistory": {
           "points": [
-            43,
-            43,
-            43,
-            43,
-            43,
-            43,
-            43,
-            43,
-            43,
-            43,
-            43.5,
-            43.5,
-            44.5,
-            44
+            23.5,
+            23.5,
+            23.5,
+            23.5,
+            23.5,
+            23.5,
+            25.5,
+            23,
+            23.5,
+            23.5,
+            24,
+            26.5,
+            26
           ],
-          "open": 43,
-          "current": 44,
-          "change": 1
+          "open": 23.5,
+          "current": 26,
+          "change": 2.5
         }
       },
       "awayTeam": "Wild",
@@ -782,13 +781,13 @@
   "MLB": {
     "cws_cle": {
       "volume24h": 4830.09002,
-      "liveVolume": 4830.090020000001,
-      "awayMoneyPct": 67.2,
-      "homeMoneyPct": 32.8,
-      "awayTicketPct": 59.6,
-      "homeTicketPct": 40.4,
-      "tradeCount": 57,
-      "sampleCash": 2587,
+      "liveVolume": 4991.22002,
+      "awayMoneyPct": 68.1,
+      "homeMoneyPct": 31.9,
+      "awayTicketPct": 59.3,
+      "homeTicketPct": 40.7,
+      "tradeCount": 59,
+      "sampleCash": 2662,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -796,11 +795,10 @@
           45.5,
           45.5,
           45.5,
-          45.5,
+          47.5,
+          48,
           48.5,
-          46,
-          49,
-          44.5,
+          48,
           44.5,
           44.5,
           44.5,
@@ -871,7 +869,7 @@
             37,
             37,
             37,
-            37,
+            36.5,
             37,
             37.5,
             37
@@ -882,39 +880,40 @@
         }
       },
       "polyTotal": {
-        "line": 6.5,
-        "title": "O/U 6.5",
+        "line": 8.5,
+        "title": "O/U 8.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          57.5,
-          42.5
+          37.5,
+          62.5
         ],
         "tokenIds": [
-          "17948093553816948683591038684185747606253044274628170348832920289422684447798",
-          "85888382006159480191831604372322798913371117655563494107294068331513209853683"
+          "9179335011012333944133963761878937764451355341515760372507621688584908969375",
+          "104459972006133069532484144141771221083304376203795236746426760656259607581775"
         ],
         "priceHistory": {
           "points": [
-            57,
-            57.5,
-            58,
-            58.5,
-            57.5,
-            57.5,
-            58,
-            57.5,
-            57.5,
-            57.5,
-            57.5,
-            57.5,
-            57.5
+            37,
+            38,
+            36.5,
+            37.5,
+            37.5,
+            38,
+            37.5,
+            37.5,
+            37.5,
+            37.5,
+            37.5,
+            37.5,
+            37.5,
+            37
           ],
-          "open": 57,
-          "current": 57.5,
-          "change": 0.5
+          "open": 37,
+          "current": 37,
+          "change": 0
         }
       },
       "awayTeam": "Chicago White Sox",
@@ -927,8 +926,8 @@
       "enrichmentFailed": false
     },
     "lad_mil": {
-      "volume24h": 2648.792878,
-      "liveVolume": 2648.792877,
+      "volume24h": 2648.7928779999997,
+      "liveVolume": 2648.792878,
       "awayMoneyPct": 86.9,
       "homeMoneyPct": 13.1,
       "awayTicketPct": 78.2,
@@ -1038,7 +1037,6 @@
             44.5,
             44.5,
             45.5,
-            45.5,
             45.5
           ],
           "open": 49.5,
@@ -1058,15 +1056,15 @@
   },
   "NBA": {
     "hou_dal": {
-      "volume24h": 154088.925678,
-      "liveVolume": 167942.53572499994,
-      "awayMoneyPct": 73.9,
-      "homeMoneyPct": 26.1,
-      "awayTicketPct": 74.2,
-      "homeTicketPct": 25.8,
-      "tradeCount": 1596,
-      "sampleCash": 87083,
-      "priceMove1h": 55.7,
+      "volume24h": 169519.82824099998,
+      "liveVolume": 173598.47641999993,
+      "awayMoneyPct": 74.7,
+      "homeMoneyPct": 25.3,
+      "awayTicketPct": 74.3,
+      "homeTicketPct": 25.7,
+      "tradeCount": 1756,
+      "sampleCash": 91561,
+      "priceMove1h": 58.3,
       "priceHistory": {
         "points": [
           49,
@@ -1077,17 +1075,17 @@
           48,
           48.5,
           55.5,
+          53.5,
           54.5,
-          54.5,
-          51.5,
           50.5,
-          89.5
+          51.5,
+          92
         ],
         "open": 49,
-        "current": 89.5,
-        "high": 89.5,
+        "current": 92,
+        "high": 93.5,
         "low": 47.5,
-        "change": 40.5
+        "change": 43
       },
       "whales": {
         "count": 38,
@@ -1323,8 +1321,8 @@
           }
         ]
       },
-      "awayProb": 90.5,
-      "homeProb": 9.5,
+      "awayProb": 88.5,
+      "homeProb": 11.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -1346,8 +1344,8 @@
           "Mavericks"
         ],
         "probs": [
-          89,
-          11
+          83,
+          17
         ],
         "tokenIds": [
           "4116187027858148765160001370315973435621796886320444769456486353424627417018",
@@ -1357,22 +1355,22 @@
           "points": [
             52,
             52,
-            52,
+            52.5,
             50.5,
             52.5,
             52.5,
             51.5,
             50.5,
-            48.5,
             47,
-            52.5,
-            54.5,
-            75,
-            90
+            46.5,
+            53.5,
+            64.5,
+            82.5,
+            83
           ],
           "open": 52,
-          "current": 90,
-          "change": 38
+          "current": 83,
+          "change": 31
         }
       },
       "polyTotal": {
@@ -1383,8 +1381,8 @@
           "Under"
         ],
         "probs": [
-          39.5,
-          60.5
+          40.5,
+          59.5
         ],
         "tokenIds": [
           "39658789354545607700352527794623783223155094648467266162804524001377473080175",
@@ -1393,22 +1391,23 @@
         "priceHistory": {
           "points": [
             51.5,
-            49.5,
+            51.5,
             51.5,
             52.5,
-            54.5,
-            54.5,
+            55,
+            56,
             59,
-            58.5,
+            58,
             58.5,
             61,
-            70,
-            73,
-            41.5
+            69.5,
+            62.5,
+            40.5,
+            48
           ],
           "open": 51.5,
-          "current": 41.5,
-          "change": -10
+          "current": 48,
+          "change": -3.5
         }
       },
       "awayTeam": "Rockets",
@@ -1429,7 +1428,7 @@
       "homeTicketPct": 21.8,
       "tradeCount": 55,
       "sampleCash": 2228,
-      "priceMove1h": 1.2,
+      "priceMove1h": -1.1,
       "priceHistory": {
         "points": [
           40.5,
@@ -1439,7 +1438,7 @@
           41.5,
           41.5,
           42.5,
-          42.5,
+          43.5,
           42.5,
           42.5,
           42.5,
@@ -1522,39 +1521,40 @@
         }
       },
       "polyTotal": {
-        "line": 239.5,
-        "title": "O/U 239.5",
+        "line": 242.5,
+        "title": "O/U 242.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          52.5,
-          47.5
+          48.5,
+          51.5
         ],
         "tokenIds": [
-          "43510406363094579724967944438765320379965537574135761120313711140998996261449",
-          "64224924025451630839820373057289924745249776114810528680038286848296157911413"
+          "19284406502705050920368860752987244319603584959446445087137408154219363105899",
+          "62329089061009522624948430894329872007921586792940936112349952852282482577146"
         ],
         "priceHistory": {
           "points": [
-            47.5,
-            47,
-            48,
-            48,
-            48,
-            48.5,
-            48.5,
             49,
+            40,
+            41,
+            40,
+            40,
+            40,
+            43.5,
+            42.5,
+            43,
+            42.5,
             49.5,
-            50,
-            52,
-            53,
-            52.5
+            48.5,
+            46.5,
+            48.5
           ],
-          "open": 47.5,
-          "current": 52.5,
-          "change": 5
+          "open": 49,
+          "current": 48.5,
+          "change": -0.5
         }
       },
       "awayTeam": "Grizzlies",
@@ -1626,7 +1626,7 @@
       "enrichmentFailed": false
     },
     "sac_gsw": {
-      "volume24h": 258.181283,
+      "volume24h": 294.763602,
       "liveVolume": 294.763602,
       "awayMoneyPct": 37.2,
       "homeMoneyPct": 62.8,
@@ -1745,7 +1745,7 @@
     },
     "lac_tor": {
       "volume24h": 199.658229,
-      "liveVolume": 199.658229,
+      "liveVolume": 199.658228,
       "awayMoneyPct": 89.4,
       "homeMoneyPct": 10.6,
       "awayTicketPct": 70,
@@ -1821,8 +1821,8 @@
           59.5,
           59.5,
           59.5,
-          59.5,
-          54,
+          54.5,
+          53.5,
           53.5,
           53.5,
           53.5,
@@ -1922,7 +1922,7 @@
     },
     "atl_ind": {
       "volume24h": 104.290928,
-      "liveVolume": 104.290928,
+      "liveVolume": 104.290927,
       "awayMoneyPct": 8.6,
       "homeMoneyPct": 91.4,
       "awayTicketPct": 60,
@@ -2100,14 +2100,14 @@
   },
   "SOC": {
     "bri_sun": {
-      "volume24h": 218695.2828330002,
-      "liveVolume": 218750.455246,
+      "volume24h": 218715.79130799996,
+      "liveVolume": 218770.963721,
       "awayMoneyPct": 7.7,
       "homeMoneyPct": 0.1,
       "awayTicketPct": 76.7,
       "homeTicketPct": 13,
-      "tradeCount": 315,
-      "sampleCash": 123263,
+      "tradeCount": 316,
+      "sampleCash": 123275,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2369,14 +2369,14 @@
       "enrichmentFailed": false
     },
     "mac_liv": {
-      "volume24h": 54109.484283,
-      "liveVolume": 55816.474283,
-      "awayMoneyPct": 37.7,
-      "homeMoneyPct": 9.6,
+      "volume24h": 55862.028128,
+      "liveVolume": 56890.439665,
+      "awayMoneyPct": 36.8,
+      "homeMoneyPct": 9.4,
       "awayTicketPct": 56.8,
       "homeTicketPct": 30,
-      "tradeCount": 446,
-      "sampleCash": 27154,
+      "tradeCount": 449,
+      "sampleCash": 27822,
       "priceMove1h": 2.5,
       "priceHistory": {
         "points": [
@@ -2401,10 +2401,10 @@
         "change": 2
       },
       "whales": {
-        "count": 8,
-        "totalCash": 9922,
+        "count": 9,
+        "totalCash": 10564,
         "largest": 5518,
-        "buyCount": 8,
+        "buyCount": 9,
         "sellCount": 0,
         "topTrades": [
           {
@@ -2433,6 +2433,15 @@
             "ts": 1790821557000,
             "wallet": "0xa7af152b6374f7f7bcab2bfabaf5f5af06beefb7",
             "traderName": "seiyah16"
+          },
+          {
+            "amount": 641,
+            "side": "BUY",
+            "outcome": null,
+            "price": 65,
+            "ts": 1791551188000,
+            "wallet": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
+            "traderName": "dv-pm"
           },
           {
             "amount": 592,
@@ -2482,9 +2491,9 @@
         ]
       },
       "awayProb": 40.5,
-      "homeProb": 35.5,
+      "homeProb": 34.5,
       "drawProb": 25.5,
-      "drawMoneyPct": 0.6,
+      "drawMoneyPct": 0.5,
       "drawTicketPct": 13.2,
       "polyMl": {
         "slug": "epl-liv-mac-2026-10-11-mac",
@@ -2508,14 +2517,14 @@
       "enrichmentFailed": false
     },
     "lee_ars": {
-      "volume24h": 47470.501060999966,
-      "liveVolume": 47506.421061,
+      "volume24h": 47470.50106099999,
+      "liveVolume": 47613.463311,
       "awayMoneyPct": 2.9,
       "homeMoneyPct": 60.7,
-      "awayTicketPct": 10.7,
-      "homeTicketPct": 83,
-      "tradeCount": 679,
-      "sampleCash": 26215,
+      "awayTicketPct": 10.8,
+      "homeTicketPct": 82.9,
+      "tradeCount": 682,
+      "sampleCash": 26232,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2651,7 +2660,7 @@
       "homeProb": 70.5,
       "drawProb": 18.5,
       "drawMoneyPct": 2,
-      "drawTicketPct": 6.4,
+      "drawTicketPct": 6.3,
       "polyMl": {
         "slug": "epl-ars-lee-2026-10-10-lee",
         "conditionId": "0xce4511220e56fb37c7e3f64f7b55c0a1e05646475f2c9bfe9f518f28acf20f30",
@@ -2777,7 +2786,7 @@
       "enrichmentFailed": false
     },
     "bou_che": {
-      "volume24h": 15591.514189999998,
+      "volume24h": 15663.20419,
       "liveVolume": 15695.204188999998,
       "awayMoneyPct": 8.2,
       "homeMoneyPct": 55.3,
@@ -2863,7 +2872,7 @@
     },
     "ful_ips": {
       "volume24h": 2863.893577,
-      "liveVolume": 2992.675089,
+      "liveVolume": 2992.67509,
       "awayMoneyPct": 17.2,
       "homeMoneyPct": 21.4,
       "awayTicketPct": 36.1,
@@ -3098,14 +3107,14 @@
       "enrichmentFailed": false
     },
     "get_bar": {
-      "volume24h": 163725.20972299995,
-      "liveVolume": 164091.655557,
+      "volume24h": 164208.322223,
+      "liveVolume": 164406.490711,
       "awayMoneyPct": 0.6,
-      "homeMoneyPct": 84.3,
-      "awayTicketPct": 17.8,
-      "homeTicketPct": 62.5,
-      "tradeCount": 828,
-      "sampleCash": 103861,
+      "homeMoneyPct": 84.4,
+      "awayTicketPct": 17.7,
+      "homeTicketPct": 62.7,
+      "tradeCount": 832,
+      "sampleCash": 104152,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3367,7 +3376,7 @@
       "homeProb": 90.5,
       "drawProb": 6.5,
       "drawMoneyPct": 0.8,
-      "drawTicketPct": 19.8,
+      "drawTicketPct": 19.6,
       "polyMl": {
         "slug": "lal-bar-get-2026-10-10-get",
         "conditionId": "0x8827b430872d9577cd6304dea40b668ab1aa9eb839c69576fb085d7bf1ba4844",
@@ -3547,14 +3556,14 @@
       "enrichmentFailed": false
     },
     "vil_rea": {
-      "volume24h": 54808.811364000016,
-      "liveVolume": 55208.811362,
+      "volume24h": 55695.761364,
+      "liveVolume": 56095.761363,
       "awayMoneyPct": 1.7,
-      "homeMoneyPct": 57.3,
+      "homeMoneyPct": 56.8,
       "awayTicketPct": 18.1,
-      "homeTicketPct": 79.7,
-      "tradeCount": 388,
-      "sampleCash": 27663,
+      "homeTicketPct": 79.4,
+      "tradeCount": 390,
+      "sampleCash": 27887,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3725,8 +3734,8 @@
       "awayProb": 12.5,
       "homeProb": 71.5,
       "drawProb": 15.5,
-      "drawMoneyPct": 0.3,
-      "drawTicketPct": 2.1,
+      "drawMoneyPct": 0.4,
+      "drawTicketPct": 2.5,
       "polyMl": {
         "slug": "lal-rea-vil-2026-10-10-vil",
         "conditionId": "0xcb67a68477347a9e086e441c0d19280b7429c01e7c737caefa733352803f96e5",
@@ -3749,14 +3758,14 @@
       "enrichmentFailed": false
     },
     "epy_mlg": {
-      "volume24h": 25195.588801000005,
-      "liveVolume": 25626.318156,
-      "awayMoneyPct": 36.4,
-      "homeMoneyPct": 20,
-      "awayTicketPct": 64.7,
-      "homeTicketPct": 17,
-      "tradeCount": 231,
-      "sampleCash": 11217,
+      "volume24h": 26151.152531,
+      "liveVolume": 26431.274589,
+      "awayMoneyPct": 37.3,
+      "homeMoneyPct": 19.3,
+      "awayTicketPct": 66.3,
+      "homeTicketPct": 16,
+      "tradeCount": 243,
+      "sampleCash": 11625,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3837,8 +3846,8 @@
       "awayProb": 36.5,
       "homeProb": 33.5,
       "drawProb": 29.5,
-      "drawMoneyPct": 2.7,
-      "drawTicketPct": 18.3,
+      "drawMoneyPct": 2.6,
+      "drawTicketPct": 17.8,
       "polyMl": {
         "slug": "lal-mala-esp-2026-10-09-esp",
         "conditionId": "0x821a3b7e9a61f01455fafcc5c6248ed20a7b356c312db87bd47fd0ca51268515",
@@ -3861,8 +3870,8 @@
       "enrichmentFailed": false
     },
     "mad_ala": {
-      "volume24h": 24047.484132999998,
-      "liveVolume": 24291.928577,
+      "volume24h": 24389.184133,
+      "liveVolume": 24633.628578,
       "awayMoneyPct": 55.8,
       "homeMoneyPct": 0.6,
       "awayTicketPct": 88.9,
@@ -3964,7 +3973,7 @@
       "enrichmentFailed": false
     },
     "bil_ray": {
-      "volume24h": 5604.684544,
+      "volume24h": 5604.684544000001,
       "liveVolume": 5611.581096,
       "awayMoneyPct": 8,
       "homeMoneyPct": 12.6,
@@ -4204,12 +4213,12 @@
     "christianleroyduncan_brendanallen": {
       "volume24h": 18888.715618,
       "liveVolume": 18888.715615999998,
-      "awayMoneyPct": 34.6,
-      "homeMoneyPct": 65.4,
-      "awayTicketPct": 40.7,
-      "homeTicketPct": 59.3,
-      "tradeCount": 140,
-      "sampleCash": 9810,
+      "awayMoneyPct": 40.4,
+      "homeMoneyPct": 59.6,
+      "awayTicketPct": 41.1,
+      "homeTicketPct": 58.9,
+      "tradeCount": 141,
+      "sampleCash": 10764,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -4234,10 +4243,10 @@
         "change": 1
       },
       "whales": {
-        "count": 5,
-        "totalCash": 3976,
+        "count": 6,
+        "totalCash": 4930,
         "largest": 1000,
-        "buyCount": 4,
+        "buyCount": 5,
         "sellCount": 1,
         "topTrades": [
           {
@@ -4257,6 +4266,15 @@
             "ts": 1791255642000,
             "wallet": "0x9e7a43eb64ada162514a38c4f35d1bedc4b51eec",
             "traderName": "enjoyablestench"
+          },
+          {
+            "amount": 954,
+            "side": "BUY",
+            "outcome": "Christian Leroy Duncan",
+            "price": 48,
+            "ts": 1791551508000,
+            "wallet": "0xfe7196ddfec2d78f51d40389c2892dc9a72f15d2",
+            "traderName": "hazedupbets"
           },
           {
             "amount": 813,
@@ -4316,13 +4334,13 @@
     "melissagatto_ernestakareckaite": {
       "volume24h": 15750.231222999999,
       "liveVolume": 15750.231222,
-      "awayMoneyPct": 0,
-      "homeMoneyPct": 0,
-      "awayTicketPct": 0,
-      "homeTicketPct": 0,
-      "tradeCount": 0,
-      "sampleCash": 0,
-      "priceMove1h": 2,
+      "awayMoneyPct": 8.1,
+      "homeMoneyPct": 91.9,
+      "awayTicketPct": 38.8,
+      "homeTicketPct": 61.2,
+      "tradeCount": 85,
+      "sampleCash": 7847,
+      "priceMove1h": 0,
       "priceHistory": {
         "points": [
           50.5,
@@ -4391,14 +4409,14 @@
     },
     "brendsonribeiro_felipefranco": {
       "volume24h": 11496.682398,
-      "liveVolume": 11496.682397999999,
+      "liveVolume": 11521.411836,
       "awayMoneyPct": 21.4,
       "homeMoneyPct": 78.6,
-      "awayTicketPct": 41.3,
-      "homeTicketPct": 58.7,
-      "tradeCount": 46,
-      "sampleCash": 7549,
-      "priceMove1h": 0,
+      "awayTicketPct": 41.7,
+      "homeTicketPct": 58.3,
+      "tradeCount": 48,
+      "sampleCash": 7557,
+      "priceMove1h": 4.3,
       "priceHistory": {
         "points": [
           24.5,
@@ -4413,13 +4431,13 @@
           24.5,
           24.5,
           24.5,
-          23.5
+          24.5
         ],
         "open": 24.5,
-        "current": 23.5,
+        "current": 24.5,
         "high": 24.5,
         "low": 23.5,
-        "change": -1
+        "change": 0
       },
       "whales": {
         "count": 2,
@@ -4448,8 +4466,8 @@
           }
         ]
       },
-      "awayProb": 23.5,
-      "homeProb": 76.5,
+      "awayProb": 24.5,
+      "homeProb": 75.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -4475,7 +4493,7 @@
       "enrichmentFailed": false
     },
     "otaritanzilovi_malcolmwellmaker": {
-      "volume24h": 10995.104340999998,
+      "volume24h": 10995.104341000002,
       "liveVolume": 10995.10434,
       "awayMoneyPct": 71.9,
       "homeMoneyPct": 28.1,
@@ -4663,7 +4681,7 @@
       "enrichmentFailed": false
     },
     "ismaelbonfim_franciscoprado": {
-      "volume24h": 7570.414546999999,
+      "volume24h": 7570.414547,
       "liveVolume": 7570.414546,
       "awayMoneyPct": 18.8,
       "homeMoneyPct": 81.2,
@@ -4842,7 +4860,7 @@
       "enrichmentFailed": false
     },
     "geraldmeerschaert_juliuswalker": {
-      "volume24h": 4803.568058999999,
+      "volume24h": 4803.568059,
       "liveVolume": 4803.568058999999,
       "awayMoneyPct": 39.7,
       "homeMoneyPct": 60.3,
@@ -4873,7 +4891,24 @@
         "low": 26.5,
         "change": -1
       },
-      "whales": null,
+      "whales": {
+        "count": 1,
+        "totalCash": 510,
+        "largest": 510,
+        "buyCount": 1,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 510,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 51,
+            "ts": 1791298056000,
+            "wallet": "0x696a0f103aab2daa93f0c7124bdfbbf19851e23a",
+            "traderName": "0x696A0F103AAb2daa93f0C7124BdFBBf19851E23A-1765573480594"
+          }
+        ]
+      },
       "awayProb": 26.5,
       "homeProb": 73.5,
       "drawProb": null,
@@ -4901,7 +4936,7 @@
       "enrichmentFailed": false
     },
     "kaikamaka_andrefili": {
-      "volume24h": 3659.113684,
+      "volume24h": 3659.113683999999,
       "liveVolume": 3659.113684,
       "awayMoneyPct": 20.8,
       "homeMoneyPct": 79.2,
@@ -5095,14 +5130,14 @@
       "enrichmentFailed": false
     },
     "allenfrye_rjharris": {
-      "volume24h": 1137.62957,
-      "liveVolume": 1137.62957,
-      "awayMoneyPct": 56.8,
-      "homeMoneyPct": 43.2,
-      "awayTicketPct": 61,
-      "homeTicketPct": 39,
-      "tradeCount": 41,
-      "sampleCash": 578,
+      "volume24h": 1140.3322730000002,
+      "liveVolume": 1140.3322730000002,
+      "awayMoneyPct": 56.6,
+      "homeMoneyPct": 43.4,
+      "awayTicketPct": 59.5,
+      "homeTicketPct": 40.5,
+      "tradeCount": 42,
+      "sampleCash": 580,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -5156,7 +5191,7 @@
   },
   "WNBA": {
     "atl_nyl": {
-      "volume24h": 17893.458033,
+      "volume24h": 20001.998537,
       "liveVolume": 20001.998536,
       "awayMoneyPct": 70,
       "homeMoneyPct": 30,
@@ -5164,7 +5199,7 @@
       "homeTicketPct": 30.4,
       "tradeCount": 181,
       "sampleCash": 9282,
-      "priceMove1h": -1.2,
+      "priceMove1h": 0,
       "priceHistory": {
         "points": [
           39.5,
@@ -5179,13 +5214,13 @@
           43.5,
           43.5,
           43.5,
-          42
+          42.5
         ],
         "open": 39.5,
-        "current": 42,
+        "current": 42.5,
         "high": 45.5,
         "low": 39.5,
-        "change": 2.5
+        "change": 3
       },
       "whales": {
         "count": 4,
@@ -5264,7 +5299,7 @@
         ],
         "priceHistory": {
           "points": [
-            49,
+            48.5,
             49,
             49,
             49,
@@ -5278,9 +5313,9 @@
             46.5,
             47
           ],
-          "open": 49,
+          "open": 48.5,
           "current": 47,
-          "change": -2
+          "change": -1.5
         }
       },
       "polyTotal": {
@@ -5311,7 +5346,7 @@
             48,
             48.5,
             46.5,
-            46,
+            41,
             45.5
           ],
           "open": 50,
@@ -5329,7 +5364,7 @@
       "enrichmentFailed": false
     },
     "gsv_lva": {
-      "volume24h": 8393.630894,
+      "volume24h": 9478.014568999999,
       "liveVolume": 9478.014569000003,
       "awayMoneyPct": 53.6,
       "homeMoneyPct": 46.4,
@@ -5480,7 +5515,7 @@
             52.5,
             52.5,
             52.5,
-            52.5,
+            50.5,
             51.5,
             51.5,
             52.5,
@@ -5504,14 +5539,14 @@
   },
   "NFL": {
     "phi_jax": {
-      "volume24h": 194718.1949449999,
-      "liveVolume": 194728.19494100002,
+      "volume24h": 194728.194945,
+      "liveVolume": 194754.86052300004,
       "awayMoneyPct": 38.2,
       "homeMoneyPct": 61.8,
       "awayTicketPct": 40.8,
       "homeTicketPct": 59.2,
-      "tradeCount": 515,
-      "sampleCash": 89739,
+      "tradeCount": 519,
+      "sampleCash": 89758,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -5809,7 +5844,7 @@
             23,
             23.5,
             23,
-            23.5,
+            23,
             23,
             23,
             23,
@@ -5982,7 +6017,7 @@
             70.5,
             70.5,
             70.5,
-            70.5,
+            70,
             70,
             70,
             70,
@@ -5994,39 +6029,39 @@
         }
       },
       "polyTotal": {
-        "line": 42.5,
-        "title": "O/U 42.5",
+        "line": 44.5,
+        "title": "O/U 44.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          51.5,
-          48.5
+          43.5,
+          56.5
         ],
         "tokenIds": [
-          "86460148031505355977205460940679260026155260810729572465297634993557997794725",
-          "109073273437595008348915584295653528079172062719853037422731300089438938471350"
+          "66062891085494712346926154433908954179806089181719044402935408315312738764190",
+          "60490270582923618511179693366933201174283445382758082804708256804894045802073"
         ],
         "priceHistory": {
           "points": [
-            51,
-            51,
-            51,
-            51,
-            51,
-            51,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5
           ],
-          "open": 51,
-          "current": 51.5,
-          "change": 0.5
+          "open": 43.5,
+          "current": 43.5,
+          "change": 0
         }
       },
       "awayTeam": "Bengals",
@@ -6040,13 +6075,13 @@
     },
     "lv_ne": {
       "volume24h": 118851.413159,
-      "liveVolume": 118851.41315800001,
+      "liveVolume": 118864.22565800001,
       "awayMoneyPct": 73,
       "homeMoneyPct": 27,
       "awayTicketPct": 50.3,
       "homeTicketPct": 49.7,
-      "tradeCount": 300,
-      "sampleCash": 61119,
+      "tradeCount": 302,
+      "sampleCash": 61126,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -6221,7 +6256,7 @@
           "points": [
             46,
             46,
-            46,
+            47.5,
             47.5,
             47.5,
             47.5,
@@ -6284,8 +6319,8 @@
       "enrichmentFailed": false
     },
     "min_no": {
-      "volume24h": 35381.3105,
-      "liveVolume": 35381.31050000001,
+      "volume24h": 35384.819272,
+      "liveVolume": 35384.81927200001,
       "awayMoneyPct": 65.7,
       "homeMoneyPct": 34.3,
       "awayTicketPct": 67.2,
@@ -6385,7 +6420,7 @@
           "points": [
             45.5,
             45.5,
-            45,
+            44.5,
             43.5,
             43.5,
             43.5,
@@ -6583,8 +6618,8 @@
           "Browns"
         ],
         "probs": [
-          54.5,
-          45.5
+          54,
+          46
         ],
         "tokenIds": [
           "24590000333545371730406328311635418938854109667585626178785358612805083068065",
@@ -6594,7 +6629,7 @@
           "points": [
             54,
             54.5,
-            54.5,
+            54,
             55.5,
             55,
             55,
@@ -6604,11 +6639,11 @@
             55.5,
             55.5,
             55.5,
-            54
+            54.5
           ],
           "open": 54,
-          "current": 54,
-          "change": 0
+          "current": 54.5,
+          "change": 0.5
         }
       },
       "polyTotal": {
@@ -6811,7 +6846,7 @@
         "priceHistory": {
           "points": [
             50.5,
-            50.5,
+            49.5,
             49.5,
             49.5,
             49.5,
@@ -6839,14 +6874,14 @@
       "enrichmentFailed": false
     },
     "hou_ten": {
-      "volume24h": 28786.317886,
+      "volume24h": 28786.317886000004,
       "liveVolume": 28786.317885,
       "awayMoneyPct": 83.5,
       "homeMoneyPct": 16.5,
-      "awayTicketPct": 71.1,
-      "homeTicketPct": 28.9,
-      "tradeCount": 225,
-      "sampleCash": 15964,
+      "awayTicketPct": 71.2,
+      "homeTicketPct": 28.8,
+      "tradeCount": 226,
+      "sampleCash": 15987,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -6991,10 +7026,10 @@
             74.5,
             74.5,
             74.5,
-            75,
             74.5,
             74.5,
-            75,
+            74.5,
+            74.5,
             74.5
           ],
           "open": 74.5,
@@ -7048,14 +7083,14 @@
       "enrichmentFailed": false
     },
     "nyg_was": {
-      "volume24h": 140444.34391000003,
-      "liveVolume": 140444.34390899996,
-      "awayMoneyPct": 56.4,
-      "homeMoneyPct": 43.6,
-      "awayTicketPct": 61.2,
-      "homeTicketPct": 38.8,
-      "tradeCount": 250,
-      "sampleCash": 71670,
+      "volume24h": 140699.34391,
+      "liveVolume": 140799.34390899996,
+      "awayMoneyPct": 56.3,
+      "homeMoneyPct": 43.7,
+      "awayTicketPct": 61,
+      "homeTicketPct": 39,
+      "tradeCount": 251,
+      "sampleCash": 71734,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -7365,39 +7400,39 @@
         }
       },
       "polyTotal": {
-        "line": 41.5,
-        "title": "O/U 41.5",
+        "line": 42.5,
+        "title": "O/U 42.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          52.5,
-          47.5
+          47.5,
+          52.5
         ],
         "tokenIds": [
-          "17567525181149790776506257609193742580181725919395008359931768263883245484152",
-          "6761947312623970584042947612667567485019169638494544081810169462207151352105"
+          "10520828637756643811621916945935802398622850392885295108877043622707975004131",
+          "29591311162689650050434352276797321685647470175217722093931211039075635374538"
         ],
         "priceHistory": {
           "points": [
-            52,
-            52,
-            52,
-            52.5,
-            52.5,
-            52.5,
-            52.5,
-            52.5,
-            52.5,
-            52.5,
-            52.5,
-            52.5,
-            52.5
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5
           ],
-          "open": 52,
-          "current": 52.5,
-          "change": 0.5
+          "open": 48.5,
+          "current": 47.5,
+          "change": -1
         }
       },
       "awayTeam": "Giants",
@@ -7554,8 +7589,8 @@
           "Under"
         ],
         "probs": [
-          47.5,
-          52.5
+          47,
+          53
         ],
         "tokenIds": [
           "67652154059036099639279966213728204539352956454727553963679324547773603933452",
@@ -7575,11 +7610,11 @@
             47.5,
             47.5,
             47.5,
-            47
+            47.5
           ],
           "open": 47.5,
-          "current": 47,
-          "change": -0.5
+          "current": 47.5,
+          "change": 0
         }
       },
       "awayTeam": "Broncos",
@@ -7909,38 +7944,38 @@
         }
       },
       "polyTotal": {
-        "line": 54.5,
-        "title": "O/U 54.5",
+        "line": 56.5,
+        "title": "O/U 56.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          49.5,
-          50.5
+          43.5,
+          56.5
         ],
         "tokenIds": [
-          "3106590765194639757891039219773767703312465519500862377310585071004264467644",
-          "41789108077394847531310642508198672359308407609730931832505419643043645606306"
+          "59843831223450227526916308603192453949263021955595520049217810092492320256026",
+          "100615237986453851388932247560277304708825468512224350361034026874108243624018"
         ],
         "priceHistory": {
           "points": [
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43,
+            43,
+            43.5,
+            43.5,
+            43.5
           ],
-          "open": 49.5,
-          "current": 49.5,
+          "open": 43.5,
+          "current": 43.5,
           "change": 0
         }
       },
@@ -7954,7 +7989,7 @@
       "enrichmentFailed": false
     },
     "chi_gb": {
-      "volume24h": 241678.87959000006,
+      "volume24h": 241680.96292400002,
       "liveVolume": 241262.51292400007,
       "awayMoneyPct": 14.6,
       "homeMoneyPct": 85.4,
@@ -8316,14 +8351,14 @@
       "enrichmentFailed": false
     },
     "sf_sea": {
-      "volume24h": 86356.589397,
-      "liveVolume": 86418.33939400001,
+      "volume24h": 86418.33939699999,
+      "liveVolume": 86423.33939400001,
       "awayMoneyPct": 42,
       "homeMoneyPct": 58,
-      "awayTicketPct": 57.4,
-      "homeTicketPct": 42.6,
-      "tradeCount": 319,
-      "sampleCash": 44871,
+      "awayTicketPct": 57.2,
+      "homeTicketPct": 42.8,
+      "tradeCount": 320,
+      "sampleCash": 44873,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -8625,11 +8660,11 @@
             59,
             59,
             59.5,
-            59.5
+            59
           ],
           "open": 58.5,
-          "current": 59.5,
-          "change": 1
+          "current": 59,
+          "change": 0.5
         }
       },
       "polyTotal": {
@@ -8977,7 +9012,7 @@
           "points": [
             36,
             36.5,
-            36.5,
+            36,
             37,
             37,
             37,
@@ -8995,38 +9030,38 @@
         }
       },
       "polyTotal": {
-        "line": 43.5,
-        "title": "O/U 43.5",
+        "line": 44.5,
+        "title": "O/U 44.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          51.5,
-          48.5
+          47,
+          53
         ],
         "tokenIds": [
-          "8062097433072775946394988532625503029870074840893381187308965469176371546022",
-          "106112157753003733273275731068777479872741285248687483298944607460802697906844"
+          "74855505162445448882085211349593507404906886396833383352228803132425164030104",
+          "13644145178214370859495120776133615898926500832040830101588742938014458047956"
         ],
         "priceHistory": {
           "points": [
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5
+            47,
+            47,
+            47,
+            47,
+            47,
+            47,
+            47,
+            47,
+            47,
+            47,
+            47,
+            47,
+            47
           ],
-          "open": 51.5,
-          "current": 51.5,
+          "open": 47,
+          "current": 47,
           "change": 0
         }
       },
@@ -9221,10 +9256,10 @@
             7.5,
             8,
             7.5,
-            7.5,
+            8,
             8.5,
             8,
-            7.5,
+            7,
             8.5
           ],
           "open": 7.5,
@@ -9277,15 +9312,170 @@
       "polyGameDate": "2026-10-10",
       "enrichmentFailed": false
     },
+    "isu_byu": {
+      "volume24h": 72523.699066,
+      "liveVolume": 72533.39906600001,
+      "awayMoneyPct": 95.1,
+      "homeMoneyPct": 4.9,
+      "awayTicketPct": 58.6,
+      "homeTicketPct": 41.4,
+      "tradeCount": 111,
+      "sampleCash": 36481,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          22,
+          22,
+          22,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5
+        ],
+        "open": 22,
+        "current": 21.5,
+        "high": 22,
+        "low": 21.5,
+        "change": -0.5
+      },
+      "whales": {
+        "count": 2,
+        "totalCash": 33000,
+        "largest": 20000,
+        "buyCount": 2,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 20000,
+            "side": "BUY",
+            "outcome": "Iowa State",
+            "price": 51,
+            "ts": 1791551034000,
+            "wallet": "0x8a8685a792c184e5c2ee8c7d4d4baba7c2c94998",
+            "traderName": "BrotherObama"
+          },
+          {
+            "amount": 13000,
+            "side": "BUY",
+            "outcome": "Iowa State",
+            "price": 51,
+            "ts": 1791539040000,
+            "wallet": "0x8a8685a792c184e5c2ee8c7d4d4baba7c2c94998",
+            "traderName": "BrotherObama"
+          }
+        ]
+      },
+      "awayProb": 21.5,
+      "homeProb": 78.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polyMl": {
+        "slug": "cfb-iowast-byu-2026-10-09",
+        "conditionId": "0xdf8eea17e96334c5f8614e463137d63467bc3b01e697663ed1577cc2a1a5ca00",
+        "title": "Iowa State vs. BYU",
+        "tokenIds": [
+          "9865141690571515900407145819787420843224413200698278007793667110277263519067",
+          "25241595804903925063662711533587534259068390232513095685236096755328085230469"
+        ],
+        "token0IsAway": true
+      },
+      "polySpread": {
+        "line": -20.5,
+        "title": "Spread -20.5",
+        "outcomes": [
+          "Iowa State",
+          "BYU"
+        ],
+        "probs": [
+          25.4,
+          74.6
+        ],
+        "tokenIds": [
+          "51706912482576492366597304036710402193348018434853792463610632047286222104637",
+          "84129925751097480018774324411804558220019369453115001798938951885712974327967"
+        ],
+        "priceHistory": {
+          "points": [
+            4.1,
+            49.5,
+            4.2,
+            4.7,
+            4.2,
+            4.4,
+            4.4,
+            4,
+            49.5,
+            49.5,
+            4.3,
+            3.3,
+            25.4
+          ],
+          "open": 4.1,
+          "current": 25.4,
+          "change": 21.3
+        }
+      },
+      "polyTotal": {
+        "line": 45.5,
+        "title": "O/U 45.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          51.5,
+          48.5
+        ],
+        "tokenIds": [
+          "6618236080136887522379222607828445130753018119889433648635601210409374500595",
+          "97421639145159980465144207222220964560872869958942212169570045761983915023260"
+        ],
+        "priceHistory": {
+          "points": [
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5
+          ],
+          "open": 51.5,
+          "current": 51.5,
+          "change": 0
+        }
+      },
+      "awayTeam": "Iowa State",
+      "homeTeam": "BYU",
+      "eventId": "1100298",
+      "title": "Iowa State vs. BYU",
+      "commence": "2026-10-10T02:15:00Z",
+      "polyGameTime": "2026-10-10T02:15:00Z",
+      "polyGameDate": "2026-10-09",
+      "enrichmentFailed": false
+    },
     "odu_app": {
-      "volume24h": 71078.02304700001,
-      "liveVolume": 71143.703047,
-      "awayMoneyPct": 9.1,
-      "homeMoneyPct": 90.9,
+      "volume24h": 71143.703047,
+      "liveVolume": 71350.19655400001,
+      "awayMoneyPct": 9.2,
+      "homeMoneyPct": 90.8,
       "awayTicketPct": 51.4,
       "homeTicketPct": 48.6,
-      "tradeCount": 70,
-      "sampleCash": 36209,
+      "tradeCount": 72,
+      "sampleCash": 36262,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -9395,8 +9585,8 @@
           "Appalachian State"
         ],
         "probs": [
-          49.5,
-          50.5
+          50,
+          50
         ],
         "tokenIds": [
           "50464111842101092627603942491925365698592373771423815405913505211289774780196",
@@ -9405,17 +9595,17 @@
         "priceHistory": {
           "points": [
             3.1,
-            3.1,
             27,
-            7.2,
-            4.4,
-            31.4,
+            3.1,
+            4,
+            3.8,
+            3.2,
             2.9,
             2.7,
-            2.7,
             49.5,
+            2.9,
             49.5,
-            3.8,
+            3.3,
             49.5
           ],
           "open": 3.1,
@@ -9424,38 +9614,38 @@
         }
       },
       "polyTotal": {
-        "line": 49.5,
-        "title": "O/U 49.5",
+        "line": 47.5,
+        "title": "O/U 47.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          44,
-          56
+          51.5,
+          48.5
         ],
         "tokenIds": [
-          "79662487276922399074251178328937156522638953894199713057862966932722028126646",
-          "12045925622910287119039761924103599147764021754012342045967146134350717988293"
+          "74299630472055566130433674020452151506120998931331978758157032406121516880911",
+          "58752076697872119725210491621971898929544620483896687839819243967822325015296"
         ],
         "priceHistory": {
           "points": [
-            45.5,
-            45.5,
-            45,
-            45,
-            45.5,
-            44.5,
-            44.5,
-            44.5,
-            44.5,
-            44.5,
-            44.5,
-            44.5,
-            44
+            53,
+            53,
+            51.5,
+            52.5,
+            52.5,
+            52.5,
+            52.5,
+            52.5,
+            52.5,
+            52.5,
+            52.5,
+            52.5,
+            51.5
           ],
-          "open": 45.5,
-          "current": 44,
+          "open": 53,
+          "current": 51.5,
           "change": -1.5
         }
       },
@@ -9469,7 +9659,7 @@
       "enrichmentFailed": false
     },
     "scar_fla": {
-      "volume24h": 61773.09634900001,
+      "volume24h": 61773.096349,
       "liveVolume": 61773.096349,
       "awayMoneyPct": 95.4,
       "homeMoneyPct": 4.6,
@@ -9604,23 +9794,23 @@
         ],
         "priceHistory": {
           "points": [
-            49.5,
-            49.5,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
             50,
             49.5,
             49.5,
+            49.5,
             50,
+            49.5,
+            49.5,
+            49.5,
+            50,
+            50,
+            50,
+            49.5,
             50
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 50,
-          "change": 0.5
+          "change": 0
         }
       },
       "polyTotal": {
@@ -9670,7 +9860,7 @@
     },
     "fsu_lou": {
       "volume24h": 61289.26928,
-      "liveVolume": 61289.269278,
+      "liveVolume": 61289.269279,
       "awayMoneyPct": 91,
       "homeMoneyPct": 9,
       "awayTicketPct": 65.4,
@@ -9700,51 +9890,7 @@
         "low": 38.5,
         "change": 0
       },
-      "whales": {
-        "count": 4,
-        "totalCash": 27315,
-        "largest": 24739,
-        "buyCount": 4,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 24739,
-            "side": "BUY",
-            "outcome": "Florida State",
-            "price": 51,
-            "ts": 1791513471000,
-            "wallet": "0x492442eab586f242b53bda933fd5de859c8a3782",
-            "traderName": "0x492442EaB586F242B53bDa933fD5dE859c8A3782-1766317541188"
-          },
-          {
-            "amount": 1577,
-            "side": "BUY",
-            "outcome": "Louisville",
-            "price": 46,
-            "ts": 1791537999000,
-            "wallet": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563",
-            "traderName": "0x2c335066FE58fe9237c3d3Dc7b275C2a034a0563-1759935795465"
-          },
-          {
-            "amount": 500,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 51,
-            "ts": 1791545140000,
-            "wallet": "0x5d646895df38abf061078117a21b29f3b71b26ce",
-            "traderName": "yeti2100"
-          },
-          {
-            "amount": 500,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 50,
-            "ts": 1791521577000,
-            "wallet": "0xd4cfe5fe9def193dbfb19fe5b755800bb42e0e95",
-            "traderName": "Jumperhq"
-          }
-        ]
-      },
+      "whales": null,
       "awayProb": 38.5,
       "homeProb": 61.5,
       "drawProb": null,
@@ -9768,8 +9914,8 @@
           "Louisville"
         ],
         "probs": [
-          26,
-          74
+          24,
+          76
         ],
         "tokenIds": [
           "109751452409550397484374555355951882007363321749929999653811574079208156670211",
@@ -9778,22 +9924,22 @@
         "priceHistory": {
           "points": [
             6,
-            6,
+            39.5,
             6.5,
-            6.5,
             6,
             6,
+            39,
             6.5,
             4,
             5.5,
+            39,
             6,
             6,
-            6,
-            25.5
+            24.5
           ],
           "open": 6,
-          "current": 25.5,
-          "change": 19.5
+          "current": 24.5,
+          "change": 18.5
         }
       },
       "polyTotal": {
@@ -9842,14 +9988,14 @@
       "enrichmentFailed": false
     },
     "iowa_wash": {
-      "volume24h": 61084.881733,
-      "liveVolume": 61084.881731,
-      "awayMoneyPct": 51,
-      "homeMoneyPct": 49,
-      "awayTicketPct": 57.1,
-      "homeTicketPct": 42.9,
-      "tradeCount": 245,
-      "sampleCash": 30621,
+      "volume24h": 61084.881732999995,
+      "liveVolume": 121989.99909200001,
+      "awayMoneyPct": 26.8,
+      "homeMoneyPct": 73.2,
+      "awayTicketPct": 59,
+      "homeTicketPct": 41,
+      "tradeCount": 271,
+      "sampleCash": 63133,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -9874,12 +10020,21 @@
         "change": 2
       },
       "whales": {
-        "count": 18,
-        "totalCash": 17395,
-        "largest": 3815,
-        "buyCount": 17,
+        "count": 20,
+        "totalCash": 48618,
+        "largest": 30000,
+        "buyCount": 19,
         "sellCount": 1,
         "topTrades": [
+          {
+            "amount": 30000,
+            "side": "BUY",
+            "outcome": "Washington",
+            "price": 54,
+            "ts": 1791551133000,
+            "wallet": "0x8a8685a792c184e5c2ee8c7d4d4baba7c2c94998",
+            "traderName": "BrotherObama"
+          },
           {
             "amount": 3815,
             "side": "BUY",
@@ -9906,6 +10061,15 @@
             "ts": 1791403597000,
             "wallet": "0x67542c3219b37fd1610aad290676ff91cdbfe3bc",
             "traderName": "gmpm2"
+          },
+          {
+            "amount": 1223,
+            "side": "BUY",
+            "outcome": "Washington",
+            "price": 54,
+            "ts": 1791551133000,
+            "wallet": "0xeed8c2be411025120fb511ea2332dd0a1f6135f0",
+            "traderName": "WarriorH"
           },
           {
             "amount": 1061,
@@ -10077,17 +10241,17 @@
         "priceHistory": {
           "points": [
             6,
-            6,
-            6,
-            5.5,
-            6,
+            7.5,
             6,
             5.5,
-            4,
-            4,
-            4,
-            4,
+            6,
+            5.5,
             5,
+            4,
+            4,
+            4,
+            4,
+            4.5,
             6.5
           ],
           "open": 6,
@@ -10122,7 +10286,7 @@
             50.5,
             49.5,
             49.5,
-            49,
+            49.5,
             48.5,
             48.5
           ],
@@ -10172,87 +10336,7 @@
         "low": 68.5,
         "change": -1
       },
-      "whales": {
-        "count": 8,
-        "totalCash": 20329,
-        "largest": 10500,
-        "buyCount": 8,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 10500,
-            "side": "BUY",
-            "outcome": "Duke",
-            "price": 50,
-            "ts": 1791535765000,
-            "wallet": "0xe18ecc345e00ee7c4f2d1f676f3dd2acb112f826",
-            "traderName": "ArielFilipino"
-          },
-          {
-            "amount": 3936,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 52,
-            "ts": 1791505986000,
-            "wallet": "0x1d1ade627d0bb0205758580b20d808573e720df6",
-            "traderName": "Pwaddler"
-          },
-          {
-            "amount": 2070,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 51,
-            "ts": 1791547957000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 1327,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 48,
-            "ts": 1791531093000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 747,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 48,
-            "ts": 1791532047000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 643,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 54,
-            "ts": 1791403505000,
-            "wallet": "0x853212cd809da6acc458021c106af749b7aa738b",
-            "traderName": "Mr.Kirk"
-          },
-          {
-            "amount": 584,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 52,
-            "ts": 1791506225000,
-            "wallet": "0x1d1ade627d0bb0205758580b20d808573e720df6",
-            "traderName": "Pwaddler"
-          },
-          {
-            "amount": 523,
-            "side": "BUY",
-            "outcome": "Georgia Tech",
-            "price": 50,
-            "ts": 1791520752000,
-            "wallet": "0xa080dadd87036ad01dbf5e9c254b0c3dbdba234f",
-            "traderName": "bands1"
-          }
-        ]
-      },
+      "whales": null,
       "awayProb": 68.5,
       "homeProb": 31.5,
       "drawProb": null,
@@ -10287,8 +10371,8 @@
           "points": [
             19,
             18.5,
-            19.5,
-            18.5,
+            19,
+            19,
             17.5,
             17,
             17,
@@ -10347,152 +10431,6 @@
       "commence": "2026-10-10T19:30:00Z",
       "polyGameTime": "2026-10-10T19:30:00Z",
       "polyGameDate": "2026-10-10",
-      "enrichmentFailed": false
-    },
-    "isu_byu": {
-      "volume24h": 33258.259849,
-      "liveVolume": 33258.259849,
-      "awayMoneyPct": 89.1,
-      "homeMoneyPct": 10.9,
-      "awayTicketPct": 58.1,
-      "homeTicketPct": 41.9,
-      "tradeCount": 105,
-      "sampleCash": 16461,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          22,
-          22,
-          22,
-          21.5,
-          21.5,
-          21.5,
-          21.5,
-          21.5,
-          21.5,
-          21.5,
-          21.5,
-          21.5,
-          21.5
-        ],
-        "open": 22,
-        "current": 21.5,
-        "high": 22,
-        "low": 21.5,
-        "change": -0.5
-      },
-      "whales": {
-        "count": 1,
-        "totalCash": 13000,
-        "largest": 13000,
-        "buyCount": 1,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 13000,
-            "side": "BUY",
-            "outcome": "Iowa State",
-            "price": 51,
-            "ts": 1791539040000,
-            "wallet": "0x8a8685a792c184e5c2ee8c7d4d4baba7c2c94998",
-            "traderName": "BrotherObama"
-          }
-        ]
-      },
-      "awayProb": 21.5,
-      "homeProb": 78.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polyMl": {
-        "slug": "cfb-iowast-byu-2026-10-09",
-        "conditionId": "0xdf8eea17e96334c5f8614e463137d63467bc3b01e697663ed1577cc2a1a5ca00",
-        "title": "Iowa State vs. BYU",
-        "tokenIds": [
-          "9865141690571515900407145819787420843224413200698278007793667110277263519067",
-          "25241595804903925063662711533587534259068390232513095685236096755328085230469"
-        ],
-        "token0IsAway": true
-      },
-      "polySpread": {
-        "line": -20.5,
-        "title": "Spread -20.5",
-        "outcomes": [
-          "Iowa State",
-          "BYU"
-        ],
-        "probs": [
-          25.9,
-          74.1
-        ],
-        "tokenIds": [
-          "51706912482576492366597304036710402193348018434853792463610632047286222104637",
-          "84129925751097480018774324411804558220019369453115001798938951885712974327967"
-        ],
-        "priceHistory": {
-          "points": [
-            4.1,
-            4.1,
-            4.2,
-            4.2,
-            5.3,
-            4.9,
-            4.9,
-            4.3,
-            4.5,
-            3.6,
-            49.5,
-            4.4,
-            25.9
-          ],
-          "open": 4.1,
-          "current": 25.9,
-          "change": 21.8
-        }
-      },
-      "polyTotal": {
-        "line": 45.5,
-        "title": "O/U 45.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          51.5,
-          48.5
-        ],
-        "tokenIds": [
-          "6618236080136887522379222607828445130753018119889433648635601210409374500595",
-          "97421639145159980465144207222220964560872869958942212169570045761983915023260"
-        ],
-        "priceHistory": {
-          "points": [
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5
-          ],
-          "open": 51.5,
-          "current": 51.5,
-          "change": 0
-        }
-      },
-      "awayTeam": "Iowa State",
-      "homeTeam": "BYU",
-      "eventId": "1100298",
-      "title": "Iowa State vs. BYU",
-      "commence": "2026-10-10T02:15:00Z",
-      "polyGameTime": "2026-10-10T02:15:00Z",
-      "polyGameDate": "2026-10-09",
       "enrichmentFailed": false
     },
     "tex_okla": {
@@ -10640,8 +10578,8 @@
           "Oklahoma"
         ],
         "probs": [
-          11.5,
-          88.5
+          11,
+          89
         ],
         "tokenIds": [
           "110851169463732618258867144195629381026489197840593880658448974166861015071705",
@@ -10652,20 +10590,20 @@
             6.5,
             6.5,
             6.5,
-            6.5,
-            6.5,
+            8,
+            7,
             6.5,
             6.5,
             5.5,
             5.5,
-            5.5,
+            31,
             5,
-            12.5,
-            13.5
+            5,
+            15.5
           ],
           "open": 6.5,
-          "current": 13.5,
-          "change": 7
+          "current": 15.5,
+          "change": 9
         }
       },
       "polyTotal": {
@@ -10715,7 +10653,7 @@
     },
     "bsu_fres": {
       "volume24h": 20285.955927000003,
-      "liveVolume": 20285.955926,
+      "liveVolume": 20285.955927,
       "awayMoneyPct": 68.5,
       "homeMoneyPct": 31.5,
       "awayTicketPct": 78.7,
@@ -10822,8 +10760,8 @@
           "Fresno State"
         ],
         "probs": [
-          16.5,
-          83.5
+          17.5,
+          82.5
         ],
         "tokenIds": [
           "98248117927710848843258418645243331009477722993229685423696682232821607742903",
@@ -10843,11 +10781,11 @@
             16.5,
             17,
             17,
-            17
+            17.5
           ],
           "open": 17,
-          "current": 17,
-          "change": 0
+          "current": 17.5,
+          "change": 0.5
         }
       },
       "polyTotal": {
@@ -10986,8 +10924,8 @@
           "Oklahoma State"
         ],
         "probs": [
-          33.5,
-          66.5
+          33,
+          67
         ],
         "tokenIds": [
           "70022983483065803370820695218633404775543307686852828945310961810910628927884",
@@ -10995,23 +10933,23 @@
         ],
         "priceHistory": {
           "points": [
-            24,
-            15.2,
-            21.3,
-            21.8,
-            35.6,
-            28.8,
+            24.9,
+            14,
+            20.8,
             20.9,
-            12.3,
-            5,
-            31.2,
-            29.1,
+            34.9,
+            28.2,
+            20.1,
+            11,
+            33.8,
+            30.5,
             34,
-            33.5
+            34,
+            33
           ],
-          "open": 24,
-          "current": 33.5,
-          "change": 9.5
+          "open": 24.9,
+          "current": 33,
+          "change": 8.1
         }
       },
       "polyTotal": {
@@ -11060,23 +10998,23 @@
       "enrichmentFailed": false
     },
     "famu_alst": {
-      "volume24h": 17064.135965,
-      "liveVolume": 17064.135965,
+      "volume24h": 17070.915627000002,
+      "liveVolume": 17070.915627,
       "awayMoneyPct": 87,
       "homeMoneyPct": 13,
       "awayTicketPct": 67.1,
       "homeTicketPct": 32.9,
       "tradeCount": 70,
       "sampleCash": 8218,
-      "priceMove1h": -3.6,
+      "priceMove1h": 0,
       "priceHistory": {
         "points": [
           14,
           14.5,
           15,
+          15,
           14.5,
-          14,
-          14,
+          14.5,
           14.5,
           14.5,
           14,
@@ -11175,9 +11113,9 @@
             49.5,
             49.5,
             49.5,
-            49,
             49.5,
-            49,
+            49.5,
+            49.5,
             49.5,
             49.5,
             49.5
@@ -11204,10 +11142,10 @@
         ],
         "priceHistory": {
           "points": [
-            56.5,
-            55,
-            60,
-            60,
+            57,
+            54.5,
+            59.5,
+            59,
             55,
             55,
             45.5,
@@ -11218,9 +11156,9 @@
             43.5,
             43.5
           ],
-          "open": 56.5,
+          "open": 57,
           "current": 43.5,
-          "change": -13
+          "change": -13.5
         }
       },
       "awayTeam": "Florida A&M",
@@ -11233,7 +11171,7 @@
       "enrichmentFailed": false
     },
     "wyo_sjsu": {
-      "volume24h": 16303.111224,
+      "volume24h": 16546.111224,
       "liveVolume": 16546.111222,
       "awayMoneyPct": 91.2,
       "homeMoneyPct": 8.8,
@@ -11351,15 +11289,15 @@
         "priceHistory": {
           "points": [
             5.5,
+            39.5,
             6,
-            6,
+            7,
             6.5,
             6,
             6,
-            5.5,
             6,
             5.5,
-            5.5,
+            6,
             5.5,
             6,
             49.5
@@ -11415,7 +11353,7 @@
       "enrichmentFailed": false
     },
     "afa_niu": {
-      "volume24h": 15750.913224999998,
+      "volume24h": 15750.913225,
       "liveVolume": 15750.913224999998,
       "awayMoneyPct": 43.7,
       "homeMoneyPct": 56.3,
@@ -11515,17 +11453,17 @@
         "priceHistory": {
           "points": [
             19.5,
-            20.5,
-            23,
+            22,
+            22.5,
             22,
             21.5,
-            21,
             20.5,
             20.5,
-            21,
             20.5,
             21,
-            21,
+            20.5,
+            21.5,
+            20,
             21
           ],
           "open": 19.5,
@@ -11678,8 +11616,8 @@
           "Oregon"
         ],
         "probs": [
-          17.3,
-          82.7
+          17,
+          83
         ],
         "tokenIds": [
           "41404647859724802821544379757294956402768490830132282243032175535135062930842",
@@ -11688,57 +11626,57 @@
         "priceHistory": {
           "points": [
             6.3,
-            6.3,
-            7.2,
+            28,
             7.2,
             7.7,
             7.6,
-            31.9,
+            7.6,
+            32.2,
             6.7,
-            7.2,
             7.2,
             28.4,
             17.5,
-            17.4
+            7.7,
+            28.4
           ],
           "open": 6.3,
-          "current": 17.4,
-          "change": 11.1
+          "current": 28.4,
+          "change": 22.1
         }
       },
       "polyTotal": {
-        "line": 58.5,
-        "title": "O/U 58.5",
+        "line": 60.5,
+        "title": "O/U 60.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          53.5,
-          46.5
+          47.5,
+          52.5
         ],
         "tokenIds": [
-          "35202177828563244574309353921477656836456619708947488028345730076690623520763",
-          "51973103077013694650070118433569037496782290580927481417655821161790983208097"
+          "89381349382776357732060778789790503149082260259540724128960200436708697913925",
+          "463237598538539774595869981364345320856599458217295577461254852402458090584"
         ],
         "priceHistory": {
           "points": [
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            53.5,
-            53.5,
-            53.5,
-            53.5,
-            53.5,
-            53.5,
-            53.5,
-            53.5
+            45.5,
+            45.5,
+            45.5,
+            45.5,
+            45.5,
+            46.5,
+            46.5,
+            46.5,
+            46.5,
+            47,
+            47.5,
+            47,
+            47.5
           ],
-          "open": 51.5,
-          "current": 53.5,
+          "open": 45.5,
+          "current": 47.5,
           "change": 2
         }
       },
@@ -11860,8 +11798,8 @@
           "Vanderbilt"
         ],
         "probs": [
-          25,
-          75
+          24.5,
+          75.5
         ],
         "tokenIds": [
           "18824127301131419158112796344214276295397490601403057242792202448928548583623",
@@ -11881,11 +11819,11 @@
             24.5,
             24.5,
             24.5,
-            25
+            24.5
           ],
           "open": 24.5,
-          "current": 25,
-          "change": 0.5
+          "current": 24.5,
+          "change": 0
         }
       },
       "polyTotal": {
@@ -12024,8 +11962,8 @@
           "Missouri"
         ],
         "probs": [
-          49.5,
-          50.5
+          50,
+          50
         ],
         "tokenIds": [
           "23175486192147060792006862470846731982490927252112136486950281389578311733273",
@@ -12041,7 +11979,7 @@
             49.5,
             49.5,
             49.5,
-            49.5,
+            4.5,
             49.5,
             49.5,
             49.5,
@@ -12189,22 +12127,22 @@
         "priceHistory": {
           "points": [
             4.2,
-            4.3,
-            4.3,
-            4.7,
+            24.5,
+            4.2,
+            5.2,
             4.9,
-            5,
-            5.1,
-            49.5,
+            4.9,
+            4.6,
             50,
-            49.5,
-            49.5,
-            4.5,
-            50
+            4.2,
+            50,
+            50,
+            4.6,
+            49.5
           ],
           "open": 4.2,
-          "current": 50,
-          "change": 45.8
+          "current": 49.5,
+          "change": 45.3
         }
       },
       "polyTotal": {
@@ -12234,7 +12172,7 @@
             49,
             49,
             49,
-            49,
+            48.5,
             49,
             49
           ],
@@ -12334,7 +12272,7 @@
         ],
         "priceHistory": {
           "points": [
-            21.5,
+            21,
             22,
             21.5,
             19.5,
@@ -12348,9 +12286,9 @@
             20.5,
             20.5
           ],
-          "open": 21.5,
+          "open": 21,
           "current": 20.5,
-          "change": -1
+          "change": -0.5
         }
       },
       "polyTotal": {
@@ -12480,8 +12418,8 @@
           "Army"
         ],
         "probs": [
-          7.5,
-          92.5
+          7,
+          93
         ],
         "tokenIds": [
           "99167638471990374716975560791552954366842994775917994524364673926856072599791",
@@ -12489,23 +12427,23 @@
         ],
         "priceHistory": {
           "points": [
-            4.5,
-            5,
-            5,
-            4.5,
-            5,
             5,
             7.5,
+            5,
+            5,
+            5,
+            4.5,
+            4.5,
             4,
             4.5,
             5,
             5,
             5,
-            7.5
+            7
           ],
-          "open": 4.5,
-          "current": 7.5,
-          "change": 3
+          "open": 5,
+          "current": 7,
+          "change": 2
         }
       },
       "polyTotal": {
@@ -12554,7 +12492,7 @@
       "enrichmentFailed": false
     },
     "buff_tol": {
-      "volume24h": 7478.505141,
+      "volume24h": 7478.505141000001,
       "liveVolume": 7478.505139999999,
       "awayMoneyPct": 77.1,
       "homeMoneyPct": 22.9,
@@ -12626,8 +12564,8 @@
           "Toledo"
         ],
         "probs": [
-          49.5,
-          50.5
+          50,
+          50
         ],
         "tokenIds": [
           "4729387498030792475109471721419443323331981484932508103771193479699173964366",
@@ -12700,7 +12638,7 @@
       "enrichmentFailed": false
     },
     "haw_asu": {
-      "volume24h": 7210.896497999999,
+      "volume24h": 7210.896498,
       "liveVolume": 7210.896497000001,
       "awayMoneyPct": 99.9,
       "homeMoneyPct": 0.1,
@@ -12781,8 +12719,8 @@
           "Arizona State"
         ],
         "probs": [
-          27.5,
-          72.5
+          27,
+          73
         ],
         "tokenIds": [
           "84104837018569313882254254817319719423311810603580995039959014349132013756790",
@@ -12790,59 +12728,59 @@
         ],
         "priceHistory": {
           "points": [
-            26,
-            5.5,
-            25.9,
-            4.7,
-            25.9,
-            31.9,
-            5.7,
-            49.5,
-            4.3,
+            5.2,
+            25.4,
+            5.2,
+            5.2,
+            30.9,
             3.9,
-            27.3,
-            3.6,
+            49.5,
+            3.5,
+            27.5,
+            3.8,
+            3.4,
+            3.3,
             27.5
           ],
-          "open": 26,
+          "open": 5.2,
           "current": 27.5,
-          "change": 1.5
+          "change": 22.3
         }
       },
       "polyTotal": {
-        "line": 49.5,
-        "title": "O/U 49.5",
+        "line": 51.5,
+        "title": "O/U 51.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          53,
-          47
+          46,
+          54
         ],
         "tokenIds": [
-          "77342784169324745415287257101838927277196802629506170130411980206383275629122",
-          "103315500260227673937005648775704993312086296866105693045618314563317238256690"
+          "10414569276743590280621103684564114239011155473218433528977853416118616947942",
+          "61289397345525914651675231895492153449508162383933358509276665376694469682577"
         ],
         "priceHistory": {
           "points": [
-            52,
-            52.5,
-            53,
-            53,
-            53,
-            53,
-            53,
-            53,
-            53,
-            53,
-            53,
-            53,
-            53
+            45.5,
+            45.5,
+            45.5,
+            45.5,
+            45.5,
+            46,
+            46,
+            46,
+            45.5,
+            45.5,
+            45.5,
+            45.5,
+            46
           ],
-          "open": 52,
-          "current": 53,
-          "change": 1
+          "open": 45.5,
+          "current": 46,
+          "change": 0.5
         }
       },
       "awayTeam": "Hawai'i",
@@ -12856,13 +12794,13 @@
     },
     "uab_mem": {
       "volume24h": 7165.190989,
-      "liveVolume": 7165.190989,
-      "awayMoneyPct": 83.4,
-      "homeMoneyPct": 16.6,
-      "awayTicketPct": 89.6,
-      "homeTicketPct": 10.4,
-      "tradeCount": 48,
-      "sampleCash": 3702,
+      "liveVolume": 7165.190988,
+      "awayMoneyPct": 0,
+      "homeMoneyPct": 0,
+      "awayTicketPct": 0,
+      "homeTicketPct": 0,
+      "tradeCount": 0,
+      "sampleCash": 0,
       "priceMove1h": 3.1,
       "priceHistory": {
         "points": [
@@ -12927,8 +12865,8 @@
           "Memphis"
         ],
         "probs": [
-          49.5,
-          50.5
+          50,
+          50
         ],
         "tokenIds": [
           "55067620154711798779417468074055108927993105872951745317199660891466179109212",
@@ -12936,23 +12874,23 @@
         ],
         "priceHistory": {
           "points": [
+            50,
             49.5,
             49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
+            50,
             49.5,
             49.5,
             49.5,
             49.5,
             49.5,
             50,
+            49.5,
+            50,
             49.5
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 49.5,
-          "change": 0
+          "change": -0.5
         }
       },
       "polyTotal": {
@@ -13016,7 +12954,7 @@
           47.5,
           47.5,
           47.5,
-          46.5,
+          47.5,
           47.5,
           47.5,
           47.5,
@@ -13092,12 +13030,12 @@
         "priceHistory": {
           "points": [
             8,
-            7.5,
-            7.5,
-            6,
-            6.5,
-            6.5,
             7,
+            7.5,
+            5.5,
+            6.5,
+            6.5,
+            6.5,
             6.5,
             6.5,
             6.5,
@@ -13156,7 +13094,7 @@
       "enrichmentFailed": false
     },
     "wsu_usu": {
-      "volume24h": 5861.102754,
+      "volume24h": 5861.1027540000005,
       "liveVolume": 5861.102752999999,
       "awayMoneyPct": 94.9,
       "homeMoneyPct": 5.1,
@@ -13238,14 +13176,14 @@
         "priceHistory": {
           "points": [
             5,
+            34.5,
             5,
             5,
             5,
-            5,
-            4.5,
-            4.5,
+            34,
+            4,
             3.5,
-            4.3,
+            3.8,
             3.8,
             3.8,
             4.3,
@@ -13394,16 +13332,16 @@
           "points": [
             26,
             25.5,
-            26,
+            25.5,
             25,
             25,
             25,
             25.5,
             25.5,
-            26,
             25.5,
             25.5,
-            26,
+            25.5,
+            25.5,
             26
           ],
           "open": 26,
@@ -13538,8 +13476,8 @@
           "North Texas"
         ],
         "probs": [
-          49.5,
-          50.5
+          50,
+          50
         ],
         "tokenIds": [
           "6042860286818344419543157116932150648875980931248084355858730875574602577212",
@@ -13548,16 +13486,16 @@
         "priceHistory": {
           "points": [
             2.4,
-            2.4,
-            2.9,
-            2.4,
             24.5,
-            3,
-            3,
+            2.4,
+            2.4,
+            2.6,
+            2.6,
+            2.5,
+            2.5,
+            2.6,
             2.5,
             3,
-            2.6,
-            50,
             2.5,
             49.5
           ],
@@ -13567,39 +13505,39 @@
         }
       },
       "polyTotal": {
-        "line": 61.5,
-        "title": "O/U 61.5",
+        "line": 57.5,
+        "title": "O/U 57.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          42,
-          58
+          52,
+          48
         ],
         "tokenIds": [
-          "71317475170565315159730981162685334648729392493294280951463261949494888505164",
-          "75964206100815266868282825324706427496286137780680025551158388805762264676619"
+          "105510871371721502904180911150905744491173267748168546604680566429415838033120",
+          "6610542219321452876070065475511911199201793679376667779475415357708884204267"
         ],
         "priceHistory": {
           "points": [
-            40.5,
-            41,
-            41,
-            41,
-            41,
-            42.5,
-            42.5,
-            42.5,
-            42.5,
-            42.5,
-            42,
-            41.5,
-            42
+            51,
+            51,
+            51,
+            51,
+            52,
+            52,
+            52,
+            52,
+            52,
+            52,
+            52.5,
+            52.5,
+            52
           ],
-          "open": 40.5,
-          "current": 42,
-          "change": 1.5
+          "open": 51,
+          "current": 52,
+          "change": 1
         }
       },
       "awayTeam": "Charlotte",
@@ -13704,21 +13642,21 @@
           "points": [
             49.5,
             49.5,
-            50,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
             49.5,
             50,
             49.5,
             49.5,
-            50,
-            49.5,
-            49.5,
-            50,
-            50,
-            50
+            49.5
           ],
           "open": 49.5,
-          "current": 50,
-          "change": 0.5
+          "current": 49.5,
+          "change": 0
         }
       },
       "polyTotal": {
@@ -13748,7 +13686,7 @@
             52.5,
             52.5,
             52.5,
-            52.5,
+            53,
             53,
             52.5
           ],
@@ -13768,7 +13706,7 @@
     },
     "tlsa_navy": {
       "volume24h": 3432.423288,
-      "liveVolume": 3432.4232869999996,
+      "liveVolume": 3432.4232879999995,
       "awayMoneyPct": 92.8,
       "homeMoneyPct": 7.2,
       "awayTicketPct": 81.8,
@@ -13858,16 +13796,16 @@
         "priceHistory": {
           "points": [
             5,
-            7,
+            6,
             6,
             6.5,
-            5,
+            4.5,
+            6,
+            7,
+            7,
+            6.5,
             7.5,
             7,
-            7,
-            6.5,
-            6,
-            6,
             6,
             7
           ],
@@ -13877,39 +13815,39 @@
         }
       },
       "polyTotal": {
-        "line": 47.5,
-        "title": "O/U 47.5",
+        "line": 49.5,
+        "title": "O/U 49.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          55.5,
-          44.5
+          48,
+          52
         ],
         "tokenIds": [
-          "19197248354402873494953977773911720430758526796016925639037822232978290225398",
-          "8679076140490418170639712528624319787547449236674152824157527415881412298143"
+          "45515586691349883913820761846079447165490600324531121544636027349728835425983",
+          "64328003610391219111772604076483265253080667734183968843859578483577736590391"
         ],
         "priceHistory": {
           "points": [
-            54.5,
-            54.5,
-            54.5,
-            54.5,
-            54.5,
-            54.5,
-            54.5,
-            54.5,
-            54.5,
-            55.5,
-            55.5,
-            55.5,
-            55.5
+            47.5,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            47.5,
+            47.5,
+            48
           ],
-          "open": 54.5,
-          "current": 55.5,
-          "change": 1
+          "open": 47.5,
+          "current": 48,
+          "change": 0.5
         }
       },
       "awayTeam": "Tulsa",
@@ -13923,7 +13861,7 @@
     },
     "ariz_wvu": {
       "volume24h": 3383.353044,
-      "liveVolume": 3383.353043,
+      "liveVolume": 3383.353044,
       "awayMoneyPct": 69.8,
       "homeMoneyPct": 30.2,
       "awayTicketPct": 76,
@@ -13977,8 +13915,8 @@
           "West Virginia"
         ],
         "probs": [
-          12,
-          88
+          11.5,
+          88.5
         ],
         "tokenIds": [
           "24796979069367338826945468065428427465725158765101486769308908198853083353374",
@@ -13994,15 +13932,15 @@
             11.5,
             10.5,
             10.5,
-            11,
             11.5,
             11.5,
             11.5,
-            12
+            12,
+            11.5
           ],
           "open": 12.5,
-          "current": 12,
-          "change": -0.5
+          "current": 11.5,
+          "change": -1
         }
       },
       "polyTotal": {
@@ -14106,8 +14044,8 @@
           "Kentucky"
         ],
         "probs": [
-          23,
-          77
+          23.5,
+          76.5
         ],
         "tokenIds": [
           "44223415215110036434078076951228640048547783400134515986150001033084146024759",
@@ -14118,15 +14056,15 @@
             24,
             24,
             23.5,
-            23.5,
+            24.5,
             23,
             23,
-            22.5,
-            22.5,
-            23.5,
-            23.5,
-            23.5,
             23,
+            23,
+            23.5,
+            23.5,
+            23.5,
+            24,
             23
           ],
           "open": 24,
@@ -14156,7 +14094,7 @@
             51,
             51,
             51,
-            51,
+            50.5,
             50.5,
             50.5,
             50.5,
@@ -14211,7 +14149,33 @@
         "low": 23.5,
         "change": -0.5
       },
-      "whales": null,
+      "whales": {
+        "count": 2,
+        "totalCash": 1053,
+        "largest": 527,
+        "buyCount": 2,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 527,
+            "side": "BUY",
+            "outcome": "Virginia",
+            "price": 51,
+            "ts": 1791504822000,
+            "wallet": "0x684baa57c338c2549aec0aa3f034f695d72a8409",
+            "traderName": "monkeymashingkeyboard"
+          },
+          {
+            "amount": 525,
+            "side": "BUY",
+            "outcome": "Virginia",
+            "price": 52,
+            "ts": 1791505824000,
+            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+            "traderName": "HomeRunHazard"
+          }
+        ]
+      },
       "awayProb": 23.5,
       "homeProb": 76.5,
       "drawProb": null,
@@ -14235,8 +14199,8 @@
           "Virginia"
         ],
         "probs": [
-          49.5,
-          50.5
+          50,
+          50
         ],
         "tokenIds": [
           "78416486014708424092097366980931675308174815160773586268444121286581039341614",
@@ -14245,17 +14209,17 @@
         "priceHistory": {
           "points": [
             3.4,
-            3.8,
             25.9,
             3.1,
-            4.8,
-            25.4,
+            5.2,
+            5.1,
             3.5,
-            4.2,
-            3.7,
+            3.5,
             3.1,
-            50,
-            4.2,
+            3.7,
+            25.4,
+            4,
+            3.6,
             49.5
           ],
           "open": 3.4,
@@ -14390,23 +14354,23 @@
         ],
         "priceHistory": {
           "points": [
-            19.5,
-            18.5,
-            18.5,
+            19,
+            19,
+            19,
+            19,
             19,
             19.5,
             19.5,
-            19,
             20,
             18.5,
             18.5,
-            18,
+            17.5,
             17,
             17
           ],
-          "open": 19.5,
+          "open": 19,
           "current": 17,
-          "change": -2.5
+          "change": -2
         }
       },
       "polyTotal": {
@@ -14510,8 +14474,8 @@
           "Michigan State"
         ],
         "probs": [
-          10.5,
-          89.5
+          11,
+          89
         ],
         "tokenIds": [
           "22980831852161795742393371728445825486290191132548827836452227499196327471060",
@@ -14522,7 +14486,7 @@
             8.5,
             8.5,
             8.5,
-            10,
+            9.5,
             11.5,
             10.5,
             10.5,
@@ -14531,11 +14495,11 @@
             10.5,
             10.5,
             10.5,
-            10.5
+            11
           ],
           "open": 8.5,
-          "current": 10.5,
-          "change": 2
+          "current": 11,
+          "change": 2.5
         }
       },
       "polyTotal": {
@@ -14558,7 +14522,7 @@
             45.5,
             45.5,
             45.5,
-            45.5,
+            44.5,
             44.5,
             44.5,
             44.5,
@@ -14670,13 +14634,13 @@
             21,
             21,
             21,
-            21,
+            20.5,
             20.5,
             20,
             20,
             20,
-            20.5,
-            21,
+            20,
+            20,
             19.5
           ],
           "open": 20.5,
@@ -14707,10 +14671,10 @@
             54.5,
             54.5,
             54.5,
-            54.5,
             55,
             54.5,
             54.5,
+            55,
             54.5,
             55,
             55
@@ -14796,21 +14760,21 @@
           "points": [
             49.5,
             50,
-            7,
-            50,
-            6.5,
-            49.5,
             6.5,
             50,
+            6.5,
+            5.5,
+            6,
+            50,
+            5.5,
+            50,
             5.5,
             5.5,
-            25,
-            5.5,
-            50
+            49.5
           ],
           "open": 49.5,
-          "current": 50,
-          "change": 0.5
+          "current": 49.5,
+          "change": 0
         }
       },
       "polyTotal": {
@@ -14830,23 +14794,23 @@
         ],
         "priceHistory": {
           "points": [
+            43.5,
             43,
             43,
             43,
-            43,
             42,
             42,
             42,
             42,
             42,
             42,
-            41.5,
+            42,
             42,
             45
           ],
-          "open": 43,
+          "open": 43.5,
           "current": 45,
-          "change": 2
+          "change": 1.5
         }
       },
       "awayTeam": "Louisiana",
@@ -14914,8 +14878,8 @@
           "Ohio"
         ],
         "probs": [
-          7.5,
-          92.5
+          7,
+          93
         ],
         "tokenIds": [
           "78972510185622924451002366878164035672466961848540444129942742503177688325774",
@@ -14925,16 +14889,16 @@
           "points": [
             6.5,
             7,
-            7.5,
             6.5,
             7,
-            5,
+            7,
+            7,
             6,
+            4.5,
+            4.5,
+            4.5,
             5.5,
-            5.5,
-            5,
-            39.5,
-            6.5,
+            6,
             7.5
           ],
           "open": 6.5,
@@ -15005,23 +14969,23 @@
           7.6,
           7.4,
           7.4,
-          7.4,
-          7.4,
+          7.2,
+          7.3,
           7.3,
           7.3,
           7.5,
           7.4,
-          7.5
+          7.4
         ],
         "open": 7.8,
-        "current": 7.5,
+        "current": 7.4,
         "high": 8.1,
         "low": 7,
-        "change": -0.3
+        "change": -0.4
       },
       "whales": null,
       "awayProb": 7.4,
-      "homeProb": 92.5,
+      "homeProb": 92.6,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -15043,8 +15007,8 @@
           "St. Thomas"
         ],
         "probs": [
-          26,
-          74
+          36.5,
+          63.5
         ],
         "tokenIds": [
           "15478798083802802722517551331105859767819461638709495834902393555278326110855",
@@ -15052,23 +15016,23 @@
         ],
         "priceHistory": {
           "points": [
-            24,
-            10.5,
-            10,
-            9,
-            26,
-            9,
-            23.5,
-            25,
-            24,
+            22.5,
+            26.5,
             9.5,
             9.5,
-            8,
-            26
+            9.5,
+            37.5,
+            37.5,
+            24.5,
+            24.5,
+            24,
+            8.5,
+            26.5,
+            36.5
           ],
-          "open": 24,
-          "current": 26,
-          "change": 2
+          "open": 22.5,
+          "current": 36.5,
+          "change": 14
         }
       },
       "polyTotal": {
@@ -15092,7 +15056,7 @@
             49.5,
             49.5,
             49.5,
-            49.5,
+            49,
             49.5,
             50,
             50,
@@ -15172,7 +15136,7 @@
           "Notre Dame"
         ],
         "probs": [
-          50.5,
+          50,
           50
         ],
         "tokenIds": [
@@ -15181,23 +15145,23 @@
         ],
         "priceHistory": {
           "points": [
+            50,
+            49.5,
+            50,
+            50,
+            49.5,
             49.5,
             49.5,
             50,
             49.5,
-            49.5,
             50,
-            50,
-            49.5,
-            50,
-            49.5,
             50,
             50,
             50
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 50,
-          "change": 0.5
+          "change": 0
         }
       },
       "polyTotal": {
@@ -15217,9 +15181,9 @@
         ],
         "priceHistory": {
           "points": [
-            47,
             46.5,
             46.5,
+            46,
             46.5,
             46,
             46,
@@ -15231,9 +15195,9 @@
             45.5,
             45.5
           ],
-          "open": 47,
+          "open": 46.5,
           "current": 45.5,
-          "change": -1.5
+          "change": -1
         }
       },
       "awayTeam": "Stanford",
@@ -15246,14 +15210,14 @@
       "enrichmentFailed": false
     },
     "kent_wmu": {
-      "volume24h": 1657.691633,
-      "liveVolume": 1657.691633,
+      "volume24h": 1660.63281,
+      "liveVolume": 1660.632809,
       "awayMoneyPct": 11.5,
       "homeMoneyPct": 88.5,
-      "awayTicketPct": 50,
-      "homeTicketPct": 50,
-      "tradeCount": 12,
-      "sampleCash": 973,
+      "awayTicketPct": 46.2,
+      "homeTicketPct": 53.8,
+      "tradeCount": 13,
+      "sampleCash": 974,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -15318,8 +15282,8 @@
           "Western Michigan"
         ],
         "probs": [
-          50,
-          50
+          49.5,
+          50.5
         ],
         "tokenIds": [
           "61903814805267649541523629195078215108280299953900785164437461341622669079961",
@@ -15328,22 +15292,22 @@
         "priceHistory": {
           "points": [
             3.1,
+            27,
             3.1,
-            3.1,
+            4.9,
+            3.9,
+            3.4,
+            3.4,
+            2.9,
             27,
             3.9,
-            7.6,
-            3.4,
             3.5,
-            3.9,
-            3.2,
-            3.5,
-            3.4,
-            50
+            4.3,
+            49.5
           ],
           "open": 3.1,
-          "current": 50,
-          "change": 46.9
+          "current": 49.5,
+          "change": 46.4
         }
       },
       "polyTotal": {
@@ -15407,7 +15371,7 @@
           39,
           39,
           39,
-          39,
+          38.5,
           38.5,
           38.5,
           38.5,
@@ -15464,8 +15428,8 @@
           "Marshall"
         ],
         "probs": [
-          7.5,
-          92.5
+          7,
+          93
         ],
         "tokenIds": [
           "72572883603840994219387836556209567088496823644470806159155515569384269264771",
@@ -15473,22 +15437,22 @@
         ],
         "priceHistory": {
           "points": [
-            6,
-            6.5,
-            6,
-            6.5,
+            5.5,
             7.5,
             5.5,
             5.5,
+            6.5,
+            6,
             5.5,
             5,
             5,
-            27,
+            28.5,
             5,
-            7.5
+            5,
+            7
           ],
-          "open": 6,
-          "current": 7.5,
+          "open": 5.5,
+          "current": 7,
           "change": 1.5
         }
       },
@@ -15538,7 +15502,7 @@
       "enrichmentFailed": false
     },
     "rice_ecu": {
-      "volume24h": 1325.1107709999999,
+      "volume24h": 1325.110771,
       "liveVolume": 1325.110771,
       "awayMoneyPct": 19.8,
       "homeMoneyPct": 80.2,
@@ -15603,16 +15567,16 @@
         "priceHistory": {
           "points": [
             3.2,
-            7.8,
-            4.1,
-            7.8,
-            4.4,
-            39.4,
-            3.3,
+            28.4,
+            3.6,
+            7.2,
+            4.7,
+            3.5,
+            3.1,
             2.7,
-            2.9,
-            2.7,
-            2.7,
+            3.1,
+            49.5,
+            3.1,
             49.5,
             49.5
           ],
@@ -15622,39 +15586,39 @@
         }
       },
       "polyTotal": {
-        "line": 49.5,
-        "title": "O/U 49.5",
+        "line": 45.5,
+        "title": "O/U 45.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          43,
-          57
+          54.5,
+          45.5
         ],
         "tokenIds": [
-          "53961143689534665376292648015116116518346259754443477999755295126543146962631",
-          "97424321080749057787204196491841670732585222351170730550631094055911593202516"
+          "101038776131624203850657517082787045243212956304225879516371591777758398596337",
+          "50964336708157852127756527126905379749313477559036762975469507021314111057292"
         ],
         "priceHistory": {
           "points": [
-            42,
-            42,
-            42,
-            42,
-            42,
-            42.5,
-            42.5,
-            42.5,
-            42.5,
-            42.5,
-            43.5,
-            43,
-            43
+            54.5,
+            54.5,
+            54,
+            54,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5
           ],
-          "open": 42,
-          "current": 43,
-          "change": 1
+          "open": 54.5,
+          "current": 54.5,
+          "change": 0
         }
       },
       "awayTeam": "Rice",
@@ -15669,13 +15633,13 @@
     "prin_wag": {
       "volume24h": 1167.111789,
       "liveVolume": 1167.111789,
-      "awayMoneyPct": 93.6,
-      "homeMoneyPct": 6.4,
-      "awayTicketPct": 70.4,
-      "homeTicketPct": 29.6,
-      "tradeCount": 27,
-      "sampleCash": 488,
-      "priceMove1h": 0,
+      "awayMoneyPct": 93.7,
+      "homeMoneyPct": 6.3,
+      "awayTicketPct": 71.4,
+      "homeTicketPct": 28.6,
+      "tradeCount": 28,
+      "sampleCash": 498,
+      "priceMove1h": -0.5,
       "priceHistory": {
         "points": [
           92,
@@ -15690,17 +15654,17 @@
           91,
           91,
           91.5,
-          91.5
+          91
         ],
         "open": 92,
-        "current": 91.5,
+        "current": 91,
         "high": 92,
         "low": 90,
-        "change": -0.5
+        "change": -1
       },
       "whales": null,
-      "awayProb": 91.5,
-      "homeProb": 8.5,
+      "awayProb": 91,
+      "homeProb": 9,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -15732,22 +15696,22 @@
         "priceHistory": {
           "points": [
             50,
-            50,
             49.5,
             50,
-            50,
-            50,
-            65.5,
-            54.5,
-            54,
             50.5,
-            49.5,
+            50.5,
+            50,
+            54,
+            54,
+            51.5,
+            50.5,
             49,
-            49
+            49.5,
+            49.5
           ],
           "open": 50,
-          "current": 49,
-          "change": -1
+          "current": 49.5,
+          "change": -0.5
         }
       },
       "polyTotal": {
@@ -15773,12 +15737,12 @@
             50,
             50,
             50,
-            50,
             54,
             54,
-            26,
-            25,
-            25,
+            54,
+            25.5,
+            25.5,
+            24.5,
             24.5
           ],
           "open": 50,
@@ -15860,23 +15824,23 @@
         ],
         "priceHistory": {
           "points": [
+            12,
+            12,
             12.5,
+            13,
+            12,
             11.5,
-            12,
-            12,
-            12.5,
-            12,
             11,
             11.5,
             12,
             12,
             12,
-            11.5,
+            11,
             11.5
           ],
-          "open": 12.5,
+          "open": 12,
           "current": 11.5,
-          "change": -1
+          "change": -0.5
         }
       },
       "polyTotal": {
@@ -15887,8 +15851,8 @@
           "Under"
         ],
         "probs": [
-          50.5,
-          49.5
+          51,
+          49
         ],
         "tokenIds": [
           "105658166829597204393539737171735586188812741001462585574812304271608419230721",
@@ -15908,11 +15872,11 @@
             50.5,
             50.5,
             50.5,
-            50.5
+            51
           ],
           "open": 51.5,
-          "current": 50.5,
-          "change": -1
+          "current": 51,
+          "change": -0.5
         }
       },
       "awayTeam": "North Dakota State",
@@ -15980,8 +15944,8 @@
           "Oregon State"
         ],
         "probs": [
-          45.5,
-          54.5
+          44.8,
+          55.3
         ],
         "tokenIds": [
           "63918591014117250327670085995401910670578628228351132384790132121797236447052",
@@ -15989,58 +15953,58 @@
         ],
         "priceHistory": {
           "points": [
-            44.9,
-            44.6,
-            44.6,
-            42.3,
-            40,
+            44.3,
             44,
-            43.8,
+            44,
+            41.7,
+            44.4,
+            43.5,
+            43.5,
             43,
-            46.1,
-            40.7,
-            34.2,
-            45.8,
-            45.3
+            45.6,
+            40.1,
+            33.6,
+            46,
+            44.8
           ],
-          "open": 44.9,
-          "current": 45.3,
-          "change": 0.4
+          "open": 44.3,
+          "current": 44.8,
+          "change": 0.5
         }
       },
       "polyTotal": {
-        "line": 53.5,
-        "title": "O/U 53.5",
+        "line": 51.5,
+        "title": "O/U 51.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          48.5,
-          51.5
+          53.5,
+          46.5
         ],
         "tokenIds": [
-          "69586569089419176850314084507618840104984142243000649815326754350665526473034",
-          "99455345681908328420764753814307780251108392520103751032092158421453398293106"
+          "86678835681577503050068054529652878273601017829305289241714254022136276112063",
+          "28003094218489838625177901992808502065139224308766969726538218627278167998396"
         ],
         "priceHistory": {
           "points": [
-            50,
-            50,
-            49.5,
-            50,
-            49.5,
-            48.5,
-            48.5,
-            48.5,
-            48,
-            48.5,
-            48.5,
-            48.5,
-            48.5
+            55,
+            55,
+            55,
+            55,
+            55,
+            53.5,
+            53.5,
+            53.5,
+            53.5,
+            53.5,
+            53.5,
+            53.5,
+            53.5
           ],
-          "open": 50,
-          "current": 48.5,
+          "open": 55,
+          "current": 53.5,
           "change": -1.5
         }
       },
@@ -16062,7 +16026,7 @@
       "homeTicketPct": 30,
       "tradeCount": 10,
       "sampleCash": 611,
-      "priceMove1h": 0,
+      "priceMove1h": 3.6,
       "priceHistory": {
         "points": [
           14,
@@ -16086,8 +16050,8 @@
         "change": 0.5
       },
       "whales": null,
-      "awayProb": 14,
-      "homeProb": 86,
+      "awayProb": 14.5,
+      "homeProb": 85.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -16119,16 +16083,16 @@
         "priceHistory": {
           "points": [
             3.1,
-            3.1,
             26,
-            5.4,
-            3.5,
-            3.8,
+            3.1,
+            5.7,
+            3.9,
+            3.3,
             3.1,
             30.4,
-            3.8,
-            3.3,
+            4.7,
             31.4,
+            31.3,
             3,
             49.5
           ],
@@ -16183,7 +16147,7 @@
       "enrichmentFailed": false
     },
     "usd_but": {
-      "volume24h": 1023.512634,
+      "volume24h": 1023.5126340000002,
       "liveVolume": 1023.512633,
       "awayMoneyPct": 89.1,
       "homeMoneyPct": 10.9,
@@ -16238,8 +16202,8 @@
           "Butler"
         ],
         "probs": [
-          49.5,
-          50.5
+          50,
+          50
         ],
         "tokenIds": [
           "70017383386248614316549394849147981991043493559059533918762187870289291411390",
@@ -16247,23 +16211,23 @@
         ],
         "priceHistory": {
           "points": [
+            45.5,
+            50,
             46,
-            43.5,
+            42.5,
             46,
-            43,
-            47.5,
+            50,
+            49,
+            50,
             49.5,
-            46.5,
-            46,
-            49.5,
-            36.5,
-            36,
-            34,
-            49.5
+            50,
+            34.5,
+            33.5,
+            50
           ],
-          "open": 46,
-          "current": 49.5,
-          "change": 3.5
+          "open": 45.5,
+          "current": 50,
+          "change": 4.5
         }
       },
       "polyTotal": {
@@ -16287,14 +16251,14 @@
             67,
             67,
             53,
-            53,
-            64.5,
+            53.5,
+            66,
             59.5,
-            55.5,
             54.5,
-            63.5,
-            58,
-            59,
+            54.5,
+            64,
+            56.5,
+            59.5,
             51.5
           ],
           "open": 68.5,
@@ -16320,32 +16284,32 @@
       "homeTicketPct": 94.7,
       "tradeCount": 57,
       "sampleCash": 447,
-      "priceMove1h": 5,
+      "priceMove1h": -4.8,
       "priceHistory": {
         "points": [
           0.4,
           0.4,
           0.4,
           0.4,
-          0.5,
+          0.4,
           0.4,
           0.4,
           0.4,
           0.9,
           1.1,
-          0.9,
           1.1,
-          1.1
+          1.1,
+          1
         ],
         "open": 0.4,
-        "current": 1.1,
+        "current": 1,
         "high": 1.4,
         "low": 0.4,
-        "change": 0.7
+        "change": 0.6
       },
       "whales": null,
-      "awayProb": 1.1,
-      "homeProb": 98.9,
+      "awayProb": 1,
+      "homeProb": 99,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -16367,8 +16331,8 @@
           "Northwestern"
         ],
         "probs": [
-          49,
-          51
+          49.5,
+          50.5
         ],
         "tokenIds": [
           "41772490077675595712605388369418752908157319213161893204983791601027142678311",
@@ -16376,59 +16340,59 @@
         ],
         "priceHistory": {
           "points": [
-            48.5,
-            48.5,
-            48.5,
-            48.5,
+            49.5,
+            49.5,
+            49.5,
+            49,
+            49,
             49,
             48.5,
             48.5,
-            48.5,
-            48.5,
             49,
             49,
             48.5,
-            49
+            48.5,
+            49.5
           ],
-          "open": 48.5,
-          "current": 49,
-          "change": 0.5
+          "open": 49.5,
+          "current": 49.5,
+          "change": 0
         }
       },
       "polyTotal": {
-        "line": 61.5,
-        "title": "O/U 61.5",
+        "line": 55.5,
+        "title": "O/U 55.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          28,
-          72
+          41.5,
+          58.5
         ],
         "tokenIds": [
-          "55673172757966898311416104726413317746742138834047626980569416279879663649430",
-          "38669426831160960356744870847837036284303047797387364451174394509625123303767"
+          "5171132064407374155797282343404678762240493765717594316322915663890267969900",
+          "78355820702157724360118460798133432687214838638090827830587042926162614836620"
         ],
         "priceHistory": {
           "points": [
-            27.5,
-            28,
-            28,
-            27.5,
-            27.5,
-            28,
-            28,
-            27.5,
-            27.5,
-            28,
-            28,
-            28,
-            28
+            42,
+            42,
+            42.5,
+            42.5,
+            42.5,
+            42,
+            42,
+            41.5,
+            41,
+            42,
+            42,
+            42,
+            41.5
           ],
-          "open": 27.5,
-          "current": 28,
-          "change": 0.5
+          "open": 42,
+          "current": 41.5,
+          "change": -0.5
         }
       },
       "awayTeam": "Ball State",
@@ -16496,8 +16460,8 @@
           "Kansas State"
         ],
         "probs": [
-          28.5,
-          71.5
+          23.5,
+          76.5
         ],
         "tokenIds": [
           "53575823900030518737895776877958269782175491667124830706827031065800030403979",
@@ -16506,22 +16470,22 @@
         "priceHistory": {
           "points": [
             7,
-            7,
-            7,
+            28,
+            6.5,
             5.5,
-            7,
-            7,
+            6,
+            5.5,
+            5.5,
+            6,
+            6,
             6.5,
             6,
-            6,
-            6,
-            6,
-            37.5,
-            27
+            37,
+            22.5
           ],
           "open": 7,
-          "current": 27,
-          "change": 20
+          "current": 22.5,
+          "change": 15.5
         }
       },
       "polyTotal": {
@@ -16570,7 +16534,7 @@
       "enrichmentFailed": false
     },
     "minn_pur": {
-      "volume24h": 817.2167169999999,
+      "volume24h": 817.216717,
       "liveVolume": 817.216716,
       "awayMoneyPct": 72,
       "homeMoneyPct": 28,
@@ -16625,8 +16589,8 @@
           "Purdue"
         ],
         "probs": [
-          11,
-          89
+          10.5,
+          89.5
         ],
         "tokenIds": [
           "79683938322834460550253168859050688261227630246916511889897436846198163724615",
@@ -16637,20 +16601,20 @@
             9.5,
             10,
             10,
-            9.5,
             10,
-            10,
-            10,
-            9.5,
-            9.5,
-            9.5,
             9.5,
             9,
-            11
+            10,
+            9.5,
+            10,
+            9.5,
+            9.5,
+            9.5,
+            10.5
           ],
           "open": 9.5,
-          "current": 11,
-          "change": 1.5
+          "current": 10.5,
+          "change": 1
         }
       },
       "polyTotal": {
@@ -16699,7 +16663,7 @@
       "enrichmentFailed": false
     },
     "wake_ncst": {
-      "volume24h": 627.496176,
+      "volume24h": 654.496176,
       "liveVolume": 654.496176,
       "awayMoneyPct": 87.6,
       "homeMoneyPct": 12.4,
@@ -16774,7 +16738,7 @@
             12,
             12.5,
             13,
-            12.5,
+            13,
             13.5
           ],
           "open": 13,
@@ -16893,22 +16857,22 @@
         "priceHistory": {
           "points": [
             3.3,
-            4.8,
-            3.5,
-            5.7,
+            4.3,
+            3.8,
+            27,
             4.4,
+            3.5,
             27,
+            3.3,
             27,
-            3.2,
-            3.2,
-            3.2,
+            3.1,
             49.5,
-            4.2,
-            49.5
+            3.7,
+            50
           ],
           "open": 3.3,
-          "current": 49.5,
-          "change": 46.2
+          "current": 50,
+          "change": 46.7
         }
       },
       "polyTotal": {
@@ -17032,7 +16996,7 @@
             32,
             32,
             32.5,
-            33,
+            32.5,
             33
           ],
           "open": 33,
@@ -17041,38 +17005,38 @@
         }
       },
       "polyTotal": {
-        "line": 49.5,
-        "title": "O/U 49.5",
+        "line": 51.5,
+        "title": "O/U 51.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          56,
-          44
+          49.5,
+          50.5
         ],
         "tokenIds": [
-          "88921090275669820532463381065812071523125719067668154695345352364826980764730",
-          "69994715375837043265931828918349192661400042850900572768542625075003684713919"
+          "28141267342166007647208041818620453610886572141646819818467450703213134717382",
+          "88976334549126173866794392562131074246973162955692000922039175702740373831457"
         ],
         "priceHistory": {
           "points": [
-            56,
-            56,
-            56,
-            56,
-            56,
-            56,
-            56,
-            56,
-            55.5,
-            55.5,
-            55.5,
-            55.5,
-            56
+            49.5,
+            49.5,
+            50,
+            50,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5
           ],
-          "open": 56,
-          "current": 56,
+          "open": 49.5,
+          "current": 49.5,
           "change": 0
         }
       },
@@ -17098,15 +17062,15 @@
       "priceHistory": {
         "points": [
           38.5,
-          43,
+          42.5,
           40.5,
-          42,
           41.5,
+          42,
           42.5,
           42.5,
           44.5,
           45,
-          44.5,
+          44,
           44,
           42.5,
           42.5
@@ -17150,23 +17114,23 @@
         ],
         "priceHistory": {
           "points": [
-            19.5,
-            19.5,
+            19,
+            19,
+            19,
+            19,
+            19,
             19.5,
             19.5,
             19,
             19.5,
-            20,
-            19.5,
-            19.5,
-            19.5,
-            19.5,
-            19.5,
-            31
+            19,
+            33,
+            33,
+            31.5
           ],
-          "open": 19.5,
-          "current": 31,
-          "change": 11.5
+          "open": 19,
+          "current": 31.5,
+          "change": 12.5
         }
       },
       "polyTotal": {
@@ -17189,7 +17153,7 @@
             49.5,
             49.5,
             49.5,
-            50,
+            49.5,
             49.5,
             49.5,
             50,
@@ -17271,7 +17235,7 @@
         ],
         "probs": [
           36.4,
-          63.5
+          63.6
         ],
         "tokenIds": [
           "52827367656914055196554024909629351453037000927288735668108389421454942415022",
@@ -17280,17 +17244,17 @@
         "priceHistory": {
           "points": [
             5.9,
-            5.7,
-            6.3,
-            5.2,
-            6.2,
-            13.7,
+            25,
+            5.5,
             5.1,
-            5,
-            5.5,
             5.8,
+            5.3,
+            5.1,
+            4.8,
+            35.4,
+            5.3,
             36.4,
-            5.5,
+            36.4,
             36.4
           ],
           "open": 5.9,
@@ -17315,6 +17279,7 @@
         ],
         "priceHistory": {
           "points": [
+            53,
             53,
             53,
             53,
@@ -17398,8 +17363,8 @@
           "Morgan State"
         ],
         "probs": [
-          12.5,
-          87.5
+          36.5,
+          63.5
         ],
         "tokenIds": [
           "85666804515789076699770422239616511782025217849358440651878338443112389527485",
@@ -17407,59 +17372,59 @@
         ],
         "priceHistory": {
           "points": [
-            11.5,
-            12,
-            12,
-            11,
-            12,
-            11,
-            18,
+            31,
+            28,
             13.5,
             14,
+            11.5,
+            25.5,
             14,
+            17,
+            13.5,
+            13.5,
+            12.5,
             13,
-            12,
-            12.5
+            36.5
           ],
-          "open": 11.5,
-          "current": 12.5,
-          "change": 1
+          "open": 31,
+          "current": 36.5,
+          "change": 5.5
         }
       },
       "polyTotal": {
-        "line": 61.5,
-        "title": "O/U 61.5",
+        "line": 53.5,
+        "title": "O/U 53.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          33,
-          67
+          49,
+          51
         ],
         "tokenIds": [
-          "4955439808354821927871738320339215348659079291953385396776667346382989460598",
-          "108039398512763101677310289289007785267879539434982676212144552993684966565323"
+          "2463461797038819844246767774573439877469699645662843362923253379947866449571",
+          "37716235188483496043732272646991889275189508303572419916945996326830249479047"
         ],
         "priceHistory": {
           "points": [
-            33,
-            32.5,
-            33,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            32.5,
-            33
+            46.5,
+            49.5,
+            49,
+            49,
+            48.5,
+            48,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            49
           ],
-          "open": 33,
-          "current": 33,
-          "change": 0
+          "open": 46.5,
+          "current": 49,
+          "change": 2.5
         }
       },
       "awayTeam": "Robert Morris",
@@ -17480,10 +17445,10 @@
       "homeTicketPct": 66.7,
       "tradeCount": 3,
       "sampleCash": 105,
-      "priceMove1h": 0,
+      "priceMove1h": -1.3,
       "priceHistory": {
         "points": [
-          39.5,
+          39,
           38.5,
           38.5,
           39.5,
@@ -17492,20 +17457,20 @@
           37,
           37.5,
           37,
-          37,
-          37,
           37.5,
+          36.5,
+          37,
           37
         ],
-        "open": 39.5,
+        "open": 39,
         "current": 37,
         "high": 40,
         "low": 36.5,
-        "change": -2.5
+        "change": -2
       },
       "whales": null,
-      "awayProb": 37.5,
-      "homeProb": 62.5,
+      "awayProb": 37,
+      "homeProb": 63,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -17527,8 +17492,8 @@
           "Elon"
         ],
         "probs": [
-          35,
-          65
+          36,
+          64
         ],
         "tokenIds": [
           "38758914104315107231618045808252268874211188725930558416521871369802637695621",
@@ -17536,23 +17501,23 @@
         ],
         "priceHistory": {
           "points": [
-            27.5,
-            26.5,
-            24,
+            33,
+            26,
             23.5,
-            23.5,
-            25,
-            24.5,
-            24.5,
-            25,
-            25,
             23,
             24,
-            34.5
+            36,
+            24.5,
+            24,
+            35.5,
+            34.5,
+            38,
+            24.5,
+            36
           ],
-          "open": 27.5,
-          "current": 34.5,
-          "change": 7
+          "open": 33,
+          "current": 36,
+          "change": 3
         }
       },
       "polyTotal": {
@@ -17574,6 +17539,7 @@
           "points": [
             50,
             50,
+            50.5,
             50,
             50,
             50,
@@ -17614,6 +17580,7 @@
           54,
           54,
           54,
+          53.5,
           53.5,
           53.5,
           53.5,
@@ -17663,13 +17630,13 @@
         ],
         "priceHistory": {
           "points": [
-            8.5,
+            10,
             8.5,
             7.5,
             8.5,
             8.5,
             9,
-            7,
+            7.5,
             7.5,
             10,
             9.5,
@@ -17677,9 +17644,9 @@
             8.5,
             9.5
           ],
-          "open": 8.5,
+          "open": 10,
           "current": 9.5,
-          "change": 1
+          "change": -0.5
         }
       },
       "polyTotal": {
@@ -17690,8 +17657,8 @@
           "Under"
         ],
         "probs": [
-          43.5,
-          56.5
+          43,
+          57
         ],
         "tokenIds": [
           "13931158667708730975880199252896748110012145005611390724236405159958505974301",
@@ -17711,11 +17678,11 @@
             43,
             43,
             43,
-            43.5
+            43
           ],
           "open": 43.5,
-          "current": 43.5,
-          "change": 0
+          "current": 43,
+          "change": -0.5
         }
       },
       "awayTeam": "Miami (OH)",
@@ -17742,7 +17709,7 @@
           37.5,
           37.5,
           37.5,
-          37.5,
+          38,
           38.5,
           38.5,
           38.5,
@@ -17750,6 +17717,7 @@
           38.5,
           38.5,
           38.5,
+          38,
           38
         ],
         "open": 37.5,
@@ -17782,8 +17750,8 @@
           "Brown"
         ],
         "probs": [
-          40.5,
-          59.5
+          40,
+          60
         ],
         "tokenIds": [
           "89693231179480414659266158113394958564994871357414896265620228173510876077362",
@@ -17791,23 +17759,23 @@
         ],
         "priceHistory": {
           "points": [
-            27,
+            26,
+            34.5,
+            34.5,
+            23,
             23,
             23.5,
-            23.5,
-            23.5,
-            23.5,
-            23.5,
-            23.5,
-            23.5,
-            22.5,
-            21.5,
-            24.5,
-            40.5
+            23,
+            23,
+            23,
+            22,
+            23,
+            24,
+            40
           ],
-          "open": 27,
-          "current": 40.5,
-          "change": 13.5
+          "open": 26,
+          "current": 40,
+          "change": 14
         }
       },
       "polyTotal": {
@@ -17833,6 +17801,7 @@
             49.5,
             49.5,
             49.5,
+            50,
             50,
             50,
             50,
@@ -17877,6 +17846,7 @@
           76,
           76,
           76.5,
+          76.5,
           76.5
         ],
         "open": 76,
@@ -17909,8 +17879,8 @@
           "UTEP"
         ],
         "probs": [
-          23,
-          77
+          23.5,
+          76.5
         ],
         "tokenIds": [
           "1616634261017238237387092737605204236930726986657205628872465430265037085769",
@@ -17930,11 +17900,11 @@
             25,
             24.5,
             23,
-            23
+            23.5
           ],
           "open": 23.5,
-          "current": 23,
-          "change": -0.5
+          "current": 23.5,
+          "change": 0
         }
       },
       "polyTotal": {
@@ -18038,8 +18008,8 @@
           "Dayton"
         ],
         "probs": [
-          35,
-          65
+          32,
+          68
         ],
         "tokenIds": [
           "20743660247485392525940545086902937086004923845541534120040523943391458139605",
@@ -18047,23 +18017,23 @@
         ],
         "priceHistory": {
           "points": [
+            27,
+            9.5,
+            9.5,
+            10.5,
+            10,
             28.5,
-            10,
-            10,
-            11.5,
+            28.5,
             10.5,
             10,
-            29,
-            11,
-            10.5,
+            38.5,
+            38,
             8,
-            9,
-            8,
-            35
+            34
           ],
-          "open": 28.5,
-          "current": 35,
-          "change": 6.5
+          "open": 27,
+          "current": 34,
+          "change": 7
         }
       },
       "polyTotal": {
@@ -18087,6 +18057,7 @@
             50,
             50,
             50,
+            50.5,
             50,
             50,
             50,
@@ -18122,11 +18093,11 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          35,
+          35.5,
           38.5,
           38.5,
           38,
-          37.5,
+          38,
           38,
           38,
           38,
@@ -18136,11 +18107,11 @@
           37,
           37
         ],
-        "open": 35,
+        "open": 35.5,
         "current": 37,
         "high": 38.5,
         "low": 35,
-        "change": 2
+        "change": 1.5
       },
       "whales": null,
       "awayProb": 37,
@@ -18166,8 +18137,8 @@
           "North Carolina Central"
         ],
         "probs": [
-          34.5,
-          65.5
+          34,
+          66
         ],
         "tokenIds": [
           "26288404189669458936017262996494150166426038700102977699689521991370629701564",
@@ -18175,23 +18146,23 @@
         ],
         "priceHistory": {
           "points": [
-            28,
-            23,
-            23,
-            22,
-            22.5,
-            22,
-            40.5,
-            22,
+            27.5,
+            34,
             22.5,
             21.5,
+            22,
+            22,
+            22,
             21.5,
             22,
-            34.5
+            22.5,
+            20.5,
+            22,
+            35
           ],
-          "open": 28,
-          "current": 34.5,
-          "change": 6.5
+          "open": 27.5,
+          "current": 35,
+          "change": 7.5
         }
       },
       "polyTotal": {
@@ -18213,6 +18184,7 @@
           "points": [
             50.5,
             50,
+            49.5,
             50,
             50,
             50,
@@ -18294,8 +18266,8 @@
           "South Dakota"
         ],
         "probs": [
-          14,
-          86
+          32.5,
+          67.5
         ],
         "tokenIds": [
           "41697857376678598139282116340580349749660220429710619198162377473507231040841",
@@ -18303,23 +18275,23 @@
         ],
         "priceHistory": {
           "points": [
-            25.5,
+            26,
+            12.5,
+            12.5,
+            11.5,
+            11.5,
+            17.5,
+            15,
+            14.5,
             13.5,
-            12.5,
-            12.5,
-            12.5,
-            12.5,
-            15.5,
-            15,
+            32.5,
             14,
-            15,
-            14,
-            15,
-            14
+            14.5,
+            32.5
           ],
-          "open": 25.5,
-          "current": 14,
-          "change": -11.5
+          "open": 26,
+          "current": 32.5,
+          "change": 6.5
         }
       },
       "polyTotal": {
@@ -18340,6 +18312,7 @@
         "priceHistory": {
           "points": [
             50.5,
+            50,
             50,
             50,
             50,
@@ -18384,7 +18357,7 @@
           34.5,
           34,
           33.5,
-          33,
+          32.5,
           32,
           31.5,
           32.5,
@@ -18422,8 +18395,8 @@
           "Yale"
         ],
         "probs": [
-          11,
-          89
+          11.5,
+          88.5
         ],
         "tokenIds": [
           "63053289803789654767026576256039948956013977666111659638342199883373071289257",
@@ -18431,23 +18404,23 @@
         ],
         "priceHistory": {
           "points": [
-            18,
+            17.5,
             11,
             11,
-            11,
-            11,
-            11,
-            10,
             10.5,
             11,
             10.5,
-            10,
-            10,
-            11
+            11,
+            10.5,
+            10.5,
+            10.5,
+            11,
+            11,
+            11.5
           ],
-          "open": 18,
-          "current": 11,
-          "change": -7
+          "open": 17.5,
+          "current": 11.5,
+          "change": -6
         }
       },
       "polyTotal": {
@@ -18467,7 +18440,8 @@
         ],
         "priceHistory": {
           "points": [
-            33.5,
+            33,
+            32.5,
             32.5,
             32.5,
             32.5,
@@ -18480,9 +18454,9 @@
             32.5,
             32.5
           ],
-          "open": 33.5,
+          "open": 33,
           "current": 32.5,
-          "change": -1
+          "change": -0.5
         }
       },
       "awayTeam": "Dartmouth",
@@ -18506,7 +18480,7 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          62.5,
+          62,
           62.5,
           62.5,
           63,
@@ -18520,11 +18494,11 @@
           62.5,
           57.5
         ],
-        "open": 62.5,
+        "open": 62,
         "current": 57.5,
         "high": 63,
         "low": 57.5,
-        "change": -5
+        "change": -4.5
       },
       "whales": null,
       "awayProb": 57.5,
@@ -18550,8 +18524,8 @@
           "Weber State"
         ],
         "probs": [
-          34.5,
-          65.5
+          34,
+          66
         ],
         "tokenIds": [
           "22979203720307729080867137824528117738643155798667620283656507120137250905563",
@@ -18559,21 +18533,22 @@
         ],
         "priceHistory": {
           "points": [
-            41.5,
-            37.5,
+            41,
             36.5,
-            38,
-            37.5,
-            38.5,
             35.5,
-            36,
-            35,
-            35,
+            37,
+            37.5,
+            37,
+            37,
+            36.5,
+            40.5,
             34.5,
-            34.5
+            34,
+            34,
+            34
           ],
-          "open": 41.5,
-          "current": 34.5,
+          "open": 41,
+          "current": 34,
           "change": -7
         }
       },
@@ -18600,6 +18575,7 @@
             50.5,
             50.5,
             50.5,
+            50,
             50,
             50,
             50,
@@ -18634,13 +18610,14 @@
       "priceHistory": {
         "points": [
           31.5,
-          32,
           31.5,
+          31,
           30.5,
           31.5,
           31.5,
           31.5,
           31.5,
+          32.5,
           32.5,
           32.5,
           32.5,
@@ -18685,23 +18662,23 @@
         ],
         "priceHistory": {
           "points": [
-            20.5,
+            20,
+            16.5,
+            16.5,
+            17,
+            16.5,
             17.5,
             17.5,
-            14,
+            17,
+            30.5,
+            17,
+            17,
             17.5,
-            17.5,
-            18,
-            17.5,
-            17.5,
-            17.5,
-            17.5,
-            18,
             32.5
           ],
-          "open": 20.5,
+          "open": 20,
           "current": 32.5,
-          "change": 12
+          "change": 12.5
         }
       },
       "polyTotal": {
@@ -18732,6 +18709,7 @@
             50,
             50,
             50,
+            50,
             50
           ],
           "open": 50,
@@ -18745,6 +18723,135 @@
       "title": "Western Carolina vs. Mercer",
       "commence": "2026-10-10T19:00:00Z",
       "polyGameTime": "2026-10-10T19:00:00Z",
+      "polyGameDate": "2026-10-10",
+      "enrichmentFailed": false
+    },
+    "stnh_shu": {
+      "volume24h": 33,
+      "liveVolume": 33,
+      "awayMoneyPct": 100,
+      "homeMoneyPct": 0,
+      "awayTicketPct": 100,
+      "homeTicketPct": 0,
+      "tradeCount": 1,
+      "sampleCash": 10,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          26.5,
+          27,
+          27.5,
+          27.5,
+          27.5,
+          27.5,
+          27.5,
+          27.5,
+          27.5,
+          28,
+          28,
+          28,
+          28
+        ],
+        "open": 26.5,
+        "current": 28,
+        "high": 28,
+        "low": 26,
+        "change": 1.5
+      },
+      "whales": null,
+      "awayProb": 28,
+      "homeProb": 72,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polyMl": {
+        "slug": "cfb-stnh-sacred-2026-10-10",
+        "conditionId": "0x94b0297fd9a504c123a6a8c792ad54b9887637f28642c44ff2db968dd70ff567",
+        "title": "Stonehill vs. Sacred Heart",
+        "tokenIds": [
+          "24204110946882375318474118300732371004484137808348991157853868250376721488162",
+          "98823947663446109153018641061540845419715007561449891471627709680850857697415"
+        ],
+        "token0IsAway": true
+      },
+      "polySpread": {
+        "line": -14.5,
+        "title": "Spread -14.5",
+        "outcomes": [
+          "Stonehill",
+          "Sacred Heart"
+        ],
+        "probs": [
+          10.5,
+          89.5
+        ],
+        "tokenIds": [
+          "77424357466820668402693075596706999162177603397325188943815785018924197633330",
+          "112750691417183194974284018995583571703271757126390393702258041052623372757065"
+        ],
+        "priceHistory": {
+          "points": [
+            26,
+            10,
+            10,
+            9.5,
+            11,
+            10,
+            10.5,
+            9.5,
+            9.5,
+            10,
+            10,
+            9.5,
+            10.5
+          ],
+          "open": 26,
+          "current": 10.5,
+          "change": -15.5
+        }
+      },
+      "polyTotal": {
+        "line": 59.5,
+        "title": "O/U 59.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          20.5,
+          79.5
+        ],
+        "tokenIds": [
+          "76607297783943598790967513555768824807059225114012808193492416842598370645970",
+          "40192164017720743896780501515156955371102387665119162399395830148013476110284"
+        ],
+        "priceHistory": {
+          "points": [
+            36,
+            20.5,
+            20,
+            20,
+            20,
+            20,
+            20.5,
+            20.5,
+            20.5,
+            20.5,
+            21,
+            20.5,
+            20.5
+          ],
+          "open": 36,
+          "current": 20.5,
+          "change": -15.5
+        }
+      },
+      "awayTeam": "Stonehill",
+      "homeTeam": "Sacred Heart",
+      "eventId": "1100313",
+      "title": "Stonehill vs. Sacred Heart",
+      "commence": "2026-10-10T16:00:00Z",
+      "polyGameTime": "2026-10-10T16:00:00Z",
       "polyGameDate": "2026-10-10",
       "enrichmentFailed": false
     },
@@ -18767,10 +18874,11 @@
           68,
           68,
           68,
-          68,
+          68.5,
           68,
           68,
           68.5,
+          68,
           68
         ],
         "open": 70,
@@ -18803,8 +18911,8 @@
           "North Carolina A&T"
         ],
         "probs": [
-          42.5,
-          57.5
+          41.5,
+          58.5
         ],
         "tokenIds": [
           "17894382056619625760589308551753985816169575436224592733194064229062357055069",
@@ -18813,22 +18921,22 @@
         "priceHistory": {
           "points": [
             43.5,
-            39.5,
-            40,
-            39.5,
-            41,
-            39.5,
-            46,
+            43.5,
             39,
-            39.5,
             38.5,
-            37.5,
+            39,
+            45,
+            39,
+            39,
+            39,
             38.5,
-            42
+            38,
+            38,
+            42.5
           ],
           "open": 43.5,
-          "current": 42,
-          "change": -1.5
+          "current": 42.5,
+          "change": -1
         }
       },
       "polyTotal": {
@@ -18852,7 +18960,8 @@
             50,
             50,
             50,
-            49.5,
+            50,
+            50,
             50,
             50,
             50,
@@ -18884,7 +18993,7 @@
       "homeTicketPct": 50,
       "tradeCount": 2,
       "sampleCash": 5,
-      "priceMove1h": 0,
+      "priceMove1h": -1.1,
       "priceHistory": {
         "points": [
           43,
@@ -18908,8 +19017,8 @@
         "change": 0.5
       },
       "whales": null,
-      "awayProb": 44,
-      "homeProb": 56,
+      "awayProb": 43.5,
+      "homeProb": 56.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -18931,8 +19040,8 @@
           "Georgetown"
         ],
         "probs": [
-          33,
-          67
+          32.5,
+          67.5
         ],
         "tokenIds": [
           "97944524507404727433214698467630769138461645791168403601508461426387918655959",
@@ -18940,59 +19049,59 @@
         ],
         "priceHistory": {
           "points": [
+            19,
+            19,
             19.5,
+            19,
             19.5,
+            32.5,
             19.5,
-            19.5,
-            19.5,
-            19.5,
-            20,
-            19.5,
-            19.5,
-            19.5,
-            19.5,
-            19.5,
-            33
+            19,
+            19,
+            19,
+            19,
+            19,
+            32.5
           ],
-          "open": 19.5,
-          "current": 33,
+          "open": 19,
+          "current": 32.5,
           "change": 13.5
         }
       },
       "polyTotal": {
-        "line": 59.5,
-        "title": "O/U 59.5",
+        "line": 55.5,
+        "title": "O/U 55.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          25,
-          75
+          30.5,
+          69.5
         ],
         "tokenIds": [
-          "100724414184709692649633416224241450159676734879545018907585373614178595145519",
-          "49982387484134856803868924739288052134082306304374338165565998061634482069545"
+          "39859432537735982012789968129824605638703137443636790229433665608759643509002",
+          "24706453579197432463273309934038033142197304378776267314437308866488088671069"
         ],
         "priceHistory": {
           "points": [
-            22.5,
-            22.5,
-            22.5,
-            23,
-            23,
-            23,
-            23.5,
-            23.5,
-            23,
-            23,
-            23,
-            23,
-            25
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30.5
           ],
-          "open": 22.5,
-          "current": 25,
-          "change": 2.5
+          "open": 30,
+          "current": 30.5,
+          "change": 0.5
         }
       },
       "awayTeam": "Bucknell",
@@ -19013,10 +19122,10 @@
       "homeTicketPct": 100,
       "tradeCount": 1,
       "sampleCash": 4,
-      "priceMove1h": 0.7,
+      "priceMove1h": -0.7,
       "priceHistory": {
         "points": [
-          58.5,
+          59.5,
           60,
           61.5,
           66.5,
@@ -19026,14 +19135,15 @@
           66,
           66,
           66,
+          68,
           67.5,
-          67.5
+          67
         ],
-        "open": 58.5,
-        "current": 67.5,
+        "open": 59.5,
+        "current": 67,
         "high": 68.5,
-        "low": 58.5,
-        "change": 9
+        "low": 59,
+        "change": 7.5
       },
       "whales": null,
       "awayProb": 67.5,
@@ -19059,8 +19169,8 @@
           "Northern Arizona"
         ],
         "probs": [
-          41,
-          59
+          37.5,
+          62.5
         ],
         "tokenIds": [
           "86925119294755700904125621143738576975874200466084871625818177267467315101464",
@@ -19070,21 +19180,20 @@
           "points": [
             49.5,
             49.5,
-            49.5,
+            50,
             50,
             49.5,
             49.5,
-            50,
-            39.5,
-            38.5,
+            50.5,
+            47,
+            38,
+            35.5,
             36.5,
-            37,
-            38.5,
-            38
+            37.5
           ],
           "open": 49.5,
-          "current": 38,
-          "change": -11.5
+          "current": 37.5,
+          "change": -12
         }
       },
       "polyTotal": {
@@ -19095,8 +19204,8 @@
           "Under"
         ],
         "probs": [
-          50,
-          50
+          54,
+          46
         ],
         "tokenIds": [
           "43417503292722588704699368456793284318451333850497161395382616436120603169008",
@@ -19111,10 +19220,10 @@
             50,
             50,
             54,
+            50,
             54,
             54,
-            54,
-            54,
+            50,
             54
           ],
           "open": 50,
@@ -19147,14 +19256,14 @@
           78.5,
           78,
           78,
-          77.5,
           78,
           78,
           78,
           78,
           78,
           78,
-          77.5,
+          78,
+          78,
           78
         ],
         "open": 78.5,
@@ -19187,8 +19296,8 @@
           "The Citadel"
         ],
         "probs": [
-          40,
-          60
+          39.5,
+          60.5
         ],
         "tokenIds": [
           "49509634048420812030091248139074430481048484349850159388968713622822486461176",
@@ -19196,59 +19305,59 @@
         ],
         "priceHistory": {
           "points": [
-            39,
-            37.5,
+            40.5,
             38,
-            37.5,
-            37.5,
-            37.5,
-            39,
-            37.5,
-            37.5,
-            37.5,
+            38,
+            38,
+            38,
+            39.5,
+            38,
+            38,
             38.5,
             37.5,
-            40
+            37.5,
+            38,
+            39.5
           ],
-          "open": 39,
-          "current": 40,
-          "change": 1
+          "open": 40.5,
+          "current": 39.5,
+          "change": -1
         }
       },
       "polyTotal": {
-        "line": 61.5,
-        "title": "O/U 61.5",
+        "line": 49.5,
+        "title": "O/U 49.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          27,
-          73
+          50,
+          50
         ],
         "tokenIds": [
-          "94244661867330799587338459475424210707844594856459832907000072437320023191502",
-          "20381124482572807688501533671619145397633097970231046253885683179642182159542"
+          "104891223591894514752863492591034919605152295868635670284584080370890528628595",
+          "21758361908667900243590532303507673670327904516017299048222852249915231624087"
         ],
         "priceHistory": {
           "points": [
-            29.5,
-            26.5,
-            26.5,
-            26.5,
-            26.5,
-            26,
-            26,
-            26,
-            26,
-            26,
-            26,
-            26,
-            26.5
+            61,
+            52.5,
+            52.5,
+            52.5,
+            53,
+            53,
+            53,
+            53,
+            47,
+            47.5,
+            47,
+            46.5,
+            50
           ],
-          "open": 29.5,
-          "current": 26.5,
-          "change": -3
+          "open": 61,
+          "current": 50,
+          "change": -11
         }
       },
       "awayTeam": "East Tennessee State",
@@ -19276,12 +19385,13 @@
           13,
           13,
           14,
+          14.5,
           14,
           14,
           14,
           14,
           14,
-          14,
+          14.5,
           14.5,
           14.5
         ],
@@ -19315,8 +19425,8 @@
           "Tennessee Tech"
         ],
         "probs": [
-          28,
-          72
+          27.5,
+          72.5
         ],
         "tokenIds": [
           "70935829059500837691109609869695933316791358045277900389927580829560171519971",
@@ -19324,22 +19434,22 @@
         ],
         "priceHistory": {
           "points": [
-            16.5,
-            10.5,
-            10.5,
-            10.5,
-            10.5,
-            10.5,
-            29,
-            11,
-            10.5,
+            16,
+            10,
+            10,
             10,
             10.5,
+            12,
+            28.5,
             10.5,
-            28
+            10,
+            10,
+            9.5,
+            10.5,
+            27.5
           ],
-          "open": 16.5,
-          "current": 28,
+          "open": 16,
+          "current": 27.5,
           "change": 11.5
         }
       },
@@ -19403,14 +19513,14 @@
           79.5,
           79.5,
           79,
-          79.5,
+          79,
           79.5,
           79.5,
           79,
           78.5,
           79,
           78.5,
-          78.5,
+          79,
           78.5
         ],
         "open": 79.5,
@@ -19452,23 +19562,23 @@
         ],
         "priceHistory": {
           "points": [
-            46.5,
-            46.5,
+            47,
+            45.5,
+            45.5,
             45.5,
             45,
+            45.5,
+            45.5,
             46,
-            44.5,
+            45.5,
+            50,
             49.5,
             45,
-            45.5,
-            44.5,
-            42,
-            45.5,
-            50
+            49.5
           ],
-          "open": 46.5,
-          "current": 50,
-          "change": 3.5
+          "open": 47,
+          "current": 49.5,
+          "change": 2.5
         }
       },
       "polyTotal": {
@@ -19488,12 +19598,12 @@
         ],
         "priceHistory": {
           "points": [
-            41.5,
+            42,
             41.5,
             41.5,
             41.5,
             41,
-            41.5,
+            41,
             41,
             41,
             41,
@@ -19502,9 +19612,9 @@
             41,
             41
           ],
-          "open": 41.5,
+          "open": 42,
           "current": 41,
-          "change": -0.5
+          "change": -1
         }
       },
       "awayTeam": "North Dakota",
@@ -19532,7 +19642,7 @@
           44,
           44,
           43.5,
-          43.5,
+          43,
           43.5,
           43.5,
           43.5,
@@ -19571,8 +19681,8 @@
           "Alabama A&M"
         ],
         "probs": [
-          12,
-          88
+          13.5,
+          86.5
         ],
         "tokenIds": [
           "49247937978710937072532624942844199762625465405580335714237243405034103715538",
@@ -19580,23 +19690,23 @@
         ],
         "priceHistory": {
           "points": [
-            27,
-            13,
-            13,
-            12.5,
-            12.5,
-            12.5,
+            26,
             12.5,
             12.5,
             13,
-            12.5,
+            13,
+            13,
+            13,
             12.5,
             13,
-            12.5
+            13,
+            13,
+            13,
+            13
           ],
-          "open": 27,
-          "current": 12.5,
-          "change": -14.5
+          "open": 26,
+          "current": 13,
+          "change": -13
         }
       },
       "polyTotal": {
@@ -19655,24 +19765,25 @@
       "priceMove1h": 3.6,
       "priceHistory": {
         "points": [
-          14.5,
           15,
           15,
-          13.5,
-          14,
-          14.5,
+          15,
           14,
           14,
           14.5,
           14,
+          14,
+          14.5,
+          14,
+          14.5,
           14.5,
           14.5
         ],
-        "open": 14.5,
+        "open": 15,
         "current": 14.5,
         "high": 15.5,
         "low": 13.5,
-        "change": 0
+        "change": -0.5
       },
       "whales": null,
       "awayProb": 14.5,
@@ -19709,6 +19820,9 @@
           "points": [
             50,
             50,
+            49.5,
+            50,
+            50,
             50,
             50,
             50,
@@ -19716,14 +19830,11 @@
             50,
             50,
             50,
-            50,
-            50,
-            50,
-            50
+            49.5
           ],
           "open": 50,
-          "current": 50,
-          "change": 0
+          "current": 49.5,
+          "change": -0.5
         }
       },
       "polyTotal": {
@@ -19754,6 +19865,7 @@
             50,
             50,
             50,
+            50,
             50
           ],
           "open": 50,
@@ -19770,133 +19882,6 @@
       "polyGameDate": "2026-10-10",
       "enrichmentFailed": false
     },
-    "stnh_shu": {
-      "volume24h": 0,
-      "liveVolume": 33,
-      "awayMoneyPct": 100,
-      "homeMoneyPct": 0,
-      "awayTicketPct": 100,
-      "homeTicketPct": 0,
-      "tradeCount": 1,
-      "sampleCash": 10,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          26.5,
-          27,
-          27.5,
-          27.5,
-          27.5,
-          27.5,
-          27.5,
-          27.5,
-          27.5,
-          28,
-          28,
-          28
-        ],
-        "open": 26.5,
-        "current": 28,
-        "high": 28,
-        "low": 26,
-        "change": 1.5
-      },
-      "whales": null,
-      "awayProb": 28,
-      "homeProb": 72,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polyMl": {
-        "slug": "cfb-stnh-sacred-2026-10-10",
-        "conditionId": "0x94b0297fd9a504c123a6a8c792ad54b9887637f28642c44ff2db968dd70ff567",
-        "title": "Stonehill vs. Sacred Heart",
-        "tokenIds": [
-          "24204110946882375318474118300732371004484137808348991157853868250376721488162",
-          "98823947663446109153018641061540845419715007561449891471627709680850857697415"
-        ],
-        "token0IsAway": true
-      },
-      "polySpread": {
-        "line": -14.5,
-        "title": "Spread -14.5",
-        "outcomes": [
-          "Stonehill",
-          "Sacred Heart"
-        ],
-        "probs": [
-          10,
-          90
-        ],
-        "tokenIds": [
-          "77424357466820668402693075596706999162177603397325188943815785018924197633330",
-          "112750691417183194974284018995583571703271757126390393702258041052623372757065"
-        ],
-        "priceHistory": {
-          "points": [
-            26,
-            10,
-            10,
-            10,
-            10,
-            10,
-            9,
-            9.5,
-            10,
-            10.5,
-            10,
-            9.5,
-            10
-          ],
-          "open": 26,
-          "current": 10,
-          "change": -16
-        }
-      },
-      "polyTotal": {
-        "line": 59.5,
-        "title": "O/U 59.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          20.5,
-          79.5
-        ],
-        "tokenIds": [
-          "76607297783943598790967513555768824807059225114012808193492416842598370645970",
-          "40192164017720743896780501515156955371102387665119162399395830148013476110284"
-        ],
-        "priceHistory": {
-          "points": [
-            24,
-            20.5,
-            21,
-            20.5,
-            20.5,
-            21,
-            20.5,
-            20.5,
-            20.5,
-            20.5,
-            20.5,
-            20.5
-          ],
-          "open": 24,
-          "current": 20.5,
-          "change": -3.5
-        }
-      },
-      "awayTeam": "Stonehill",
-      "homeTeam": "Sacred Heart",
-      "eventId": "1100313",
-      "title": "Stonehill vs. Sacred Heart",
-      "commence": "2026-10-10T16:00:00Z",
-      "polyGameTime": "2026-10-10T16:00:00Z",
-      "polyGameDate": "2026-10-10",
-      "enrichmentFailed": false
-    },
     "harv_cor": {
       "volume24h": 0,
       "liveVolume": 0,
@@ -19909,7 +19894,7 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          71,
+          70.5,
           70,
           70,
           70,
@@ -19919,14 +19904,14 @@
           70.5,
           70.5,
           70.5,
-          70,
+          70.5,
           70.5
         ],
-        "open": 71,
+        "open": 70.5,
         "current": 70.5,
-        "high": 71,
+        "high": 70.5,
         "low": 69.5,
-        "change": -0.5
+        "change": 0
       },
       "whales": null,
       "awayProb": 70.5,
@@ -19961,23 +19946,23 @@
         ],
         "priceHistory": {
           "points": [
-            32.5,
-            31.5,
-            31.5,
+            32,
             31.5,
             31,
-            31,
-            48.5,
-            29,
-            28.5,
-            31,
-            29,
+            31.5,
+            31.5,
+            50.5,
             30.5,
+            29.5,
+            27.5,
+            30.5,
+            28.5,
+            29,
             43
           ],
-          "open": 32.5,
+          "open": 32,
           "current": 43,
-          "change": 10.5
+          "change": 11
         }
       },
       "polyTotal": {
@@ -20080,8 +20065,8 @@
           "Indiana State"
         ],
         "probs": [
-          45,
-          55
+          44.5,
+          55.5
         ],
         "tokenIds": [
           "105171950584730982389033488104302449398228518067443237050448628194249162682907",
@@ -20090,22 +20075,22 @@
         "priceHistory": {
           "points": [
             49.5,
-            49.5,
+            49,
+            49,
             49,
             48.5,
-            47.5,
-            42,
-            41.5,
+            41,
             40,
-            39.5,
-            39.5,
+            40,
+            38.5,
+            68,
             68.5,
-            69,
-            45
+            57.5,
+            44.5
           ],
           "open": 49.5,
-          "current": 45,
-          "change": -4.5
+          "current": 44.5,
+          "change": -5
         }
       },
       "polyTotal": {
@@ -20174,7 +20159,8 @@
           16,
           16,
           16,
-          16.5,
+          16,
+          16,
           16
         ],
         "open": 17,
@@ -20207,8 +20193,8 @@
           "Penn"
         ],
         "probs": [
-          31.5,
-          68.5
+          42.5,
+          57.5
         ],
         "tokenIds": [
           "31316480199206416216755307167173362029589919446161727331079973207608621044545",
@@ -20216,23 +20202,23 @@
         ],
         "priceHistory": {
           "points": [
-            17.5,
-            16.5,
+            17,
+            16,
+            14.5,
+            14.5,
             14,
-            15,
-            14.5,
-            14.5,
-            13.5,
-            25.5,
-            14.5,
-            13.5,
             14,
             14.5,
-            31.5
+            25,
+            14,
+            37,
+            13.5,
+            30.5,
+            42.5
           ],
-          "open": 17.5,
-          "current": 31.5,
-          "change": 14
+          "open": 17,
+          "current": 42.5,
+          "change": 25.5
         }
       },
       "polyTotal": {
@@ -20335,8 +20321,8 @@
           "Chattanooga"
         ],
         "probs": [
-          32,
-          68
+          31.5,
+          68.5
         ],
         "tokenIds": [
           "5885320136879145307134217602003260597434275017740726930405593964609481996583",
@@ -20344,59 +20330,59 @@
         ],
         "priceHistory": {
           "points": [
-            14.5,
+            13.5,
+            12,
+            13.5,
+            13.5,
             13,
             12.5,
-            13,
-            13.5,
-            15,
-            29.5,
             14.5,
-            14.5,
-            15,
-            15,
             14,
+            14.5,
+            31,
+            14.5,
+            15,
             32
           ],
-          "open": 14.5,
+          "open": 13.5,
           "current": 32,
-          "change": 17.5
+          "change": 18.5
         }
       },
       "polyTotal": {
-        "line": 61.5,
-        "title": "O/U 61.5",
+        "line": 53.5,
+        "title": "O/U 53.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          20.5,
-          79.5
+          31.5,
+          68.5
         ],
         "tokenIds": [
-          "7294569342737525391786627127326892366421804220762042479344422652315266857075",
-          "108695432224357480060801850901943760025385996458943277280626156715724182893069"
+          "13210782081652035122770985143730158235962875975553342834782746577031629638436",
+          "74983683694376554843985263388648221525765949601361104767279530719772578174664"
         ],
         "priceHistory": {
           "points": [
-            37.5,
-            21,
-            21,
-            21.5,
-            21.5,
-            21.5,
-            21,
-            21,
-            21,
-            21,
-            21,
-            21.5,
-            20.5
+            34,
+            32,
+            32,
+            32,
+            32,
+            32,
+            31.5,
+            31.5,
+            31.5,
+            31.5,
+            32,
+            31.5,
+            31.5
           ],
-          "open": 37.5,
-          "current": 20.5,
-          "change": -17
+          "open": 34,
+          "current": 31.5,
+          "change": -2.5
         }
       },
       "awayTeam": "Samford",
@@ -20428,6 +20414,7 @@
           57,
           57,
           57,
+          56.5,
           56.5,
           56.5,
           56.5,
@@ -20463,8 +20450,8 @@
           "Lindenwood"
         ],
         "probs": [
-          21,
-          79
+          21.5,
+          78.5
         ],
         "tokenIds": [
           "19099230770533858018380124982336256020577564038144094270012888387487664085648",
@@ -20473,58 +20460,57 @@
         "priceHistory": {
           "points": [
             26,
+            21,
+            21.5,
+            21.5,
+            21.5,
+            22,
+            21.5,
+            21,
             21.5,
             21,
             21,
             21,
-            21,
-            21,
-            21,
-            21,
-            21,
-            21,
-            21,
-            21
+            21.5
           ],
           "open": 26,
-          "current": 21,
-          "change": -5
+          "current": 21.5,
+          "change": -4.5
         }
       },
       "polyTotal": {
-        "line": 49.5,
-        "title": "O/U 49.5",
+        "line": 53.5,
+        "title": "O/U 53.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          41.5,
-          58.5
+          32.5,
+          67.5
         ],
         "tokenIds": [
-          "91067209663606095159993701589340401223471864309701246442065138835026133831525",
-          "78267184683922477768018999107545710823875148739733035423199234362433084623376"
+          "99504894834511832894191882272353450870696638006993627267594936152217488565365",
+          "45834164535191197118761340239869833512202591376896482435433804586874290721065"
         ],
         "priceHistory": {
           "points": [
-            41.5,
-            41.5,
-            41.5,
-            41.5,
             41,
-            41.5,
-            41.5,
-            41,
-            41,
-            41,
-            41,
-            41,
-            41.5
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5,
+            32.5
           ],
-          "open": 41.5,
-          "current": 41.5,
-          "change": 0
+          "open": 41,
+          "current": 32.5,
+          "change": -8.5
         }
       },
       "awayTeam": "Southeast Missouri State",
@@ -20558,7 +20544,7 @@
           15,
           15,
           15,
-          15.5,
+          15,
           15
         ],
         "open": 15,
@@ -20591,8 +20577,8 @@
           "Texas Southern"
         ],
         "probs": [
-          10.5,
-          89.5
+          10,
+          90
         ],
         "tokenIds": [
           "26368740632695986777519825667520840310601282808081190484983010567427350664033",
@@ -20600,23 +20586,23 @@
         ],
         "priceHistory": {
           "points": [
-            13.5,
-            12,
-            11,
-            11,
-            10,
-            9,
-            12.5,
-            12.5,
-            12,
-            12,
-            12,
+            19.5,
             11.5,
-            10.5
+            10.5,
+            11.5,
+            9.5,
+            12.5,
+            13.5,
+            11.5,
+            14.5,
+            11.5,
+            11.5,
+            11,
+            29.5
           ],
-          "open": 13.5,
-          "current": 10.5,
-          "change": -3
+          "open": 19.5,
+          "current": 29.5,
+          "change": 10
         }
       },
       "polyTotal": {
@@ -20636,6 +20622,7 @@
         ],
         "priceHistory": {
           "points": [
+            62.5,
             67.5,
             67.5,
             67.5,
@@ -20645,13 +20632,12 @@
             68,
             68,
             68,
-            68,
-            68,
+            67.5,
             68
           ],
-          "open": 67.5,
+          "open": 62.5,
           "current": 68,
-          "change": 0.5
+          "change": 5.5
         }
       },
       "awayTeam": "Mississippi Valley State",
@@ -20728,23 +20714,23 @@
         ],
         "priceHistory": {
           "points": [
-            16,
-            10.5,
+            27,
             10,
+            9.5,
+            9.5,
+            9.5,
+            28,
             10,
-            10,
-            10.5,
-            28.5,
-            10,
-            10,
-            10,
-            10,
-            10,
+            9.5,
+            27.5,
+            9.5,
+            9.5,
+            9.5,
             27
           ],
-          "open": 16,
+          "open": 27,
           "current": 27,
-          "change": 11
+          "change": 0
         }
       },
       "polyTotal": {
@@ -20766,10 +20752,10 @@
           "points": [
             50.5,
             50,
-            49.5,
+            50.5,
             50,
-            60.5,
-            49.5,
+            64,
+            50,
             50,
             50,
             50,
@@ -20855,23 +20841,23 @@
         ],
         "priceHistory": {
           "points": [
-            36.5,
-            39,
+            36,
             37,
-            37,
-            37.5,
+            38.5,
             38,
-            42,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
+            36.5,
+            38,
+            39,
+            38,
+            38,
+            38,
+            38,
+            38,
             42.5
           ],
-          "open": 36.5,
+          "open": 36,
           "current": 42.5,
-          "change": 6
+          "change": 6.5
         }
       },
       "polyTotal": {
@@ -20933,8 +20919,9 @@
           74.5,
           74.5,
           74.5,
-          73.5,
+          74,
           75,
+          74.5,
           74.5,
           74.5,
           74.5,
@@ -20982,23 +20969,23 @@
         ],
         "priceHistory": {
           "points": [
-            45,
-            44,
-            43,
-            44,
-            43,
-            43,
-            48.5,
+            43.5,
+            43.5,
             43,
             43.5,
             42.5,
-            42.5,
+            44,
+            43.5,
             43,
+            43,
+            48.5,
+            50,
+            41,
             50
           ],
-          "open": 45,
+          "open": 43.5,
           "current": 50,
-          "change": 5
+          "change": 6.5
         }
       },
       "polyTotal": {
@@ -21058,10 +21045,10 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          24.5,
+          25,
           26,
           26.5,
-          27,
+          26.5,
           26.5,
           26.5,
           27,
@@ -21072,11 +21059,11 @@
           25.5,
           25.5
         ],
-        "open": 24.5,
+        "open": 25,
         "current": 25.5,
         "high": 27.5,
         "low": 24.5,
-        "change": 1
+        "change": 0.5
       },
       "whales": null,
       "awayProb": 25.5,
@@ -21102,8 +21089,8 @@
           "Portland State"
         ],
         "probs": [
-          9,
-          91
+          10.5,
+          89.5
         ],
         "tokenIds": [
           "16155859963692119791492288052692155396799899108631953692912311272772610835290",
@@ -21111,58 +21098,59 @@
         ],
         "priceHistory": {
           "points": [
-            25,
-            10,
-            10,
+            26,
+            9.5,
+            9.5,
+            9.5,
+            9.5,
             9.5,
             10,
-            9.5,
             9,
             9.5,
             9.5,
             9.5,
             9.5,
-            10,
-            9.5
+            10.5
           ],
-          "open": 25,
-          "current": 9.5,
+          "open": 26,
+          "current": 10.5,
           "change": -15.5
         }
       },
       "polyTotal": {
-        "line": 49.5,
-        "title": "O/U 49.5",
+        "line": 57.5,
+        "title": "O/U 57.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          77,
-          23
+          60,
+          40
         ],
         "tokenIds": [
-          "81188324398971958325960935996543381491737381519863957781685529999742322830825",
-          "104739346828040691526653054507031490849288058603778369442249901203561358667995"
+          "10397337000409087013113205373906814232686147808248276966084546342888121690332",
+          "29217944308589584296405674795013481132017203009566086596833036376953594458380"
         ],
         "priceHistory": {
           "points": [
-            64.5,
-            77,
-            76.5,
-            76.5,
-            76.5,
-            76.5,
-            77,
-            77,
-            77,
-            77,
-            77,
-            77
+            60.5,
+            59.5,
+            59.5,
+            59.5,
+            60,
+            59.5,
+            60,
+            60,
+            60.5,
+            59.5,
+            60,
+            60,
+            60
           ],
-          "open": 64.5,
-          "current": 77,
-          "change": 12.5
+          "open": 60.5,
+          "current": 60,
+          "change": -0.5
         }
       },
       "awayTeam": "Utah Tech",
@@ -21187,9 +21175,9 @@
       "priceHistory": {
         "points": [
           32,
+          31.5,
           32,
-          31.5,
-          31.5,
+          31,
           31.5,
           31.5,
           31.5,
@@ -21229,8 +21217,8 @@
           "Lamar"
         ],
         "probs": [
-          33,
-          67
+          32.5,
+          67.5
         ],
         "tokenIds": [
           "51945704734120959493006451526243016236284097420025612524465129990655667091815",
@@ -21238,58 +21226,59 @@
         ],
         "priceHistory": {
           "points": [
-            20.5,
+            26.5,
+            17,
             17.5,
             17.5,
             18,
-            17.5,
-            49,
-            48,
-            17.5,
-            17.5,
+            22,
             18.5,
-            32,
+            17,
+            17,
+            18,
+            31,
             17.5,
-            33
+            32.5
           ],
-          "open": 20.5,
-          "current": 33,
-          "change": 12.5
+          "open": 26.5,
+          "current": 32.5,
+          "change": 6
         }
       },
       "polyTotal": {
-        "line": 53.5,
-        "title": "O/U 53.5",
+        "line": 57.5,
+        "title": "O/U 57.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          42,
-          58
+          33.5,
+          66.5
         ],
         "tokenIds": [
-          "24232173302038062186253596225959656714954769614383836599575759702781397369598",
-          "27756186505657794968801632445001957330984655288840500007943088518675295300377"
+          "89216860063786744884811929817386452169271199282635575708037145894043112228942",
+          "44368295931263531650784942687542514680956917244795033260360446007082699131504"
         ],
         "priceHistory": {
           "points": [
-            42,
-            42.5,
-            42.5,
-            42,
-            42,
-            41.5,
-            42,
-            42,
-            42,
-            42,
-            42,
-            42
+            37.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5,
+            33.5
           ],
-          "open": 42,
-          "current": 42,
-          "change": 0
+          "open": 37.5,
+          "current": 33.5,
+          "change": -4
         }
       },
       "awayTeam": "Incarnate Word",
@@ -21317,13 +21306,14 @@
           67,
           67,
           68,
+          68,
           67.5,
           67.5,
           67.5,
           67.5,
           67.5,
           67.5,
-          67.5,
+          67,
           67
         ],
         "open": 67.5,
@@ -21356,8 +21346,8 @@
           "Towson"
         ],
         "probs": [
-          29.5,
-          70.5
+          30,
+          70
         ],
         "tokenIds": [
           "98353231986286227327538234000264294214526245898142049702655467570099912690849",
@@ -21365,58 +21355,58 @@
         ],
         "priceHistory": {
           "points": [
-            34.5,
-            29.5,
-            29,
+            33.5,
             29,
             29.5,
+            29,
             29.5,
             29.5,
             29.5,
-            30,
             29.5,
             29.5,
-            29.5
+            29.5,
+            29.5,
+            29.5,
+            30
           ],
-          "open": 34.5,
-          "current": 29.5,
-          "change": -5
+          "open": 33.5,
+          "current": 30,
+          "change": -3.5
         }
       },
       "polyTotal": {
-        "line": 49.5,
-        "title": "O/U 49.5",
+        "line": 61.5,
+        "title": "O/U 61.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          67.5,
-          32.5
+          41,
+          59
         ],
         "tokenIds": [
-          "84167534523723533824147915638656158033796769783791593930226565875089266161868",
-          "93267150995756941753645926085909528268272760184476404188396771162667938056475"
+          "4586177790266246771637727672573286686017214404496145233273771986453055058250",
+          "110389999281394058808915353339635982176745245081825156098270734007428204816105"
         ],
         "priceHistory": {
           "points": [
-            67,
-            67.5,
-            67.5,
-            67.5,
-            67.5,
-            68,
-            67.5,
-            67.5,
-            67.5,
-            67.5,
-            67.5,
-            67.5,
-            68
+            44,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41,
+            41,
+            41,
+            41,
+            41,
+            40.5,
+            41
           ],
-          "open": 67,
-          "current": 68,
-          "change": 1
+          "open": 44,
+          "current": 41,
+          "change": -3
         }
       },
       "awayTeam": "Stony Brook",
@@ -21442,11 +21432,12 @@
         "points": [
           74,
           74.5,
-          76,
-          74.5,
-          75.5,
+          75,
+          74,
+          75,
           73.5,
-          73.5,
+          74,
+          74,
           74,
           74,
           74,
@@ -21483,8 +21474,8 @@
           "Grambling State"
         ],
         "probs": [
-          42,
-          58
+          41.5,
+          58.5
         ],
         "tokenIds": [
           "111839232057039145948310304442246914781092035679096538409274930014112275099505",
@@ -21492,23 +21483,23 @@
         ],
         "priceHistory": {
           "points": [
-            40.5,
+            41.5,
+            50,
+            37,
+            38.5,
+            37,
+            33,
+            39,
             38,
-            38.5,
-            32.5,
-            35,
-            34.5,
-            42,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            42
+            38,
+            38,
+            38,
+            38,
+            42.5
           ],
-          "open": 40.5,
-          "current": 42,
-          "change": 1.5
+          "open": 41.5,
+          "current": 42.5,
+          "change": 1
         }
       },
       "polyTotal": {
@@ -21579,6 +21570,7 @@
           49.5,
           49.5,
           49.5,
+          49.5,
           49.5
         ],
         "open": 50,
@@ -21631,6 +21623,7 @@
             50,
             50,
             50,
+            50,
             50
           ],
           "open": 50,
@@ -21655,6 +21648,7 @@
         ],
         "priceHistory": {
           "points": [
+            50,
             50,
             50,
             50,
@@ -21705,7 +21699,6 @@
           14.5,
           14.5,
           14.5,
-          14.5,
           14
         ],
         "open": 14.5,
@@ -21738,8 +21731,8 @@
           "Presbyterian"
         ],
         "probs": [
-          28,
-          72
+          28.5,
+          71.5
         ],
         "tokenIds": [
           "33755062874849502064499569207626810994430113856526070300566817646784927267905",
@@ -21747,23 +21740,23 @@
         ],
         "priceHistory": {
           "points": [
-            31,
+            33.5,
+            9.5,
+            9.5,
+            9.5,
+            9.5,
+            10.5,
             10,
+            9,
             10,
             9.5,
-            10,
-            10,
-            29.5,
-            9.5,
-            11.5,
-            10,
             10,
             28,
-            28
+            28.5
           ],
-          "open": 31,
-          "current": 28,
-          "change": -3
+          "open": 33.5,
+          "current": 28.5,
+          "change": -5
         }
       },
       "polyTotal": {
@@ -21789,6 +21782,7 @@
             49.5,
             49.5,
             49.5,
+            50,
             50,
             50,
             50,
@@ -21823,10 +21817,10 @@
       "priceHistory": {
         "points": [
           67.5,
+          66.5,
+          68.5,
           67.5,
-          68,
-          67.5,
-          67.5,
+          67,
           67,
           66.5,
           66.5,
@@ -21866,8 +21860,8 @@
           "Charleston Southern"
         ],
         "probs": [
-          28.5,
-          71.5
+          29,
+          71
         ],
         "tokenIds": [
           "18654617498817501882094317371206459636280960384227896530592079084283082626944",
@@ -21875,23 +21869,23 @@
         ],
         "priceHistory": {
           "points": [
-            30.5,
+            30,
             28,
             29,
             28.5,
             28.5,
-            29,
             28.5,
             28.5,
-            29,
-            29,
             28.5,
-            29,
-            28.5
+            28.5,
+            28.5,
+            28.5,
+            28,
+            29
           ],
-          "open": 30.5,
-          "current": 28.5,
-          "change": -2
+          "open": 30,
+          "current": 29,
+          "change": -1
         }
       },
       "polyTotal": {
@@ -21902,8 +21896,8 @@
           "Under"
         ],
         "probs": [
-          16,
-          84
+          19,
+          81
         ],
         "tokenIds": [
           "43313288245398456613005897877207924721139707197897360293412460514543613123162",
@@ -21911,23 +21905,23 @@
         ],
         "priceHistory": {
           "points": [
-            20.5,
-            17,
+            42,
             17.5,
             17,
             17.5,
-            17.5,
+            15,
+            18.5,
             18,
-            18,
+            14.5,
             18,
             18.5,
+            16,
             18.5,
-            18.5,
-            18.5
+            19
           ],
-          "open": 20.5,
-          "current": 18.5,
-          "change": -2
+          "open": 42,
+          "current": 19,
+          "change": -23
         }
       },
       "awayTeam": "South Carolina State",
@@ -21995,8 +21989,8 @@
           "Idaho State"
         ],
         "probs": [
-          28.5,
-          71.5
+          28,
+          72
         ],
         "tokenIds": [
           "67796287547235228859993968505196736579429137574774201733447078927093254006935",
@@ -22004,22 +21998,22 @@
         ],
         "priceHistory": {
           "points": [
-            18,
-            11,
-            11,
-            10,
+            17.5,
             10.5,
-            10.5,
-            29.5,
             10.5,
             10,
+            11,
+            12,
+            11,
+            10.5,
+            10.5,
+            27.5,
+            28.5,
             11.5,
-            10.5,
-            10.5,
-            28.5
+            28
           ],
-          "open": 18,
-          "current": 28.5,
+          "open": 17.5,
+          "current": 28,
           "change": 10.5
         }
       },
@@ -22124,8 +22118,8 @@
           "Eastern Kentucky"
         ],
         "probs": [
-          22.5,
-          77.5
+          22,
+          78
         ],
         "tokenIds": [
           "41510582275166460599317007605662939678725714125992609340819846361980737480606",
@@ -22133,59 +22127,59 @@
         ],
         "priceHistory": {
           "points": [
-            28.5,
-            23.5,
+            29,
+            23,
+            22,
+            21,
             22.5,
             21.5,
-            23,
-            22,
-            21,
-            23,
-            22,
-            21,
+            20.5,
             22.5,
-            23.5,
-            22.5
+            21.5,
+            20.5,
+            35,
+            23,
+            35
           ],
-          "open": 28.5,
-          "current": 22.5,
-          "change": -6
+          "open": 29,
+          "current": 35,
+          "change": 6
         }
       },
       "polyTotal": {
-        "line": 59.5,
-        "title": "O/U 59.5",
+        "line": 55.5,
+        "title": "O/U 55.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          24,
-          76
+          30.5,
+          69.5
         ],
         "tokenIds": [
-          "73045697934716274991911514004014265491364278674265445398194949902588447989207",
-          "34763092358761720606750816078089816467091243367082109074691763489601250836287"
+          "82549568767440483927653407231313337758648517087057829378051972946882456634705",
+          "36342607434439319436239454987204320704492809582618930618161270934306213374542"
         ],
         "priceHistory": {
           "points": [
-            22.5,
-            22.5,
-            22.5,
-            22.5,
-            22.5,
-            22.5,
-            23,
-            23,
-            22.5,
-            22.5,
-            22.5,
-            22.5,
-            24
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30.5
           ],
-          "open": 22.5,
-          "current": 24,
-          "change": 1.5
+          "open": 30,
+          "current": 30.5,
+          "change": 0.5
         }
       },
       "awayTeam": "West Georgia",
@@ -22212,7 +22206,7 @@
           45.5,
           45.5,
           45.5,
-          46,
+          45.5,
           45.5,
           46.5,
           46.5,
@@ -22253,8 +22247,8 @@
           "Austin Peay"
         ],
         "probs": [
-          13,
-          87
+          13.5,
+          86.5
         ],
         "tokenIds": [
           "22473088814149444430391794721057088088151607580777338820874177958406666862148",
@@ -22262,59 +22256,59 @@
         ],
         "priceHistory": {
           "points": [
-            16,
+            15.5,
+            14.5,
             15,
-            14.5,
-            14.5,
-            14.5,
+            15,
+            15,
             13.5,
-            12,
-            12,
             13,
-            13.5,
-            13.5,
-            14.5,
-            13
+            12,
+            12.5,
+            14,
+            12.5,
+            14,
+            13.5
           ],
-          "open": 16,
-          "current": 13,
-          "change": -3
+          "open": 15.5,
+          "current": 13.5,
+          "change": -2
         }
       },
       "polyTotal": {
-        "line": 51.5,
-        "title": "O/U 51.5",
+        "line": 55.5,
+        "title": "O/U 55.5",
         "outcomes": [
           "Over",
           "Under"
         ],
         "probs": [
-          74.5,
-          25.5
+          66.5,
+          33.5
         ],
         "tokenIds": [
-          "47481496302251660415591765175239877216591415810255127363677211903844881667528",
-          "114378827200940327794597931555115183117046645143325389168759189430039456064558"
+          "30676836830644512963677534149237670355717051368212818800056282005520499923737",
+          "104855045732758888258013740068730936521679783569389577014788575870579780163515"
         ],
         "priceHistory": {
           "points": [
-            80.5,
-            76.5,
-            76.5,
-            76.5,
-            76.5,
-            76.5,
-            76,
-            76,
-            76.5,
-            76.5,
-            76.5,
-            76.5,
-            75
+            67.5,
+            67.5,
+            67.5,
+            67.5,
+            67.5,
+            67.5,
+            67,
+            67,
+            67.5,
+            67.5,
+            67.5,
+            67.5,
+            66.5
           ],
-          "open": 80.5,
-          "current": 75,
-          "change": -5.5
+          "open": 67.5,
+          "current": 66.5,
+          "change": -1
         }
       },
       "awayTeam": "Tarleton State",
@@ -22339,8 +22333,8 @@
       "priceHistory": {
         "points": [
           32.5,
-          32.5,
           33,
+          32.5,
           33,
           33,
           33,
@@ -22382,8 +22376,8 @@
           "Eastern Washington"
         ],
         "probs": [
-          10,
-          90
+          12.5,
+          87.5
         ],
         "tokenIds": [
           "38454734766235669300197555427160096731337422898565286705308975776262983271674",
@@ -22391,23 +22385,23 @@
         ],
         "priceHistory": {
           "points": [
-            14.5,
-            11,
-            11,
+            13.5,
+            10.5,
+            10.5,
+            10.5,
+            10.5,
             10.5,
             11,
+            10,
+            10.5,
             10.5,
             10,
             10.5,
-            11,
-            10.5,
-            10.5,
-            11,
-            10.5
+            11.5
           ],
-          "open": 14.5,
-          "current": 10.5,
-          "change": -4
+          "open": 13.5,
+          "current": 11.5,
+          "change": -2
         }
       },
       "polyTotal": {
@@ -22427,23 +22421,22 @@
         ],
         "priceHistory": {
           "points": [
-            59,
             59.5,
             59.5,
             59.5,
+            59.5,
             60,
             59.5,
             60,
             60,
             60,
             60,
-            60,
-            60,
+            59.5,
             60
           ],
-          "open": 59,
+          "open": 59.5,
           "current": 60,
-          "change": 1
+          "change": 0.5
         }
       },
       "awayTeam": "Northern Colorado",
@@ -22471,7 +22464,7 @@
           26,
           25.5,
           26,
-          26,
+          25.5,
           25,
           25,
           25,
@@ -22511,8 +22504,8 @@
           "Abilene Christian"
         ],
         "probs": [
-          8.5,
-          91.5
+          10,
+          90
         ],
         "tokenIds": [
           "104379089586303955965137831221745891800124581871971837420174816720368116836148",
@@ -22520,23 +22513,23 @@
         ],
         "priceHistory": {
           "points": [
-            17.5,
+            16.5,
+            9,
+            9.5,
+            9.5,
+            9.5,
             9,
             9.5,
             9,
             9,
+            9.5,
             9,
-            8.5,
-            9,
-            9,
-            9,
-            9,
-            9,
-            9
+            9.5,
+            9.5
           ],
-          "open": 17.5,
-          "current": 9,
-          "change": -8.5
+          "open": 16.5,
+          "current": 9.5,
+          "change": -7
         }
       },
       "polyTotal": {
@@ -22556,8 +22549,7 @@
         ],
         "priceHistory": {
           "points": [
-            50.5,
-            50,
+            51,
             50,
             50,
             50,
@@ -22570,9 +22562,9 @@
             50,
             50
           ],
-          "open": 50.5,
+          "open": 51,
           "current": 50,
-          "change": -0.5
+          "change": -1
         }
       },
       "awayTeam": "Central Arkansas",
@@ -22597,17 +22589,16 @@
       "priceHistory": {
         "points": [
           63.5,
-          63.5,
           63,
           63,
+          62,
           63,
           63.5,
           62.5,
-          62.5,
+          62,
           62.5,
           62.5,
           62,
-          61.5,
           61.5
         ],
         "open": 63.5,
@@ -22640,8 +22631,8 @@
           "UT Rio Grande Valley"
         ],
         "probs": [
-          46,
-          54
+          47.5,
+          52.5
         ],
         "tokenIds": [
           "109042275346281414451941579062666482978391635292134102189721622232446981859546",
@@ -22659,13 +22650,13 @@
             50,
             50,
             50,
-            39,
+            31,
             47.5,
-            47.5
+            36
           ],
           "open": 50,
-          "current": 47.5,
-          "change": -2.5
+          "current": 36,
+          "change": -14
         }
       },
       "polyTotal": {
@@ -22676,8 +22667,8 @@
           "Under"
         ],
         "probs": [
-          48,
-          52
+          48.5,
+          51.5
         ],
         "tokenIds": [
           "48026481922256536344689751228576186066071775515590001204302458697865462538894",
@@ -22686,22 +22677,22 @@
         "priceHistory": {
           "points": [
             50.5,
-            51.5,
-            52,
+            50.5,
+            52.5,
             53,
             53,
             53.5,
-            49.5,
             50,
+            49.5,
             49.5,
             49,
             48.5,
-            48.5,
-            48
+            48,
+            48.5
           ],
           "open": 50.5,
-          "current": 48,
-          "change": -2.5
+          "current": 48.5,
+          "change": -2
         }
       },
       "awayTeam": "Southeastern Louisiana",
@@ -22725,7 +22716,6 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          50,
           50,
           50,
           50,
@@ -22825,7 +22815,6 @@
             50,
             50,
             50,
-            50,
             50
           ],
           "open": 50,
@@ -22843,5 +22832,5 @@
       "enrichmentFailed": false
     }
   },
-  "updatedAt": "2026-10-09T13:02:46.611Z"
+  "updatedAt": "2026-10-09T13:13:37.075Z"
 }
