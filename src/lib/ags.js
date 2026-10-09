@@ -1094,9 +1094,9 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6', 'TRUST-G'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
-  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'SOLO-Q', 'PRESS-M', 'TRUST-G'] },
+  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'SOLO-Q', 'PRESS-M'] },
 ];
 
 // Reverse lookup: internal stake-tier key → display-tier key.
@@ -1194,8 +1194,9 @@ export const AGS_V12_STAKE_TIER_META = {
   'FADE-F':      { label: 'SHARP PLAY', short: 'FADE-F',  color: '#38BDF8', bg: 'rgba(56,189,248,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   'PRESS-M':     { label: 'LEAN',      short: 'MIRROR',  color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  units: 1,                     ribbon: null, stars: 2 },
   // 2026-10-09: TRUST-G — moneyline at gate_fail that legacy V12 sizing
-  // staked, with a tier-4+ form-ON wallet for (retro 34-21 +12.3%) → 1u.
-  'TRUST-G':     { label: 'LEAN',      short: 'TRUST',   color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 1,                     ribbon: null, stars: 2 },
+  // staked, with a tier-4+ form-ON wallet for (retro 34-21 +12.3%, 26-10 at
+  // implied .40–.65) → 3u, 4u inside the gated ML floor window (.50–.65).
+  'TRUST-G':     { label: 'SHARP PLAY', short: 'TRUST',  color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 3,                     ribbon: null, stars: 3 },
   'PRESS-R6':    { label: 'SHARP PLAY', short: 'VETS',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
   // CONFIRMED / MINI- / DISSENT all roll up to the LEAN path-display band

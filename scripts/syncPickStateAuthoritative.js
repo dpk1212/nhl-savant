@@ -8260,7 +8260,7 @@ async function main() {
       console.log(
         `TRUST LIVE: wallet trust status (tier ≥${TRUST_TIER_MIN} on running edge vs own prices + last-10 form ON, per wallet × sport) stamped FOR/AG on every side (v8_trust*)`
         + ` · TRUST-G: moneyline at gate_fail + legacy V12 stake > 0 + trusted wallet for → ${TRUST_G_UNITS}u (${TRUST_G_STAKE_TIER})`
-        + ` · gated ML floor: staked moneyline rung (TRUST-G exempt) + trusted wallet for + implied ${Math.round(ML_FLOOR_IMPLIED_MIN * 100)}–${Math.round(ML_FLOOR_IMPLIED_MAX * 100)}% → ≥${ML_FLOOR_UNITS}u (oddsCap still rules)`
+        + ` · gated ML floor: staked moneyline rung (TRUST-G included) + trusted wallet for + implied ${Math.round(ML_FLOOR_IMPLIED_MIN * 100)}–${Math.round(ML_FLOOR_IMPLIED_MAX * 100)}% → ≥${ML_FLOOR_UNITS}u (oddsCap still rules)`
         + ` · spreads / totals cap ${ST_CAP_UNITS}u · gated moneyline rungs flagged v8_trustLift (shadow) · from ${TRUST_FROM}`,
       );
     } else {
