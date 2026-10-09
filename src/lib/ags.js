@@ -1093,9 +1093,9 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
-  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'PRESS-U', 'SOLO-Q', 'PRESS-M'] },
+  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'SOLO-Q', 'PRESS-M'] },
 ];
 
 // Reverse lookup: internal stake-tier key → display-tier key.
@@ -1181,11 +1181,12 @@ export const AGS_V12_STAKE_TIER_META = {
   // midpoint for pathBase readers, the card shows cron finalUnits.
   PRESS:         { label: 'SHARP PLAY', short: 'PRESS', color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 3,                     ribbon: null, stars: 3 },
   // Re-sized 2026-10-07 (audit Aug 1 → Oct 5): PRESS-X 3u steam off / 2u on,
-  // PRESS-N 3u clean / 1u moved, STEAM-C / STEAM-S / FADE-F / R6 2u. `units`
-  // is the clean size; the card shows cron finalUnits.
+  // STEAM-C / STEAM-S / FADE-F / R6 2u; 2026-10-09: PRESS-N 3u clean and
+  // moved, PRESS-U 2u, PRESS band 4 cut to 2/1/2, PRESS dogs (< .50) capped
+  // at 1u. `units` is the clean size; the card shows cron finalUnits.
   'PRESS-X':     { label: 'SHARP PLAY', short: 'PRESS-X', color: '#A855F7', bg: 'rgba(168,85,247,0.12)', units: 3,                     ribbon: null, stars: 3 },
   'PRESS-N':     { label: 'SHARP PLAY', short: 'DEEP',    color: '#A855F7', bg: 'rgba(168,85,247,0.12)', units: 3,                     ribbon: null, stars: 3 },
-  'PRESS-U':     { label: 'LEAN',      short: 'UNDER',   color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  units: 1,                     ribbon: null, stars: 2 },
+  'PRESS-U':     { label: 'SHARP PLAY', short: 'UNDER',   color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   'STEAM-C':     { label: 'SHARP PLAY', short: 'STEAM',   color: '#38BDF8', bg: 'rgba(56,189,248,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   'STEAM-S':     { label: 'SHARP PLAY', short: 'STEAM-S', color: '#38BDF8', bg: 'rgba(56,189,248,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   'SOLO-Q':      { label: 'LEAN',      short: 'SOLO-Q',  color: '#38BDF8', bg: 'rgba(56,189,248,0.12)',  units: 1,                     ribbon: null, stars: 2 },
