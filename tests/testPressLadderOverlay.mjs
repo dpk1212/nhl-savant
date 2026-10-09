@@ -833,10 +833,10 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(pressStamp(evaluatePressLadder({ walletDetails: [], side: 'home', sport: SPORT }), 1).v8_pressFloorFade, null, 'empty eval → floorFade null');
 }
 
-// 15. TRUST layer (from 2026-10-10): statuses on every side, TRUST-G rescue, ML floor, spread/total cap
+// 15. TRUST layer (from 2026-10-09): statuses on every side, TRUST-G rescue, ML floor, spread/total cap
 {
-  eq(TRUST_FROM, '2026-10-10', 'TRUST live date');
-  ok(!isTrustLive('2026-10-09') && isTrustLive('2026-10-10') && !isTrustLive(null), 'live gate');
+  eq(TRUST_FROM, '2026-10-09', 'TRUST live date');
+  ok(!isTrustLive('2026-10-08') && isTrustLive('2026-10-09') && !isTrustLive(null), 'live gate');
   eq(TRUST_G_STAKE_TIER, 'TRUST-G', 'rung name'); eq(TRUST_G_UNITS, 1, 'TRUST-G 1u');
   eq(ML_FLOOR_UNITS, 3, 'ML floor 3u'); eq(ST_CAP_UNITS, 2, 'spread/total cap 2u'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
 
@@ -857,8 +857,8 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     profileT('iiiiii', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('REGAINED_ON', 4) }), // regained — trusted
     profileT('dddddd', SPORT, { n: 3, wr: 67, dollarRoi: 20, usual: 100 }),                             // no trust stamp → UNPROVEN
   ]);
-  const LIVE = '2026-10-10';
-  const PRE = '2026-10-09';
+  const LIVE = '2026-10-09';
+  const PRE = '2026-10-08';
 
   // Rows carry trust; the read names the trusted FOR wallets and counts both sides.
   const rows = pressWalletRows([wd('aaaaaa', 'home', 900), wd('hhhhhh', 'home', 400), wd('gggggg', 'away', 300), wd('dddddd', 'away', 50)], 'home', SPORT, profilesT, 'SPREAD');
