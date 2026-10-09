@@ -18,6 +18,10 @@ import {
   PRESS_R6_STAKE_TIER,
   PRESS_X_STAKE_TIER,
   PRESS_X_UNITS,
+  PRESS_BAND_4_UNITS,
+  PRESS_DOG_IMPLIED_MAX,
+  PRESS_DOG_UNITS,
+  pressUnits,
   PRESS_X_UNITS_STEAM_ON,
   R6_UNITS,
   PRESS_U_STAKE_TIER,
@@ -97,7 +101,64 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(r.band, 4, 'band 4 at 2.2×');
   ok(r.edge > 0, 'edge positive: 58% vs 47.6% implied');
   eq(r.priceStep, 1, 'moved, edge ≥ 0');
-  eq(r.units, 3, '3u');
+  eq(r.units, 1, 'band 4 step 1 is 1u (cut 2026-10-09), and +110 is a dog');
+  ok(r.reason === 'press_4_moved_edge_pos_dog_cap', r.reason);
+  // Same band-4 steam-on shape at a favourite price: the band-4 cut alone → 1u, no dog suffix.
+  const fav = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 2200), wd('bbbbbb', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -130, steamOn: true,
+  });
+  eq(fav.band, 4, 'band 4'); eq(fav.priceStep, 1, 'step 1'); eq(fav.units, 1, 'band 4 step 1 → 1u');
+  eq(fav.reason, 'press_4_moved_edge_pos', 'no dog suffix at −130');
+  // Band 4 clean at a favourite price → 2u (was 4u).
+  const clean4 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 2200), wd('bbbbbb', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -130, steamOn: false,
+  });
+  eq(clean4.band, 4, 'band 4'); eq(clean4.priceStep, 0, 'clean'); eq(clean4.units, PRESS_BAND_4_UNITS[0], 'band 4 clean → 2u');
+  eq(PRESS_BAND_4_UNITS.join('/'), '2/1/2', 'band 4 table 2 / 1 / 2');
+  // Band 4 moved with edge < 0 (heavy favourite) → 2u.
+  const heavy4 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 2200), wd('bbbbbb', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -300, steamOn: false,
+  });
+  eq(heavy4.band, 4, 'band 4'); eq(heavy4.priceStep, 2, 'step 2'); eq(heavy4.units, PRESS_BAND_4_UNITS[2], 'band 4 step 2 → 2u');
+}
+
+// 2b. PRESS dog cap: under .50 implied → 1u whatever the band, on every market type
+{
+  const dog5 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: +110, steamOn: false,
+  });
+  eq(dog5.band, 5, 'band 5'); eq(dog5.priceStep, 0, 'clean'); eq(dog5.units, PRESS_DOG_UNITS, 'band 5 clean at +110 → 1u');
+  ok(dog5.reason === 'press_5_clean_dog_cap', dog5.reason);
+  const fav5 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -105, steamOn: false,
+  });
+  eq(fav5.units, 5, 'band 5 clean at −105 (.512) keeps 5u'); eq(fav5.reason, 'press_5_clean', 'no suffix');
+  const spreadDog = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profiles, sideOdds: +105, steamOn: false,
+  });
+  eq(spreadDog.units, 1, 'a +105 spread is a dog → 1u'); ok(spreadDog.reason.endsWith('_dog_cap'), spreadDog.reason);
+  const spreadStd = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profiles, sideOdds: -110, steamOn: false,
+  });
+  eq(spreadStd.units, 5, '−110 spread keeps the band');
+  const noOdds = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, steamOn: false,
+  });
+  eq(noOdds.units, 5, 'no price → no cap');
+  // pressUnits directly
+  eq(pressUnits(5, 0, 0.55), 5, '5/0'); eq(pressUnits(5, 1, 0.55), 4, '5/1'); eq(pressUnits(5, 2, 0.55), 3, '5/2');
+  eq(pressUnits(4, 0, 0.55), 2, '4/0'); eq(pressUnits(4, 1, 0.55), 1, '4/1'); eq(pressUnits(4, 2, 0.55), 2, '4/2');
+  eq(pressUnits(3, 0, 0.55), 3, '3/0'); eq(pressUnits(3, 1, 0.55), 2, '3/1'); eq(pressUnits(3, 2, 0.55), 1, '3/2');
+  eq(pressUnits(5, 0, 0.49), 1, 'dog cap'); eq(pressUnits(5, 0, 0.50), 5, '.50 is not a dog'); eq(pressUnits(5, 0, null), 5, 'no price');
+  eq(PRESS_DOG_IMPLIED_MAX, 0.5, 'dog line .50'); eq(PRESS_DOG_UNITS, 1, 'dog units 1');
 }
 
 // 3. Heavy ML favorite counts as moved; edge < 0 → −2
@@ -201,7 +262,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   ok(!r.gate.noDoor2Ag, 'gate 3 fails');
   eq(r.door2For - r.door2Ag, 1, 'margin +1');
   eq(r.rung, PRESS_U_STAKE_TIER, 'PRESS-U fires');
-  eq(r.units, PRESS_U_UNITS, '1u'); eq(PRESS_U_UNITS, 1, 'PRESS-U stays 1u');
+  eq(r.units, PRESS_U_UNITS, '2u'); eq(PRESS_U_UNITS, 2, 'PRESS-U is 2u');
   eq(r.presser, null, 'no presser stamped');
   eq(r.dissenters[0].wallet, 'cccccc', 'dissenter recorded');
   ok(r.reason.startsWith('press_u_margin1'), r.reason);
@@ -299,12 +360,12 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     walletDetails: [wd('hhhhhh', 'home', 2000), wd('bbbbbb', 'away', 300)],
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -120, steamOn: true,
   });
-  eq(moved.rung, PRESS_N_STAKE_TIER, 'PRESS-N fires moved'); eq(moved.units, PRESS_N_UNITS_MOVED, '1u moved'); eq(PRESS_N_UNITS_MOVED, 1, 'PRESS-N moved stays 1u'); eq(moved.priceStep, 1, 'moved step 1');
+  eq(moved.rung, PRESS_N_STAKE_TIER, 'PRESS-N fires moved'); eq(moved.units, PRESS_N_UNITS_MOVED, '3u moved'); eq(PRESS_N_UNITS_MOVED, 3, 'PRESS-N moved is 3u'); eq(moved.priceStep, 1, 'moved step 1');
   const heavy = evaluatePressLadder({
     walletDetails: [wd('hhhhhh', 'home', 2000), wd('bbbbbb', 'away', 300)],
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: deep, sideOdds: -250,
   });
-  eq(heavy.units, PRESS_N_UNITS_MOVED, 'heavy favourite counts as moved → 1u');
+  eq(heavy.units, PRESS_N_UNITS_MOVED, 'heavy favourite counts as moved → 3u'); eq(heavy.priceStep, 1, 'still stamped as moved');
   // presser with a shallow book (eeeeee n=30) → no PRESS-N, gate-4 fail
   const shallow = evaluatePressLadder({
     walletDetails: [wd('eeeeee', 'home', 1600), wd('bbbbbb', 'away', 300)],   // 2.0× press from n=30

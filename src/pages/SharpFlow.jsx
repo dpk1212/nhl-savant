@@ -1568,8 +1568,8 @@ function starsFromAgsuTier(tier, units = null) {
     return 3.0;
   }
   if (tier === 'PRESS-X') return units != null && units >= 3 ? 3.0 : 2.5; // informed dissent under size (3u steam off / 2u on)
-  if (tier === 'PRESS-N') return units != null && units >= 3 ? 3.0 : 2.0; // deep-book press, no Door-2 (3u clean / 1u moved)
-  if (tier === 'PRESS-U') return 2.0;     // dissent under size, no press (1u)
+  if (tier === 'PRESS-N') return units != null && units >= 3 ? 3.0 : 2.0; // deep-book press, no Door-2 (3u clean and moved)
+  if (tier === 'PRESS-U') return 2.5;     // dissent under size, no press (2u)
   if (tier === 'STEAM-C') return 2.5;     // steam overrules a small dissent (2u)
   if (tier === 'STEAM-S') return 2.5;     // steam overrules a seasoned ordinary bet (2u)
   if (tier === 'SOLO-Q') return 2.0;      // quiet unopposed favourite (1u)

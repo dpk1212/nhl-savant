@@ -19,6 +19,9 @@
  *   price −0 clean (no steam, not a heavy ML favorite ≥ 60% implied)
  *         −1 moved and FOR-wallet edge ≥ 0
  *         −2 moved and FOR-wallet edge < 0
+ *   units band − step (floor 1) for bands 5 and 3; band 4 is cut to
+ *         2 / 1 / 2 (PRESS_BAND_4_UNITS, 2026-10-09); a side under .50
+ *         implied is capped at 1u whatever the band (PRESS dog cap).
  *   edge = mean sport WR of FOR wallets with n ≥ 10, minus the implied win %
  *          of the ticket price (ML) or 52.4 (spreads / totals at −110).
  *
@@ -37,13 +40,14 @@
  *
  * Rung PRESS-N when gate 4 fails with nothing informed on either side:
  * money ≥ 0.60, seasoned press ≥ 1.5×, zero Door-2 FOR and zero Door-2 AG,
- * and the biggest presser's sport book has ≥ 50 bets → 3u clean / 1u moved
+ * and the biggest presser's sport book has ≥ 50 bets → 3u clean and moved
+ * (moved raised to 3u 2026-10-09 on 23-11 +8.0%)
  * (clean re-sized 2026-10-07 from 2u on 43-21 +27.4%).
  * Research: 66-32 +20.6% flat (P1 +20.7%, P2 +13.3%, P3 +26.7%), 21 lead
  * pressers; clean 42-18 +32.7%, moved 24-14 +1.6%; presser with 30-49 bets
  * was 10-11 −25.0%, so the depth line is part of the rule.
  *
- * Rescue rung PRESS-U (1u) when gate 2 fails for the same shape: money ≥ 0.60,
+ * Rescue rung PRESS-U (2u from 2026-10-09; 1u at launch) when gate 2 fails for the same shape: money ≥ 0.60,
  * Door-2 FOR ≥ 1, Door-2 margin ≥ 1, every Door-2 AG wallet under 1.0× its
  * usual size, no seasoned press. Research 18-11 +11.9% (P2 −15.5%, P3 +26.4%)
  * on 29 plays — directional, not period-confirmed; shipped at 1u on the R6
@@ -151,6 +155,11 @@ export const PRESS_BAND_5 = 3.0;
 export const PRESS_BAND_4 = 2.0;
 export const PRESS_EDGE_MIN_N = 10;
 export const PRESS_HEAVY_FAV_IMPLIED = 0.60;
+/** PRESS band 4 units by price step [clean, moved edge ≥ 0, moved edge < 0] (cut 2026-10-09). */
+export const PRESS_BAND_4_UNITS = [2, 1, 2];
+/** PRESS dog cap (2026-10-09): side implied under this → PRESS_DOG_UNITS whatever the band. */
+export const PRESS_DOG_IMPLIED_MAX = 0.50;
+export const PRESS_DOG_UNITS = 1;
 export const PRESS_ST_IMPLIED_PCT = 52.4;
 
 /**
@@ -158,7 +167,9 @@ export const PRESS_ST_IMPLIED_PCT = 52.4;
  * rung re-run on the live wallet rows with the live oddsCap; yardstick is
  * PRESS band 3 clean, 3u for 31-22 +8.9% flat):
  *   STEAM-C 1u → 2u     57-27 +31.6%, +18.5pp, 4/4 half-months positive
- *   PRESS-N clean 2u → 3u   43-21 +27.4%; moved stays 1u (23-11 +8.0%)
+ *   PRESS-N clean 2u → 3u   43-21 +27.4%; moved 1u → 3u on 2026-10-09 (23-11 +8.0%)
+ *   PRESS-U 1u → 2u on 2026-10-09 (18-11 +11.9%)
+ *   PRESS band 4 cut to 2 / 1 / 2 and the PRESS dog cap added 2026-10-09 (see pressUnits)
  *   PRESS-X 2u → 3u steam off (13-3 +46.5%); steam on stays 2u (5-2 +0.5%)
  *   STEAM-S 1u → 2u     17-5 +45.5% (27-6 in its research)
  *   PRESS-R6 1u → 2u    20-9 +27.9%
@@ -180,10 +191,11 @@ export const PRESS_X_UNITS = 3;
 export const PRESS_X_UNITS_STEAM_ON = 2;
 /** PRESS-N: no Door-2 wallet on either side; presser book must be this deep. */
 export const PRESS_N_MIN_PRESSER_N = 50;
+/** PRESS-N: 3u clean and moved (moved raised from 1u 2026-10-09; 23-11 +8.0%). */
 export const PRESS_N_UNITS_CLEAN = 3;
-export const PRESS_N_UNITS_MOVED = 1;
-/** PRESS-U: the same shape with no seasoned press, rescued at 1u. */
-export const PRESS_U_UNITS = 1;
+export const PRESS_N_UNITS_MOVED = 3;
+/** PRESS-U: the same shape with no seasoned press (2u from 2026-10-09; 18-11 +11.9%). */
+export const PRESS_U_UNITS = 2;
 /** STEAM-C: Door-2 margin (FOR − AG) must be at most this. */
 export const STEAM_C_MAX_MARGIN = 0;
 export const STEAM_C_UNITS = 2;
@@ -535,6 +547,30 @@ export function pressBand(maxRatio) {
 }
 
 /**
+ * PRESS units for a band × price step, then the dog cap (2026-10-09).
+ * Bands 5 and 3 keep band − step (floor 1): 5/4/3 and 3/2/1. Band 4
+ * (presser 2–3×) is cut to PRESS_BAND_4_UNITS: clean 19-17 −0.5% on the
+ * Aug 1 → Oct 5 re-run (was 4u), moved edge ≥ 0 4-6 −18% (was 3u), moved
+ * edge < 0 17-5 +4.9% (stays 2u). A side priced under PRESS_DOG_IMPLIED_MAX
+ * implied is capped at PRESS_DOG_UNITS whatever the band: PRESS dogs were
+ * 18-21 −11.6% flat, 135u → −15.5u, clean band 3 under .50 5-11. The cap
+ * reads the side's own price on every market type (a +105 spread is a
+ * dog); with no price there is no cap.
+ */
+export function pressUnits(band, priceStep, implied) {
+  const step = Number.isFinite(priceStep) ? priceStep : 0;
+  let units = band === 4
+    ? PRESS_BAND_4_UNITS[Math.min(step, PRESS_BAND_4_UNITS.length - 1)]
+    : Math.max(1, band - step);
+  if (implied != null && implied < PRESS_DOG_IMPLIED_MAX) units = Math.min(units, PRESS_DOG_UNITS);
+  return units;
+}
+
+export function isPressDog(implied) {
+  return implied != null && implied < PRESS_DOG_IMPLIED_MAX;
+}
+
+/**
  * Mean sport WR of FOR wallets with n ≥ 10 minus the implied win % of the
  * price. Null when no FOR wallet is deep enough.
  */
@@ -655,7 +691,9 @@ function evaluatePressLadderCore({
   if (gate.pass) {
     const band = pressBand(maxRatio);
     const priceStep = pressPriceStep({ steamOn: !!steamOn, heavyFav, edge });
-    const units = Math.max(1, band - priceStep);
+    const implied = impliedFromAmerican(sideOdds);
+    const dog = isPressDog(implied);
+    const units = pressUnits(band, priceStep, implied);
     return {
       gate, moneyShare, door2Ag, door2For,
       presser: strip(presser), maxRatio, band, priceStep, edge,
@@ -663,7 +701,7 @@ function evaluatePressLadderCore({
       veterans: [],
       dissenters: [],
       rung: PRESS_STAKE_TIER, units,
-      reason: `press_${band}_${priceStep === 0 ? 'clean' : (priceStep === 1 ? 'moved_edge_pos' : 'moved_edge_neg')}`,
+      reason: `press_${band}_${priceStep === 0 ? 'clean' : (priceStep === 1 ? 'moved_edge_pos' : 'moved_edge_neg')}${dog ? '_dog_cap' : ''}`,
     };
   }
 
