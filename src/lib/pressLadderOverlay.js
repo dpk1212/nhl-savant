@@ -142,11 +142,14 @@
  * every month ≥ 60.5%. Spreads + totals 97-94 vs 198-195 (p = .95) — no
  * gate there; the market-level status is stamped as a shadow.
  *   • Every side carries v8_trust* (FOR / AG statuses, sport + market gate).
- *   • TRUST-G (1u): moneyline the ladder left at gate_fail / 0u, legacy V12
- *     sizing would have staked it, and a tier-4+ form-ON wallet is FOR.
- *     Retro cell Aug 1 → Oct 5: 34-21 61.8% +12.3%, every one gate_fail.
+ *   • TRUST-G (3u, 4u inside the floor window): moneyline the ladder left at
+ *     gate_fail / 0u, legacy V12 sizing would have staked it, and a tier-4+
+ *     form-ON wallet is FOR. Retro cell Aug 1 → Oct 5: 34-21 61.8% +12.3%,
+ *     every one gate_fail; by implied .40–.50 6-3, .50–.55 6-4, .55–.60 7-0,
+ *     .60–.65 7-3 (26-10 in .40–.65). Shipped at 1u midday 2026-10-09,
+ *     raised the same evening; oddsCap at the call site still trims dogs.
  *   • Gated ML floor (2026-10-09 evening): a staked moneyline rung
- *     (TRUST-G excepted) with a trusted wallet FOR and the side's implied in
+ *     (TRUST-G included) with a trusted wallet FOR and the side's implied in
  *     [ML_FLOOR_IMPLIED_MIN, ML_FLOOR_IMPLIED_MAX) floors at ML_FLOOR_UNITS.
  *     Live book Jun 1 → Oct 9: gate ON at .50–.65 is 76-24 (+18pp vs price,
  *     every month ≥ 11pp except Oct), the sub-3u part 20-4; gate OFF at the
@@ -306,8 +309,8 @@ export const PRESS_GATE_MUTED_BY = 'press-gate';
 // market-level status is a shadow stamp for spreads / totals.
 export const TRUST_FROM = '2026-10-09';
 export const TRUST_G_STAKE_TIER = 'TRUST-G';
-export const TRUST_G_UNITS = 1;
-/** Staked moneyline rungs with a trusted wallet FOR floor here inside the implied window (TRUST-G exempt). */
+export const TRUST_G_UNITS = 3;
+/** Staked moneyline rungs with a trusted wallet FOR floor here inside the implied window (TRUST-G included: 3u → 4u in the window). */
 export const ML_FLOOR_UNITS = 4;
 export const ML_FLOOR_IMPLIED_MIN = 0.50;
 export const ML_FLOOR_IMPLIED_MAX = 0.65;
@@ -771,7 +774,7 @@ export function applyTrustLayer(result, {
   }
 
   const inFloorWindow = implied != null && implied >= ML_FLOOR_IMPLIED_MIN && implied < ML_FLOOR_IMPLIED_MAX;
-  if (isML && out.units > 0 && out.rung !== TRUST_G_STAKE_TIER
+  if (isML && out.units > 0
     && trust.gate && inFloorWindow && out.units < ML_FLOOR_UNITS) {
     out.units = ML_FLOOR_UNITS;
     out.reason = `${out.reason}+ml_floor${ML_FLOOR_UNITS}_gate_${trust.gateWallets.join('+')}`;
