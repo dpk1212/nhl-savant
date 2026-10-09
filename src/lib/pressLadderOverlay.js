@@ -145,12 +145,18 @@
  *   • TRUST-G (1u): moneyline the ladder left at gate_fail / 0u, legacy V12
  *     sizing would have staked it, and a tier-4+ form-ON wallet is FOR.
  *     Retro cell Aug 1 → Oct 5: 34-21 61.8% +12.3%, every one gate_fail.
- *   • ML floor: a staked moneyline rung (TRUST-G excepted) floors at
- *     ML_FLOOR_UNITS when the side's implied ≥ PRESS_DOG_IMPLIED_MAX; dogs
- *     keep their cap, and oddsCap at the call site still rules long prices.
+ *   • Gated ML floor (2026-10-09 evening): a staked moneyline rung
+ *     (TRUST-G excepted) with a trusted wallet FOR and the side's implied in
+ *     [ML_FLOOR_IMPLIED_MIN, ML_FLOOR_IMPLIED_MAX) floors at ML_FLOOR_UNITS.
+ *     Live book Jun 1 → Oct 9: gate ON at .50–.65 is 76-24 (+18pp vs price,
+ *     every month ≥ 11pp except Oct), the sub-3u part 20-4; gate OFF at the
+ *     same prices 36-48 in the sub-3u part. A blanket floor replayed −36u;
+ *     this one +43u at 4u, same drawdown. Under .50 the price is the edge
+ *     and the gate adds nothing (the PRESS dog cap stands); .65+ loses
+ *     with or without the gate. oddsCap at the call site still rules.
  *   • Spreads / totals cap at ST_CAP_UNITS.
- *   • v8_trustLift: shadow flag on gated moneyline rungs (ladder YES · gate
- *     YES 26-7 78.8% +37% retro) — no units yet.
+ *   • v8_trustLift: shadow flag on gated moneyline rungs — no units beyond
+ *     the floor yet.
  *
  * Everything else between the v12 score gate and the odds cap (HC ladder,
  * rescues, floors, tape, EDGE bands, the mute chain, HARD+ layer, form×tier)
@@ -301,8 +307,10 @@ export const PRESS_GATE_MUTED_BY = 'press-gate';
 export const TRUST_FROM = '2026-10-09';
 export const TRUST_G_STAKE_TIER = 'TRUST-G';
 export const TRUST_G_UNITS = 1;
-/** Staked moneyline rungs floor here when the side is not a dog (TRUST-G exempt). */
-export const ML_FLOOR_UNITS = 3;
+/** Staked moneyline rungs with a trusted wallet FOR floor here inside the implied window (TRUST-G exempt). */
+export const ML_FLOOR_UNITS = 4;
+export const ML_FLOOR_IMPLIED_MIN = 0.50;
+export const ML_FLOOR_IMPLIED_MAX = 0.65;
 /** Spread / total rungs cap here. */
 export const ST_CAP_UNITS = 2;
 export { TRUST_TIER_MIN };
@@ -714,9 +722,9 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * The TRUST layer (from TRUST_FROM) runs last: `trust` (FOR / AG statuses,
  * gate) is attached on every evaluated side; TRUST-G rescues a gate_fail
  * moneyline that legacy V12 sizing (`legacyUnits` > 0) would have staked
- * when a trusted wallet is FOR; staked moneyline rungs floor at
- * ML_FLOOR_UNITS unless the side is a dog; spread / total rungs cap at
- * ST_CAP_UNITS. FADE-F VETO stays a veto.
+ * when a trusted wallet is FOR; staked moneyline rungs with a trusted wallet
+ * FOR floor at ML_FLOOR_UNITS inside the implied window; spread / total
+ * rungs cap at ST_CAP_UNITS. FADE-F VETO stays a veto.
  */
 export function evaluatePressLadder(args = {}) {
   const core = evaluatePressLadderCore(args);
@@ -762,10 +770,11 @@ export function applyTrustLayer(result, {
     rules.push('trust_g');
   }
 
+  const inFloorWindow = implied != null && implied >= ML_FLOOR_IMPLIED_MIN && implied < ML_FLOOR_IMPLIED_MAX;
   if (isML && out.units > 0 && out.rung !== TRUST_G_STAKE_TIER
-    && implied != null && implied >= PRESS_DOG_IMPLIED_MAX && out.units < ML_FLOOR_UNITS) {
+    && trust.gate && inFloorWindow && out.units < ML_FLOOR_UNITS) {
     out.units = ML_FLOOR_UNITS;
-    out.reason = `${out.reason}+ml_floor${ML_FLOOR_UNITS}`;
+    out.reason = `${out.reason}+ml_floor${ML_FLOOR_UNITS}_gate_${trust.gateWallets.join('+')}`;
     rules.push('ml_floor');
   }
 

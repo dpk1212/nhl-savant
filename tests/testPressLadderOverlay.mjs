@@ -65,6 +65,8 @@ import {
   TRUST_G_UNITS,
   TRUST_TIER_MIN,
   ML_FLOOR_UNITS,
+  ML_FLOOR_IMPLIED_MIN,
+  ML_FLOOR_IMPLIED_MAX,
   ST_CAP_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
@@ -838,7 +840,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(TRUST_FROM, '2026-10-09', 'TRUST live date');
   ok(!isTrustLive('2026-10-08') && isTrustLive('2026-10-09') && !isTrustLive(null), 'live gate');
   eq(TRUST_G_STAKE_TIER, 'TRUST-G', 'rung name'); eq(TRUST_G_UNITS, 1, 'TRUST-G 1u');
-  eq(ML_FLOOR_UNITS, 3, 'ML floor 3u'); eq(ST_CAP_UNITS, 2, 'spread/total cap 2u'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
+  eq(ML_FLOOR_UNITS, 4, 'gated ML floor 4u'); eq(ST_CAP_UNITS, 2, 'spread/total cap 2u'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
 
   const T = (status, tier, n = 40) => ({ status, tier, n, edge: tier >= 4 ? 6 : -2, formOn: status.endsWith('_ON') });
   const profileT = (short, sport, { n: bets, wr, dollarRoi, usual, trust = null, trustMkt = {} }) => {
@@ -895,23 +897,34 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const gDog = gfail({ sideOdds: +130 }); eq(gDog.rung, TRUST_G_STAKE_TIER, 'dog TRUST-G'); eq(gDog.units, 1, 'dog 1u');
   eq(gfail({ sideOdds: -200 }).units, 1, 'favourite TRUST-G stays 1u (no floor)');
 
-  // B. ML floor: staked moneyline rung under 3u at a non-dog price → 3u
+  // B. Gated ML floor: staked moneyline rung under 4u, trusted wallet FOR, implied in [.50, .65) → 4u
+  eq(ML_FLOOR_IMPLIED_MIN, 0.5, 'floor window from .50'); eq(ML_FLOOR_IMPLIED_MAX, 0.65, 'floor window to .65');
   const band4 = (over = {}) => evaluatePressLadder({
     walletDetails: [wd('aaaaaa', 'home', 2200), wd('gggggg', 'away', 500)],
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesT, sideOdds: -130, steamOn: false,
     pickDate: LIVE, legacyUnits: 2, ...over,
   });
   const b4 = band4();
-  eq(b4.band, 4, 'band 4'); eq(b4.rung, PRESS_STAKE_TIER, 'PRESS'); eq(b4.units, ML_FLOOR_UNITS, 'band 4 clean 2u → floored 3u');
-  ok(b4.reason.endsWith('+ml_floor3'), b4.reason); eq(b4.trust.rule, 'ml_floor', 'rule'); eq(b4.trust.lift, true, 'gated PRESS ML → lift flag');
+  eq(b4.band, 4, 'band 4'); eq(b4.rung, PRESS_STAKE_TIER, 'PRESS'); eq(b4.units, ML_FLOOR_UNITS, 'band 4 clean 2u at −130 (.565) with gate → 4u');
+  ok(b4.reason.endsWith('+ml_floor4_gate_aaaaaa'), b4.reason); eq(b4.trust.rule, 'ml_floor', 'rule'); eq(b4.trust.lift, true, 'gated PRESS ML → lift flag');
   eq(band4({ pickDate: PRE }).units, PRESS_BAND_4_UNITS[0], 'before TRUST_FROM: 2u');
   const b4dog = band4({ sideOdds: +110 });
-  eq(b4dog.units, PRESS_DOG_UNITS, 'dog → cap stands, no floor'); ok(!b4dog.reason.includes('ml_floor'), 'no floor suffix on a dog');
+  eq(b4dog.units, PRESS_DOG_UNITS, 'dog (.476) → cap stands, no floor'); ok(!b4dog.reason.includes('ml_floor'), 'no floor suffix on a dog');
   const b4edge = band4({ sideOdds: +100 });
-  eq(b4edge.units, ML_FLOOR_UNITS, '+100 is .50 → not a dog → floor');
+  eq(b4edge.units, ML_FLOOR_UNITS, '+100 is .50 → inside the window → floor');
+  eq(band4({ sideOdds: -185 }).units, ML_FLOOR_UNITS, '−185 is .649 → inside the window → floor');
+  const b4heavy = band4({ sideOdds: -186 });
+  eq(b4heavy.units, PRESS_BAND_4_UNITS[2], '−186 is .650 → outside the window → band 4 step 2 (heavy fav) stays 2u'); ok(!b4heavy.reason.includes('ml_floor'), 'no floor suffix at .65+');
+  eq(band4({ sideOdds: -300 }).units, PRESS_BAND_4_UNITS[2], '−300 → no floor');
   eq(band4({ sideOdds: null }).units, PRESS_BAND_4_UNITS[0], 'no price → no floor (odds unknown)');
   const b4steam = band4({ steamOn: true });
-  eq(b4steam.units, ML_FLOOR_UNITS, 'band 4 moved 1u → floored 3u');
+  eq(b4steam.units, ML_FLOOR_UNITS, 'band 4 moved 1u with gate → 4u');
+  // Gate OFF at the same price → the rung's own units stand.
+  const b4off = band4({ walletDetails: [wd('aaaaaa', 'home', 2200), wd('gggggg', 'away', 500)], walletProfiles: new Map([profile('aaaaaa', SPORT, { n: 40, wr: 58, dollarRoi: 12, usual: 1000 }), profile('gggggg', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500 })]) });
+  eq(b4off.units, PRESS_BAND_4_UNITS[0], 'no trusted wallet FOR → 2u stands'); eq(b4off.trust.gate, false, 'gate off'); eq(b4off.trust.rule, null, 'no rule');
+  // A trusted wallet AG only does not open the floor.
+  const b4ag = band4({ walletDetails: [wd('aaaaaa', 'home', 2200), wd('bbbbbb', 'away', 500)], walletProfiles: new Map([profile('aaaaaa', SPORT, { n: 40, wr: 58, dollarRoi: 12, usual: 1000 }), profileT('bbbbbb', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('STABLE_ON', 4) })]) });
+  eq(b4ag.units, PRESS_BAND_4_UNITS[0], 'trusted wallet AG only → no floor'); eq(b4ag.trust.agTrusted.join(','), 'bbbbbb', 'AG trusted recorded');
   const full = evaluatePressLadder({
     walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
     side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesT, sideOdds: -120, steamOn: false, pickDate: LIVE, legacyUnits: 3,
