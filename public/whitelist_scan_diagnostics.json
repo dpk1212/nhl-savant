@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-10-09T00:58:03.907Z",
-  "elapsedSec": 71.6,
+  "scannedAt": "2026-10-09T01:05:49.093Z",
+  "elapsedSec": 72.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 180,
   "summary": {
     "total": 457,
     "coveredByMain": 84,
     "recovered": 29,
-    "recoveredPositions": 356,
+    "recoveredPositions": 362,
     "noPositions": 344,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 55,
-      "spread": 47,
-      "total": 21,
-      "dropped_shadow_gate": 136,
-      "dropped_excluded": 74,
+      "spread": 50,
+      "total": 22,
+      "dropped_shadow_gate": 137,
+      "dropped_excluded": 75,
       "dropped_duplicate": 23
     }
   },
@@ -275,12 +275,21 @@
       "sports": "NHL,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0a77bc0638f13892c8b1d1d2c13ba178540f9d74",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 2066,
-      "willPassShadowGate": 0,
+      "willPassShadowGate": 1,
       "willDropAtShadowGate": 1,
       "positions": [
+        {
+          "sport": "NHL",
+          "gameKey": "col_cgy",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 308,
+          "entryLine": 1.5,
+          "passesShadow": true
+        },
         {
           "sport": "NHL",
           "gameKey": "tor_vgk",
@@ -1186,10 +1195,10 @@
       "sports": "WNBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 93,
+      "positionsCount": 94,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 93763,
-      "willPassShadowGate": 32,
+      "willPassShadowGate": 33,
       "willDropAtShadowGate": 61,
       "positions": [
         {
@@ -1343,6 +1352,15 @@
           "side": "away",
           "invested": 814,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "NHL",
+          "gameKey": "col_cgy",
+          "marketType": "total",
+          "side": "over",
+          "invested": 641,
+          "entryLine": 5.5,
           "passesShadow": true
         },
         {
@@ -3496,11 +3514,11 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0d2d845a6ff64e31e04a70afce8a573940767ff5",
-      "positionsCount": 113,
+      "positionsCount": 117,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 339,
-      "willPassShadowGate": 111,
-      "willDropAtShadowGate": 2,
+      "willPassShadowGate": 114,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "CFB",
@@ -4331,6 +4349,15 @@
           "passesShadow": true
         },
         {
+          "sport": "CFB",
+          "gameKey": "ind_neb",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 36,
+          "entryLine": 2.5,
+          "passesShadow": true
+        },
+        {
           "sport": "NFL",
           "gameKey": "hou_ten",
           "marketType": "ml",
@@ -4517,6 +4544,33 @@
           "side": "away",
           "invested": 40,
           "entryLine": 2.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "NHL",
+          "gameKey": "tor_vgk",
+          "marketType": "total",
+          "side": "under",
+          "invested": 37,
+          "entryLine": 6.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "CFB",
+          "gameKey": "wsu_usu",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 30,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "NHL",
+          "gameKey": "tor_vgk",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 45,
+          "entryLine": 1.5,
           "passesShadow": true
         }
       ]
@@ -5557,7 +5611,7 @@
           "gameKey": "lv_ne",
           "marketType": "ml",
           "side": "away",
-          "invested": 3094,
+          "invested": 3095,
           "entryLine": null,
           "passesShadow": true
         },
