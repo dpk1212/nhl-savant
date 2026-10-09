@@ -1080,6 +1080,7 @@ export const AGS_V12_STAKE_PATH = {
   'SOLO-Q':      'press ladder · quiet unopposed favourite',
   'FADE-F':      'press ladder · a streaking floor wallet is on the other side',
   'PRESS-M':     'press ladder · mirror of a muted V12 side',
+  'TRUST-G':     'press ladder · trusted wallet (tier 4+, form on) is for',
   'PRESS-R6':    'press ladder · two veterans',
   MONITORING:    'watch',
   FADE:          'muted',
@@ -1095,7 +1096,7 @@ export const AGS_V12_DISPLAY_TIERS = [
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
   { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
-  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'SOLO-Q', 'PRESS-M'] },
+  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'SOLO-Q', 'PRESS-M', 'TRUST-G'] },
 ];
 
 // Reverse lookup: internal stake-tier key → display-tier key.
@@ -1192,6 +1193,9 @@ export const AGS_V12_STAKE_TIER_META = {
   'SOLO-Q':      { label: 'LEAN',      short: 'SOLO-Q',  color: '#38BDF8', bg: 'rgba(56,189,248,0.12)',  units: 1,                     ribbon: null, stars: 2 },
   'FADE-F':      { label: 'SHARP PLAY', short: 'FADE-F',  color: '#38BDF8', bg: 'rgba(56,189,248,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   'PRESS-M':     { label: 'LEAN',      short: 'MIRROR',  color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  units: 1,                     ribbon: null, stars: 2 },
+  // 2026-10-10: TRUST-G — moneyline at gate_fail that legacy V12 sizing
+  // staked, with a tier-4+ form-ON wallet for (retro 34-21 +12.3%) → 1u.
+  'TRUST-G':     { label: 'LEAN',      short: 'TRUST',   color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 1,                     ribbon: null, stars: 2 },
   'PRESS-R6':    { label: 'SHARP PLAY', short: 'VETS',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
   // CONFIRMED / MINI- / DISSENT all roll up to the LEAN path-display band

@@ -56,6 +56,16 @@ import {
   FADE_F_FROM,
   FADE_F_STAKE_TIER,
   FADE_F_UNITS,
+  isTrustLive,
+  trustRead,
+  trustStamp,
+  applyTrustLayer,
+  TRUST_FROM,
+  TRUST_G_STAKE_TIER,
+  TRUST_G_UNITS,
+  TRUST_TIER_MIN,
+  ML_FLOOR_UNITS,
+  ST_CAP_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -821,6 +831,148 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const stV = pressStamp(v, 5);
   eq(stV.v8_pressRung, null, 'veto stamp rung null'); eq(stV.v8_pressUnits, 0, 'veto stamp 0u'); eq(stV.v8_pressFloorFade.status, 'VETO', 'veto stamp status');
   eq(pressStamp(evaluatePressLadder({ walletDetails: [], side: 'home', sport: SPORT }), 1).v8_pressFloorFade, null, 'empty eval → floorFade null');
+}
+
+// 15. TRUST layer (from 2026-10-10): statuses on every side, TRUST-G rescue, ML floor, spread/total cap
+{
+  eq(TRUST_FROM, '2026-10-10', 'TRUST live date');
+  ok(!isTrustLive('2026-10-09') && isTrustLive('2026-10-10') && !isTrustLive(null), 'live gate');
+  eq(TRUST_G_STAKE_TIER, 'TRUST-G', 'rung name'); eq(TRUST_G_UNITS, 1, 'TRUST-G 1u');
+  eq(ML_FLOOR_UNITS, 3, 'ML floor 3u'); eq(ST_CAP_UNITS, 2, 'spread/total cap 2u'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
+
+  const T = (status, tier, n = 40) => ({ status, tier, n, edge: tier >= 4 ? 6 : -2, formOn: status.endsWith('_ON') });
+  const profileT = (short, sport, { n: bets, wr, dollarRoi, usual, trust = null, trustMkt = {} }) => {
+    const byMarket = {};
+    for (const [m, t] of Object.entries(trustMkt)) byMarket[m] = { trust: t };
+    return [short, { bySport: { [sport]: {
+      positions: { n: bets, wr, dollarRoi, invested: usual * bets, wins: Math.round(bets * wr / 100), settledPnl: 0 },
+      trust, byMarket,
+    } } }];
+  };
+  const profilesT = new Map([
+    profileT('aaaaaa', SPORT, { n: 40, wr: 58, dollarRoi: 12, usual: 1000, trust: T('STABLE_ON', 5), trustMkt: { ML: T('STABLE_ON', 5), SPREAD: T('STABLE_OFF', 2) } }), // Door 2 presser, trusted
+    profileT('bbbbbb', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('STABLE_ON', 4) }),   // seasoned, not Door 2, trusted
+    profileT('gggggg', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('STABLE_ON', 3) }),   // tier 3 — not trusted
+    profileT('hhhhhh', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('FALLEN_OFF', 5) }),  // tier 5 but fallen/off
+    profileT('iiiiii', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('REGAINED_ON', 4) }), // regained — trusted
+    profileT('dddddd', SPORT, { n: 3, wr: 67, dollarRoi: 20, usual: 100 }),                             // no trust stamp → UNPROVEN
+  ]);
+  const LIVE = '2026-10-10';
+  const PRE = '2026-10-09';
+
+  // Rows carry trust; the read names the trusted FOR wallets and counts both sides.
+  const rows = pressWalletRows([wd('aaaaaa', 'home', 900), wd('hhhhhh', 'home', 400), wd('gggggg', 'away', 300), wd('dddddd', 'away', 50)], 'home', SPORT, profilesT, 'SPREAD');
+  eq(rows[0].trust.status, 'STABLE_ON', 'row trust'); eq(rows[0].trustMkt.status, 'STABLE_OFF', 'row market trust (SPREAD)');
+  eq(rows[3].trust, null, 'no stamp → null');
+  const tr = trustRead(rows);
+  eq(tr.gate, true, 'gate: aaaaaa tier 5 ON is FOR'); eq(tr.gateWallets.join(','), 'aaaaaa', 'gate wallets');
+  eq(tr.forOn, 1, 'FOR on'); eq(tr.forOff, 1, 'FOR off (hhhhhh FALLEN_OFF)'); eq(tr.agOn, 1, 'AG on (gggggg tier 3 ON)'); eq(tr.agOff, 0, 'AG off');
+  eq(tr.agTrusted.length, 0, 'tier 3 AG is not trusted'); eq(tr.mktGate, false, 'market gate: aaaaaa SPREAD status OFF');
+  eq(tr.for.length, 2, 'two FOR'); eq(tr.ag.length, 2, 'two AG'); eq(tr.ag[1].status, 'UNPROVEN', 'missing → UNPROVEN'); eq(tr.ag[1].tier, 0, 'missing → tier 0');
+
+  // A. TRUST-G: gate_fail moneyline, legacy V12 would have staked, trusted wallet FOR → 1u
+  const gfail = (over = {}) => evaluatePressLadder({
+    walletDetails: [wd('bbbbbb', 'home', 2000), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesT, sideOdds: -115, steamOn: false,
+    pickDate: LIVE, legacyUnits: 2, ...over,
+  });
+  const g = gfail();
+  ok(!g.gate.pass, 'ladder gate fails (bbbbbb is not Door 2)');
+  eq(g.rung, TRUST_G_STAKE_TIER, 'TRUST-G'); eq(g.units, TRUST_G_UNITS, '1u');
+  ok(g.reason.startsWith('trust_g_for_bbbbbb_legacy2u:gate_fail:'), g.reason);
+  eq(g.trust.gate, true, 'trust gate'); eq(g.trust.rule, 'trust_g', 'rule'); eq(g.trust.lift, false, 'TRUST-G is not a lift');
+  eq(gfail({ pickDate: PRE }).units, 0, 'before TRUST_FROM: 0u'); eq(gfail({ pickDate: PRE }).rung, null, 'before: no rung');
+  eq(gfail({ pickDate: PRE }).trust.gate, true, 'before: statuses still read'); eq(gfail({ pickDate: PRE }).trust.rule, null, 'before: no rule');
+  eq(gfail({ legacyUnits: 0 }).units, 0, 'legacy 0u → no rescue'); eq(gfail({ legacyUnits: null }).units, 0, 'legacy unknown → no rescue');
+  eq(gfail({ marketType: 'SPREAD', sideOdds: -110 }).units, 0, 'spread → no TRUST-G');
+  eq(gfail({ marketType: 'TOTAL', sideOdds: -110 }).units, 0, 'total → no TRUST-G');
+  eq(gfail({ walletDetails: [wd('gggggg', 'home', 2000), wd('dddddd', 'away', 100)] }).units, 0, 'tier 3 FOR → no rescue');
+  eq(gfail({ walletDetails: [wd('hhhhhh', 'home', 2000), wd('dddddd', 'away', 100)] }).units, 0, 'FALLEN_OFF tier 5 FOR → no rescue');
+  eq(gfail({ walletDetails: [wd('dddddd', 'home', 2000), wd('bbbbbb', 'away', 100)] }).units, 0, 'trusted wallet AG only → no rescue');
+  const reg = gfail({ walletDetails: [wd('iiiiii', 'home', 2000), wd('dddddd', 'away', 100)] });
+  eq(reg.rung, TRUST_G_STAKE_TIER, 'REGAINED_ON tier 4 counts'); eq(reg.units, 1, '1u');
+  // TRUST-G at a dog price still 1u; TRUST-G is exempt from the ML floor.
+  const gDog = gfail({ sideOdds: +130 }); eq(gDog.rung, TRUST_G_STAKE_TIER, 'dog TRUST-G'); eq(gDog.units, 1, 'dog 1u');
+  eq(gfail({ sideOdds: -200 }).units, 1, 'favourite TRUST-G stays 1u (no floor)');
+
+  // B. ML floor: staked moneyline rung under 3u at a non-dog price → 3u
+  const band4 = (over = {}) => evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 2200), wd('gggggg', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesT, sideOdds: -130, steamOn: false,
+    pickDate: LIVE, legacyUnits: 2, ...over,
+  });
+  const b4 = band4();
+  eq(b4.band, 4, 'band 4'); eq(b4.rung, PRESS_STAKE_TIER, 'PRESS'); eq(b4.units, ML_FLOOR_UNITS, 'band 4 clean 2u → floored 3u');
+  ok(b4.reason.endsWith('+ml_floor3'), b4.reason); eq(b4.trust.rule, 'ml_floor', 'rule'); eq(b4.trust.lift, true, 'gated PRESS ML → lift flag');
+  eq(band4({ pickDate: PRE }).units, PRESS_BAND_4_UNITS[0], 'before TRUST_FROM: 2u');
+  const b4dog = band4({ sideOdds: +110 });
+  eq(b4dog.units, PRESS_DOG_UNITS, 'dog → cap stands, no floor'); ok(!b4dog.reason.includes('ml_floor'), 'no floor suffix on a dog');
+  const b4edge = band4({ sideOdds: +100 });
+  eq(b4edge.units, ML_FLOOR_UNITS, '+100 is .50 → not a dog → floor');
+  eq(band4({ sideOdds: null }).units, PRESS_BAND_4_UNITS[0], 'no price → no floor (odds unknown)');
+  const b4steam = band4({ steamOn: true });
+  eq(b4steam.units, ML_FLOOR_UNITS, 'band 4 moved 1u → floored 3u');
+  const full = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesT, sideOdds: -120, steamOn: false, pickDate: LIVE, legacyUnits: 3,
+  });
+  eq(full.units, 5, '5u PRESS unchanged'); eq(full.trust.rule, null, 'no rule'); eq(full.trust.lift, true, 'gated 5u PRESS → lift flag');
+  // Lift flag is false when no trusted wallet is FOR.
+  const noGate = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: new Map([profile('aaaaaa', SPORT, { n: 40, wr: 58, dollarRoi: 12, usual: 1000 })]),
+    sideOdds: -120, steamOn: false, pickDate: LIVE, legacyUnits: 3,
+  });
+  eq(noGate.units, 5, '5u'); eq(noGate.trust.gate, false, 'no stamp → no gate'); eq(noGate.trust.lift, false, 'no lift');
+
+  // C. Spread / total cap at 2u
+  const sp = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesT, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(sp.band, 5, 'band 5 spread'); eq(sp.units, ST_CAP_UNITS, '5u → 2u'); ok(sp.reason.endsWith('+st_cap2'), sp.reason); eq(sp.trust.rule, 'st_cap', 'rule');
+  eq(sp.trust.lift, false, 'no lift on spreads'); eq(sp.trust.mktGate, false, 'aaaaaa SPREAD status OFF → market gate false');
+  const tot = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 1600), wd('dddddd', 'away', 50)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profilesT, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(tot.units, 0, 'over side with home wallets → no FOR rows… wallets are AG → gate fail');
+  const tot2 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'over', 1600), wd('dddddd', 'under', 50)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profilesT, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(tot2.band, 3, 'band 3 total'); eq(tot2.units, 2, '3u → 2u'); eq(tot2.trust.rule, 'st_cap', 'rule');
+  const spPre = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesT, sideOdds: -110, steamOn: false, pickDate: PRE,
+  });
+  eq(spPre.units, 5, 'before TRUST_FROM: 5u spread stands');
+  const sp2 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 2200), wd('gggggg', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesT, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(sp2.units, 2, 'band 4 clean spread 2u unchanged'); eq(sp2.trust.rule, null, 'no rule when under the cap');
+
+  // D. FADE-F veto stays a veto even with the gate on
+  const vetoed = applyTrustLayer(
+    { rung: null, units: 0, reason: 'fade_f_veto_of_none:x', gate: { pass: false } },
+    { walletDetails: [wd('bbbbbb', 'home', 2000)], side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesT, sideOdds: -115, pickDate: LIVE, legacyUnits: 2 },
+  );
+  eq(vetoed.units, 0, 'veto holds'); eq(vetoed.rung, null, 'no rung'); eq(vetoed.trust.gate, true, 'gate read anyway');
+
+  // E. Stamp: v8_trust* on every side, nothing undefined
+  const st = pressStamp(g, 7);
+  eq(st.v8_pressRung, 'TRUST-G', 'stamp rung'); eq(st.v8_pressUnits, 1, 'stamp units');
+  eq(st.v8_trustGate, true, 'stamp gate'); eq(st.v8_trustGateWallets.join(','), 'bbbbbb', 'stamp gate wallets'); eq(st.v8_trustRule, 'trust_g', 'stamp rule');
+  eq(st.v8_trustFor[0].status, 'STABLE_ON', 'stamp FOR status'); eq(st.v8_trustAg[0].status, 'UNPROVEN', 'stamp AG status');
+  eq(st.v8_trustCounts.forOn, 1, 'stamp counts'); eq(st.v8_trustLift, false, 'stamp lift'); eq(st.v8_trustMktGate, false, 'no ML market stamp on bbbbbb → false');
+  for (const [k, val] of Object.entries(st)) ok(val !== undefined, `stamp ${k} defined`);
+  for (const w of [...st.v8_trustFor, ...st.v8_trustAg]) for (const [k, val] of Object.entries(w)) ok(val !== undefined, `stamp wallet ${k} defined`);
+  const stEmpty = pressStamp(evaluatePressLadder({ walletDetails: [], side: 'home', sport: SPORT }), 1);
+  eq(stEmpty.v8_trustGate, null, 'empty eval → trust gate null'); eq(stEmpty.v8_trustFor, null, 'empty eval → FOR null'); eq(stEmpty.v8_trustRule, null, 'empty → rule null');
+  const stNull = trustStamp(null);
+  for (const [k, val] of Object.entries(stNull)) eq(val, null, `trustStamp(null).${k} null`);
+  const stLift = pressStamp(full, 7); eq(stLift.v8_trustLift, true, 'lift stamped'); eq(stLift.v8_trustMktFor[0].status, 'STABLE_ON', 'ML market status stamped');
 }
 
 console.log(`testPressLadderOverlay: ${n} assertions passed`);

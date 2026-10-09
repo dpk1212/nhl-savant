@@ -133,6 +133,25 @@
  * 1u. Never while any sibling side carries units; the V12 side is
  * superseded while the mirror is live. See evaluatePressMirror().
  *
+ * TRUST layer (from TRUST_FROM, 2026-10-10) — wallet trust status
+ * (src/lib/walletTrustStatus.js: tier floors on the wallet's running edge
+ * vs its own prices + last-10 form, walked forward per wallet × sport, read
+ * from profile.bySport[sport].trust). Live book Jun 1 → Oct 9, moneylines:
+ * a tier-4+ form-ON wallet FOR 120-60 66.7% +21.1% (554u → +116.7u) vs
+ * 259-217 54.4% +2.2% without (p = .023); MLB ML 81-37 vs 172-167 (p = .003);
+ * every month ≥ 60.5%. Spreads + totals 97-94 vs 198-195 (p = .95) — no
+ * gate there; the market-level status is stamped as a shadow.
+ *   • Every side carries v8_trust* (FOR / AG statuses, sport + market gate).
+ *   • TRUST-G (1u): moneyline the ladder left at gate_fail / 0u, legacy V12
+ *     sizing would have staked it, and a tier-4+ form-ON wallet is FOR.
+ *     Retro cell Aug 1 → Oct 5: 34-21 61.8% +12.3%, every one gate_fail.
+ *   • ML floor: a staked moneyline rung (TRUST-G excepted) floors at
+ *     ML_FLOOR_UNITS when the side's implied ≥ PRESS_DOG_IMPLIED_MAX; dogs
+ *     keep their cap, and oddsCap at the call site still rules long prices.
+ *   • Spreads / totals cap at ST_CAP_UNITS.
+ *   • v8_trustLift: shadow flag on gated moneyline rungs (ladder YES · gate
+ *     YES 26-7 78.8% +37% retro) — no units yet.
+ *
  * Everything else between the v12 score gate and the odds cap (HC ladder,
  * rescues, floors, tape, EDGE bands, the mute chain, HARD+ layer, form×tier)
  * is retired for pickDate ≥ PRESS_LADDER_FROM. The v12 score > 0 gate,
@@ -142,6 +161,7 @@
  */
 import { isConfirmedSportRec } from './whitelistTier.js';
 import { stakeSizeRatio } from './sizeRatioBands.js';
+import { isTrustedWallet, isTrustOn, isTrustOff, TRUST_TIER_MIN } from './walletTrustStatus.js';
 
 /** Stakes follow the press ladder for pick dates on/after this. */
 export const PRESS_LADDER_FROM = '2026-10-06';
@@ -275,6 +295,21 @@ export const STEAM_C_STAKE_TIER = 'STEAM-C';
 export const STEAM_S_STAKE_TIER = 'STEAM-S';
 export const SOLO_Q_STAKE_TIER = 'SOLO-Q';
 export const PRESS_GATE_MUTED_BY = 'press-gate';
+
+// TRUST layer — see header. Sport-level status feeds the moneyline gate;
+// market-level status is a shadow stamp for spreads / totals.
+export const TRUST_FROM = '2026-10-10';
+export const TRUST_G_STAKE_TIER = 'TRUST-G';
+export const TRUST_G_UNITS = 1;
+/** Staked moneyline rungs floor here when the side is not a dog (TRUST-G exempt). */
+export const ML_FLOOR_UNITS = 3;
+/** Spread / total rungs cap here. */
+export const ST_CAP_UNITS = 2;
+export { TRUST_TIER_MIN };
+
+export function isTrustLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TRUST_FROM;
+}
 
 export function isSteamSLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= STEAM_S_FROM && isPressLadderLive(pickDate);
@@ -496,33 +531,48 @@ export function impliedFromAmerican(o) {
  * Sport book for one wallet as production exports it:
  * profile.bySport[sport].positions = { n, wins, wr, invested, settledPnl, dollarRoi }.
  */
-export function sportBook(profile, sport) {
+export function sportBook(profile, sport, marketType = null) {
   const rec = profile?.bySport?.[sport];
   const pos = rec?.positions;
   if (!pos || typeof pos !== 'object') return null;
   const n = Number(pos.n) || 0;
   const wr = Number(pos.wr);
   const l10 = rec?.form?.actionL10;
+  const mkt = marketType ? String(marketType).toUpperCase() : null;
   return {
     n,
     wr: Number.isFinite(wr) ? wr : null,
     door2: isConfirmedSportRec(rec),
     l10: l10 && typeof l10 === 'object' ? { w: Number(l10.w) || 0, l: Number(l10.l) || 0 } : null,
+    trust: trustPick(rec?.trust),
+    trustMkt: mkt ? trustPick(rec?.byMarket?.[mkt]?.trust) : null,
+  };
+}
+
+/** Compact trust record off a profile node; null when the export has not stamped one. */
+function trustPick(t) {
+  if (!t || typeof t !== 'object' || typeof t.status !== 'string') return null;
+  return {
+    status: t.status,
+    tier: Number(t.tier) || 0,
+    n: Number(t.n) || 0,
+    edge: Number.isFinite(Number(t.edge)) ? Number(t.edge) : null,
+    formOn: t.formOn === true,
   };
 }
 
 /**
  * Per-wallet row the gate reads: direction, dollars, sport-local size ratio,
- * sport book depth / WR / Door-2 flag.
+ * sport book depth / WR / Door-2 flag, trust status (sport + market).
  */
-export function pressWalletRows(walletDetails, side, sport, walletProfiles) {
+export function pressWalletRows(walletDetails, side, sport, walletProfiles, marketType = null) {
   const rows = [];
   for (const wd of walletDetails || []) {
     if (!wd || !wd.side) continue;
     const invested = Number(wd.invested) || 0;
     if (!(invested > 0)) continue;
     const profile = profileForWallet(walletProfiles, wd.wallet);
-    const book = sportBook(profile, sport);
+    const book = sportBook(profile, sport, marketType);
     const sr = stakeSizeRatio(wd, profile, sport);
     rows.push({
       wallet: shortId(wd.wallet),
@@ -534,9 +584,50 @@ export function pressWalletRows(walletDetails, side, sport, walletProfiles) {
       door2: book?.door2 === true,
       l10: book?.l10 ?? null,
       streak: careerLossStreak(profile),
+      trust: book?.trust ?? null,
+      trustMkt: book?.trustMkt ?? null,
     });
   }
   return rows;
+}
+
+/**
+ * Trust read for one side: FOR / AG wallet statuses at the sport level
+ * (the moneyline gate) and the market level (shadow). `gate` = at least one
+ * FOR wallet with tier ≥ TRUST_TIER_MIN and form ON.
+ */
+export function trustRead(rows) {
+  const pack = (r, t) => ({
+    wallet: r.wallet,
+    status: t?.status ?? 'UNPROVEN',
+    tier: t?.tier ?? 0,
+    n: t?.n ?? 0,
+    edge: t?.edge ?? null,
+  });
+  const forRows = rows.filter((r) => r.dir === 'FOR');
+  const agRows = rows.filter((r) => r.dir === 'AG');
+  const sportFor = forRows.map((r) => pack(r, r.trust));
+  const sportAg = agRows.map((r) => pack(r, r.trust));
+  const mktFor = forRows.map((r) => pack(r, r.trustMkt));
+  const mktAg = agRows.map((r) => pack(r, r.trustMkt));
+  const trusted = (list) => list.filter((w) => isTrustedWallet(w)).map((w) => w.wallet);
+  const count = (list, fn) => list.filter((w) => fn(w.status)).length;
+  return {
+    gate: trusted(sportFor).length >= 1,
+    gateWallets: trusted(sportFor),
+    agTrusted: trusted(sportAg),
+    forOn: count(sportFor, isTrustOn),
+    forOff: count(sportFor, isTrustOff),
+    agOn: count(sportAg, isTrustOn),
+    agOff: count(sportAg, isTrustOff),
+    for: sportFor,
+    ag: sportAg,
+    mktGate: trusted(mktFor).length >= 1,
+    mktFor,
+    mktAg,
+    lift: false,
+    rule: null,
+  };
 }
 
 export function pressBand(maxRatio) {
@@ -609,8 +700,9 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|'FADE-F'|null, units: number, reason: string,
- *   floorFade: { status: 'BOOST'|'VETO'|null, floorCount, wallet, dir, n, wr, streak, ratio, floorImplied, reason }|null
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|'FADE-F'|'TRUST-G'|null, units: number, reason: string,
+ *   floorFade: { status: 'BOOST'|'VETO'|null, floorCount, wallet, dir, n, wr, streak, ratio, floorImplied, reason }|null,
+ *   trust: { gate, gateWallets, agTrusted, forOn, forOff, agOn, agOff, for, ag, mktGate, mktFor, mktAg, lift, rule }|null
  * }}
  * pickDate gates the dated rungs (STEAM-S from STEAM_S_FROM, SOLO-Q from
  * SOLO_Q_FROM, FADE-F from FADE_F_FROM); null → those rungs stay off.
@@ -618,20 +710,77 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * FADE-F sits over the whole ladder: a VETO zeroes any rung the core chose
  * (reason fade_f_veto_of_<rung>:…); a BOOST stakes FADE_F_UNITS only when the
  * core left the side at 0u. Staked sides keep their rung and units.
+ *
+ * The TRUST layer (from TRUST_FROM) runs last: `trust` (FOR / AG statuses,
+ * gate) is attached on every evaluated side; TRUST-G rescues a gate_fail
+ * moneyline that legacy V12 sizing (`legacyUnits` > 0) would have staked
+ * when a trusted wallet is FOR; staked moneyline rungs floor at
+ * ML_FLOOR_UNITS unless the side is a dog; spread / total rungs cap at
+ * ST_CAP_UNITS. FADE-F VETO stays a veto.
  */
 export function evaluatePressLadder(args = {}) {
   const core = evaluatePressLadderCore(args);
   const { pickDate = null } = args;
   const floorFade = core.floorFade ?? null;
-  if (!floorFade || !isFadeFLive(pickDate)) return core;
-  if (floorFade.status === 'VETO') {
-    const of = core.units > 0 ? core.rung : 'none';
-    return { ...core, rung: null, units: 0, reason: `fade_f_veto_of_${of}:${floorFade.reason}` };
+  let out = core;
+  if (floorFade && isFadeFLive(pickDate)) {
+    if (floorFade.status === 'VETO') {
+      const of = core.units > 0 ? core.rung : 'none';
+      out = { ...core, rung: null, units: 0, reason: `fade_f_veto_of_${of}:${floorFade.reason}` };
+    } else if (floorFade.status === 'BOOST' && core.units === 0) {
+      out = { ...core, rung: FADE_F_STAKE_TIER, units: FADE_F_UNITS, reason: `fade_f_${floorFade.reason}` };
+    }
   }
-  if (floorFade.status === 'BOOST' && core.units === 0) {
-    return { ...core, rung: FADE_F_STAKE_TIER, units: FADE_F_UNITS, reason: `fade_f_${floorFade.reason}` };
+  return applyTrustLayer(out, args);
+}
+
+/**
+ * Attach the trust read and, when live, apply TRUST-G / the ML floor / the
+ * spread-total cap. Pure: returns a new result object.
+ */
+export function applyTrustLayer(result, {
+  walletDetails, side, sport, marketType, walletProfiles, sideOdds = null, pickDate = null, legacyUnits = null,
+} = {}) {
+  const rows = (Array.isArray(walletDetails) && walletDetails.length && side && sport && walletProfiles)
+    ? pressWalletRows(walletDetails, side, sport, walletProfiles, marketType)
+    : [];
+  const trust = rows.length ? trustRead(rows) : null;
+  const out = { ...result, trust };
+  if (!trust || !isTrustLive(pickDate)) return out;
+
+  const isML = String(marketType).toUpperCase() === 'ML';
+  const implied = impliedFromAmerican(sideOdds);
+  const rules = [];
+  const vetoed = typeof out.reason === 'string' && out.reason.startsWith('fade_f_veto');
+
+  if (isML && out.units === 0 && !vetoed
+    && typeof out.reason === 'string' && out.reason.startsWith('gate_fail')
+    && Number(legacyUnits) > 0 && trust.gate) {
+    out.rung = TRUST_G_STAKE_TIER;
+    out.units = TRUST_G_UNITS;
+    out.reason = `trust_g_for_${trust.gateWallets.join('+')}_legacy${Number(legacyUnits)}u:${out.reason}`;
+    rules.push('trust_g');
   }
-  return core;
+
+  if (isML && out.units > 0 && out.rung !== TRUST_G_STAKE_TIER
+    && implied != null && implied >= PRESS_DOG_IMPLIED_MAX && out.units < ML_FLOOR_UNITS) {
+    out.units = ML_FLOOR_UNITS;
+    out.reason = `${out.reason}+ml_floor${ML_FLOOR_UNITS}`;
+    rules.push('ml_floor');
+  }
+
+  if (!isML && out.units > ST_CAP_UNITS) {
+    out.units = ST_CAP_UNITS;
+    out.reason = `${out.reason}+st_cap${ST_CAP_UNITS}`;
+    rules.push('st_cap');
+  }
+
+  out.trust = {
+    ...trust,
+    lift: isML && out.units > 0 && out.rung !== TRUST_G_STAKE_TIER && trust.gate,
+    rule: rules.length ? rules.join('+') : null,
+  };
+  return out;
 }
 
 function evaluatePressLadderCore({
@@ -654,7 +803,7 @@ function evaluatePressLadderCore({
   if (!Array.isArray(walletDetails) || walletDetails.length === 0 || !side || !sport) return empty;
   if (!walletProfiles) return { ...empty, reason: 'no_wallet_profiles' };
 
-  const rows = pressWalletRows(walletDetails, side, sport, walletProfiles);
+  const rows = pressWalletRows(walletDetails, side, sport, walletProfiles, marketType);
   if (rows.length === 0) return { ...empty, reason: 'no_wallet_rows' };
   // FLOOR-FADE read is computed on every evaluated side so the stamp carries
   // it even where the policy is not live yet or the side is already staked.
@@ -920,6 +1069,28 @@ export function pressStamp(evalResult, now) {
       floorImplied: e.floorFade.floorImplied ?? null,
       reason: e.floorFade.reason ?? null,
     } : null,
+    ...trustStamp(e.trust),
     v8_pressAt: now,
+  };
+}
+
+/** v8_trust* fields — written on every evaluated side (null when no read). */
+export function trustStamp(trust) {
+  const t = trust ?? null;
+  const pack = (list) => (Array.isArray(list) && list.length
+    ? list.slice(0, 6).map((w) => ({ wallet: w.wallet, status: w.status, tier: w.tier, n: w.n }))
+    : null);
+  return {
+    v8_trustGate: t ? t.gate === true : null,
+    v8_trustGateWallets: t && t.gateWallets.length ? t.gateWallets.slice(0, 4) : null,
+    v8_trustAgTrusted: t && t.agTrusted.length ? t.agTrusted.slice(0, 4) : null,
+    v8_trustCounts: t ? { forOn: t.forOn, forOff: t.forOff, agOn: t.agOn, agOff: t.agOff } : null,
+    v8_trustFor: t ? pack(t.for) : null,
+    v8_trustAg: t ? pack(t.ag) : null,
+    v8_trustMktGate: t ? t.mktGate === true : null,
+    v8_trustMktFor: t ? pack(t.mktFor) : null,
+    v8_trustMktAg: t ? pack(t.mktAg) : null,
+    v8_trustLift: t ? t.lift === true : null,
+    v8_trustRule: t ? (t.rule ?? null) : null,
   };
 }
