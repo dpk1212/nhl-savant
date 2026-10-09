@@ -168,7 +168,19 @@
  *     rule replays +41u against −12.9u as staked at half the drawdown.
  *     Staked book Jun 3 → Oct 8: clean-trusted 38-27 +14.8u, the rest 52-54
  *     −16.6u. Sides without a trusted FOR keep their ladder stake.
- *   • Spreads cap at SPREAD_CAP_UNITS, totals at ST_CAP_UNITS.
+ *   • TRUST-T (2026-10-09 night): totals read the wallet's status in THIS
+ *     sport's totals market, and separate on agreement rather than on one
+ *     wallet. Exactly one trusted FOR (no trusted AG) → 0u: the wallets' own
+ *     lone totals bets Aug 1 → Oct 5 are 163-187 (−3.4pp), the board's lone
+ *     sides 128-150 (−25.2u flat), our staked lone-trusted totals Jun 1 →
+ *     Oct 8 48-61 for −78.4u, negative every month. Trusted wallets on both
+ *     sides → 0u. ≥ TRUST_T_MIN_FOR trusted FOR and no trusted AG stakes
+ *     TRUST_T_UNITS, TRUST_T_PRESS_UNITS at implied ≤ TRUST_T_PRESS_IMPLIED_MAX
+ *     (own bets 143-99 / 84-49 +16pp at ≤ .50; board 44-33 / 20-11; staked
+ *     4-1). Sides without a trusted FOR keep their ladder stake under
+ *     ST_CAP_UNITS. Replay: staked book −20.0u → +15.8u, board −19.4u → +24.0u.
+ *   • Spreads cap at SPREAD_CAP_UNITS, totals at ST_CAP_UNITS (TRUST-T
+ *     consensus stakes sit above that cap by design).
  *   • v8_trustLift: shadow flag on gated moneyline rungs — no units beyond
  *     the floor yet.
  *
@@ -343,6 +355,22 @@ export const TRUST_S_DOG_UNITS = 1;
 export const TRUST_S_IMPLIED_MIN = 0.50;
 export const TRUST_S_IMPLIED_MAX = 0.70;
 export const TRUST_S_CONVICTION_RATIO = 1.5;
+// TRUST-T — totals, market-level status (the wallet's totals book in this
+// sport). Totals separate on agreement, not on a single wallet: a lone
+// trusted FOR is negative in every dataset (wallets' own bets Aug 1 → Oct 5
+// 163-187 −3.4pp; board 128-150 −25.2u flat; our staked lone-trusted totals
+// Jun 1 → Oct 8 48-61 −78.4u, negative every month), while ≥ 2 trusted FOR
+// on the same total is 143-99 (59.1%, z 2.7) / board 44-33 / staked 4-1.
+// Inside consensus the edge sits at implied ≤ .50 (own bets 84-49 +16.0pp
+// z 3.7; board 20-11 +17pp); above .50 it is flat. Conviction is stamped,
+// not sized. Non-trusted sides keep their ladder stake under ST_CAP_UNITS.
+export const TRUST_T_STAKE_TIER = 'TRUST-T';
+/** ≥ TRUST_T_MIN_FOR market-trusted FOR, 0 trusted AG. */
+export const TRUST_T_MIN_FOR = 2;
+export const TRUST_T_UNITS = 2.5;
+/** Consensus at implied ≤ TRUST_T_PRESS_IMPLIED_MAX presses to this. */
+export const TRUST_T_PRESS_UNITS = 3;
+export const TRUST_T_PRESS_IMPLIED_MAX = 0.50;
 export { TRUST_TIER_MIN };
 
 export function isTrustLive(pickDate) {
@@ -740,7 +768,7 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|'FADE-F'|'TRUST-G'|'TRUST-S'|null, units: number, reason: string,
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|'FADE-F'|'TRUST-G'|'TRUST-S'|'TRUST-T'|null, units: number, reason: string,
  *   floorFade: { status: 'BOOST'|'VETO'|null, floorCount, wallet, dir, n, wr, streak, ratio, floorImplied, reason }|null,
  *   trust: { gate, gateWallets, agTrusted, forOn, forOff, agOn, agOff, for, ag, mktGate, mktFor, mktAg, lift, rule }|null
  * }}
@@ -756,8 +784,9 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * moneyline that legacy V12 sizing (`legacyUnits` > 0) would have staked
  * when a trusted wallet is FOR; staked moneyline rungs with a trusted wallet
  * FOR floor at ML_FLOOR_UNITS inside the implied window; TRUST-S vetoes /
- * stakes spreads off market-level status; spreads cap at SPREAD_CAP_UNITS,
- * totals at ST_CAP_UNITS. FADE-F VETO stays a veto.
+ * stakes spreads and TRUST-T mutes lone / stakes consensus totals off
+ * market-level status; spreads cap at SPREAD_CAP_UNITS, totals at
+ * ST_CAP_UNITS. FADE-F VETO stays a veto.
  */
 export function evaluatePressLadder(args = {}) {
   const core = evaluatePressLadderCore(args);
@@ -776,8 +805,8 @@ export function evaluatePressLadder(args = {}) {
 }
 
 /**
- * Attach the trust read and, when live, apply TRUST-G / the ML floor / the
- * spread-total cap. Pure: returns a new result object.
+ * Attach the trust read and, when live, apply TRUST-G / the ML floor /
+ * TRUST-S / TRUST-T / the spread-total caps. Pure: returns a new result object.
  */
 export function applyTrustLayer(result, {
   walletDetails, side, sport, marketType, walletProfiles, sideOdds = null, pickDate = null, legacyUnits = null,
@@ -840,12 +869,50 @@ export function applyTrustLayer(result, {
     }
   }
 
+  const isTotal = String(marketType).toUpperCase() === 'TOTAL';
+  let trustT = false;
+  if (isTotal && !vetoed) {
+    const tFor = trust.mktFor.filter((w) => isTrustedWallet(w));
+    const tAg = trust.mktAg.filter((w) => isTrustedWallet(w));
+    if (tFor.length && tAg.length) {
+      // Trusted wallets on both sides of the total — stand down.
+      if (out.units > 0) { out.units = 0; out.rung = null; }
+      out.reason = `trust_t_veto_ag_${tAg.map((w) => w.wallet).join('+')}:${out.reason}`;
+      rules.push('trust_t_veto');
+    } else if (tFor.length >= TRUST_T_MIN_FOR) {
+      const press = implied != null && implied <= TRUST_T_PRESS_IMPLIED_MAX;
+      const target = press ? TRUST_T_PRESS_UNITS : TRUST_T_UNITS;
+      if (out.units < target) {
+        const conviction = tFor.some((w) => Number(w.ratio) >= TRUST_S_CONVICTION_RATIO);
+        const tag = `trust_t_for_${tFor.map((w) => w.wallet).join('+')}_x${tFor.length}${conviction ? '_conv' : ''}${press ? '_dog' : ''}${target}u`;
+        if (out.units > 0) {
+          out.reason = `${out.reason}+${tag}`;
+        } else {
+          out.rung = TRUST_T_STAKE_TIER;
+          out.reason = `${tag}:${out.reason}`;
+        }
+        out.units = target;
+        rules.push('trust_t');
+      } else if (out.units > target) {
+        out.units = target;
+        out.reason = `${out.reason}+tt_cap${target}`;
+        rules.push('tt_cap');
+      }
+      trustT = true;
+    } else if (tFor.length >= 1) {
+      // One trusted wallet alone on a total is a fade, not a follow.
+      if (out.units > 0) { out.units = 0; out.rung = null; }
+      out.reason = `trust_t_lone_${tFor.map((w) => w.wallet).join('+')}:${out.reason}`;
+      rules.push('trust_t_lone');
+    }
+  }
+
   if (isSpread && out.units > SPREAD_CAP_UNITS) {
     out.units = SPREAD_CAP_UNITS;
     out.reason = `${out.reason}+sp_cap${SPREAD_CAP_UNITS}`;
     rules.push('sp_cap');
   }
-  if (!isML && !isSpread && out.units > ST_CAP_UNITS) {
+  if (!isML && !isSpread && !trustT && out.units > ST_CAP_UNITS) {
     out.units = ST_CAP_UNITS;
     out.reason = `${out.reason}+st_cap${ST_CAP_UNITS}`;
     rules.push('st_cap');

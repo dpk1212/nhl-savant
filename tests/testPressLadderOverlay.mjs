@@ -70,6 +70,7 @@ import {
   ST_CAP_UNITS,
   SPREAD_CAP_UNITS,
   TRUST_S_STAKE_TIER,
+  TRUST_T_STAKE_TIER, TRUST_T_MIN_FOR, TRUST_T_UNITS, TRUST_T_PRESS_UNITS, TRUST_T_PRESS_IMPLIED_MAX,
   TRUST_S_UNITS,
   TRUST_S_PRESS_UNITS,
   TRUST_S_DOG_UNITS,
@@ -848,7 +849,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(TRUST_FROM, '2026-10-09', 'TRUST live date');
   ok(!isTrustLive('2026-10-08') && isTrustLive('2026-10-09') && !isTrustLive(null), 'live gate');
   eq(TRUST_G_STAKE_TIER, 'TRUST-G', 'rung name'); eq(TRUST_G_UNITS, 3, 'TRUST-G 3u');
-  eq(ML_FLOOR_UNITS, 4, 'gated ML floor 4u'); eq(ST_CAP_UNITS, 2, 'total cap 2u'); eq(SPREAD_CAP_UNITS, 2.5, 'spread cap 2.5u'); eq(TRUST_S_STAKE_TIER, 'TRUST-S', 'rung'); eq(TRUST_S_UNITS, 2, 'TRUST-S 2u'); eq(TRUST_S_PRESS_UNITS, 2.5, 'pressed 2.5u'); eq(TRUST_S_DOG_UNITS, 1, 'dog 1u'); eq(TRUST_S_IMPLIED_MIN, 0.5, 'window min'); eq(TRUST_S_IMPLIED_MAX, 0.7, 'window max'); eq(TRUST_S_CONVICTION_RATIO, 1.5, 'conviction'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
+  eq(ML_FLOOR_UNITS, 4, 'gated ML floor 4u'); eq(ST_CAP_UNITS, 2, 'total cap 2u'); eq(SPREAD_CAP_UNITS, 2.5, 'spread cap 2.5u'); eq(TRUST_S_STAKE_TIER, 'TRUST-S', 'rung'); eq(TRUST_S_UNITS, 2, 'TRUST-S 2u'); eq(TRUST_S_PRESS_UNITS, 2.5, 'pressed 2.5u'); eq(TRUST_S_DOG_UNITS, 1, 'dog 1u'); eq(TRUST_S_IMPLIED_MIN, 0.5, 'window min'); eq(TRUST_S_IMPLIED_MAX, 0.7, 'window max'); eq(TRUST_S_CONVICTION_RATIO, 1.5, 'conviction'); eq(TRUST_T_STAKE_TIER, 'TRUST-T', 'rung T'); eq(TRUST_T_MIN_FOR, 2, 'consensus ≥ 2'); eq(TRUST_T_UNITS, 2.5, 'TRUST-T 2.5u'); eq(TRUST_T_PRESS_UNITS, 3, 'pressed 3u'); eq(TRUST_T_PRESS_IMPLIED_MAX, 0.5, 'press at ≤ .50'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
 
   const T = (status, tier, n = 40) => ({ status, tier, n, edge: tier >= 4 ? 6 : -2, formOn: status.endsWith('_ON') });
   const profileT = (short, sport, { n: bets, wr, dollarRoi, usual, trust = null, trustMkt = {} }) => {
@@ -1036,6 +1037,65 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const sst = pressStamp(s1, 3);
   eq(sst.v8_pressRung, 'TRUST-S', 'stamp rung'); eq(sst.v8_pressUnits, 2, 'stamp units'); eq(sst.v8_trustRule, 'trust_s', 'stamp rule'); eq(sst.v8_trustMktGate, true, 'stamp market gate');
   eq(sst.v8_trustMktFor[0].wallet, 'ssssss', 'stamp market FOR'); ok(!('ratio' in sst.v8_trustMktFor[0]), 'ratio is not stamped');
+
+  // C3. TRUST-T: totals off the wallet's status in THIS sport's totals market — agreement, not one wallet
+  const profilesO = new Map([
+    ...profilesS,
+    profileT('oooooo', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 1000, trustMkt: { TOTAL: T('STABLE_ON', 5) } }), // trusted on totals only
+    profileT('pppppp', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 1000, trustMkt: { TOTAL: T('REGAINED_ON', 4) } }),
+    profileT('qqqqqq', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 1000, trustMkt: { TOTAL: T('STABLE_OFF', 5), SPREAD: T('STABLE_ON', 5) } }), // totals status OFF
+  ]);
+  const totT = (over = {}) => evaluatePressLadder({
+    walletDetails: [wd('oooooo', 'over', 900), wd('pppppp', 'over', 900), wd('dddddd', 'under', 50)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profilesO, sideOdds: -110, steamOn: false, pickDate: LIVE, ...over,
+  });
+  const t1 = totT();
+  ok(!t1.gate.pass, 'ladder gate fails (neither wallet is Door 2)');
+  eq(t1.rung, TRUST_T_STAKE_TIER, 'TRUST-T'); eq(t1.units, TRUST_T_UNITS, '−110 (.524), two trusted FOR, no trusted AG → 2.5u');
+  ok(t1.reason.startsWith('trust_t_for_oooooo+pppppp_x22.5u:gate_fail'), t1.reason); eq(t1.trust.rule, 'trust_t', 'rule'); eq(t1.trust.lift, false, 'no lift on totals');
+  const t2 = totT({ sideOdds: +100 });
+  eq(t2.units, TRUST_T_PRESS_UNITS, '+100 is .500 → press → 3u'); ok(t2.reason.startsWith('trust_t_for_oooooo+pppppp_x2_dog3u:'), t2.reason);
+  eq(totT({ sideOdds: -101 }).units, TRUST_T_UNITS, '−101 is .5025 → 2.5u');
+  eq(totT({ sideOdds: +115 }).units, TRUST_T_PRESS_UNITS, '+115 (.465) → 3u');
+  eq(totT({ sideOdds: null }).units, TRUST_T_UNITS, 'no price → consensus still 2.5u (no press)');
+  const t3 = totT({ walletDetails: [wd('oooooo', 'over', 1500), wd('pppppp', 'over', 900), wd('dddddd', 'under', 50)] });
+  eq(t3.units, TRUST_T_UNITS, 'conviction is stamped, not sized'); ok(t3.reason.startsWith('trust_t_for_oooooo+pppppp_x2_conv2.5u:'), t3.reason);
+  eq(totT({ pickDate: PRE }).units, 0, 'before TRUST_FROM → 0u'); eq(totT({ pickDate: PRE }).trust.rule, null, 'before: no rule');
+  // Lone: exactly one trusted FOR → 0u, staked or not.
+  const l1 = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('dddddd', 'under', 50)] });
+  eq(l1.units, 0, 'one trusted FOR alone → 0u'); eq(l1.rung, null, 'no rung'); eq(l1.trust.rule, 'trust_t_lone', 'rule'); ok(l1.reason.startsWith('trust_t_lone_oooooo:gate_fail'), l1.reason);
+  const l2 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'over', 2200), wd('oooooo', 'over', 900), wd('gggggg', 'under', 500)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profilesO, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(l2.units, 0, 'ladder PRESS total with one trusted FOR → 0u'); eq(l2.rung, null, 'rung cleared'); ok(l2.reason.startsWith('trust_t_lone_oooooo:press_'), l2.reason); eq(l2.trust.rule, 'trust_t_lone', 'rule');
+  eq(totT({ walletDetails: [wd('qqqqqq', 'over', 900), wd('oooooo', 'over', 900), wd('dddddd', 'under', 50)] }).units, 0, 'totals status OFF does not count toward consensus → lone → 0u');
+  // Veto: trusted wallets on both sides → 0u, whatever the count.
+  const tv = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('pppppp', 'over', 900), wd('ssssss', 'under', 50)] });
+  eq(tv.units, TRUST_T_UNITS, 'a spread-trusted wallet AG is not totals-trusted → consensus stands');
+  const tv2 = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('pppppp', 'under', 900)] });
+  eq(tv2.units, 0, 'trusted FOR and trusted AG → 0u'); eq(tv2.trust.rule, 'trust_t_veto', 'rule'); ok(tv2.reason.startsWith('trust_t_veto_ag_pppppp:'), tv2.reason);
+  // No trusted FOR: nothing changes, the 2u totals cap still applies.
+  const nt = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'over', 3500), wd('dddddd', 'under', 100)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profilesO, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(nt.units, ST_CAP_UNITS, 'no trusted FOR → ladder stake under the 2u cap'); eq(nt.trust.rule, 'st_cap', 'cap only');
+  // Consensus over a ladder stake: a 5u PRESS total with two trusted FOR comes down to the TRUST-T target, not the 2u cap.
+  const cc = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'over', 3500), wd('oooooo', 'over', 900), wd('pppppp', 'over', 900), wd('dddddd', 'under', 100)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profilesO, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(cc.rung, 'PRESS', 'rung stays PRESS'); eq(cc.units, TRUST_T_UNITS, '5u → 2.5u'); ok(cc.reason.includes('+tt_cap2.5'), cc.reason); eq(cc.trust.rule, 'tt_cap', 'rule');
+  const cf = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'over', 2200), wd('oooooo', 'over', 900), wd('pppppp', 'over', 900), wd('dddddd', 'under', 100)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profilesO, sideOdds: +105, steamOn: false, pickDate: LIVE,
+  });
+  eq(cf.rung, 'PRESS', 'rung stays PRESS'); eq(cf.units, TRUST_T_PRESS_UNITS, '2u PRESS + consensus at .488 → 3u'); ok(cf.reason.includes('+trust_t_for_oooooo+pppppp_x2_dog3u'), cf.reason); eq(cf.trust.rule, 'trust_t', 'rule');
+  eq(totT({ marketType: 'SPREAD', side: 'home', walletDetails: [wd('oooooo', 'home', 900), wd('pppppp', 'home', 900), wd('dddddd', 'away', 50)] }).units, 0, 'TRUST-T is totals only (totals-trusted wallets are not spread-trusted)');
+  // Stamp
+  const tst = pressStamp(t2, 3);
+  eq(tst.v8_pressRung, 'TRUST-T', 'stamp rung'); eq(tst.v8_pressUnits, 3, 'stamp units'); eq(tst.v8_trustRule, 'trust_t', 'stamp rule'); eq(tst.v8_trustMktFor.length, 2, 'stamp market FOR rows');
 
   // D. FADE-F veto stays a veto even with the gate on
   const vetoed = applyTrustLayer(

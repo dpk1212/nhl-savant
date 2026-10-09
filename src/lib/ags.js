@@ -1082,6 +1082,7 @@ export const AGS_V12_STAKE_PATH = {
   'PRESS-M':     'press ladder · mirror of a muted V12 side',
   'TRUST-G':     'press ladder · trusted wallet (tier 4+, form on) is for',
   'TRUST-S':     'press ladder · spread: wallet trusted in this spread market is for, none against',
+  'TRUST-T':     'press ladder · total: two or more wallets trusted in this totals market are for, none against',
   'PRESS-R6':    'press ladder · two veterans',
   MONITORING:    'watch',
   FADE:          'muted',
@@ -1095,7 +1096,7 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6', 'TRUST-G', 'TRUST-S'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6', 'TRUST-G', 'TRUST-S', 'TRUST-T'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
   { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'SOLO-Q', 'PRESS-M'] },
 ];
@@ -1202,6 +1203,10 @@ export const AGS_V12_STAKE_TIER_META = {
   // spread market FOR and none against, implied .50–.70 (board 57-32) → 2u,
   // 2.5u with conviction or two trusted FOR.
   'TRUST-S':     { label: 'SHARP PLAY', short: 'TRUST-S', color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 2,                     ribbon: null, stars: 2.5 },
+  // 2026-10-09 night: TRUST-T — total with two or more wallets trusted in this
+  // sport's totals market FOR and none against (own bets 143-99, board 44-33)
+  // → 2.5u, 3u at implied ≤ .50. One trusted wallet alone → 0u.
+  'TRUST-T':     { label: 'SHARP PLAY', short: 'TRUST-T', color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 2.5,                   ribbon: null, stars: 3 },
   'PRESS-R6':    { label: 'SHARP PLAY', short: 'VETS',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 2,                     ribbon: null, stars: 2.5 },
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
   // CONFIRMED / MINI- / DISSENT all roll up to the LEAN path-display band
