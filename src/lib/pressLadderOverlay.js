@@ -157,7 +157,18 @@
  *     this one +43u at 4u, same drawdown. Under .50 the price is the edge
  *     and the gate adds nothing (the PRESS dog cap stands); .65+ loses
  *     with or without the gate. oddsCap at the call site still rules.
- *   • Spreads / totals cap at ST_CAP_UNITS.
+ *   • TRUST-S (2026-10-09 evening): spreads read the wallet's status in THIS
+ *     sport's spread market (the sport-level ML gate applied to spreads is
+ *     31-29 −12.4u). A trusted wallet AGAINST vetoes the side (board 16-20 /
+ *     26-30, staked 3-6). Clean-trusted (≥ 1 trusted FOR, 0 trusted AG) at
+ *     implied .50–.70 stakes TRUST_S_UNITS, TRUST_S_PRESS_UNITS with conviction
+ *     (≥ 1.5× usual) or two trusted FOR; clean dogs stake TRUST_S_DOG_UNITS
+ *     only with that add-on. Board Aug 1 → Oct 5: clean .50–.70 is 57-32
+ *     (64%, +9.4pp), conviction 25-9, two FOR 10-4, clean dogs 20-29; the
+ *     rule replays +41u against −12.9u as staked at half the drawdown.
+ *     Staked book Jun 3 → Oct 8: clean-trusted 38-27 +14.8u, the rest 52-54
+ *     −16.6u. Sides without a trusted FOR keep their ladder stake.
+ *   • Spreads cap at SPREAD_CAP_UNITS, totals at ST_CAP_UNITS.
  *   • v8_trustLift: shadow flag on gated moneyline rungs — no units beyond
  *     the floor yet.
  *
@@ -314,8 +325,24 @@ export const TRUST_G_UNITS = 3;
 export const ML_FLOOR_UNITS = 4;
 export const ML_FLOOR_IMPLIED_MIN = 0.50;
 export const ML_FLOOR_IMPLIED_MAX = 0.65;
-/** Spread / total rungs cap here. */
+/** Total rungs cap here. */
 export const ST_CAP_UNITS = 2;
+/** Spread rungs cap here (2026-10-09 evening, was ST_CAP_UNITS). */
+export const SPREAD_CAP_UNITS = 2.5;
+// TRUST-S — spreads, market-level status (the wallet's spread book in this
+// sport). Board Aug 1 → Oct 5: clean-trusted (≥ 1 trusted FOR, 0 trusted AG)
+// at implied .50–.70 is 57-32 (64%, +9.4pp); with conviction 25-9, with two
+// trusted FOR 10-4; clean dogs 20-29; a trusted wallet AG 16-20 / 26-30.
+// Staked book Jun 3 → Oct 8: clean-trusted 38-27 +14.8u, the rest 52-54 −16.6u.
+export const TRUST_S_STAKE_TIER = 'TRUST-S';
+export const TRUST_S_UNITS = 2;
+/** Conviction (a trusted FOR wallet at ≥ TRUST_S_CONVICTION_RATIO × usual) or 2+ trusted FOR. */
+export const TRUST_S_PRESS_UNITS = 2.5;
+/** Clean-trusted dog (implied < TRUST_S_IMPLIED_MIN) stakes this only with conviction / 2+ trusted FOR. */
+export const TRUST_S_DOG_UNITS = 1;
+export const TRUST_S_IMPLIED_MIN = 0.50;
+export const TRUST_S_IMPLIED_MAX = 0.70;
+export const TRUST_S_CONVICTION_RATIO = 1.5;
 export { TRUST_TIER_MIN };
 
 export function isTrustLive(pickDate) {
@@ -614,6 +641,8 @@ export function trustRead(rows) {
     tier: t?.tier ?? 0,
     n: t?.n ?? 0,
     edge: t?.edge ?? null,
+    // Sport-local size ratio of this bet (TRUST-S conviction input).
+    ratio: Number.isFinite(r.ratio) ? r.ratio : null,
   });
   const forRows = rows.filter((r) => r.dir === 'FOR');
   const agRows = rows.filter((r) => r.dir === 'AG');
@@ -711,7 +740,7 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  *   steamOn: boolean, heavyFav: boolean,
  *   veterans: Array<{ wallet, ratio, n, wr }>,
  *   dissenters: Array<{ wallet, ratio, n, wr }>,
- *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|'FADE-F'|'TRUST-G'|null, units: number, reason: string,
+ *   rung: 'PRESS'|'PRESS-X'|'PRESS-N'|'PRESS-U'|'STEAM-C'|'PRESS-R6'|'STEAM-S'|'SOLO-Q'|'FADE-F'|'TRUST-G'|'TRUST-S'|null, units: number, reason: string,
  *   floorFade: { status: 'BOOST'|'VETO'|null, floorCount, wallet, dir, n, wr, streak, ratio, floorImplied, reason }|null,
  *   trust: { gate, gateWallets, agTrusted, forOn, forOff, agOn, agOff, for, ag, mktGate, mktFor, mktAg, lift, rule }|null
  * }}
@@ -726,8 +755,9 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * gate) is attached on every evaluated side; TRUST-G rescues a gate_fail
  * moneyline that legacy V12 sizing (`legacyUnits` > 0) would have staked
  * when a trusted wallet is FOR; staked moneyline rungs with a trusted wallet
- * FOR floor at ML_FLOOR_UNITS inside the implied window; spread / total
- * rungs cap at ST_CAP_UNITS. FADE-F VETO stays a veto.
+ * FOR floor at ML_FLOOR_UNITS inside the implied window; TRUST-S vetoes /
+ * stakes spreads off market-level status; spreads cap at SPREAD_CAP_UNITS,
+ * totals at ST_CAP_UNITS. FADE-F VETO stays a veto.
  */
 export function evaluatePressLadder(args = {}) {
   const core = evaluatePressLadderCore(args);
@@ -781,7 +811,41 @@ export function applyTrustLayer(result, {
     rules.push('ml_floor');
   }
 
-  if (!isML && out.units > ST_CAP_UNITS) {
+  const isSpread = String(marketType).toUpperCase() === 'SPREAD';
+  if (isSpread && !vetoed) {
+    const tFor = trust.mktFor.filter((w) => isTrustedWallet(w));
+    const tAg = trust.mktAg.filter((w) => isTrustedWallet(w));
+    if (tAg.length) {
+      // A wallet trusted in this spread market is AGAINST — veto.
+      if (out.units > 0) { out.units = 0; out.rung = null; }
+      out.reason = `trust_s_veto_ag_${tAg.map((w) => w.wallet).join('+')}:${out.reason}`;
+      rules.push('trust_s_veto');
+    } else if (tFor.length) {
+      const conviction = tFor.some((w) => Number(w.ratio) >= TRUST_S_CONVICTION_RATIO);
+      const press = conviction || tFor.length >= 2;
+      const inWindow = implied != null && implied >= TRUST_S_IMPLIED_MIN && implied < TRUST_S_IMPLIED_MAX;
+      const isDog = implied != null && implied < TRUST_S_IMPLIED_MIN;
+      const target = inWindow ? (press ? TRUST_S_PRESS_UNITS : TRUST_S_UNITS) : (isDog && press ? TRUST_S_DOG_UNITS : 0);
+      if (target > 0 && out.units < target) {
+        const tag = `trust_s_for_${tFor.map((w) => w.wallet).join('+')}${conviction ? '_conv' : ''}${tFor.length >= 2 ? '_x2' : ''}_${inWindow ? 'win' : 'dog'}${target}u`;
+        if (out.units > 0) {
+          out.reason = `${out.reason}+${tag}`;
+        } else {
+          out.rung = TRUST_S_STAKE_TIER;
+          out.reason = `${tag}:${out.reason}`;
+        }
+        out.units = target;
+        rules.push('trust_s');
+      }
+    }
+  }
+
+  if (isSpread && out.units > SPREAD_CAP_UNITS) {
+    out.units = SPREAD_CAP_UNITS;
+    out.reason = `${out.reason}+sp_cap${SPREAD_CAP_UNITS}`;
+    rules.push('sp_cap');
+  }
+  if (!isML && !isSpread && out.units > ST_CAP_UNITS) {
     out.units = ST_CAP_UNITS;
     out.reason = `${out.reason}+st_cap${ST_CAP_UNITS}`;
     rules.push('st_cap');

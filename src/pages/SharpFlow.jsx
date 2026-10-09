@@ -1576,6 +1576,7 @@ function starsFromAgsuTier(tier, units = null) {
   if (tier === 'FADE-F') return 2.5;      // streaking floor wallet on the other side (2u)
   if (tier === 'PRESS-M') return 2.0;     // mirror of a muted V12 side (1u)
   if (tier === 'TRUST-G') return units != null && units >= 4 ? 4.0 : 3.0; // trusted wallet for at gate_fail (3u, 4u in the .50–.65 window)
+  if (tier === 'TRUST-S') return units != null && units >= 2.5 ? 3.0 : 2.5; // spread with a market-trusted wallet for (2u, 2.5u pressed)
   if (tier === 'PRESS-R6') return 2.5;    // two veterans (2u)
   if (tier === 'SUPER') return 5.0;       // MAX PLAY (6u)
   if (tier === 'TOP+') return 5.0;        // TOP PLAY (5u)

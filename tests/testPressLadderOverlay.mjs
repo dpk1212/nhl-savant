@@ -68,6 +68,14 @@ import {
   ML_FLOOR_IMPLIED_MIN,
   ML_FLOOR_IMPLIED_MAX,
   ST_CAP_UNITS,
+  SPREAD_CAP_UNITS,
+  TRUST_S_STAKE_TIER,
+  TRUST_S_UNITS,
+  TRUST_S_PRESS_UNITS,
+  TRUST_S_DOG_UNITS,
+  TRUST_S_IMPLIED_MIN,
+  TRUST_S_IMPLIED_MAX,
+  TRUST_S_CONVICTION_RATIO,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -840,7 +848,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(TRUST_FROM, '2026-10-09', 'TRUST live date');
   ok(!isTrustLive('2026-10-08') && isTrustLive('2026-10-09') && !isTrustLive(null), 'live gate');
   eq(TRUST_G_STAKE_TIER, 'TRUST-G', 'rung name'); eq(TRUST_G_UNITS, 3, 'TRUST-G 3u');
-  eq(ML_FLOOR_UNITS, 4, 'gated ML floor 4u'); eq(ST_CAP_UNITS, 2, 'spread/total cap 2u'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
+  eq(ML_FLOOR_UNITS, 4, 'gated ML floor 4u'); eq(ST_CAP_UNITS, 2, 'total cap 2u'); eq(SPREAD_CAP_UNITS, 2.5, 'spread cap 2.5u'); eq(TRUST_S_STAKE_TIER, 'TRUST-S', 'rung'); eq(TRUST_S_UNITS, 2, 'TRUST-S 2u'); eq(TRUST_S_PRESS_UNITS, 2.5, 'pressed 2.5u'); eq(TRUST_S_DOG_UNITS, 1, 'dog 1u'); eq(TRUST_S_IMPLIED_MIN, 0.5, 'window min'); eq(TRUST_S_IMPLIED_MAX, 0.7, 'window max'); eq(TRUST_S_CONVICTION_RATIO, 1.5, 'conviction'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
 
   const T = (status, tier, n = 40) => ({ status, tier, n, edge: tier >= 4 ? 6 : -2, formOn: status.endsWith('_ON') });
   const profileT = (short, sport, { n: bets, wr, dollarRoi, usual, trust = null, trustMkt = {} }) => {
@@ -945,12 +953,12 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   });
   eq(noGate.units, 5, '5u'); eq(noGate.trust.gate, false, 'no stamp → no gate'); eq(noGate.trust.lift, false, 'no lift');
 
-  // C. Spread / total cap at 2u
+  // C. Spread cap 2.5u, total cap 2u
   const sp = evaluatePressLadder({
     walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
     side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesT, sideOdds: -110, steamOn: false, pickDate: LIVE,
   });
-  eq(sp.band, 5, 'band 5 spread'); eq(sp.units, ST_CAP_UNITS, '5u → 2u'); ok(sp.reason.endsWith('+st_cap2'), sp.reason); eq(sp.trust.rule, 'st_cap', 'rule');
+  eq(sp.band, 5, 'band 5 spread'); eq(sp.units, SPREAD_CAP_UNITS, '5u → 2.5u'); ok(sp.reason.endsWith('+sp_cap2.5'), sp.reason); eq(sp.trust.rule, 'sp_cap', 'rule');
   eq(sp.trust.lift, false, 'no lift on spreads'); eq(sp.trust.mktGate, false, 'aaaaaa SPREAD status OFF → market gate false');
   const tot = evaluatePressLadder({
     walletDetails: [wd('aaaaaa', 'home', 1600), wd('dddddd', 'away', 50)],
@@ -972,6 +980,62 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesT, sideOdds: -110, steamOn: false, pickDate: LIVE,
   });
   eq(sp2.units, 2, 'band 4 clean spread 2u unchanged'); eq(sp2.trust.rule, null, 'no rule when under the cap');
+
+  // C2. TRUST-S: spreads off the wallet's status in THIS sport's spread market
+  const profilesS = new Map([
+    ...profilesT,
+    profileT('ssssss', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 1000, trustMkt: { SPREAD: T('STABLE_ON', 5) } }), // trusted on spreads only, not Door 2
+    profileT('tttttt', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 1000, trustMkt: { SPREAD: T('REGAINED_ON', 4) } }),
+    profileT('uuuuuu', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 1000, trustMkt: { SPREAD: T('FALLEN_OFF', 5), ML: T('STABLE_ON', 5) } }), // spread status OFF
+  ]);
+  const spr = (over = {}) => evaluatePressLadder({
+    walletDetails: [wd('ssssss', 'home', 900), wd('dddddd', 'away', 50)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesS, sideOdds: -110, steamOn: false, pickDate: LIVE, ...over,
+  });
+  const s1 = spr();
+  ok(!s1.gate.pass, 'ladder gate fails (ssssss is not Door 2)');
+  eq(s1.rung, TRUST_S_STAKE_TIER, 'TRUST-S'); eq(s1.units, TRUST_S_UNITS, '−110 (.524), one trusted FOR, no add-on → 2u');
+  ok(s1.reason.startsWith('trust_s_for_ssssss_win2u:gate_fail'), s1.reason); eq(s1.trust.rule, 'trust_s', 'rule'); eq(s1.trust.mktGate, true, 'market gate');
+  eq(s1.trust.mktFor[0].ratio, 0.9, 'market FOR row carries the size ratio'); eq(s1.trust.lift, false, 'no lift on spreads');
+  const s2 = spr({ walletDetails: [wd('ssssss', 'home', 1500), wd('dddddd', 'away', 50)] });
+  eq(s2.units, TRUST_S_PRESS_UNITS, 'conviction 1.5× → 2.5u'); ok(s2.reason.startsWith('trust_s_for_ssssss_conv_win2.5u:'), s2.reason);
+  const s3 = spr({ walletDetails: [wd('ssssss', 'home', 900), wd('tttttt', 'home', 900), wd('dddddd', 'away', 50)] });
+  eq(s3.units, TRUST_S_PRESS_UNITS, 'two trusted FOR → 2.5u'); ok(s3.reason.startsWith('trust_s_for_ssssss+tttttt_x2_win2.5u:'), s3.reason);
+  eq(spr({ sideOdds: +120 }).units, 0, 'clean dog (.455) without an add-on → 0u'); eq(spr({ sideOdds: +120 }).trust.rule, null, 'no rule');
+  const s5 = spr({ sideOdds: +120, walletDetails: [wd('ssssss', 'home', 1500), wd('dddddd', 'away', 50)] });
+  eq(s5.units, TRUST_S_DOG_UNITS, 'clean dog with conviction → 1u'); ok(s5.reason.startsWith('trust_s_for_ssssss_conv_dog1u:'), s5.reason); eq(s5.rung, TRUST_S_STAKE_TIER, 'rung');
+  eq(spr({ sideOdds: -250 }).units, 0, '.714 is outside the window → 0u');
+  eq(spr({ sideOdds: -233 }).units, TRUST_S_UNITS, '−233 is .6997 → inside → 2u');
+  eq(spr({ sideOdds: -234 }).units, 0, '−234 is .7006 → outside → 0u');
+  eq(spr({ sideOdds: +100 }).units, TRUST_S_UNITS, '+100 is .500 → inside → 2u');
+  eq(spr({ sideOdds: null }).units, 0, 'no price → no TRUST-S stake');
+  eq(spr({ pickDate: PRE }).units, 0, 'before TRUST_FROM → 0u'); eq(spr({ pickDate: PRE }).trust.rule, null, 'before: no rule');
+  eq(spr({ walletDetails: [wd('uuuuuu', 'home', 900), wd('dddddd', 'away', 50)] }).units, 0, 'spread status FALLEN_OFF (ML trusted) → not trusted here → 0u');
+  eq(spr({ marketType: 'TOTAL', side: 'over', walletDetails: [wd('ssssss', 'over', 900), wd('dddddd', 'under', 50)] }).units, 0, 'TRUST-S is spreads only');
+  // Veto: a wallet trusted in the spread market AGAINST zeroes the side, staked or not.
+  const v1 = spr({ walletDetails: [wd('ssssss', 'home', 900), wd('tttttt', 'away', 900)] });
+  eq(v1.units, 0, 'trusted FOR and trusted AG → veto'); eq(v1.trust.rule, 'trust_s_veto', 'rule'); ok(v1.reason.startsWith('trust_s_veto_ag_tttttt:'), v1.reason);
+  const v2 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 2200), wd('tttttt', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesS, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(v2.units, 0, 'ladder 2u PRESS spread with a trusted AG → 0u'); eq(v2.rung, null, 'rung cleared'); ok(v2.reason.startsWith('trust_s_veto_ag_tttttt:press_'), v2.reason);
+  // Floor: a ladder-staked spread under the TRUST-S target rises to it and keeps its rung.
+  const fl = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 2200), wd('ssssss', 'home', 1500), wd('gggggg', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesS, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(fl.rung, 'PRESS', 'rung stays PRESS'); eq(fl.units, TRUST_S_PRESS_UNITS, '2u PRESS + conviction trusted FOR → 2.5u'); ok(fl.reason.includes('+trust_s_for_ssssss_conv_win2.5u'), fl.reason); eq(fl.trust.rule, 'trust_s', 'rule');
+  // Cap: a ladder 5u spread with a trusted FOR caps at 2.5u (no TRUST-S floor needed).
+  const cp = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('ssssss', 'home', 900), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesS, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  eq(cp.units, SPREAD_CAP_UNITS, '5u → 2.5u'); eq(cp.trust.rule, 'sp_cap', 'cap only');
+  // Stamp
+  const sst = pressStamp(s1, 3);
+  eq(sst.v8_pressRung, 'TRUST-S', 'stamp rung'); eq(sst.v8_pressUnits, 2, 'stamp units'); eq(sst.v8_trustRule, 'trust_s', 'stamp rule'); eq(sst.v8_trustMktGate, true, 'stamp market gate');
+  eq(sst.v8_trustMktFor[0].wallet, 'ssssss', 'stamp market FOR'); ok(!('ratio' in sst.v8_trustMktFor[0]), 'ratio is not stamped');
 
   // D. FADE-F veto stays a veto even with the gate on
   const vetoed = applyTrustLayer(
