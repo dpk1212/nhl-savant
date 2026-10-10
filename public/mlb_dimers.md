@@ -1,42 +1,36 @@
 # MLB Predictions
 
-MLB predictions for Thursday, October 8, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
+MLB predictions for Saturday, October 10, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 8 2026Oct 8
+Date: Oct 10 2026Oct 10
 
-[Oct 8, 8:00 PM ET\\
-\\
-R\\
-\\
-H\\
-\\
-E\\
-\\
-![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
-\\
-Guardians \\
-\\
-9 \\
-\\
-10 \\
-\\
-0 \\
+[Oct 10, 8:00 PM ET\\
 \\
 ![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
 \\
-White Sox \\
+White Sox  S. Burke \\
 \\
-5 \\
+42.5% \\
 \\
-8 \\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-0 \\
+44¢\\
 \\
-FINAL\\
+![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
 \\
-See Game Recap](https://www.dimers.com/mlb/predictions/2026_198_cws_cle)
+Guardians  G. Williams \\
+\\
+57.5% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+57¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_200_cle_cws)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -264,11 +258,11 @@ Claim Now
 
 How to claim
 
-## MLB predictions for Thursday
+## MLB predictions for Saturday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Thursday, the Guardians have a 50.9% chance of beating the White Sox at Rate Field.
+On Saturday, the Guardians have a 57.4% chance of beating the White Sox at Progressive Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
