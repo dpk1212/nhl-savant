@@ -1,36 +1,36 @@
 # MLB Predictions
 
-MLB predictions for Saturday, October 10, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
+MLB predictions for Sunday, October 11, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 10 2026Oct 10
+Date: Oct 11 2026Oct 11
 
-[Oct 10, 8:00 PM ET\\
+[Oct 11, 8:00 PM ET\\
 \\
-![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
+![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
 \\
-White Sox  S. Burke \\
+Dodgers  T. Skubal \\
 \\
-42.5% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-44¢\\
-\\
-![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
-\\
-Guardians  G. Williams \\
-\\
-57.5% \\
+56.7% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-57¢\\
+51¢\\
+\\
+![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
+\\
+Brewers  J. Misiorowski \\
+\\
+43.3% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+50¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_200_cle_cws)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_201_mil_lad)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -258,11 +258,11 @@ Claim Now
 
 How to claim
 
-## MLB predictions for Saturday
+## MLB predictions for Sunday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Saturday, the Guardians have a 57.4% chance of beating the White Sox at Progressive Field.
+On Sunday, the Dodgers have a 56.0% chance of beating the Brewers at American Family Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
