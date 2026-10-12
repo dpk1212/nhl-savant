@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-10-12T11:45:59.656Z",
-  "elapsedSec": 116.8,
+  "scannedAt": "2026-10-12T11:56:46.774Z",
+  "elapsedSec": 113.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 156,
   "summary": {
     "total": 482,
     "coveredByMain": 30,
-    "recovered": 24,
-    "recoveredPositions": 169,
-    "noPositions": 428,
+    "recovered": 25,
+    "recoveredPositions": 170,
+    "noPositions": 427,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 8,
       "spread": 5,
       "total": 4,
-      "dropped_shadow_gate": 63,
+      "dropped_shadow_gate": 64,
       "dropped_excluded": 89,
       "dropped_duplicate": 0
     }
@@ -347,7 +347,7 @@
           "gameKey": "buf_lar",
           "marketType": "spread",
           "side": "away",
-          "invested": 1646,
+          "invested": 1747,
           "entryLine": 3.5,
           "passesShadow": true
         },
@@ -842,7 +842,7 @@
           "gameKey": "cle_tbr",
           "marketType": "ml",
           "side": "away",
-          "invested": 5270,
+          "invested": 5272,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1262,6 +1262,15 @@
           "passesShadow": true
         },
         {
+          "sport": "SOC",
+          "gameKey": "new_cov",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 95,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
           "sport": "CFB",
           "gameKey": "wsu_orst",
           "marketType": "spread",
@@ -1277,15 +1286,6 @@
           "side": "home",
           "invested": 87,
           "entryLine": -2.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "new_cov",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 70,
-          "entryLine": null,
           "passesShadow": false
         },
         {
@@ -1872,7 +1872,7 @@
           "gameKey": "buf_lar",
           "marketType": "ml",
           "side": "away",
-          "invested": 2809,
+          "invested": 4006,
           "entryLine": null,
           "passesShadow": true
         }
@@ -2282,10 +2282,19 @@
       "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
       "positionsCount": 10,
       "statsSource": "profile.bySport.positions",
-      "avgSportBet": 3068,
+      "avgSportBet": 323,
       "willPassShadowGate": 3,
       "willDropAtShadowGate": 7,
       "positions": [
+        {
+          "sport": "NFL",
+          "gameKey": "buf_lar",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 194,
+          "entryLine": -3.5,
+          "passesShadow": true
+        },
         {
           "sport": "SOC",
           "gameKey": "new_cov",
@@ -2294,15 +2303,6 @@
           "invested": 125,
           "entryLine": null,
           "passesShadow": false
-        },
-        {
-          "sport": "NFL",
-          "gameKey": "buf_lar",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 97,
-          "entryLine": -3.5,
-          "passesShadow": true
         },
         {
           "sport": "NBA",
@@ -3577,8 +3577,24 @@
       "tier": "CONFIRMED",
       "name": "KosekiBijou",
       "sports": "NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x763427e72a4dcbd078a819a9de9b32de2794600d"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x763427e72a4dcbd078a819a9de9b32de2794600d",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 8990,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "NBA",
+          "gameKey": "bkn_was",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 312,
+          "entryLine": -2.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "946418",
@@ -5260,7 +5276,7 @@
           "gameKey": "lad_mil",
           "marketType": "ml",
           "side": "away",
-          "invested": 408,
+          "invested": 409,
           "entryLine": null,
           "passesShadow": false
         }
