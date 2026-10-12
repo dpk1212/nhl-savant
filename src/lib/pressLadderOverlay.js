@@ -179,6 +179,12 @@
  *     (own bets 143-99 / 84-49 +16pp at ≤ .50; board 44-33 / 20-11; staked
  *     4-1). Sides without a trusted FOR keep their ladder stake under
  *     ST_CAP_UNITS. Replay: staked book −20.0u → +15.8u, board −19.4u → +24.0u.
+ *   • Hedge netting (2026-10-12): a wallet holding positions on BOTH sides
+ *     of the same spread / total is hedging its own bet, not disagreeing
+ *     with another trusted wallet. It is dropped from both the FOR and AG
+ *     lists before TRUST-S / TRUST-T read veto, consensus and lone
+ *     (netHedgedTrusted). Reason carries `+hedge_<wallet>`, rule
+ *     `trust_hedge`. Oct 9–10 two vetoes fired on self-hedges.
  *   • Spreads cap at SPREAD_CAP_UNITS, totals at ST_CAP_UNITS (TRUST-T
  *     consensus stakes sit above that cap by design).
  *   • v8_trustLift: shadow flag on gated moneyline rungs — no units beyond
@@ -698,6 +704,29 @@ export function trustRead(rows) {
   };
 }
 
+/**
+ * Trusted FOR / AG lists for the market-level rules with self-hedges netted
+ * out: a wallet holding positions on BOTH sides of the same market is
+ * hedging or middling its own bet, not disagreeing with another trusted
+ * wallet. Oct 9–10 2026 two TRUST-S/T vetoes fired on exactly this
+ * (…767ff5 on iowa_wash under, …eeabaf on tex_okla spread). Such a wallet
+ * is dropped from both lists before the veto / consensus / lone reads.
+ * Returns { tFor, tAg, hedged } where hedged lists the netted wallet ids.
+ */
+export function netHedgedTrusted(forList, agList) {
+  const tForAll = (forList || []).filter((w) => isTrustedWallet(w));
+  const tAgAll = (agList || []).filter((w) => isTrustedWallet(w));
+  const agIds = new Set(tAgAll.map((w) => w.wallet));
+  const hedged = [...new Set(tForAll.map((w) => w.wallet).filter((id) => agIds.has(id)))];
+  if (!hedged.length) return { tFor: tForAll, tAg: tAgAll, hedged };
+  const h = new Set(hedged);
+  return {
+    tFor: tForAll.filter((w) => !h.has(w.wallet)),
+    tAg: tAgAll.filter((w) => !h.has(w.wallet)),
+    hedged,
+  };
+}
+
 export function pressBand(maxRatio) {
   if (!Number.isFinite(maxRatio) || maxRatio < PRESS_RATIO_MIN) return null;
   if (maxRatio >= PRESS_BAND_5) return 5;
@@ -842,8 +871,8 @@ export function applyTrustLayer(result, {
 
   const isSpread = String(marketType).toUpperCase() === 'SPREAD';
   if (isSpread && !vetoed) {
-    const tFor = trust.mktFor.filter((w) => isTrustedWallet(w));
-    const tAg = trust.mktAg.filter((w) => isTrustedWallet(w));
+    const { tFor, tAg, hedged } = netHedgedTrusted(trust.mktFor, trust.mktAg);
+    if (hedged.length) { out.reason = `${out.reason}+hedge_${hedged.join('+')}`; rules.push('trust_hedge'); }
     if (tAg.length) {
       // A wallet trusted in this spread market is AGAINST — veto.
       if (out.units > 0) { out.units = 0; out.rung = null; }
@@ -872,8 +901,8 @@ export function applyTrustLayer(result, {
   const isTotal = String(marketType).toUpperCase() === 'TOTAL';
   let trustT = false;
   if (isTotal && !vetoed) {
-    const tFor = trust.mktFor.filter((w) => isTrustedWallet(w));
-    const tAg = trust.mktAg.filter((w) => isTrustedWallet(w));
+    const { tFor, tAg, hedged } = netHedgedTrusted(trust.mktFor, trust.mktAg);
+    if (hedged.length) { out.reason = `${out.reason}+hedge_${hedged.join('+')}`; rules.push('trust_hedge'); }
     if (tFor.length && tAg.length) {
       // Trusted wallets on both sides of the total — stand down.
       if (out.units > 0) { out.units = 0; out.rung = null; }

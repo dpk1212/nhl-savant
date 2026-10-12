@@ -1021,6 +1021,22 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesS, sideOdds: -110, steamOn: false, pickDate: LIVE,
   });
   eq(v2.units, 0, 'ladder 2u PRESS spread with a trusted AG → 0u'); eq(v2.rung, null, 'rung cleared'); ok(v2.reason.startsWith('trust_s_veto_ag_tttttt:press_'), v2.reason);
+  // Hedge netting: the same trusted wallet on BOTH sides is a self-hedge, not a trusted wallet against.
+  const h1 = spr({ walletDetails: [wd('ssssss', 'home', 900), wd('ssssss', 'away', 400), wd('dddddd', 'away', 50)] });
+  eq(h1.units, 0, 'only wallet FOR is hedging itself → netted out → no trusted FOR → 0u'); eq(h1.trust.rule, 'trust_hedge', 'rule is the hedge, not a veto');
+  ok(h1.reason.startsWith('gate_fail'), h1.reason); ok(h1.reason.includes('+hedge_ssssss'), h1.reason); ok(!h1.reason.includes('trust_s_veto'), 'no veto on a self-hedge');
+  const h2 = spr({ walletDetails: [wd('ssssss', 'home', 900), wd('tttttt', 'home', 900), wd('tttttt', 'away', 300), wd('dddddd', 'away', 50)] });
+  eq(h2.units, TRUST_S_UNITS, 'hedging wallet netted → one clean trusted FOR → 2u (no x2 press)'); eq(h2.rung, TRUST_S_STAKE_TIER, 'rung');
+  ok(h2.reason.startsWith('trust_s_for_ssssss_win2u:'), h2.reason); ok(h2.reason.includes('+hedge_tttttt'), h2.reason); eq(h2.trust.rule, 'trust_hedge+trust_s', 'rules in order');
+  const h3 = spr({ walletDetails: [wd('ssssss', 'home', 900), wd('ssssss', 'away', 400), wd('tttttt', 'away', 900)] });
+  eq(h3.units, 0, 'self-hedge netted, a different trusted wallet AG still vetoes'); eq(h3.trust.rule, 'trust_hedge+trust_s_veto', 'veto'); ok(h3.reason.startsWith('trust_s_veto_ag_tttttt:'), h3.reason);
+  ok(!h3.reason.includes('veto_ag_ssssss') && !h3.reason.includes('+ssssss'), 'the hedged wallet is not named as the veto');
+  const h4 = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 2200), wd('ssssss', 'home', 900), wd('ssssss', 'away', 300), wd('gggggg', 'away', 500)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesS, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  ok(h4.units > 0, 'ladder-staked spread survives a self-hedge (no veto)'); ok(!h4.reason.includes('trust_s_veto'), h4.reason); ok(h4.reason.includes('+hedge_ssssss'), h4.reason);
+  ok(!h4.reason.includes('trust_s_for'), 'the hedging wallet does not count as a trusted FOR either');
   // Floor: a ladder-staked spread under the TRUST-S target rises to it and keeps its rung.
   const fl = evaluatePressLadder({
     walletDetails: [wd('aaaaaa', 'home', 2200), wd('ssssss', 'home', 1500), wd('gggggg', 'away', 500)],
@@ -1075,6 +1091,16 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(tv.units, TRUST_T_UNITS, 'a spread-trusted wallet AG is not totals-trusted → consensus stands');
   const tv2 = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('pppppp', 'under', 900)] });
   eq(tv2.units, 0, 'trusted FOR and trusted AG → 0u'); eq(tv2.trust.rule, 'trust_t_veto', 'rule'); ok(tv2.reason.startsWith('trust_t_veto_ag_pppppp:'), tv2.reason);
+  // Hedge netting: the same trusted wallet on both sides of a total is a self-hedge, not a veto (…767ff5 on iowa_wash under, Oct 9).
+  const th1 = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('oooooo', 'under', 400), wd('dddddd', 'under', 50)] });
+  eq(th1.units, 0, 'self-hedged lone wallet netted → no trusted FOR → ladder 0u stands'); eq(th1.trust.rule, 'trust_hedge', 'hedge only, no veto, no lone');
+  ok(th1.reason.startsWith('gate_fail'), th1.reason); ok(th1.reason.includes('+hedge_oooooo'), th1.reason); ok(!th1.reason.includes('trust_t_veto') && !th1.reason.includes('trust_t_lone'), th1.reason);
+  const th2 = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('pppppp', 'over', 900), wd('pppppp', 'under', 300), wd('dddddd', 'under', 50)] });
+  eq(th2.units, 0, 'one of two FOR hedges itself → netted → lone → 0u'); eq(th2.trust.rule, 'trust_hedge+trust_t_lone', 'rule'); ok(th2.reason.startsWith('trust_t_lone_oooooo:'), th2.reason);
+  const th3 = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('pppppp', 'over', 900), wd('qqqqqq', 'under', 300), wd('oooooo', 'under', 100)] });
+  eq(th3.units, 0, 'self-hedge netted → one trusted FOR left → lone → 0u (OFF wallet AG does not veto)'); ok(th3.reason.startsWith('trust_t_lone_pppppp:'), th3.reason);
+  const th4 = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('pppppp', 'over', 900), wd('pppppp', 'under', 100), wd('oooooo', 'under', 100), wd('dddddd', 'under', 50)] });
+  eq(th4.units, 0, 'both FOR wallets hedge → nothing trusted left → ladder stake stands (0u)'); eq(th4.trust.rule, 'trust_hedge', 'hedge only'); ok(th4.reason.includes('+hedge_oooooo+pppppp'), th4.reason);
   // No trusted FOR: nothing changes, the 2u totals cap still applies.
   const nt = evaluatePressLadder({
     walletDetails: [wd('aaaaaa', 'over', 3500), wd('dddddd', 'under', 100)],
