@@ -406,6 +406,8 @@ import {
   TRUST_T_UNITS,
   TRUST_T_PRESS_UNITS,
   TRUST_T_PRESS_IMPLIED_MAX,
+  TRUST_M_MARGIN,
+  TRUST_M_ML_UNITS,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -8275,6 +8277,7 @@ async function main() {
         + ` · TRUST-S: spread with a wallet trusted in this sport's spread market for + none against + implied ${Math.round(TRUST_S_IMPLIED_MIN * 100)}–${Math.round(TRUST_S_IMPLIED_MAX * 100)}% → ${TRUST_S_UNITS}u, ${TRUST_S_PRESS_UNITS}u with conviction or two trusted for (${TRUST_S_STAKE_TIER}); a trusted wallet against vetoes the spread`
         + ` · TRUST-T: total with ${TRUST_T_MIN_FOR}+ wallets trusted in this sport's totals market for + none against → ${TRUST_T_UNITS}u, ${TRUST_T_PRESS_UNITS}u at implied ≤${Math.round(TRUST_T_PRESS_IMPLIED_MAX * 100)}% (${TRUST_T_STAKE_TIER}); exactly one trusted wallet for → 0u; trusted wallets both sides → 0u`
         + ` · a wallet holding both sides of the same spread/total is a self-hedge and is netted out of both lists before TRUST-S/T read (+hedge_<wallet>)`
+        + ` · TRUST-M: market-book trusted margin (for − against) ≥ ${TRUST_M_MARGIN} goes through a TRUST-S/T veto (+trust_m_over_ag_<wallets>) and stakes a 0u moneyline at ${TRUST_M_ML_UNITS}u (trust_m_ml_for_…)`
         + ` · spreads cap ${SPREAD_CAP_UNITS}u, totals cap ${ST_CAP_UNITS}u · gated moneyline rungs flagged v8_trustLift (shadow) · from ${TRUST_FROM}`,
       );
     } else {

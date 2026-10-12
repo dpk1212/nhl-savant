@@ -377,6 +377,18 @@ export const TRUST_T_UNITS = 2.5;
 /** Consensus at implied ≤ TRUST_T_PRESS_IMPLIED_MAX presses to this. */
 export const TRUST_T_PRESS_UNITS = 3;
 export const TRUST_T_PRESS_IMPLIED_MAX = 0.50;
+// TRUST-M — market-level trusted margin (2026-10-12). Margin = trusted FOR −
+// trusted AG on THIS market's book, self-hedges netted. At ≥ TRUST_M_MARGIN
+// the margin goes through: a spread / total with a trusted wallet against is
+// not vetoed (the FOR path sizes it as usual, reason carries
+// trust_m_over_ag_<wallets>), and a moneyline the ladder left at 0u stakes
+// TRUST_M_ML_UNITS (TRUST-G rung, reason trust_m_ml_for_…). Production bags
+// Aug 1 → Oct 4 on the market key: staked clean margin ≥ +2 is 24-9
+// (+18.9pp, 107.6u → +45.1u); margin ≥ +2 with a trusted wallet against is
+// 7-3 on 10 sides (all MLB totals / ML); 0u moneylines at margin ≥ +2 are
+// 22-15 (+1.6pp, flat −0.4u at 1u) — the ML leg is sized small for that.
+export const TRUST_M_MARGIN = 2;
+export const TRUST_M_ML_UNITS = 1;
 export { TRUST_TIER_MIN };
 
 export function isTrustLive(pickDate) {
@@ -815,7 +827,9 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * FOR floor at ML_FLOOR_UNITS inside the implied window; TRUST-S vetoes /
  * stakes spreads and TRUST-T mutes lone / stakes consensus totals off
  * market-level status; spreads cap at SPREAD_CAP_UNITS, totals at
- * ST_CAP_UNITS. FADE-F VETO stays a veto.
+ * ST_CAP_UNITS. TRUST-M: a market-book trusted margin ≥ TRUST_M_MARGIN goes
+ * through a TRUST-S/T veto (+trust_m_over_ag_…) and stakes a 0u moneyline
+ * at TRUST_M_ML_UNITS (trust_m_ml_for_…). FADE-F VETO stays a veto.
  */
 export function evaluatePressLadder(args = {}) {
   const core = evaluatePressLadderCore(args);
@@ -869,11 +883,32 @@ export function applyTrustLayer(result, {
     rules.push('ml_floor');
   }
 
+  // TRUST-M on moneylines: the ladder left the side at 0u, the ML book's
+  // trusted margin is ≥ TRUST_M_MARGIN → a small stake. Runs after the floor
+  // so the rescue is not lifted into the 4u window.
+  if (isML && out.units === 0 && !vetoed) {
+    const { tFor, tAg, hedged } = netHedgedTrusted(trust.mktFor, trust.mktAg);
+    const margin = tFor.length - tAg.length;
+    if (margin >= TRUST_M_MARGIN) {
+      if (hedged.length) { out.reason = `${out.reason}+hedge_${hedged.join('+')}`; rules.push('trust_hedge'); }
+      out.rung = TRUST_G_STAKE_TIER;
+      out.units = TRUST_M_ML_UNITS;
+      out.reason = `trust_m_ml_for_${tFor.map((w) => w.wallet).join('+')}_m${margin}${tAg.length ? `_over_ag_${tAg.map((w) => w.wallet).join('+')}` : ''}:${out.reason}`;
+      rules.push('trust_m');
+    }
+  }
+
   const isSpread = String(marketType).toUpperCase() === 'SPREAD';
   if (isSpread && !vetoed) {
     const { tFor, tAg, hedged } = netHedgedTrusted(trust.mktFor, trust.mktAg);
     if (hedged.length) { out.reason = `${out.reason}+hedge_${hedged.join('+')}`; rules.push('trust_hedge'); }
-    if (tAg.length) {
+    const margin = tFor.length - tAg.length;
+    if (tAg.length && margin >= TRUST_M_MARGIN) {
+      // TRUST-M: the spread book's trusted margin outweighs the wallet against — no veto, the FOR path sizes it.
+      out.reason = `${out.reason}+trust_m_over_ag_${tAg.map((w) => w.wallet).join('+')}_m${margin}`;
+      rules.push('trust_m');
+    }
+    if (tAg.length && margin < TRUST_M_MARGIN) {
       // A wallet trusted in this spread market is AGAINST — veto.
       if (out.units > 0) { out.units = 0; out.rung = null; }
       out.reason = `trust_s_veto_ag_${tAg.map((w) => w.wallet).join('+')}:${out.reason}`;
@@ -903,7 +938,13 @@ export function applyTrustLayer(result, {
   if (isTotal && !vetoed) {
     const { tFor, tAg, hedged } = netHedgedTrusted(trust.mktFor, trust.mktAg);
     if (hedged.length) { out.reason = `${out.reason}+hedge_${hedged.join('+')}`; rules.push('trust_hedge'); }
-    if (tFor.length && tAg.length) {
+    const margin = tFor.length - tAg.length;
+    if (tAg.length && margin >= TRUST_M_MARGIN) {
+      // TRUST-M: the totals book's trusted margin outweighs the wallet against — no veto, consensus sizes it.
+      out.reason = `${out.reason}+trust_m_over_ag_${tAg.map((w) => w.wallet).join('+')}_m${margin}`;
+      rules.push('trust_m');
+    }
+    if (tFor.length && tAg.length && margin < TRUST_M_MARGIN) {
       // Trusted wallets on both sides of the total — stand down.
       if (out.units > 0) { out.units = 0; out.rung = null; }
       out.reason = `trust_t_veto_ag_${tAg.map((w) => w.wallet).join('+')}:${out.reason}`;
