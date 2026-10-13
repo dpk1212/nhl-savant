@@ -79,6 +79,12 @@ import {
   TRUST_S_CONVICTION_RATIO,
   TRUST_M_MARGIN,
   TRUST_M_ML_UNITS,
+  TRUST_M_FLOOR_UNITS,
+  TRUST_M_CONVICTION_RATIO,
+  TRUST_M_DOLLAR_MARGIN,
+  isTrustMRule,
+  trustMarginRead,
+  trustMTag,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -1147,7 +1153,8 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const m6 = spr({ walletProfiles: profilesM2, walletDetails: [wd('ssssss', 'home', 900), wd('tttttt', 'home', 900), wd('vvvvvv', 'home', 900), wd('zzzzzz', 'away', 900), wd('vvvvvv', 'away', 100)] });
   eq(m6.units, 0, '3 v 1 with one FOR hedging itself → netted 2 v 1 → margin +1 → veto'); eq(m6.trust.rule, 'trust_hedge+trust_s_veto', 'rules');
   const m7 = spr({ walletProfiles: profilesM2, sideOdds: -250, walletDetails: [wd('ssssss', 'home', 900), wd('tttttt', 'home', 900), wd('vvvvvv', 'home', 900), wd('zzzzzz', 'away', 900)] });
-  eq(m7.units, 0, 'margin +2 through the veto at .714 → outside the TRUST-S window → 0u'); eq(m7.trust.rule, 'trust_m', 'margin noted, no stake'); ok(m7.reason.includes('+trust_m_over_ag_zzzzzz_m2'), m7.reason);
+  eq(m7.units, TRUST_M_FLOOR_UNITS, 'margin +2 through the veto at .714 → outside the TRUST-S window → TRUST-M floor 1u'); eq(m7.trust.rule, 'trust_m', 'margin rule'); eq(m7.rung, TRUST_S_STAKE_TIER, 'rung TRUST-S');
+  ok(m7.reason.startsWith('trust_m_floor_ssssss+tttttt+vvvvvv_m2_fav1u:'), m7.reason); ok(m7.reason.includes('+trust_m_over_ag_zzzzzz_m2'), m7.reason);
   const m8 = evaluatePressLadder({
     walletDetails: [wd('aaaaaa', 'home', 2200), wd('ssssss', 'home', 900), wd('tttttt', 'home', 900), wd('vvvvvv', 'home', 900), wd('zzzzzz', 'away', 900)],
     side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesM2, sideOdds: -110, steamOn: false, pickDate: LIVE,
@@ -1186,7 +1193,70 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const mmStamp = pressStamp(mm1, 2);
   eq(mmStamp.v8_pressRung, 'TRUST-G', 'stamp rung'); eq(mmStamp.v8_pressUnits, 1, 'stamp units'); eq(mmStamp.v8_trustRule, 'trust_m', 'stamp rule');
 
-  // D. FADE-F veto stays a veto even with the gate on
+  // C5. TRUST-M v2 (2026-10-13): margin +1 goes through on conviction (ticket ≥ 1.5× usual, or trusted $ margin ≥ $10k);
+  // the margin door crosses a FADE-F veto and the TRUST-T lone mute; a 0u spread / total with the door open floors at 1u.
+  eq(TRUST_M_FLOOR_UNITS, 1, 'floor 1u'); eq(TRUST_M_CONVICTION_RATIO, TRUST_S_CONVICTION_RATIO, 'conviction ratio shared with TRUST-S'); eq(TRUST_M_DOLLAR_MARGIN, 10000, '$10k dollar margin');
+  ok(isTrustMRule('trust_m') && isTrustMRule('trust_m+trust_s') && isTrustMRule('trust_hedge+trust_m') && !isTrustMRule('trust_s_veto') && !isTrustMRule(null) && !isTrustMRule('trust_mx'), 'isTrustMRule');
+  // margin read
+  const mr = trustMarginRead(
+    [{ wallet: 'a', status: 'STABLE_ON', tier: 5, ratio: 1.6, invested: 12000 }, { wallet: 'e', status: 'REGAINED_ON', tier: 4, ratio: 0.5, invested: 100 }, { wallet: 'b', status: 'UNPROVEN', tier: 2, ratio: 3, invested: 50000 }],
+    [{ wallet: 'c', status: 'STABLE_ON', tier: 4, ratio: 1, invested: 1500 }],
+  );
+  eq(mr.margin, 1, 'read margin (untrusted wallet ignored)'); eq(mr.dollars, 10600, 'trusted $ margin (untrusted wallet ignored)'); eq(mr.conviction, true, 'conviction'); eq(mr.strong, false, 'not strong'); eq(mr.plusOne, true, '+1 door'); eq(mr.through, true, 'through');
+  eq(trustMTag(mr), 'm1_conv_$11k', 'tag'); eq(trustMTag({ margin: 2, dollars: 500, conviction: false, plusOne: false }), 'm2', 'strong tag plain');
+  eq(trustMarginRead([{ wallet: 'a', status: 'STABLE_ON', tier: 5, ratio: 1.0, invested: 9999 }], []).through, false, '+1 at 1.0× and $9,999 → closed');
+  eq(trustMarginRead([{ wallet: 'a', status: 'STABLE_ON', tier: 5, ratio: 1.0, invested: 10000 }], []).through, true, '+1 at $10,000 → open');
+  eq(trustMarginRead([{ wallet: 'a', status: 'STABLE_ON', tier: 5, ratio: 1.5, invested: 100 }], []).through, true, '+1 at 1.5× → open');
+  eq(trustMarginRead([{ wallet: 'a', status: 'STABLE_ON', tier: 5, ratio: 1.6, invested: 50000 }, { wallet: 'a', status: 'STABLE_ON', tier: 5, ratio: 1, invested: 100 }], [{ wallet: 'a', status: 'STABLE_ON', tier: 5, ratio: 1, invested: 100 }]).through, false, 'self-hedge nets the wallet out → margin 0 → closed');
+  eq(trustMarginRead([{ wallet: 'a', status: 'STABLE_ON', tier: 5, ratio: 1.6, invested: 50000 }, { wallet: 'b', status: 'STABLE_ON', tier: 5, ratio: 1.6, invested: 50000 }], [{ wallet: 'c', status: 'STABLE_ON', tier: 5, ratio: 1, invested: 100 }, { wallet: 'd', status: 'STABLE_ON', tier: 5, ratio: 1, invested: 100 }]).through, false, '2 v 2 → margin 0 → closed even with conviction');
+  // Spreads: 2 v 1 with a 1.6× FOR ticket → +1 with conviction → through the veto → conviction press 2.5u.
+  const c1 = spr({ walletProfiles: profilesM2, walletDetails: [wd('ssssss', 'home', 1600), wd('tttttt', 'home', 900), wd('zzzzzz', 'away', 900)] });
+  eq(c1.units, TRUST_S_PRESS_UNITS, '2 v 1 +conviction → through → x2 conv → 2.5u'); eq(c1.trust.rule, 'trust_m+trust_s', 'rules'); ok(c1.reason.includes('+trust_m_over_ag_zzzzzz_m1_conv'), c1.reason); ok(!c1.reason.includes('trust_s_veto'), 'no veto');
+  // 2 v 1 with $ margin ≥ $10k (no ratio conviction at usual size) → through on dollars.
+  const profilesM3 = new Map([...profilesM2, profileT('rrrrrr', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 20000, trustMkt: { SPREAD: T('STABLE_ON', 5), ML: T('STABLE_ON', 5), TOTAL: T('STABLE_ON', 5) } })]);
+  const c2 = spr({ walletProfiles: profilesM3, walletDetails: [wd('rrrrrr', 'home', 20000), wd('tttttt', 'home', 900), wd('zzzzzz', 'away', 900)] });
+  eq(c2.units, TRUST_S_PRESS_UNITS, '2 v 1, $20k FOR at 1.0× → $ margin $20k → through → x2 → 2.5u'); ok(c2.reason.includes('+trust_m_over_ag_zzzzzz_m1_$20k'), c2.reason); ok(!c2.reason.includes('_conv'), 'no conviction tag at usual size');
+  eq(spr({ walletProfiles: profilesM3, walletDetails: [wd('rrrrrr', 'home', 20000), wd('tttttt', 'home', 900), wd('zzzzzz', 'away', 900), wd('vvvvvv', 'away', 900)] }).units, 0, '2 v 2 → margin 0 → veto stands');
+  eq(spr({ walletProfiles: profilesM3, walletDetails: [wd('rrrrrr', 'home', 9000), wd('zzzzzz', 'away', 900)] }).units, 0, '1 v 1 → margin 0 → veto stands even with $8k');
+  // Lone trusted spread FOR, no AG, $ ≥ $10k, dog without press → was 0u → TRUST-M floor 1u.
+  const c3 = spr({ walletProfiles: profilesM3, sideOdds: +150, walletDetails: [wd('rrrrrr', 'home', 20000), wd('dddddd', 'away', 50)] });
+  eq(c3.units, TRUST_M_FLOOR_UNITS, 'lone $20k FOR on a +150 dog → floor 1u'); eq(c3.rung, TRUST_S_STAKE_TIER, 'rung TRUST-S'); ok(c3.reason.startsWith('trust_m_floor_rrrrrr_m1_$20k_dog1u:'), c3.reason); eq(c3.trust.rule, 'trust_m', 'rule');
+  eq(spr({ walletProfiles: profilesM3, sideOdds: +150, walletDetails: [wd('rrrrrr', 'home', 9000), wd('dddddd', 'away', 50)] }).units, 0, 'lone $9k FOR at 0.45× on a dog → door closed → 0u');
+  eq(spr({ walletProfiles: profilesM2, sideOdds: -110, walletDetails: [wd('ssssss', 'home', 900), wd('dddddd', 'away', 50)] }).units, TRUST_S_UNITS, 'lone 900 FOR in window → TRUST-S 2u unchanged (door closed, no floor needed)');
+  // Totals: 2 v 1 with conviction → through the veto → consensus 2.5u; lone trusted FOR with conviction → floor 1u instead of the lone mute.
+  const c4 = totT({ walletProfiles: profilesM2, walletDetails: [wd('oooooo', 'over', 1600), wd('pppppp', 'over', 900), wd('zzzzzz', 'under', 900)] });
+  eq(c4.units, TRUST_T_UNITS, '2 v 1 total +conviction → through → 2.5u'); eq(c4.trust.rule, 'trust_m+trust_t', 'rules'); ok(c4.reason.includes('+trust_m_over_ag_zzzzzz_m1_conv'), c4.reason);
+  const c5 = totT({ walletProfiles: profilesM2, walletDetails: [wd('oooooo', 'over', 1600), wd('dddddd', 'under', 50)] });
+  eq(c5.units, TRUST_M_FLOOR_UNITS, 'lone total FOR at 1.6× → floor 1u'); eq(c5.rung, TRUST_T_STAKE_TIER, 'rung TRUST-T'); ok(c5.reason.startsWith('trust_m_floor_oooooo_m1_conv1u:'), c5.reason); eq(c5.trust.rule, 'trust_m', 'rule'); ok(!c5.reason.includes('trust_t_lone'), 'no lone mute');
+  eq(totT({ walletProfiles: profilesM2, walletDetails: [wd('oooooo', 'over', 900), wd('dddddd', 'under', 50)] }).units, 0, 'lone total FOR at 0.9× → lone mute stands');
+  const c5b = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'over', 2200), wd('oooooo', 'over', 1600), wd('dddddd', 'under', 50)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profilesM2, sideOdds: -110, steamOn: false, pickDate: LIVE,
+  });
+  ok(c5b.units >= TRUST_M_FLOOR_UNITS, 'ladder-staked total with a lone conviction FOR keeps a stake'); ok(c5b.reason.includes('trust_m_lone_m1_conv') || c5b.reason.includes('trust_m_floor'), c5b.reason); ok(!c5b.reason.includes('trust_t_lone'), 'no lone mute');
+  // Moneylines: 2 v 1 with conviction → 1u; 1 v 0 with $ ≥ $10k → 1u; 1 v 0 at usual size → 0u.
+  const c6 = mlM({ walletDetails: [wd('wwwwww', 'home', 1600), wd('xxxxxx', 'home', 900), wd('aaaaaa', 'away', 900)] });
+  eq(c6.units, TRUST_M_ML_UNITS, '2 v 1 ML +conviction → 1u'); ok(c6.reason.startsWith('trust_m_ml_for_wwwwww+xxxxxx_m1_conv_over_ag_aaaaaa:'), c6.reason); eq(c6.rung, TRUST_G_STAKE_TIER, 'rung');
+  const c7 = mlM({ walletProfiles: profilesM3, walletDetails: [wd('rrrrrr', 'home', 20000), wd('dddddd', 'away', 50)] });
+  eq(c7.units, TRUST_M_ML_UNITS, 'lone $20k ML FOR → 1u'); ok(c7.reason.startsWith('trust_m_ml_for_rrrrrr_m1_$20k:'), c7.reason);
+  eq(mlM({ walletDetails: [wd('wwwwww', 'home', 900), wd('dddddd', 'away', 50)] }).units, 0, 'lone 0.9× ML FOR → 0u (unchanged)');
+  // FADE-F veto: the margin door crosses it; a closed door keeps it.
+  const fadeArgs = (walletDetails, marketType, over = {}) => [
+    { rung: null, units: 0, reason: 'fade_f_veto_of_none:x', gate: { pass: false } },
+    { walletDetails, side: 'home', sport: SPORT, marketType, walletProfiles: profilesM3, sideOdds: -110, pickDate: LIVE, legacyUnits: 0, ...over },
+  ];
+  const f1 = applyTrustLayer(...fadeArgs([wd('wwwwww', 'home', 900), wd('xxxxxx', 'home', 900), wd('dddddd', 'away', 50)], 'ML'));
+  eq(f1.units, TRUST_M_ML_UNITS, 'ML margin +2 crosses FADE-F → 1u'); ok(f1.reason.startsWith('trust_m_ml_for_wwwwww+xxxxxx_m2:fade_f_veto_of_none:x+trust_m_over_fade_f_m2'), f1.reason); eq(f1.trust.rule, 'trust_m', 'rule');
+  const f2 = applyTrustLayer(...fadeArgs([wd('ssssss', 'home', 900), wd('tttttt', 'home', 900), wd('dddddd', 'away', 50)], 'SPREAD'));
+  eq(f2.units, TRUST_S_PRESS_UNITS, 'spread margin +2 crosses FADE-F → TRUST-S x2 2.5u'); ok(f2.reason.includes('+trust_m_over_fade_f_m2'), f2.reason); eq(f2.trust.rule, 'trust_m+trust_s', 'rules');
+  const f3 = applyTrustLayer(...fadeArgs([wd('oooooo', 'home', 1600), wd('dddddd', 'away', 50)], 'TOTAL'));
+  eq(f3.units, TRUST_M_FLOOR_UNITS, 'lone conviction total crosses FADE-F → floor 1u'); ok(f3.reason.includes('+trust_m_over_fade_f_m1_conv'), f3.reason);
+  eq(applyTrustLayer(...fadeArgs([wd('wwwwww', 'home', 900), wd('dddddd', 'away', 50)], 'ML')).units, 0, 'ML margin +1 at usual size → FADE-F veto holds');
+  eq(applyTrustLayer(...fadeArgs([wd('ssssss', 'home', 900), wd('dddddd', 'away', 50)], 'SPREAD')).units, 0, 'spread margin +1 at usual size → FADE-F veto holds (no TRUST-S stake through a veto)');
+  const c8 = pressStamp(c3, 3);
+  eq(c8.v8_pressUnits, 1, 'floor stamped'); eq(c8.v8_trustRule, 'trust_m', 'rule stamped'); ok(!('invested' in (c8.v8_trustMktFor?.[0] || {})), 'invested not stamped');
+
+  // D. FADE-F veto stays a veto with the gate on and the margin door closed
   const vetoed = applyTrustLayer(
     { rung: null, units: 0, reason: 'fade_f_veto_of_none:x', gate: { pass: false } },
     { walletDetails: [wd('bbbbbb', 'home', 2000)], side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesT, sideOdds: -115, pickDate: LIVE, legacyUnits: 2 },

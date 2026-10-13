@@ -389,7 +389,58 @@ export const TRUST_T_PRESS_IMPLIED_MAX = 0.50;
 // 22-15 (+1.6pp, flat −0.4u at 1u) — the ML leg is sized small for that.
 export const TRUST_M_MARGIN = 2;
 export const TRUST_M_ML_UNITS = 1;
+// 2026-10-13 — "a margin ≥ 2 is never muted again": TRUST-M also goes
+// through a FADE-F veto and, when the FOR path would still leave a spread /
+// total at 0u (dog without press, outside the TRUST-S window, lone total),
+// floors it at TRUST_M_FLOOR_UNITS. A margin of exactly +1 goes through the
+// same doors when it carries conviction: a trusted FOR ticket at
+// ≥ TRUST_M_CONVICTION_RATIO × the wallet's usual, or a trusted dollar
+// margin (FOR − AG tickets of trusted wallets) ≥ TRUST_M_DOLLAR_MARGIN.
+// Oct 6–12 stamped read: +1 with ratio ≥ 1.5 5-1, with $ ≥ $10k 4-1;
+// Aug 1 → Oct 4 walk-forward heads +1 with $ ≥ $10k 22-24 (spreads 6-2,
+// spreads with $ ≥ $2k 16-5), so the +1 door is sized at the floor.
+export const TRUST_M_FLOOR_UNITS = 1;
+export const TRUST_M_CONVICTION_RATIO = TRUST_S_CONVICTION_RATIO;
+export const TRUST_M_DOLLAR_MARGIN = 10000;
 export { TRUST_TIER_MIN };
+
+/** True when a stamped v8_trustRule carries the TRUST-M door (margin / conviction went through a gate, veto or mute). */
+export function isTrustMRule(rule) {
+  return typeof rule === 'string' && /(^|\+)trust_m(\+|$)/.test(rule);
+}
+
+/**
+ * Market-book margin read for TRUST-M: trusted FOR / AG with self-hedges
+ * netted, head margin, trusted dollar margin, conviction, and whether the
+ * side goes through (`through`): margin ≥ TRUST_M_MARGIN, or margin +1 with
+ * conviction (ratio ≥ TRUST_M_CONVICTION_RATIO or $ ≥ TRUST_M_DOLLAR_MARGIN).
+ */
+export function trustMarginRead(mktFor, mktAg) {
+  const { tFor, tAg, hedged } = netHedgedTrusted(mktFor, mktAg);
+  const margin = tFor.length - tAg.length;
+  const dollars = tFor.reduce((t, w) => t + (Number(w.invested) || 0), 0) - tAg.reduce((t, w) => t + (Number(w.invested) || 0), 0);
+  const conviction = tFor.some((w) => Number(w.ratio) >= TRUST_M_CONVICTION_RATIO);
+  const strong = margin >= TRUST_M_MARGIN;
+  const plusOne = margin === 1 && (conviction || dollars >= TRUST_M_DOLLAR_MARGIN);
+  return { tFor, tAg, hedged, margin, dollars, conviction, strong, plusOne, through: strong || plusOne };
+}
+
+/**
+ * Is this wallet trusted (tier ≥ TRUST_TIER_MIN, status ON) in `sport`, at the
+ * sport level or in `marketType`'s book? The sync keeps a trusted wallet's
+ * still-open position through the freshness prune so a TRUST-M margin is
+ * not lost to a wallet whose scan simply ran earlier than the latest one.
+ */
+export function isTrustedPositionWallet(walletProfiles, wallet, sport, marketType = null) {
+  const book = sportBook(profileForWallet(walletProfiles, wallet), sport, marketType);
+  return !!book && (isTrustedWallet(book.trust) || isTrustedWallet(book.trustMkt));
+}
+
+/** Reason tag for a TRUST-M door: m<margin>, plus _conv / _$<k>k when a +1 went through on conviction. */
+export function trustMTag(m) {
+  const d = m.dollars >= TRUST_M_DOLLAR_MARGIN ? `_$${Math.round(m.dollars / 1000)}k` : '';
+  return `m${m.margin}${m.plusOne ? `${m.conviction ? '_conv' : ''}${d}` : ''}`;
+}
 
 export function isTrustLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= TRUST_FROM;
@@ -689,6 +740,8 @@ export function trustRead(rows) {
     edge: t?.edge ?? null,
     // Sport-local size ratio of this bet (TRUST-S conviction input).
     ratio: Number.isFinite(r.ratio) ? r.ratio : null,
+    // Ticket dollars (TRUST-M dollar-margin input); not stamped.
+    invested: Number(r.invested) || 0,
   });
   const forRows = rows.filter((r) => r.dir === 'FOR');
   const agRows = rows.filter((r) => r.dir === 'AG');
@@ -827,9 +880,14 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * FOR floor at ML_FLOOR_UNITS inside the implied window; TRUST-S vetoes /
  * stakes spreads and TRUST-T mutes lone / stakes consensus totals off
  * market-level status; spreads cap at SPREAD_CAP_UNITS, totals at
- * ST_CAP_UNITS. TRUST-M: a market-book trusted margin ≥ TRUST_M_MARGIN goes
- * through a TRUST-S/T veto (+trust_m_over_ag_…) and stakes a 0u moneyline
- * at TRUST_M_ML_UNITS (trust_m_ml_for_…). FADE-F VETO stays a veto.
+ * ST_CAP_UNITS. TRUST-M: a market-book trusted margin ≥ TRUST_M_MARGIN, or
+ * +1 with conviction (ticket ≥ TRUST_M_CONVICTION_RATIO× usual, or trusted $
+ * margin ≥ TRUST_M_DOLLAR_MARGIN), goes through a FADE-F veto
+ * (+trust_m_over_fade_f_…), a TRUST-S/T veto (+trust_m_over_ag_…) and the
+ * TRUST-T lone mute; it stakes a 0u moneyline at TRUST_M_ML_UNITS
+ * (trust_m_ml_for_…) and floors a spread / total the FOR path would leave
+ * at 0u at TRUST_M_FLOOR_UNITS (trust_m_floor_…). The sync applies a
+ * trust_m stake through the AGS quality gate as well (trust_m_ags_bypass).
  */
 export function evaluatePressLadder(args = {}) {
   const core = evaluatePressLadderCore(args);
@@ -864,7 +922,17 @@ export function applyTrustLayer(result, {
   const isML = String(marketType).toUpperCase() === 'ML';
   const implied = impliedFromAmerican(sideOdds);
   const rules = [];
-  const vetoed = typeof out.reason === 'string' && out.reason.startsWith('fade_f_veto');
+  const fadeVetoed = typeof out.reason === 'string' && out.reason.startsWith('fade_f_veto');
+  // TRUST-M read on this market's book. A side that goes through (margin ≥
+  // TRUST_M_MARGIN, or +1 with conviction) crosses a FADE-F veto too; any
+  // other side keeps the veto.
+  const m = trustMarginRead(trust.mktFor, trust.mktAg);
+  const mTag = trustMTag(m);
+  const vetoed = fadeVetoed && !m.through;
+  if (fadeVetoed && m.through) {
+    out.reason = `${out.reason}+trust_m_over_fade_f_${mTag}`;
+    rules.push('trust_m');
+  }
 
   if (isML && out.units === 0 && !vetoed
     && typeof out.reason === 'string' && out.reason.startsWith('gate_fail')
@@ -883,32 +951,27 @@ export function applyTrustLayer(result, {
     rules.push('ml_floor');
   }
 
-  // TRUST-M on moneylines: the ladder left the side at 0u, the ML book's
-  // trusted margin is ≥ TRUST_M_MARGIN → a small stake. Runs after the floor
-  // so the rescue is not lifted into the 4u window.
-  if (isML && out.units === 0 && !vetoed) {
-    const { tFor, tAg, hedged } = netHedgedTrusted(trust.mktFor, trust.mktAg);
-    const margin = tFor.length - tAg.length;
-    if (margin >= TRUST_M_MARGIN) {
-      if (hedged.length) { out.reason = `${out.reason}+hedge_${hedged.join('+')}`; rules.push('trust_hedge'); }
-      out.rung = TRUST_G_STAKE_TIER;
-      out.units = TRUST_M_ML_UNITS;
-      out.reason = `trust_m_ml_for_${tFor.map((w) => w.wallet).join('+')}_m${margin}${tAg.length ? `_over_ag_${tAg.map((w) => w.wallet).join('+')}` : ''}:${out.reason}`;
-      rules.push('trust_m');
-    }
+  // TRUST-M on moneylines: the ladder (or a FADE-F veto) left the side at
+  // 0u and the ML book's margin goes through → TRUST_M_ML_UNITS. Runs after
+  // the floor so the rescue is not lifted into the 4u window.
+  if (isML && out.units === 0 && m.through) {
+    if (m.hedged.length) { out.reason = `${out.reason}+hedge_${m.hedged.join('+')}`; rules.push('trust_hedge'); }
+    out.rung = TRUST_G_STAKE_TIER;
+    out.units = TRUST_M_ML_UNITS;
+    out.reason = `trust_m_ml_for_${m.tFor.map((w) => w.wallet).join('+')}_${mTag}${m.tAg.length ? `_over_ag_${m.tAg.map((w) => w.wallet).join('+')}` : ''}:${out.reason}`;
+    if (!rules.includes('trust_m')) rules.push('trust_m');
   }
 
   const isSpread = String(marketType).toUpperCase() === 'SPREAD';
   if (isSpread && !vetoed) {
-    const { tFor, tAg, hedged } = netHedgedTrusted(trust.mktFor, trust.mktAg);
+    const { tFor, tAg, hedged } = m;
     if (hedged.length) { out.reason = `${out.reason}+hedge_${hedged.join('+')}`; rules.push('trust_hedge'); }
-    const margin = tFor.length - tAg.length;
-    if (tAg.length && margin >= TRUST_M_MARGIN) {
-      // TRUST-M: the spread book's trusted margin outweighs the wallet against — no veto, the FOR path sizes it.
-      out.reason = `${out.reason}+trust_m_over_ag_${tAg.map((w) => w.wallet).join('+')}_m${margin}`;
-      rules.push('trust_m');
+    if (tAg.length && m.through) {
+      // TRUST-M: the spread book's margin outweighs the wallet against — no veto, the FOR path sizes it.
+      out.reason = `${out.reason}+trust_m_over_ag_${tAg.map((w) => w.wallet).join('+')}_${mTag}`;
+      if (!rules.includes('trust_m')) rules.push('trust_m');
     }
-    if (tAg.length && margin < TRUST_M_MARGIN) {
+    if (tAg.length && !m.through) {
       // A wallet trusted in this spread market is AGAINST — veto.
       if (out.units > 0) { out.units = 0; out.rung = null; }
       out.reason = `trust_s_veto_ag_${tAg.map((w) => w.wallet).join('+')}:${out.reason}`;
@@ -918,9 +981,13 @@ export function applyTrustLayer(result, {
       const press = conviction || tFor.length >= 2;
       const inWindow = implied != null && implied >= TRUST_S_IMPLIED_MIN && implied < TRUST_S_IMPLIED_MAX;
       const isDog = implied != null && implied < TRUST_S_IMPLIED_MIN;
-      const target = inWindow ? (press ? TRUST_S_PRESS_UNITS : TRUST_S_UNITS) : (isDog && press ? TRUST_S_DOG_UNITS : 0);
+      let target = inWindow ? (press ? TRUST_S_PRESS_UNITS : TRUST_S_UNITS) : (isDog && press ? TRUST_S_DOG_UNITS : 0);
+      let floored = false;
+      if (target === 0 && m.through) { target = TRUST_M_FLOOR_UNITS; floored = true; }
       if (target > 0 && out.units < target) {
-        const tag = `trust_s_for_${tFor.map((w) => w.wallet).join('+')}${conviction ? '_conv' : ''}${tFor.length >= 2 ? '_x2' : ''}_${inWindow ? 'win' : 'dog'}${target}u`;
+        const tag = floored
+          ? `trust_m_floor_${tFor.map((w) => w.wallet).join('+')}_${mTag}_${inWindow ? 'win' : (isDog ? 'dog' : 'fav')}${target}u`
+          : `trust_s_for_${tFor.map((w) => w.wallet).join('+')}${conviction ? '_conv' : ''}${tFor.length >= 2 ? '_x2' : ''}_${inWindow ? 'win' : 'dog'}${target}u`;
         if (out.units > 0) {
           out.reason = `${out.reason}+${tag}`;
         } else {
@@ -928,7 +995,8 @@ export function applyTrustLayer(result, {
           out.reason = `${tag}:${out.reason}`;
         }
         out.units = target;
-        rules.push('trust_s');
+        if (!floored) rules.push('trust_s');
+        else if (!rules.includes('trust_m')) rules.push('trust_m');
       }
     }
   }
@@ -936,15 +1004,14 @@ export function applyTrustLayer(result, {
   const isTotal = String(marketType).toUpperCase() === 'TOTAL';
   let trustT = false;
   if (isTotal && !vetoed) {
-    const { tFor, tAg, hedged } = netHedgedTrusted(trust.mktFor, trust.mktAg);
+    const { tFor, tAg, hedged } = m;
     if (hedged.length) { out.reason = `${out.reason}+hedge_${hedged.join('+')}`; rules.push('trust_hedge'); }
-    const margin = tFor.length - tAg.length;
-    if (tAg.length && margin >= TRUST_M_MARGIN) {
-      // TRUST-M: the totals book's trusted margin outweighs the wallet against — no veto, consensus sizes it.
-      out.reason = `${out.reason}+trust_m_over_ag_${tAg.map((w) => w.wallet).join('+')}_m${margin}`;
-      rules.push('trust_m');
+    if (tAg.length && m.through) {
+      // TRUST-M: the totals book's margin outweighs the wallet against — no veto, consensus sizes it.
+      out.reason = `${out.reason}+trust_m_over_ag_${tAg.map((w) => w.wallet).join('+')}_${mTag}`;
+      if (!rules.includes('trust_m')) rules.push('trust_m');
     }
-    if (tFor.length && tAg.length && margin < TRUST_M_MARGIN) {
+    if (tFor.length && tAg.length && !m.through) {
       // Trusted wallets on both sides of the total — stand down.
       if (out.units > 0) { out.units = 0; out.rung = null; }
       out.reason = `trust_t_veto_ag_${tAg.map((w) => w.wallet).join('+')}:${out.reason}`;
@@ -968,6 +1035,18 @@ export function applyTrustLayer(result, {
         out.reason = `${out.reason}+tt_cap${target}`;
         rules.push('tt_cap');
       }
+      trustT = true;
+    } else if (tFor.length >= 1 && m.through) {
+      // TRUST-M: a lone trusted wallet with conviction on a total takes the floor instead of the lone mute.
+      if (out.units < TRUST_M_FLOOR_UNITS) {
+        const tag = `trust_m_floor_${tFor.map((w) => w.wallet).join('+')}_${mTag}${TRUST_M_FLOOR_UNITS}u`;
+        if (out.units > 0) out.reason = `${out.reason}+${tag}`;
+        else { out.rung = TRUST_T_STAKE_TIER; out.reason = `${tag}:${out.reason}`; }
+        out.units = TRUST_M_FLOOR_UNITS;
+      } else {
+        out.reason = `${out.reason}+trust_m_lone_${mTag}`;
+      }
+      if (!rules.includes('trust_m')) rules.push('trust_m');
       trustT = true;
     } else if (tFor.length >= 1) {
       // One trusted wallet alone on a total is a fade, not a follow.
