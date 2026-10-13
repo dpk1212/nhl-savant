@@ -1,60 +1,36 @@
 # MLB Predictions
 
-MLB predictions for Monday, October 12, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
+MLB predictions for Tuesday, October 13, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
-[![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Don't guess. Join Dimers Pro to unlock the bets worth making. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
+[![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 12 2026Oct 12
+Date: Oct 13 2026Oct 13
 
-[Oct 12, 5:00 PM ET\\
-\\
-![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
-\\
-Dodgers \\
-\\
-2 \\
-\\
-33.6% \\
-\\
-![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
-\\
-Brewers \\
-\\
-3 \\
-\\
-66.4% \\
-\\
-3 Out\\
-\\
-LIVE\\
-\\
-Bot 3rd \\
-\\
-In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_202_mil_lad) [Oct 12, 8:00 PM ET\\
+[Oct 13, 8:00 PM ET\\
 \\
 ![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
 \\
-Guardians  F. Griffin \\
+Guardians  P. Messick \\
 \\
-41.7% \\
+45.4% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-40¢\\
+45¢\\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
-Rays  D. Rasmussen \\
+Rays  F. Peralta \\
 \\
-58.3% \\
+54.6% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-60¢\\
+56¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_202_tb_cle)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_203_tb_cle)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -282,16 +258,11 @@ Claim Now
 
 How to claim
 
-## MLB predictions for Monday
+## MLB predictions for Tuesday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Monday, the Rays lead all win probabilities with a 58.7% chance of beating the Guardians at Tropicana Field. The Dodgers also ranks among the leading moneyline favorites.
-
-| Team | Prob. | Opponent | First pitch (ET) |
-| --- | --- | --- | --- |
-| Rays | 58.7% | vs. Guardians | 5:00pm |
-| Dodgers | 57.5% | @ Brewers | 2:00pm |
+On Tuesday, the Rays have a 55.1% chance of beating the Guardians at Tropicana Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
