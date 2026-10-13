@@ -408,6 +408,11 @@ import {
   TRUST_T_PRESS_IMPLIED_MAX,
   TRUST_M_MARGIN,
   TRUST_M_ML_UNITS,
+  TRUST_M_FLOOR_UNITS,
+  TRUST_M_CONVICTION_RATIO,
+  TRUST_M_DOLLAR_MARGIN,
+  isTrustMRule,
+  isTrustedPositionWallet,
 } from '../src/lib/pressLadderOverlay.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -4075,7 +4080,11 @@ async function createMissingLockedPicks({
         });
       }
       if (isPressLadderLive(TARGET_DATE)) {
-        const pressScoreOkCreate = scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0;
+        // TRUST-M: a side the trust layer put through on market-book margin /
+        // conviction is staked through the AGS quality gate (no V12 score).
+        const trustMForceCreate = !!pressEvalCreate && pressEvalCreate.units > 0
+          && isTrustMRule(pressEvalCreate.trust?.rule);
+        const pressScoreOkCreate = (scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0) || trustMForceCreate;
         const pressUnitsCreate = pressScoreOkCreate && pressEvalCreate && pressEvalCreate.units > 0
           ? pressEvalCreate.units
           : (pressMirrorForceCreate ? PRESS_M_UNITS : 0);
@@ -6192,7 +6201,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const pressLive = isPressLadderLive(pickDate);
   let pressMirrorApplied = false;
   if (pressLive && !skipManualFlinch) {
-    const pressScoreOk = appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0;
+    // TRUST-M: a side the trust layer put through on market-book margin /
+    // conviction is staked through the AGS quality mute (agsv12 ≤ 0 / no
+    // signal) the same way PRESS-M is — the stake is the trusted book's.
+    const trustMForce = !!pressEval && pressEval.units > 0 && isTrustMRule(pressEval.trust?.rule);
+    if (trustMForce && appliedStatus !== 'ACTIVE' && mutedByAgs) {
+      appliedStatus = 'ACTIVE';
+      appliedReason = 'trust_m_ags_bypass';
+      mutedByAgs = false;
+    }
+    const pressScoreOk = (appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0)
+      || (trustMForce && appliedStatus === 'ACTIVE');
     const pressMirrorOk = !pressScoreOk && appliedStatus === 'ACTIVE' && pressMirrorFires;
     const pressUnitsRaw = pressScoreOk && pressEval && pressEval.units > 0
       ? pressEval.units
@@ -8277,7 +8296,7 @@ async function main() {
         + ` · TRUST-S: spread with a wallet trusted in this sport's spread market for + none against + implied ${Math.round(TRUST_S_IMPLIED_MIN * 100)}–${Math.round(TRUST_S_IMPLIED_MAX * 100)}% → ${TRUST_S_UNITS}u, ${TRUST_S_PRESS_UNITS}u with conviction or two trusted for (${TRUST_S_STAKE_TIER}); a trusted wallet against vetoes the spread`
         + ` · TRUST-T: total with ${TRUST_T_MIN_FOR}+ wallets trusted in this sport's totals market for + none against → ${TRUST_T_UNITS}u, ${TRUST_T_PRESS_UNITS}u at implied ≤${Math.round(TRUST_T_PRESS_IMPLIED_MAX * 100)}% (${TRUST_T_STAKE_TIER}); exactly one trusted wallet for → 0u; trusted wallets both sides → 0u`
         + ` · a wallet holding both sides of the same spread/total is a self-hedge and is netted out of both lists before TRUST-S/T read (+hedge_<wallet>)`
-        + ` · TRUST-M: market-book trusted margin (for − against) ≥ ${TRUST_M_MARGIN} goes through a TRUST-S/T veto (+trust_m_over_ag_<wallets>) and stakes a 0u moneyline at ${TRUST_M_ML_UNITS}u (trust_m_ml_for_…)`
+        + ` · TRUST-M: market-book trusted margin (for − against) ≥ ${TRUST_M_MARGIN}, or +1 with conviction (ticket ≥ ${TRUST_M_CONVICTION_RATIO}× usual or trusted $ margin ≥ $${TRUST_M_DOLLAR_MARGIN / 1000}k), goes through FADE-F / TRUST-S/T vetoes, the TRUST-T lone mute and the AGS quality mute (trust_m_ags_bypass); stakes a 0u moneyline at ${TRUST_M_ML_UNITS}u (trust_m_ml_for_…) and floors a 0u spread / total at ${TRUST_M_FLOOR_UNITS}u (trust_m_floor_…); trusted wallets' open tickets survive the ${30}-min freshness prune`
         + ` · spreads cap ${SPREAD_CAP_UNITS}u, totals cap ${ST_CAP_UNITS}u · gated moneyline rungs flagged v8_trustLift (shadow) · from ${TRUST_FROM}`,
       );
     } else {
@@ -8439,6 +8458,7 @@ async function main() {
   const FRESHNESS_WINDOW_MS = 30 * 60 * 1000; // 30 min — see comment above (was 90s pre-2026-05-10)
   let prunedStale = 0;
   let keptByScanBoard = 0;
+  let keptByTrust = 0;
   const positionsFresh = maxUpdatedMs > 0
     ? rawAfterExclusion.filter(p => {
         const t = tsMs(p);
@@ -8449,10 +8469,21 @@ async function main() {
           keptByScanBoard++;
           return true;
         }
+        // TRUST-M: a trusted wallet's still-PENDING ticket stays in the bag
+        // — the wallet scans on its own cadence, and the trusted margin must
+        // not disappear because another wallet scanned later (Bills +3.5,
+        // 2026-10-11: a T5 $75k FOR ticket pruned → margin +3 fell to +1 → veto).
+        if (isTrustedPositionWallet(walletProfiles, p.wallet, p.sport, p.marketType)) {
+          keptByTrust++;
+          return true;
+        }
         prunedStale++;
         return false;
       })
     : rawAfterExclusion;
+  if (keptByTrust > 0) {
+    console.log(`  ↳ kept ${keptByTrust} stale-but-trusted-wallet position(s) (TRUST-M margin parity)`);
+  }
   if (prunedStale > 0) {
     console.log(`  ↳ pruned ${prunedStale} stale position(s) outside ${FRESHNESS_WINDOW_MS/60000}min of latest scan (${new Date(maxUpdatedMs).toISOString()})`);
   }
