@@ -14,6 +14,7 @@ import { isWNBAMarketTitle } from './lib/wnbaTeams.js';
 import { isNFLMarketTitle } from './lib/nflTeams.js';
 import { isCFBMarketTitle } from './lib/cfbTeams.js';
 import { isUFCMarketTitle } from './lib/ufcFighters.js';
+import { isATPMarketTitle } from './lib/atpPlayers.js';
 import { isSoccerMarketTitle } from './lib/soccerTeams.js';
 import {
   isNonFullGameTotalMarket,
@@ -42,7 +43,7 @@ const EARLY_FLIP = 55;
 const HOLD_FLIP_MAX = 40;
 const MIN_SPORTS_MARKETS = 8;
 
-const SPORT_KEYS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
+const SPORT_KEYS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'ATP'];
 
 const httpFetch = typeof globalThis.fetch === 'function'
   ? globalThis.fetch
@@ -64,7 +65,8 @@ function parseJsonField(v) {
   return [];
 }
 
-function classifySport(title) {
+function classifySport(title, slug = '') {
+  if (isATPMarketTitle(title, slug)) return 'ATP';
   const t = (title || '').toLowerCase();
   if (isWNBAMarketTitle(title)) return 'WNBA';
   if (isCFBMarketTitle(title)) return 'CFB';
@@ -143,7 +145,7 @@ function pickFgMarkets(ev) {
 function analyzeClosedSports(closed) {
   const sports = [];
   for (const p of closed) {
-    const sport = classifySport(p.title || '')
+    const sport = classifySport(p.title || '', p.slug || p.eventSlug || '')
       || (String(p.eventSlug || p.slug || '').startsWith('mlb-') ? 'MLB' : null);
     if (!sport) continue;
     const curRaw = p.curPrice;

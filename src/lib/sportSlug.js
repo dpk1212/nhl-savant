@@ -11,6 +11,7 @@ export const BOARD_SPORT_SLUG = {
   CFB: 'cfb',
   NBA: 'nba',
   UFC: 'ufc',
+  ATP: 'atp',
 };
 
 /** Polymarket league tokens that belong on a SOC board (not a single slug). */

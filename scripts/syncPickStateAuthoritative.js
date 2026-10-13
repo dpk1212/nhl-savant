@@ -350,6 +350,7 @@ import {
 import { oddsCap } from '../src/lib/oddsCap.js';
 import {
   evaluatePressLadder,
+  atpMayStake,
   pressStamp,
   isPressLadderLive,
   isPressStampLive,
@@ -2511,7 +2512,7 @@ function loadGameMetadata() {
   const meta = new Map(); // key: `${sport}|${gameKey}` → { commenceTime, away, home, mlOdds: { away, home }, spread, total }
   try {
     const poly = JSON.parse(readFileSync(join(PUBLIC, 'polymarket_data.json'), 'utf8'));
-    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'CFB', 'SOC', 'UFC', 'WNBA', 'NFL']) {
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'CFB', 'SOC', 'UFC', 'WNBA', 'NFL', 'ATP']) {
       const games = poly[sport] || {};
       for (const [gk, g] of Object.entries(games)) {
         const key = `${sport}|${gk}`;
@@ -2539,7 +2540,7 @@ function loadGameMetadata() {
   }
   try {
     const pinn = JSON.parse(readFileSync(join(PUBLIC, 'pinnacle_history.json'), 'utf8'));
-    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'CFB', 'SOC', 'UFC', 'WNBA', 'NFL']) {
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'CFB', 'SOC', 'UFC', 'WNBA', 'NFL', 'ATP']) {
       const games = pinn[sport] || {};
       for (const [gk, g] of Object.entries(games)) {
         const key = `${sport}|${gk}`;
@@ -4093,6 +4094,7 @@ async function createMissingLockedPicks({
         peakUnitsApplied = pressUnitsCreate > 0 && Number.isFinite(Number(odds))
           ? Math.round(oddsCap(pressUnitsCreate, odds) * 100) / 100
           : pressUnitsCreate;
+        if (!atpMayStake(sport, marketType, pressEvalCreate)) peakUnitsApplied = 0;
         if (pressScoreOkCreate) {
           hcStakeTierCreate = peakUnitsApplied > 0 ? pressEvalCreate.rung : 'MONITORING';
         } else if (pressMirrorForceCreate) {
@@ -6221,6 +6223,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = pressUnitsRaw > 0
       ? Math.round(oddsCap(pressUnitsRaw, sideOdds) * 100) / 100
       : 0;
+    if (!atpMayStake(pick.sport, mkt, pressEval)) finalUnitsApplied = 0;
     if (pressScoreOk) {
       hcStakeTier = finalUnitsApplied > 0 ? pressEval.rung : 'MONITORING';
     } else if (pressMirrorOk) {

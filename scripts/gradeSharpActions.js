@@ -29,6 +29,11 @@ import {
 import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
 import { resolveCFBTeam, cfbTeamsMatch } from './lib/cfbTeams.js';
+import {
+  resolveATPPlayer,
+  playersMatch,
+  isGradableATPMainML,
+} from './lib/atpPlayers.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { shouldGradeExited } from '../src/lib/actionLockPin.js';
 import {
@@ -57,6 +62,7 @@ const ESPN_SOC_URLS = [
   'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',
 ];
 const ESPN_UFC_URL = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
+const ESPN_ATP_URL = 'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard';
 // ESPN 403s Node's default fetch UA and browser Chrome UAs.
 // `curl/8.x` is what their scoreboard currently allows (confirmed 2026-08-21).
 const ESPN_HEADERS = {
@@ -816,8 +822,64 @@ function finalDateMatches(g, pos) {
   return g.dateET != null && g.dateET === pos.date;
 }
 
-function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = [], wnbaFinals = [], nflFinals = [], cfbFinals = []) {
-  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB):/, '');
+/**
+ * ATP men's singles via ESPN tennis scoreboard.
+ * Competitions live under event.groupings (not event.competitions).
+ * Doubles are skipped. Winner is competitor.winner; scores are synthetic 1/0.
+ */
+async function fetchATPFinalMatches(dateStr) {
+  try {
+    const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
+    const data = await espnJson(`${ESPN_ATP_URL}${ymd}`);
+    if (!data) return [];
+    const matches = [];
+    for (const ev of data.events || []) {
+      const groups = ev.groupings?.length ? ev.groupings : [{ competitions: ev.competitions || [] }];
+      for (const group of groups) {
+        const groupSlug = group.grouping?.slug || '';
+        if (groupSlug && groupSlug !== 'mens-singles') continue;
+        for (const comp of group.competitions || []) {
+          const typeSlug = comp.type?.slug || '';
+          if (typeSlug && typeSlug !== 'mens-singles') continue;
+          const st = comp.status?.type;
+          const name = st?.name || '';
+          if (name.startsWith('STATUS_POSTPONED') || name.startsWith('STATUS_CANCELED')
+            || name.startsWith('STATUS_CANCELLED') || name.startsWith('STATUS_SUSPENDED')) {
+            continue;
+          }
+          if (st?.state !== 'post' && !st?.completed && !name.startsWith('STATUS_FINAL')) continue;
+          const comps = comp.competitors || [];
+          if (comps.length < 2) continue;
+          const nameOf = (c) => c.athlete?.displayName || c.athlete?.fullName || '';
+          const a = comps.find((c) => c.homeAway === 'away') || comps[0];
+          const h = comps.find((c) => c.homeAway === 'home') || comps[1];
+          const aName = nameOf(a);
+          const hName = nameOf(h);
+          const aCode = resolveATPPlayer(aName);
+          const hCode = resolveATPPlayer(hName);
+          if (!aCode || !hCode) continue;
+          if (a.winner !== true && h.winner !== true) continue;
+          matches.push({
+            dateET: espnEventDateET(comp) || espnEventDateET(ev),
+            awayCode: aCode,
+            homeCode: hCode,
+            awayTeam: aName,
+            homeTeam: hName,
+            awayScore: a.winner === true ? 1 : 0,
+            homeScore: h.winner === true ? 1 : 0,
+          });
+        }
+      }
+    }
+    return matches;
+  } catch (e) {
+    console.error('ESPN ATP fetch error:', e.message);
+    return [];
+  }
+}
+
+function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = [], wnbaFinals = [], nflFinals = [], cfbFinals = [], atpFinals = []) {
+  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB|ATP):/, '');
   const parts = rawKey.split('_');
 
   if (pos.sport === 'NHL') {
@@ -949,6 +1011,25 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
     return null;
   }
 
+  if (pos.sport === 'ATP') {
+    if (!isGradableATPMainML(pos)) return null;
+    if (parts.length < 2) return null;
+    const dated = atpFinals.filter(g => finalDateMatches(g, pos));
+    for (const g of dated) {
+      if (g.awayCode === parts[0] && g.homeCode === parts[1]) return g;
+      if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+        return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+      }
+    }
+    for (const g of dated) {
+      if (playersMatch(pos.away, g.awayTeam) && playersMatch(pos.home, g.homeTeam)) return g;
+      if (playersMatch(pos.away, g.homeTeam) && playersMatch(pos.home, g.awayTeam)) {
+        return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+      }
+    }
+    return null;
+  }
+
   return null;
 }
 
@@ -1004,7 +1085,7 @@ async function loadGradeCandidates(db) {
 const PICK_SCORE_COLS = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
 
 function knownFinalKey(sport, date, gameKey) {
-  const raw = String(gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB):/, '');
+  const raw = String(gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB|ATP):/, '');
   return `${sport}|${date}|${raw}`;
 }
 
@@ -1013,7 +1094,7 @@ async function collectPendingPickDates(db) {
   const sports = new Set();
   const bySport = {
     CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(),
-    WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set(),
+    WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set(), ATP: new Set(),
   };
   for (const col of PICK_SCORE_COLS) {
     const snap = await db.collection(col).where('status', '==', 'PENDING').get();
@@ -1072,6 +1153,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
           gameKey: pick.gameKey,
           away: pick.away,
           home: pick.home,
+          marketType,
         },
         finals.nhlFinals,
         finals.cbbFinals,
@@ -1082,6 +1164,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
         finals.wnbaFinals,
         finals.nflFinals,
         finals.cfbFinals,
+        finals.atpFinals,
       );
       if (!game) {
         skipped++;
@@ -1097,7 +1180,8 @@ async function gradePendingSharpFlowPicks(db, finals) {
               : pick.sport === 'NFL' ? 'ESPN_NFL_API'
                 : pick.sport === 'CFB' ? 'ESPN_CFB_API'
                 : pick.sport === 'SOC' ? 'ESPN_SOC_API'
-                  : pick.sport === 'UFC' ? 'ESPN_UFC_API' : 'ESPN_MLB_API';
+                  : pick.sport === 'UFC' ? 'ESPN_UFC_API'
+                    : pick.sport === 'ATP' ? 'ESPN_ATP_API' : 'ESPN_MLB_API';
       const updates = {
         'result.awayScore': game.awayScore,
         'result.homeScore': game.homeScore,
@@ -1164,7 +1248,7 @@ async function loadKnownFinalsFromPicks(db, dates) {
         if (!sport || !gameKey) continue;
         const key = knownFinalKey(sport, date, gameKey);
         if (map.has(key)) continue;
-        const parts = String(gameKey).replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB):/, '').split('_');
+        const parts = String(gameKey).replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB|ATP):/, '').split('_');
         map.set(key, {
           dateET: date,
           awayCode: parts[0] || null,
@@ -1208,7 +1292,7 @@ async function collectOpenTails(db) {
 async function gradeOpenTails(db, openTails, finals) {
   const {
     nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
-    ufcFinals, wnbaFinals, nflFinals, cfbFinals, knownFinals,
+    ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, knownFinals,
   } = finals;
   let graded = 0;
   let waiting = 0;
@@ -1227,7 +1311,7 @@ async function gradeOpenTails(db, openTails, finals) {
     if (!game) {
       game = findMatchingGame(
         pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
-        ufcFinals, wnbaFinals, nflFinals, cfbFinals,
+        ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals,
       );
     }
     if (!game || game.awayScore == null || game.homeScore == null) {
@@ -1294,6 +1378,7 @@ async function main() {
   const cfbDates = new Set();
   const socDates = new Set();
   const ufcDates = new Set();
+  const atpDates = new Set();
   for (const doc of snapshot.docs) {
     const d = doc.data();
     sports.add(d.sport);
@@ -1306,6 +1391,7 @@ async function main() {
     if (d.sport === 'CFB' && d.date) cfbDates.add(d.date);
     if (d.sport === 'SOC' && d.date) socDates.add(d.date);
     if (d.sport === 'UFC' && d.date) ufcDates.add(d.date);
+    if (d.sport === 'ATP' && d.date) atpDates.add(d.date);
   }
 
   const openTails = await collectOpenTails(db);
@@ -1314,13 +1400,13 @@ async function main() {
     sports.add(t.sport);
     const bucket = {
       CBB: cbbDates, NHL: nhlDates, MLB: mlbDates, NBA: nbaDates,
-      WNBA: wnbaDates, NFL: nflDates, CFB: cfbDates, SOC: socDates, UFC: ufcDates,
+      WNBA: wnbaDates, NFL: nflDates, CFB: cfbDates, SOC: socDates, UFC: ufcDates, ATP: atpDates,
     }[t.sport];
     if (bucket) bucket.add(t.date);
   }
 
   const pendingPicks = TAILS_ONLY
-    ? { sports: new Set(), bySport: { CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(), WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set() } }
+    ? { sports: new Set(), bySport: { CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(), WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set(), ATP: new Set() } }
     : await collectPendingPickDates(db);
   for (const s of pendingPicks.sports) sports.add(s);
   for (const d of pendingPicks.bySport.CBB) cbbDates.add(d);
@@ -1332,8 +1418,9 @@ async function main() {
   for (const d of pendingPicks.bySport.CFB) cfbDates.add(d);
   for (const d of pendingPicks.bySport.SOC) socDates.add(d);
   for (const d of pendingPicks.bySport.UFC) ufcDates.add(d);
+  for (const d of pendingPicks.bySport.ATP) atpDates.add(d);
 
-  const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...cfbDates, ...socDates, ...ufcDates]);
+  const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...cfbDates, ...socDates, ...ufcDates, ...atpDates]);
   const knownFinals = await loadKnownFinalsFromPicks(db, allDates);
   console.log(`Source A known finals: ${knownFinals.size} games (already-graded picks)`);
 
@@ -1419,9 +1506,18 @@ async function main() {
     }
   }
 
+  let atpFinals = [];
+  if (sports.has('ATP')) {
+    for (const d of recentScoreboardDates(atpDates)) {
+      const matches = await fetchATPFinalMatches(d);
+      atpFinals.push(...matches);
+      console.log(`ESPN ATP API: ${matches.length} final singles matches for ${d}`);
+    }
+  }
+
   if (!TAILS_ONLY) {
     await gradePendingSharpFlowPicks(db, {
-      nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals,
+      nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals,
     });
   }
 
@@ -1445,7 +1541,7 @@ async function main() {
 
       let game = knownFinals.get(knownFinalKey(pos.sport, pos.date, pos.gameKey)) || null;
       if (!game) {
-        game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals);
+        game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals);
       }
       if (!game) {
         noGame++;
@@ -1578,7 +1674,7 @@ async function main() {
 
   await gradeOpenTails(db, openTails, {
     nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
-    ufcFinals, wnbaFinals, nflFinals, cfbFinals, knownFinals,
+    ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, knownFinals,
   });
 
   console.log('\nDone.');

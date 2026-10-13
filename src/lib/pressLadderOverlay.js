@@ -915,7 +915,38 @@ export function evaluatePressLadder(args = {}) {
       out = { ...core, rung: FADE_F_STAKE_TIER, units: FADE_F_UNITS, reason: `fade_f_${floorFade.reason}` };
     }
   }
-  return applyTrustLayer(out, args);
+  return clampAtpToTrustedMargin(applyTrustLayer(out, args), args);
+}
+
+/**
+ * ATP is moneyline only, and the only stake is a tier-4+ form-ON margin of
+ * at least 2 on this match's book. Every other rung (v12, press mirror input,
+ * margin +1, spreads, totals) is zeroed. Margin ≥ 2 keeps the trust-layer size.
+ */
+export function clampAtpToTrustedMargin(result, { sport, marketType } = {}) {
+  if (String(sport || '').toUpperCase() !== 'ATP') return result;
+  const isML = String(marketType || '').toUpperCase() === 'ML';
+  const strong = isML && result?.trust
+    && trustMarginRead(result.trust.mktFor, result.trust.mktAg).strong === true;
+  if (strong && result.units > 0) {
+    const reason = String(result.reason || '');
+    return reason.includes('atp_t4_m2') ? result : { ...result, reason: `${reason}+atp_t4_m2` };
+  }
+  if (!(result?.units > 0) && !result?.rung) return result;
+  return {
+    ...result,
+    rung: null,
+    units: 0,
+    reason: `atp_ml_t4_m2_only:${result?.reason || 'none'}`,
+  };
+}
+
+/** False only for ATP sides that are not an ML with a live T4+ margin ≥ 2. */
+export function atpMayStake(sport, marketType, pressEval) {
+  if (String(sport || '').toUpperCase() !== 'ATP') return true;
+  if (String(marketType || '').toUpperCase() !== 'ML') return false;
+  return !!pressEval && pressEval.units > 0
+    && !String(pressEval.reason || '').startsWith('atp_ml_t4_m2_only');
 }
 
 /**

@@ -19,6 +19,7 @@ import { isUFCMarketTitle } from './lib/ufcFighters.js';
 import { isWNBAMarketTitle } from './lib/wnbaTeams.js';
 import { isNFLMarketTitle } from './lib/nflTeams.js';
 import { isCFBMarketTitle } from './lib/cfbTeams.js';
+import { isATPMarketTitle } from './lib/atpPlayers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -66,7 +67,8 @@ const SPORT_KEYWORDS = {
     'giants', 'rockies', 'royals', 'angels', 'tigers', 'marlins', 'nationals', 'athletics'],
 };
 
-function classifySport(title) {
+function classifySport(title, slug = '') {
+  if (isATPMarketTitle(title, slug)) return 'ATP';
   const t = title.toLowerCase();
   // WNBA before NBA keyword loop — shared nicknames (Liberty, Sun, Sparks, …).
   if (isWNBAMarketTitle(title)) return 'WNBA';
@@ -191,7 +193,7 @@ async function buildProfile(wallet) {
 
   // Pages are newest-first; collect recent settled form in pass order.
   for (const p of closedPositions) {
-    const sport = classifySport(p.title || '');
+    const sport = classifySport(p.title || '', p.slug || p.eventSlug || '');
     if (!sport) continue;
 
     sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
@@ -224,7 +226,7 @@ async function buildProfile(wallet) {
   }
 
   for (const p of currentPositions) {
-    const sport = classifySport(p.title || '');
+    const sport = classifySport(p.title || '', p.slug || p.eventSlug || '');
     if (sport) {
       sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
       sportPositionCount++;

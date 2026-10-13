@@ -38,6 +38,12 @@ import {
   isMainCFBGameSlug,
 } from './lib/cfbTeams.js';
 import {
+  makeATPGameKey,
+  extractATPPlayersFromTitle,
+  isMainATPMatchSlug,
+  isAtpPolyWindow,
+} from './lib/atpPlayers.js';
+import {
   isNonFullGameTotalMarket,
   pickFullGameMlMarket,
   pickFullGameSpreadMarket,
@@ -105,6 +111,41 @@ async function listEvents(tagSlug, maxResults = 200) {
 /** Page the nfl tag until empty. Keep only dated game slugs — futures drown page 1. */
 const NFL_TAG_PAGE = 100;
 const NFL_TAG_PAGE_CAP = 1500;
+
+/** ATP Tour series 10365 — match events, not the futures that lead the atp tag. */
+const ATP_SERIES_ID = '10365';
+const ATP_SERIES_PAGE = 100;
+const ATP_SERIES_CAP = 800;
+
+async function listMainAtpMatchEvents() {
+  const mains = [];
+  let pages = 0;
+  let raw = 0;
+  for (let offset = 0; offset < ATP_SERIES_CAP; offset += ATP_SERIES_PAGE) {
+    const params = new URLSearchParams({
+      active: 'true',
+      closed: 'false',
+      limit: String(ATP_SERIES_PAGE),
+      offset: String(offset),
+      series_id: ATP_SERIES_ID,
+    });
+    let arr = [];
+    try {
+      const events = await get(`/events?${params}`);
+      arr = Array.isArray(events) ? events : [];
+    } catch {
+      break;
+    }
+    pages += 1;
+    raw += arr.length;
+    for (const ev of arr) {
+      if (isMainATPMatchSlug(ev.slug)) mains.push(ev);
+    }
+    if (arr.length < ATP_SERIES_PAGE) break;
+  }
+  console.log(`  📡 atp main matches: ${mains.length} from ${raw} series events (${pages} pages)`);
+  return mains;
+}
 
 async function listMainNflGameEvents() {
   const mains = [];
@@ -549,6 +590,9 @@ function matchToGameKey(teams, cbbMap, sport) {
   if (sport === 'CFB') {
     return makeCFBGameKey(a, b);
   }
+  if (sport === 'ATP') {
+    return makeATPGameKey(a, b);
+  }
   return null;
 }
 
@@ -977,15 +1021,40 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
+  // ATP: Polymarket series is the slate. Odds API tennis keys are per-tournament
+  // and not stable, so matches in the 6h / 72h window seed from the series.
+  const validATP = new Set();
+  try {
+    const list = await listMainAtpMatchEvents();
+    let seeded = 0;
+    for (const ev of list) {
+      const title = ev.title || ev.question || '';
+      const pair = extractATPPlayersFromTitle(title);
+      if (!pair) {
+        console.warn(`ATP Poly seed miss: "${title}" (${ev.slug})`);
+        continue;
+      }
+      const gk = makeATPGameKey(pair[0], pair[1]);
+      if (!gk) continue;
+      if (!isAtpPolyWindow(ev.startTime)) continue;
+      if (!validATP.has(gk)) seeded++;
+      validATP.add(gk);
+      if (ev.startTime && !commenceTimes[`ATP:${gk}`]) commenceTimes[`ATP:${gk}`] = ev.startTime;
+    }
+    console.log(`📋 ATP Poly seed: +${seeded} → ${validATP.size}`);
+  } catch (e) {
+    console.warn('Could not seed ATP from Polymarket series:', e.message);
+  }
+
   applyCommenceOverrides(commenceTimes);
-  return { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, validCFB, commenceTimes };
+  return { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, validCFB, validATP, commenceTimes };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, CFB: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, CFB: {}, ATP: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, validCFB, commenceTimes } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, validCFB, validATP, commenceTimes } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -1036,6 +1105,13 @@ async function run() {
     } catch (e) {
       console.warn(`Failed to fetch ${slug}:`, e.message);
     }
+  }
+
+  try {
+    const list = await listMainAtpMatchEvents();
+    for (const ev of list) events.push({ ...ev, _tag: 'atp', _sport: 'ATP' });
+  } catch (e) {
+    console.warn('Failed to fetch ATP series:', e.message);
   }
 
   const haveNflKey = new Set();
@@ -1110,7 +1186,7 @@ async function run() {
       || evTags.includes('la-liga');
     const hasUfcTag = evTags.includes('ufc') || evTags.includes('mma');
 
-    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'WNBA' ? 'WNBA' : ev._sport === 'wnba' ? 'WNBA' : ev._sport === 'NFL' ? 'NFL' : ev._sport === 'nfl' ? 'NFL' : ev._sport === 'CFB' ? 'CFB' : ev._sport === 'cfb' ? 'CFB' : ev._sport === 'ncaaf' ? 'CFB' : ev._sport === 'ncaa-football' ? 'CFB' : ev._sport === 'college-football' ? 'CFB' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : null;
+    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'WNBA' ? 'WNBA' : ev._sport === 'wnba' ? 'WNBA' : ev._sport === 'NFL' ? 'NFL' : ev._sport === 'nfl' ? 'NFL' : ev._sport === 'CFB' ? 'CFB' : ev._sport === 'cfb' ? 'CFB' : ev._sport === 'ncaaf' ? 'CFB' : ev._sport === 'ncaa-football' ? 'CFB' : ev._sport === 'college-football' ? 'CFB' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : ev._sport === 'ATP' ? 'ATP' : ev._sport === 'atp' ? 'ATP' : null;
 
     // CFB dated game slugs beat ncaa-tag CBB (college football is not basketball).
     if (isMainCFBGameSlug(ev.slug) || hasCfbTag) sport = 'CFB';
@@ -1138,9 +1214,14 @@ async function run() {
     else if (!sport && hasNflTag && isMainNFLGameSlug(ev.slug)) sport = 'NFL';
     else if (!sport && hasNflTag) sport = 'NFL';
 
+    // ATP match slugs are authoritative and beat a city-prefixed title parse.
+    if (isMainATPMatchSlug(ev.slug)) sport = 'ATP';
+
     let teams = sport === 'UFC'
       ? extractUFCFightersFromTitle(title)
-      : extractTeamsFromTitle(title);
+      : sport === 'ATP'
+        ? extractATPPlayersFromTitle(title)
+        : extractTeamsFromTitle(title);
     if (!teams) continue;
 
     if (!sport) {
@@ -1187,7 +1268,7 @@ async function run() {
         else if ((socKey && validSOC.has(socKey)) || (socRevKey && validSOC.has(socRevKey))) sport = 'SOC';
       }
     }
-    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'CFB'].includes(sport)) continue;
+    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'CFB', 'ATP'].includes(sport)) continue;
 
     // SOC: only MAIN EPL / La Liga / leftover WC match events (drops HT result,
     // exact-score, corners, champion futures, MLS / UCL / other leagues).
@@ -1195,6 +1276,9 @@ async function run() {
 
     // UFC: only MAIN fight-card ML events (drops method/round props + futures).
     if (sport === 'UFC' && !isMainUFCFightSlug(ev.slug)) continue;
+
+    // ATP: main-match moneylines only (drops set winners, spreads, totals, futures).
+    if (sport === 'ATP' && !isMainATPMatchSlug(ev.slug)) continue;
 
     // WNBA: only MAIN game events (drops championship futures / props).
     if (sport === 'WNBA' && !isMainWNBAGameSlug(ev.slug)) {
@@ -1237,6 +1321,7 @@ async function run() {
       : sport === 'CFB' ? validCFB
       : sport === 'SOC' ? validSOC
       : sport === 'UFC' ? validUFC
+      : sport === 'ATP' ? validATP
       : validNHL;
     const keyReversed = !(key1 && validSet.has(key1)) && (key2 && validSet.has(key2));
     let key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
@@ -1254,6 +1339,18 @@ async function run() {
           commenceTimes[`UFC:${key}`] = ev.startTime;
         }
         console.log(`UFC poly-only (no Odds API row): ${key} — ${title}`);
+      }
+    }
+    if (!key && sport === 'ATP' && isMainATPMatchSlug(ev.slug)) {
+      const polyKey = key1 || key2;
+      if (polyKey && isAtpPolyWindow(ev.startTime, nowMs)) {
+        key = polyKey;
+        if (!key1 && key2) teams.reverse();
+        validATP.add(key);
+        if (ev.startTime && !commenceTimes[`ATP:${key}`]) {
+          commenceTimes[`ATP:${key}`] = ev.startTime;
+        }
+        console.log(`ATP poly-only: ${key} — ${title}`);
       }
     }
     if (!key) continue;
@@ -1309,6 +1406,7 @@ async function run() {
       homeTeam: _homeRawSkeleton,
       eventId: id,
       title: (title || '').substring(0, 80),
+      eventSlug: ev.slug || null,
       commence: commenceTimes[`${sport}:${key}`] || ev.startTime || null,
       polyGameTime: ev.startTime || null,
       polyGameDate: ev.eventDate || null,
@@ -1354,6 +1452,16 @@ async function run() {
         }
         // mlMarket = away-team market, so its Yes token tracks the away side
         // (matches the away-oriented priceHistory convention below).
+      } else if (sport === 'ATP') {
+        // Moneyline only. The event slug market is the match winner.
+        // Set winners, game spreads, and match totals stay off the board.
+        for (const m of markets) {
+          const slug = (m.slug || '').toLowerCase();
+          const kind = String(m.sportsMarketType || '').toLowerCase();
+          if (kind && kind !== 'moneyline') continue;
+          if (!isMainATPMatchSlug(slug) && slug !== String(ev.slug || '').toLowerCase()) continue;
+          if (!mlMarket) mlMarket = m;
+        }
       } else if (sport === 'UFC') {
         // UFC fight card: one 2-way ML market (fighter names as outcomes) plus
         // method/round props. Prefer the market whose slug equals the event slug.
@@ -1404,7 +1512,9 @@ async function run() {
           totalMarket = fgTotalCandidates[0];
         }
       }
-      if (!mlMarket && (sport === 'SOC' || sport === 'UFC')) mlMarket = markets[0];
+      if (!mlMarket && (sport === 'SOC' || sport === 'UFC' || sport === 'ATP')) {
+        if (sport !== 'ATP') mlMarket = markets[0];
+      }
 
       let tokenIds = mlMarket?.clobTokenIds;
       if (typeof tokenIds === 'string') tokenIds = JSON.parse(tokenIds || '[]').filter(Boolean);
@@ -1649,6 +1759,7 @@ async function run() {
         homeTeam: homeRaw,
         eventId: id,
         title: title.substring(0, 80),
+        eventSlug: ev.slug || null,
         commence: commenceTimes[`${sport}:${key}`] || ev.startTime || null,
         polyGameTime: ev.startTime || null,
         polyGameDate: ev.eventDate || null,

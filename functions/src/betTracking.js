@@ -49,6 +49,7 @@ const ESPN_SOC_URLS = [
   "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard",
 ];
 const ESPN_UFC_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard";
+const ESPN_ATP_URL = "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard";
 const ESPN_HEADERS = {
   "User-Agent": "curl/8.7.1",
   "Accept": "application/json",
@@ -912,6 +913,88 @@ async function fetchUFCFinalFights(dateStr) {
   }
 }
 
+function normalizeATPPlayer(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function resolveATPPlayer(raw) {
+  if (!raw) return null;
+  const cleaned = String(raw).replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+  const n = normalizeATPPlayer(cleaned);
+  if (!n || n.length < 3) return null;
+  return n;
+}
+
+function playersMatchATP(rawA, rawB) {
+  const a = resolveATPPlayer(rawA);
+  const b = resolveATPPlayer(rawB);
+  return !!(a && b && a === b);
+}
+
+function isGradableATPMainML(pos) {
+  if (!pos) return false;
+  const mt = (pos.marketType || pos.market || "ml").toString().toLowerCase();
+  if (mt && mt !== "ml" && mt !== "moneyline" && mt !== "h2h") return false;
+  const title = String(pos.title || "");
+  if (/\b(set\s*\d|first\s+set|spread|handicap|o\/u|total\s+sets)\b/i.test(title)) return false;
+  return true;
+}
+
+async function fetchATPFinalMatches(dateStr) {
+  try {
+    const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, "")}` : "";
+    const res = await fetch(`${ESPN_ATP_URL}${ymd}`);
+    if (!res.ok) { logger.warn(`ESPN ATP API ${res.status}`); return []; }
+    const data = await res.json();
+    const matches = [];
+    for (const ev of data.events || []) {
+      const groups = ev.groupings?.length ? ev.groupings : [{ competitions: ev.competitions || [] }];
+      for (const group of groups) {
+        const groupSlug = group.grouping?.slug || "";
+        if (groupSlug && groupSlug !== "mens-singles") continue;
+        for (const comp of group.competitions || []) {
+          const typeSlug = comp.type?.slug || "";
+          if (typeSlug && typeSlug !== "mens-singles") continue;
+          const st = comp.status?.type;
+          const name = st?.name || "";
+          if (name.startsWith("STATUS_POSTPONED") || name.startsWith("STATUS_CANCELED")
+            || name.startsWith("STATUS_CANCELLED") || name.startsWith("STATUS_SUSPENDED")) continue;
+          if (st?.state !== "post" && !st?.completed && !name.startsWith("STATUS_FINAL")) continue;
+          const comps = comp.competitors || [];
+          if (comps.length < 2) continue;
+          const nameOf = (c) => c.athlete?.displayName || c.athlete?.fullName || "";
+          const a = comps.find((c) => c.homeAway === "away") || comps[0];
+          const h = comps.find((c) => c.homeAway === "home") || comps[1];
+          const aName = nameOf(a);
+          const hName = nameOf(h);
+          const aCode = resolveATPPlayer(aName);
+          const hCode = resolveATPPlayer(hName);
+          if (!aCode || !hCode) continue;
+          if (a.winner !== true && h.winner !== true) continue;
+          const dateET = espnEventDateET(comp) || espnEventDateET(ev);
+          matches.push({
+            dateET,
+            awayCode: aCode,
+            homeCode: hCode,
+            awayTeam: aName,
+            homeTeam: hName,
+            awayScore: a.winner === true ? 1 : 0,
+            homeScore: h.winner === true ? 1 : 0,
+          });
+        }
+      }
+    }
+    return matches;
+  } catch (e) {
+    logger.error("ESPN ATP fetch error:", e.message);
+    return [];
+  }
+}
+
 /**
  * Scheduled function: Updates bet results with game outcomes
  */
@@ -1019,6 +1102,7 @@ exports.updateBetResults = onSchedule({
     const allCbbDates = new Set();
     const allSocDates = new Set();
     const allUfcDates = new Set();
+    const allAtpDates = new Set();
     const allNflDates = new Set();
     const allCfbDates = new Set();
     allDocs.forEach((d) => {
@@ -1027,6 +1111,7 @@ exports.updateBetResults = onSchedule({
       if (p.sport === "CBB" && p.date) allCbbDates.add(p.date);
       if (p.sport === "SOC" && p.date) allSocDates.add(p.date);
       if (p.sport === "UFC" && p.date) allUfcDates.add(p.date);
+      if (p.sport === "ATP" && p.date) allAtpDates.add(p.date);
       if (p.sport === "NFL" && p.date) allNflDates.add(p.date);
       if (p.sport === "CFB" && p.date) allCfbDates.add(p.date);
     });
@@ -1085,6 +1170,15 @@ exports.updateBetResults = onSchedule({
         const games = await fetchSOCFinalGames(d);
         socFinalGames.push(...games);
         logger.info(`ESPN SOC API: ${games.length} final World Cup games for ${d}`);
+      }
+    }
+
+    let atpFinalGames = [];
+    if (allSports.has("ATP")) {
+      for (const d of allAtpDates) {
+        const matches = await fetchATPFinalMatches(d);
+        atpFinalGames.push(...matches);
+        logger.info(`ESPN ATP API: ${matches.length} final singles matches for ${d}`);
       }
     }
 
@@ -1255,6 +1349,36 @@ exports.updateBetResults = onSchedule({
                     homeScore: flipped.awayScore,
                     wentBeyond90: flipped.wentBeyond90,
                   };
+                }
+              }
+            }
+          } else if (sport === "ATP") {
+            if (!isGradableATPMainML(pick)) continue;
+            const rawKey = (pick.gameKey || "").replace(/^ATP:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length < 2) continue;
+            const dated = atpFinalGames.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            for (const g of dated) {
+              if (g.awayCode === parts[0] && g.homeCode === parts[1]) {
+                matchingGame = g;
+                break;
+              }
+              if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+                matchingGame = { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+                break;
+              }
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (playersMatchATP(pick.away, g.awayTeam) && playersMatchATP(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+                if (playersMatchATP(pick.away, g.homeTeam) && playersMatchATP(pick.home, g.awayTeam)) {
+                  matchingGame = { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+                  break;
                 }
               }
             }

@@ -27,7 +27,7 @@ const SLUG_TO_SPORT = Object.fromEntries(
   Object.entries(BOARD_SPORT_SLUG).map(([sport, slug]) => [slug, sport]),
 );
 
-export const ACTION_BOARD_SPORTS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
+export const ACTION_BOARD_SPORTS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'ATP'];
 const SPORTS = ACTION_BOARD_SPORTS;
 
 /** Action date chips: today through whatever 72h reaches in ET. */
