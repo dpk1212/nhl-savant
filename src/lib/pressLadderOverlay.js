@@ -402,6 +402,15 @@ export const TRUST_M_ML_UNITS = 1;
 export const TRUST_M_FLOOR_UNITS = 1;
 export const TRUST_M_CONVICTION_RATIO = TRUST_S_CONVICTION_RATIO;
 export const TRUST_M_DOLLAR_MARGIN = 10000;
+// 2026-10-13 (v3) — sizing by margin. A market-book margin ≥ TRUST_M_MARGIN
+// is the best play the book has (14 days 19-4 +33.5pp; Aug 1 → Oct 4
+// staked 27-11 +37%): every staked side floors at TRUST_M_STRONG_FLOOR_UNITS
+// in every market, over the spread / totals caps. A margin of exactly +1 is
+// a mid/low play (14 days 16-23 staked, two months 84-78 −3%): the stake
+// ceils at TRUST_M_PLUS1_CEIL_UNITS, HC or not. The sync's odds cap still
+// trims long dogs after this.
+export const TRUST_M_STRONG_FLOOR_UNITS = 3;
+export const TRUST_M_PLUS1_CEIL_UNITS = 3;
 export { TRUST_TIER_MIN };
 
 /** True when a stamped v8_trustRule carries the TRUST-M door (margin / conviction went through a gate, veto or mute). */
@@ -888,6 +897,10 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * (trust_m_ml_for_…) and floors a spread / total the FOR path would leave
  * at 0u at TRUST_M_FLOOR_UNITS (trust_m_floor_…). The sync applies a
  * trust_m stake through the AGS quality gate as well (trust_m_ags_bypass).
+ * Sizing (v3): a staked margin ≥ TRUST_M_MARGIN side floors at
+ * TRUST_M_STRONG_FLOOR_UNITS in every market, over the spread / totals caps
+ * (+trust_m_floor3_m…); a margin +1 side ceils at TRUST_M_PLUS1_CEIL_UNITS
+ * (+trust_m_ceil3_m1).
  */
 export function evaluatePressLadder(args = {}) {
   const core = evaluatePressLadderCore(args);
@@ -1056,6 +1069,12 @@ export function applyTrustLayer(result, {
     }
   }
 
+  // TRUST-M v3: margin +1 is a mid/low play — ceiling, HC or not, before the market caps.
+  if (m.margin === 1 && out.units > TRUST_M_PLUS1_CEIL_UNITS) {
+    out.units = TRUST_M_PLUS1_CEIL_UNITS;
+    out.reason = `${out.reason}+trust_m_ceil${TRUST_M_PLUS1_CEIL_UNITS}_m1`;
+    rules.push('trust_m_ceil');
+  }
   if (isSpread && out.units > SPREAD_CAP_UNITS) {
     out.units = SPREAD_CAP_UNITS;
     out.reason = `${out.reason}+sp_cap${SPREAD_CAP_UNITS}`;
@@ -1065,6 +1084,12 @@ export function applyTrustLayer(result, {
     out.units = ST_CAP_UNITS;
     out.reason = `${out.reason}+st_cap${ST_CAP_UNITS}`;
     rules.push('st_cap');
+  }
+  // TRUST-M v3: margin ≥ 2 is the best play on the book — floor every staked side, in every market, over the caps.
+  if (m.strong && out.units > 0 && out.units < TRUST_M_STRONG_FLOOR_UNITS) {
+    out.units = TRUST_M_STRONG_FLOOR_UNITS;
+    out.reason = `${out.reason}+trust_m_floor${TRUST_M_STRONG_FLOOR_UNITS}_${mTag}`;
+    rules.push('trust_m_floor');
   }
 
   out.trust = {
