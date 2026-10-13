@@ -411,6 +411,8 @@ import {
   TRUST_M_FLOOR_UNITS,
   TRUST_M_CONVICTION_RATIO,
   TRUST_M_DOLLAR_MARGIN,
+  TRUST_M_STRONG_FLOOR_UNITS,
+  TRUST_M_PLUS1_CEIL_UNITS,
   isTrustMRule,
   isTrustedPositionWallet,
 } from '../src/lib/pressLadderOverlay.js';
@@ -8296,7 +8298,7 @@ async function main() {
         + ` · TRUST-S: spread with a wallet trusted in this sport's spread market for + none against + implied ${Math.round(TRUST_S_IMPLIED_MIN * 100)}–${Math.round(TRUST_S_IMPLIED_MAX * 100)}% → ${TRUST_S_UNITS}u, ${TRUST_S_PRESS_UNITS}u with conviction or two trusted for (${TRUST_S_STAKE_TIER}); a trusted wallet against vetoes the spread`
         + ` · TRUST-T: total with ${TRUST_T_MIN_FOR}+ wallets trusted in this sport's totals market for + none against → ${TRUST_T_UNITS}u, ${TRUST_T_PRESS_UNITS}u at implied ≤${Math.round(TRUST_T_PRESS_IMPLIED_MAX * 100)}% (${TRUST_T_STAKE_TIER}); exactly one trusted wallet for → 0u; trusted wallets both sides → 0u`
         + ` · a wallet holding both sides of the same spread/total is a self-hedge and is netted out of both lists before TRUST-S/T read (+hedge_<wallet>)`
-        + ` · TRUST-M: market-book trusted margin (for − against) ≥ ${TRUST_M_MARGIN}, or +1 with conviction (ticket ≥ ${TRUST_M_CONVICTION_RATIO}× usual or trusted $ margin ≥ $${TRUST_M_DOLLAR_MARGIN / 1000}k), goes through FADE-F / TRUST-S/T vetoes, the TRUST-T lone mute and the AGS quality mute (trust_m_ags_bypass); stakes a 0u moneyline at ${TRUST_M_ML_UNITS}u (trust_m_ml_for_…) and floors a 0u spread / total at ${TRUST_M_FLOOR_UNITS}u (trust_m_floor_…); trusted wallets' open tickets survive the ${30}-min freshness prune`
+        + ` · TRUST-M: market-book trusted margin (for − against) ≥ ${TRUST_M_MARGIN}, or +1 with conviction (ticket ≥ ${TRUST_M_CONVICTION_RATIO}× usual or trusted $ margin ≥ $${TRUST_M_DOLLAR_MARGIN / 1000}k), goes through FADE-F / TRUST-S/T vetoes, the TRUST-T lone mute and the AGS quality mute (trust_m_ags_bypass); stakes a 0u moneyline at ${TRUST_M_ML_UNITS}u (trust_m_ml_for_…) and floors a 0u spread / total at ${TRUST_M_FLOOR_UNITS}u (trust_m_floor_…); trusted wallets' open tickets survive the ${30}-min freshness prune · TRUST-M sizing: margin ≥ ${TRUST_M_MARGIN} floors every staked side at ${TRUST_M_STRONG_FLOOR_UNITS}u in every market, over the caps (+trust_m_floor${TRUST_M_STRONG_FLOOR_UNITS}_m…); margin +1 ceils at ${TRUST_M_PLUS1_CEIL_UNITS}u, HC or not (+trust_m_ceil${TRUST_M_PLUS1_CEIL_UNITS}_m1)`
         + ` · spreads cap ${SPREAD_CAP_UNITS}u, totals cap ${ST_CAP_UNITS}u · gated moneyline rungs flagged v8_trustLift (shadow) · from ${TRUST_FROM}`,
       );
     } else {
