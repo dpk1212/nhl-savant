@@ -122,6 +122,8 @@ const LEAGUE_FALLBACK = {
   SOC: { c1: '#2ECC71', c2: '#0d3320' },
   UFC: { c1: '#C0392B', c2: '#2a0f0c' },
   ATP: { c1: '#C8F542', c2: '#1a2408' },
+  CS2: { c1: '#FF6B1A', c2: '#2a1208' },
+  LOL: { c1: '#C8AA6E', c2: '#1c180e' },
 };
 
 /** Trailing/leading club tokens that are never a unique nick (Chelsea FC vs Fulham FC). */

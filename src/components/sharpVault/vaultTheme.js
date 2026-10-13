@@ -33,7 +33,7 @@ export const T = {
 
 export const SPORT_COLORS = {
   NBA: '#FF8C00', WNBA: '#F472B6', NHL: '#D4AF37', MLB: '#E31837',
-  CBB: '#FF6B35', CFB: '#BF5700', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B', ATP: '#C8F542',
+  CBB: '#FF6B35', CFB: '#BF5700', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B', ATP: '#C8F542', CS2: '#FF6B1A', LOL: '#C8AA6E',
 };
 
 export function fmtVol(v) {

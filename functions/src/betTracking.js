@@ -995,6 +995,100 @@ async function fetchATPFinalMatches(dateStr) {
   }
 }
 
+function resolveEsportsTeam(raw) {
+  if (!raw) return null;
+  const n = String(raw)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  if (!n || n.length < 2) return null;
+  return n;
+}
+
+function esportsTeamsMatch(a, b) {
+  const x = resolveEsportsTeam(a);
+  const y = resolveEsportsTeam(b);
+  return !!(x && y && x === y);
+}
+
+function isGradableEsportsMainML(pos) {
+  if (!pos) return false;
+  const sport = String(pos.sport || "").toUpperCase();
+  if (sport !== "CS2" && sport !== "LOL") return false;
+  const mt = (pos.marketType || pos.market || "ml").toString().toLowerCase();
+  if (mt && mt !== "ml" && mt !== "moneyline" && mt !== "h2h") return false;
+  const slug = String(pos.slug || pos.eventSlug || "").toLowerCase();
+  if (slug.startsWith("cs2-") || slug.startsWith("lol-")) {
+    const main = /^(cs2|lol)-.+-\d{4}-\d{2}-\d{2}$/.test(slug);
+    if (!main) return false;
+  }
+  const title = String(pos.title || "");
+  if (/\b(map\s*\d+|game\s*\d+|o\/u|handicap|odd\/even|baron|dragon)\b/i.test(title)) return false;
+  return true;
+}
+
+const BO3_DISC = { CS2: 1, LOL: 3 };
+
+async function fetchEsportsFinalMatches(sport, dateStr) {
+  const disc = BO3_DISC[sport];
+  if (!disc || !dateStr) return [];
+  const matches = [];
+  try {
+    for (let page = 0; page < 12; page++) {
+      const params = new URLSearchParams({
+        "filter[matches.discipline_id][eq]": String(disc),
+        "filter[matches.status][eq]": "finished",
+        "page[limit]": "50",
+        "page[offset]": String(page * 50),
+        sort: "-start_date",
+      });
+      const res = await fetch(`https://api.bo3.gg/api/v1/matches?${params}`, {
+        headers: { Accept: "application/json", "User-Agent": "nhl-savant" },
+      });
+      if (!res.ok) break;
+      const data = await res.json();
+      const rows = data.results || [];
+      if (!rows.length) break;
+      let older = 0;
+      for (const m of rows) {
+        const dateET = m.start_date
+          ? new Date(m.start_date).toLocaleDateString("en-CA", { timeZone: "America/New_York" })
+          : null;
+        if (!dateET) continue;
+        if (dateET < dateStr) { older++; continue; }
+        if (dateET !== dateStr) continue;
+        const n1 = m.bet_updates?.team_1?.name;
+        const n2 = m.bet_updates?.team_2?.name;
+        if (!n1 || !n2 || !m.winner_team_id) continue;
+        const t1 = m.winner_team_id === m.team1_id;
+        const t2 = m.winner_team_id === m.team2_id;
+        if (t1 === t2) continue;
+        const aCode = resolveEsportsTeam(n1);
+        const hCode = resolveEsportsTeam(n2);
+        if (!aCode || !hCode) continue;
+        matches.push({
+          dateET,
+          awayCode: aCode,
+          homeCode: hCode,
+          awayTeam: n1,
+          homeTeam: n2,
+          awayScore: t1 ? 1 : 0,
+          homeScore: t2 ? 1 : 0,
+        });
+      }
+      const oldest = rows[rows.length - 1].start_date
+        ? new Date(rows[rows.length - 1].start_date).toLocaleDateString("en-CA", { timeZone: "America/New_York" })
+        : null;
+      if ((oldest && oldest < dateStr) || older === rows.length) break;
+    }
+    return matches;
+  } catch (e) {
+    logger.error(`BO3 ${sport} fetch error:`, e.message);
+    return [];
+  }
+}
+
 /**
  * Scheduled function: Updates bet results with game outcomes
  */
@@ -1103,6 +1197,8 @@ exports.updateBetResults = onSchedule({
     const allSocDates = new Set();
     const allUfcDates = new Set();
     const allAtpDates = new Set();
+    const allCs2Dates = new Set();
+    const allLolDates = new Set();
     const allNflDates = new Set();
     const allCfbDates = new Set();
     allDocs.forEach((d) => {
@@ -1112,6 +1208,8 @@ exports.updateBetResults = onSchedule({
       if (p.sport === "SOC" && p.date) allSocDates.add(p.date);
       if (p.sport === "UFC" && p.date) allUfcDates.add(p.date);
       if (p.sport === "ATP" && p.date) allAtpDates.add(p.date);
+      if (p.sport === "CS2" && p.date) allCs2Dates.add(p.date);
+      if (p.sport === "LOL" && p.date) allLolDates.add(p.date);
       if (p.sport === "NFL" && p.date) allNflDates.add(p.date);
       if (p.sport === "CFB" && p.date) allCfbDates.add(p.date);
     });
@@ -1179,6 +1277,24 @@ exports.updateBetResults = onSchedule({
         const matches = await fetchATPFinalMatches(d);
         atpFinalGames.push(...matches);
         logger.info(`ESPN ATP API: ${matches.length} final singles matches for ${d}`);
+      }
+    }
+
+    let cs2FinalGames = [];
+    if (allSports.has("CS2")) {
+      for (const d of allCs2Dates) {
+        const matches = await fetchEsportsFinalMatches("CS2", d);
+        cs2FinalGames.push(...matches);
+        logger.info(`BO3 CS2: ${matches.length} final matches for ${d}`);
+      }
+    }
+
+    let lolFinalGames = [];
+    if (allSports.has("LOL")) {
+      for (const d of allLolDates) {
+        const matches = await fetchEsportsFinalMatches("LOL", d);
+        lolFinalGames.push(...matches);
+        logger.info(`BO3 LoL: ${matches.length} final matches for ${d}`);
       }
     }
 
@@ -1377,6 +1493,37 @@ exports.updateBetResults = onSchedule({
                   break;
                 }
                 if (playersMatchATP(pick.away, g.homeTeam) && playersMatchATP(pick.home, g.awayTeam)) {
+                  matchingGame = { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+                  break;
+                }
+              }
+            }
+          } else if (sport === "CS2" || sport === "LOL") {
+            if (!isGradableEsportsMainML(pick)) continue;
+            const rawKey = (pick.gameKey || "").replace(/^(CS2|LOL):/, "");
+            const parts = rawKey.split("_");
+            if (parts.length < 2) continue;
+            const pool = sport === "CS2" ? cs2FinalGames : lolFinalGames;
+            const dated = pool.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            for (const g of dated) {
+              if (g.awayCode === parts[0] && g.homeCode === parts[1]) {
+                matchingGame = g;
+                break;
+              }
+              if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+                matchingGame = { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+                break;
+              }
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (esportsTeamsMatch(pick.away, g.awayTeam) && esportsTeamsMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+                if (esportsTeamsMatch(pick.away, g.homeTeam) && esportsTeamsMatch(pick.home, g.awayTeam)) {
                   matchingGame = { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
                   break;
                 }

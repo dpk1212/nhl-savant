@@ -103,6 +103,8 @@ function sportColor(sport) {
   if (sport === 'SOC') return '#2ECC71';
   if (sport === 'UFC') return '#C0392B';
   if (sport === 'ATP') return '#C8F542';
+  if (sport === 'CS2') return '#FF6B1A';
+  if (sport === 'LOL') return '#C8AA6E';
   if (sport === 'CBB') return '#FF6B35';
   if (sport === 'CFB') return '#BF5700';
   return B.gold;

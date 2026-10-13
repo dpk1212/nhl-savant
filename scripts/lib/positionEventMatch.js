@@ -60,6 +60,7 @@ export function slugDatesAreBoardLeftovers(slugDates, boardDate) {
 const FOREIGN_SLUG_LEAGUES = new Set([
   'mex', 'epl', 'lal', 'uefa', 'ucl', 'uel', 'mls', 'liga', 'serie', 'bundes',
   'fifa', 'fifwc', 'caf', 'afc', 'ufc', 'mma', 'atp', 'wta', 'canpl', 'cpl',
+  'cs2', 'lol',
 ]);
 
 /**

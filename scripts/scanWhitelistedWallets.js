@@ -62,6 +62,7 @@ import { dirname, join } from 'path';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchATPPositionTitle } from './lib/atpPlayers.js';
+import { matchEsportsPositionTitle } from './lib/esportsTeams.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { matchCFBPositionTitle, resolveCFBTeam, CFB_NAME_TO_CODE } from './lib/cfbTeams.js';
@@ -290,7 +291,7 @@ function extractTeamsFromTitle(title) {
 
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'ATP']) {
+  for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'ATP', 'CS2', 'LOL']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -458,7 +459,7 @@ function collectScannedWallets() {
   for (const f of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const data = loadJSON(f);
     if (!data) continue;
-    for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'ATP']) {
+    for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'ATP', 'CS2', 'LOL']) {
       const games = data[sport] || {};
       if (typeof games !== 'object') continue;
       for (const g of Object.values(games)) {
@@ -747,7 +748,8 @@ async function run() {
     for (const pos of fetched.data) {
       const title = pos.title || '';
       if (isPlayerPropsEvent(title, pos.slug || pos.eventSlug)) continue;
-      let match = matchPositionToGame(title, todaysGames, cbbMap)
+      let match = matchEsportsPositionTitle(title, todaysGames, pos.slug || pos.eventSlug || '')
+        || matchPositionToGame(title, todaysGames, cbbMap)
         || matchSoccerPositionTitle(title, todaysGames)
         || matchUFCPositionTitle(title, todaysGames)
         || matchATPPositionTitle(title, todaysGames, pos.slug || pos.eventSlug || '')
@@ -772,7 +774,7 @@ async function run() {
       const isTotal = ['over', 'under'].includes(outcomeNorm);
       const isSpread = forcedSpread || (!isTotal && (titleLower.includes('spread') || /[+-]\d+\.?\d*/.test(outcome)));
       const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
-      if (match.sport === 'ATP' && marketType !== 'ml') continue;
+      if ((match.sport === 'ATP' || match.sport === 'CS2' || match.sport === 'LOL') && marketType !== 'ml') continue;
       const game = todaysGames[`${match.sport}:${match.key}`];
       const polyGame = polyData?.[match.sport]?.[match.key];
 
@@ -1172,7 +1174,7 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
     if (!data) {
       // If the main scanner didn't produce this file (e.g. no totals
       // today), bootstrap a minimal shape so we can still inject.
-      data = { NHL: {}, CBB: {}, CFB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, ATP: {}, _whitelist_bootstrap: true };
+      data = { NHL: {}, CBB: {}, CFB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, ATP: {}, CS2: {}, LOL: {}, _whitelist_bootstrap: true };
     }
 
     for (const pos of bucket.positions) {

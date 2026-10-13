@@ -34,6 +34,7 @@ import {
   playersMatch,
   isGradableATPMainML,
 } from './lib/atpPlayers.js';
+import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML } from './lib/esportsTeams.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { shouldGradeExited } from '../src/lib/actionLockPin.js';
 import {
@@ -878,8 +879,78 @@ async function fetchATPFinalMatches(dateStr) {
   }
 }
 
-function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = [], wnbaFinals = [], nflFinals = [], cfbFinals = [], atpFinals = []) {
-  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB|ATP):/, '');
+const BO3_DISC = { CS2: 1, LOL: 3 };
+const BO3_MATCHES = 'https://api.bo3.gg/api/v1/matches';
+
+function bo3DateET(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+/**
+ * Finished CS2 / LoL series from BO3. ESPN has no esports scoreboard.
+ * Team names come from the match's book snapshot. A finished match with
+ * no names stays unmatched so the position remains PENDING.
+ * BO3's date filters are ignored by the API, so pages are walked client-side.
+ */
+async function fetchEsportsFinalMatches(sport, dateStr) {
+  const disc = BO3_DISC[sport];
+  if (!disc || !dateStr) return [];
+  const matches = [];
+  try {
+    for (let page = 0; page < 12; page++) {
+      const params = new URLSearchParams({
+        'filter[matches.discipline_id][eq]': String(disc),
+        'filter[matches.status][eq]': 'finished',
+        'page[limit]': '50',
+        'page[offset]': String(page * 50),
+        sort: '-start_date',
+      });
+      const res = await fetch(`${BO3_MATCHES}?${params}`, {
+        headers: { Accept: 'application/json', 'User-Agent': 'nhl-savant' },
+      });
+      if (!res.ok) break;
+      const data = await res.json();
+      const rows = data.results || [];
+      if (!rows.length) break;
+      let older = 0;
+      for (const m of rows) {
+        const dateET = bo3DateET(m.start_date);
+        if (!dateET) continue;
+        if (dateET < dateStr) { older++; continue; }
+        if (dateET !== dateStr) continue;
+        const n1 = m.bet_updates?.team_1?.name;
+        const n2 = m.bet_updates?.team_2?.name;
+        if (!n1 || !n2 || !m.winner_team_id) continue;
+        const t1 = m.winner_team_id === m.team1_id;
+        const t2 = m.winner_team_id === m.team2_id;
+        if (t1 === t2) continue;
+        const aCode = resolveEsportsTeam(n1);
+        const hCode = resolveEsportsTeam(n2);
+        if (!aCode || !hCode) continue;
+        matches.push({
+          dateET,
+          awayCode: aCode,
+          homeCode: hCode,
+          awayTeam: n1,
+          homeTeam: n2,
+          awayScore: t1 ? 1 : 0,
+          homeScore: t2 ? 1 : 0,
+        });
+      }
+      const oldest = bo3DateET(rows[rows.length - 1].start_date);
+      if ((oldest && oldest < dateStr) || older === rows.length) break;
+    }
+    return matches;
+  } catch (e) {
+    console.error(`BO3 ${sport} fetch error:`, e.message);
+    return [];
+  }
+}
+
+function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = [], wnbaFinals = [], nflFinals = [], cfbFinals = [], atpFinals = [], cs2Finals = [], lolFinals = []) {
+  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB|ATP|CS2|LOL):/, '');
   const parts = rawKey.split('_');
 
   if (pos.sport === 'NHL') {
@@ -1030,6 +1101,26 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
     return null;
   }
 
+  if (pos.sport === 'CS2' || pos.sport === 'LOL') {
+    if (!isGradableEsportsMainML(pos)) return null;
+    if (parts.length < 2) return null;
+    const pool = pos.sport === 'CS2' ? cs2Finals : lolFinals;
+    const dated = pool.filter(g => finalDateMatches(g, pos));
+    for (const g of dated) {
+      if (g.awayCode === parts[0] && g.homeCode === parts[1]) return g;
+      if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+        return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+      }
+    }
+    for (const g of dated) {
+      if (esportsTeamsMatch(pos.away, g.awayTeam) && esportsTeamsMatch(pos.home, g.homeTeam)) return g;
+      if (esportsTeamsMatch(pos.away, g.homeTeam) && esportsTeamsMatch(pos.home, g.awayTeam)) {
+        return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+      }
+    }
+    return null;
+  }
+
   return null;
 }
 
@@ -1085,7 +1176,7 @@ async function loadGradeCandidates(db) {
 const PICK_SCORE_COLS = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
 
 function knownFinalKey(sport, date, gameKey) {
-  const raw = String(gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB|ATP):/, '');
+  const raw = String(gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB|ATP|CS2|LOL):/, '');
   return `${sport}|${date}|${raw}`;
 }
 
@@ -1095,6 +1186,7 @@ async function collectPendingPickDates(db) {
   const bySport = {
     CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(),
     WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set(), ATP: new Set(),
+    CS2: new Set(), LOL: new Set(),
   };
   for (const col of PICK_SCORE_COLS) {
     const snap = await db.collection(col).where('status', '==', 'PENDING').get();
@@ -1165,6 +1257,8 @@ async function gradePendingSharpFlowPicks(db, finals) {
         finals.nflFinals,
         finals.cfbFinals,
         finals.atpFinals,
+        finals.cs2Finals,
+        finals.lolFinals,
       );
       if (!game) {
         skipped++;
@@ -1181,7 +1275,9 @@ async function gradePendingSharpFlowPicks(db, finals) {
                 : pick.sport === 'CFB' ? 'ESPN_CFB_API'
                 : pick.sport === 'SOC' ? 'ESPN_SOC_API'
                   : pick.sport === 'UFC' ? 'ESPN_UFC_API'
-                    : pick.sport === 'ATP' ? 'ESPN_ATP_API' : 'ESPN_MLB_API';
+                    : pick.sport === 'ATP' ? 'ESPN_ATP_API'
+                      : pick.sport === 'CS2' ? 'BO3_CS2'
+                        : pick.sport === 'LOL' ? 'BO3_LOL' : 'ESPN_MLB_API';
       const updates = {
         'result.awayScore': game.awayScore,
         'result.homeScore': game.homeScore,
@@ -1292,7 +1388,7 @@ async function collectOpenTails(db) {
 async function gradeOpenTails(db, openTails, finals) {
   const {
     nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
-    ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, knownFinals,
+    ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals, knownFinals,
   } = finals;
   let graded = 0;
   let waiting = 0;
@@ -1311,7 +1407,7 @@ async function gradeOpenTails(db, openTails, finals) {
     if (!game) {
       game = findMatchingGame(
         pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
-        ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals,
+        ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals,
       );
     }
     if (!game || game.awayScore == null || game.homeScore == null) {
@@ -1379,6 +1475,8 @@ async function main() {
   const socDates = new Set();
   const ufcDates = new Set();
   const atpDates = new Set();
+  const cs2Dates = new Set();
+  const lolDates = new Set();
   for (const doc of snapshot.docs) {
     const d = doc.data();
     sports.add(d.sport);
@@ -1392,6 +1490,8 @@ async function main() {
     if (d.sport === 'SOC' && d.date) socDates.add(d.date);
     if (d.sport === 'UFC' && d.date) ufcDates.add(d.date);
     if (d.sport === 'ATP' && d.date) atpDates.add(d.date);
+    if (d.sport === 'CS2' && d.date) cs2Dates.add(d.date);
+    if (d.sport === 'LOL' && d.date) lolDates.add(d.date);
   }
 
   const openTails = await collectOpenTails(db);
@@ -1401,12 +1501,13 @@ async function main() {
     const bucket = {
       CBB: cbbDates, NHL: nhlDates, MLB: mlbDates, NBA: nbaDates,
       WNBA: wnbaDates, NFL: nflDates, CFB: cfbDates, SOC: socDates, UFC: ufcDates, ATP: atpDates,
+      CS2: cs2Dates, LOL: lolDates,
     }[t.sport];
     if (bucket) bucket.add(t.date);
   }
 
   const pendingPicks = TAILS_ONLY
-    ? { sports: new Set(), bySport: { CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(), WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set(), ATP: new Set() } }
+    ? { sports: new Set(), bySport: { CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(), WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set(), ATP: new Set(), CS2: new Set(), LOL: new Set() } }
     : await collectPendingPickDates(db);
   for (const s of pendingPicks.sports) sports.add(s);
   for (const d of pendingPicks.bySport.CBB) cbbDates.add(d);
@@ -1419,8 +1520,10 @@ async function main() {
   for (const d of pendingPicks.bySport.SOC) socDates.add(d);
   for (const d of pendingPicks.bySport.UFC) ufcDates.add(d);
   for (const d of pendingPicks.bySport.ATP) atpDates.add(d);
+  for (const d of pendingPicks.bySport.CS2 || []) cs2Dates.add(d);
+  for (const d of pendingPicks.bySport.LOL || []) lolDates.add(d);
 
-  const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...cfbDates, ...socDates, ...ufcDates, ...atpDates]);
+  const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...cfbDates, ...socDates, ...ufcDates, ...atpDates, ...cs2Dates, ...lolDates]);
   const knownFinals = await loadKnownFinalsFromPicks(db, allDates);
   console.log(`Source A known finals: ${knownFinals.size} games (already-graded picks)`);
 
@@ -1515,9 +1618,27 @@ async function main() {
     }
   }
 
+  let cs2Finals = [];
+  if (sports.has('CS2')) {
+    for (const d of recentScoreboardDates(cs2Dates)) {
+      const matches = await fetchEsportsFinalMatches('CS2', d);
+      cs2Finals.push(...matches);
+      console.log(`BO3 CS2: ${matches.length} final matches for ${d}`);
+    }
+  }
+
+  let lolFinals = [];
+  if (sports.has('LOL')) {
+    for (const d of recentScoreboardDates(lolDates)) {
+      const matches = await fetchEsportsFinalMatches('LOL', d);
+      lolFinals.push(...matches);
+      console.log(`BO3 LoL: ${matches.length} final matches for ${d}`);
+    }
+  }
+
   if (!TAILS_ONLY) {
     await gradePendingSharpFlowPicks(db, {
-      nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals,
+      nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals,
     });
   }
 
@@ -1541,7 +1662,7 @@ async function main() {
 
       let game = knownFinals.get(knownFinalKey(pos.sport, pos.date, pos.gameKey)) || null;
       if (!game) {
-        game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals);
+        game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals);
       }
       if (!game) {
         noGame++;
@@ -1674,7 +1795,7 @@ async function main() {
 
   await gradeOpenTails(db, openTails, {
     nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
-    ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, knownFinals,
+    ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals, knownFinals,
   });
 
   console.log('\nDone.');

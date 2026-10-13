@@ -20,6 +20,7 @@ import { isWNBAMarketTitle } from './lib/wnbaTeams.js';
 import { isNFLMarketTitle } from './lib/nflTeams.js';
 import { isCFBMarketTitle } from './lib/cfbTeams.js';
 import { isATPMarketTitle } from './lib/atpPlayers.js';
+import { classifyEsportsMarket } from './lib/esportsTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -68,6 +69,8 @@ const SPORT_KEYWORDS = {
 };
 
 function classifySport(title, slug = '') {
+  const es = classifyEsportsMarket(title, slug);
+  if (es) return es;
   if (isATPMarketTitle(title, slug)) return 'ATP';
   const t = title.toLowerCase();
   // WNBA before NBA keyword loop — shared nicknames (Liberty, Sun, Sparks, …).

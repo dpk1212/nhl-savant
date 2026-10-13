@@ -44,6 +44,13 @@ import {
   isAtpPolyWindow,
 } from './lib/atpPlayers.js';
 import {
+  ESPORTS_SERIES,
+  esportFromSlug,
+  extractEsportsTeamsFromTitle,
+  makeEsportsGameKey,
+  isEsportsPolyWindow,
+} from './lib/esportsTeams.js';
+import {
   isNonFullGameTotalMarket,
   pickFullGameMlMarket,
   pickFullGameSpreadMarket,
@@ -144,6 +151,36 @@ async function listMainAtpMatchEvents() {
     if (arr.length < ATP_SERIES_PAGE) break;
   }
   console.log(`  📡 atp main matches: ${mains.length} from ${raw} series events (${pages} pages)`);
+  return mains;
+}
+
+async function listMainEsportsMatchEvents(seriesId, label) {
+  const mains = [];
+  let pages = 0;
+  let raw = 0;
+  for (let offset = 0; offset < ATP_SERIES_CAP; offset += ATP_SERIES_PAGE) {
+    const params = new URLSearchParams({
+      active: 'true',
+      closed: 'false',
+      limit: String(ATP_SERIES_PAGE),
+      offset: String(offset),
+      series_id: seriesId,
+    });
+    let arr = [];
+    try {
+      const events = await get(`/events?${params}`);
+      arr = Array.isArray(events) ? events : [];
+    } catch {
+      break;
+    }
+    pages += 1;
+    raw += arr.length;
+    for (const ev of arr) {
+      if (esportFromSlug(ev.slug)) mains.push(ev);
+    }
+    if (arr.length < ATP_SERIES_PAGE) break;
+  }
+  console.log(`  📡 ${label} main matches: ${mains.length} from ${raw} series events (${pages} pages)`);
   return mains;
 }
 
@@ -592,6 +629,9 @@ function matchToGameKey(teams, cbbMap, sport) {
   }
   if (sport === 'ATP') {
     return makeATPGameKey(a, b);
+  }
+  if (sport === 'CS2' || sport === 'LOL') {
+    return makeEsportsGameKey(a, b);
   }
   return null;
 }
@@ -1046,15 +1086,42 @@ async function loadTodaysSchedule(cbbMap) {
     console.warn('Could not seed ATP from Polymarket series:', e.message);
   }
 
+  const validCS2 = new Set();
+  const validLOL = new Set();
+  for (const [sport, seriesId] of Object.entries(ESPORTS_SERIES)) {
+    try {
+      const list = await listMainEsportsMatchEvents(seriesId, sport);
+      let seeded = 0;
+      for (const ev of list) {
+        const title = ev.title || ev.question || '';
+        const extracted = extractEsportsTeamsFromTitle(title);
+        if (!extracted || extracted.sport !== sport) {
+          console.warn(`${sport} Poly seed miss: "${title}" (${ev.slug})`);
+          continue;
+        }
+        const gk = makeEsportsGameKey(extracted.teams[0], extracted.teams[1]);
+        if (!gk) continue;
+        if (!isEsportsPolyWindow(ev.startTime)) continue;
+        const bucket = sport === 'CS2' ? validCS2 : validLOL;
+        if (!bucket.has(gk)) seeded++;
+        bucket.add(gk);
+        if (ev.startTime && !commenceTimes[`${sport}:${gk}`]) commenceTimes[`${sport}:${gk}`] = ev.startTime;
+      }
+      console.log(`📋 ${sport} Poly seed: +${seeded} → ${(sport === 'CS2' ? validCS2 : validLOL).size}`);
+    } catch (e) {
+      console.warn(`Could not seed ${sport} from Polymarket series:`, e.message);
+    }
+  }
+
   applyCommenceOverrides(commenceTimes);
-  return { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, validCFB, validATP, commenceTimes };
+  return { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, validCFB, validATP, validCS2, validLOL, commenceTimes };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, CFB: {}, ATP: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, CFB: {}, ATP: {}, CS2: {}, LOL: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, validCFB, validATP, commenceTimes } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, validCFB, validATP, validCS2, validLOL, commenceTimes } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -1112,6 +1179,14 @@ async function run() {
     for (const ev of list) events.push({ ...ev, _tag: 'atp', _sport: 'ATP' });
   } catch (e) {
     console.warn('Failed to fetch ATP series:', e.message);
+  }
+  for (const [sport, seriesId] of Object.entries(ESPORTS_SERIES)) {
+    try {
+      const list = await listMainEsportsMatchEvents(seriesId, sport);
+      for (const ev of list) events.push({ ...ev, _tag: sport.toLowerCase(), _sport: sport });
+    } catch (e) {
+      console.warn(`Failed to fetch ${sport} series:`, e.message);
+    }
   }
 
   const haveNflKey = new Set();
@@ -1186,7 +1261,7 @@ async function run() {
       || evTags.includes('la-liga');
     const hasUfcTag = evTags.includes('ufc') || evTags.includes('mma');
 
-    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'WNBA' ? 'WNBA' : ev._sport === 'wnba' ? 'WNBA' : ev._sport === 'NFL' ? 'NFL' : ev._sport === 'nfl' ? 'NFL' : ev._sport === 'CFB' ? 'CFB' : ev._sport === 'cfb' ? 'CFB' : ev._sport === 'ncaaf' ? 'CFB' : ev._sport === 'ncaa-football' ? 'CFB' : ev._sport === 'college-football' ? 'CFB' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : ev._sport === 'ATP' ? 'ATP' : ev._sport === 'atp' ? 'ATP' : null;
+    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'WNBA' ? 'WNBA' : ev._sport === 'wnba' ? 'WNBA' : ev._sport === 'NFL' ? 'NFL' : ev._sport === 'nfl' ? 'NFL' : ev._sport === 'CFB' ? 'CFB' : ev._sport === 'cfb' ? 'CFB' : ev._sport === 'ncaaf' ? 'CFB' : ev._sport === 'ncaa-football' ? 'CFB' : ev._sport === 'college-football' ? 'CFB' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : ev._sport === 'ATP' ? 'ATP' : ev._sport === 'atp' ? 'ATP' : ev._sport === 'CS2' ? 'CS2' : ev._sport === 'LOL' ? 'LOL' : null;
 
     // CFB dated game slugs beat ncaa-tag CBB (college football is not basketball).
     if (isMainCFBGameSlug(ev.slug) || hasCfbTag) sport = 'CFB';
@@ -1216,12 +1291,17 @@ async function run() {
 
     // ATP match slugs are authoritative and beat a city-prefixed title parse.
     if (isMainATPMatchSlug(ev.slug)) sport = 'ATP';
+    // CS2 / LoL slugs beat nickname collisions (Falcons, magic).
+    const esSlugSport = esportFromSlug(ev.slug);
+    if (esSlugSport) sport = esSlugSport;
 
     let teams = sport === 'UFC'
       ? extractUFCFightersFromTitle(title)
       : sport === 'ATP'
         ? extractATPPlayersFromTitle(title)
-        : extractTeamsFromTitle(title);
+        : (sport === 'CS2' || sport === 'LOL')
+          ? (extractEsportsTeamsFromTitle(title)?.teams || null)
+          : extractTeamsFromTitle(title);
     if (!teams) continue;
 
     if (!sport) {
@@ -1268,7 +1348,7 @@ async function run() {
         else if ((socKey && validSOC.has(socKey)) || (socRevKey && validSOC.has(socRevKey))) sport = 'SOC';
       }
     }
-    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'CFB', 'ATP'].includes(sport)) continue;
+    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'CFB', 'ATP', 'CS2', 'LOL'].includes(sport)) continue;
 
     // SOC: only MAIN EPL / La Liga / leftover WC match events (drops HT result,
     // exact-score, corners, champion futures, MLS / UCL / other leagues).
@@ -1279,6 +1359,9 @@ async function run() {
 
     // ATP: main-match moneylines only (drops set winners, spreads, totals, futures).
     if (sport === 'ATP' && !isMainATPMatchSlug(ev.slug)) continue;
+
+    // CS2 / LoL: main-match moneylines only (drops map winners, handicaps, totals).
+    if ((sport === 'CS2' || sport === 'LOL') && esportFromSlug(ev.slug) !== sport) continue;
 
     // WNBA: only MAIN game events (drops championship futures / props).
     if (sport === 'WNBA' && !isMainWNBAGameSlug(ev.slug)) {
@@ -1322,6 +1405,8 @@ async function run() {
       : sport === 'SOC' ? validSOC
       : sport === 'UFC' ? validUFC
       : sport === 'ATP' ? validATP
+      : sport === 'CS2' ? validCS2
+      : sport === 'LOL' ? validLOL
       : validNHL;
     const keyReversed = !(key1 && validSet.has(key1)) && (key2 && validSet.has(key2));
     let key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
@@ -1351,6 +1436,19 @@ async function run() {
           commenceTimes[`ATP:${key}`] = ev.startTime;
         }
         console.log(`ATP poly-only: ${key} — ${title}`);
+      }
+    }
+    if (!key && (sport === 'CS2' || sport === 'LOL') && esportFromSlug(ev.slug) === sport) {
+      const polyKey = key1 || key2;
+      const bucket = sport === 'CS2' ? validCS2 : validLOL;
+      if (polyKey && isEsportsPolyWindow(ev.startTime, nowMs)) {
+        key = polyKey;
+        if (!key1 && key2) teams.reverse();
+        bucket.add(key);
+        if (ev.startTime && !commenceTimes[`${sport}:${key}`]) {
+          commenceTimes[`${sport}:${key}`] = ev.startTime;
+        }
+        console.log(`${sport} poly-only: ${key} — ${title}`);
       }
     }
     if (!key) continue;
@@ -1462,6 +1560,15 @@ async function run() {
           if (!isMainATPMatchSlug(slug) && slug !== String(ev.slug || '').toLowerCase()) continue;
           if (!mlMarket) mlMarket = m;
         }
+      } else if (sport === 'CS2' || sport === 'LOL') {
+        // Moneyline only. Map / game winners are child slugs and stay off.
+        for (const m of markets) {
+          const slug = (m.slug || '').toLowerCase();
+          const kind = String(m.sportsMarketType || '').toLowerCase();
+          if (kind && kind !== 'moneyline') continue;
+          if (esportFromSlug(slug) !== sport && slug !== String(ev.slug || '').toLowerCase()) continue;
+          if (!mlMarket) mlMarket = m;
+        }
       } else if (sport === 'UFC') {
         // UFC fight card: one 2-way ML market (fighter names as outcomes) plus
         // method/round props. Prefer the market whose slug equals the event slug.
@@ -1512,8 +1619,8 @@ async function run() {
           totalMarket = fgTotalCandidates[0];
         }
       }
-      if (!mlMarket && (sport === 'SOC' || sport === 'UFC' || sport === 'ATP')) {
-        if (sport !== 'ATP') mlMarket = markets[0];
+      if (!mlMarket && (sport === 'SOC' || sport === 'UFC' || sport === 'ATP' || sport === 'CS2' || sport === 'LOL')) {
+        if (sport !== 'ATP' && sport !== 'CS2' && sport !== 'LOL') mlMarket = markets[0];
       }
 
       let tokenIds = mlMarket?.clobTokenIds;
