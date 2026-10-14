@@ -623,7 +623,7 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
             const mineOpen = openRows.filter((r) => {
               if (String(r.sport || '').toUpperCase() !== g.sport) return false;
               return String(r.marketType || '').toUpperCase() === m.market;
-            });
+            }).sort((a, b) => (Number(a.commenceMs) || 0) - (Number(b.commenceMs) || 0));
             const hot = mineOpen.reduce((best, r) => {
               const ratio = Number(r.displaySizeRatio ?? r.sizeRatio);
               return Number.isFinite(ratio) && ratio > best ? ratio : best;
@@ -632,7 +632,7 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
             const record = m.honest?.record
               ? `All time ${m.honest.record}${m.n ? ` · ${m.n} bets` : ''}`
               : (m.n ? `All time · ${m.n} bets` : '—');
-            const tape = open ? marketTape(walletProfiles, holding.walletShort, g.sport, m.market) : null;
+            const tape = open ? marketTape(walletProfiles, holding.walletShort, g.sport, m.market, { limit: 80 }) : null;
             return (
               <div key={key} style={{ borderTop: `1px solid ${B.hair}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1569,7 +1569,7 @@ function WeightBar({ value, maxAbs, height = 10 }) {
 
 function PortfolioStage({
   holdings, isMobile, selected, nameFocus, onToggle, onOpen, onRename, onRemove,
-  walletProfiles, actionRows, onToggleBets,
+  walletProfiles, actionRows, openRows, onToggleBets,
 }) {
   const [sport, setSport] = useState(null);
   const [span, setSpan] = useState('30d');
@@ -1782,7 +1782,7 @@ function PortfolioStage({
                   <MarketBook
                     holding={face.holding}
                     walletProfiles={walletProfiles}
-                    actionRows={actionRows}
+                    actionRows={openRows?.length ? openRows : actionRows}
                     sportFilter={sport}
                     onToggleBets={onToggleBets}
                     onRemove={() => onRemove?.(id)}
@@ -2407,6 +2407,7 @@ export default function MySharpsDesk({
               nameFocus={nameFocus}
               walletProfiles={walletProfiles}
               actionRows={actionRows}
+              openRows={weekRows}
               onToggleBets={onToggleBets}
               onToggle={(id) => setSelected((cur) => (cur === id ? null : id))}
               onOpen={(id) => setSelected(id)}
