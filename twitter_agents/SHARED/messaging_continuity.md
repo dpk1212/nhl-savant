@@ -7,17 +7,18 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-13 · HERO **GIVE** · same NHL wallet on Penguins and Wild |
+| Last updated | 2026-10-14 · HERO **GIVE** · Brewers dog the board is fading |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
 | Ask temperature | **Give.** No fork. |
-| Account arc | One wallet, 22-11, L30 +$31K. Penguins locked at -147. Wild flagged, +104 to -104, locks 8:10. |
+| Account arc | Last night’s highlighted sharp screwed the post. Tonight the lead is $312K on the Dodgers vs a 10-4’s $21K on the Brewers. Locks 7:45. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 10/13 ~8:02 ET | Hero **GIVE** | `22-11. Up $31,000.` / same wallet Penguins + Wild | **P + C** | none | **Staged** |
+| 10/14 ~7:01 ET | Hero **GIVE** | `$312,000 is on the Dodgers.` / 10-4’s $21K on the Brewers | **C + L** | none | **Staged** |
+| 10/13 ~8:02 ET | Hero **GIVE** | `22-11. Up $31,000.` / same wallet Penguins + Wild | **P + C** | none | **Staged** · Dale: that sharp screwed him |
 | 9/27 ~12:08 ET | Hero **GIVE** | `$174,000 ON THE GIANTS` / $546K against | **S + C** | none | **Staged** |
 | 9/26 ~7:36 ET | Hero **GIVE** | `$68,000 AT 12.9× ON MISSISSIPPI STATE` | **S + C** | none | **Staged** |
 | 9/23 ~5:32 ET | Self-QT **ASK** | `We're 4-1 today, and one of them lost.` / first week free | **S+P+C+L** | canonical offer | **Staged** |
@@ -31,11 +32,11 @@
 ---
 
 ## Angle lock
-**ONE:** The same 22-11 wallet, up $31,000 the last 30 days, is on Pittsburgh and Minnesota.  
-**Hook:** `22-11. Up $31,000 the last 30 days.`  
-**Body:** moneylines 10-4 · Penguins $3K at 1.3×, $7.4K vs $108, -147 vs Pin -157, flagged -141, 3u locked · Wild $4.7K at 2×, flagged +104 now -104, $5.6K vs $2.6K, Pin -108, 1u, 8:10.  
+**ONE:** A 10-4 up $118,000 has $21,000 on the Brewers, and $312,000 of the tracked money is on the Dodgers.  
+**Hook:** `$312,000 is on the Dodgers.`  
+**Body:** whole record is 10-4 · confirmed $23K vs $6.2K · losing money $335K on LA · 1.5× · plays-like-this 53.6% at +34% · beat close 67% · last three Brewers ML cashed · +156 vs Pin +153 · flagged +156 · 1.5u · 7:45.  
 **Ask:** none.  
-**Killed:** 12-4 next to 22-11 · calling $3K a huge pile · Wild all-money majority · invented limit rise · HC · gold · both locked · trial
+**Killed:** crowning one wallet again · Celtics $520 and Capitals split in the hero · both ROI labels · invented score from last night · unopposed · gold · HC · limit climb · trial
 
 ---
 
@@ -51,22 +52,22 @@
 ---
 
 ## Unfinished
-- Next hero — spine not in yet
+- Grade the Brewers +156 after lock
 - Weekly report (Power)
 - Fence-sitter DMs
 
 ---
 
-## FORWARD LOOK — after this QT
-1. **Grade the rest of the slate** when it finishes. Cash and the loss, named. Do not restage 4-1.
-2. If the thread answers "which of the three," reply with the receipt. That is the fence-sitter close.
-3. No second ask tomorrow.
+## FORWARD LOOK — after this Brewers give
+1. **Grade the Brewers** when it finishes. If it loses, say so on the same disagreement. Do not restage the $312K hook.
+2. Celtics and Capitals stay off the hero unless Dale asks. Both profiles say the line is against the bettor.
+3. No ask on the scar. The next ask needs a cashed disagreement, not an apology.
 
-**NOT:** reprint `+98.88` · trial paragraph · `$5.35` · 3-1 card · dollar-stack · v12 open
+**NOT:** one-wallet coronation · Celtics $520 · Capitals 2.2× with a 44% close-rate · trial paragraph · dollar-stack of three teams
 
-**Avatar:** they have the season number, the live 4-1, and a reason to talk.  
-**Hormozi economics:** ask, because he spined it, on a post that already worked.  
-**Desk scar:** Tue's trial paragraph was 0 replies. This ask is a grade plus a question, not a signup speech.
+**Avatar:** they just watched a highlighted sharp lose. They need the board, including the side that is wrong.  
+**Hormozi economics:** give. The scar is new. An ask here is a signup speech on a loss.  
+**Desk scar:** 10/13 crowned 22-11 across two games. Dale says that sharp screwed him.
 
 ---
 
