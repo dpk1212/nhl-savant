@@ -929,6 +929,28 @@ export function buildConfirmedActionRows({
 }
 
 /**
+ * The Sharp Intel feed is Proven-only before it reaches this desk.
+ * A saved wallet's other sports still have to be joined back on.
+ * Proven rows stay the ones from the first pass, so the public board's
+ * opposition counts do not move.
+ */
+export function mergePortfolioActionRows(primaryRows = [], portfolioRows = []) {
+  const seen = new Set();
+  const out = [];
+  for (const r of primaryRows || []) {
+    if (r?.id) seen.add(r.id);
+    out.push(r);
+  }
+  for (const r of portfolioRows || []) {
+    if (!r?.portfolioOnly) continue;
+    if (r.id && seen.has(r.id)) continue;
+    if (r?.id) seen.add(r.id);
+    out.push(r);
+  }
+  return out;
+}
+
+/**
  * "Best" ≈ researched edge order, not raw conviction theatre.
  * Spine: CONFIRMED flatDollar Q1 × sized (≥0.5×) × unopposed, then pin/form/price.
  * Uses model sizeRatio (cross-sport stamp) — display size is separate.

@@ -10,6 +10,7 @@ import {
   resolveActionSport,
   sportsWithActionPositions,
   buildConfirmedActionRows,
+  mergePortfolioActionRows,
   sortActionRows,
   pinMoveFor,
 } from '../src/lib/confirmedActionDesk.js';
@@ -195,6 +196,46 @@ assert.equal(provenOver.portfolioOnly, false);
 assert.equal(provenOver.opposed, 'clear', 'a tracked unproven ticket does not contest the Action board');
 assert.equal(trackedUnder.portfolioOnly, true);
 assert.equal(trackedUnder.opposed, 'contested', 'My Bets still sees the other side');
+
+const qualifiedFeed = {
+  MLB: {
+    pit_chc: {
+      away: 'PIT', home: 'CHC',
+      positions: [{
+        wallet: '0xaaaaaaaaaaaaaa11bb', side: 'home', invested: 2200,
+        slug: 'mlb-pit-chc-2026-10-14',
+      }],
+    },
+  },
+};
+const rawFeed = {
+  ...qualifiedFeed,
+  NHL: {
+    dal_col: {
+      away: 'Stars', home: 'Avalanche',
+      positions: [{
+        wallet: '0xaaaaaaaaaaaaaa11bb', side: 'home', invested: 1404,
+        slug: 'nhl-dal-col-2026-10-14',
+      }],
+    },
+  },
+};
+const qualifiedOnly = buildConfirmedActionRows({
+  sharpPositions: qualifiedFeed,
+  walletProfiles: trackedProfiles,
+  portfolioShorts: ['aa11bb'],
+}).rows;
+assert.equal(qualifiedOnly.some((r) => r.sport === 'NHL'), false, 'a Proven-only feed has no NHL ticket to show');
+const fromRaw = buildConfirmedActionRows({
+  sharpPositions: rawFeed,
+  walletProfiles: trackedProfiles,
+  sportFilter: 'All',
+  portfolioShorts: ['aa11bb'],
+}).rows;
+const joined = mergePortfolioActionRows(qualifiedOnly, fromRaw);
+assert.equal(joined.filter((r) => r.sport === 'NHL' && r.portfolioOnly).length, 1);
+assert.equal(joined.find((r) => r.sport === 'MLB'), qualifiedOnly.find((r) => r.sport === 'MLB'));
+assert.equal(joined.filter((r) => !r.portfolioOnly).length, qualifiedOnly.filter((r) => !r.portfolioOnly).length);
 
 const small = [{ sport: 'NHL', invested: 297, skillKey: 'low', sizeRatio: 0.2, opposed: 'clear', pinMove: null }];
 assert.equal(filterActionRows(small, { sport: 'All' }).length, 0, 'the public board still hides a sub-$500 ticket');
