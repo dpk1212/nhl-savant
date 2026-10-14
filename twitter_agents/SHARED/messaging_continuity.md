@@ -7,17 +7,18 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-09-27 · HERO **GIVE** · three 1:00 NFL flagged plays |
+| Last updated | 2026-10-13 · HERO **GIVE** · same NHL wallet on Penguins and Wild |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
 | Ask temperature | **Give.** No fork. |
-| Account arc | Giants $174K vs $546K against. Jaguars $83K at 2.7×, nothing against. Steelers under 42.5→43.5, proven ticket is $2K. Locks 12:45. |
+| Account arc | One wallet, 22-11, L30 +$31K. Penguins locked at -147. Wild flagged, +104 to -104, locks 8:10. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 9/27 ~12:08 ET | Hero **GIVE** | `$174,000 ON THE GIANTS` / $546K against / Jags 2.7× / under 42.5→43.5 | **S + C** | none | **Staged** |
+| 10/13 ~8:02 ET | Hero **GIVE** | `22-11. Up $31,000.` / same wallet Penguins + Wild | **P + C** | none | **Staged** |
+| 9/27 ~12:08 ET | Hero **GIVE** | `$174,000 ON THE GIANTS` / $546K against | **S + C** | none | **Staged** |
 | 9/26 ~7:36 ET | Hero **GIVE** | `$68,000 AT 12.9× ON MISSISSIPPI STATE` | **S + C** | none | **Staged** |
 | 9/23 ~5:32 ET | Self-QT **ASK** | `We're 4-1 today, and one of them lost.` / first week free | **S+P+C+L** | canonical offer | **Staged** |
 | 9/23 | **INGEST** | Pin $20k **366**. `+98.88` **328**. Down-days **8R**. Trial paragraph **0R**. Dollar-stacks **0R** | — | none | Locked |
@@ -30,11 +31,11 @@
 ---
 
 ## Angle lock
-**ONE:** Proven money is in on three 1:00 games, and on the Giants most of the tracked money is on the Titans.  
-**Hook:** `$174,000 ON THE GIANTS` / `$546,000 is on the Titans.`  
-**Body:** 13-3, +$1,037,000, 2×, moneylines 2-3, -127 vs Pin -134 · Jags $83K at 2.7×, nothing against, -149 vs -157 · under 42.5→43.5, $2K normal bet, $212K vs $69K.  
+**ONE:** The same 22-11 wallet, up $31,000 the last 30 days, is on Pittsburgh and Minnesota.  
+**Hook:** `22-11. Up $31,000 the last 30 days.`  
+**Body:** moneylines 10-4 · Penguins $3K at 1.3×, $7.4K vs $108, -147 vs Pin -157, flagged -141, 3u locked · Wild $4.7K at 2×, flagged +104 now -104, $5.6K vs $2.6K, Pin -108, 1u, 8:10.  
 **Ask:** none.  
-**Killed:** invented limit climb · calling the under ticket big · Giants unopposed · HC · gold · locked · trial · three-stack `$N ON THE TEAM` open
+**Killed:** 12-4 next to 22-11 · calling $3K a huge pile · Wild all-money majority · invented limit rise · HC · gold · both locked · trial
 
 ---
 
