@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState, memo } from 'react';
 import { Activity, ChevronDown, Star } from 'lucide-react';
 import {
   buildConfirmedActionRows,
+  mergePortfolioActionRows,
   buildConfirmedActionMarquee,
   filterActionRows,
   rowMatchesActionSport,
@@ -1519,6 +1520,9 @@ export default function ConfirmedActionDesk({
   sharpPositions,
   spreadPositions,
   totalPositions,
+  rawSharpPositions = null,
+  rawSpreadPositions = null,
+  rawTotalPositions = null,
   walletProfiles,
   pinnacleHistory,
   polyData = null,
@@ -1606,7 +1610,7 @@ export default function ConfirmedActionDesk({
     }
   }, [focusShort, mySharps.shorts]);
 
-  const { rows } = useMemo(
+  const { rows: qualifiedRows } = useMemo(
     () => buildConfirmedActionRows({
       sharpPositions,
       spreadPositions,
@@ -1621,6 +1625,27 @@ export default function ConfirmedActionDesk({
     [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData, sportFilter, mySharps.shorts],
   );
 
+  const { rows: savedRows } = useMemo(() => {
+    if (!mySharps.shorts?.size) return { rows: [] };
+    if (!rawSharpPositions && !rawSpreadPositions && !rawTotalPositions) return { rows: [] };
+    return buildConfirmedActionRows({
+      sharpPositions: rawSharpPositions,
+      spreadPositions: rawSpreadPositions,
+      totalPositions: rawTotalPositions,
+      walletProfiles,
+      pinnacleHistory,
+      cellStatsTable,
+      polyData,
+      sportFilter: 'All',
+      portfolioShorts: mySharps.shorts,
+    });
+  }, [rawSharpPositions, rawSpreadPositions, rawTotalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData, mySharps.shorts]);
+
+  const rows = useMemo(
+    () => mergePortfolioActionRows(qualifiedRows, savedRows),
+    [qualifiedRows, savedRows],
+  );
+
   const boardRows = useMemo(
     () => (deskMode === 'mine' ? rows : (rows || []).filter((r) => !r.portfolioOnly)),
     [rows, deskMode],
@@ -1633,7 +1658,7 @@ export default function ConfirmedActionDesk({
 
   const dated = useMemo(() => {
     const filtered = filterActionRows(boardRows, {
-      sport: sportFilter,
+      sport: deskMode === 'mine' ? 'All' : sportFilter,
       highMidOnly: deskMode === 'mine' ? false : highMidOnly,
       sizedOnly: deskMode === 'mine' ? false : sizedOnly,
       clearOnly: deskMode === 'mine' ? false : clearOnly,
@@ -1643,7 +1668,7 @@ export default function ConfirmedActionDesk({
       nowMs: Date.now(),
       // The public board hides small tickets. A followed wallet's bet still counts.
       minInvested: deskMode === 'mine' ? 0 : undefined,
-    }).filter((r) => rowMatchesActionSport(r, sportFilter));
+    }).filter((r) => deskMode === 'mine' || rowMatchesActionSport(r, sportFilter));
     return filtered;
   }, [boardRows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, topPlayOnly, selectedDate, deskMode]);
 
@@ -1654,10 +1679,10 @@ export default function ConfirmedActionDesk({
 
   const allMineAnyDay = useMemo(
     () => filterRowsToMySharps(
-      (boardRows || []).filter((r) => rowMatchesActionSport(r, sportFilter)),
+      (boardRows || []).filter((r) => deskMode === 'mine' || rowMatchesActionSport(r, sportFilter)),
       mySharps.shorts,
     ),
-    [boardRows, sportFilter, mySharps.shorts],
+    [boardRows, sportFilter, mySharps.shorts, deskMode],
   );
 
   const roster = useMemo(

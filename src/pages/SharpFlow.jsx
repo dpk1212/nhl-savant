@@ -9784,6 +9784,9 @@ export default function SharpFlow() {
           sharpPositions={sharpPositions}
           spreadPositions={spreadPositions}
           totalPositions={totalPositions}
+          rawSharpPositions={rawSharpPositions}
+          rawSpreadPositions={rawSpreadPositions}
+          rawTotalPositions={rawTotalPositions}
           walletProfiles={walletProfiles}
           pinnacleHistory={pinnacleHistory}
           polyData={polyData}
