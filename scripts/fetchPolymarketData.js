@@ -154,6 +154,39 @@ async function listMainAtpMatchEvents() {
   return mains;
 }
 
+/** UEFA Champions League series 10204. Tag `ucl` leads with futures; series has the matches. */
+const UCL_SERIES_ID = '10204';
+
+async function listMainUclMatchEvents() {
+  const mains = [];
+  let pages = 0;
+  let raw = 0;
+  for (let offset = 0; offset < ATP_SERIES_CAP; offset += ATP_SERIES_PAGE) {
+    const params = new URLSearchParams({
+      active: 'true',
+      closed: 'false',
+      limit: String(ATP_SERIES_PAGE),
+      offset: String(offset),
+      series_id: UCL_SERIES_ID,
+    });
+    let arr = [];
+    try {
+      const events = await get(`/events?${params}`);
+      arr = Array.isArray(events) ? events : [];
+    } catch {
+      break;
+    }
+    pages += 1;
+    raw += arr.length;
+    for (const ev of arr) {
+      if (isMainSoccerMatchSlug(ev.slug)) mains.push(ev);
+    }
+    if (arr.length < ATP_SERIES_PAGE) break;
+  }
+  console.log(`  📡 ucl main matches: ${mains.length} from ${raw} series events (${pages} pages)`);
+  return mains;
+}
+
 async function listMainEsportsMatchEvents(seriesId, label) {
   const mains = [];
   let pages = 0;
@@ -832,14 +865,14 @@ async function loadTodaysSchedule(cbbMap) {
     console.warn('Could not seed NBA from Polymarket tag nba:', e.message);
   }
 
-  // SOC: EPL + La Liga (club soccer). World Cup Odds API key is gone.
+  // SOC: EPL + La Liga + UCL. World Cup Odds API key is gone.
   // Season endpoints return the remaining slate, so keep a weekend window
   // (now−8h → +5d) like NFL — otherwise futures soft-gate through.
   const validSOC = new Set();
+  const socWindowLo = Date.now() - 8 * 3600 * 1000;
+  const socWindowHi = Date.now() + 5 * 24 * 3600 * 1000;
   if (ODDS_API_KEY) {
-    const socWindowLo = Date.now() - 8 * 3600 * 1000;
-    const socWindowHi = Date.now() + 5 * 24 * 3600 * 1000;
-    for (const oddsKey of ['soccer_epl', 'soccer_spain_la_liga']) {
+    for (const oddsKey of ['soccer_epl', 'soccer_spain_la_liga', 'soccer_uefa_champs_league']) {
       try {
         const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
         const res = await fetch(url);
@@ -867,6 +900,28 @@ async function loadTodaysSchedule(cbbMap) {
         console.warn(`Could not load SOC schedule from Odds API (${oddsKey}):`, e.message);
       }
     }
+  }
+  try {
+    const list = await listMainUclMatchEvents();
+    let seeded = 0;
+    for (const ev of list) {
+      const title = ev.title || '';
+      const pair = extractTeamsFromTitle(title);
+      if (!pair) continue;
+      const t = ev.startTime ? Date.parse(ev.startTime) : NaN;
+      if (!Number.isFinite(t) || t < socWindowLo || t > socWindowHi) continue;
+      const gk = makeSOCGameKey(pair[0], pair[1]);
+      if (!gk) {
+        console.warn(`UCL team resolution miss: "${pair[0]}" / "${pair[1]}" (${ev.slug})`);
+        continue;
+      }
+      if (!validSOC.has(gk)) seeded++;
+      validSOC.add(gk);
+      if (ev.startTime && !commenceTimes[`SOC:${gk}`]) commenceTimes[`SOC:${gk}`] = ev.startTime;
+    }
+    console.log(`📋 UCL Poly seed: +${seeded} → ${validSOC.size} cumulative`);
+  } catch (e) {
+    console.warn('Could not seed UCL from Polymarket series:', e.message);
   }
 
   // UFC: Odds API key is mma_mixed_martial_arts (includes non-UFC orgs).
@@ -1180,6 +1235,16 @@ async function run() {
   } catch (e) {
     console.warn('Failed to fetch ATP series:', e.message);
   }
+  try {
+    const have = new Set(events.map((ev) => ev.slug).filter(Boolean));
+    const list = await listMainUclMatchEvents();
+    for (const ev of list) {
+      if (ev.slug && have.has(ev.slug)) continue;
+      events.push({ ...ev, _tag: 'ucl', _sport: 'SOC' });
+    }
+  } catch (e) {
+    console.warn('Failed to fetch UCL series:', e.message);
+  }
   for (const [sport, seriesId] of Object.entries(ESPORTS_SERIES)) {
     try {
       const list = await listMainEsportsMatchEvents(seriesId, sport);
@@ -1258,7 +1323,9 @@ async function run() {
       || evTags.includes('soccer')
       || evTags.includes('premier-league')
       || evTags.includes('epl')
-      || evTags.includes('la-liga');
+      || evTags.includes('la-liga')
+      || evTags.includes('ucl')
+      || evTags.includes('champions-league');
     const hasUfcTag = evTags.includes('ufc') || evTags.includes('mma');
 
     let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'WNBA' ? 'WNBA' : ev._sport === 'wnba' ? 'WNBA' : ev._sport === 'NFL' ? 'NFL' : ev._sport === 'nfl' ? 'NFL' : ev._sport === 'CFB' ? 'CFB' : ev._sport === 'cfb' ? 'CFB' : ev._sport === 'ncaaf' ? 'CFB' : ev._sport === 'ncaa-football' ? 'CFB' : ev._sport === 'college-football' ? 'CFB' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : ev._sport === 'ATP' ? 'ATP' : ev._sport === 'atp' ? 'ATP' : ev._sport === 'CS2' ? 'CS2' : ev._sport === 'LOL' ? 'LOL' : null;
@@ -1294,6 +1361,8 @@ async function run() {
     // CS2 / LoL slugs beat nickname collisions (Falcons, magic).
     const esSlugSport = esportFromSlug(ev.slug);
     if (esSlugSport) sport = esSlugSport;
+    // EPL / La Liga / UCL / World Cup match slugs are the soccer board.
+    if (!esSlugSport && isMainSoccerMatchSlug(ev.slug)) sport = 'SOC';
 
     let teams = sport === 'UFC'
       ? extractUFCFightersFromTitle(title)
@@ -1350,8 +1419,8 @@ async function run() {
     }
     if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'CFB', 'ATP', 'CS2', 'LOL'].includes(sport)) continue;
 
-    // SOC: only MAIN EPL / La Liga / leftover WC match events (drops HT result,
-    // exact-score, corners, champion futures, MLS / UCL / other leagues).
+    // SOC: only MAIN EPL / La Liga / UCL / leftover WC match events (drops HT,
+    // exact-score, corners, player props, champion futures, other leagues).
     if (sport === 'SOC' && !isMainSoccerMatchSlug(ev.slug)) continue;
 
     // UFC: only MAIN fight-card ML events (drops method/round props + futures).

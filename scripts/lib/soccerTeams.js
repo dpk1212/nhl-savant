@@ -1,5 +1,5 @@
 /**
- * Soccer team resolution — World Cup nations + EPL / La Liga clubs.
+ * Soccer team resolution — World Cup nations + EPL / La Liga / UCL clubs.
  * Shared by fetchPolymarketData, snapshotPinnacle, scanSharpPositions,
  * scanWhitelistedWallets, seedSportsSharps, buildWhaleProfiles, gradeSharpActions.
  *
@@ -120,6 +120,34 @@ const SOC_CLUBS = [
   { code: 'SEV', names: ['Sevilla', 'Sevilla FC'] },
   { code: 'VAL', names: ['Valencia', 'Valencia CF'] },
   { code: 'VIL', names: ['Villarreal', 'Villarreal CF'] },
+  // UEFA Champions League. POR stays Portugal — Porto is FCP.
+  // Aliases cover Polymarket titles and ESPN display names.
+  { code: 'AEK', names: ['AEK', 'AEK Athens'] },
+  { code: 'BAY', names: ['FC Bayern München', 'Bayern München', 'Bayern Munich', 'Bayern'] },
+  { code: 'BOD', names: ['FK Bodø/Glimt', 'Bodø/Glimt', 'Bodo/Glimt'] },
+  { code: 'BRU', names: ['Club Brugge KV', 'Club Brugge'] },
+  { code: 'BVB', names: ['BV Borussia 09 Dortmund', 'Borussia Dortmund', 'Dortmund'] },
+  { code: 'COM', names: ['Como 1907', 'Como'] },
+  { code: 'FCP', names: ['FC Porto', 'Porto'] },
+  { code: 'FEN', names: ['Fenerbahçe SK', 'Fenerbahçe', 'Fenerbahce'] },
+  { code: 'FEY', names: ['Feyenoord Rotterdam', 'Feyenoord'] },
+  { code: 'GAL', names: ['Galatasaray SK', 'Galatasaray'] },
+  { code: 'INT', names: ['FC Internazionale Milano', 'Internazionale', 'Inter Milan', 'Inter'] },
+  { code: 'LAS', names: ['LASK Linz', 'LASK'] },
+  { code: 'LEN', names: ['Racing Club de Lens', 'Lens'] },
+  { code: 'LIL', names: ['Lille OSC', 'Lille'] },
+  { code: 'NAP', names: ['SSC Napoli', 'Napoli'] },
+  { code: 'PSG', names: ['Paris Saint-Germain FC', 'Paris Saint-Germain', 'PSG'] },
+  { code: 'PSV', names: ['PSV Eindhoven', 'PSV'] },
+  { code: 'RBL', names: ['RB Leipzig'] },
+  { code: 'ROM', names: ['AS Roma', 'Roma'] },
+  { code: 'SAB', names: ['Sabah FK'] },
+  { code: 'SCP', names: ['Sporting CP'] },
+  { code: 'SHK', names: ['FK Shakhtar Donetsk', 'Shakhtar Donetsk', 'Shakhtar'] },
+  { code: 'SLO', names: ['ŠK Slovan Bratislava', 'SK Slovan Bratislava', 'Slovan Bratislava'] },
+  { code: 'SLP', names: ['SK Slavia Praha', 'Slavia Prague', 'Slavia Praha'] },
+  { code: 'STU', names: ['VfB Stuttgart', 'Stuttgart'] },
+  { code: 'VIK', names: ['Viking FK', 'Viking'] },
 ];
 
 const ALL_SOC_TEAMS = [...SOC_TEAMS, ...SOC_CLUBS];
@@ -182,7 +210,7 @@ export function makeSOCGameKey(a, b) {
  */
 export function isSoccerMarketTitle(title) {
   const t = (title || '').toLowerCase();
-  if (/world cup|\bfifa\b|\bepl\b|premier league|la ?liga|laliga/.test(t)) return true;
+  if (/world cup|\bfifa\b|\bepl\b|premier league|la ?liga|laliga|champions league|\bucl\b/.test(t)) return true;
   let m = t.match(/^will\s+(?:the\s+)?(.+?)\s+win(?:\s+on\s+\d{4}-\d{2}-\d{2})?\s*\?*$/);
   if (m && resolveSOCTeam(m[1])) return true;
   m = t.match(/^will\s+(.+?)\s+vs\.?\s+(.+?)\s+end\s+in\s+a\s+draw/);
@@ -192,9 +220,9 @@ export function isSoccerMarketTitle(title) {
   return false;
 }
 
-const MAIN_SOC_SLUG = /^(fifwc|epl|lal)-[a-z]+-[a-z]+-\d{4}-\d{2}-\d{2}$/;
+const MAIN_SOC_SLUG = /^(fifwc|epl|lal|ucl)-[a-z0-9]+-[a-z0-9]+-\d{4}-\d{2}-\d{2}$/;
 
-/** MAIN match event — EPL, La Liga, leftover World Cup. Drops HT / exact-score / futures. */
+/** MAIN match event — EPL, La Liga, UCL, leftover World Cup. Drops HT / corners / props / futures. */
 export function isMainSoccerMatchSlug(slug) {
   return MAIN_SOC_SLUG.test(String(slug || '').toLowerCase());
 }

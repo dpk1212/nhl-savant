@@ -61,6 +61,7 @@ const ESPN_CFB_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/col
 const ESPN_SOC_URLS = [
   'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
   'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
 ];
 const ESPN_UFC_URL = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
 const ESPN_ATP_URL = 'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard';
@@ -653,7 +654,7 @@ async function fetchCFBFinalGames(dateStr) {
 }
 
 async function fetchSOCFinalGames(dateStr) {
-  // EPL (eng.1) + La Liga (esp.1). Polymarket 3-way match markets resolve on
+  // EPL (eng.1) + La Liga (esp.1) + UCL (uefa.champions). Polymarket 3-way markets resolve on
   // the 90-minute result. League games are almost always STATUS_FULL_TIME;
   // cup extra-time still flags wentBeyond90 so we grade a DRAW.
   const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';

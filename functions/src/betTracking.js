@@ -47,6 +47,7 @@ const ESPN_CFB_URL = "https://site.api.espn.com/apis/site/v2/sports/football/col
 const ESPN_SOC_URLS = [
   "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard",
   "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard",
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard",
 ];
 const ESPN_UFC_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard";
 const ESPN_ATP_URL = "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard";
@@ -392,6 +393,33 @@ const SOC_NAME_TO_CODE = {
   "sevilla": "SEV", "sevillafc": "SEV",
   "valencia": "VAL", "valenciacf": "VAL",
   "villarreal": "VIL", "villarrealcf": "VIL",
+  // UCL. porto ≠ portugal (POR).
+  "aek": "AEK", "aekathens": "AEK",
+  "bayernmunchen": "BAY", "fcbayernmunchen": "BAY", "bayernmunich": "BAY", "bayern": "BAY",
+  "fkbodglimt": "BOD", "bodglimt": "BOD",
+  "clubbruggekv": "BRU", "clubbrugge": "BRU",
+  "bvborussia09dortmund": "BVB", "borussiadortmund": "BVB", "dortmund": "BVB",
+  "como1907": "COM", "como": "COM",
+  "porto": "FCP", "fcporto": "FCP",
+  "fenerbahcesk": "FEN", "fenerbahce": "FEN",
+  "feyenoordrotterdam": "FEY", "feyenoord": "FEY",
+  "galatasaraysk": "GAL", "galatasaray": "GAL",
+  "fcinternazionalemilano": "INT", "internazionalemilano": "INT", "internazionale": "INT", "intermilan": "INT", "inter": "INT",
+  "lasklinz": "LAS", "lask": "LAS",
+  "racingclubdelens": "LEN", "lens": "LEN",
+  "lilleosc": "LIL", "lille": "LIL",
+  "sscnapoli": "NAP", "napoli": "NAP",
+  "parissaintgermainfc": "PSG", "parissaintgermain": "PSG", "psg": "PSG",
+  "psveindhoven": "PSV", "psv": "PSV",
+  "rbleipzig": "RBL",
+  "asroma": "ROM", "roma": "ROM",
+  "sabahfk": "SAB",
+  "sportingcp": "SCP",
+  "fkshakhtardonetsk": "SHK", "shakhtardonetsk": "SHK", "shakhtar": "SHK",
+  "skslovanbratislava": "SLO", "slovanbratislava": "SLO",
+  "skslaviapraha": "SLP", "slaviaprague": "SLP", "slaviapraha": "SLP",
+  "vfbstuttgart": "STU", "stuttgart": "STU",
+  "vikingfk": "VIK", "viking": "VIK",
 };
 
 function resolveSOCCode(raw) {

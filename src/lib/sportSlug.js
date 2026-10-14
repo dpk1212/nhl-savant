@@ -17,7 +17,7 @@ export const BOARD_SPORT_SLUG = {
 };
 
 /** Polymarket league tokens that belong on a SOC board (not a single slug). */
-export const SOC_SLUG_LEAGUES = new Set(['epl', 'lal', 'fifwc']);
+export const SOC_SLUG_LEAGUES = new Set(['epl', 'lal', 'fifwc', 'ucl']);
 
 export function slugLeague(slug) {
   const m = String(slug || '').toLowerCase().match(/^([a-z0-9]+)-/);
