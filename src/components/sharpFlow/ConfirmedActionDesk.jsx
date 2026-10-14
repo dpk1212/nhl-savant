@@ -1641,6 +1641,8 @@ export default function ConfirmedActionDesk({
       topPlayOnly: deskMode === 'mine' ? false : topPlayOnly,
       dateKey: selectedDate,
       nowMs: Date.now(),
+      // The public board hides small tickets. A followed wallet's bet still counts.
+      minInvested: deskMode === 'mine' ? 0 : undefined,
     }).filter((r) => rowMatchesActionSport(r, sportFilter));
     return filtered;
   }, [boardRows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, topPlayOnly, selectedDate, deskMode]);

@@ -196,6 +196,10 @@ assert.equal(provenOver.opposed, 'clear', 'a tracked unproven ticket does not co
 assert.equal(trackedUnder.portfolioOnly, true);
 assert.equal(trackedUnder.opposed, 'contested', 'My Bets still sees the other side');
 
+const small = [{ sport: 'NHL', invested: 297, skillKey: 'low', sizeRatio: 0.2, opposed: 'clear', pinMove: null }];
+assert.equal(filterActionRows(small, { sport: 'All' }).length, 0, 'the public board still hides a sub-$500 ticket');
+assert.equal(filterActionRows(small, { sport: 'All', minInvested: 0 }).length, 1, 'a followed wallet keeps the small ticket');
+
 assert.equal(pinMoveFor({ MLB: { x: { movement: { direction: 'over' } } } }, 'MLB', 'x', 'over'), 'with');
 assert.equal(pinMoveFor({ MLB: { x: { movement: { direction: 'under' } } } }, 'MLB', 'x', 'over'), 'against');
 assert.equal(pinMoveFor({}, 'MLB', 'x', 'over', { show: true }), 'with');
