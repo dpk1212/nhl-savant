@@ -14,6 +14,8 @@
  * Do NOT use Polymarket short codes (max1/con) — they are opaque and unstable.
  */
 
+import { flipSOCGameKey, remapSoccerPinnSides } from './soccerTeams.js';
+
 /** Fold diacritics then strip non-alphanumerics: "Benoît Saint-Denis" -> "benoitsaintdenis". */
 export function normalizeFighterName(s) {
   return (s || '')
@@ -218,10 +220,20 @@ export function lookupPinnGame(pinnacleHistory, sport, gameKey) {
   const bucket = pinnacleHistory[sport];
   if (!bucket || typeof bucket !== 'object') return null;
   if (bucket[gameKey]) return bucket[gameKey];
-  if (String(sport).toUpperCase() !== 'UFC') return null;
-  const flip = flipUFCGameKey(gameKey);
-  if (!flip || !bucket[flip]) return null;
-  return remapUFCPinnSides(bucket[flip]);
+  const sportUpper = String(sport).toUpperCase();
+  if (sportUpper === 'UFC') {
+    const flip = flipUFCGameKey(gameKey);
+    if (!flip || !bucket[flip]) return null;
+    return remapUFCPinnSides(bucket[flip]);
+  }
+  // UCL Polymarket titles often list the home side first. Odds API keys are
+  // away_home, so las_liv (board) lives under liv_las until the sides swap.
+  if (sportUpper === 'SOC') {
+    const flip = flipSOCGameKey(gameKey);
+    if (!flip || !bucket[flip]) return null;
+    return remapSoccerPinnSides(bucket[flip]);
+  }
+  return null;
 }
 
 /**

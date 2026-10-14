@@ -15,6 +15,7 @@ export function resolvePayOdds({
   oddsSource = null,
   fairBook = null,
   sealed = false,
+  offMain = false,
 } = {}) {
   const stamp = Number.isFinite(stampedOdds) && stampedOdds !== 0 ? stampedOdds : null;
   const bookPx = Number.isFinite(bookOnLine) && bookOnLine !== 0 ? bookOnLine : null;
@@ -30,6 +31,13 @@ export function resolvePayOdds({
   }
   const stampLooksPoly = src.includes('poly')
     || (poly != null && stamp != null && Math.abs(Math.round(stamp) - Math.round(poly)) <= 2);
+
+  // Alt with no quote on that number. A stored +125 here is the main's
+  // juice (MIL@LAD 2026-10-14: Dodgers +2.5 painted at the −1.5 price).
+  if (offMain && bookPx == null && poly != null && stamp != null
+      && Math.round(stamp) !== Math.round(poly)) {
+    return { payOdds: poly, polyReceipt: poly, demotedPoly: false };
+  }
 
   if (stampLooksPoly && bookPx != null && stamp != null
       && Math.round(stamp) !== Math.round(bookPx)) {

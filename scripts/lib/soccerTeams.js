@@ -201,6 +201,75 @@ export function makeSOCGameKey(a, b) {
   return `${aa.toLowerCase()}_${bb.toLowerCase()}`;
 }
 
+/** `las_liv` → `liv_las`. UCL titles are often the reverse of Odds API home/away. */
+export function flipSOCGameKey(key) {
+  if (!key || typeof key !== 'string') return null;
+  const i = key.indexOf('_');
+  if (i <= 0 || i === key.length - 1) return null;
+  if (key.indexOf('_', i + 1) !== -1) return null;
+  const a = key.slice(0, i);
+  const b = key.slice(i + 1);
+  if (!a || !b || a === b) return null;
+  return `${b}_${a}`;
+}
+
+function swapSoccerSides(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const out = { ...obj };
+  if ('away' in obj || 'home' in obj) {
+    out.away = obj.home;
+    out.home = obj.away;
+  }
+  if ('awayLine' in obj || 'homeLine' in obj) {
+    out.awayLine = obj.homeLine;
+    out.homeLine = obj.awayLine;
+  }
+  if ('awayOdds' in obj || 'homeOdds' in obj) {
+    out.awayOdds = obj.homeOdds;
+    out.homeOdds = obj.awayOdds;
+  }
+  return out;
+}
+
+/** Odds API stored Liverpool @ LASK. The board key is LASK @ Liverpool. Swap sides. */
+export function remapSoccerPinnSides(game) {
+  if (!game || typeof game !== 'object') return game;
+  const allBooks = {};
+  for (const [k, v] of Object.entries(game.allBooks || {})) allBooks[k] = swapSoccerSides(v);
+  const allSpreadBooks = {};
+  for (const [k, v] of Object.entries(game.allSpreadBooks || {})) {
+    allSpreadBooks[k] = swapSoccerSides(v);
+  }
+  const dir = game.movement?.direction;
+  return {
+    ...game,
+    current: swapSoccerSides(game.current),
+    opener: swapSoccerSides(game.opener),
+    bestAway: game.bestHome,
+    bestHome: game.bestAway,
+    bestAwayBook: game.bestHomeBook,
+    bestHomeBook: game.bestAwayBook,
+    bestAwaySpread: game.bestHomeSpread,
+    bestHomeSpread: game.bestAwaySpread,
+    movement: game.movement ? {
+      ...game.movement,
+      away: game.movement.home,
+      home: game.movement.away,
+      direction: dir === 'away' ? 'home' : dir === 'home' ? 'away' : dir,
+    } : game.movement,
+    ev: game.ev ? { ...game.ev, away: game.ev.home, home: game.ev.away } : game.ev,
+    history: Array.isArray(game.history) ? game.history.map(swapSoccerSides) : game.history,
+    spreadHistory: Array.isArray(game.spreadHistory) ? game.spreadHistory.map(swapSoccerSides) : game.spreadHistory,
+    spreadLines: Array.isArray(game.spreadLines) ? game.spreadLines.map(swapSoccerSides) : game.spreadLines,
+    spreadCurrent: swapSoccerSides(game.spreadCurrent),
+    spreadOpener: swapSoccerSides(game.spreadOpener),
+    allBooks,
+    ...(game.allSpreadBooks ? { allSpreadBooks } : {}),
+    awayTeam: game.homeTeam,
+    homeTeam: game.awayTeam,
+  };
+}
+
 /**
  * Precise soccer-title classifier for wallet-universe sport tagging
  * (seedSportsSharps / buildWhaleProfiles). Deliberately NOT a bare keyword

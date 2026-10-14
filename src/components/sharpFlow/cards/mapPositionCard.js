@@ -1403,7 +1403,10 @@ export function mapLockedPickToCardFixture(pick, {
     ticketOdds = bound.odds;
   }
   if (Number.isFinite(bound.line) && (isSpread || isTotal)) {
-    const stampOk = Number.isFinite(ticketLine) && ticketLine >= 1.5;
+    // Totals below 1.5 are junk stamps. A spread of −1.5 is a real favorite.
+    const stampOk = isSpread
+      ? (Number.isFinite(ticketLine) && Math.abs(ticketLine) >= 0.5)
+      : (Number.isFinite(ticketLine) && ticketLine >= 1.5);
     if (!ticketFrozen || !stampOk) ticketLine = bound.line;
   } else if (!Number.isFinite(ticketLine) && (isSpread || isTotal) && Number.isFinite(bound.line)) {
     ticketLine = bound.line;
@@ -1839,9 +1842,14 @@ export function mapLockedPickToCardFixture(pick, {
   // INVARIANT: hero American = sportsbook quote for hero line.
   // Poly avgPrice is PM-only — chi_ten 2026-08-29 painted Bears +2.5 +110
   // (poly) next to PIN/NOW −108 (book) and blew the line↔odds contract.
-  const bookOnLine = Number.isFinite(tapeNow) ? tapeNow
-    : (Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
-      : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : null));
+  // lockPinnOdds is the MAIN quote. It must not become the price of an alt
+  // the board does not offer (Dodgers +2.5 wearing −1.5's +125).
+  const sameLineBook = Number.isFinite(tapeNow) ? tapeNow : null;
+  const storedMainOdds = Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
+    : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : null);
+  const bookOnLine = sameLineBook != null
+    ? sameLineBook
+    : (ticketOffMain ? null : storedMainOdds);
   const pay = resolvePayOdds({
     stampedOdds: lockOdds,
     bookOnLine,
@@ -1849,6 +1857,7 @@ export function mapLockedPickToCardFixture(pick, {
     bookLabel: pick.book,
     oddsSource: pick.oddsSource,
     fairBook: pick.fairBook,
+    offMain: ticketOffMain && sameLineBook == null,
     sealed: ticketFrozen && (
       pick.t15Sealed === true
       || String(pick.oddsSource || pick.fairBook || '').toLowerCase().includes('t15_best')

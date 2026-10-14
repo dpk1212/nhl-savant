@@ -43,6 +43,19 @@ import { mapLockedPickToCardFixture } from '../src/components/sharpFlow/cards/ma
     fairBook: 'poly_avgPrice',
   });
   assert.equal(r.payOdds, -114, 'sealed T-15 juice does not follow live Pin');
+}
+
+// MIL@LAD 2026-10-14: +2.5 has no book quote. +125 belongs to −1.5.
+{
+  const r = resolvePayOdds({
+    stampedOdds: 125,
+    bookOnLine: null,
+    polyReceipt: -413,
+    bookLabel: 'Pinnacle',
+    oddsSource: 'pinnacle_main',
+    offMain: true,
+  });
+  assert.equal(r.payOdds, -413, 'alt with no book quote keeps the fill, not the main juice');
   assert.equal(r.demotedPoly, false);
 }
 

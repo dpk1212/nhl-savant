@@ -11,6 +11,7 @@ import {
 } from '../scripts/lib/soccerTeams.js';
 import { positionMatchesPolyEvent } from '../scripts/lib/positionEventMatch.js';
 import { positionFitsBoardSport, SOC_SLUG_LEAGUES } from '../src/lib/sportSlug.js';
+import { lookupPinnGame } from '../scripts/lib/ufcFighters.js';
 
 let pass = 0, fail = 0;
 function check(name, cond) {
@@ -135,6 +136,32 @@ check('epl does not fit WNBA', positionFitsBoardSport({ slug: 'epl-ars-cov-2026-
     { boardDate: '2026-08-21', sport: 'WNBA' },
   );
   check('epl rejected on WNBA', gate.ok === false && gate.reason === 'slug_sport_mismatch');
+}
+
+check('odds API Paris Saint Germain', resolveSOCTeam('Paris Saint Germain') === 'PSG');
+check('odds API LASK', resolveSOCTeam('LASK') === 'LAS');
+check('odds API Bodo', resolveSOCTeam('Bodø/Glimt') === 'BOD');
+check('ucl odds key Liverpool at LASK', makeSOCGameKey('Liverpool', 'LASK') === 'liv_las');
+check('ucl odds key Como at Feyenoord', makeSOCGameKey('Como', 'Feyenoord') === 'com_fey');
+{
+  const flipped = lookupPinnGame({
+    SOC: {
+      liv_las: {
+        awayTeam: 'Liverpool',
+        homeTeam: 'LASK',
+        current: { away: -239, home: 450, draw: 340 },
+        allBooks: { fanduel: { away: -250, home: 440, draw: 330, name: 'FanDuel' } },
+        spreadCurrent: { awayLine: 1.5, homeLine: -1.5, awayOdds: -110, homeOdds: -110 },
+        spreadLines: [{ awayLine: 1.5, homeLine: -1.5, awayOdds: -110, homeOdds: -110, isMain: true }],
+        bestAway: -239,
+        bestHome: 450,
+      },
+    },
+  }, 'SOC', 'las_liv');
+  check('ucl board finds reversed book', flipped?.current?.home === -239 && flipped?.current?.away === 450);
+  check('ucl book rail follows the flip', flipped?.allBooks?.fanduel?.home === -250);
+  check('ucl spread flip', flipped?.spreadCurrent?.homeLine === 1.5 && flipped?.spreadLines?.[0]?.homeLine === 1.5);
+  check('direct epl key is not flipped', lookupPinnGame({ SOC: { ars_not: { current: { home: 100 } } } }, 'SOC', 'ars_not')?.current?.home === 100);
 }
 
 console.log(`\ntestSoccerTeams: ${pass} passed, ${fail} failed`);
