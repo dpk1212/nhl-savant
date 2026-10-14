@@ -1616,8 +1616,14 @@ export default function ConfirmedActionDesk({
       cellStatsTable,
       polyData,
       sportFilter,
+      portfolioShorts: mySharps.shorts,
     }),
-    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData, sportFilter],
+    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable, polyData, sportFilter, mySharps.shorts],
+  );
+
+  const boardRows = useMemo(
+    () => (deskMode === 'mine' ? rows : (rows || []).filter((r) => !r.portfolioOnly)),
+    [rows, deskMode],
   );
 
   const nowMs = Date.now();
@@ -1626,7 +1632,7 @@ export default function ConfirmedActionDesk({
   const selectedDate = dateKeys.includes(dateKey) ? dateKey : todayKey;
 
   const dated = useMemo(() => {
-    const filtered = filterActionRows(rows, {
+    const filtered = filterActionRows(boardRows, {
       sport: sportFilter,
       highMidOnly: deskMode === 'mine' ? false : highMidOnly,
       sizedOnly: deskMode === 'mine' ? false : sizedOnly,
@@ -1637,7 +1643,7 @@ export default function ConfirmedActionDesk({
       nowMs: Date.now(),
     }).filter((r) => rowMatchesActionSport(r, sportFilter));
     return filtered;
-  }, [rows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, topPlayOnly, selectedDate, deskMode]);
+  }, [boardRows, sportFilter, highMidOnly, sizedOnly, clearOnly, pinWithOnly, topPlayOnly, selectedDate, deskMode]);
 
   const allMine = useMemo(
     () => filterRowsToMySharps(dated, mySharps.shorts),
@@ -1646,10 +1652,10 @@ export default function ConfirmedActionDesk({
 
   const allMineAnyDay = useMemo(
     () => filterRowsToMySharps(
-      (rows || []).filter((r) => rowMatchesActionSport(r, sportFilter)),
+      (boardRows || []).filter((r) => rowMatchesActionSport(r, sportFilter)),
       mySharps.shorts,
     ),
-    [rows, sportFilter, mySharps.shorts],
+    [boardRows, sportFilter, mySharps.shorts],
   );
 
   const roster = useMemo(

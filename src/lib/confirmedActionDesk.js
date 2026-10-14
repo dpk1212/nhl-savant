@@ -708,7 +708,13 @@ export function buildConfirmedActionRows({
   cellStatsTable = null,
   polyData = null,
   sportFilter = 'All',
+  portfolioShorts = null,
 } = {}) {
+  const portfolioSet = new Set();
+  for (const s of portfolioShorts || []) {
+    const id = shortWalletId(s);
+    if (id) portfolioSet.add(id);
+  }
   const qBySport = buildFlatDollarQBySport(walletProfiles);
   const raw = [
     ...collectPositions(sharpPositions, 'ML'),
@@ -754,7 +760,10 @@ export function buildConfirmedActionRows({
     if (hardMarket) addHardWallet(hardByCluster, sport, gameKey, marketType, side, short);
 
     const tier = String(prof?.bySport?.[sport]?.whitelistTier || '').toUpperCase();
-    if (!ACTION_TIERS.has(tier)) continue;
+    const proven = ACTION_TIERS.has(tier);
+    // Saved portfolio wallets still feed My Bets when this sport is tracked.
+    // The public Action board stays Proven-only.
+    if (!proven && !portfolioSet.has(short)) continue;
     const qMap = qBySport.get(sport) || new Map();
     const q = qMap.get(short) || qMap.get(String(short).toLowerCase()) || null;
     const skill = skillBandFromQ(q);
@@ -764,7 +773,8 @@ export function buildConfirmedActionRows({
     const size = sizeBandFromRatio(sr);
     const dispSr = sportDisplaySizeRatio(pos, prof, sport);
     const dispSize = sizeBandFromRatio(dispSr);
-    const counted = isCountedProvenSize(sr);
+    const portfolioOnly = !proven;
+    const counted = portfolioOnly ? false : isCountedProvenSize(sr);
     const form = formFromProfile(prof, sport);
     const formDisp = formLabel(form);
     const invested = Number(pos.invested || pos.size || 0) || 0;
@@ -819,6 +829,7 @@ export function buildConfirmedActionRows({
       displaySizeBand: dispSize.key,
       displaySizeLabel: dispSize.label,
       whitelistTier: tier,
+      portfolioOnly,
       counted,
       skillKey: skill.key,
       skillLabel: skill.label,
@@ -887,7 +898,7 @@ export function buildConfirmedActionRows({
         r.opposedBy = 0;
         continue;
       }
-      const foes = list.filter((x) => x.side === opp && x.counted);
+      const foes = list.filter((x) => x.side === opp && (r.portfolioOnly ? (x.counted || x.portfolioOnly) : x.counted));
       r.opposedBy = foes.length;
       r.opposed = foes.length > 0 ? 'contested' : 'clear';
     }

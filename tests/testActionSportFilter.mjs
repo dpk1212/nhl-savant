@@ -142,6 +142,60 @@ assert.deepEqual(filterActionRows(sortRows, { sport: 'All', clearOnly: true, min
 assert.deepEqual(filterActionRows(sortRows, { sport: 'All', pinWithOnly: true, minInvested: 0 }).map((r) => r.team), ['Over', 'Cubs']);
 assert.deepEqual(filterActionRows(sortRows, { sport: 'All', highMidOnly: true, minInvested: 0 }).map((r) => r.team), ['Over', 'Cubs']);
 
+const trackedProfiles = new Map([
+  ['aa11bb', { bySport: { MLB: { whitelistTier: 'CONFIRMED' }, NHL: { whitelistTier: 'WR50' } } }],
+  ['cc33dd', { bySport: { NHL: { whitelistTier: 'WR50' } } }],
+  ['dd44ee', { bySport: { MLB: { whitelistTier: 'WR50' } } }],
+]);
+const nhlBoard = {
+  NHL: {
+    njd_tor: {
+      away: 'NJD', home: 'TOR',
+      positions: [
+        { wallet: '0xaaaaaaaaaaaaaa11bb', side: 'away', invested: 2700, slug: 'nhl-njd-tor-2026-10-14' },
+        { wallet: '0xcccccccccccccc33dd', side: 'home', invested: 1800, slug: 'nhl-njd-tor-2026-10-14' },
+      ],
+    },
+  },
+};
+assert.equal(buildConfirmedActionRows({
+  sharpPositions: nhlBoard,
+  walletProfiles: trackedProfiles,
+}).rows.length, 0, 'unproven NHL stays off the Action board');
+const tracked = buildConfirmedActionRows({
+  sharpPositions: nhlBoard,
+  walletProfiles: trackedProfiles,
+  portfolioShorts: ['aa11bb'],
+}).rows;
+assert.equal(tracked.length, 1, 'only the saved wallet is added');
+assert.equal(tracked[0].walletShort, 'aa11bb');
+assert.equal(tracked[0].sport, 'NHL');
+assert.equal(tracked[0].portfolioOnly, true);
+assert.equal(tracked[0].counted, false);
+
+const splitBoard = {
+  MLB: {
+    pit_chc: {
+      away: 'PIT', home: 'CHC',
+      positions: [
+        { wallet: '0xaaaaaaaaaaaaaa11bb', side: 'over', invested: 2000, slug: 'mlb-pit-chc-2026-10-14', betMultiplier: 1.2 },
+        { wallet: '0xdddddddddddddd44ee', side: 'under', invested: 1500, slug: 'mlb-pit-chc-2026-10-14', betMultiplier: 1.1 },
+      ],
+    },
+  },
+};
+const splitRows = buildConfirmedActionRows({
+  totalPositions: splitBoard,
+  walletProfiles: trackedProfiles,
+  portfolioShorts: ['dd44ee'],
+}).rows;
+const provenOver = splitRows.find((r) => r.walletShort === 'aa11bb');
+const trackedUnder = splitRows.find((r) => r.walletShort === 'dd44ee');
+assert.equal(provenOver.portfolioOnly, false);
+assert.equal(provenOver.opposed, 'clear', 'a tracked unproven ticket does not contest the Action board');
+assert.equal(trackedUnder.portfolioOnly, true);
+assert.equal(trackedUnder.opposed, 'contested', 'My Bets still sees the other side');
+
 assert.equal(pinMoveFor({ MLB: { x: { movement: { direction: 'over' } } } }, 'MLB', 'x', 'over'), 'with');
 assert.equal(pinMoveFor({ MLB: { x: { movement: { direction: 'under' } } } }, 'MLB', 'x', 'over'), 'against');
 assert.equal(pinMoveFor({}, 'MLB', 'x', 'over', { show: true }), 'with');
