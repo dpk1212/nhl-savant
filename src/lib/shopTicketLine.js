@@ -194,51 +194,130 @@ function onPlayLine(bookLine, ticketLine, market, side) {
   return nearFavorableMain(ticketLine, bookLine, { marketType: market, sideNorm: side });
 }
 
+/** Same lead the locked card uses. The board seals 15 minutes before start. */
+export const TICKET_FREEZE_LEAD_MS = 15 * 60 * 1000;
+
+export function ticketFreezeAt(commenceMs) {
+  const n = Number(commenceMs);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n - TICKET_FREEZE_LEAD_MS;
+}
+
+export function ticketIsFrozen(commenceMs, nowMs = Date.now()) {
+  const at = ticketFreezeAt(commenceMs);
+  return at != null && Number(nowMs) >= at;
+}
+
+/** Keep history points at or before the lock. Points without a time stay. */
+function histUpTo(hist, freezeAtMs) {
+  if (!Array.isArray(hist)) return [];
+  if (!Number.isFinite(freezeAtMs)) return hist;
+  const freezeSec = freezeAtMs > 1e12 ? freezeAtMs / 1000 : freezeAtMs;
+  return hist.filter((h) => {
+    if (!Number.isFinite(h?.t)) return true;
+    const sec = h.t > 1e12 ? h.t / 1000 : h.t;
+    return sec <= freezeSec;
+  });
+}
+
 /**
- * Live shop for one open ticket. Same books the locked card prices:
- * Pinnacle on this line, the retail board, best American, EV vs sharp consensus.
- * A miss stays null — the card keeps the sharp's own price.
+ * Pinnacle's last print at the lock. Live retail is not on the tape, so a
+ * sealed card does not keep the moving best-book row.
  */
-export function quoteTicketShop(pinnacleHistory, ticket) {
+function frozenBoard(game, { market, side, line, freezeAt }) {
+  if (market === 'TOTAL') {
+    const hist = histUpTo(game.totalHistory, freezeAt);
+    const hit = [...hist].reverse().find((h) => onPlayLine(h.line, line, 'total', side));
+    if (!hit) return null;
+    return {
+      totalCurrent: { line: hit.line, overOdds: hit.overOdds, underOdds: hit.underOdds },
+      fairTotalBook: hit.fairBook || game.fairTotalBook || 'pinnacle',
+      allTotalBooks: {},
+    };
+  }
+  if (market === 'SPREAD') {
+    const hist = histUpTo(game.spreadHistory, freezeAt);
+    const hit = [...hist].reverse().find((h) => {
+      const ln = side === 'away' ? h.awayLine : h.homeLine;
+      return onPlayLine(ln, line, 'spread', side);
+    });
+    if (!hit) return null;
+    return {
+      spreadCurrent: {
+        awayLine: hit.awayLine,
+        homeLine: hit.homeLine,
+        awayOdds: hit.awayOdds,
+        homeOdds: hit.homeOdds,
+      },
+      fairSpreadBook: hit.fairBook || game.fairSpreadBook || 'pinnacle',
+      allSpreadBooks: {},
+    };
+  }
+  const hist = histUpTo(game.history, freezeAt);
+  const hit = [...hist].reverse().find((h) => {
+    const o = side === 'away' ? h.away : side === 'draw' ? h.draw : h.home;
+    return Number.isFinite(o);
+  });
+  if (!hit) return null;
+  return {
+    current: { away: hit.away, home: hit.home, draw: hit.draw },
+    fairBook: hit.fairBook || game.fairBook || 'pinnacle',
+    allBooks: {},
+  };
+}
+
+/**
+ * Shop for one open ticket. Same books the locked card prices:
+ * Pinnacle on this line, the retail board, best American, EV vs sharp consensus.
+ * At the lock (15 minutes before start) the live board is ignored and the
+ * last Pinnacle print on the tape is the price. A miss stays null — the card
+ * keeps the sharp's own price.
+ */
+export function quoteTicketShop(pinnacleHistory, ticket, opts = {}) {
   if (!ticket) return null;
   const game = lookupPinnGame(pinnacleHistory, ticket.sport, ticket.gameKey);
   if (!game) return null;
   const market = String(ticket.marketType || 'ML').toUpperCase();
   const side = String(ticket.side || '').toLowerCase();
   const line = Number.isFinite(Number(ticket.entryLine)) ? Number(ticket.entryLine) : null;
+  const nowMs = Number.isFinite(opts?.nowMs) ? opts.nowMs : Date.now();
+  const freezeAt = ticketFreezeAt(ticket.commenceMs);
+  const sealed = freezeAt != null && nowMs >= freezeAt;
+  const view = sealed ? frozenBoard(game, { market, side, line, freezeAt }) : game;
+  if (!view) return null;
   const books = [];
   const seen = new Set();
   let presetOdds = null;
   let presetBook = null;
 
   if (market === 'TOTAL') {
-    const cur = game.totalCurrent;
+    const cur = view.totalCurrent;
     if (cur && onPlayLine(cur.line, line, 'total', side)) {
       const o = side === 'under' ? cur.underOdds : cur.overOdds;
-      pushShopBook(books, seen, { name: pinLabel(game.fairTotalBook), odds: o, sharp: true, line: cur.line });
+      pushShopBook(books, seen, { name: pinLabel(view.fairTotalBook), odds: o, sharp: true, line: cur.line });
     }
-    const all = game.allTotalBooks || {};
+    const all = view.allTotalBooks || {};
     for (const k of shopKeys(all)) {
       const b = all[k];
       if (!b || !onPlayLine(b.line, line, 'total', side)) continue;
       const o = side === 'under' ? b.under : b.over;
       pushShopBook(books, seen, { name: b.name || k, odds: o, line: b.line });
     }
-    const best = side === 'under' ? game.bestUnder : game.bestOver;
+    const best = side === 'under' ? view.bestUnder : view.bestOver;
     if (best && Number.isFinite(best.odds) && onPlayLine(best.line, line, 'total', side)) {
       presetOdds = best.odds;
       presetBook = best.book || null;
     }
   } else if (market === 'SPREAD') {
-    const cur = game.spreadCurrent;
+    const cur = view.spreadCurrent;
     if (cur) {
       const ln = side === 'away' ? cur.awayLine : cur.homeLine;
       const o = side === 'away' ? cur.awayOdds : cur.homeOdds;
       if (onPlayLine(ln, line, 'spread', side)) {
-        pushShopBook(books, seen, { name: pinLabel(game.fairSpreadBook), odds: o, sharp: true, line: ln });
+        pushShopBook(books, seen, { name: pinLabel(view.fairSpreadBook), odds: o, sharp: true, line: ln });
       }
     }
-    const all = game.allSpreadBooks || {};
+    const all = view.allSpreadBooks || {};
     for (const k of shopKeys(all)) {
       const b = all[k];
       if (!b) continue;
@@ -247,23 +326,23 @@ export function quoteTicketShop(pinnacleHistory, ticket) {
       const o = side === 'away' ? b.away : b.home;
       pushShopBook(books, seen, { name: b.name || k, odds: o, line: ln });
     }
-    const best = side === 'away' ? game.bestAwaySpread : game.bestHomeSpread;
+    const best = side === 'away' ? view.bestAwaySpread : view.bestHomeSpread;
     if (best && Number.isFinite(best.odds) && onPlayLine(best.line, line, 'spread', side)) {
       presetOdds = best.odds;
       presetBook = best.book || null;
     }
   } else {
-    const cur = game.current || {};
+    const cur = view.current || {};
     const fair = side === 'away' ? cur.away : side === 'draw' ? cur.draw : cur.home;
-    pushShopBook(books, seen, { name: pinLabel(game.fairBook), odds: fair, sharp: true });
-    const all = game.allBooks || {};
+    pushShopBook(books, seen, { name: pinLabel(view.fairBook), odds: fair, sharp: true });
+    const all = view.allBooks || {};
     for (const k of shopKeys(all)) {
       const b = all[k];
       const o = side === 'away' ? b?.away : side === 'draw' ? b?.draw : b?.home;
       pushShopBook(books, seen, { name: b?.name || k, odds: o });
     }
-    presetOdds = side === 'away' ? game.bestAway : side === 'draw' ? game.bestDraw : game.bestHome;
-    presetBook = side === 'away' ? game.bestAwayBook : side === 'draw' ? game.bestDrawBook : game.bestHomeBook;
+    presetOdds = side === 'away' ? view.bestAway : side === 'draw' ? view.bestDraw : view.bestHome;
+    presetBook = side === 'away' ? view.bestAwayBook : side === 'draw' ? view.bestDrawBook : view.bestHomeBook;
     if (!Number.isFinite(presetOdds)) {
       presetOdds = null;
       presetBook = null;
@@ -299,5 +378,6 @@ export function quoteTicketShop(pinnacleHistory, ticket) {
     consensusOdds: Number.isFinite(shop.consensusOdds) ? shop.consensusOdds : null,
     impliedPct: implied == null ? null : Math.round(implied * 1000) / 10,
     books: rail.slice(0, 8),
+    frozen: sealed,
   };
 }

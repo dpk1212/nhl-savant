@@ -25,7 +25,7 @@ import {
 } from '../../lib/mySharpsDesk.js';
 import { betsFeedKey, betsFeedOn } from '../../lib/mySharps.js';
 import { getTeamIdentity, shortTeamNick, teamLogoUrl } from '../../utils/teamIdentity.js';
-import { quoteTicketShop } from '../../lib/shopTicketLine.js';
+import { quoteTicketShop, ticketIsFrozen } from '../../lib/shopTicketLine.js';
 import { BookLogo } from './cards/bookLogo.jsx';
 
 const B = {
@@ -120,6 +120,23 @@ function fmtPrice(n) {
   const v = Number(n);
   if (!Number.isFinite(v) || v === 0) return '—';
   return v > 0 ? `+${v}` : `${v}`;
+}
+
+function fmtEntry(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).formatToParts(new Date(n));
+  const get = (type) => parts.find((p) => p.type === type)?.value || '';
+  const period = get('dayPeriod').toLowerCase().replace(/\s+/g, '');
+  const clock = `${get('hour')}:${get('minute')}${period}`;
+  return `${get('month')}/${get('day')} ${clock}`;
 }
 
 function fmtClock(ms) {
@@ -1050,41 +1067,51 @@ function WhoChip({ line }) {
       {line.ratio ? (
         <span style={{ ...T.figure, color, fontSize: '0.78rem' }}>{line.ratio.toFixed(1)}×</span>
       ) : null}
+      {line.ts ? (
+        <span style={{ ...T.meta, color: B.textFaint, fontWeight: 500 }}>{fmtEntry(line.ts)}</span>
+      ) : null}
     </span>
   );
 }
 
-function PricePair({ quote, fallback }) {
+function PricePair({ quote, fallback, frozen, isMobile }) {
+  const oddsSize = isMobile ? '1.45rem' : '1.7rem';
   if (!quote || !Number.isFinite(quote.odds)) {
     return (
       <div style={{ marginTop: 12 }}>
-        <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>Their price</div>
-        <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.55rem', marginTop: 4, letterSpacing: '-0.04em' }}>{fallback}</div>
+        <div style={{ ...T.kicker, color: frozen ? B.gold : B.textFaint, letterSpacing: '0.08em' }}>
+          {frozen ? 'Locked' : 'Their price'}
+        </div>
+        <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.4rem' : '1.55rem', marginTop: 4, letterSpacing: '-0.04em' }}>{fallback}</div>
+        {frozen ? <div style={{ ...T.meta, color: B.textFaint, marginTop: 5 }}>Their price · at the lock</div> : null}
       </div>
     );
   }
-  const ev = Number.isFinite(quote.evPct) ? `+${quote.evPct.toFixed(1)}% EV` : null;
+  const ev = !frozen && Number.isFinite(quote.evPct) ? `+${quote.evPct.toFixed(1)}% EV` : null;
   const sub = [
     quote.impliedPct != null ? `${quote.impliedPct}%` : null,
     quote.book || null,
+    frozen ? 'at the lock' : null,
   ].filter(Boolean).join('  ·  ');
+  const showSharp = Number.isFinite(quote.consensusOdds)
+    && (!frozen || quote.consensusOdds !== quote.odds);
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 28px', alignItems: 'flex-end', marginTop: 12 }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: isMobile ? '8px 20px' : '8px 28px', alignItems: 'flex-end', marginTop: 12 }}>
       <div>
-        <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>Best</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-          {quote.book ? <BookLogo name={quote.book} size={22} /> : null}
-          <span style={{ ...T.figure, color: B.text, fontSize: '1.7rem', letterSpacing: '-0.045em', lineHeight: 0.9 }}>
+        <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>{frozen ? 'Locked' : 'Best'}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
+          {quote.book ? <BookLogo name={quote.book} size={isMobile ? 20 : 22} /> : null}
+          <span style={{ ...T.figure, color: B.text, fontSize: oddsSize, letterSpacing: '-0.045em', lineHeight: 0.9 }}>
             {fmtPrice(quote.odds)}
           </span>
-          {ev ? <span style={{ ...T.figure, color: B.green, fontSize: '0.95rem' }}>{ev}</span> : null}
+          {ev ? <span style={{ ...T.figure, color: B.green, fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{ev}</span> : null}
         </div>
         {sub ? <div style={{ ...T.meta, color: B.textSec, marginTop: 5 }}>{sub}</div> : null}
       </div>
-      {Number.isFinite(quote.consensusOdds) ? (
+      {showSharp ? (
         <div>
           <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Sharp</div>
-          <div style={{ ...T.figure, color: B.textSec, fontSize: '1.35rem', marginTop: 6, letterSpacing: '-0.03em', lineHeight: 0.95 }}>
+          <div style={{ ...T.figure, color: B.textSec, fontSize: isMobile ? '1.2rem' : '1.35rem', marginTop: 6, letterSpacing: '-0.03em', lineHeight: 0.95 }}>
             {fmtPrice(quote.consensusOdds)}
           </div>
           <div style={{ ...T.meta, color: B.textFaint, marginTop: 5 }}>consensus</div>
@@ -1442,6 +1469,50 @@ function SharpResults({ line, sport, market, isMobile }) {
   );
 }
 
+function MobileFact({ label, value, sub, color = B.text }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div style={{
+        ...T.kicker,
+        color: B.textFaint,
+        letterSpacing: '0.06em',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+      >
+        {label}
+      </div>
+      <div style={{
+        ...T.figure,
+        color,
+        fontSize: '0.98rem',
+        lineHeight: 1.1,
+        marginTop: 3,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+      >
+        {value}
+      </div>
+      {sub ? (
+        <div style={{
+          ...T.meta,
+          color: B.textMuted,
+          marginTop: 2,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+        >
+          {sub}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SharpReceipt({ line, sport, isMobile, selected, onOpen }) {
   const pressing = (line.ratio || 0) >= 1.5;
   const heat = heatWord(line.heat);
@@ -1460,33 +1531,51 @@ function SharpReceipt({ line, sport, isMobile, selected, onOpen }) {
   };
 
   if (isMobile) {
+    const entered = fmtEntry(line.ts);
+    const sizeSub = line.sizeTier?.wr != null
+      ? line.sizeTier.kicker
+      : (line.sizeTier?.n ? `${line.sizeTier.n} bets` : null);
+    const sizeValue = line.sizeTier?.wr != null
+      ? `${line.sizeTier.wr}%`
+      : (line.sizeTier?.record || '—');
     return (
       <div
-        style={{ padding: '0.55rem 0', borderTop: `1px solid ${B.hair}`, cursor: onOpen ? 'pointer' : 'default', background: selected ? 'rgba(255,255,255,0.02)' : 'transparent' }}
+        style={{ padding: '0.72rem 0', borderTop: `1px solid ${B.hair}`, cursor: onOpen ? 'pointer' : 'default', background: selected ? 'rgba(255,255,255,0.02)' : 'transparent' }}
         onClick={openRow}
       >
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ ...T.name, color: B.text, fontSize: '0.92rem' }}>{line.tag}</span>
-          <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '1rem' }}>{size}</span>
-          <span style={{ textAlign: 'right' }}>
-            <span style={{ ...T.figure, color: B.goldSoft, fontSize: '1rem' }}>{stake}</span>
-            {line.price ? <span style={{ ...T.meta, color: B.text, marginLeft: 6 }}>{line.price}</span> : null}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+          <span style={{ ...T.name, color: B.text, fontSize: '0.95rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line.tag}</span>
+          {entered ? <span style={{ ...T.meta, color: B.textFaint, whiteSpace: 'nowrap', flexShrink: 0 }}>{entered}</span> : null}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8, marginTop: 8 }}>
-          <div>
-            <div style={{ ...T.figure, color: heatColor, fontSize: '0.95rem' }}>{l10}</div>
-            <div style={{ ...T.kicker, color: heatColor, marginTop: 3 }}>{heat || 'L10'}</div>
-          </div>
-          <SizeWr tier={line.sizeTier} />
-          <div>
-            <div style={{ ...T.figure, color: B.text, fontSize: '0.95rem' }}>{book}</div>
-            <div style={{ ...T.kicker, color: bookRoi == null ? B.textFaint : pnlColor(bookRoi, B.textMuted), marginTop: 3 }}>{bookRoi == null ? 'Book' : `${bookRoi}% book`}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ ...T.figure, color: pnlColor(line.marketL30, B.textMuted), fontSize: '0.95rem' }}>{month}</div>
-            <div style={{ ...T.kicker, color: B.textFaint, marginTop: 3 }}>30 days</div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginTop: 4 }}>
+          <span style={{ whiteSpace: 'nowrap' }}>
+            <span style={{ ...T.figure, color: B.goldSoft, fontSize: '1.05rem' }}>{stake}</span>
+            {line.price ? <span style={{ ...T.figure, color: B.text, fontSize: '1.05rem', marginLeft: 8 }}>{line.price}</span> : null}
+          </span>
+          {size !== '—' ? (
+            <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '1.05rem', whiteSpace: 'nowrap' }}>{size}</span>
+          ) : null}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px', marginTop: 10 }}>
+          <MobileFact label={heat || 'Last 10'} value={l10} color={heatColor} />
+          <MobileFact
+            label="At size"
+            value={sizeValue}
+            sub={sizeSub}
+            color={tierWrColor(line.sizeTier)}
+          />
+          <MobileFact
+            label="Book"
+            value={book}
+            sub={bookRoi == null ? null : `${bookRoi}%`}
+            color={B.text}
+          />
+          <MobileFact
+            label="30 days"
+            value={month}
+            sub={sportBit}
+            color={pnlColor(line.marketL30, B.textMuted)}
+          />
         </div>
       </div>
     );
@@ -1506,7 +1595,12 @@ function SharpReceipt({ line, sport, isMobile, selected, onOpen }) {
       }}
       onClick={openRow}
     >
-      <div style={{ ...T.name, color: B.text, fontSize: '0.92rem' }}>{line.tag}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ ...T.name, color: B.text, fontSize: '0.92rem' }}>{line.tag}</div>
+        {fmtEntry(line.ts) ? (
+          <div style={{ ...T.meta, color: B.textFaint, marginTop: 3 }}>{fmtEntry(line.ts)}</div>
+        ) : null}
+      </div>
       <div style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '1.12rem', textAlign: 'right' }}>{size}</div>
       <div style={{ textAlign: 'right' }}>
         <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.08rem', lineHeight: 1 }}>{stake}</div>
@@ -1539,8 +1633,46 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
   const price = item.americanLabel || fmtPrice(item.americanOdds);
   const lines = item.walletLines || [];
   const nSharps = lines.length;
+  const frozen = ticketIsFrozen(item.commenceMs);
   const quote = quoteTicketShop(pinnacleHistory, item);
   const [openLine, setOpenLine] = useState(null);
+  const metaBits = [shortMatchup(item), clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean);
+  const soloEntry = nSharps === 1 ? fmtEntry(lines[0]?.ts) : '';
+  const stakeBlock = (
+    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+      <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.15rem' : '1.35rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>On this side</div>
+      <div style={{ marginTop: 8 }}>
+        {tailed && !open ? (
+          <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
+        ) : (
+          <button type="button" onClick={() => onDraft(item, suggestedStake)} style={goldBtn}>
+            {open ? 'Close' : 'Tail'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+  const meta = (
+    <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, display: 'flex', flexWrap: 'wrap' }}>
+      {metaBits.map((bit, i) => (
+        <span key={`${bit}-${i}`} style={{ whiteSpace: 'nowrap' }}>
+          {i > 0 ? <span style={{ color: B.textFaint }}>{'  ·  '}</span> : null}
+          {bit}
+        </span>
+      ))}
+      {soloEntry ? (
+        <span style={{ whiteSpace: 'nowrap' }}>
+          <span style={{ color: B.textFaint }}>{'  ·  '}</span>
+          {`entered ${soloEntry}`}
+        </span>
+      ) : null}
+      {!frozen && item.pinMove === 'with' ? <span style={{ whiteSpace: 'nowrap', color: B.green }}>{'  ·  with the line'}</span> : null}
+      {!frozen && item.pinMove === 'against' ? <span style={{ whiteSpace: 'nowrap', color: B.red }}>{'  ·  against the line'}</span> : null}
+      {frozen ? <span style={{ whiteSpace: 'nowrap', color: B.goldSoft }}>{'  ·  locked'}</span> : null}
+      {tailed ? <span style={{ whiteSpace: 'nowrap', color: B.goldSoft }}>{`  ·  Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
+    </div>
+  );
   return (
     <div style={{
       position: 'relative',
@@ -1560,32 +1692,28 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <MatchMarks item={item} size={isMobile ? 36 : 44} />
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ ...T.name, color: B.text, fontSize: isMobile ? '1.28rem' : '1.45rem', letterSpacing: '-0.035em', lineHeight: 1 }}>
-            {item.pick}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
+            <div style={{ ...T.name, color: B.text, fontSize: isMobile ? '1.28rem' : '1.45rem', letterSpacing: '-0.035em', lineHeight: 1, minWidth: 0 }}>
+              {item.pick}
+            </div>
+            {isMobile ? stakeBlock : null}
           </div>
-          <div style={{ ...T.meta, color: B.textMuted, marginTop: 6 }}>
-            {[shortMatchup(item), clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean).join('  ·  ')}
-            {item.pinMove === 'with' ? <span style={{ color: B.green }}>  ·  with the line</span> : null}
-            {item.pinMove === 'against' ? <span style={{ color: B.red }}>  ·  against the line</span> : null}
-            {tailed ? <span style={{ color: B.goldSoft }}>{`  ·  Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
-          </div>
-          <PricePair quote={quote} fallback={price} />
-          {quote ? <BookRail books={quote.books} /> : null}
+          {meta}
+          {isMobile ? null : (
+            <>
+              <PricePair quote={quote} fallback={price} frozen={frozen} isMobile={false} />
+              {quote && !frozen ? <BookRail books={quote.books} /> : null}
+            </>
+          )}
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.15rem' : '1.35rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>On this side</div>
-          <div style={{ marginTop: 8 }}>
-            {tailed && !open ? (
-              <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
-            ) : (
-              <button type="button" onClick={() => onDraft(item, suggestedStake)} style={goldBtn}>
-                {open ? 'Close' : 'Tail'}
-              </button>
-            )}
-          </div>
-        </div>
+        {isMobile ? null : stakeBlock}
       </div>
+      {isMobile ? (
+        <>
+          <PricePair quote={quote} fallback={price} frozen={frozen} isMobile />
+          {quote && !frozen ? <BookRail books={quote.books} /> : null}
+        </>
+      ) : null}
       <OtherSideNote item={item} />
       <ProofPair lines={lines} />
       {lines.length > 1 ? <SharpPlate lines={lines} hideChips={expanded} /> : null}

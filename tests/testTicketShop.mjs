@@ -64,4 +64,62 @@ const missing = quoteTicketShop(history, {
 });
 assert.equal(missing, null);
 
-console.log('ticket shop ok', { underEv: under.evPct, spreadEv: spread.evPct });
+const commence = Date.parse('2026-10-15T23:00:00Z');
+const freeze = commence - 15 * 60 * 1000;
+const moving = {
+  MLB: {
+    tor_bal: {
+      ...history.MLB.tor_bal,
+      history: [
+        { t: Math.floor((freeze - 60_000) / 1000), away: -140, home: 120 },
+        { t: Math.floor((freeze + 120_000) / 1000), away: 150, home: -170 },
+      ],
+      totalHistory: [
+        { t: Math.floor((freeze - 60_000) / 1000), line: 8.5, overOdds: -104, underOdds: -118, isMain: true },
+        { t: Math.floor((freeze + 60_000) / 1000), line: 8.5, overOdds: -160, underOdds: 140, isMain: true },
+      ],
+      spreadHistory: [
+        { t: Math.floor((freeze - 60_000) / 1000), awayLine: 1.5, homeLine: -1.5, awayOdds: -112, homeOdds: -108 },
+        { t: Math.floor((freeze + 60_000) / 1000), awayLine: 1.5, homeLine: -1.5, awayOdds: 130, homeOdds: -150 },
+      ],
+    },
+  },
+};
+const ticket = {
+  sport: 'MLB', gameKey: 'tor_bal', commenceMs: commence,
+};
+const liveUnder = quoteTicketShop(moving, {
+  ...ticket, marketType: 'TOTAL', side: 'under', entryLine: 8.5,
+}, { nowMs: freeze - 1000 });
+assert.equal(liveUnder.frozen, false);
+assert.equal(liveUnder.book, 'DraftKings');
+assert.equal(liveUnder.odds, -105);
+
+const lockedUnder = quoteTicketShop(moving, {
+  ...ticket, marketType: 'TOTAL', side: 'under', entryLine: 8.5,
+}, { nowMs: freeze + 1000 });
+assert.equal(lockedUnder.frozen, true);
+assert.equal(lockedUnder.odds, -118);
+assert.equal(lockedUnder.book, 'Pinnacle');
+assert.equal(lockedUnder.books.length, 1);
+assert.equal(lockedUnder.evPct, null);
+
+const lockedAway = quoteTicketShop(moving, {
+  ...ticket, marketType: 'ML', side: 'away',
+}, { nowMs: freeze + 5000 });
+assert.equal(lockedAway.odds, -140);
+assert.equal(lockedAway.book, 'Pinnacle');
+assert.ok(!lockedAway.books.some((b) => b.name === 'FanDuel'));
+
+const lockedSpread = quoteTicketShop(moving, {
+  ...ticket, marketType: 'SPREAD', side: 'away', entryLine: 1.5,
+}, { nowMs: freeze + 1000 });
+assert.equal(lockedSpread.odds, -112);
+assert.equal(lockedSpread.book, 'Pinnacle');
+
+const noTape = quoteTicketShop(history, {
+  ...ticket, marketType: 'TOTAL', side: 'under', entryLine: 8.5,
+}, { nowMs: freeze + 1000 });
+assert.equal(noTape, null);
+
+console.log('ticket shop ok', { underEv: under.evPct, spreadEv: spread.evPct, lockedUnder: lockedUnder.odds });

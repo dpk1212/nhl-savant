@@ -2,10 +2,12 @@
  * Populated My Sharps desk — #/my-sharps-lab
  * Fixture only. No auth, no live wallets.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { parseMySharpsDoc, tailFromTicket, toggleBetsFeed, toggleMySharpMember } from '../../lib/mySharps.js';
 import { buildMySharpsRoster } from '../../lib/mySharpsDesk.js';
-import MySharpsDesk from '../sharpFlow/MySharpsDesk.jsx';
+import MySharpsDesk, { focusSharpsRoom } from '../sharpFlow/MySharpsDesk.jsx';
+
+focusSharpsRoom('bets');
 
 const seed = parseMySharpsDoc({
   mySharps: {
@@ -306,6 +308,10 @@ const profiles = new Map([
   }],
 ]);
 
+const torCommence = Date.parse('2026-09-22T18:36:00-04:00');
+const torFreeze = torCommence - 15 * 60 * 1000;
+const liveCommence = Date.now() + 4 * 60 * 60 * 1000;
+
 const pinnacleHistory = {
   MLB: {
     tor_bal: {
@@ -327,6 +333,22 @@ const pinnacleHistory = {
         draftkings: { name: 'DraftKings', line: 8.5, over: -118, under: -105 },
         fanduel: { name: 'FanDuel', line: 8.5, over: 100, under: -112 },
       },
+      totalHistory: [
+        { t: Math.floor((torFreeze - 60_000) / 1000), line: 8.5, overOdds: -104, underOdds: -118, isMain: true },
+        { t: Math.floor((torFreeze + 30 * 60_000) / 1000), line: 8.5, overOdds: -160, underOdds: 140, isMain: true },
+      ],
+    },
+    stl_pit: {
+      current: { away: -130, home: 118 },
+      fairBook: 'pinnacle',
+      bestAway: -125,
+      bestAwayBook: 'FanDuel',
+      bestHome: 120,
+      bestHomeBook: 'DraftKings',
+      allBooks: {
+        fanduel: { name: 'FanDuel', away: -125, home: 112 },
+        draftkings: { name: 'DraftKings', away: -128, home: 120 },
+      },
     },
   },
 };
@@ -337,37 +359,50 @@ const actionRows = [
     team: 'Under', marketLabel: 'TOTAL 8.5', away: 'TOR', home: 'BAL', cents: 61, americanLabel: '-154', americanOdds: -154,
     invested: 14000, displaySizeRatio: 3.0, opposed: 'clear', pinMove: 'with', entryLine: 8.5,
     steam: { show: true, tier: 'gold', goldConfirmed: true, tag: 'GOLD 4.2%' },
-    commenceMs: Date.parse('2026-09-22T18:36:00-04:00'),
+    commenceMs: torCommence,
+    ts: torCommence - 3 * 60 * 60 * 1000,
   },
   {
     walletShort: '51176e', sport: 'MLB', gameKey: 'tor_bal', marketType: 'TOTAL', side: 'under',
     team: 'Under', marketLabel: 'U 8.5', away: 'TOR', home: 'BAL', americanLabel: '-100', americanOdds: -100,
     invested: 4200, displaySizeRatio: 1.0, opposed: 'clear', entryLine: 8.5,
-    commenceMs: Date.parse('2026-09-22T18:36:00-04:00'),
+    commenceMs: torCommence,
+    ts: torCommence - 90 * 60 * 1000,
+  },
+  {
+    walletShort: 'e4ec62', sport: 'MLB', gameKey: 'tor_bal', marketType: 'TOTAL', side: 'under',
+    team: 'Under', marketLabel: 'TOTAL 8.5', away: 'TOR', home: 'BAL', americanLabel: '+180', americanOdds: 180,
+    invested: 50000, displaySizeRatio: 8, opposed: 'clear', entryLine: 8.5,
+    commenceMs: torCommence,
+    ts: torCommence - 2 * 60 * 1000,
   },
   {
     walletShort: '51176e', sport: 'MLB', gameKey: 'hou_sea', marketType: 'TOTAL', side: 'under',
     team: 'Under', marketLabel: 'TOTAL 7.5', away: 'HOU', home: 'SEA', cents: 52, americanLabel: '-108', americanOdds: -108, entryLine: 7.5,
     invested: 2200, displaySizeRatio: 1.1, opposed: 'clear',
     commenceMs: Date.parse('2026-09-22T21:41:00-04:00'),
+    ts: Date.parse('2026-09-22T21:41:00-04:00') - 2 * 60 * 60 * 1000,
   },
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'hou_sea', marketType: 'TOTAL', side: 'over',
     team: 'Over', marketLabel: 'TOTAL 7.5', away: 'HOU', home: 'SEA', cents: 51, americanLabel: '-102', americanOdds: -102, entryLine: 7.5,
     invested: 1800, displaySizeRatio: 0.9, opposed: 'contested',
     commenceMs: Date.parse('2026-09-22T21:41:00-04:00'),
+    ts: Date.parse('2026-09-22T21:41:00-04:00') - 4 * 60 * 60 * 1000,
   },
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'bos_nyy', marketType: 'SPREAD', side: 'home',
     team: 'Yankees', marketLabel: 'SPREAD -1.5', away: 'BOS', home: 'NYY', cents: 52, americanLabel: '-110', americanOdds: -110,
     invested: 6400, displaySizeRatio: 1.4, opposed: 'clear', entryLine: -1.5,
     commenceMs: Date.parse('2026-09-22T19:05:00-04:00'),
+    ts: Date.parse('2026-09-22T19:05:00-04:00') - 5 * 60 * 60 * 1000,
   },
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'stl_pit', marketType: 'ML', side: 'home',
     team: 'Pirates', marketLabel: 'ML', away: 'STL', home: 'PIT', cents: 60, americanLabel: '-149', americanOdds: -149,
     invested: 9800, displaySizeRatio: 2.1, opposed: 'clear', pinMove: 'with',
-    commenceMs: Date.parse('2026-09-22T18:41:00-04:00'),
+    commenceMs: liveCommence,
+    ts: Date.now() - 40 * 60 * 1000,
   },
   {
     walletShort: '51176e', sport: 'MLB', gameKey: 'nyy_tex', marketType: 'ML', side: 'away',
@@ -375,6 +410,7 @@ const actionRows = [
     invested: 2000, displaySizeRatio: 0.8, opposed: 'clear',
     steam: { show: true, tier: 'steam', goldConfirmed: false, tag: '2× 3.1%' },
     commenceMs: Date.parse('2026-09-22T20:05:00-04:00'),
+    ts: Date.parse('2026-09-22T20:05:00-04:00') - 6 * 60 * 60 * 1000,
   },
 ];
 
@@ -383,7 +419,20 @@ const recentLegs = [
   { walletShort: 'e4ec62', won: 0, dollarPnl: -1400, date: '2026-09-21', sport: 'MLB', marketType: 'TOTAL', side: 'over', line: 8.5, gameKey: 'laa_oak' },
 ];
 
+function usePhone() {
+  const [phone, setPhone] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const on = () => setPhone(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return phone;
+}
+
 export default function MySharpsDeskLab() {
+  const phone = usePhone();
   const [state, setState] = useState(seed);
   const roster = useMemo(
     () => buildMySharpsRoster(state, { walletProfiles: profiles, actionRows, sportFilter: 'All' }),
@@ -392,7 +441,7 @@ export default function MySharpsDeskLab() {
   const shorts = roster.map((r) => r.walletShort);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0B0F1F', color: '#F8FAFC', padding: '1.6rem 1.2rem 4rem' }}>
+    <div style={{ minHeight: '100vh', background: '#0B0F1F', color: '#F8FAFC', padding: phone ? '0.7rem 0.45rem 3rem' : '1.6rem 1.2rem 4rem' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <MySharpsDesk
           ready
@@ -406,7 +455,7 @@ export default function MySharpsDeskLab() {
           pinnacleHistory={pinnacleHistory}
           tails={state.tails}
           cap={40}
-          isMobile={false}
+          isMobile={phone}
           onRename={(short, name) => setState((cur) => ({
             ...cur,
             members: {

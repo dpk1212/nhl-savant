@@ -7,6 +7,7 @@ import { sportBookForDisplay } from './walletSportBook.js';
 import { sizeTierForRatio, sizeTierWinRates, sportUsualBetFromProfile } from './sizeRatioBands.js';
 import { SIZED_UP_RATIO, betsFeedKey, fmtWalletTag, listMySharps, normalizeWalletShort, tailKey } from './mySharps.js';
 import { etDateKey } from './confirmedActionDesk.js';
+import { ticketFreezeAt } from './shopTicketLine.js';
 import { graderTailResult, tailGameDate, usableCommenceMs } from './tailGrade.js';
 
 /** Last-N needed before Hot / Cold is a claim, not noise. */
@@ -869,6 +870,9 @@ export function buildMySharpsBoard(rows = []) {
   const byTicket = new Map();
   const byCluster = new Map();
   for (const r of rows || []) {
+    const entered = lineEntryMs(r);
+    const freezeAt = ticketFreezeAt(r?.commenceMs);
+    if (freezeAt != null && entered != null && entered >= freezeAt) continue;
     const tk = ticketKey(r);
     if (!byTicket.has(tk)) byTicket.set(tk, []);
     byTicket.get(tk).push(r);
@@ -2666,6 +2670,16 @@ function actionTape(prof, row, sport, market) {
   };
 }
 
+function lineEntryMs(r) {
+  const ts = Number(r?.ts);
+  if (Number.isFinite(ts) && ts > 0) return ts;
+  const raw = r?.firstSeen;
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw < 1e12 ? raw * 1000 : raw;
+  const n = Date.parse(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function walletLinesFor(ticket, names, walletProfiles) {
   return [...(ticket?.rows || [])].map((r) => {
     const short = shortWalletId(r?.walletShort) || normalizeWalletShort(r?.walletShort);
@@ -2682,6 +2696,7 @@ function walletLinesFor(ticket, names, walletProfiles) {
       invested: Number(r?.invested) || 0,
       ratio: multiple,
       price: r?.americanLabel || null,
+      ts: lineEntryMs(r),
       steam: steamStamp(r),
       sizeTier: sizeTierForRatio(prof?.sizeRatioBands, multiple, { minPctN: HONEST_PCT_N }),
       tape: actionTape(prof, r, sport, market),

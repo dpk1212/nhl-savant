@@ -311,6 +311,23 @@ assert.equal(filterBoardTickets(board, { filter: 'fight' }).length, 2);
 assert.equal(filterBoardTickets(board, { filter: 'NFL' }).every((t) => t.sport === 'NFL'), true);
 assert.equal(filterBoardTickets(board, { focusShort: 'aaaaaa' }).length, 1);
 
+const lockCommence = Date.parse('2026-10-15T23:00:00Z');
+const lockBoard = buildMySharpsBoard([
+  {
+    walletShort: '162937', sport: 'NFL', gameKey: 'sea_ari', marketType: 'ML', side: 'home',
+    team: 'Cardinals', invested: 4000, displaySizeRatio: 1.2, opposed: 'clear',
+    commenceMs: lockCommence, ts: lockCommence - 2 * 60 * 60 * 1000,
+  },
+  {
+    walletShort: 'e4ec62', sport: 'NFL', gameKey: 'sea_ari', marketType: 'ML', side: 'home',
+    team: 'Cardinals', invested: 90000, displaySizeRatio: 4, opposed: 'clear',
+    commenceMs: lockCommence, ts: lockCommence - 5 * 60 * 1000,
+  },
+]);
+const lockedTicket = lockBoard.tickets.find((t) => t.gameKey === 'sea_ari');
+assert.deepEqual(lockedTicket.shorts, ['162937']);
+assert.equal(lockedTicket.invested, 4000);
+
 const twoState = parseMySharpsDoc({
   mySharps: {
     members: {
