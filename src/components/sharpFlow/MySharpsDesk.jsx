@@ -904,42 +904,11 @@ function BetsHero({ groups, tails, isMobile, lens, onLens }) {
   );
 }
 
-function betWash(item) {
-  if (item.split) return 'linear-gradient(180deg, rgba(239,68,68,0.10), #141821 46%)';
-  if (item.shared) return 'linear-gradient(180deg, rgba(212,175,55,0.12), #141821 46%)';
-  if (item.sizeText) return 'linear-gradient(180deg, rgba(245,158,11,0.10), #141821 46%)';
-  return B.card;
-}
-
 function heatWord(heat) {
   if (!heat?.record || heat.key === 'quiet') return null;
   if (heat.key === 'hot') return 'Hot';
   if (heat.key === 'cold') return 'Cold';
   return 'Even';
-}
-
-function SteamBit({ steam }) {
-  if (!steam?.show || !steam.tag) return null;
-  const gold = steam.goldConfirmed || steam.tier === 'gold';
-  const label = steam.goldConfirmed ? steam.tag : `Steam ${steam.tag}`;
-  return (
-    <span style={{
-      ...T.kicker,
-      letterSpacing: '0.08em',
-      color: gold ? '#1a1404' : '#6EE7B7',
-      background: gold
-        ? 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)'
-        : 'rgba(16,185,129,0.12)',
-      border: gold ? 'none' : '1px solid rgba(16,185,129,0.35)',
-      borderRadius: 999,
-      padding: '0.22rem 0.55rem',
-      lineHeight: 1.2,
-      whiteSpace: 'nowrap',
-    }}
-    >
-      {label}
-    </span>
-  );
 }
 
 function readRecord(record) {
@@ -1083,35 +1052,151 @@ function WhoChip({ line }) {
   );
 }
 
-function SharpPlate({ lines, hideChips }) {
-  const roll = sideRollup(lines);
-  const steam = (lines || []).find((line) => line.steam?.show)?.steam || null;
-  const support = [
-    roll.book ? `${roll.book} book` : null,
-    Number.isFinite(roll.roi) ? `${roll.roi}% ROI` : null,
-    roll.l10 ? `L10 ${roll.l10}` : null,
-  ].filter(Boolean).join('  ·  ');
-  const hero = Number.isFinite(roll.pnl)
-    ? { value: fmtVol(roll.pnl), kicker: `${roll.bookLabel} · 30 days`, color: pnlColor(roll.pnl, B.text) }
-    : (roll.book
-      ? { value: roll.book, kicker: `${roll.bookLabel} book`, color: B.text }
-      : null);
-  if (!hero && !lines.length) return null;
+function leadLine(lines) {
+  return [...(lines || [])].sort((a, b) => (b.invested || 0) - (a.invested || 0))[0] || null;
+}
+
+function TailSentence({ item, lines }) {
+  const lead = leadLine(lines);
+  if (!lead) return null;
+  const others = Math.max(0, (lines || []).length - 1);
+  const stake = fmtVol(lead.invested, { signed: false });
+  const pressing = (lead.ratio || 0) >= 1.5;
+  const atSize = pressing && lead.sizeTier?.wr != null ? lead.sizeTier : null;
+  const steam = (lines || []).find((line) => line.steam?.show && line.steam.tag)?.steam || null;
+  const steamText = steam ? (steam.goldConfirmed ? steam.tag : `Steam ${steam.tag}`) : null;
+  const movedWith = item.pinMove === 'with';
+  const movedAgainst = item.pinMove === 'against';
   return (
-    <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${B.hair}` }}>
-      {hero ? (
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ ...T.figure, color: hero.color, fontSize: '1.72rem', letterSpacing: '-0.045em', lineHeight: 0.9 }}>{hero.value}</div>
-            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>{hero.kicker}</div>
+    <p style={{
+      ...T.body,
+      color: B.textSec,
+      margin: '14px 0 0',
+      fontSize: '0.95rem',
+      lineHeight: 1.45,
+      maxWidth: 680,
+    }}
+    >
+      <span style={{ color: B.text, fontWeight: 650 }}>{lead.tag}</span>
+      {` has ${stake} on this`}
+      {lead.ratio ? (
+        <>
+          {', '}
+          <span style={{ color: pressing ? '#F59E0B' : B.text, fontWeight: 650 }}>{`${lead.ratio.toFixed(1)}× usual`}</span>
+        </>
+      ) : null}
+      {atSize ? (
+        <>
+          {', '}
+          <span style={{ color: tierWrColor(atSize), fontWeight: 650 }}>{`${atSize.wr}% at this size`}</span>
+        </>
+      ) : null}
+      {others === 1 ? ', with one more from your list' : null}
+      {others > 1 ? `, with ${others} more from your list` : null}
+      .
+      {movedWith || movedAgainst ? (
+        <>
+          {' The line moved '}
+          <span style={{ color: movedAgainst ? B.red : B.green, fontWeight: 650 }}>
+            {movedAgainst ? 'against' : 'with'}
+          </span>
+          {' them.'}
+        </>
+      ) : null}
+      {steamText ? ` ${steamText}.` : null}
+    </p>
+  );
+}
+
+function OtherSideNote({ item }) {
+  const sides = (item?.otherSide || [])
+    .map((side) => [side.pick, ...(side.tags || [])].filter(Boolean).join(' · '))
+    .filter(Boolean);
+  if (!sides.length) return null;
+  return (
+    <p style={{
+      ...T.body,
+      color: B.red,
+      fontWeight: 650,
+      margin: '6px 0 0',
+      lineHeight: 1.4,
+    }}
+    >
+      {`Other side · ${sides.join('  ·  ')}`}
+    </p>
+  );
+}
+
+function ProofPair({ lines }) {
+  const roll = sideRollup(lines);
+  const month = Number.isFinite(roll.pnl);
+  const book = roll.book;
+  if (!month && !book && !roll.l10) return null;
+  const roi = Number.isFinite(roll.roi) ? `${roll.roi > 0 ? '+' : ''}${roll.roi}%` : null;
+  const monthKicker = [
+    roll.bookLabel && roll.bookLabel !== 'Book' ? roll.bookLabel : null,
+    '30 days',
+    roi,
+  ].filter(Boolean).join(' · ');
+  const bookKicker = [
+    roll.bookLabel && roll.bookLabel !== 'Book' ? `${roll.bookLabel} book` : 'Book',
+    roll.l10 ? `L10 ${roll.l10}` : null,
+  ].filter(Boolean).join(' · ');
+  return (
+    <div style={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '14px 32px',
+      alignItems: 'flex-end',
+      marginTop: 14,
+      paddingTop: 12,
+      borderTop: `1px solid ${B.hair}`,
+    }}
+    >
+      {month ? (
+        <div>
+          <div style={{
+            ...T.figure,
+            color: pnlColor(roll.pnl, B.text),
+            fontSize: '1.7rem',
+            letterSpacing: '-0.045em',
+            lineHeight: 0.9,
+          }}
+          >
+            {fmtVol(roll.pnl)}
           </div>
-          {steam ? <SteamBit steam={steam} /> : null}
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>{monthKicker}</div>
         </div>
       ) : null}
-      {support ? (
-        <div style={{ ...T.meta, color: B.textSec, marginTop: 6, fontFeatureSettings: "'tnum'" }}>{support}</div>
-      ) : null}
-      {!hideChips && lines.length ? (
+      {book ? (
+        <div>
+          <div style={{
+            ...T.figure,
+            color: B.text,
+            fontSize: month ? '1.2rem' : '1.7rem',
+            letterSpacing: '-0.03em',
+            lineHeight: 0.95,
+          }}
+          >
+            {book}
+          </div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>{bookKicker}</div>
+        </div>
+      ) : (roll.l10 ? (
+        <div>
+          <div style={{ ...T.figure, color: B.text, fontSize: '1.2rem', lineHeight: 0.95 }}>{roll.l10}</div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>L10</div>
+        </div>
+      ) : null)}
+    </div>
+  );
+}
+
+function SharpPlate({ lines, hideChips }) {
+  if (!lines?.length) return null;
+  return (
+    <div>
+      {!hideChips ? (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', marginTop: 10 }}>
           {lines.map((line) => (
             <WhoChip key={line.walletShort || line.tag} line={line} />
@@ -1221,26 +1306,19 @@ function SharpReceipt({ line, sport, isMobile }) {
 
 function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedStake, expanded, onToggle }) {
   const tailed = item.tail;
-  const edge = item.split ? B.red : item.shared ? B.gold : (item.sizeText ? '#F59E0B' : B.line);
+  const tone = item.split ? B.red : item.shared ? B.gold : (item.sizeText ? '#F59E0B' : 'rgba(148,163,184,0.45)');
   const open = draft?.id === item.id;
   const clock = fmtClock(item.commenceMs);
   const price = item.americanLabel || fmtPrice(item.americanOdds);
   const lines = item.walletLines || [];
-  const lineNote = item.pinMove === 'with' ? 'with the line' : item.pinMove === 'against' ? 'against the line' : null;
   const nSharps = lines.length;
-  const rail = item.split
-    ? 'linear-gradient(90deg, transparent, #EF4444 30%, #FCA5A5, transparent)'
-    : item.shared
-      ? 'linear-gradient(90deg, transparent, #D4AF37 35%, #F3E3AC, transparent)'
-      : (item.sizeText
-        ? 'linear-gradient(90deg, transparent, #F59E0B 35%, #FDE68A, transparent)'
-        : `linear-gradient(90deg, transparent, ${edge}, transparent)`);
   return (
     <div style={{
       position: 'relative',
       borderRadius: 14,
-      border: `1px solid ${open || tailed || expanded ? B.goldBorder : B.line}`,
-      background: betWash(item),
+      border: `1px solid ${B.line}`,
+      borderLeft: `3px solid ${tone}`,
+      background: B.card,
       overflow: 'hidden',
       cursor: 'pointer',
     }}
@@ -1249,31 +1327,27 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
       onToggle?.();
     }}
     >
-      <div style={{ height: 2, background: rail }} />
-      <div style={{ padding: isMobile ? '0.7rem 0.75rem 0.68rem' : '0.78rem 0.95rem 0.72rem' }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <MatchMarks item={item} size={isMobile ? 40 : 48} />
+      <div style={{ padding: isMobile ? '0.85rem 0.8rem 0.8rem' : '0.95rem 1.05rem 0.9rem' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <MatchMarks item={item} size={isMobile ? 36 : 44} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ ...T.name, color: item.shared && !item.split ? B.goldSoft : B.text, fontSize: isMobile ? '1.15rem' : '1.32rem', letterSpacing: '-0.03em', lineHeight: 1 }}>
+            <div style={{ ...T.name, color: B.text, fontSize: isMobile ? '1.28rem' : '1.55rem', letterSpacing: '-0.035em', lineHeight: 1 }}>
               {item.pick}
             </div>
-            <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.02rem', letterSpacing: '-0.03em' }}>
+            <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.05rem' : '1.22rem', letterSpacing: '-0.03em' }}>
               {price}
             </div>
           </div>
-          <div style={{ ...T.meta, color: B.textMuted, marginTop: 5 }}>
+          <div style={{ ...T.meta, color: B.textMuted, marginTop: 6 }}>
             {[shortMatchup(item), clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean).join('  ·  ')}
-            {lineNote ? (
-              <span style={{ color: item.pinMove === 'against' ? B.red : B.goldSoft }}>{`  ·  ${lineNote}`}</span>
-            ) : null}
-            {tailed ? <span style={{ color: B.gold }}>{`  ·  Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
+            {tailed ? <span style={{ color: B.goldSoft }}>{`  ·  Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.15rem' : '1.32rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 5 }}>On this side</div>
-          <div style={{ marginTop: 6 }}>
+          <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.15rem' : '1.35rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>On this side</div>
+          <div style={{ marginTop: 8 }}>
             {tailed && !open ? (
               <button type="button" onClick={() => onUntail(item.id)} style={quietBtn}>Untail</button>
             ) : (
@@ -1284,7 +1358,10 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           </div>
         </div>
       </div>
-      {lines.length ? <SharpPlate lines={lines} hideChips={expanded} /> : null}
+      <TailSentence item={item} lines={lines} />
+      <OtherSideNote item={item} />
+      <ProofPair lines={lines} />
+      {lines.length > 1 ? <SharpPlate lines={lines} hideChips={expanded} /> : null}
       {expanded ? <TicketContext item={item} isMobile={isMobile} /> : null}
       {open ? (
         <TailForm
@@ -2005,23 +2082,6 @@ function TicketContext({ item, isMobile }) {
   const bookLabel = lines.find((line) => line.book?.label)?.book?.label || 'Market';
   return (
     <div style={{ marginTop: 10 }}>
-      {(item.otherSide || []).map((side, i) => (
-        <div
-          key={`${side.pick || 'side'}-${i}`}
-          style={{
-            marginBottom: 6,
-            borderRadius: 8,
-            background: 'rgba(239,68,68,0.10)',
-            border: '1px solid rgba(239,68,68,0.28)',
-            padding: '0.35rem 0.6rem',
-            ...T.meta,
-            color: '#FCA5A5',
-            fontWeight: 650,
-          }}
-        >
-          Other side · {[side.pick, ...(side.tags || [])].filter(Boolean).join(' · ')}
-        </div>
-      ))}
       {isMobile || !lines.length ? null : (
         <div style={{
           display: 'grid',
