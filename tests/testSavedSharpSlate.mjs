@@ -5,6 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import { buildSavedSharpGroups } from '../src/lib/savedSharpSlate.js';
+import { buildGradedPlays } from '../src/lib/mySharpsDesk.js';
 
 const profiles = new Map([
   ['aa11bb', { bySport: { MLB: { whitelistTier: 'CONFIRMED' }, NHL: { whitelistTier: 'WR50' } } }],
@@ -108,5 +109,26 @@ const opposed = buildSavedSharpGroups({
   dateKey: null,
 });
 assert.equal(opposed.split.some((t) => t.sport === 'NHL'), true, 'two followed wallets on opposite sides sit in Split');
+
+const graded = buildGradedPlays([
+  { walletShort: 'aa11bb', sport: 'NHL', gameKey: 'uta_edm', marketType: 'ML', side: 'home', team: 'Oilers', away: 'Utah', home: 'Oilers', date: '2026-10-14', won: 1, dollarPnl: 2100, invested: 8000, odds: -115, sizeRatio: 3.1 },
+  { walletShort: 'bb22cc', sport: 'NHL', gameKey: 'uta_edm', marketType: 'ML', side: 'home', team: 'Oilers', away: 'Utah', home: 'Oilers', date: '2026-10-14', won: 1, dollarPnl: 400, invested: 2000, odds: 104, sizeRatio: 2.1 },
+  { walletShort: 'aa11bb', sport: 'NHL', gameKey: 'sea_lak', marketType: 'TOTAL', side: 'over', line: 6.5, date: '2026-10-13', won: 0, dollarPnl: -900, invested: 900, odds: -110, sizeRatio: 1.1 },
+], { names: { aa11bb: 'Bands' }, roster: [] });
+assert.equal(graded.plays.length, 2);
+assert.equal(graded.plays[0].pick, 'Oilers');
+assert.equal(graded.plays[0].n, 2);
+assert.equal(graded.plays[0].pnl, 2500);
+assert.equal(graded.plays[0].won, true);
+assert.equal(graded.wins, 1);
+assert.equal(graded.losses, 1);
+assert.equal(graded.pnl, 1600);
+
+const hiddenGrade = buildGradedPlays([
+  { walletShort: 'aa11bb', sport: 'NHL', gameKey: 'uta_edm', marketType: 'ML', side: 'home', team: 'Oilers', date: '2026-10-14', won: 1, dollarPnl: 100, invested: 500 },
+], {
+  roster: [{ walletShort: 'aa11bb', betsOff: ['NHL|ML'] }],
+});
+assert.equal(hiddenGrade.n, 0);
 
 console.log('testSavedSharpSlate: ok');

@@ -635,6 +635,94 @@ export function collectRecentLegs(walletProfiles, shorts, {
   return list.slice(0, limit);
 }
 
+function gradedAmerican(raw) {
+  const o = Number(raw);
+  if (!Number.isFinite(o) || o === 0) return null;
+  const n = Math.round(o);
+  return n > 0 ? `+${n}` : `${n}`;
+}
+
+/**
+ * Finished plays from the wallets on this list.
+ * One row per game × market × side, newest first.
+ * The record counts plays, not each wallet on the same ticket.
+ */
+export function buildGradedPlays(legs, { names = {}, roster = [], limit = 40 } = {}) {
+  const fed = rowsForBetsFeed(legs, roster);
+  const by = new Map();
+  for (const leg of fed || []) {
+    if (legWon(leg) == null) continue;
+    const market = String(leg.marketType || leg.market || '').toUpperCase();
+    const side = String(leg.side || '').toLowerCase();
+    const date = leg.date || null;
+    const game = leg.gameKey || leg.matchup || leg.label || '';
+    const key = `${leg.sport || ''}|${game}|${market}|${side}|${date || ''}`;
+    if (!by.has(key)) by.set(key, []);
+    by.get(key).push(leg);
+  }
+  const plays = [];
+  for (const [id, group] of by) {
+    const seen = new Set();
+    const lines = [];
+    for (const leg of group) {
+      const short = shortWalletId(leg.walletShort) || normalizeWalletShort(leg.walletShort);
+      if (short && seen.has(short)) continue;
+      if (short) seen.add(short);
+      const pnl = legDollar(leg);
+      const ratio = Number(leg.sizeRatio ?? leg.displaySizeRatio);
+      lines.push({
+        walletShort: short,
+        tag: (short && names[short]) || fmtWalletTag(short || leg.walletShort),
+        price: gradedAmerican(leg.odds ?? leg.americanOdds),
+        ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null,
+        pnl: Number.isFinite(pnl) ? Math.round(pnl) : null,
+        won: legWon(leg) === 1,
+        invested: Number(leg.invested) || 0,
+      });
+    }
+    if (!lines.length) continue;
+    const first = group[0];
+    const wonN = lines.filter((line) => line.won).length;
+    const lostN = lines.length - wonN;
+    const pnl = lines.reduce((s, line) => s + (Number.isFinite(line.pnl) ? line.pnl : 0), 0);
+    const havePnl = lines.some((line) => Number.isFinite(line.pnl));
+    plays.push({
+      id,
+      pick: closedPickLabel(first),
+      matchup: ticketMatchup(first),
+      sport: first.sport || null,
+      market: MARKET_LABEL[String(first.marketType || first.market || '').toUpperCase()] || null,
+      date: first.date || null,
+      won: wonN > lostN ? true : wonN < lostN ? false : null,
+      n: lines.length,
+      invested: lines.reduce((s, line) => s + (line.invested || 0), 0),
+      pnl: havePnl ? pnl : null,
+      lines,
+    });
+  }
+  plays.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || ((b.invested || 0) - (a.invested || 0)));
+  const shown = plays.slice(0, limit);
+  let wins = 0;
+  let losses = 0;
+  let pnl = 0;
+  let have = false;
+  for (const play of shown) {
+    if (play.won === true) wins += 1;
+    else if (play.won === false) losses += 1;
+    if (Number.isFinite(play.pnl)) {
+      have = true;
+      pnl += play.pnl;
+    }
+  }
+  return {
+    plays: shown,
+    n: shown.length,
+    wins,
+    losses,
+    pnl: have ? pnl : null,
+  };
+}
+
 export function buildMySharpsRoster(state, {
   walletProfiles = null,
   actionRows = [],

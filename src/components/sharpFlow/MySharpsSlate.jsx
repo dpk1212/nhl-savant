@@ -10,6 +10,7 @@ import {
   formatActionDateChip,
 } from '../../lib/confirmedActionDesk.js';
 import { buildSavedSharpGroups } from '../../lib/savedSharpSlate.js';
+import { buildGradedPlays, collectRecentLegs } from '../../lib/mySharpsDesk.js';
 import { BetGroup } from './MySharpsDesk.jsx';
 
 const B = {
@@ -40,13 +41,75 @@ const GROUPS = [
   { id: 'rest', label: 'Rest', tone: B.textSec },
 ];
 
-function fmtVol(v) {
+function fmtVol(v, { signed = false } = {}) {
   const n = Number(v);
   if (!Number.isFinite(n)) return '—';
   const abs = Math.abs(n);
-  if (abs >= 1_000_000) return `$${(abs / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `$${(abs / 1_000).toFixed(1)}K`;
-  return `$${Math.round(abs)}`;
+  const sign = signed ? (n < 0 ? '−' : n > 0 ? '+' : '') : '';
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}K`;
+  return `${sign}$${Math.round(abs)}`;
+}
+
+function GradedList({ plays, isMobile }) {
+  if (!plays?.length) return null;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+      {plays.map((play) => {
+        const tone = play.won === true ? B.green : play.won === false ? B.red : B.textSec;
+        const result = play.won === true ? 'Won' : play.won === false ? 'Lost' : 'Push';
+        return (
+          <div
+            key={play.id}
+            style={{
+              borderRadius: 14,
+              border: `1px solid ${B.line}`,
+              borderLeft: `3px solid ${tone}`,
+              padding: isMobile ? '0.8rem 0.75rem' : '0.9rem 1rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ ...TYPE.name, color: B.text, fontSize: isMobile ? '1.15rem' : '1.28rem' }}>{play.pick}</div>
+                <div style={{ ...TYPE.meta, color: B.textFaint, marginTop: 4, fontSize: '0.75rem' }}>
+                  {[play.matchup, play.date ? String(play.date).slice(5) : null, play.sport, play.market, result, play.n > 1 ? `${play.n} sharps` : null].filter(Boolean).join('  ·  ')}
+                </div>
+              </div>
+              <div style={{ ...TYPE.figure, color: Number.isFinite(play.pnl) ? (play.pnl < 0 ? B.red : B.green) : B.textFaint, fontSize: isMobile ? '1.15rem' : '1.35rem', flexShrink: 0 }}>
+                {Number.isFinite(play.pnl) ? fmtVol(play.pnl, { signed: true }) : '—'}
+              </div>
+            </div>
+            {play.lines?.length ? (
+              <div style={{ marginTop: 10 }}>
+                {play.lines.map((line) => (
+                  <div
+                    key={line.walletShort || line.tag}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                      padding: '0.28rem 0',
+                      borderTop: `1px solid ${B.hair}`,
+                      ...TYPE.meta,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    <span style={{ color: B.textSec, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line.tag}</span>
+                    <span style={{ color: B.textFaint, whiteSpace: 'nowrap' }}>
+                      {[line.price, line.ratio ? `${line.ratio.toFixed(1)}×` : null].filter(Boolean).join('  ')}
+                    </span>
+                    <span style={{ color: Number.isFinite(line.pnl) ? (line.pnl < 0 ? B.red : B.green) : B.textFaint, whiteSpace: 'nowrap' }}>
+                      {Number.isFinite(line.pnl) ? fmtVol(line.pnl, { signed: true }) : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 const textBtn = {
@@ -98,6 +161,7 @@ export default function MySharpsSlate({
   const todayKey = etDateKey(nowMs);
   const dateKeys = actionDateKeys(nowMs);
   const [dateKey, setDateKey] = useState(todayKey);
+  const [gradedOn, setGradedOn] = useState(false);
   const [lens, setLens] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [draft, setDraft] = useState(null);
@@ -136,6 +200,11 @@ export default function MySharpsSlate({
     names, sportFilter, selected, nowMs,
   ]);
 
+  const graded = useMemo(() => buildGradedPlays(
+    collectRecentLegs(walletProfiles, mySharps?.shorts || [], { sportFilter, limit: 800 }),
+    { names, roster: mySharps?.members || [], limit: 40 },
+  ), [walletProfiles, mySharps?.shorts, mySharps?.members, names, sportFilter]);
+
   const tracked = (mySharps?.count || 0) > 0;
   const cells = GROUPS.map((g) => ({
     ...g,
@@ -145,6 +214,9 @@ export default function MySharpsSlate({
   const shown = lens ? cells.filter((c) => c.id === lens) : cells;
   const n = cells.reduce((s, c) => s + c.n, 0);
   const money = cells.reduce((s, c) => s + c.money, 0);
+  const gradedTone = Number.isFinite(graded.pnl)
+    ? (graded.pnl < 0 ? B.red : B.green)
+    : (graded.losses > graded.wins ? B.red : B.green);
 
   const openDraft = (item, suggested, patch) => {
     setDraft((cur) => {
@@ -192,11 +264,11 @@ export default function MySharpsSlate({
               <button
                 key={key}
                 type="button"
-                onClick={() => { setDateKey(key); setLens(null); setOpenId(null); setDraft(null); }}
+                onClick={() => { setGradedOn(false); setDateKey(key); setLens(null); setOpenId(null); setDraft(null); }}
                 style={{
                   ...textBtn,
-                  color: on ? B.goldSoft : B.textFaint,
-                  borderBottom: on ? `1px solid ${B.gold}` : '1px solid transparent',
+                  color: !gradedOn && on ? B.goldSoft : B.textFaint,
+                  borderBottom: !gradedOn && on ? `1px solid ${B.gold}` : '1px solid transparent',
                   paddingBottom: 4,
                   letterSpacing: '0.06em',
                 }}
@@ -205,20 +277,44 @@ export default function MySharpsSlate({
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={() => { setGradedOn(true); setLens(null); setOpenId(null); setDraft(null); }}
+            style={{
+              ...textBtn,
+              color: gradedOn ? gradedTone : B.textFaint,
+              borderBottom: gradedOn ? `1px solid ${gradedTone}` : '1px solid transparent',
+              paddingBottom: 4,
+              letterSpacing: '0.06em',
+            }}
+          >
+            {graded.n ? `Graded ${graded.wins}–${graded.losses}` : 'Graded'}
+          </button>
         </div>
         <button type="button" onClick={onOpenList} style={textBtn}>Portfolio</button>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.35rem 0.9rem', marginTop: 16 }}>
-        <div style={{ ...TYPE.figure, color: n ? B.text : B.textFaint, fontSize: isMobile ? '1.85rem' : '2.2rem' }}>
-          {n ? fmtVol(money) : '—'}
+        <div style={{
+          ...TYPE.figure,
+          color: gradedOn
+            ? (Number.isFinite(graded.pnl) ? (graded.pnl < 0 ? B.red : B.green) : B.textFaint)
+            : (n ? B.text : B.textFaint),
+          fontSize: isMobile ? '1.85rem' : '2.2rem',
+        }}
+        >
+          {gradedOn ? (Number.isFinite(graded.pnl) ? fmtVol(graded.pnl, { signed: true }) : '—') : (n ? fmtVol(money) : '—')}
         </div>
         <div style={{ ...TYPE.meta, color: B.textSec }}>
-          {n ? `${n} bet${n === 1 ? '' : 's'} from your list` : 'Nothing on this slate'}
+          {gradedOn
+            ? (graded.n ? `${graded.wins}–${graded.losses} · ${graded.n} finished` : 'No finished plays in this window')
+            : (n ? `${n} bet${n === 1 ? '' : 's'} from your list` : 'Nothing on this slate')}
         </div>
       </div>
 
-      <div style={{
+      {gradedOn ? <GradedList plays={graded.plays} isMobile={isMobile} /> : null}
+
+      {gradedOn ? null : <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
         marginTop: 14,
@@ -253,9 +349,9 @@ export default function MySharpsSlate({
             </button>
           );
         })}
-      </div>
+      </div>}
 
-      {shown.map((cell) => (
+      {gradedOn ? null : shown.map((cell) => (
         <BetGroup
           key={cell.id}
           id={`intel-${cell.id}`}
