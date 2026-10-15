@@ -312,6 +312,20 @@ const torCommence = Date.parse('2026-09-22T18:36:00-04:00');
 const torFreeze = torCommence - 15 * 60 * 1000;
 const liveCommence = Date.now() + 4 * 60 * 60 * 1000;
 
+/** Two days of Pinnacle prints on PIT: a drift, a pullback, then the sharps' push. */
+function pittsburghTape() {
+  const start = liveCommence - 46 * 60 * 60 * 1000;
+  const shape = [
+    -128, -128, -129, -131, -133, -134, -134, -133, -132, -130, -130, -131,
+    -133, -135, -136, -136, -138, -138, -137, -139, -140, -140, -142, -144, -146, -149,
+  ];
+  return shape.map((home, i) => {
+    const t = Math.floor((start + (i / (shape.length - 1)) * (liveCommence - 25 * 60 * 1000 - start)) / 1000);
+    const away = Math.round(Math.abs(home) * 0.86);
+    return { t, home, away };
+  });
+}
+
 const pinnacleHistory = {
   MLB: {
     tor_bal: {
@@ -339,16 +353,22 @@ const pinnacleHistory = {
       ],
     },
     stl_pit: {
-      current: { away: -130, home: 118 },
+      current: { away: 128, home: -149 },
       fairBook: 'pinnacle',
-      bestAway: -125,
+      bestAway: 132,
       bestAwayBook: 'FanDuel',
-      bestHome: 120,
-      bestHomeBook: 'DraftKings',
+      bestHome: -138,
+      bestHomeBook: 'Novig',
       allBooks: {
-        fanduel: { name: 'FanDuel', away: -125, home: 112 },
-        draftkings: { name: 'DraftKings', away: -128, home: 120 },
+        novig: { name: 'Novig', away: 125, home: -138 },
+        betfair: { name: 'Betfair', away: 126, home: -141 },
+        matchbook: { name: 'Matchbook', away: 126, home: -141 },
+        polymarket: { name: 'Polymarket', away: 124, home: -143 },
+        kalshi: { name: 'Kalshi', away: 124, home: -143 },
+        fanduel: { name: 'FanDuel', away: 132, home: -146 },
+        draftkings: { name: 'DraftKings', away: 120, home: -148 },
       },
+      history: pittsburghTape(),
     },
   },
 };
@@ -399,10 +419,17 @@ const actionRows = [
   },
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'stl_pit', marketType: 'ML', side: 'home',
-    team: 'Pirates', marketLabel: 'ML', away: 'STL', home: 'PIT', cents: 60, americanLabel: '-149', americanOdds: -149,
+    team: 'Pirates', marketLabel: 'ML', away: 'STL', home: 'PIT', cents: 58, americanLabel: '-140', americanOdds: -140,
     invested: 9800, displaySizeRatio: 2.1, opposed: 'clear', pinMove: 'with',
     commenceMs: liveCommence,
-    ts: Date.now() - 40 * 60 * 1000,
+    ts: liveCommence - 6 * 60 * 60 * 1000,
+  },
+  {
+    walletShort: '51176e', sport: 'MLB', gameKey: 'stl_pit', marketType: 'ML', side: 'home',
+    team: 'Pirates', marketLabel: 'ML', away: 'STL', home: 'PIT', cents: 58, americanLabel: '-140', americanOdds: -140,
+    invested: 4500, displaySizeRatio: 1.0, opposed: 'clear', pinMove: 'with',
+    commenceMs: liveCommence,
+    ts: liveCommence - 4 * 60 * 60 * 1000 - 20 * 60 * 1000,
   },
   {
     walletShort: '51176e', sport: 'MLB', gameKey: 'nyy_tex', marketType: 'ML', side: 'away',
