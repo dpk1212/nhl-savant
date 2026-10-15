@@ -1119,6 +1119,81 @@ function pointTimeMs(t) {
   return n > 1e12 ? n : n * 1000;
 }
 
+function fmtPct(prob) {
+  if (!Number.isFinite(prob)) return null;
+  return `${(Math.round(prob * 10) / 10).toFixed(1)}%`;
+}
+
+function fmtPts(openOdds, nowOdds) {
+  const openP = impliedFromAmerican(openOdds);
+  const nowP = impliedFromAmerican(nowOdds);
+  if (openP == null || nowP == null) return null;
+  const delta = (nowP - openP) * 100;
+  if (Math.abs(delta) < 0.05) return null;
+  const rounded = Math.round(delta * 10) / 10;
+  const sign = rounded > 0 ? '+' : '−';
+  return `${sign}${Math.abs(rounded).toFixed(1)}`;
+}
+
+function seriesGeometry(series) {
+  const pts = sparkPoints(series);
+  if (pts.length < 2) return null;
+  const timed = pts.every((p) => Number.isFinite(p.t)) && pts[pts.length - 1].t > pts[0].t;
+  const t0 = timed ? pts[0].t : null;
+  const t1 = timed ? pts[pts.length - 1].t : null;
+  const frac = (p, i) => {
+    if (!timed) return i / (pts.length - 1);
+    return (p.t - t0) / (t1 - t0);
+  };
+  const probs = pts.map((p) => p.prob);
+  const hi = Math.max(...probs);
+  const lo = Math.min(...probs);
+  let min = lo;
+  let max = hi;
+  if (max - min < 1.6) {
+    const mid = (max + min) / 2;
+    min = mid - 1.2;
+    max = mid + 1.2;
+  } else {
+    const pad = (max - min) * 0.28;
+    min -= pad;
+    max += pad;
+  }
+  return { pts, frac, t0, t1, hi, lo, min, max };
+}
+
+function marksFor(geo, lines) {
+  if (!geo || geo.t0 == null) return [];
+  const fracs = geo.pts.map((p, i) => geo.frac(p, i));
+  const probAt = (x) => {
+    let i1 = fracs.findIndex((f) => f >= x);
+    if (i1 < 0) return geo.pts[geo.pts.length - 1].prob;
+    if (i1 === 0) return geo.pts[0].prob;
+    const i0 = i1 - 1;
+    const span = fracs[i1] - fracs[i0] || 1;
+    const f = (x - fracs[i0]) / span;
+    return geo.pts[i0].prob + (geo.pts[i1].prob - geo.pts[i0].prob) * f;
+  };
+  const out = [];
+  for (const line of lines || []) {
+    const ts = Number(line.ts);
+    if (!Number.isFinite(ts) || ts <= 0) continue;
+    const x = (ts - geo.t0) / (geo.t1 - geo.t0);
+    if (x < -0.02 || x > 1.04) continue;
+    const clamped = Math.min(1, Math.max(0, x));
+    out.push({
+      x: clamped,
+      prob: probAt(clamped),
+      tag: line.tag,
+      price: line.price,
+      when: fmtEntry(ts),
+      ts,
+    });
+  }
+  out.sort((a, b) => a.ts - b.ts);
+  return out;
+}
+
 function sparkPoints(series) {
   const pts = (series || []).map((p) => {
     const prob = impliedFromAmerican(p.odds);
@@ -1132,76 +1207,77 @@ function sparkPoints(series) {
   return out;
 }
 
-function entryMarks(pts, lines) {
-  const timed = pts.filter((p) => Number.isFinite(p.t));
-  if (timed.length < 2) return [];
-  const t0 = timed[0].t;
-  const t1 = timed[timed.length - 1].t;
-  if (!(t1 > t0)) return [];
-  const out = [];
-  for (const line of lines || []) {
-    const ts = Number(line.ts);
-    if (!Number.isFinite(ts) || ts <= 0) continue;
-    const x = (ts - t0) / (t1 - t0);
-    if (x < -0.02 || x > 1.04) continue;
-    const clamped = Math.min(1, Math.max(0, x));
-    const idx = clamped * (pts.length - 1);
-    const i0 = Math.floor(idx);
-    const i1 = Math.min(pts.length - 1, i0 + 1);
-    const f = idx - i0;
-    const prob = pts[i0].prob + (pts[i1].prob - pts[i0].prob) * f;
-    out.push({
-      x: clamped,
-      prob,
-      title: [line.tag, line.price, fmtEntry(line.ts)].filter(Boolean).join(' · '),
-    });
-  }
-  return out;
+function pathD(geo, xOf, yOf) {
+  return geo.pts.map((p, i) => `${i ? 'L' : 'M'}${xOf(p, i).toFixed(1)},${yOf(p.prob).toFixed(1)}`).join(' ');
 }
 
-function LineSpark({ series, lines, height = 96 }) {
-  const uid = useId().replace(/:/g, '');
-  const pts = sparkPoints(series);
-  if (pts.length < 2) return null;
-  const probs = pts.map((p) => p.prob);
-  let min = Math.min(...probs);
-  let max = Math.max(...probs);
-  if (max - min < 1.4) {
-    const mid = (max + min) / 2;
-    min = mid - 0.9;
-    max = mid + 0.9;
-  } else {
-    const pad = (max - min) * 0.16;
-    min -= pad;
-    max += pad;
-  }
-  const w = 640;
-  const h = 120;
-  const xOf = (i) => 18 + (i / (pts.length - 1)) * (w - 36);
-  const yOf = (p) => 14 + (1 - (p - min) / (max - min)) * (h - 30);
-  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${xOf(i).toFixed(1)},${yOf(p.prob).toFixed(1)}`).join(' ');
-  const area = `${d} L${xOf(pts.length - 1).toFixed(1)},${(h - 10).toFixed(1)} L${xOf(0).toFixed(1)},${(h - 10).toFixed(1)} Z`;
-  const marks = entryMarks(pts, lines);
-  const end = pts[pts.length - 1];
+function MiniPath({ series }) {
+  const geo = seriesGeometry(series);
+  if (!geo) return null;
+  const w = 84;
+  const h = 36;
+  const xOf = (p, i) => 3 + geo.frac(p, i) * (w - 6);
+  const yOf = (prob) => 4 + (1 - (prob - geo.min) / (geo.max - geo.min)) * (h - 8);
+  const d = pathD(geo, xOf, yOf);
+  const end = geo.pts[geo.pts.length - 1];
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={height} role="img" aria-label="Pinnacle price path">
+    <svg width="84" height="36" viewBox={`0 0 ${w} ${h}`} aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
+      <path d={d} fill="none" stroke={B.gold} strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={xOf(end, geo.pts.length - 1)} cy={yOf(end.prob)} r="2.2" fill={B.gold} />
+    </svg>
+  );
+}
+
+function LineChart({ geo, marks, isMobile }) {
+  const uid = useId().replace(/:/g, '');
+  if (!geo) return null;
+  const w = 800;
+  const h = isMobile ? 430 : 210;
+  const stroke = isMobile ? 5.2 : 2.7;
+  const glow = isMobile ? 16 : 8.5;
+  const dot = isMobile ? 9 : 4.2;
+  const halo = isMobile ? 20 : 10;
+  const entry = isMobile ? 8.2 : 3.8;
+  const entryHalo = isMobile ? 18 : 8.5;
+  const grid = isMobile ? 2.4 : 1;
+  const left = 10;
+  const right = 14;
+  const top = 18;
+  const bottom = 16;
+  const xOf = (p, i) => left + geo.frac(p, i) * (w - left - right);
+  const yOf = (prob) => top + (1 - (prob - geo.min) / (geo.max - geo.min)) * (h - top - bottom);
+  const d = pathD(geo, xOf, yOf);
+  const last = geo.pts[geo.pts.length - 1];
+  const first = geo.pts[0];
+  const floor = h - bottom;
+  const area = `${d} L${xOf(last, geo.pts.length - 1).toFixed(1)},${floor} L${xOf(first, 0).toFixed(1)},${floor} Z`;
+  const openLabel = fmtPrice(first.odds);
+  const nowLabel = fmtPrice(last.odds);
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" role="img" aria-label={`Pinnacle from ${openLabel} to ${nowLabel}`} style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: `${w} / ${h}` }}>
       <defs>
-        <linearGradient id={`line-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={B.gold} stopOpacity="0.28" />
+        <linearGradient id={`stage-${uid}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={B.gold} stopOpacity="0.32" />
+          <stop offset="70%" stopColor={B.gold} stopOpacity="0.05" />
           <stop offset="100%" stopColor={B.gold} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={area} fill={`url(#line-${uid})`} />
-      <path d={d} fill="none" stroke={B.gold} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={xOf(pts.length - 1)} cy={yOf(end.prob)} r="3.2" fill={B.gold} />
+      <line x1={left} x2={w - right} y1={yOf(geo.hi)} y2={yOf(geo.hi)} stroke="rgba(255,255,255,0.06)" strokeWidth={grid} />
+      <line x1={left} x2={w - right} y1={yOf(geo.lo)} y2={yOf(geo.lo)} stroke="rgba(255,255,255,0.06)" strokeWidth={grid} />
+      <path d={area} fill={`url(#stage-${uid})`} />
+      <path d={d} fill="none" stroke={B.gold} strokeWidth={glow} strokeOpacity="0.16" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={d} fill="none" stroke={B.gold} strokeWidth={stroke} strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={xOf(first, 0)} cy={yOf(first.prob)} r={dot * 0.7} fill={B.gold} />
+      <circle cx={xOf(last, geo.pts.length - 1)} cy={yOf(last.prob)} r={halo} fill={B.gold} opacity="0.16" />
+      <circle cx={xOf(last, geo.pts.length - 1)} cy={yOf(last.prob)} r={dot} fill={B.gold} />
       {marks.map((mark, i) => {
-        const cx = 18 + mark.x * (w - 36);
+        const cx = left + mark.x * (w - left - right);
         const cy = yOf(mark.prob);
         return (
-          <g key={`${mark.title}-${i}`}>
-            <circle cx={cx} cy={cy} r="6.5" fill={B.green} opacity="0.22" />
-            <circle cx={cx} cy={cy} r="3.3" fill={B.green} stroke="#0B0E14" strokeWidth="1.2">
-              <title>{mark.title}</title>
+          <g key={`${mark.tag}-${mark.ts}-${i}`}>
+            <circle cx={cx} cy={cy} r={entryHalo} fill={B.green} opacity="0.18" />
+            <circle cx={cx} cy={cy} r={entry} fill={B.green} stroke="#10141A" strokeWidth={isMobile ? 2.4 : 1.4}>
+              <title>{[mark.tag, mark.price, mark.when].filter(Boolean).join(' · ')}</title>
             </circle>
           </g>
         );
@@ -1210,51 +1286,67 @@ function LineSpark({ series, lines, height = 96 }) {
   );
 }
 
-function BookBoard({ books }) {
+function BookLadder({ books, evPct, isMobile }) {
   if (!books || books.length < 2) return null;
+  const ev = Number.isFinite(evPct) ? `+${evPct.toFixed(1)}% EV` : null;
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
-      marginTop: 12,
-      borderTop: `1px solid ${B.hair}`,
-    }}
-    >
-      {books.map((book) => (
-        <div
-          key={book.name}
-          style={{
-            minWidth: 0,
-            padding: '0.5rem 0.45rem 0.45rem',
-            background: book.best ? 'rgba(212,175,55,0.08)' : 'transparent',
-            borderRight: `1px solid ${B.hair}`,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-            <BookLogo name={book.name} size={14} />
-            <span style={{
-              ...T.kicker,
-              color: book.sharp ? B.gold : B.textFaint,
-              letterSpacing: '0.04em',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+    <div style={{ marginTop: 18 }}>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Books</div>
+      <div style={{ marginTop: 6 }}>
+        {books.map((book) => {
+          const fair = book.sharp || /pinnacle/i.test(book.name || '');
+          const note = book.best && ev ? ev : (fair ? 'Fair' : null);
+          const noteColor = book.best && ev ? B.green : B.gold;
+          return (
+            <div
+              key={book.name}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '20px minmax(0, 1fr) auto' : '22px minmax(0, 1fr) 84px auto',
+                gap: 10,
+                alignItems: 'center',
+                padding: '0.68rem 0.15rem 0.68rem 0.55rem',
+                borderTop: `1px solid ${B.hair}`,
+                background: book.best ? 'rgba(212,175,55,0.07)' : 'transparent',
+                boxShadow: book.best ? `inset 2px 0 0 ${B.gold}` : 'none',
+              }}
             >
-              {book.name}
-            </span>
-          </div>
-          <div style={{
-            ...T.figure,
-            color: book.best ? B.goldSoft : B.text,
-            marginTop: 4,
-            fontSize: '0.95rem',
-          }}
-          >
-            {fmtPrice(book.odds)}
-          </div>
-        </div>
-      ))}
+              <BookLogo name={book.name} size={isMobile ? 16 : 20} />
+              <span style={{ minWidth: 0 }}>
+                <span style={{
+                  ...T.name,
+                  color: fair ? B.goldSoft : B.text,
+                  fontSize: isMobile ? '0.86rem' : '0.95rem',
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+                >
+                  {book.name}
+                </span>
+                {isMobile && note ? (
+                  <span style={{ ...T.meta, color: noteColor, fontWeight: 700, display: 'block', marginTop: 2 }}>{note}</span>
+                ) : null}
+              </span>
+              {isMobile ? null : (
+                <span style={{ ...T.meta, color: note ? noteColor : B.textFaint, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  {note || ''}
+                </span>
+              )}
+              <span style={{
+                ...T.figure,
+                color: book.best ? B.goldSoft : B.text,
+                fontSize: isMobile ? '1rem' : '1.12rem',
+                textAlign: 'right',
+              }}
+              >
+                {fmtPrice(book.odds)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1262,22 +1354,27 @@ function BookBoard({ books }) {
 function LineFold({ history, item, quote, lines, isMobile }) {
   const tape = ticketLineTape(history, item);
   const books = quote?.frozen ? [] : (quote?.books || []);
-  const path = tape && Number.isFinite(tape.open) && Number.isFinite(tape.now)
-    ? (Math.round(tape.open) === Math.round(tape.now)
-      ? fmtPrice(tape.now)
-      : `${fmtPrice(tape.open)} → ${fmtPrice(tape.now)}`)
+  const geo = seriesGeometry(tape?.series);
+  const marks = marksFor(geo, lines);
+  const openOdds = Number.isFinite(tape?.open) ? tape.open : null;
+  const nowOdds = Number.isFinite(tape?.now) ? tape.now : null;
+  const path = openOdds != null && nowOdds != null
+    ? (Math.round(openOdds) === Math.round(nowOdds)
+      ? fmtPrice(nowOdds)
+      : `${fmtPrice(openOdds)} → ${fmtPrice(nowOdds)}`)
     : null;
-  const canOpen = (tape?.series?.length >= 2) || books.length > 1;
+  const canOpen = !!geo || books.length > 1;
   const [open, setOpen] = useState(false);
   if (!canOpen) return null;
   const move = tape?.move === 'with' || tape?.move === 'against' ? tape.move : null;
-  const moveColor = move === 'with' ? B.green : B.red;
+  const moveColor = move === 'with' ? B.green : move === 'against' ? B.red : B.textSec;
   const summary = path || (books.length > 1 ? `${books.length} books` : 'Line');
-  const pinOdds = tape?.now ?? quote?.consensusOdds;
-  const pinPct = impliedFromAmerican(pinOdds);
-  const bestIsPin = quote?.book && /pinnacle/i.test(quote.book);
+  const pts = fmtPts(openOdds, nowOdds);
+  const openPct = fmtPct(impliedFromAmerican(openOdds) == null ? null : impliedFromAmerican(openOdds) * 100);
+  const nowPct = fmtPct(impliedFromAmerican(nowOdds) == null ? null : impliedFromAmerican(nowOdds) * 100);
+  const figureSize = isMobile ? '1.55rem' : '1.9rem';
   return (
-    <div style={{ marginTop: 4 }}>
+    <div style={{ marginTop: 6 }}>
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
@@ -1287,8 +1384,8 @@ function LineFold({ history, item, quote, lines, isMobile }) {
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 12,
-          marginTop: 8,
-          padding: '0.62rem 0 0.15rem',
+          marginTop: 10,
+          padding: '0.85rem 0 0.15rem',
           border: 'none',
           borderTop: `1px solid ${B.hair}`,
           background: 'transparent',
@@ -1297,62 +1394,91 @@ function LineFold({ history, item, quote, lines, isMobile }) {
           textAlign: 'left',
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0, flexWrap: 'wrap' }}>
-          <span style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Line</span>
-          <span style={{ ...T.figure, color: B.text, fontSize: '0.92rem' }}>{summary}</span>
-          {move ? (
-            <span style={{ ...T.meta, color: moveColor, fontWeight: 700 }}>{move}</span>
-          ) : null}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+          <MiniPath series={tape?.series} />
+          <span style={{ minWidth: 0 }}>
+            <span style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em', display: 'block' }}>Line</span>
+            <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+              <span style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.05rem' : '1.2rem' }}>{summary}</span>
+              {move ? <span style={{ ...T.meta, color: moveColor, fontWeight: 700 }}>{move}</span> : null}
+            </span>
+          </span>
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0, ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>
           {open ? 'Less' : 'Details'}
           <ChevronDown
-            size={13}
+            size={14}
             color={B.textFaint}
             style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
           />
         </span>
       </button>
       {open ? (
-        <div onClick={(e) => e.stopPropagation()} style={{ paddingTop: 8 }}>
-          {tape?.series?.length >= 2 ? (
-            <>
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>
-                  <span style={{ width: 14, height: 2, background: B.gold, borderRadius: 1, display: 'inline-block' }} />
-                  Pinnacle
-                </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: B.green, display: 'inline-block' }} />
-                  Entry
-                </span>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            marginTop: 12,
+            borderRadius: 16,
+            border: `1px solid ${B.line}`,
+            borderTop: `2px solid ${B.gold}`,
+            background: '#10141A',
+            padding: isMobile ? '0.95rem 0.8rem 0.85rem' : '1.15rem 1.15rem 1rem',
+          }}
+        >
+          {openOdds != null && nowOdds != null ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr',
+              gap: 12,
+              alignItems: 'end',
+            }}
+            >
+              <div>
+                <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Open</div>
+                <div style={{ ...T.figure, color: B.goldSoft, fontSize: figureSize, marginTop: 6, letterSpacing: '-0.04em' }}>{fmtPrice(openOdds)}</div>
+                {openPct ? <div style={{ ...T.meta, color: B.textFaint, marginTop: 4 }}>{openPct}</div> : null}
               </div>
-              <LineSpark series={tape.series} lines={lines} height={isMobile ? 84 : 104} />
-            </>
+              {move && pts ? (
+                <div style={{ textAlign: 'center', paddingBottom: 2 }}>
+                  <div style={{ ...T.figure, color: moveColor, fontSize: isMobile ? '1.15rem' : '1.35rem', letterSpacing: '-0.03em' }}>{pts}</div>
+                  <div style={{ ...T.kicker, color: move ? moveColor : B.textFaint, letterSpacing: '0.12em', marginTop: 5 }}>Pts</div>
+                </div>
+              ) : <div />}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ ...T.kicker, color: move ? moveColor : B.textFaint, letterSpacing: '0.12em' }}>{move || 'Now'}</div>
+                <div style={{ ...T.figure, color: move ? moveColor : B.text, fontSize: figureSize, marginTop: 6, letterSpacing: '-0.04em' }}>{fmtPrice(nowOdds)}</div>
+                {nowPct ? <div style={{ ...T.meta, color: B.textFaint, marginTop: 4 }}>{nowPct}</div> : null}
+              </div>
+            </div>
           ) : null}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px 28px', marginTop: 8 }}>
-            {Number.isFinite(pinOdds) ? (
-              <div>
-                <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>Pinnacle</div>
-                <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.2rem', marginTop: 4 }}>{fmtPrice(pinOdds)}</div>
-                {pinPct != null ? (
-                  <div style={{ ...T.meta, color: B.textFaint, marginTop: 3 }}>{`${Math.round(pinPct * 1000) / 10}% implied`}</div>
-                ) : null}
-              </div>
-            ) : null}
-            {quote && Number.isFinite(quote.odds) && !bestIsPin ? (
-              <div>
-                <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Best</div>
-                <div style={{ ...T.figure, color: Number.isFinite(quote.evPct) ? B.green : B.text, fontSize: '1.2rem', marginTop: 4 }}>
-                  {fmtPrice(quote.odds)}
+          {geo ? <div style={{ marginTop: 8 }}><LineChart geo={geo} marks={marks} isMobile={isMobile} /></div> : null}
+          {geo?.t0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 2 }}>
+              <span style={{ ...T.meta, color: B.textFaint }}>{fmtEntry(geo.t0)}</span>
+              <span style={{ ...T.meta, color: B.textFaint }}>{fmtEntry(geo.t1)}</span>
+            </div>
+          ) : null}
+          {marks.length ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr 1fr' : `repeat(${Math.min(marks.length, 5)}, minmax(0, 1fr))`,
+              gap: '12px 14px',
+              marginTop: 14,
+            }}
+            >
+              {marks.map((mark) => (
+                <div key={`${mark.tag}-${mark.ts}`} style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: B.green, flexShrink: 0, transform: 'translateY(1px)' }} />
+                    <span style={{ ...T.name, color: B.textSec, fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mark.tag}</span>
+                    {mark.price ? <span style={{ ...T.figure, color: B.goldSoft, fontSize: '0.78rem', marginLeft: 'auto' }}>{mark.price}</span> : null}
+                  </div>
+                  {mark.when ? <div style={{ ...T.meta, color: B.textFaint, marginTop: 3, paddingLeft: 13 }}>{mark.when}</div> : null}
                 </div>
-                <div style={{ ...T.meta, color: B.textFaint, marginTop: 3 }}>
-                  {[quote.book, Number.isFinite(quote.evPct) ? `+${quote.evPct.toFixed(1)}% EV` : null].filter(Boolean).join('  ·  ')}
-                </div>
-              </div>
-            ) : null}
-          </div>
-          <BookBoard books={books} />
+              ))}
+            </div>
+          ) : null}
+          <BookLadder books={books} evPct={quote?.evPct} isMobile={isMobile} />
         </div>
       ) : null}
     </div>
