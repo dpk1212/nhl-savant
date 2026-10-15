@@ -14,6 +14,7 @@ import { sharpMarketAgreementFromPinnGame, buildLockedMarketSignals } from '../.
 import {
   sportTrustBookPreferB,
   pickSensationalTrust,
+  sourceBPreferredBook,
 } from '../../../lib/walletSportBook.js';
 import {
   buildWideBoardMoneySplits,
@@ -236,8 +237,11 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const picks = sportRec?.picks;
       const positions = sportRec?.positions;
 
-      // Whitelist-coherent record first (the record that EARNED the badge).
-      const wlRec = getRecordForDisplay?.(short, sport) || null;
+      // Why we trust them: all-time Source B for this sport×market, or this
+      // sport, whichever book is stronger. Featured picks stay a fallback
+      // only when neither Source B book has two decided bets.
+      const preferredB = sourceBPreferredBook(profile, sport, opts.marketType);
+      const wlRec = preferredB || getRecordForDisplay?.(short, sport) || null;
       const wr = Number.isFinite(wlRec?.wr) ? wlRec.wr
         : Number.isFinite(picks?.wr) && (picks.n || 0) >= 2 ? picks.wr
         : Number.isFinite(positions?.wr) && (positions.n || 0) >= 2 ? positions.wr

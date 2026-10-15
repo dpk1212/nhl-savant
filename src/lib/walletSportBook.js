@@ -5,7 +5,8 @@
  * Source B = on-chain positions (bySport.positions / positionFlatRoi + dollarRoi)
  *
  * When both exist (≥2 decided), pick the stronger book (positive ROI first,
- * then WR, then ROI). Action + locked cards must share this helper.
+ * then WR, then ROI). Action receipts still use this helper.
+ * Locked “Why we trust them” uses sourceBPreferredBook instead.
  */
 export function sportBookForDisplay(sportRec) {
   if (!sportRec) return null;
@@ -48,6 +49,61 @@ export function sportBookForDisplay(sportRec) {
     return posRoi * 1e6 + wr * 1e3 + roi;
   };
   return candidates.sort((a, b) => score(b) - score(a))[0];
+}
+
+function bookStrength(book) {
+  const wr = Number.isFinite(book?.wr) ? book.wr : -1;
+  const roi = Number.isFinite(book?.roi) ? book.roi : -999;
+  const posRoi = roi > 0 ? 1 : 0;
+  return posRoi * 1e6 + wr * 1e3 + roi;
+}
+
+function marketKey(market) {
+  const raw = String(market || '').toUpperCase();
+  if (raw === 'MONEYLINE' || raw === 'ML') return 'ML';
+  if (raw === 'SPREAD' || raw === 'SPREADS') return 'SPREAD';
+  if (raw === 'TOTAL' || raw === 'TOTALS') return 'TOTAL';
+  return raw || null;
+}
+
+/** Full Source B positions book. n≥2 decided bets. Flat ROI is the number on the card. */
+function sourceBBook(pos, scope) {
+  if (!pos) return null;
+  const wins = Number(pos.wins) || 0;
+  const losses = Number(pos.losses) || 0;
+  const decided = wins + losses;
+  const n = Number(pos.n) || decided;
+  if (n < 2 || decided < 2) return null;
+  return {
+    wins,
+    losses,
+    wr: Number.isFinite(Number(pos.wr)) ? Number(pos.wr) : (100 * wins) / decided,
+    roi: Number.isFinite(Number(pos.positionFlatRoi)) ? Number(pos.positionFlatRoi) : null,
+    dollarRoi: Number.isFinite(Number(pos.dollarRoi)) ? Number(pos.dollarRoi) : null,
+    kind: 'positions',
+    scope,
+    n,
+  };
+}
+
+/**
+ * Locked-card “Why we trust them”.
+ * All-time Source B only: this sport × market, or this sport.
+ * The stronger book wins (positive flat ROI, then win rate, then ROI).
+ * Featured picks (Source A) and the 30-day window are not candidates.
+ */
+export function sourceBPreferredBook(profile, sport, market) {
+  const rec = profile?.bySport?.[sport];
+  if (!rec) return null;
+  const key = marketKey(market);
+  const marketPos = key ? rec.byMarket?.[key]?.positions : null;
+  const books = [
+    sourceBBook(marketPos, 'market'),
+    sourceBBook(rec.positions, 'sport'),
+  ].filter(Boolean);
+  if (!books.length) return null;
+  books.sort((a, b) => bookStrength(b) - bookStrength(a));
+  return books[0];
 }
 
 /**
