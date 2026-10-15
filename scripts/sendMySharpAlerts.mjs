@@ -127,7 +127,6 @@ function flattenBoard(files, poly, now) {
             away: game.away || game.awayTeam || null,
             home: game.home || game.homeTeam || null,
             walletShort,
-            name: typeof pos.name === 'string' ? pos.name : null,
             marketType: marketType === 'MONEYLINE' ? 'ML' : marketType,
             side: String(pos.side || '').toLowerCase(),
             team: teamName(pos, game, marketType === 'MONEYLINE' ? 'ML' : marketType),
@@ -193,34 +192,12 @@ function rowsForUser(boardRows, sharps) {
     const member = members[row.walletShort];
     if (!member || member.muted) continue;
     if (!betsFeedOn(member, row.sport, row.marketType)) continue;
-    out.push({
-      ...row,
-      name: member.name || row.name,
-    });
+    out.push(row);
   }
   return out;
 }
 
-function indexNames(files) {
-  const names = new Map();
-  for (const [data] of files) {
-    if (!data || typeof data !== 'object') continue;
-    for (const sport of SPORTS) {
-      const games = data[sport];
-      if (!games || typeof games !== 'object') continue;
-      for (const game of Object.values(games)) {
-        const positions = Array.isArray(game?.positions) ? game.positions : [];
-        for (const pos of positions) {
-          const short = shortOf(pos.wallet || pos.walletShort);
-          if (short && typeof pos.name === 'string' && pos.name.trim()) names.set(short, pos.name.trim());
-        }
-      }
-    }
-  }
-  return names;
-}
-
-async function loadExits(db, boardRows, date, names, now) {
+async function loadExits(db, boardRows, date, now) {
   let snap;
   try {
     snap = await db.collection('sharp_action_positions')
@@ -251,7 +228,6 @@ async function loadExits(db, boardRows, date, names, now) {
       away: data.away || null,
       home: data.home || null,
       walletShort,
-      name: names.get(walletShort) || null,
       marketType,
       side,
       team: data.teamName || data.outcome || null,
@@ -339,10 +315,9 @@ async function main() {
   ]);
   const paired = files.map((data, i) => [data, POSITION_FILES[i][1]]);
   const boardRows = flattenBoard(paired, poly, now);
-  const names = indexNames(paired);
   console.log(`Open pregame positions: ${boardRows.length}`);
 
-  const exits = TEST_OILERS ? [] : await loadExits(db, boardRows, date, names, now);
+  const exits = TEST_OILERS ? [] : await loadExits(db, boardRows, date, now);
   const users = await loadRosterUsers(db, roster);
   const targets = TEST_OILERS ? users.filter((u) => u.uid === OWNER_UID) : users;
 

@@ -68,11 +68,10 @@ export function fmtStake(n) {
   return `$${Math.round(v)}`;
 }
 
+/** Push copy uses the wallet tag. Polymarket usernames stay off the lock screen. */
 export function walletLabel(row) {
-  const name = typeof row?.name === 'string' ? row.name.replace(/\s+/g, ' ').trim() : '';
-  if (name) return name.slice(0, 22);
   const short = String(row?.walletShort || '').toLowerCase().slice(-6);
-  return short || 'A sharp';
+  return short.length >= 4 ? `··${short}` : 'a sharp';
 }
 
 function normMarket(raw) {
