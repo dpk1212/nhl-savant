@@ -7,17 +7,18 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-14 · HERO **GIVE** · Brewers dog the board is fading |
+| Last updated | 2026-10-15 · HERO **ASK** · Oilers -144 to +106, five sharps stayed, 20 alerts |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** No fork. |
-| Account arc | Last night’s highlighted sharp screwed the post. Tonight the lead is $312K on the Dodgers vs a 10-4’s $21K on the Brewers. Locks 7:45. |
+| Ask temperature | **Ask.** Proof opens. 20 seats close. No trial paragraph. |
+| Account arc | Brewers cashed after a sweat. Oilers flagged -107, live +106, Pin -101. Five sharps, 5u, locks 8:55. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 10/14 ~7:01 ET | Hero **GIVE** | `$312,000 is on the Dodgers.` / 10-4’s $21K on the Brewers | **C + L** | none | **Staged** |
+| 10/15 ~5:06 ET | Hero **ASK** | `The Oilers were -144. They're +106 now.` / 20 alert seats | **C + P** | reply, first 20 | **Staged** |
+| 10/14 ~7:01 ET | Hero **GIVE** | `$312,000 is on the Dodgers.` / 10-4’s $21K on the Brewers | **C + L** | none | **Posted** · Brewers cashed after a sweat |
 | 10/13 ~8:02 ET | Hero **GIVE** | `22-11. Up $31,000.` / same wallet Penguins + Wild | **P + C** | none | **Staged** · Dale: that sharp screwed him |
 | 9/27 ~12:08 ET | Hero **GIVE** | `$174,000 ON THE GIANTS` / $546K against | **S + C** | none | **Staged** |
 | 9/26 ~7:36 ET | Hero **GIVE** | `$68,000 AT 12.9× ON MISSISSIPPI STATE` | **S + C** | none | **Staged** |
@@ -32,11 +33,11 @@
 ---
 
 ## Angle lock
-**ONE:** A 10-4 up $118,000 has $21,000 on the Brewers, and $312,000 of the tracked money is on the Dodgers.  
-**Hook:** `$312,000 is on the Dodgers.`  
-**Body:** whole record is 10-4 · confirmed $23K vs $6.2K · losing money $335K on LA · 1.5× · plays-like-this 53.6% at +34% · beat close 67% · last three Brewers ML cashed · +156 vs Pin +153 · flagged +156 · 1.5u · 7:45.  
-**Ask:** none.  
-**Killed:** crowning one wallet again · Celtics $520 and Capitals split in the hero · both ROI labels · invented score from last night · unopposed · gold · HC · limit climb · trial
+**ONE:** The Oilers went from -144 to +106, and five sharps are still on Edmonton.  
+**Hook:** `The Oilers were -144. They're +106 now.`  
+**Body:** dfa240 -115 at 3.1× · 5ce139 $7.7K at 2.1×, 22-17, +$22K · group 96-78, +$37.8K, +11%, L10 25-25 · $24K vs nothing · confirmed $12K · all-money $40K/$49K · flagged -107, Pin -101, +106, 5u, 8:55 · Brewers cashed.  
+**Ask:** 20 portfolio alerts, reply, first come.  
+**Killed:** naming 0cd77e · stale 5am dollars · Devils press · HC · gold · losers-row vs bar contradiction · Brewers score · $312K reprint · trial paragraph · limit climb
 
 ---
 
@@ -52,22 +53,23 @@
 ---
 
 ## Unfinished
-- Grade the Brewers +156 after lock
+- Grade the Oilers +106 after 8:55 lock
+- Count the 20 alert replies. Do not open a second wave in the next post.
 - Weekly report (Power)
 - Fence-sitter DMs
 
 ---
 
-## FORWARD LOOK — after this Brewers give
-1. **Grade the Brewers** when it finishes. If it loses, say so on the same disagreement. Do not restage the $312K hook.
-2. Celtics and Capitals stay off the hero unless Dale asks. Both profiles say the line is against the bettor.
-3. No ask on the scar. The next ask needs a cashed disagreement, not an apology.
+## FORWARD LOOK — after this Oilers ask
+1. **Grade the Oilers** on the same line move. Cash or loss, named. Do not reprint -144.
+2. If replies claim the 20 seats, answer with the seat, not another pitch.
+3. No second offer tomorrow. The Brewers cash was the say-do. This ask spends it.
 
-**NOT:** one-wallet coronation · Celtics $520 · Capitals 2.2× with a 44% close-rate · trial paragraph · dollar-stack of three teams
+**NOT:** Devils as a second hero · naming the -4% wallet · trial paragraph · `$N ON THE TEAM` · stale 5:00 AM sizes
 
-**Avatar:** they just watched a highlighted sharp lose. They need the board, including the side that is wrong.  
-**Hormozi economics:** give. The scar is new. An ask here is a signup speech on a loss.  
-**Desk scar:** 10/13 crowned 22-11 across two games. Dale says that sharp screwed him.
+**Avatar:** they saw Milwaukee cash after a sweat. They need the live disagreement plus a way to hear the next one.  
+**Hormozi economics:** ask, because he spined the 20 seats, on a cashed write-up.  
+**Desk scar:** 10/13 crowned one wallet. He is on this Oilers list at -4%. The group number carries him. He does not get the hook.
 
 ---
 

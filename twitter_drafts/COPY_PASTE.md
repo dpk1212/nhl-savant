@@ -1,58 +1,57 @@
-# Twitter — 2026-10-14 · HERO GIVE · Brewers dog the board is fading
-**Pathway:** Hormozi. One idea. Give. No ask.
+# Twitter — 2026-10-15 · HERO ASK · Oilers line moved away, five sharps stayed
+**Pathway:** Hormozi. One idea. Proof opens. 20 seats close.
 
 | | |
 |--|--|
-| WHO | Anyone who saw last night’s one-wallet post and is deciding whether to trust tonight’s card. |
-| PURPOSE | **Give.** |
-| ONE | A 10-4 bettor up $118,000 has $21,000 on the Brewers, and $312,000 of the tracked money is on the Dodgers. |
-| SPCL | **C + L.** The split is the credibility. The scar is the likeness. |
-| Ask | **None.** |
+| WHO | Someone who wants the pile when it happens, not a recap after the number is gone. |
+| PURPOSE | **Ask.** The Oilers are the proof. The 20 alerts are the fork. |
+| ONE | The Oilers went from -144 to +106, and five sharps are still on Edmonton. |
+| SPCL | **C** in the open (the move). **P** is one line: the Brewers cashed. |
+| Ask | First 20. Reply. No link. No “first week free.” |
 
-**Attach:** Brewers ML card, then his profile.  
-**Still flagged.** Locks **7:45 ET.** First pitch 8:00. Do not say locked. Do not say gold, HC, tier, or unopposed.
+**Attach:** Oilers ML card, then the together list. The lock screen is the alert proof if it fits.  
+**Still flagged.** Locks **8:55 ET.** Puck drop 9:10. Do not say locked, gold, or HC.
 
-### Why this is the route
-Last night’s post crowned one wallet (22-11, two games). Dale: that sharp screwed him. Do not invent the score. Do not say 0-2.
-
-Tonight the lead is the disagreement, not a coronation.
-
-### Receipts — Brewers (use these)
-- Lead `…27ae49` · **$21,000** at **1.5×** · one other proven with him
-- Tracked bar **$23,000** Brewers vs **$312,000** Dodgers · 7% · card says most of the tracked money is against
-- Confirmed **$23,000** vs **$6,200** · the qualified money is with Milwaukee
-- All money **$281,000** vs **$692,000** · leave this out of the tweet; same direction as the tracked pile
-- Losing **$27,000** vs **$335,000**
-- Record: L30 and all-time are the same **10-4**, **+$118,000**, 71% wins, **+59%** dollar ROI. Header ROI is **+40%**. Do not print both ROIs.
-- Bets shaped like this: **53.6%** wins, **+34.3%** ROI. Beat the close **67%**.
-- Last three Brewers moneylines on the tape cashed: Oct 12 +117, Oct 11 -102 at 3.5×, Oct 7 +104. Do not say he always hits them.
-- Price **+156**, flagged **+156**, Pinnacle **+153**. No move. No limit climb. Chart max label is $50K.
-- **1.5u**, to win +2.29u
-
-### Looked at, kept off the tweet
-- **Celtics -8.5 +103.** Flagged -7.5 -112. Wallet `…d9dcb1` has **$520** at 0.7×. NBA 7-3, spreads 4-2, L30 +$1,900. Profile says the line is against him. Hit edge -3.3. Locks 7:15.
-- **Capitals -111.** Flagged -119. Wallet `…5c2194` has **$1,400** at 2.2×. L30 chart is +$1,800, 12-7. Beat the close 44%. Plays like this are 50% at -1.2%. Tracked money is split, $2,000 vs $1,500. Profile says the line is against him. Locks 7:25.
+### Receipts
+- Line on the together list: **-144 → -101**, marked against. Live price **+106**. Flagged **-107**. Pinnacle **-101**.
+- **5.0u**, to win +4.95u. Five tracked sharps, **$22,600** on the together list. Game card **$24,000** on the Oilers, nothing on Utah.
+- Do not call the $24,000 clean. The bar has a losers slice on Edmonton. Confirmed is **$12,000 vs $0**.
+- All money **$40,000** Oilers vs **$49,000** Utah. The market is slightly the other way.
+- Lead `…5ce139`: **$7,700** at **2.1×**, **22-17**, L30 **+$22,000**. One other proven with him.
+- `…dfa240`: in at **-115** last night, **3.1×**, +25%. No live dollar on the together row. Do not use the 5:00 AM “$8,000 at 2.4×.”
+- `…0cd77e` is on the list at 1.9× and -4%. He is the wallet from the night that got screwed. Do not name him. Do not crown him.
+- Group, last 30 days: **+$37,800**, moneylines **96-78**, **+11%**. Last 10: **25-25**.
+- Losing row reads $13,000 to $0 on our side. Leave it out. The losers slice on the Oilers bar is the honest version.
+- No limit climb. Chart max label is $10K. Hit edge is -0.4. Do not claim a model edge.
+- Brewers cashed. Dale: they sweated, then delivered. Do not invent the score. Do not reprint $312,000.
+- Alert on the lock screen at **5:00 AM**: five together on the Oilers. The 5:00 AM multipliers are stale. Devils press stays off this tweet.
+- Offer: **20 people**, first come first serve. Push when the sharps in that person’s portfolio press, or when they land on the same side. Claim is a **reply**. No URL was given.
 
 ---
 
 ## COPY THIS
 
 ```
-$312,000 is on the Dodgers.
-$21,000 is on the Brewers, from a 10-4 who's up $118,000. That's his whole record in here.
+The Oilers were -144. They're +106 now.
 
-Last night I picked one sharp and built the post around him. He screwed me.
+Five sharps we track are on Edmonton anyway.
+One got in at -115 last night, 3.1× his usual.
+The lead ticket is $7,700 at 2.1×. He's 22-17 and up $22,000 the last 30 days.
+Together they are 96-78 on moneylines, up $37,800, at +11%. The last 10 are 25-25.
 
-Confirmed money is $23,000 on Milwaukee and $6,200 on Los Angeles.
-Most of the tracked money is the other way. $23,000 to $312,000.
-The losing money is on the Dodgers. $335,000 to $27,000.
+$24,000 is on the Oilers. None of it is on Utah.
+$12,000 of it is confirmed, and one other proven winner is with that $7,700.
+Some of the $24,000 is from bettors who have been losing.
+The rest of the market is $49,000 on Utah and $40,000 on Edmonton.
 
-He's betting 1.5× his usual. One other proven winner is with him.
-On bets shaped like this, 53.6% wins at +34%. He beat the close 67% of the time.
-He's cashed the Brewers the last three times he bet them.
+We flagged this at -107. Pinnacle is -101. We're +106.
+5 units. Locks 8:55.
 
-We're +156. Pinnacle is +153. Same number we flagged.
-1.5 units. Locks 7:45.
+The Brewers cashed last night. They made us sweat first.
+
+At 5:00 this morning an alert fired because those five were on the same side.
+First 20 people. It notifies you when the sharps in your portfolio press, or when they land together.
+Reply if you want one.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
