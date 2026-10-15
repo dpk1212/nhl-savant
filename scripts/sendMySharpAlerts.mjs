@@ -254,14 +254,15 @@ async function markSent(db, uid, alert) {
   });
 }
 
-async function sendPush({ uid, alert }) {
+async function sendPush({ uid, alert, resend = false }) {
   if (!REST_KEY) throw new Error('ONESIGNAL_REST_API_KEY is not set');
+  const key = pushKey(uid, resend ? `${alert.stamp}:${Date.now()}` : alert.stamp);
   const res = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Key ${REST_KEY}`,
-      'Idempotency-Key': pushKey(uid, alert.stamp),
+      'Idempotency-Key': key,
     },
     body: JSON.stringify({
       app_id: APP_ID,
@@ -275,7 +276,7 @@ async function sendPush({ uid, alert }) {
       chrome_web_icon: ICON,
       firefox_icon: ICON,
       chrome_web_badge: ICON,
-      web_push_topic: pushKey(uid, alert.stamp),
+      web_push_topic: key,
       name: alert.heading.slice(0, 128),
     }),
   });
@@ -341,7 +342,7 @@ async function main() {
       alerts = alerts.slice(0, 1);
     }
     for (const alert of alerts) {
-      const dup = await alreadySent(db, user.uid, alert.stamp);
+      const dup = !TEST_OILERS && await alreadySent(db, user.uid, alert.stamp);
       if (dup) {
         skipped += 1;
         console.log(`skip ${user.uid.slice(0, 6)} ${alert.stamp}`);
@@ -349,7 +350,7 @@ async function main() {
       }
       console.log(`→ ${user.uid.slice(0, 6)} [${alert.reason}] ${alert.body}`);
       if (DRY_RUN) continue;
-      const id = await sendPush({ uid: user.uid, alert });
+      const id = await sendPush({ uid: user.uid, alert, resend: TEST_OILERS });
       await markSent(db, user.uid, alert);
       sent += 1;
       console.log(`sent ${id || '(no id)'} ${alert.stamp}`);
