@@ -299,7 +299,13 @@ async function main() {
   const now = Date.now();
   const date = etDate(new Date(now));
   console.log(`\n=== my sharp alerts — ${date} ===`);
-  const testLabel = TEST_OILERS ? ' · OILERS TEST' : TEST_PRESSING ? ' · PRESSING TEST' : '';
+  const testLabel = TEST_OILERS && TEST_PRESSING
+    ? ' · OILERS + PRESSING'
+    : TEST_OILERS
+      ? ' · OILERS TEST'
+      : TEST_PRESSING
+        ? ' · PRESSING TEST'
+        : '';
   console.log(`Mode: ${DRY_RUN ? 'DRY RUN' : 'LIVE'}${testLabel}`);
 
   const db = initFirebase();
@@ -336,15 +342,22 @@ async function main() {
       return betsFeedOn(member, row.sport, row.marketType);
     });
     let alerts = planMySharpAlerts({ prefs: user.prefs, rows: mine, exits: mineExits });
-    if (TEST_OILERS) {
+    if (TEST_OILERS && TEST_PRESSING) {
+      const oilers = alerts.filter((a) => a.reason === 'together' && isOilersAlert(a)).slice(0, 1);
+      const pressing = alerts.filter((a) => a.reason === 'pressing').slice(0, 1);
+      if (!oilers.length || !pressing.length) {
+        console.error('Need both an Oilers together alert and a pressing alert. Not sending a stand-in.');
+        process.exit(1);
+      }
+      alerts = [...oilers, ...pressing];
+    } else if (TEST_OILERS) {
       alerts = alerts.filter((a) => a.reason === 'together' && isOilersAlert(a));
       if (!alerts.length) {
         console.error('No together alert on the Oilers for the owner. Not sending a stand-in.');
         process.exit(1);
       }
       alerts = alerts.slice(0, 1);
-    }
-    if (TEST_PRESSING) {
+    } else if (TEST_PRESSING) {
       alerts = alerts.filter((a) => a.reason === 'pressing');
       if (!alerts.length) {
         console.error('No pressing alert for the owner. Not sending a stand-in.');
@@ -352,6 +365,7 @@ async function main() {
       }
       alerts = alerts.slice(0, 1);
     }
+    const queued = [];
     for (const alert of alerts) {
       const dup = !TEST_ONE && await alreadySent(db, user.uid, alert.stamp);
       if (dup) {
@@ -360,12 +374,15 @@ async function main() {
         continue;
       }
       console.log(`→ ${user.uid.slice(0, 6)} [${alert.reason}] ${alert.body}`);
-      if (DRY_RUN) continue;
+      if (!DRY_RUN) queued.push(alert);
+    }
+    const deliveries = await Promise.all(queued.map(async (alert) => {
       const id = await sendPush({ uid: user.uid, alert, resend: TEST_ONE });
       await markSent(db, user.uid, alert);
-      sent += 1;
       console.log(`sent ${id || '(no id)'} ${alert.stamp}`);
-    }
+      return id;
+    }));
+    sent += deliveries.length;
   }
   console.log(`Done. sent=${sent} already-sent=${skipped}${DRY_RUN ? ' (dry run, nothing sent)' : ''}`);
 }

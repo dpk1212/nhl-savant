@@ -21,6 +21,10 @@ on:
         description: Send the owner one pressing alert and skip the scan
         type: boolean
         default: false
+      test_pair:
+        description: Send the owner the Oilers and pressing tests together
+        type: boolean
+        default: false
 
 concurrency:
   group: send-lock-alerts
@@ -67,12 +71,12 @@ jobs:
           fi
 
       - name: syncPickStateAuthoritative
-        if: steps.gate.outputs.skip != 'true' && github.event.inputs.test_oilers != 'true' && github.event.inputs.test_pressing != 'true'
+        if: steps.gate.outputs.skip != 'true' && github.event.inputs.test_oilers != 'true' && github.event.inputs.test_pressing != 'true' && github.event.inputs.test_pair != 'true'
         run: node scripts/syncPickStateAuthoritative.js
 
       # Beta My Sharp alerts. External ids on the roster only — not the paid lock audience.
       - name: My Sharp alerts
-        if: steps.gate.outputs.skip != 'true' && github.event.inputs.test_oilers != 'true' && github.event.inputs.test_pressing != 'true'
+        if: steps.gate.outputs.skip != 'true' && github.event.inputs.test_oilers != 'true' && github.event.inputs.test_pressing != 'true' && github.event.inputs.test_pair != 'true'
         run: node scripts/sendMySharpAlerts.mjs
 
       - name: My Sharp Oilers test
@@ -82,4 +86,8 @@ jobs:
       - name: My Sharp pressing test
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_pressing == 'true'
         run: node scripts/sendMySharpAlerts.mjs --test-pressing
+
+      - name: My Sharp pair test
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_pair == 'true'
+        run: node scripts/sendMySharpAlerts.mjs --test-oilers --test-pressing
 
