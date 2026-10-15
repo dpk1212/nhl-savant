@@ -31,6 +31,8 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const DRY_RUN = argv.includes('--dry-run');
 const TEST_OILERS = argv.includes('--test-oilers');
+const TEST_PRESSING = argv.includes('--test-pressing');
+const TEST_ONE = TEST_OILERS || TEST_PRESSING;
 const OWNER_UID = 'TJs6JFr8JxXRzCsMmNMC8MIOtYw2';
 const APP_ID = process.env.ONESIGNAL_APP_ID || 'd8fcb504-8d29-4354-a9e4-8b612d3eafeb';
 const REST_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
@@ -297,7 +299,8 @@ async function main() {
   const now = Date.now();
   const date = etDate(new Date(now));
   console.log(`\n=== my sharp alerts — ${date} ===`);
-  console.log(`Mode: ${DRY_RUN ? 'DRY RUN' : 'LIVE'}${TEST_OILERS ? ' · OILERS TEST' : ''}`);
+  const testLabel = TEST_OILERS ? ' · OILERS TEST' : TEST_PRESSING ? ' · PRESSING TEST' : '';
+  console.log(`Mode: ${DRY_RUN ? 'DRY RUN' : 'LIVE'}${testLabel}`);
 
   const db = initFirebase();
   const roster = await ensureOwnerSeat(db);
@@ -318,9 +321,9 @@ async function main() {
   const boardRows = flattenBoard(paired, poly, now);
   console.log(`Open pregame positions: ${boardRows.length}`);
 
-  const exits = TEST_OILERS ? [] : await loadExits(db, boardRows, date, now);
+  const exits = TEST_ONE ? [] : await loadExits(db, boardRows, date, now);
   const users = await loadRosterUsers(db, roster);
-  const targets = TEST_OILERS ? users.filter((u) => u.uid === OWNER_UID) : users;
+  const targets = TEST_ONE ? users.filter((u) => u.uid === OWNER_UID) : users;
 
   let sent = 0;
   let skipped = 0;
@@ -341,8 +344,16 @@ async function main() {
       }
       alerts = alerts.slice(0, 1);
     }
+    if (TEST_PRESSING) {
+      alerts = alerts.filter((a) => a.reason === 'pressing');
+      if (!alerts.length) {
+        console.error('No pressing alert for the owner. Not sending a stand-in.');
+        process.exit(1);
+      }
+      alerts = alerts.slice(0, 1);
+    }
     for (const alert of alerts) {
-      const dup = !TEST_OILERS && await alreadySent(db, user.uid, alert.stamp);
+      const dup = !TEST_ONE && await alreadySent(db, user.uid, alert.stamp);
       if (dup) {
         skipped += 1;
         console.log(`skip ${user.uid.slice(0, 6)} ${alert.stamp}`);
@@ -350,7 +361,7 @@ async function main() {
       }
       console.log(`→ ${user.uid.slice(0, 6)} [${alert.reason}] ${alert.body}`);
       if (DRY_RUN) continue;
-      const id = await sendPush({ uid: user.uid, alert, resend: TEST_OILERS });
+      const id = await sendPush({ uid: user.uid, alert, resend: TEST_ONE });
       await markSent(db, user.uid, alert);
       sent += 1;
       console.log(`sent ${id || '(no id)'} ${alert.stamp}`);
