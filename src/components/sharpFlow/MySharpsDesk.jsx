@@ -1075,7 +1075,7 @@ function WhoChip({ line }) {
 }
 
 function PricePair({ quote, fallback, frozen, isMobile }) {
-  const oddsSize = isMobile ? '1.45rem' : '1.7rem';
+  const oddsSize = isMobile ? '1.2rem' : '1.35rem';
   if (!quote || !Number.isFinite(quote.odds)) {
     return (
       <div style={{ marginTop: 12 }}>
@@ -1101,7 +1101,7 @@ function PricePair({ quote, fallback, frozen, isMobile }) {
         <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>{frozen ? 'Locked' : 'Best'}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
           {quote.book ? <BookLogo name={quote.book} size={isMobile ? 20 : 22} /> : null}
-          <span style={{ ...T.figure, color: B.text, fontSize: oddsSize, letterSpacing: '-0.045em', lineHeight: 0.9 }}>
+          <span style={{ ...T.figure, color: B.text, fontSize: oddsSize, letterSpacing: '-0.04em', lineHeight: 0.9 }}>
             {fmtPrice(quote.odds)}
           </span>
           {ev ? <span style={{ ...T.figure, color: B.green, fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{ev}</span> : null}
@@ -1111,7 +1111,7 @@ function PricePair({ quote, fallback, frozen, isMobile }) {
       {showSharp ? (
         <div>
           <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Sharp</div>
-          <div style={{ ...T.figure, color: B.textSec, fontSize: isMobile ? '1.2rem' : '1.35rem', marginTop: 6, letterSpacing: '-0.03em', lineHeight: 0.95 }}>
+          <div style={{ ...T.figure, color: B.textSec, fontSize: isMobile ? '1.05rem' : '1.15rem', marginTop: 6, letterSpacing: '-0.03em', lineHeight: 0.95 }}>
             {fmtPrice(quote.consensusOdds)}
           </div>
           <div style={{ ...T.meta, color: B.textFaint, marginTop: 5 }}>consensus</div>
@@ -1165,69 +1165,70 @@ function OtherSideNote({ item }) {
   );
 }
 
-function ProofPair({ lines }) {
+function Showcase({ lines, isMobile }) {
   const roll = sideRollup(lines);
-  const month = Number.isFinite(roll.pnl);
-  const book = roll.book;
-  if (!month && !book && !roll.l10) return null;
-  const roi = Number.isFinite(roll.roi) ? `${roll.roi > 0 ? '+' : ''}${roll.roi}%` : null;
-  const monthKicker = [
-    roll.bookLabel && roll.bookLabel !== 'Book' ? roll.bookLabel : null,
-    '30 days',
-    roi,
-  ].filter(Boolean).join(' · ');
-  const bookKicker = [
-    roll.bookLabel && roll.bookLabel !== 'Book' ? `${roll.bookLabel} book` : 'Book',
-    roll.l10 ? `L10 ${roll.l10}` : null,
-  ].filter(Boolean).join(' · ');
+  const bookName = roll.bookLabel && roll.bookLabel !== 'Book' ? roll.bookLabel : 'Book';
+  const cells = [
+    Number.isFinite(roll.pnl) ? {
+      key: 'money',
+      value: fmtVol(roll.pnl),
+      label: '30 days',
+      color: pnlColor(roll.pnl, B.text),
+      lead: true,
+    } : null,
+    roll.book ? {
+      key: 'book',
+      value: roll.book,
+      label: `${bookName} book`,
+      color: B.text,
+    } : null,
+    Number.isFinite(roll.roi) ? {
+      key: 'roi',
+      value: `${roll.roi > 0 ? '+' : ''}${roll.roi}%`,
+      label: 'ROI',
+      color: pnlColor(roll.roi, B.text),
+    } : null,
+    roll.l10 ? {
+      key: 'l10',
+      value: roll.l10,
+      label: 'L10',
+      color: B.text,
+    } : null,
+  ].filter(Boolean);
+  if (!cells.length) return null;
+  const cols = isMobile ? 2 : cells.length;
   return (
     <div style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '16px 36px',
-      alignItems: 'flex-start',
+      display: 'grid',
+      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+      gap: isMobile ? '16px 10px' : '0 12px',
       marginTop: 16,
-      paddingTop: 14,
-      borderTop: `1px solid ${B.hair}`,
+      padding: '14px 2px 13px',
+      borderTop: `2px solid ${B.gold}`,
+      borderBottom: `1px solid ${B.hair}`,
     }}
     >
-      {month ? (
-        <div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{monthKicker}</div>
+      {cells.map((cell) => (
+        <div key={cell.key} style={{ minWidth: 0 }}>
           <div style={{
-            ...T.figure,
-            color: pnlColor(roll.pnl, B.text),
-            fontSize: '1.55rem',
-            letterSpacing: '-0.045em',
-            lineHeight: 0.95,
-            marginTop: 5,
+            ...T.hero,
+            color: cell.color,
+            fontSize: cell.lead
+              ? (isMobile ? '1.72rem' : '2.15rem')
+              : (isMobile ? '1.35rem' : '1.72rem'),
+            lineHeight: 0.92,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
           >
-            {fmtVol(roll.pnl)}
+            {cell.value}
+          </div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em', marginTop: 7 }}>
+            {cell.label}
           </div>
         </div>
-      ) : null}
-      {book ? (
-        <div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{bookKicker}</div>
-          <div style={{
-            ...T.figure,
-            color: B.text,
-            fontSize: '1.35rem',
-            letterSpacing: '-0.03em',
-            lineHeight: 0.95,
-            marginTop: 6,
-          }}
-          >
-            {book}
-          </div>
-        </div>
-      ) : (roll.l10 ? (
-        <div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>L10</div>
-          <div style={{ ...T.figure, color: B.text, fontSize: '1.35rem', marginTop: 6 }}>{roll.l10}</div>
-        </div>
-      ) : null)}
+      ))}
     </div>
   );
 }
@@ -1692,30 +1693,17 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <MatchMarks item={item} size={isMobile ? 36 : 44} />
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
-            <div style={{ ...T.name, color: B.text, fontSize: isMobile ? '1.28rem' : '1.45rem', letterSpacing: '-0.035em', lineHeight: 1, minWidth: 0 }}>
-              {item.pick}
-            </div>
-            {isMobile ? stakeBlock : null}
+          <div style={{ ...T.name, color: B.text, fontSize: isMobile ? '1.28rem' : '1.45rem', letterSpacing: '-0.035em', lineHeight: 1, minWidth: 0 }}>
+            {item.pick}
           </div>
           {meta}
-          {isMobile ? null : (
-            <>
-              <PricePair quote={quote} fallback={price} frozen={frozen} isMobile={false} />
-              {quote && !frozen ? <BookRail books={quote.books} /> : null}
-            </>
-          )}
         </div>
-        {isMobile ? null : stakeBlock}
+        {stakeBlock}
       </div>
-      {isMobile ? (
-        <>
-          <PricePair quote={quote} fallback={price} frozen={frozen} isMobile />
-          {quote && !frozen ? <BookRail books={quote.books} /> : null}
-        </>
-      ) : null}
+      <Showcase lines={lines} isMobile={isMobile} />
+      <PricePair quote={quote} fallback={price} frozen={frozen} isMobile={isMobile} />
+      {quote && !frozen ? <BookRail books={quote.books} /> : null}
       <OtherSideNote item={item} />
-      <ProofPair lines={lines} />
       {lines.length > 1 ? <SharpPlate lines={lines} hideChips={expanded} /> : null}
       {expanded ? (
         <TicketContext

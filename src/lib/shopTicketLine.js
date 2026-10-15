@@ -351,14 +351,15 @@ export function quoteTicketShop(pinnacleHistory, ticket, opts = {}) {
 
   if (presetBook && Number.isFinite(presetOdds) && !shopRailHidden(presetBook)) {
     const hit = books.find((b) => String(b.name).toLowerCase() === String(presetBook).toLowerCase());
-    if (hit) hit.odds = presetOdds;
-    else pushShopBook(books, seen, { name: presetBook, odds: presetOdds });
+    // The feed's "best" is often a retail subset, and it can be the short
+    // number. A plus price on the board beats −105. Keep the better American.
+    if (hit) {
+      if (presetOdds > hit.odds) hit.odds = presetOdds;
+    } else pushShopBook(books, seen, { name: presetBook, odds: presetOdds });
   }
 
   if (!books.length) return null;
-  const gold = (presetBook && Number.isFinite(presetOdds) && !shopRailHidden(presetBook))
-    ? { bestOdds: presetOdds, bestBook: presetBook }
-    : markGoldFromTicketBooks(books);
+  const gold = markGoldFromTicketBooks(books);
   if (!Number.isFinite(gold.bestOdds)) return null;
   const shop = resolveHeroShop({
     bestOdds: gold.bestOdds,

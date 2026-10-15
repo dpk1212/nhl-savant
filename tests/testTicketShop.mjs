@@ -122,4 +122,26 @@ const noTape = quoteTicketShop(history, {
 }, { nowMs: freeze + 1000 });
 assert.equal(noTape, null);
 
+const plusBoard = {
+  MLB: {
+    edm_uta: {
+      current: { away: 101, home: -115 },
+      fairBook: 'pinnacle',
+      bestAway: -105,
+      bestAwayBook: 'DraftKings',
+      allBooks: {
+        draftkings: { name: 'DraftKings', away: -105, home: -115 },
+        fanduel: { name: 'FanDuel', away: 104, home: -120 },
+        betmgm: { name: 'BetMGM', away: 100, home: -118 },
+      },
+    },
+  },
+};
+const plus = quoteTicketShop(plusBoard, {
+  sport: 'MLB', gameKey: 'edm_uta', marketType: 'ML', side: 'away',
+});
+assert.equal(plus.odds, 104);
+assert.equal(plus.book, 'FanDuel');
+assert.ok(plus.books[0].odds > 0, 'best price leads the rail');
+
 console.log('ticket shop ok', { underEv: under.evPct, spreadEv: spread.evPct, lockedUnder: lockedUnder.odds });

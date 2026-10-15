@@ -11217,10 +11217,10 @@ export default function SharpFlow() {
                     const sharpsCount = mySharps?.count || 0;
                     const hcTabCount = (actionPositions || []).filter(p => p.vault_hcTier === 'HC_DOMINANT' || p.vault_hcTier === 'HC_STANDARD').length;
                     const views = [
-                      { id: 'positions', label: 'Live Positions', icon: Eye, count: !isLockedView && !isWatchView && !isHcView ? allPosGames.length : null, color: B.gold },
+                      { id: 'watchlist', label: 'My Sharps', icon: Star, count: sharpsCount > 0 ? sharpsCount : null, color: B.gold },
                       { id: 'locked', label: 'Locked Picks', icon: Lock, count: null, color: B.green },
                       { id: 'hc', label: 'HC Positions', icon: Star, count: hcTabCount > 0 ? hcTabCount : null, color: B.gold },
-                      { id: 'watchlist', label: 'My Sharps', icon: Star, count: sharpsCount > 0 ? sharpsCount : null, color: B.gold },
+                      { id: 'positions', label: 'Live Positions', icon: Eye, count: !isLockedView && !isWatchView && !isHcView ? allPosGames.length : null, color: B.gold },
                     ];
                     const activeView = isLockedView ? 'locked' : isHcView ? 'hc' : isWatchView ? 'watchlist' : 'positions';
                     const selectView = (id) => {
