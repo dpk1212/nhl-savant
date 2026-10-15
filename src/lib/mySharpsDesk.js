@@ -2606,16 +2606,75 @@ export function sharpFaceFromProfile(prof, { sport = null, market = null } = {})
   };
 }
 
+function tapeBook(block, window) {
+  if (!block) return null;
+  const wins = Number(block.wins);
+  const losses = Number(block.losses);
+  const record = block.record
+    || (Number.isFinite(wins) && Number.isFinite(losses) ? `${wins}–${losses}` : null);
+  const pnl = Number.isFinite(block.settledPnl) ? block.settledPnl
+    : (Number.isFinite(block.pnl) ? block.pnl : null);
+  if (!record && !Number.isFinite(pnl) && !Number.isFinite(block.roi)) return null;
+  return {
+    record,
+    n: block.n ?? null,
+    wr: Number.isFinite(block.wr) ? block.wr : null,
+    roi: Number.isFinite(block.roi) ? block.roi : null,
+    pnl: Number.isFinite(pnl) ? pnl : null,
+    window: block.window || window,
+  };
+}
+
+function tapeFromL30(slice) {
+  const s = l30FromRec(slice);
+  if (!s) return null;
+  return tapeBook({
+    wins: s.wins,
+    losses: s.losses,
+    n: s.n,
+    wr: s.wr,
+    roi: s.roi,
+    pnl: s.pnl,
+  }, '30d');
+}
+
+function tapeFromAgg(agg) {
+  const packed = packBook(agg);
+  if (!packed) return null;
+  return tapeBook({
+    wins: packed.wins,
+    losses: packed.losses,
+    n: packed.n,
+    wr: packed.wr,
+    roi: packed.roi,
+  }, 'all');
+}
+
+function actionTape(prof, row, sport, market) {
+  const rec = sport ? prof?.bySport?.[sport] : null;
+  const mkt = marketKeyOf(market);
+  const mRec = mkt ? rec?.byMarket?.[mkt] : null;
+  const legs = (Array.isArray(row?.recentAction) && row.recentAction.length
+    ? row.recentAction
+    : rec?.form?.recentAction) || [];
+  return {
+    marketL30: tapeBook(row?.marketAction, '30d') || tapeFromL30(mRec),
+    marketAll: tapeBook(row?.marketActionAll, 'all') || tapeFromAgg(mRec?.positions),
+    sportL30: tapeBook(row?.sportAction, '30d') || tapeFromL30(rec),
+    sportAll: tapeBook(row?.sportActionAll, 'all') || tapeFromAgg(rec?.positions),
+    legs: legs.slice(-12),
+  };
+}
+
 function walletLinesFor(ticket, names, walletProfiles) {
   return [...(ticket?.rows || [])].map((r) => {
     const short = shortWalletId(r?.walletShort) || normalizeWalletShort(r?.walletShort);
     const named = short && names?.[short];
     const ratio = Number(r?.displaySizeRatio ?? r?.sizeRatio);
     const prof = profileFor(walletProfiles, short);
-    const face = sharpFaceFromProfile(prof, {
-      sport: ticket?.sport || r?.sport,
-      market: ticket?.marketType || r?.marketType,
-    });
+    const sport = ticket?.sport || r?.sport;
+    const market = ticket?.marketType || r?.marketType;
+    const face = sharpFaceFromProfile(prof, { sport, market });
     const multiple = Number.isFinite(ratio) && ratio > 0 ? ratio : null;
     return {
       walletShort: short,
@@ -2625,6 +2684,7 @@ function walletLinesFor(ticket, names, walletProfiles) {
       price: r?.americanLabel || null,
       steam: steamStamp(r),
       sizeTier: sizeTierForRatio(prof?.sizeRatioBands, multiple, { minPctN: HONEST_PCT_N }),
+      tape: actionTape(prof, r, sport, market),
       ...face,
     };
   }).sort((a, b) => (b.invested || 0) - (a.invested || 0));

@@ -270,6 +270,7 @@ export default function MySharpsSlate({
           walletProfiles={walletProfiles}
           expandedId={openId}
           onToggle={(id) => setOpenId((cur) => (cur === id ? null : id))}
+          pinnacleHistory={pinnacleHistory}
         />
       ))}
     </div>

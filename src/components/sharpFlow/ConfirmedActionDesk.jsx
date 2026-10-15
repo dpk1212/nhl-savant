@@ -1780,6 +1780,7 @@ export default function ConfirmedActionDesk({
           onAdd={(row) => mySharps.addFromRow(row)}
           onTail={(ticket, patch) => mySharps.markTail(ticket, patch)}
           onUntail={(id) => mySharps.clearTail(id)}
+          pinnacleHistory={pinnacleHistory}
         />
       ) : (
       <div style={{

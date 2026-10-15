@@ -306,6 +306,31 @@ const profiles = new Map([
   }],
 ]);
 
+const pinnacleHistory = {
+  MLB: {
+    tor_bal: {
+      current: { away: -130, home: 118 },
+      fairBook: 'pinnacle',
+      bestAway: -125,
+      bestAwayBook: 'FanDuel',
+      bestHome: 120,
+      bestHomeBook: 'DraftKings',
+      allBooks: {
+        fanduel: { name: 'FanDuel', away: -125, home: 112 },
+        draftkings: { name: 'DraftKings', away: -128, home: 120 },
+      },
+      totalCurrent: { line: 8.5, overOdds: -102, underOdds: -120 },
+      fairTotalBook: 'pinnacle',
+      bestUnder: { line: 8.5, odds: -105, book: 'DraftKings' },
+      bestOver: { line: 8.5, odds: 100, book: 'FanDuel' },
+      allTotalBooks: {
+        draftkings: { name: 'DraftKings', line: 8.5, over: -118, under: -105 },
+        fanduel: { name: 'FanDuel', line: 8.5, over: 100, under: -112 },
+      },
+    },
+  },
+};
+
 const actionRows = [
   {
     walletShort: 'e4ec62', sport: 'MLB', gameKey: 'tor_bal', marketType: 'TOTAL', side: 'under',
@@ -378,6 +403,7 @@ export default function MySharpsDeskLab() {
           actionRows={actionRows}
           weekRows={actionRows}
           recentLegs={recentLegs}
+          pinnacleHistory={pinnacleHistory}
           tails={state.tails}
           cap={40}
           isMobile={false}

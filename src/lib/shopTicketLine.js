@@ -2,10 +2,12 @@
  * Shop rail / gold chip stay on the ticket line.
  * Missing line is a miss — never paint 8.5 onto Over 7.5.
  */
+import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
 import { evPctVsFairProb, impliedFromAmerican } from './oddsEv.js';
 import {
   bookBeatsConsensus,
   evPctVsConsensus,
+  SHOP_BOOK_PREFER,
   sharpConsensusFromBooks,
 } from './sharpConsensus.js';
 import { shopRailHidden } from './shopRailHidden.js';
@@ -164,4 +166,138 @@ export function markGoldFromTicketBooks(books) {
     if (win && !bestBook) bestBook = b.name;
   }
   return { bestOdds, bestBook };
+}
+
+function pinLabel(raw) {
+  const s = String(raw || 'Pinnacle').trim();
+  if (!s) return 'Pinnacle';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function pushShopBook(books, seen, book) {
+  if (!book || !Number.isFinite(book.odds) || shopRailHidden(book.name)) return;
+  const key = String(book.name).toLowerCase();
+  if (seen.has(key)) return;
+  seen.add(key);
+  books.push(book);
+}
+
+function shopKeys(map) {
+  return [
+    ...SHOP_BOOK_PREFER.filter((k) => map[k]),
+    ...Object.keys(map).filter((k) => !SHOP_BOOK_PREFER.includes(k) && k !== 'pinnacle' && !shopRailHidden(k)),
+  ];
+}
+
+function onPlayLine(bookLine, ticketLine, market, side) {
+  if (bookOnTicketLine(bookLine, ticketLine)) return true;
+  return nearFavorableMain(ticketLine, bookLine, { marketType: market, sideNorm: side });
+}
+
+/**
+ * Live shop for one open ticket. Same books the locked card prices:
+ * Pinnacle on this line, the retail board, best American, EV vs sharp consensus.
+ * A miss stays null — the card keeps the sharp's own price.
+ */
+export function quoteTicketShop(pinnacleHistory, ticket) {
+  if (!ticket) return null;
+  const game = lookupPinnGame(pinnacleHistory, ticket.sport, ticket.gameKey);
+  if (!game) return null;
+  const market = String(ticket.marketType || 'ML').toUpperCase();
+  const side = String(ticket.side || '').toLowerCase();
+  const line = Number.isFinite(Number(ticket.entryLine)) ? Number(ticket.entryLine) : null;
+  const books = [];
+  const seen = new Set();
+  let presetOdds = null;
+  let presetBook = null;
+
+  if (market === 'TOTAL') {
+    const cur = game.totalCurrent;
+    if (cur && onPlayLine(cur.line, line, 'total', side)) {
+      const o = side === 'under' ? cur.underOdds : cur.overOdds;
+      pushShopBook(books, seen, { name: pinLabel(game.fairTotalBook), odds: o, sharp: true, line: cur.line });
+    }
+    const all = game.allTotalBooks || {};
+    for (const k of shopKeys(all)) {
+      const b = all[k];
+      if (!b || !onPlayLine(b.line, line, 'total', side)) continue;
+      const o = side === 'under' ? b.under : b.over;
+      pushShopBook(books, seen, { name: b.name || k, odds: o, line: b.line });
+    }
+    const best = side === 'under' ? game.bestUnder : game.bestOver;
+    if (best && Number.isFinite(best.odds) && onPlayLine(best.line, line, 'total', side)) {
+      presetOdds = best.odds;
+      presetBook = best.book || null;
+    }
+  } else if (market === 'SPREAD') {
+    const cur = game.spreadCurrent;
+    if (cur) {
+      const ln = side === 'away' ? cur.awayLine : cur.homeLine;
+      const o = side === 'away' ? cur.awayOdds : cur.homeOdds;
+      if (onPlayLine(ln, line, 'spread', side)) {
+        pushShopBook(books, seen, { name: pinLabel(game.fairSpreadBook), odds: o, sharp: true, line: ln });
+      }
+    }
+    const all = game.allSpreadBooks || {};
+    for (const k of shopKeys(all)) {
+      const b = all[k];
+      if (!b) continue;
+      const ln = side === 'away' ? b.awayLine : b.homeLine;
+      if (!onPlayLine(ln, line, 'spread', side)) continue;
+      const o = side === 'away' ? b.away : b.home;
+      pushShopBook(books, seen, { name: b.name || k, odds: o, line: ln });
+    }
+    const best = side === 'away' ? game.bestAwaySpread : game.bestHomeSpread;
+    if (best && Number.isFinite(best.odds) && onPlayLine(best.line, line, 'spread', side)) {
+      presetOdds = best.odds;
+      presetBook = best.book || null;
+    }
+  } else {
+    const cur = game.current || {};
+    const fair = side === 'away' ? cur.away : side === 'draw' ? cur.draw : cur.home;
+    pushShopBook(books, seen, { name: pinLabel(game.fairBook), odds: fair, sharp: true });
+    const all = game.allBooks || {};
+    for (const k of shopKeys(all)) {
+      const b = all[k];
+      const o = side === 'away' ? b?.away : side === 'draw' ? b?.draw : b?.home;
+      pushShopBook(books, seen, { name: b?.name || k, odds: o });
+    }
+    presetOdds = side === 'away' ? game.bestAway : side === 'draw' ? game.bestDraw : game.bestHome;
+    presetBook = side === 'away' ? game.bestAwayBook : side === 'draw' ? game.bestDrawBook : game.bestHomeBook;
+    if (!Number.isFinite(presetOdds)) {
+      presetOdds = null;
+      presetBook = null;
+    }
+  }
+
+  if (presetBook && Number.isFinite(presetOdds) && !shopRailHidden(presetBook)) {
+    const hit = books.find((b) => String(b.name).toLowerCase() === String(presetBook).toLowerCase());
+    if (hit) hit.odds = presetOdds;
+    else pushShopBook(books, seen, { name: presetBook, odds: presetOdds });
+  }
+
+  if (!books.length) return null;
+  const gold = (presetBook && Number.isFinite(presetOdds) && !shopRailHidden(presetBook))
+    ? { bestOdds: presetOdds, bestBook: presetBook }
+    : markGoldFromTicketBooks(books);
+  if (!Number.isFinite(gold.bestOdds)) return null;
+  const shop = resolveHeroShop({
+    bestOdds: gold.bestOdds,
+    bestBook: gold.bestBook,
+    books,
+  });
+  const implied = impliedFromAmerican(shop.odds);
+  const rail = books.map((b) => ({
+    ...b,
+    best: shop.book && String(b.name).toLowerCase() === String(shop.book).toLowerCase(),
+  }));
+  rail.sort((a, b) => (Number(b.best) - Number(a.best)) || ((b.odds || -99999) - (a.odds || -99999)));
+  return {
+    odds: shop.odds,
+    book: shop.book,
+    evPct: shop.evPct,
+    consensusOdds: Number.isFinite(shop.consensusOdds) ? shop.consensusOdds : null,
+    impliedPct: implied == null ? null : Math.round(implied * 1000) / 10,
+    books: rail.slice(0, 8),
+  };
 }

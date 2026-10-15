@@ -25,6 +25,8 @@ import {
 } from '../../lib/mySharpsDesk.js';
 import { betsFeedKey, betsFeedOn } from '../../lib/mySharps.js';
 import { getTeamIdentity, shortTeamNick, teamLogoUrl } from '../../utils/teamIdentity.js';
+import { quoteTicketShop } from '../../lib/shopTicketLine.js';
+import { BookLogo } from './cards/bookLogo.jsx';
 
 const B = {
   gold: '#D4AF37',
@@ -1052,59 +1054,41 @@ function WhoChip({ line }) {
   );
 }
 
-function leadLine(lines) {
-  return [...(lines || [])].sort((a, b) => (b.invested || 0) - (a.invested || 0))[0] || null;
+function ShopPrice({ quote }) {
+  if (!quote || !Number.isFinite(quote.odds)) return null;
+  const ev = Number.isFinite(quote.evPct) ? `+${quote.evPct.toFixed(1)}% EV` : null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+      {quote.book ? <BookLogo name={quote.book} size={22} /> : null}
+      <span style={{ ...T.figure, color: B.text, fontSize: '1.65rem', letterSpacing: '-0.04em', lineHeight: 1 }}>
+        {fmtPrice(quote.odds)}
+      </span>
+      {quote.impliedPct != null ? (
+        <span style={{ ...T.meta, color: B.textSec, fontSize: '0.95rem' }}>{quote.impliedPct}%</span>
+      ) : null}
+      {ev ? (
+        <span style={{ ...T.figure, color: B.green, fontSize: '1.05rem' }}>{ev}</span>
+      ) : null}
+    </div>
+  );
 }
 
-function TailSentence({ item, lines }) {
-  const lead = leadLine(lines);
-  if (!lead) return null;
-  const others = Math.max(0, (lines || []).length - 1);
-  const stake = fmtVol(lead.invested, { signed: false });
-  const pressing = (lead.ratio || 0) >= 1.5;
-  const atSize = pressing && lead.sizeTier?.wr != null ? lead.sizeTier : null;
-  const steam = (lines || []).find((line) => line.steam?.show && line.steam.tag)?.steam || null;
-  const steamText = steam ? (steam.goldConfirmed ? steam.tag : `Steam ${steam.tag}`) : null;
-  const movedWith = item.pinMove === 'with';
-  const movedAgainst = item.pinMove === 'against';
+function BookRail({ books }) {
+  if (!books?.length) return null;
   return (
-    <p style={{
-      ...T.body,
-      color: B.textSec,
-      margin: '14px 0 0',
-      fontSize: '0.95rem',
-      lineHeight: 1.45,
-      maxWidth: 680,
-    }}
-    >
-      <span style={{ color: B.text, fontWeight: 650 }}>{lead.tag}</span>
-      {` has ${stake} on this`}
-      {lead.ratio ? (
-        <>
-          {', '}
-          <span style={{ color: pressing ? '#F59E0B' : B.text, fontWeight: 650 }}>{`${lead.ratio.toFixed(1)}× usual`}</span>
-        </>
-      ) : null}
-      {atSize ? (
-        <>
-          {', '}
-          <span style={{ color: tierWrColor(atSize), fontWeight: 650 }}>{`${atSize.wr}% at this size`}</span>
-        </>
-      ) : null}
-      {others === 1 ? ', with one more from your list' : null}
-      {others > 1 ? `, with ${others} more from your list` : null}
-      .
-      {movedWith || movedAgainst ? (
-        <>
-          {' The line moved '}
-          <span style={{ color: movedAgainst ? B.red : B.green, fontWeight: 650 }}>
-            {movedAgainst ? 'against' : 'with'}
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10 }}>
+      {books.map((book) => (
+        <span
+          key={book.name}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: book.best ? B.goldSoft : B.textMuted }}
+        >
+          <BookLogo name={book.name} size={14} />
+          <span style={{ ...T.figure, fontSize: '0.82rem', color: book.best ? B.goldSoft : B.textSec }}>
+            {fmtPrice(book.odds)}
           </span>
-          {' them.'}
-        </>
-      ) : null}
-      {steamText ? ` ${steamText}.` : null}
-    </p>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -1227,7 +1211,95 @@ function SizeWr({ tier, align = 'left' }) {
   );
 }
 
-function SharpReceipt({ line, sport, isMobile }) {
+function tapeBits(book) {
+  if (!book) return '—';
+  return [
+    book.record,
+    Number.isFinite(book.pnl) ? fmtVol(book.pnl) : null,
+    Number.isFinite(book.roi) ? `${book.roi > 0 ? '+' : ''}${book.roi}%` : null,
+    Number.isFinite(book.wr) ? `${book.wr}%` : null,
+  ].filter(Boolean).join('  ·  ') || '—';
+}
+
+function TapeRow({ kicker, book }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 8px', alignItems: 'baseline' }}>
+      <span style={{ ...T.kicker, color: kicker === 'L30' ? B.green : B.textFaint, letterSpacing: '0.08em', width: 64 }}>{kicker}</span>
+      <span style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{tapeBits(book)}</span>
+    </div>
+  );
+}
+
+function legPick(leg) {
+  if (leg?.team) return leg.team;
+  const side = String(leg?.side || '').trim();
+  const line = Number(leg?.line);
+  if (/^(over|under)$/i.test(side) && Number.isFinite(line)) return `${side} ${line}`;
+  if (side) return side;
+  return leg?.marketType || 'Bet';
+}
+
+function SharpResults({ line, sport, market }) {
+  const tape = line?.tape;
+  const marketLabel = [sport, market].filter(Boolean).join(' ');
+  const legs = tape?.legs || [];
+  const empty = !tape?.marketL30 && !tape?.marketAll && !tape?.sportL30 && !tape?.sportAll && !legs.length;
+  if (empty) {
+    return (
+      <div style={{ ...T.meta, color: B.textFaint, padding: '0.45rem 0 0.2rem' }}>
+        No graded tickets in this window.
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: '0.35rem 0 0.55rem 0.15rem' }} onClick={(e) => e.stopPropagation()}>
+      {marketLabel ? (
+        <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.08em', marginTop: 4 }}>{marketLabel}</div>
+      ) : null}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+        <TapeRow kicker="L30" book={tape?.marketL30} />
+        <TapeRow kicker="All-time" book={tape?.marketAll} />
+      </div>
+      {sport ? (
+        <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 10 }}>{sport}</div>
+      ) : null}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+        <TapeRow kicker="L30" book={tape?.sportL30} />
+        <TapeRow kicker="All-time" book={tape?.sportAll} />
+      </div>
+      {legs.length ? (
+        <div style={{ marginTop: 10 }}>
+          {[...legs].reverse().slice(0, 8).map((leg, i) => {
+            const won = leg.won === 1 || leg.won === true;
+            const odds = Number.isFinite(Number(leg.odds)) ? fmtPrice(leg.odds) : (leg.americanLabel || null);
+            return (
+              <div
+                key={`${leg.date || 'd'}-${leg.gameKey || i}-${i}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '52px minmax(0, 1fr) auto auto',
+                  gap: '0 10px',
+                  alignItems: 'baseline',
+                  padding: '0.32rem 0',
+                  borderTop: `1px solid ${B.hair}`,
+                }}
+              >
+                <span style={{ ...T.meta, color: B.textFaint }}>{leg.date ? String(leg.date).slice(5) : '—'}</span>
+                <span style={{ ...T.name, color: B.text, fontSize: '0.84rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {legPick(leg)}
+                </span>
+                <span style={{ ...T.meta, color: B.textSec }}>{odds || '—'}</span>
+                <span style={{ ...T.kicker, color: won ? B.green : B.red, letterSpacing: '0.06em' }}>{won ? 'W' : 'L'}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SharpReceipt({ line, sport, isMobile, selected, onOpen }) {
   const pressing = (line.ratio || 0) >= 1.5;
   const heat = heatWord(line.heat);
   const heatColor = line.heat?.key === 'hot' ? B.green : line.heat?.key === 'cold' ? B.red : B.text;
@@ -1239,9 +1311,17 @@ function SharpReceipt({ line, sport, isMobile }) {
   const month = Number.isFinite(line.marketL30) ? fmtVol(line.marketL30) : '—';
   const sportBit = Number.isFinite(line.sportL30) ? `${sport || 'Sport'} ${fmtVol(line.sportL30)}` : null;
 
+  const openRow = (e) => {
+    e.stopPropagation();
+    onOpen?.();
+  };
+
   if (isMobile) {
     return (
-      <div style={{ padding: '0.55rem 0', borderTop: `1px solid ${B.hair}` }}>
+      <div
+        style={{ padding: '0.55rem 0', borderTop: `1px solid ${B.hair}`, cursor: onOpen ? 'pointer' : 'default', background: selected ? 'rgba(255,255,255,0.02)' : 'transparent' }}
+        onClick={openRow}
+      >
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ ...T.name, color: B.text, fontSize: '0.92rem' }}>{line.tag}</span>
           <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '1rem' }}>{size}</span>
@@ -1270,14 +1350,18 @@ function SharpReceipt({ line, sport, isMobile }) {
   }
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: RECEIPT_COLS,
-      gap: '0 12px',
-      alignItems: 'center',
-      padding: '0.62rem 0',
-      borderTop: `1px solid ${B.hair}`,
-    }}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: RECEIPT_COLS,
+        gap: '0 12px',
+        alignItems: 'center',
+        padding: '0.62rem 0',
+        borderTop: `1px solid ${B.hair}`,
+        cursor: onOpen ? 'pointer' : 'default',
+        background: selected ? 'rgba(255,255,255,0.02)' : 'transparent',
+      }}
+      onClick={openRow}
     >
       <div style={{ ...T.name, color: B.text, fontSize: '0.92rem' }}>{line.tag}</div>
       <div style={{ ...T.figure, color: pressing ? '#F59E0B' : B.goldSoft, fontSize: '1.12rem', textAlign: 'right' }}>{size}</div>
@@ -1304,7 +1388,7 @@ function SharpReceipt({ line, sport, isMobile }) {
   );
 }
 
-function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedStake, expanded, onToggle }) {
+function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedStake, expanded, onToggle, pinnacleHistory }) {
   const tailed = item.tail;
   const tone = item.split ? B.red : item.shared ? B.gold : (item.sizeText ? '#F59E0B' : 'rgba(148,163,184,0.45)');
   const open = draft?.id === item.id;
@@ -1312,6 +1396,8 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
   const price = item.americanLabel || fmtPrice(item.americanOdds);
   const lines = item.walletLines || [];
   const nSharps = lines.length;
+  const quote = quoteTicketShop(pinnacleHistory, item);
+  const [openLine, setOpenLine] = useState(null);
   return (
     <div style={{
       position: 'relative',
@@ -1331,18 +1417,26 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <MatchMarks item={item} size={isMobile ? 36 : 44} />
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ ...T.name, color: B.text, fontSize: isMobile ? '1.28rem' : '1.55rem', letterSpacing: '-0.035em', lineHeight: 1 }}>
-              {item.pick}
-            </div>
-            <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.05rem' : '1.22rem', letterSpacing: '-0.03em' }}>
+          <div style={{ ...T.name, color: B.text, fontSize: isMobile ? '1.28rem' : '1.45rem', letterSpacing: '-0.035em', lineHeight: 1 }}>
+            {item.pick}
+          </div>
+          {quote ? <ShopPrice quote={quote} /> : (
+            <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.2rem' : '1.45rem', marginTop: 8, letterSpacing: '-0.03em' }}>
               {price}
             </div>
-          </div>
+          )}
           <div style={{ ...T.meta, color: B.textMuted, marginTop: 6 }}>
             {[shortMatchup(item), clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean).join('  ·  ')}
+            {item.pinMove === 'with' ? <span style={{ color: B.green }}>  ·  with the line</span> : null}
+            {item.pinMove === 'against' ? <span style={{ color: B.red }}>  ·  against the line</span> : null}
             {tailed ? <span style={{ color: B.goldSoft }}>{`  ·  Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
           </div>
+          {quote ? <BookRail books={quote.books} /> : null}
+          {quote && Number.isFinite(quote.consensusOdds) ? (
+            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 8 }}>
+              {`Sharp ${fmtPrice(quote.consensusOdds)}`}
+            </div>
+          ) : null}
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.15rem' : '1.35rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
@@ -1358,11 +1452,17 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           </div>
         </div>
       </div>
-      <TailSentence item={item} lines={lines} />
       <OtherSideNote item={item} />
       <ProofPair lines={lines} />
       {lines.length > 1 ? <SharpPlate lines={lines} hideChips={expanded} /> : null}
-      {expanded ? <TicketContext item={item} isMobile={isMobile} /> : null}
+      {expanded ? (
+        <TicketContext
+          item={item}
+          isMobile={isMobile}
+          openLine={openLine}
+          onOpenLine={(id) => setOpenLine((cur) => (cur === id ? null : id))}
+        />
+      ) : null}
       {open ? (
         <TailForm
           item={item}
@@ -1445,7 +1545,7 @@ const fieldStyle = {
   fontFeatureSettings: "'tnum'",
 };
 
-export function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, onUntail, walletProfiles, expandedId, onToggle }) {
+export function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, onUntail, walletProfiles, expandedId, onToggle, pinnacleHistory }) {
   if (!items.length) return null;
   const money = sumInvested(items);
   return (
@@ -1471,6 +1571,7 @@ export function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onT
             onUntail={onUntail}
             expanded={expandedId === item.id}
             onToggle={() => onToggle?.(item.id)}
+            pinnacleHistory={pinnacleHistory}
           />
         ))}
       </div>
@@ -2077,7 +2178,7 @@ function SharpProfile({ dossier, isMobile }) {
   );
 }
 
-function TicketContext({ item, isMobile }) {
+function TicketContext({ item, isMobile, openLine, onOpenLine }) {
   const lines = item.walletLines || [];
   const bookLabel = lines.find((line) => line.book?.label)?.book?.label || 'Market';
   return (
@@ -2101,9 +2202,22 @@ function TicketContext({ item, isMobile }) {
         </div>
       )}
       <div>
-        {lines.map((line) => (
-          <SharpReceipt key={line.walletShort || line.tag} line={line} sport={item.sport} isMobile={isMobile} />
-        ))}
+        {lines.map((line) => {
+          const id = line.walletShort || line.tag;
+          const selected = openLine === id;
+          return (
+            <div key={id}>
+              <SharpReceipt
+                line={line}
+                sport={item.sport}
+                isMobile={isMobile}
+                selected={selected}
+                onOpen={() => onOpenLine?.(id)}
+              />
+              {selected ? <SharpResults line={line} sport={item.sport} market={item.marketType} /> : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -2364,6 +2478,7 @@ export default function MySharpsDesk({
   onRoomChange = null,
   tails = {},
   cap = 40,
+  pinnacleHistory = null,
 }) {
   const [room, setRoomState] = useState(roomMemory);
   const [selected, setSelected] = useState(null);
@@ -2498,10 +2613,10 @@ export default function MySharpsDesk({
         <>
           <BetsHero groups={groups} tails={snapshot.tails} isMobile={isMobile} lens={betLens} onLens={setBetLens} />
           <TailStrip cards={tailCards} onUntail={(id) => onUntail?.(id)} />
-          {(!betLens || betLens === 'together') ? <BetGroup id="bets-together" title="Together" tone={B.goldSoft} items={groups.together} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} /> : null}
-          {(!betLens || betLens === 'pressing') ? <BetGroup id="bets-pressing" title="Pressing" tone="#F59E0B" items={groups.pressing} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} /> : null}
-          {(!betLens || betLens === 'split') ? <BetGroup id="bets-split" title="Split" tone={B.red} items={groups.split} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} /> : null}
-          {(!betLens || betLens === 'rest') ? <BetGroup id="bets-rest" title="The rest" tone={B.textSec} items={groups.rest} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} /> : null}
+          {(!betLens || betLens === 'together') ? <BetGroup id="bets-together" title="Together" tone={B.goldSoft} items={groups.together} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} pinnacleHistory={pinnacleHistory} /> : null}
+          {(!betLens || betLens === 'pressing') ? <BetGroup id="bets-pressing" title="Pressing" tone="#F59E0B" items={groups.pressing} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} pinnacleHistory={pinnacleHistory} /> : null}
+          {(!betLens || betLens === 'split') ? <BetGroup id="bets-split" title="Split" tone={B.red} items={groups.split} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} pinnacleHistory={pinnacleHistory} /> : null}
+          {(!betLens || betLens === 'rest') ? <BetGroup id="bets-rest" title="The rest" tone={B.textSec} items={groups.rest} isMobile={isMobile} draft={draft} onDraft={openDraft} onTail={commitTail} onUntail={(id) => onUntail?.(id)} walletProfiles={walletProfiles} expandedId={openBet} onToggle={(id) => setOpenBet((cur) => (cur === id ? null : id))} pinnacleHistory={pinnacleHistory} /> : null}
         </>
       ) : null}
 
