@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-15 · HERO **ASK** · Oilers -144 to +106, five sharps stayed, 20 alerts |
+| Last updated | 2026-10-15 · HERO **GIVE** · Devils -142 to -122, three on NJ, one proven on the Rangers |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Ask.** Proof opens. 20 seats close. No trial paragraph. |
-| Account arc | Brewers cashed after a sweat. Oilers flagged -107, live +106, Pin -101. Five sharps, 5u, locks 8:55. |
+| Ask temperature | **Give.** Oilers ask is already out. No second offer on this game. |
+| Account arc | Devils flagged -125, live -122, Pin -129. 4u. Locks 6:55. Oilers still later, 8:55. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/15 ~6:19 ET | Hero **GIVE** | `The Devils were -142. We're -122.` / one proven on the Rangers | **C** | none | **Staged** |
 | 10/15 ~5:06 ET | Hero **ASK** | `The Oilers were -144. They're +106 now.` / 20 alert seats | **C + P** | reply, first 20 | **Staged** |
 | 10/14 ~7:01 ET | Hero **GIVE** | `$312,000 is on the Dodgers.` / 10-4’s $21K on the Brewers | **C + L** | none | **Posted** · Brewers cashed after a sweat |
 | 10/13 ~8:02 ET | Hero **GIVE** | `22-11. Up $31,000.` / same wallet Penguins + Wild | **P + C** | none | **Staged** · Dale: that sharp screwed him |
@@ -33,11 +34,11 @@
 ---
 
 ## Angle lock
-**ONE:** The Oilers went from -144 to +106, and five sharps are still on Edmonton.  
-**Hook:** `The Oilers were -144. They're +106 now.`  
-**Body:** dfa240 -115 at 3.1× · 5ce139 $7.7K at 2.1×, 22-17, +$22K · group 96-78, +$37.8K, +11%, L10 25-25 · $24K vs nothing · confirmed $12K · all-money $40K/$49K · flagged -107, Pin -101, +106, 5u, 8:55 · Brewers cashed.  
-**Ask:** 20 portfolio alerts, reply, first come.  
-**Killed:** naming 0cd77e · stale 5am dollars · Devils press · HC · gold · losers-row vs bar contradiction · Brewers score · $312K reprint · trial paragraph · limit climb
+**ONE:** The Devils went from -142 to -122, three sharps are on New Jersey, and one proven bettor is on the Rangers.  
+**Hook:** `The Devils were -142. We're -122.`  
+**Body:** 5ce139 $5.6K at 1.5×, ML 16-9, +$22.9K, L10 5-5 · 2× ticket $4.8K at -127 and -4% · dfa240 -133 at 1.5× · group 65-50, +$28.6K, L10 17-13 · $16K vs $1.3K · market $62K on the Rangers · Rangers book 19-21, +$7.7K · flagged -125, Pin -129, 4u, 6:55.  
+**Ask:** none.  
+**Killed:** crowning the -4% press · giving him the 16-9 · second 20-seat ask · Oilers reprint · HC · gold · hit-edge hook · limit climb
 
 ---
 
@@ -53,23 +54,24 @@
 ---
 
 ## Unfinished
-- Grade the Oilers +106 after 8:55 lock
-- Count the 20 alert replies. Do not open a second wave in the next post.
+- Grade the Devils -122 after the 6:55 lock
+- Grade the Oilers +106 after the 8:55 lock
+- Count the 20 alert replies. Do not open a second wave on the Devils post.
 - Weekly report (Power)
 - Fence-sitter DMs
 
 ---
 
-## FORWARD LOOK — after this Oilers ask
-1. **Grade the Oilers** on the same line move. Cash or loss, named. Do not reprint -144.
-2. If replies claim the 20 seats, answer with the seat, not another pitch.
-3. No second offer tomorrow. The Brewers cash was the say-do. This ask spends it.
+## FORWARD LOOK — after this Devils give
+1. **Grade the Devils** on the split. Name the Rangers bettor if that side wins. Do not reprint -142.
+2. Oilers remains the ask post. Do not attach another 20-seat close here.
+3. If the -4% wallet is the one that cashes, say the size. If he loses, do not pretend the 16-9 was the press.
 
-**NOT:** Devils as a second hero · naming the -4% wallet · trial paragraph · `$N ON THE TEAM` · stale 5:00 AM sizes
+**NOT:** a second alert pitch · naming 0cd77e · hit-edge as the hook · `$16K ON THE DEVILS`
 
-**Avatar:** they saw Milwaukee cash after a sweat. They need the live disagreement plus a way to hear the next one.  
-**Hormozi economics:** ask, because he spined the 20 seats, on a cashed write-up.  
-**Desk scar:** 10/13 crowned one wallet. He is on this Oilers list at -4%. The group number carries him. He does not get the hook.
+**Avatar:** they have the Oilers move already. This game is the split, including the one proven ticket on the other side.  
+**Hormozi economics:** give. The ask is already spending the Brewers cash on Edmonton.  
+**Desk scar:** the 2× ticket is the wallet at -4%. The 16-9 is a different bettor. Keep them apart.
 
 ---
 
