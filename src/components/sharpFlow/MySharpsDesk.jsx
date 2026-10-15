@@ -87,6 +87,11 @@ const FIND_MARKETS = [
 
 let roomMemory = 'book';
 
+/** Open a My Sharps room the next time the desk mounts. */
+export function focusSharpsRoom(room) {
+  if (room) roomMemory = room;
+}
+
 function fmtVol(v, { signed = true } = {}) {
   const n = Number(v);
   if (!Number.isFinite(n)) return '—';
@@ -1363,7 +1368,7 @@ const fieldStyle = {
   fontFeatureSettings: "'tnum'",
 };
 
-function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, onUntail, walletProfiles, expandedId, onToggle }) {
+export function BetGroup({ id, title, tone, items, isMobile, draft, onDraft, onTail, onUntail, walletProfiles, expandedId, onToggle }) {
   if (!items.length) return null;
   const money = sumInvested(items);
   return (

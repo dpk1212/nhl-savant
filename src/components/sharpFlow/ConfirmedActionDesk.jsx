@@ -139,6 +139,11 @@ const deskUi = {
   deskMode: 'all',
 };
 
+/** Land on My Sharps the next time the Action desk mounts. */
+export function focusMySharpsDesk() {
+  deskUi.deskMode = 'mine';
+}
+
 const FlatSpark = memo(function FlatSpark({ points, width = 64, height = 20 }) {
   if (!points || points.length < 5) return null;
   const min = Math.min(...points);

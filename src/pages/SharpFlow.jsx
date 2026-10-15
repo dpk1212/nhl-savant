@@ -23,7 +23,9 @@ import { scaleUnits } from '../lib/unitDisplayScale.js';
 import { redirectToCheckout } from '../utils/stripe';
 import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
-import ConfirmedActionDesk from '../components/sharpFlow/ConfirmedActionDesk';
+import ConfirmedActionDesk, { focusMySharpsDesk } from '../components/sharpFlow/ConfirmedActionDesk';
+import { focusSharpsRoom } from '../components/sharpFlow/MySharpsDesk';
+import MySharpsSlate from '../components/sharpFlow/MySharpsSlate';
 import {
   mapLockedPickToCardFixture,
   mapLiveGameToCardFixture,
@@ -11195,9 +11197,9 @@ export default function SharpFlow() {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <SectionHead
-                      title={sortBy === 'locked' ? `Locked Picks — ${lockedDay === 'today' ? 'Today' : 'Yesterday'}` : sortBy === 'hcPositions' ? 'HC Positions' : sortBy === 'myPicks' ? `My Watchlist (${allPosGames.length})` : `Sharp Positions (${allPosGames.length} games)`}
-                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedDay === 'today' ? 'today' : 'yesterday'} at peak snapshot` : sortBy === 'hcPositions' ? 'Proven HC +1 / HC +2+ sides — CONFIRMED whales sized 1.5×+ on one side' : sortBy === 'myPicks' ? 'Games you added to your watchlist today' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
-                      icon={sortBy === 'locked' ? Lock : sortBy === 'hcPositions' ? Star : sortBy === 'myPicks' ? CheckCircle : Eye}
+                      title={sortBy === 'locked' ? `Locked Picks — ${lockedDay === 'today' ? 'Today' : 'Yesterday'}` : sortBy === 'hcPositions' ? 'HC Positions' : sortBy === 'myPicks' ? 'My Sharps' : `Sharp Positions (${allPosGames.length} games)`}
+                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedDay === 'today' ? 'today' : 'yesterday'} at peak snapshot` : sortBy === 'hcPositions' ? 'Proven HC +1 / HC +2+ sides — CONFIRMED whales sized 1.5×+ on one side' : sortBy === 'myPicks' ? 'Open bets from the wallets you follow' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
+                      icon={sortBy === 'locked' ? Lock : sortBy === 'hcPositions' ? Star : sortBy === 'myPicks' ? Star : Eye}
                     />
                     <SharpFlowInfo isMobile={isMobile} />
                   </div>
@@ -11206,19 +11208,19 @@ export default function SharpFlow() {
                       were previously one undifferentiated chip row —
                       users read "Locked" as a filter and lost their
                       place. Now: a segmented control owns the four
-                      views (Live / Locked / HC / Watchlist); sort pills
+                      views (Live / Locked / HC / My Sharps); sort pills
                       only render in the Positions view where they apply. */}
                   {(() => {
                     const isLockedView = sortBy === 'locked';
                     const isWatchView = sortBy === 'myPicks';
                     const isHcView = sortBy === 'hcPositions';
-                    const watchCount = Object.keys(userPicks).length;
+                    const sharpsCount = mySharps?.count || 0;
                     const hcTabCount = (actionPositions || []).filter(p => p.vault_hcTier === 'HC_DOMINANT' || p.vault_hcTier === 'HC_STANDARD').length;
                     const views = [
                       { id: 'positions', label: 'Live Positions', icon: Eye, count: !isLockedView && !isWatchView && !isHcView ? allPosGames.length : null, color: B.gold },
                       { id: 'locked', label: 'Locked Picks', icon: Lock, count: null, color: B.green },
                       { id: 'hc', label: 'HC Positions', icon: Star, count: hcTabCount > 0 ? hcTabCount : null, color: B.gold },
-                      { id: 'watchlist', label: 'Watchlist', icon: CheckCircle, count: watchCount > 0 ? watchCount : null, color: '#818CF8' },
+                      { id: 'watchlist', label: 'My Sharps', icon: Star, count: sharpsCount > 0 ? sharpsCount : null, color: B.gold },
                     ];
                     const activeView = isLockedView ? 'locked' : isHcView ? 'hc' : isWatchView ? 'watchlist' : 'positions';
                     const selectView = (id) => {
@@ -12249,7 +12251,7 @@ export default function SharpFlow() {
                   })()}
 
                   {/* Always render SharpPositionCards so health effects stay alive */}
-                  <div style={(sortBy === 'locked' || sortBy === 'hcPositions') ? { display: 'none' } : undefined}>
+                  <div style={(sortBy === 'locked' || sortBy === 'hcPositions' || sortBy === 'myPicks') ? { display: 'none' } : undefined}>
                     <SharpTape sharpPositions={sharpPositions} />
                     <div className="sf-stagger" style={{
                       display: 'grid',
@@ -12404,6 +12406,30 @@ export default function SharpFlow() {
                       return <SharpFlowPaywall isMobile={isMobile} lockedCount={hiddenGames.length} pnlData={allTimePnL} teaserGames={teaserGames} />;
                     })()}
                   </div>
+
+                  {sortBy === 'myPicks' ? (
+                    <MySharpsSlate
+                      isMobile={isMobile}
+                      signedIn={!!user}
+                      isPremium={!!isPremium}
+                      mySharps={mySharps}
+                      sharpPositions={sharpPositions}
+                      spreadPositions={spreadPositions}
+                      totalPositions={totalPositions}
+                      rawSharpPositions={rawSharpPositions}
+                      rawSpreadPositions={rawSpreadPositions}
+                      rawTotalPositions={rawTotalPositions}
+                      walletProfiles={walletProfiles}
+                      pinnacleHistory={pinnacleHistory}
+                      polyData={polyData}
+                      sportFilter={sportFilter}
+                      onOpenList={() => {
+                        focusSharpsRoom('book');
+                        focusMySharpsDesk();
+                        setViewMode('flow');
+                      }}
+                    />
+                  ) : null}
 
                   {sortBy === 'locked' && isFreeUser ? (
                     <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
@@ -13459,7 +13485,7 @@ export default function SharpFlow() {
                         })()}
                       </>
                     );
-                  })() : sortBy === 'hcPositions' ? null : (
+                  })() : (sortBy === 'hcPositions' || sortBy === 'myPicks') ? null : (
                     <>
                       {/* Context legend */}
                       <div style={{
@@ -13487,36 +13513,6 @@ export default function SharpFlow() {
                           </span>
                         )}
                       </div>
-                      {allPosGames.length === 0 && sortBy === 'myPicks' ? (
-                        <div style={{
-                          textAlign: 'center', padding: '2.5rem 1rem', borderRadius: '12px',
-                          background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-                          border: `1px solid ${B.border}`,
-                        }}>
-                          <CheckCircle size={28} color="#818CF8" style={{ marginBottom: '0.5rem' }} />
-                          {user && isPremium ? (
-                            <>
-                              <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>Watchlist is empty</div>
-                              <div style={{ ...T.micro, color: B.textMuted }}>Browse the games and tap "Add to Watchlist" on any card to start tracking.</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>Build your personal watchlist</div>
-                              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.75rem' }}>Pro members can save games to their watchlist for easy tracking.</div>
-                              <a href="#/pricing?promo=NHL40" style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                                padding: '0.5rem 1.25rem', borderRadius: '8px',
-                                background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(129,140,248,0.08) 100%)',
-                                border: '1px solid rgba(99,102,241,0.3)',
-                                color: '#A5B4FC', fontWeight: 700, fontSize: '0.8rem',
-                                textDecoration: 'none', transition: 'all 0.2s ease',
-                              }}>
-                                <Lock size={13} /> Unlock Watchlist
-                              </a>
-                            </>
-                          )}
-                        </div>
-                      ) : null}
                     </>
                   )}
                 </div>
