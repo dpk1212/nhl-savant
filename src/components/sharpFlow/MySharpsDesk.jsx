@@ -1051,27 +1051,11 @@ function shortMatchup(item) {
   return item?.matchup || null;
 }
 
-function WhoChip({ line }) {
-  const pressing = (line.ratio || 0) >= 1.5;
-  const heat = line.heat?.key;
-  const color = pressing ? '#F59E0B' : heat === 'hot' ? B.green : heat === 'cold' ? B.red : B.goldSoft;
-  return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'baseline',
-      gap: 5,
-      fontFeatureSettings: "'tnum'",
-    }}
-    >
-      <span style={{ ...T.name, color: B.textSec, fontSize: '0.78rem' }}>{line.tag}</span>
-      {line.ratio ? (
-        <span style={{ ...T.figure, color, fontSize: '0.78rem' }}>{line.ratio.toFixed(1)}×</span>
-      ) : null}
-      {line.ts ? (
-        <span style={{ ...T.meta, color: B.textFaint, fontWeight: 500 }}>{fmtEntry(line.ts)}</span>
-      ) : null}
-    </span>
-  );
+function marketRoi(line) {
+  const book = Number(line?.book?.roi);
+  if (Number.isFinite(book)) return book;
+  const month = Number(line?.market?.roi);
+  return Number.isFinite(month) ? month : null;
 }
 
 function PricePair({ quote, fallback, frozen, isMobile }) {
@@ -1233,17 +1217,64 @@ function Showcase({ lines, isMobile }) {
   );
 }
 
-function SharpPlate({ lines, hideChips }) {
-  if (!lines?.length) return null;
+const GLANCE_COLS = 'minmax(0, 1.15fr) 108px 52px 44px 64px';
+
+function GlanceHead({ children, align = 'right' }) {
   return (
-    <div>
-      {!hideChips ? (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', marginTop: 10 }}>
-          {lines.map((line) => (
-            <WhoChip key={line.walletShort || line.tag} line={line} />
-          ))}
-        </div>
-      ) : null}
+    <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', textAlign: align, whiteSpace: 'nowrap' }}>
+      {children}
+    </div>
+  );
+}
+
+function SharpPlate({ lines, hideChips, isMobile }) {
+  if (!lines?.length || hideChips) return null;
+  const market = lines.find((line) => line.book?.label)?.book.label || 'Market';
+  const cols = isMobile ? 'minmax(0, 1.3fr) 48px 40px 52px' : GLANCE_COLS;
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: cols, gap: '0 8px', alignItems: 'end' }}>
+        <GlanceHead align="left">Sharp</GlanceHead>
+        {isMobile ? null : <GlanceHead>In</GlanceHead>}
+        <GlanceHead>Price</GlanceHead>
+        <GlanceHead>Size</GlanceHead>
+        <GlanceHead>{`${market} ROI`}</GlanceHead>
+      </div>
+      {lines.map((line) => {
+        const pressing = (line.ratio || 0) >= 1.5;
+        const roi = marketRoi(line);
+        const entered = fmtEntry(line.ts);
+        return (
+          <div
+            key={line.walletShort || line.tag}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: cols,
+              gap: '0 8px',
+              alignItems: 'center',
+              padding: '0.34rem 0',
+              borderTop: `1px solid ${B.hair}`,
+            }}
+          >
+            <span style={{ minWidth: 0 }}>
+              <span style={{ ...T.name, color: B.textSec, fontSize: '0.78rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line.tag}</span>
+              {isMobile ? (
+                <span style={{ ...T.meta, color: B.textFaint, display: 'block', marginTop: 2, whiteSpace: 'nowrap' }}>{entered || '—'}</span>
+              ) : null}
+            </span>
+            {isMobile ? null : (
+              <span style={{ ...T.meta, color: B.textFaint, textAlign: 'right', whiteSpace: 'nowrap' }}>{entered || '—'}</span>
+            )}
+            <span style={{ ...T.figure, color: B.goldSoft, fontSize: '0.78rem', textAlign: 'right', whiteSpace: 'nowrap' }}>{line.price || '—'}</span>
+            <span style={{ ...T.figure, color: pressing ? '#F59E0B' : B.textSec, fontSize: '0.78rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+              {line.ratio ? `${line.ratio.toFixed(1)}×` : '—'}
+            </span>
+            <span style={{ ...T.figure, color: roi == null ? B.textFaint : pnlColor(roi, B.textSec), fontSize: '0.78rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+              {roi == null ? '—' : `${roi > 0 ? '+' : ''}${roi}%`}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1638,7 +1669,6 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
   const quote = quoteTicketShop(pinnacleHistory, item);
   const [openLine, setOpenLine] = useState(null);
   const metaBits = [shortMatchup(item), clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean);
-  const soloEntry = nSharps === 1 ? fmtEntry(lines[0]?.ts) : '';
   const stakeBlock = (
     <div style={{ textAlign: 'right', flexShrink: 0 }}>
       <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.15rem' : '1.35rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
@@ -1662,12 +1692,6 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           {bit}
         </span>
       ))}
-      {soloEntry ? (
-        <span style={{ whiteSpace: 'nowrap' }}>
-          <span style={{ color: B.textFaint }}>{'  ·  '}</span>
-          {`entered ${soloEntry}`}
-        </span>
-      ) : null}
       {!frozen && item.pinMove === 'with' ? <span style={{ whiteSpace: 'nowrap', color: B.green }}>{'  ·  with the line'}</span> : null}
       {!frozen && item.pinMove === 'against' ? <span style={{ whiteSpace: 'nowrap', color: B.red }}>{'  ·  against the line'}</span> : null}
       {frozen ? <span style={{ whiteSpace: 'nowrap', color: B.goldSoft }}>{'  ·  locked'}</span> : null}
@@ -1704,7 +1728,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
       <PricePair quote={quote} fallback={price} frozen={frozen} isMobile={isMobile} />
       {quote && !frozen ? <BookRail books={quote.books} /> : null}
       <OtherSideNote item={item} />
-      {lines.length > 1 ? <SharpPlate lines={lines} hideChips={expanded} /> : null}
+      <SharpPlate lines={lines} hideChips={expanded} isMobile={isMobile} />
       {expanded ? (
         <TicketContext
           item={item}
