@@ -117,6 +117,40 @@ service cloud.firestore {
       allow write: if false;
     }
     
+    // My Sharp alert beta. 20 seats. A signed-in user may add only
+    // themselves, or change only their own together / pressing / exiting
+    // switches. The sender writes with the Admin SDK.
+    function mySharpMemberOk(m) {
+      return m.keys().hasOnly(['together', 'pressing', 'exiting', 'joinedAt'])
+        && m.together is bool
+        && m.pressing is bool
+        && m.exiting is bool
+        && m.joinedAt is int;
+    }
+    function mySharpRosterUpdate() {
+      let uid = request.auth.uid;
+      let before = resource.data.members;
+      let after = request.resource.data.members;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        && request.resource.data.cap == resource.data.cap
+        && resource.data.cap == 20
+        && after.size() <= 20
+        && after.diff(before).affectedKeys().hasOnly([uid])
+        && mySharpMemberOk(after[uid])
+        && (
+          (before.keys().hasAny([uid])
+            && after.size() == before.size()
+            && after[uid].joinedAt == before[uid].joinedAt)
+          || (!before.keys().hasAny([uid]) && after.size() == before.size() + 1)
+        );
+    }
+    match /mySharpAlertBeta/{docId} {
+      allow read: if request.auth != null && docId == 'roster';
+      allow create: if false;
+      allow delete: if false;
+      allow update: if request.auth != null && docId == 'roster' && mySharpRosterUpdate();
+    }
+
     // User accounts - users can manage their own account
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;

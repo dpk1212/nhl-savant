@@ -12,6 +12,11 @@ on:
     - cron: '0 22 * * *'   # 6:00 PM ET
     - cron: '0 0 * * *'    # 8:00 PM ET
   workflow_dispatch:
+    inputs:
+      test_oilers:
+        description: Send the owner one Oilers together alert and skip the scan
+        type: boolean
+        default: false
 
 concurrency:
   group: send-lock-alerts
@@ -58,6 +63,15 @@ jobs:
           fi
 
       - name: syncPickStateAuthoritative
-        if: steps.gate.outputs.skip != 'true'
+        if: steps.gate.outputs.skip != 'true' && github.event.inputs.test_oilers != 'true'
         run: node scripts/syncPickStateAuthoritative.js
+
+      # Beta My Sharp alerts. External ids on the roster only — not the paid lock audience.
+      - name: My Sharp alerts
+        if: steps.gate.outputs.skip != 'true' && github.event.inputs.test_oilers != 'true'
+        run: node scripts/sendMySharpAlerts.mjs
+
+      - name: My Sharp Oilers test
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_oilers == 'true'
+        run: node scripts/sendMySharpAlerts.mjs --test-oilers
 
