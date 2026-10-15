@@ -1054,20 +1054,41 @@ function WhoChip({ line }) {
   );
 }
 
-function ShopPrice({ quote }) {
-  if (!quote || !Number.isFinite(quote.odds)) return null;
+function PricePair({ quote, fallback }) {
+  if (!quote || !Number.isFinite(quote.odds)) {
+    return (
+      <div style={{ marginTop: 12 }}>
+        <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>Their price</div>
+        <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.55rem', marginTop: 4, letterSpacing: '-0.04em' }}>{fallback}</div>
+      </div>
+    );
+  }
   const ev = Number.isFinite(quote.evPct) ? `+${quote.evPct.toFixed(1)}% EV` : null;
+  const sub = [
+    quote.impliedPct != null ? `${quote.impliedPct}%` : null,
+    quote.book || null,
+  ].filter(Boolean).join('  ·  ');
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-      {quote.book ? <BookLogo name={quote.book} size={22} /> : null}
-      <span style={{ ...T.figure, color: B.text, fontSize: '1.65rem', letterSpacing: '-0.04em', lineHeight: 1 }}>
-        {fmtPrice(quote.odds)}
-      </span>
-      {quote.impliedPct != null ? (
-        <span style={{ ...T.meta, color: B.textSec, fontSize: '0.95rem' }}>{quote.impliedPct}%</span>
-      ) : null}
-      {ev ? (
-        <span style={{ ...T.figure, color: B.green, fontSize: '1.05rem' }}>{ev}</span>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 28px', alignItems: 'flex-end', marginTop: 12 }}>
+      <div>
+        <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>Best</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+          {quote.book ? <BookLogo name={quote.book} size={22} /> : null}
+          <span style={{ ...T.figure, color: B.text, fontSize: '1.7rem', letterSpacing: '-0.045em', lineHeight: 0.9 }}>
+            {fmtPrice(quote.odds)}
+          </span>
+          {ev ? <span style={{ ...T.figure, color: B.green, fontSize: '0.95rem' }}>{ev}</span> : null}
+        </div>
+        {sub ? <div style={{ ...T.meta, color: B.textSec, marginTop: 5 }}>{sub}</div> : null}
+      </div>
+      {Number.isFinite(quote.consensusOdds) ? (
+        <div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Sharp</div>
+          <div style={{ ...T.figure, color: B.textSec, fontSize: '1.35rem', marginTop: 6, letterSpacing: '-0.03em', lineHeight: 0.95 }}>
+            {fmtPrice(quote.consensusOdds)}
+          </div>
+          <div style={{ ...T.meta, color: B.textFaint, marginTop: 5 }}>consensus</div>
+        </div>
       ) : null}
     </div>
   );
@@ -1076,14 +1097,20 @@ function ShopPrice({ quote }) {
 function BookRail({ books }) {
   if (!books?.length) return null;
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10 }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 12, alignItems: 'center' }}>
       {books.map((book) => (
         <span
           key={book.name}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: book.best ? B.goldSoft : B.textMuted }}
+          title={book.name}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
         >
-          <BookLogo name={book.name} size={14} />
-          <span style={{ ...T.figure, fontSize: '0.82rem', color: book.best ? B.goldSoft : B.textSec }}>
+          <BookLogo name={book.name} size={book.best ? 16 : 13} />
+          <span style={{
+            ...T.figure,
+            fontSize: book.best ? '0.84rem' : '0.75rem',
+            color: book.best ? B.goldSoft : B.textMuted,
+          }}
+          >
             {fmtPrice(book.odds)}
           </span>
         </span>
@@ -1130,46 +1157,48 @@ function ProofPair({ lines }) {
     <div style={{
       display: 'flex',
       flexWrap: 'wrap',
-      gap: '14px 32px',
-      alignItems: 'flex-end',
-      marginTop: 14,
-      paddingTop: 12,
+      gap: '16px 36px',
+      alignItems: 'flex-start',
+      marginTop: 16,
+      paddingTop: 14,
       borderTop: `1px solid ${B.hair}`,
     }}
     >
       {month ? (
         <div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{monthKicker}</div>
           <div style={{
             ...T.figure,
             color: pnlColor(roll.pnl, B.text),
-            fontSize: '1.7rem',
+            fontSize: '1.55rem',
             letterSpacing: '-0.045em',
-            lineHeight: 0.9,
+            lineHeight: 0.95,
+            marginTop: 5,
           }}
           >
             {fmtVol(roll.pnl)}
           </div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>{monthKicker}</div>
         </div>
       ) : null}
       {book ? (
         <div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{bookKicker}</div>
           <div style={{
             ...T.figure,
             color: B.text,
-            fontSize: month ? '1.2rem' : '1.7rem',
+            fontSize: '1.35rem',
             letterSpacing: '-0.03em',
             lineHeight: 0.95,
+            marginTop: 6,
           }}
           >
             {book}
           </div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>{bookKicker}</div>
         </div>
       ) : (roll.l10 ? (
         <div>
-          <div style={{ ...T.figure, color: B.text, fontSize: '1.2rem', lineHeight: 0.95 }}>{roll.l10}</div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 6 }}>L10</div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>L10</div>
+          <div style={{ ...T.figure, color: B.text, fontSize: '1.35rem', marginTop: 6 }}>{roll.l10}</div>
         </div>
       ) : null)}
     </div>
@@ -1211,38 +1240,120 @@ function SizeWr({ tier, align = 'left' }) {
   );
 }
 
-function tapeBits(book) {
-  if (!book) return '—';
-  return [
-    book.record,
+function bookMoney(book) {
+  if (!book) return null;
+  const bits = [
     Number.isFinite(book.pnl) ? fmtVol(book.pnl) : null,
     Number.isFinite(book.roi) ? `${book.roi > 0 ? '+' : ''}${book.roi}%` : null,
-    Number.isFinite(book.wr) ? `${book.wr}%` : null,
-  ].filter(Boolean).join('  ·  ') || '—';
+    Number.isFinite(book.wr) ? `${Math.round(book.wr)}%` : null,
+  ].filter(Boolean);
+  return bits.join('  ·  ') || null;
 }
 
-function TapeRow({ kicker, book }) {
+function BookCell({ label, book }) {
+  const money = bookMoney(book);
+  const moneyColor = Number.isFinite(book?.pnl) ? pnlColor(book.pnl, B.textSec)
+    : (Number.isFinite(book?.roi) ? pnlColor(book.roi, B.textSec) : B.textSec);
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 8px', alignItems: 'baseline' }}>
-      <span style={{ ...T.kicker, color: kicker === 'L30' ? B.green : B.textFaint, letterSpacing: '0.08em', width: 64 }}>{kicker}</span>
-      <span style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{tapeBits(book)}</span>
+    <div>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>{label}</div>
+      <div style={{ ...T.figure, color: B.text, fontSize: '1.05rem', marginTop: 4, lineHeight: 1 }}>
+        {book?.record || '—'}
+      </div>
+      {money ? <div style={{ ...T.meta, color: moneyColor, marginTop: 4 }}>{money}</div> : null}
     </div>
   );
 }
 
-function legPick(leg) {
-  if (leg?.team) return leg.team;
-  const side = String(leg?.side || '').trim();
-  const line = Number(leg?.line);
-  if (/^(over|under)$/i.test(side) && Number.isFinite(line)) return `${side} ${line}`;
-  if (side) return side;
-  return leg?.marketType || 'Bet';
+function BookBlock({ title, l30, all }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>{title}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
+        <BookCell label="30 days" book={l30} />
+        <BookCell label="All-time" book={all} />
+      </div>
+    </div>
+  );
 }
 
-function SharpResults({ line, sport, market }) {
+function matchupFromLeg(leg) {
+  if (leg?.matchup) return leg.matchup;
+  const gk = String(leg?.gameKey || '');
+  const m = gk.match(/([a-z]{2,5})_([a-z]{2,5})(?:__2)?(?:_(?:total|spread|ml))?$/i);
+  if (!m) return null;
+  return `${m[1].toUpperCase()} @ ${m[2].toUpperCase()}`;
+}
+
+function marketBit(leg) {
+  const m = String(leg?.marketType || leg?.market || '').toUpperCase();
+  const line = Number(leg?.line ?? leg?.entryLine);
+  if (m === 'TOTAL' || m === 'TOTALS') return Number.isFinite(line) ? `Total ${line}` : 'Total';
+  if (m === 'SPREAD') {
+    if (!Number.isFinite(line)) return 'Spread';
+    return `Spread ${line > 0 ? '+' : ''}${line}`;
+  }
+  if (m === 'ML' || m === 'MONEYLINE') return 'ML';
+  return m || null;
+}
+
+function legTitle(leg) {
+  const side = String(leg?.side || '').toLowerCase();
+  const line = Number(leg?.line ?? leg?.entryLine);
+  if (side === 'over' || side === 'under') {
+    const word = side === 'over' ? 'Over' : 'Under';
+    return Number.isFinite(line) ? `${word} ${line}` : word;
+  }
+  if (side === 'draw') return 'Draw';
+  const away = leg?.away || null;
+  const home = leg?.home || null;
+  const fromSide = side === 'away' ? away : side === 'home' ? home : null;
+  const named = leg?.team || (leg?.label && !/^(away|home|over|under)$/i.test(String(leg.label)) ? leg.label : null);
+  const raw = fromSide || named;
+  if (raw) return shortTeamNick(raw, side === 'away' ? home : away);
+  const mu = matchupFromLeg(leg);
+  if (mu && (side === 'away' || side === 'home')) {
+    const [a, h] = mu.split('@').map((s) => s.trim());
+    return (side === 'away' ? a : h) || mu;
+  }
+  return marketBit(leg) || 'Bet';
+}
+
+function legSub(leg) {
+  const m = String(leg?.marketType || leg?.market || '').toUpperCase();
+  const kind = m === 'TOTAL' || m === 'TOTALS' ? 'Total'
+    : m === 'SPREAD' ? 'Spread'
+      : (m === 'ML' || m === 'MONEYLINE' ? 'ML' : null);
+  const title = legTitle(leg);
+  const kindShown = kind && title.toLowerCase().startsWith(kind.toLowerCase()) ? null : kind;
+  return [kindShown, matchupFromLeg(leg)].filter(Boolean).join('  ·  ');
+}
+
+function legSize(leg) {
+  const ratio = Number(leg?.sizeRatio);
+  const stake = Number(leg?.invested);
+  const bits = [];
+  if (Number.isFinite(ratio) && ratio > 0) bits.push(`${ratio >= 10 ? ratio.toFixed(0) : ratio.toFixed(1)}×`);
+  if (Number.isFinite(stake) && stake > 0) bits.push(fmtVol(stake, { signed: false }));
+  return bits.join('  ') || '—';
+}
+
+function legOdds(leg) {
+  const n = Number(leg?.odds ?? leg?.americanOdds);
+  if (Number.isFinite(n) && n !== 0) return fmtPrice(n);
+  return leg?.americanLabel || '—';
+}
+
+function legPnl(leg) {
+  const n = Number(leg?.dollarPnl ?? leg?.settledPnl);
+  return Number.isFinite(n) && n !== 0 ? fmtVol(n) : null;
+}
+
+function SharpResults({ line, sport, market, isMobile }) {
   const tape = line?.tape;
   const marketLabel = [sport, market].filter(Boolean).join(' ');
-  const legs = tape?.legs || [];
+  const legs = [...(tape?.legs || [])].reverse();
+  const shown = legs.slice(0, 8);
   const empty = !tape?.marketL30 && !tape?.marketAll && !tape?.sportL30 && !tape?.sportAll && !legs.length;
   if (empty) {
     return (
@@ -1251,45 +1362,77 @@ function SharpResults({ line, sport, market }) {
       </div>
     );
   }
+  const cols = isMobile
+    ? '46px minmax(0, 1fr) 46px'
+    : '52px minmax(0, 1.4fr) 58px 84px 78px';
   return (
-    <div style={{ padding: '0.35rem 0 0.55rem 0.15rem' }} onClick={(e) => e.stopPropagation()}>
-      {marketLabel ? (
-        <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.08em', marginTop: 4 }}>{marketLabel}</div>
-      ) : null}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
-        <TapeRow kicker="L30" book={tape?.marketL30} />
-        <TapeRow kicker="All-time" book={tape?.marketAll} />
+    <div style={{ padding: '0.7rem 0 0.35rem' }} onClick={(e) => e.stopPropagation()}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? 14 : 22,
+      }}
+      >
+        <BookBlock title={marketLabel || 'This market'} l30={tape?.marketL30} all={tape?.marketAll} />
+        <BookBlock title={sport || 'Sport'} l30={tape?.sportL30} all={tape?.sportAll} />
       </div>
-      {sport ? (
-        <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 10 }}>{sport}</div>
-      ) : null}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
-        <TapeRow kicker="L30" book={tape?.sportL30} />
-        <TapeRow kicker="All-time" book={tape?.sportAll} />
-      </div>
-      {legs.length ? (
-        <div style={{ marginTop: 10 }}>
-          {[...legs].reverse().slice(0, 8).map((leg, i) => {
+      {shown.length ? (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginBottom: 4 }}>
+            {legs.length > shown.length ? `Last ${shown.length} of ${legs.length}` : `Last ${shown.length}`}
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: cols,
+            gap: '0 10px',
+            padding: '0.2rem 0 0.28rem',
+          }}
+          >
+            {['Date', 'Pick', 'Odds', 'Size', 'Result'].slice(0, isMobile ? 3 : 5).map((head) => (
+              <div key={head} style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', textAlign: head === 'Date' || head === 'Pick' ? 'left' : 'right' }}>{head}</div>
+            ))}
+          </div>
+          {shown.map((leg, i) => {
             const won = leg.won === 1 || leg.won === true;
-            const odds = Number.isFinite(Number(leg.odds)) ? fmtPrice(leg.odds) : (leg.americanLabel || null);
+            const pnl = legPnl(leg);
             return (
               <div
                 key={`${leg.date || 'd'}-${leg.gameKey || i}-${i}`}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '52px minmax(0, 1fr) auto auto',
+                  gridTemplateColumns: cols,
                   gap: '0 10px',
-                  alignItems: 'baseline',
-                  padding: '0.32rem 0',
+                  alignItems: 'center',
+                  padding: '0.42rem 0',
                   borderTop: `1px solid ${B.hair}`,
                 }}
               >
                 <span style={{ ...T.meta, color: B.textFaint }}>{leg.date ? String(leg.date).slice(5) : '—'}</span>
-                <span style={{ ...T.name, color: B.text, fontSize: '0.84rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {legPick(leg)}
+                <span style={{ minWidth: 0 }}>
+                  <div style={{ ...T.name, color: B.text, fontSize: '0.86rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {legTitle(leg)}
+                  </div>
+                  {legSub(leg) ? (
+                    <div style={{ ...T.meta, color: B.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {legSub(leg)}
+                    </div>
+                  ) : null}
                 </span>
-                <span style={{ ...T.meta, color: B.textSec }}>{odds || '—'}</span>
-                <span style={{ ...T.kicker, color: won ? B.green : B.red, letterSpacing: '0.06em' }}>{won ? 'W' : 'L'}</span>
+                {isMobile ? (
+                  <span style={{ textAlign: 'right' }}>
+                    <div style={{ ...T.kicker, color: won ? B.green : B.red, letterSpacing: '0.06em' }}>{won ? 'W' : 'L'}</div>
+                    {pnl ? <div style={{ ...T.meta, color: pnlColor(Number(leg.dollarPnl ?? leg.settledPnl), B.textSec) }}>{pnl}</div> : null}
+                  </span>
+                ) : (
+                  <>
+                    <span style={{ ...T.figure, color: B.textSec, fontSize: '0.86rem', textAlign: 'right' }}>{legOdds(leg)}</span>
+                    <span style={{ ...T.meta, color: B.textSec, textAlign: 'right' }}>{legSize(leg)}</span>
+                    <span style={{ textAlign: 'right' }}>
+                      <div style={{ ...T.kicker, color: won ? B.green : B.red, letterSpacing: '0.06em' }}>{won ? 'W' : 'L'}</div>
+                      {pnl ? <div style={{ ...T.meta, color: pnlColor(Number(leg.dollarPnl ?? leg.settledPnl), B.textSec), marginTop: 2 }}>{pnl}</div> : null}
+                    </span>
+                  </>
+                )}
               </div>
             );
           })}
@@ -1420,23 +1563,14 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           <div style={{ ...T.name, color: B.text, fontSize: isMobile ? '1.28rem' : '1.45rem', letterSpacing: '-0.035em', lineHeight: 1 }}>
             {item.pick}
           </div>
-          {quote ? <ShopPrice quote={quote} /> : (
-            <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.2rem' : '1.45rem', marginTop: 8, letterSpacing: '-0.03em' }}>
-              {price}
-            </div>
-          )}
           <div style={{ ...T.meta, color: B.textMuted, marginTop: 6 }}>
             {[shortMatchup(item), clock, item.sport, nSharps > 1 ? `${nSharps} sharps` : null].filter(Boolean).join('  ·  ')}
             {item.pinMove === 'with' ? <span style={{ color: B.green }}>  ·  with the line</span> : null}
             {item.pinMove === 'against' ? <span style={{ color: B.red }}>  ·  against the line</span> : null}
             {tailed ? <span style={{ color: B.goldSoft }}>{`  ·  Tailed ${fmtPrice(tailed.myAmerican)}`}</span> : null}
           </div>
+          <PricePair quote={quote} fallback={price} />
           {quote ? <BookRail books={quote.books} /> : null}
-          {quote && Number.isFinite(quote.consensusOdds) ? (
-            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.08em', marginTop: 8 }}>
-              {`Sharp ${fmtPrice(quote.consensusOdds)}`}
-            </div>
-          ) : null}
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ ...T.figure, color: B.text, fontSize: isMobile ? '1.15rem' : '1.35rem', letterSpacing: '-0.04em', lineHeight: 1 }}>{fmtVol(item.invested, { signed: false })}</div>
@@ -2214,7 +2348,9 @@ function TicketContext({ item, isMobile, openLine, onOpenLine }) {
                 selected={selected}
                 onOpen={() => onOpenLine?.(id)}
               />
-              {selected ? <SharpResults line={line} sport={item.sport} market={item.marketType} /> : null}
+              {selected ? (
+                <SharpResults line={line} sport={item.sport} market={item.marketType} isMobile={isMobile} />
+              ) : null}
             </div>
           );
         })}
