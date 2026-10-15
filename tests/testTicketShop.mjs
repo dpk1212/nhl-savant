@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { quoteTicketShop } from '../src/lib/shopTicketLine.js';
+import { lineMoveSide, quoteTicketShop, ticketLineTape } from '../src/lib/shopTicketLine.js';
 
 const history = {
   MLB: {
@@ -143,5 +143,30 @@ const plus = quoteTicketShop(plusBoard, {
 assert.equal(plus.odds, 104);
 assert.equal(plus.book, 'FanDuel');
 assert.ok(plus.books[0].odds > 0, 'best price leads the rail');
+
+assert.equal(lineMoveSide(-144, 100), 'against');
+assert.equal(lineMoveSide(-110, -150), 'with');
+assert.equal(lineMoveSide(-110, -112), 'flat');
+
+const pathBoard = {
+  NHL: {
+    uta_edm: {
+      history: [
+        { t: 1000, away: -110, home: -144 },
+        { t: 2000, away: -105, home: -120 },
+        { t: 3000, away: -102, home: 100 },
+      ],
+      current: { away: -102, home: 100 },
+      fairBook: 'pinnacle',
+    },
+  },
+};
+const tape = ticketLineTape(pathBoard, {
+  sport: 'NHL', gameKey: 'uta_edm', marketType: 'ML', side: 'home',
+});
+assert.equal(tape.move, 'against');
+assert.equal(tape.open, -144);
+assert.equal(tape.now, 100);
+assert.equal(tape.series.length, 3);
 
 console.log('ticket shop ok', { underEv: under.evPct, spreadEv: spread.evPct, lockedUnder: lockedUnder.odds });

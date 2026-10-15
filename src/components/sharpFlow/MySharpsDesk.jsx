@@ -3,7 +3,7 @@
  * Portfolio is the fund. Bets are the decisions. Find is how the list gets built.
  */
 import React, { useEffect, useId, useMemo, useState } from 'react';
-import { Star } from 'lucide-react';
+import { ChevronDown, Star } from 'lucide-react';
 import {
   HONEST_PCT_N,
   buildDeskHoldings,
@@ -25,7 +25,8 @@ import {
 } from '../../lib/mySharpsDesk.js';
 import { betsFeedKey, betsFeedOn } from '../../lib/mySharps.js';
 import { getTeamIdentity, shortTeamNick, teamLogoUrl } from '../../utils/teamIdentity.js';
-import { quoteTicketShop, ticketIsFrozen } from '../../lib/shopTicketLine.js';
+import { quoteTicketShop, ticketIsFrozen, ticketLineTape } from '../../lib/shopTicketLine.js';
+import { impliedFromAmerican } from '../../lib/oddsEv.js';
 import { BookLogo } from './cards/bookLogo.jsx';
 
 const B = {
@@ -1058,74 +1059,302 @@ function marketRoi(line) {
   return Number.isFinite(month) ? month : null;
 }
 
-function PricePair({ quote, fallback, frozen, isMobile }) {
-  const oddsSize = isMobile ? '1.2rem' : '1.35rem';
+function ShopStrip({ quote, fallback, frozen, isMobile }) {
+  const oddsSize = isMobile ? '1.22rem' : '1.38rem';
+  const band = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTop: `1px solid ${B.line}`,
+  };
   if (!quote || !Number.isFinite(quote.odds)) {
     return (
-      <div style={{ marginTop: 12 }}>
-        <div style={{ ...T.kicker, color: frozen ? B.gold : B.textFaint, letterSpacing: '0.08em' }}>
+      <div style={band}>
+        <div style={{ ...T.kicker, color: frozen ? B.gold : B.textFaint, letterSpacing: '0.1em' }}>
           {frozen ? 'Locked' : 'Their price'}
         </div>
-        <div style={{ ...T.figure, color: B.goldSoft, fontSize: isMobile ? '1.4rem' : '1.55rem', marginTop: 4, letterSpacing: '-0.04em' }}>{fallback}</div>
-        {frozen ? <div style={{ ...T.meta, color: B.textFaint, marginTop: 5 }}>Their price · at the lock</div> : null}
+        <div style={{ ...T.figure, color: B.goldSoft, fontSize: oddsSize, letterSpacing: '-0.04em' }}>{fallback}</div>
       </div>
     );
   }
   const ev = !frozen && Number.isFinite(quote.evPct) ? `+${quote.evPct.toFixed(1)}% EV` : null;
-  const sub = [
-    quote.impliedPct != null ? `${quote.impliedPct}%` : null,
+  const where = [
     quote.book || null,
+    quote.impliedPct != null ? `${quote.impliedPct}%` : null,
     frozen ? 'at the lock' : null,
   ].filter(Boolean).join('  ·  ');
   const showSharp = Number.isFinite(quote.consensusOdds)
     && (!frozen || quote.consensusOdds !== quote.odds);
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: isMobile ? '8px 20px' : '8px 28px', alignItems: 'flex-end', marginTop: 12 }}>
-      <div>
-        <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>{frozen ? 'Locked' : 'Best'}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
-          {quote.book ? <BookLogo name={quote.book} size={isMobile ? 20 : 22} /> : null}
-          <span style={{ ...T.figure, color: B.text, fontSize: oddsSize, letterSpacing: '-0.04em', lineHeight: 0.9 }}>
-            {fmtPrice(quote.odds)}
-          </span>
-          {ev ? <span style={{ ...T.figure, color: B.green, fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{ev}</span> : null}
-        </div>
-        {sub ? <div style={{ ...T.meta, color: B.textSec, marginTop: 5 }}>{sub}</div> : null}
+    <div style={band}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flexWrap: 'wrap' }}>
+        <span style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>{frozen ? 'Locked' : 'Best'}</span>
+        {quote.book ? <BookLogo name={quote.book} size={isMobile ? 18 : 20} /> : null}
+        <span style={{ ...T.figure, color: B.text, fontSize: oddsSize, letterSpacing: '-0.04em', lineHeight: 1 }}>
+          {fmtPrice(quote.odds)}
+        </span>
+        {ev ? <span style={{ ...T.figure, color: B.green, fontSize: isMobile ? '0.82rem' : '0.9rem' }}>{ev}</span> : null}
+        {where ? (
+          <span style={{ ...T.meta, color: B.textFaint, minWidth: 0 }}>{where}</span>
+        ) : null}
       </div>
       {showSharp ? (
-        <div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Sharp</div>
-          <div style={{ ...T.figure, color: B.textSec, fontSize: isMobile ? '1.05rem' : '1.15rem', marginTop: 6, letterSpacing: '-0.03em', lineHeight: 0.95 }}>
+          <div style={{ ...T.figure, color: B.textSec, fontSize: isMobile ? '1.02rem' : '1.12rem', marginTop: 3, letterSpacing: '-0.03em' }}>
             {fmtPrice(quote.consensusOdds)}
           </div>
-          <div style={{ ...T.meta, color: B.textFaint, marginTop: 5 }}>consensus</div>
         </div>
       ) : null}
     </div>
   );
 }
 
-function BookRail({ books }) {
-  if (!books?.length) return null;
+function pointTimeMs(t) {
+  const n = Number(t);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n > 1e12 ? n : n * 1000;
+}
+
+function sparkPoints(series) {
+  const pts = (series || []).map((p) => {
+    const prob = impliedFromAmerican(p.odds);
+    if (prob == null) return null;
+    return { t: pointTimeMs(p.t), prob: prob * 100, odds: p.odds };
+  }).filter(Boolean);
+  if (pts.length <= 56) return pts;
+  const out = [];
+  const step = (pts.length - 1) / 55;
+  for (let i = 0; i < 56; i += 1) out.push(pts[Math.round(i * step)]);
+  return out;
+}
+
+function entryMarks(pts, lines) {
+  const timed = pts.filter((p) => Number.isFinite(p.t));
+  if (timed.length < 2) return [];
+  const t0 = timed[0].t;
+  const t1 = timed[timed.length - 1].t;
+  if (!(t1 > t0)) return [];
+  const out = [];
+  for (const line of lines || []) {
+    const ts = Number(line.ts);
+    if (!Number.isFinite(ts) || ts <= 0) continue;
+    const x = (ts - t0) / (t1 - t0);
+    if (x < -0.02 || x > 1.04) continue;
+    const clamped = Math.min(1, Math.max(0, x));
+    const idx = clamped * (pts.length - 1);
+    const i0 = Math.floor(idx);
+    const i1 = Math.min(pts.length - 1, i0 + 1);
+    const f = idx - i0;
+    const prob = pts[i0].prob + (pts[i1].prob - pts[i0].prob) * f;
+    out.push({
+      x: clamped,
+      prob,
+      title: [line.tag, line.price, fmtEntry(line.ts)].filter(Boolean).join(' · '),
+    });
+  }
+  return out;
+}
+
+function LineSpark({ series, lines, height = 96 }) {
+  const uid = useId().replace(/:/g, '');
+  const pts = sparkPoints(series);
+  if (pts.length < 2) return null;
+  const probs = pts.map((p) => p.prob);
+  let min = Math.min(...probs);
+  let max = Math.max(...probs);
+  if (max - min < 1.4) {
+    const mid = (max + min) / 2;
+    min = mid - 0.9;
+    max = mid + 0.9;
+  } else {
+    const pad = (max - min) * 0.16;
+    min -= pad;
+    max += pad;
+  }
+  const w = 640;
+  const h = 120;
+  const xOf = (i) => 18 + (i / (pts.length - 1)) * (w - 36);
+  const yOf = (p) => 14 + (1 - (p - min) / (max - min)) * (h - 30);
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${xOf(i).toFixed(1)},${yOf(p.prob).toFixed(1)}`).join(' ');
+  const area = `${d} L${xOf(pts.length - 1).toFixed(1)},${(h - 10).toFixed(1)} L${xOf(0).toFixed(1)},${(h - 10).toFixed(1)} Z`;
+  const marks = entryMarks(pts, lines);
+  const end = pts[pts.length - 1];
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 12, alignItems: 'center' }}>
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={height} role="img" aria-label="Pinnacle price path">
+      <defs>
+        <linearGradient id={`line-${uid}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={B.gold} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={B.gold} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#line-${uid})`} />
+      <path d={d} fill="none" stroke={B.gold} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={xOf(pts.length - 1)} cy={yOf(end.prob)} r="3.2" fill={B.gold} />
+      {marks.map((mark, i) => {
+        const cx = 18 + mark.x * (w - 36);
+        const cy = yOf(mark.prob);
+        return (
+          <g key={`${mark.title}-${i}`}>
+            <circle cx={cx} cy={cy} r="6.5" fill={B.green} opacity="0.22" />
+            <circle cx={cx} cy={cy} r="3.3" fill={B.green} stroke="#0B0E14" strokeWidth="1.2">
+              <title>{mark.title}</title>
+            </circle>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function BookBoard({ books }) {
+  if (!books || books.length < 2) return null;
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
+      marginTop: 12,
+      borderTop: `1px solid ${B.hair}`,
+    }}
+    >
       {books.map((book) => (
-        <span
+        <div
           key={book.name}
-          title={book.name}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          style={{
+            minWidth: 0,
+            padding: '0.5rem 0.45rem 0.45rem',
+            background: book.best ? 'rgba(212,175,55,0.08)' : 'transparent',
+            borderRight: `1px solid ${B.hair}`,
+          }}
         >
-          <BookLogo name={book.name} size={book.best ? 16 : 13} />
-          <span style={{
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+            <BookLogo name={book.name} size={14} />
+            <span style={{
+              ...T.kicker,
+              color: book.sharp ? B.gold : B.textFaint,
+              letterSpacing: '0.04em',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            >
+              {book.name}
+            </span>
+          </div>
+          <div style={{
             ...T.figure,
-            fontSize: book.best ? '0.84rem' : '0.75rem',
-            color: book.best ? B.goldSoft : B.textMuted,
+            color: book.best ? B.goldSoft : B.text,
+            marginTop: 4,
+            fontSize: '0.95rem',
           }}
           >
             {fmtPrice(book.odds)}
-          </span>
-        </span>
+          </div>
+        </div>
       ))}
+    </div>
+  );
+}
+
+function LineFold({ history, item, quote, lines, isMobile }) {
+  const tape = ticketLineTape(history, item);
+  const books = quote?.frozen ? [] : (quote?.books || []);
+  const path = tape && Number.isFinite(tape.open) && Number.isFinite(tape.now)
+    ? (Math.round(tape.open) === Math.round(tape.now)
+      ? fmtPrice(tape.now)
+      : `${fmtPrice(tape.open)} → ${fmtPrice(tape.now)}`)
+    : null;
+  const canOpen = (tape?.series?.length >= 2) || books.length > 1;
+  const [open, setOpen] = useState(false);
+  if (!canOpen) return null;
+  const move = tape?.move === 'with' || tape?.move === 'against' ? tape.move : null;
+  const moveColor = move === 'with' ? B.green : B.red;
+  const summary = path || (books.length > 1 ? `${books.length} books` : 'Line');
+  const pinOdds = tape?.now ?? quote?.consensusOdds;
+  const pinPct = impliedFromAmerican(pinOdds);
+  const bestIsPin = quote?.book && /pinnacle/i.test(quote.book);
+  return (
+    <div style={{ marginTop: 4 }}>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginTop: 8,
+          padding: '0.62rem 0 0.15rem',
+          border: 'none',
+          borderTop: `1px solid ${B.hair}`,
+          background: 'transparent',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0, flexWrap: 'wrap' }}>
+          <span style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Line</span>
+          <span style={{ ...T.figure, color: B.text, fontSize: '0.92rem' }}>{summary}</span>
+          {move ? (
+            <span style={{ ...T.meta, color: moveColor, fontWeight: 700 }}>{move}</span>
+          ) : null}
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0, ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>
+          {open ? 'Less' : 'Details'}
+          <ChevronDown
+            size={13}
+            color={B.textFaint}
+            style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
+          />
+        </span>
+      </button>
+      {open ? (
+        <div onClick={(e) => e.stopPropagation()} style={{ paddingTop: 8 }}>
+          {tape?.series?.length >= 2 ? (
+            <>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>
+                  <span style={{ width: 14, height: 2, background: B.gold, borderRadius: 1, display: 'inline-block' }} />
+                  Pinnacle
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...T.kicker, color: B.textFaint, letterSpacing: '0.08em' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: B.green, display: 'inline-block' }} />
+                  Entry
+                </span>
+              </div>
+              <LineSpark series={tape.series} lines={lines} height={isMobile ? 84 : 104} />
+            </>
+          ) : null}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px 28px', marginTop: 8 }}>
+            {Number.isFinite(pinOdds) ? (
+              <div>
+                <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.1em' }}>Pinnacle</div>
+                <div style={{ ...T.figure, color: B.goldSoft, fontSize: '1.2rem', marginTop: 4 }}>{fmtPrice(pinOdds)}</div>
+                {pinPct != null ? (
+                  <div style={{ ...T.meta, color: B.textFaint, marginTop: 3 }}>{`${Math.round(pinPct * 1000) / 10}% implied`}</div>
+                ) : null}
+              </div>
+            ) : null}
+            {quote && Number.isFinite(quote.odds) && !bestIsPin ? (
+              <div>
+                <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>Best</div>
+                <div style={{ ...T.figure, color: Number.isFinite(quote.evPct) ? B.green : B.text, fontSize: '1.2rem', marginTop: 4 }}>
+                  {fmtPrice(quote.odds)}
+                </div>
+                <div style={{ ...T.meta, color: B.textFaint, marginTop: 3 }}>
+                  {[quote.book, Number.isFinite(quote.evPct) ? `+${quote.evPct.toFixed(1)}% EV` : null].filter(Boolean).join('  ·  ')}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <BookBoard books={books} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1725,8 +1954,7 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
         {stakeBlock}
       </div>
       <Showcase lines={lines} isMobile={isMobile} />
-      <PricePair quote={quote} fallback={price} frozen={frozen} isMobile={isMobile} />
-      {quote && !frozen ? <BookRail books={quote.books} /> : null}
+      <ShopStrip quote={quote} fallback={price} frozen={frozen} isMobile={isMobile} />
       <OtherSideNote item={item} />
       <SharpPlate lines={lines} hideChips={expanded} isMobile={isMobile} />
       {expanded ? (
@@ -1737,6 +1965,13 @@ function BetCard({ item, isMobile, draft, onDraft, onTail, onUntail, suggestedSt
           onOpenLine={(id) => setOpenLine((cur) => (cur === id ? null : id))}
         />
       ) : null}
+      <LineFold
+        history={pinnacleHistory}
+        item={item}
+        quote={quote}
+        lines={lines}
+        isMobile={isMobile}
+      />
       {open ? (
         <TailForm
           item={item}

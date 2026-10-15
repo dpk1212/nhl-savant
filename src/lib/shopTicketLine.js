@@ -4,6 +4,7 @@
  */
 import { lookupPinnGame } from '../../scripts/lib/ufcFighters.js';
 import { evPctVsFairProb, impliedFromAmerican } from './oddsEv.js';
+import { tapeOnLine } from './ticketInstrument.js';
 import {
   bookBeatsConsensus,
   evPctVsConsensus,
@@ -206,6 +207,50 @@ export function ticketFreezeAt(commenceMs) {
 export function ticketIsFrozen(commenceMs, nowMs = Date.now()) {
   const at = ticketFreezeAt(commenceMs);
   return at != null && Number(nowMs) >= at;
+}
+
+/**
+ * Did this side's fair price shorten or lengthen?
+ * A shorter number (higher implied) moved with the play.
+ */
+export function lineMoveSide(openOdds, nowOdds) {
+  const openP = impliedFromAmerican(openOdds);
+  const nowP = impliedFromAmerican(nowOdds);
+  if (openP == null || nowP == null) return null;
+  const pp = (nowP - openP) * 100;
+  if (Math.abs(pp) < 1) return 'flat';
+  return pp > 0 ? 'with' : 'against';
+}
+
+/** Pinnacle path on this ticket's line, sealed at the lock. */
+export function ticketLineTape(pinnacleHistory, ticket, nowMs = Date.now()) {
+  if (!ticket) return null;
+  const game = lookupPinnGame(pinnacleHistory, ticket.sport, ticket.gameKey);
+  if (!game) return null;
+  const market = String(ticket.marketType || 'ML').toUpperCase();
+  const family = market === 'MONEYLINE' ? 'ML' : (market === 'TOTALS' ? 'TOTAL' : market);
+  const side = String(ticket.side || '').toLowerCase();
+  const line = Number(ticket.entryLine);
+  const freezeAt = ticketFreezeAt(ticket.commenceMs);
+  const now = Number.isFinite(nowMs) ? nowMs : Date.now();
+  const sealed = freezeAt != null && now >= freezeAt;
+  const tape = tapeOnLine(game, {
+    family,
+    side,
+    line: Number.isFinite(line) ? line : null,
+    freezeAtMs: sealed ? freezeAt : null,
+  });
+  const series = (tape?.series || []).filter((p) => Number.isFinite(p?.odds) && p.odds !== 0);
+  const open = Number.isFinite(tape?.open) ? tape.open : null;
+  const current = Number.isFinite(tape?.now) ? tape.now : null;
+  if (series.length < 2 && open == null && current == null) return null;
+  return {
+    open,
+    now: current,
+    series,
+    move: lineMoveSide(open, current),
+    frozen: sealed,
+  };
 }
 
 /** Keep history points at or before the lock. Points without a time stay. */
