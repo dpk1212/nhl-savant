@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-15 · HERO **GIVE** · Devils -142 to -122, three on NJ, one proven on the Rangers |
+| Last updated | 2026-10-16 · HERO **GIVE** · Brewers bettor 11-4 on the Rays |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** Oilers ask is already out. No second offer on this game. |
-| Account arc | Devils flagged -125, live -122, Pin -129. 4u. Locks 6:55. Oilers still later, 8:55. |
+| Ask temperature | **Give.** No fork. |
+| Account arc | Same wallet, was 10-4. Brewers cashed. Now 11-4, +$126K, $10K on Tampa. One proven on Cleveland. Locks 5:45. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/16 ~5:35 ET | Hero **GIVE** | `We posted him at 10-4.` / 11-4 and $10K on the Rays | **P + C** | none | **Staged** |
 | 10/15 ~6:19 ET | Hero **GIVE** | `The Devils were -142. We're -122.` / one proven on the Rangers | **C** | none | **Staged** |
 | 10/15 ~5:06 ET | Hero **ASK** | `The Oilers were -144. They're +106 now.` / 20 alert seats | **C + P** | reply, first 20 | **Staged** |
 | 10/14 ~7:01 ET | Hero **GIVE** | `$312,000 is on the Dodgers.` / 10-4’s $21K on the Brewers | **C + L** | none | **Posted** · Brewers cashed after a sweat |
@@ -34,11 +35,11 @@
 ---
 
 ## Angle lock
-**ONE:** The Devils went from -142 to -122, three sharps are on New Jersey, and one proven bettor is on the Rangers.  
-**Hook:** `The Devils were -142. We're -122.`  
-**Body:** 5ce139 $5.6K at 1.5×, ML 16-9, +$22.9K, L10 5-5 · 2× ticket $4.8K at -127 and -4% · dfa240 -133 at 1.5× · group 65-50, +$28.6K, L10 17-13 · $16K vs $1.3K · market $62K on the Rangers · Rangers book 19-21, +$7.7K · flagged -125, Pin -129, 4u, 6:55.  
+**ONE:** The Brewers bettor is 11-4 and up $126,000, with $10,000 on the Rays, and one proven bettor is on Cleveland.  
+**Hook:** `We posted him at 10-4. He cashed the Brewers.`  
+**Body:** 15 bets, +61%, 73% · tracked $13K vs $16K · confirmed $10K vs $918 · market $131K vs $27K · losing money $17K on Cleveland · last two Rays bets cashed · flagged -100, live -103, 1u, 5:45.  
 **Ask:** none.  
-**Killed:** crowning the -4% press · giving him the 16-9 · second 20-seat ask · Oilers reprint · HC · gold · hit-edge hook · limit climb
+**Killed:** invented size multiple · invented Pinnacle · other-side record · calling the tracked money his · hit-edge hook · gold · limit climb · another 20-seat ask
 
 ---
 
@@ -54,24 +55,24 @@
 ---
 
 ## Unfinished
+- Grade the Rays -103 after the 5:45 lock
 - Grade the Devils -122 after the 6:55 lock
 - Grade the Oilers +106 after the 8:55 lock
-- Count the 20 alert replies. Do not open a second wave on the Devils post.
 - Weekly report (Power)
 - Fence-sitter DMs
 
 ---
 
-## FORWARD LOOK — after this Devils give
-1. **Grade the Devils** on the split. Name the Rangers bettor if that side wins. Do not reprint -142.
-2. Oilers remains the ask post. Do not attach another 20-seat close here.
-3. If the -4% wallet is the one that cashes, say the size. If he loses, do not pretend the 16-9 was the press.
+## FORWARD LOOK — after this Rays give
+1. **Grade the Rays** on the same split. If Cleveland wins, the one proven on that side is the sentence. Do not reprint 10-4.
+2. No alert pitch on this post. The 20 seats were yesterday.
+3. If he cashes, the next number is 12-5. Do not pre-write it.
 
-**NOT:** a second alert pitch · naming 0cd77e · hit-edge as the hook · `$16K ON THE DEVILS`
+**NOT:** a size multiple · Pinnacle · `$10K ON THE RAYS` as the open · hit edge as the hook
 
-**Avatar:** they have the Oilers move already. This game is the split, including the one proven ticket on the other side.  
-**Hormozi economics:** give. The ask is already spending the Brewers cash on Edmonton.  
-**Desk scar:** the 2× ticket is the wallet at -4%. The 16-9 is a different bettor. Keep them apart.
+**Avatar:** they watched the Brewers ticket cash. They need the updated record and the side that is against him.  
+**Hormozi economics:** give. Say-do is the Brewers cash. An ask here spends it twice.  
+**Desk scar:** tracked money is $16,000 on Cleveland. The market is $131,000 on Tampa. Both stay in the post.
 
 ---
 

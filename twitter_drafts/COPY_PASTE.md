@@ -1,54 +1,49 @@
-# Twitter — 2026-10-15 · HERO GIVE · Devils split, number came off
-**Pathway:** Hormozi. One idea. Give. No second ask.
+# Twitter — 2026-10-16 · HERO GIVE · Brewers bettor is on the Rays
+**Pathway:** Hormozi. One idea. Give. No ask.
 
 | | |
 |--|--|
-| WHO | Anyone looking at New Jersey and missing that one proven bettor is on the Rangers. |
-| PURPOSE | **Give.** The 20-seat ask is already staged on the Oilers. Do not repeat it. |
-| ONE | The Devils went from -142 to -122, three sharps are on New Jersey, and one proven bettor is on the Rangers. |
-| SPCL | **C.** The price and the split. |
+| WHO | Anyone who saw the Brewers write-up cash and is looking at Tampa. |
+| PURPOSE | **Give.** |
+| ONE | The same bettor is 11-4 and up $126,000, with $10,000 on the Rays, and one proven bettor is on Cleveland. |
+| SPCL | **P + C.** The Brewers cash is the say-do. The split is the credibility. |
 | Ask | **None.** |
 
-**Attach:** Devils ML card, then the split list.  
-**Still flagged.** Locks **6:55 ET.** Puck drop 7:10. Do not say locked, gold, or HC.
+**Attach:** Rays ML card, then his profile.  
+**Still flagged.** Locks **5:45 ET.** First pitch 6:00. Do not say locked or gold.
 
 ### Receipts
-- Line on the split: **-142 → -129**, marked against. Live **-122**. Flagged **-125**. Pinnacle **-129**. Sharp line **-128**. Fair **-122**.
-- **4.0u**, to win +3.10u.
-- Tracked **$16,000** Devils vs **$1,300** Rangers. Confirmed **$12,000** vs **$350**.
-- All money **$39,000** Devils vs **$62,000** Rangers.
-- Losing **$5,100** vs **$989** on our side.
-- Three on the Devils, **$14,400** on the split. Group: **+$28,600**, moneylines **65-50**, **+11%**, last 10 **17-13**.
-- `…5ce139`: **$5,600** at **-122**, **1.5×**. Moneylines **16-9**, **+$22,900**, +23%. All NHL **22-17**, **+$21,900**. Last 10 **5-5**. At this size 2-0 on two bets. All-time moneylines are the same 16-9.
-- `…0cd77e`: **$4,800** at **2.0×**, in at **-127**, moneylines **-4%**. This is the press. Do not give him the 16-9. Do not use the 5:00 AM 3.2×.
-- `…dfa240`: in at **-133** last night, **1.5×**, moneylines **+25%**. No dollar on the row.
-- Other side is `…8d3672`. The unnamed profile in the batch is not 5ce139 and not 0cd77e. Use it as the Rangers book: moneylines **19-21**, **+$7,700**, 48%. All-time moneylines **39-34**. NHL last 30 **29-26**, **+$12,500**.
-- No limit climb. Max label is $10K. Leave hit edge in the file. It is +8.3. Do not make it the hook.
+- Same wallet as the Brewers post, `…27ae49`
+- Was **10-4** and **+$118,000**. Brewers +158 at $21,300 cashed. Live record **11-4**, **+$126,000**, **+61%**, **73%**. All-time matches the last 30. All of it is moneylines. 15 bets.
+- Tonight **$10,000**. The card does not show a size multiple. Do not invent one.
+- One proven bettor on the other side. No record for him in this batch. Do not invent one.
+- Tracked **$13,000** Rays vs **$16,000** Guardians. 44% on Tampa.
+- Confirmed **$10,000** vs **$918**
+- All money **$131,000** vs **$27,000**
+- Losing **$3,300** vs **$17,000**
+- Last two Rays bets on the tape cashed: Oct 13 at -127, Oct 7 at +150. Do not say he always hits them.
+- Price **-103**, flagged **-100**. Sharp line **-107**. Fair **-104**. Hit edge **-2.9**. The number got worse. Do not say it moved our way. Books are cropped. Do not invent Pinnacle.
+- **1.0u**, to win +0.93u. No limit climb. Max label is $48K.
 
 ---
 
 ## COPY THIS
 
 ```
-The Devils were -142. We're -122.
+We posted him at 10-4. He cashed the Brewers.
+He's 11-4 now. Up $126,000, at +61%. That's 15 bets. It's the whole record we have on him.
 
-Three sharps are on New Jersey. One proven bettor is on the Rangers.
+He's on the Rays for $10,000.
 
-The moneylines record on this side is 16-9, up $22,900. All of his NHL bets are 22-17.
-He has $5,600 on New Jersey at 1.5×. His last 10 are 5-5.
-The 2× ticket is $4,800, in at -127. That bettor's moneylines are at -4%.
-The third got in at -133 last night, 1.5×.
-Together they are 65-50 on moneylines, up $28,600, at +11%. The last 10 are 17-13.
+One proven bettor took Cleveland.
+$13,000 is on Tampa. $16,000 is on the Guardians.
+Confirmed money is $10,000 to $918.
+The rest of the market is $131,000 on the Rays and $27,000 on Cleveland.
+The losing money is $17,000 on the Guardians and $3,300 on Tampa.
 
-$16,000 on the Devils. $1,300 on the Rangers.
-Confirmed is $12,000 to $350.
-The market is $62,000 on the Rangers and $39,000 on the Devils.
-Losing money is $5,100 on New York and $989 on New Jersey.
-
-The proven bettor on the Rangers is 19-21 on moneylines, up $7,700.
-
-We flagged this at -125. Pinnacle is -129.
-4 units. Locks 6:55.
+He's cashed the Rays the last two times he bet them.
+We flagged this at -100. It's -103.
+1 unit. Locks 5:45.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
