@@ -18,6 +18,7 @@ import {
   coherentTicket,
   stampJuice,
   stampTape,
+  repairCrossedLineOdds,
 } from '../src/lib/ticketInstrument.js';
 
 assert.equal(americanFromPolyPrice(0.554), -124);
@@ -396,5 +397,21 @@ const oneAlt = resolveInstrument({
   stampedLine: -6.5,
 });
 assert.equal(oneAlt.line, -3.5, 'one wallet keeps their alt');
+
+// JSU@KSU 2026-10-07: vault +4.5 Poly −279 vs book MAIN −3 +100.
+// Repair uncrosses juice; it does not flip the one-wallet alt line.
+const jsuPair = repairCrossedLineOdds({
+  heroLine: 4.5,
+  heroOdds: 101,
+  mainLine: -3,
+  mainOdds: 100,
+  vaultLine: 4.5,
+  vaultOdds: -279,
+  flaggedLine: -3,
+  flaggedOdds: -279,
+});
+assert.equal(jsuPair.heroLine, 4.5);
+assert.equal(jsuPair.heroOdds, -279);
+assert.equal(jsuPair.flaggedOdds, 100);
 
 console.log('testTicketInstrument: ok');
