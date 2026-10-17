@@ -1,18 +1,18 @@
 # MLB Predictions
 
-MLB predictions for Friday, October 16, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
+MLB predictions for Saturday, October 17, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 16 2026Oct 16
+Date: Oct 17 2026Oct 17
 
-[Oct 16, 8:00 PM ET\\
+[Oct 17, 8:08 PM ET\\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
 Rays  N. Martinez \\
 \\
-49.6% \\
+50.0% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -22,15 +22,15 @@ Rays  N. Martinez \\
 \\
 Guardians  S. Armstrong \\
 \\
-50.4% \\
+50.0% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
 50¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_206_cle_tb)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_207_cle_tb)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -258,11 +258,11 @@ Claim Now
 
 How to claim
 
-## MLB predictions for Friday
+## MLB predictions for Saturday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Friday, the Guardians have a 50.6% chance of beating the Rays at Progressive Field.
+On Saturday, the Guardians have a 50.1% chance of beating the Rays at Progressive Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
