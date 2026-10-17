@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-17 · HERO **GIVE** · Oklahoma State +4.5 and +178, line against |
+| Last updated | 2026-10-17 · HERO **GIVE** · three NHL tickets, different evidence |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
 | Ask temperature | **Give.** No fork. |
-| Account arc | Spreads 24-11, +$146K. Spread shape is 44.9% at +2%. ML 8-6, +$40K. Locks 7:15. |
+| Account arc | 3u each. Jackets $385 vs Rangers market. Stars set, -188 to -200. Blues $6.8K mostly losers, locks 7:55. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/17 ~6:58 ET | Hero **GIVE** | `3 units on each. Different evidence on every one.` / Jackets, Stars, Blues | **C** | none | **Staged** |
 | 10/17 ~6:11 ET | Hero **GIVE** | `24-11 on spreads. The line is against him.` / Oklahoma State +4.5 and +178 | **C** | none | **Staged** |
 | 10/16 ~5:35 ET | Hero **GIVE** | `We posted him at 10-4.` / 11-4 and $10K on the Rays | **P + C** | none | **Staged** |
 | 10/15 ~6:19 ET | Hero **GIVE** | `The Devils were -142. We're -122.` / one proven on the Rangers | **C** | none | **Staged** |
@@ -36,11 +37,11 @@
 ---
 
 ## Angle lock
-**ONE:** He's 24-11 on college spreads and up $146,000, and the line is against him on Oklahoma State.  
-**Hook:** `24-11 on spreads. Up $146,000. The line is against him.`  
-**Body:** +4.5 for $13.4K at -100, 0.9×, shape 44.9% at +2% · ML $11.2K at +178, 0.8×, 8-6 and +$40K, shape 54.7% at +2.7% · all-time 48-36 at +9% · beat close 62% · L10 7-3 · one proven on Houston · confirmed $25K vs $0 · card -104, flag -100, sharp -113 · 2u on the spread · 7:15.  
+**ONE:** Same 3-unit stake on Columbus, Dallas, and St. Louis. The evidence on each ticket is different.  
+**Hook:** `Three NHL games tonight. 3 units on each. Different evidence on every one.`  
+**Body:** Jackets $385, 10-6, +$3.3K, market $33K on the Rangers, -122 vs Pin -130 · Stars set, -188 to -200, 10-5 has $2K at 1.0×, $971 at 1.6×, 43-37 has $5K at 1.8×, fair -193, pays +1.44u · Blues $6.8K mostly losers, 9-7 up $1.1K, nothing on Nashville, -104 from -100, locks 7:55.  
 **Ask:** none.  
-**Killed:** calling State without the school · 1.6× from the Miami page · 36-20 · selling 24-11 as this bet's shape · 2 units on the moneyline · tier · gold · hit-edge hook · invented Pinnacle
+**Killed:** three copies of the record-then-scar post · giving the $971 the 10-5 · calling the 43-37 the lead · gold · HC · tier · hit-edge label · invented Blues Pinnacle · invented Jackets lock
 
 ---
 
@@ -56,6 +57,7 @@
 ---
 
 ## Unfinished
+- Grade Jackets, Stars, and Blues as three results. Do not blend them into one record.
 - Grade Oklahoma State +4.5 and +178 after the 7:15 lock
 - Grade the Rays -103 after the 5:45 lock
 - Grade the Devils -122 after the 6:55 lock
@@ -65,16 +67,16 @@
 
 ---
 
-## FORWARD LOOK — after this Oklahoma State give
-1. **Grade the spread and the moneyline separately.** The line was against both. Do not reprint 24-11 as if this shape was 69%.
-2. If Houston covers, the one proven on that side is the sentence.
-3. No ask on this post.
+## FORWARD LOOK — after this three-game NHL give
+1. **Grade each ticket on its own evidence.** Columbus is the Pinnacle gap. Dallas is the worse number. St. Louis is the loser bar.
+2. Do not write the next single-game post in this three-block shape. The switch was for this slate.
+3. No ask here.
 
-**NOT:** Miami +20.5 · 36-20 · `$13K ON OKLAHOMA STATE` as the open · hit edge as the hook
+**NOT:** a second copy of "3 units on each" · hit-edge as the hook · treating $385 like a pile
 
-**Avatar:** a 24-11 month is easy to tail. They need the shape of this bet and the Houston ticket.  
-**Hormozi economics:** give. The scar is the line against a lean, not a press.  
-**Desk scar:** plays-like-this on the spread is 44.9% at +2%. The 24-11 stays labeled as every spread.
+**Avatar:** they just got one-bettor posts. This slate shows the stake can be the same while the proof is not.  
+**Hormozi economics:** give. Three scars are the value. An ask would flatten them into a signup.  
+**Desk scar:** the Stars number went from -188 to -200, and the fair price on the card is -193.
 
 ---
 
