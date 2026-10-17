@@ -1,0 +1,25 @@
+# One-shot: PUSH TB@CLE Over 6.5 false LOSS from 2026-10-16 postponement.
+name: push-cle-tb-postponed-total
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/cle-tb-ou-push-24aa
+
+jobs:
+  push-total:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: PUSH postponed Rays-Guardians Over 6.5
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/_push_cle_tb_postponed_total.mjs

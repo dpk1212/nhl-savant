@@ -7,7 +7,7 @@
  *
  * Run: node tests/testGradeDateGuard.mjs
  */
-import { espnEventDateET, finalDateMatches, findMatchingGame } from '../scripts/gradeSharpActions.js';
+import { espnEventDateET, isEspnPlayableFinal, calculateOutcome, finalDateMatches, findMatchingGame } from '../scripts/gradeSharpActions.js';
 
 let pass = 0, fail = 0;
 function check(name, cond) {
@@ -80,6 +80,18 @@ check('NHL: same-date final is chosen when both are loaded',
   findMatchingGame(sepPos, [marchIslanders, sepIslanders]) === sepIslanders);
 check('NHL: a final with no date is rejected',
   findMatchingGame(sepPos, [{ awayTeam: 'NYI', homeTeam: 'TOR', awayScore: 3, homeScore: 1 }]) === null);
+
+// ── postponed 0-0 must not grade (2026-10-16 TB@CLE Over 6.5) ───────────
+check('STATUS_POSTPONED + state=post is not a playable final',
+  isEspnPlayableFinal({ name: 'STATUS_POSTPONED', state: 'post', completed: false, description: 'Postponed' }) === false);
+check('STATUS_CANCELED is not a playable final',
+  isEspnPlayableFinal({ name: 'STATUS_CANCELED', state: 'post', completed: false }) === false);
+check('STATUS_FINAL is playable',
+  isEspnPlayableFinal({ name: 'STATUS_FINAL', state: 'post', completed: true }) === true);
+check('0-0 Over 6.5 would be LOSS — reason postponed games must be skipped',
+  calculateOutcome({ awayScore: 0, homeScore: 0 }, 'TOTAL', 'over', 6.5) === 'LOSS');
+check('0-0 baseball ML is PUSH — same rainout already graded the Rays ML correctly',
+  calculateOutcome({ awayScore: 0, homeScore: 0 }, 'ML', 'away', null) === 'PUSH');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);
