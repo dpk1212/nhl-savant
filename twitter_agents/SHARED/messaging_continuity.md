@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-16 · HERO **GIVE** · Brewers bettor 11-4 on the Rays |
+| Last updated | 2026-10-17 · HERO **GIVE** · Oklahoma State +4.5 and +178, line against |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
 | Ask temperature | **Give.** No fork. |
-| Account arc | Same wallet, was 10-4. Brewers cashed. Now 11-4, +$126K, $10K on Tampa. One proven on Cleveland. Locks 5:45. |
+| Account arc | Spreads 24-11, +$146K. Spread shape is 44.9% at +2%. ML 8-6, +$40K. Locks 7:15. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/17 ~6:11 ET | Hero **GIVE** | `24-11 on spreads. The line is against him.` / Oklahoma State +4.5 and +178 | **C** | none | **Staged** |
 | 10/16 ~5:35 ET | Hero **GIVE** | `We posted him at 10-4.` / 11-4 and $10K on the Rays | **P + C** | none | **Staged** |
 | 10/15 ~6:19 ET | Hero **GIVE** | `The Devils were -142. We're -122.` / one proven on the Rangers | **C** | none | **Staged** |
 | 10/15 ~5:06 ET | Hero **ASK** | `The Oilers were -144. They're +106 now.` / 20 alert seats | **C + P** | reply, first 20 | **Staged** |
@@ -35,11 +36,11 @@
 ---
 
 ## Angle lock
-**ONE:** The Brewers bettor is 11-4 and up $126,000, with $10,000 on the Rays, and one proven bettor is on Cleveland.  
-**Hook:** `We posted him at 10-4. He cashed the Brewers.`  
-**Body:** 15 bets, +61%, 73% · tracked $13K vs $16K · confirmed $10K vs $918 · market $131K vs $27K · losing money $17K on Cleveland · last two Rays bets cashed · flagged -100, live -103, 1u, 5:45.  
+**ONE:** He's 24-11 on college spreads and up $146,000, and the line is against him on Oklahoma State.  
+**Hook:** `24-11 on spreads. Up $146,000. The line is against him.`  
+**Body:** +4.5 for $13.4K at -100, 0.9×, shape 44.9% at +2% · ML $11.2K at +178, 0.8×, 8-6 and +$40K, shape 54.7% at +2.7% · all-time 48-36 at +9% · beat close 62% · L10 7-3 · one proven on Houston · confirmed $25K vs $0 · card -104, flag -100, sharp -113 · 2u on the spread · 7:15.  
 **Ask:** none.  
-**Killed:** invented size multiple · invented Pinnacle · other-side record · calling the tracked money his · hit-edge hook · gold · limit climb · another 20-seat ask
+**Killed:** calling State without the school · 1.6× from the Miami page · 36-20 · selling 24-11 as this bet's shape · 2 units on the moneyline · tier · gold · hit-edge hook · invented Pinnacle
 
 ---
 
@@ -55,6 +56,7 @@
 ---
 
 ## Unfinished
+- Grade Oklahoma State +4.5 and +178 after the 7:15 lock
 - Grade the Rays -103 after the 5:45 lock
 - Grade the Devils -122 after the 6:55 lock
 - Grade the Oilers +106 after the 8:55 lock
@@ -63,16 +65,16 @@
 
 ---
 
-## FORWARD LOOK — after this Rays give
-1. **Grade the Rays** on the same split. If Cleveland wins, the one proven on that side is the sentence. Do not reprint 10-4.
-2. No alert pitch on this post. The 20 seats were yesterday.
-3. If he cashes, the next number is 12-5. Do not pre-write it.
+## FORWARD LOOK — after this Oklahoma State give
+1. **Grade the spread and the moneyline separately.** The line was against both. Do not reprint 24-11 as if this shape was 69%.
+2. If Houston covers, the one proven on that side is the sentence.
+3. No ask on this post.
 
-**NOT:** a size multiple · Pinnacle · `$10K ON THE RAYS` as the open · hit edge as the hook
+**NOT:** Miami +20.5 · 36-20 · `$13K ON OKLAHOMA STATE` as the open · hit edge as the hook
 
-**Avatar:** they watched the Brewers ticket cash. They need the updated record and the side that is against him.  
-**Hormozi economics:** give. Say-do is the Brewers cash. An ask here spends it twice.  
-**Desk scar:** tracked money is $16,000 on Cleveland. The market is $131,000 on Tampa. Both stay in the post.
+**Avatar:** a 24-11 month is easy to tail. They need the shape of this bet and the Houston ticket.  
+**Hormozi economics:** give. The scar is the line against a lean, not a press.  
+**Desk scar:** plays-like-this on the spread is 44.9% at +2%. The 24-11 stays labeled as every spread.
 
 ---
 

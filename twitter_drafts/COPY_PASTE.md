@@ -1,49 +1,62 @@
-# Twitter — 2026-10-16 · HERO GIVE · Brewers bettor is on the Rays
+# Twitter — 2026-10-17 · HERO GIVE · Oklahoma State at Houston
 **Pathway:** Hormozi. One idea. Give. No ask.
 
 | | |
 |--|--|
-| WHO | Anyone who saw the Brewers write-up cash and is looking at Tampa. |
+| WHO | Anyone who would read 24-11 and miss that the line is against this bet. |
 | PURPOSE | **Give.** |
-| ONE | The same bettor is 11-4 and up $126,000, with $10,000 on the Rays, and one proven bettor is on Cleveland. |
-| SPCL | **P + C.** The Brewers cash is the say-do. The split is the credibility. |
+| ONE | He's 24-11 on college spreads and up $146,000, and the line is against him on Oklahoma State. |
+| SPCL | **C.** The spread month, then the shape of this bet. |
 | Ask | **None.** |
 
-**Attach:** Rays ML card, then his profile.  
-**Still flagged.** Locks **5:45 ET.** First pitch 6:00. Do not say locked or gold.
+**Attach:** the +4.5 card, then the spread profile. The moneyline profile if it fits.  
+**Still flagged.** Locks **7:15 ET.** Kick 7:30. Do not say locked, gold, or tier.
 
 ### Receipts
-- Same wallet as the Brewers post, `…27ae49`
-- Was **10-4** and **+$118,000**. Brewers +158 at $21,300 cashed. Live record **11-4**, **+$126,000**, **+61%**, **73%**. All-time matches the last 30. All of it is moneylines. 15 bets.
-- Tonight **$10,000**. The card does not show a size multiple. Do not invent one.
-- One proven bettor on the other side. No record for him in this batch. Do not invent one.
-- Tracked **$13,000** Rays vs **$16,000** Guardians. 44% on Tampa.
-- Confirmed **$10,000** vs **$918**
-- All money **$131,000** vs **$27,000**
-- Losing **$3,300** vs **$17,000**
-- Last two Rays bets on the tape cashed: Oct 13 at -127, Oct 7 at +150. Do not say he always hits them.
-- Price **-103**, flagged **-100**. Sharp line **-107**. Fair **-104**. Hit edge **-2.9**. The number got worse. Do not say it moved our way. Books are cropped. Do not invent Pinnacle.
-- **1.0u**, to win +0.93u. No limit climb. Max label is $48K.
+- **Oklahoma State +4.5.** His ticket **$13,400** at **-100**, **0.9×** lean. Page says **line against** and **sharp contested · 2**.
+- Game card a few minutes later: **-104**, flagged **-100**. Sharp line **-113**. Fair **-107**. Actual win **48.8%**. Best implied **51.0%**. Hit edge **-2.2**. Do not claim an edge.
+- **2.0u** on the spread, to win +1.75u. Do not put 2 units on the moneyline.
+- Tracked **$13,000** vs **$4,100**. One proven bettor on Houston. No record for him in this batch.
+- Confirmed **$25,000** vs **$0**. All money **$60,000** vs **$36,000**. Losing **$4,100**, all on Houston.
+- Spreads, last 30: **24-11**, **+$146,000**, **+29%**, 69%. All-time spreads **29-16**, **+24%**, 64%.
+- Bets shaped like this spread: **44.9%** wins, **+2%** ROI. Do not let 24-11 stand in for that.
+- **Moneyline:** **$11,200** at **+178**, **0.8×** lean. Page says line against, and no one on the other side of that ticket.
+- Moneylines, last 30: **8-6**, **+$40,000**, **+13%**, 57%. All-time **10-7**, **+8%**, 59%.
+- Bets shaped like this moneyline: **54.7%** wins, **+2.7%** ROI.
+- All college, last 30: **38-25**, **+$194,000**, **+20%**, 60%. All-time **48-36**, **+9%**, 57%.
+- Header on both pages: beat the close **62%**. Last 10: **7-3**.
+- Leave **36-20** out. It matches neither the spread row nor the moneyline row.
+- The earlier Miami +20.5 page was a different ticket. It stays off.
 
 ---
 
 ## COPY THIS
 
 ```
-We posted him at 10-4. He cashed the Brewers.
-He's 11-4 now. Up $126,000, at +61%. That's 15 bets. It's the whole record we have on him.
+24-11 on spreads. Up $146,000. The line is against him.
+He's on Oklahoma State anyway.
 
-He's on the Rays for $10,000.
+The spread is +4.5. He has $13,400 at -100, 0.9× his usual.
+Bets shaped like this one have won 44.9% of the time, at +2%.
+That 24-11 stretch is at +29%. It is every spread, not this shape.
 
-One proven bettor took Cleveland.
-$13,000 is on Tampa. $16,000 is on the Guardians.
-Confirmed money is $10,000 to $918.
-The rest of the market is $131,000 on the Rays and $27,000 on Cleveland.
-The losing money is $17,000 on the Guardians and $3,300 on Tampa.
+The moneyline is $11,200 at +178, 0.8× his usual.
+His moneylines in the last 30 days are 8-6, up $40,000.
+Bets shaped like this moneyline have won 54.7% of the time, at +2.7%.
+The line is against that ticket too. Nobody tracked is on the other side of it.
 
-He's cashed the Rays the last two times he bet them.
-We flagged this at -100. It's -103.
-1 unit. Locks 5:45.
+All of his college bets in the last 30 days are 38-25, up $194,000.
+All-time he's 48-36, at +9%. He's beaten the close 62% of the time.
+His last 10 are 7-3.
+
+One proven bettor took Houston on the spread.
+Tracked money there is $13,000 to $4,100.
+Confirmed money is $25,000 on Oklahoma State and $0 on Houston.
+The rest of the market is $60,000 to $36,000.
+The losing money is $4,100, all of it on Houston.
+
+The spread card is -104. We flagged it at -100. The sharp line is -113.
+2 units on the spread. Locks 7:15.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
