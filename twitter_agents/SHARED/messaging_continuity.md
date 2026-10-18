@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-17 · HERO **GIVE** · three NHL tickets, different evidence |
+| Last updated | 2026-10-18 · HERO **GIVE** · Oklahoma State +4.5 covered, +178 lost |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** No fork. |
-| Account arc | 3u each. Jackets $385 vs Rangers market. Stars set, -188 to -200. Blues $6.8K mostly losers, locks 7:55. |
+| Ask temperature | **Give.** Week is real. No ask until an NFL spine shows up. |
+| Account arc | Houston 35, Oklahoma State 32. Spread covered by 1.5. Moneyline lost. NFL slate is unnamed. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/18 ~10:06 ET | Hero **GIVE** | `Oklahoma State lost 35-32.` / +4.5 covered, +178 lost | **P + C** | none | **Staged** |
 | 10/17 ~6:58 ET | Hero **GIVE** | `3 units on each. Different evidence on every one.` / Jackets, Stars, Blues | **C** | none | **Staged** |
 | 10/17 ~6:11 ET | Hero **GIVE** | `24-11 on spreads. The line is against him.` / Oklahoma State +4.5 and +178 | **C** | none | **Staged** |
 | 10/16 ~5:35 ET | Hero **GIVE** | `We posted him at 10-4.` / 11-4 and $10K on the Rays | **P + C** | none | **Staged** |
@@ -37,11 +38,11 @@
 ---
 
 ## Angle lock
-**ONE:** Same 3-unit stake on Columbus, Dallas, and St. Louis. The evidence on each ticket is different.  
-**Hook:** `Three NHL games tonight. 3 units on each. Different evidence on every one.`  
-**Body:** Jackets $385, 10-6, +$3.3K, market $33K on the Rangers, -122 vs Pin -130 · Stars set, -188 to -200, 10-5 has $2K at 1.0×, $971 at 1.6×, 43-37 has $5K at 1.8×, fair -193, pays +1.44u · Blues $6.8K mostly losers, 9-7 up $1.1K, nothing on Nashville, -104 from -100, locks 7:55.  
+**ONE:** Oklahoma State lost by 3, the +4.5 covered, and the moneyline lost.  
+**Hook:** `Oklahoma State lost 35-32.`  
+**Body:** cover by 1.5 · +178 lost · under usual size · line was against · soccer amazing, NHL solid, CFB excellent, in his words · NFL slate unnamed.  
 **Ask:** none.  
-**Killed:** three copies of the record-then-scar post · giving the $971 the 10-5 · calling the 43-37 the lead · gold · HC · tier · hit-edge label · invented Blues Pinnacle · invented Jackets lock
+**Killed:** a week record · unit profit · other Saturday scores · naming an NFL side · calling the moneyline a win · trial paragraph
 
 ---
 
@@ -57,8 +58,8 @@
 ---
 
 ## Unfinished
-- Grade Jackets, Stars, and Blues as three results. Do not blend them into one record.
-- Grade Oklahoma State +4.5 and +178 after the 7:15 lock
+- NFL slate today. Wait for his card. Do not invent the sides.
+- Grade Jackets, Stars, and Blues as three results if he brings them. Do not blend them into the week line.
 - Grade the Rays -103 after the 5:45 lock
 - Grade the Devils -122 after the 6:55 lock
 - Grade the Oilers +106 after the 8:55 lock
@@ -67,16 +68,16 @@
 
 ---
 
-## FORWARD LOOK — after this three-game NHL give
-1. **Grade each ticket on its own evidence.** Columbus is the Pinnacle gap. Dallas is the worse number. St. Louis is the loser bar.
-2. Do not write the next single-game post in this three-block shape. The switch was for this slate.
-3. No ask here.
+## FORWARD LOOK — after this Oklahoma State grade
+1. **The NFL card, when he sends it.** One idea from the live tickets. Do not preview teams from a blank slate.
+2. If he wants the week in units, he has to bring the number. Do not back into one from soccer, NHL, and Saturday.
+3. An ask can wait until that NFL proof is posted. This recap spends the say-do.
 
-**NOT:** a second copy of "3 units on each" · hit-edge as the hook · treating $385 like a pile
+**NOT:** a fake week record · the +178 as a win · three NFL sides with no cards
 
-**Avatar:** they just got one-bettor posts. This slate shows the stake can be the same while the proof is not.  
-**Hormozi economics:** give. Three scars are the value. An ask would flatten them into a signup.  
-**Desk scar:** the Stars number went from -188 to -200, and the fair price on the card is -193.
+**Avatar:** they have a final and a cover that came with a loss. They do not have a Sunday side yet.  
+**Hormozi economics:** give. The score is the pudding. A trial sentence here is a signup on a vibe.  
+**Desk scar:** the moneyline lost. The tweet says so.
 
 ---
 
