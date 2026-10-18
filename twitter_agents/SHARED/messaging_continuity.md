@@ -40,10 +40,10 @@
 
 ## Angle lock
 **ONE:** Two proven bettors took Bills-Raiders Over 52.5, and the board is 53.5.  
-**Hook:** `They got Over 52.5. The number is 53.5 now.`  
-**Body:** $2K each at -117, 1.0×, steam 4.7% · totals 7-4 and 10-6 · shapes +1.3% and +2.7% · second guy L10 4-6 · tracked $4K/$5K · market $35K/$16K · +100, flagged -110 · 3u · 4:10.  
+**Hook:** `They got Over 52.5. It's 53.5 now.`  
+**Body:** $2K each at -117 · steam 4.7% · lead 19-13 and +$8.4K, totals 7-4 · other 10-6, L10 4-6 · tracked $4K/$5K · market $35K/$16K · +100 from a -110 flag · 3u · 4:10.  
 **Ask:** none.  
-**Killed:** selling 27-16 as the last 30 days · invented sharp line · tier · gold · a second NFL game · trial paragraph
+**Killed:** the shape-ROI stack in the copy · beat-close as a second scar · selling 27-16 as the month · invented sharp line · tier · gold · trial paragraph
 
 ---
 
