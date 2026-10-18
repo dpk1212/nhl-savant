@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-18 · HERO **GIVE** · Panthers -150, $110K at 4.7× |
+| Last updated | 2026-10-18 · HERO **GIVE** · 11-1 today, +35.39u on the week |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** The price answers the free-money question. |
-| Account arc | Carolina -149, flagged -150. Eagles 2-3, L3. Press is $110K. Tracked money is $177K on Philadelphia. Locks 12:45. |
+| Ask temperature | **Give.** Closed day. No ask. |
+| Account arc | Today 11-1, +19.50u. Soccer 4-0. Week 58-35-2, +35.39u, 4 still open. Since June 1, +153.99u, 29.9u off the Sep 14 peak. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/18 ~7:51 ET | Hero **GIVE** | `11-1 today. +19.50 units.` / week +35.39u, June +153.99u | **P** | none | **Staged** |
 | 10/18 ~12:43 ET | Hero **GIVE** | `Carolina is -150, on the road.` / $110K at 4.7× | **C** | none | **Staged** |
 | 10/18 ~12:25 ET | Hero **GIVE** | `They got Over 52.5. It's 53.5 now.` / Bills-Raiders | **C** | none | **Staged** |
 | 10/18 ~10:10 ET | Hero **GIVE** | `2 of the 3 NHL plays we gave out hit.` / soccer, OK State +4.5 | **P** | none | **Staged** |
@@ -40,11 +41,11 @@
 ---
 
 ## Angle lock
-**ONE:** Carolina is -150 on the road, and the ticket is $110,000 at 4.7×.  
-**Hook:** `Carolina is -150, on the road. 4 units wins 2.47.`  
-**Body:** Eagles 2-3, three straight losses · beat close 75% · L30 6-6 and +$98K · ML 3-2 and +$82K · shape 59% at +0.8% · L10 4-6 · tracked $134K/$177K · confirmed $114K/$89K · market $1.673M/$907K · losing money $233K on Philadelphia · steam 19.9% · -149, flagged -150 · 4u · 12:45.  
+**ONE:** Today was 11-1 for +19.50 units, and the last 7 days are +35.39.  
+**Hook:** `11-1 today. +19.50 units.`  
+**Body:** soccer 4-0 inside the day · week 58-35-2, +16.5%, 62.4%, 4 still open · v12 since June 1 is 748-611-14, +153.99u, 55% · 29.9u under the Sep 14 peak.  
 **Ask:** none.  
-**Killed:** calling it free money · calling the Eagles season over · header +59% ROI · HC · tier · gold · invented sharp line · the skid-steer photo
+**Killed:** adding soccer on top of 11-1 · calling +153.99u a 30-day number · Hurricanes no-play · CLV at zero · tier names · AGS · v12 in line 1 · trial paragraph
 
 ---
 
@@ -70,16 +71,16 @@
 
 ---
 
-## FORWARD LOOK — after this Panthers give
-1. **Grade Carolina at the price.** -150 was chalk. If it wins, the 4.7× is the sentence. If it loses, the Eagles record does not get to explain it.
-2. The Bills-Raiders over is still a separate grade. They had 52.5. The live number was 53.5.
-3. No ask on this one.
+## FORWARD LOOK — after this 11-1 give
+1. **Leave the day closed.** If he names which one lost, that is the reply. Do not guess it.
+2. The 4 open picks from the week get graded when they finish. Do not roll them into the +35.39.
+3. An ask can wait. This post is the say-do. The next one needs a new live ticket.
 
-**NOT:** free money · the Eagles season as the reason · HC · a second -150 hook
+**NOT:** a second 11-1 · v12 in line 1 · the Hurricanes no-play · a trial paragraph on the back of +19.50
 
-**Avatar:** they wanted to know if a slump makes a road favorite free. The price answered.  
-**Hormozi economics:** give. 4 units to win 2.47 is the whole offer.  
-**Desk scar:** $177,000 of tracked money is on Philadelphia, and one proven bettor is with it.
+**Avatar:** they have a closed Sunday and a week that actually paid. They also have the June number and the 29.9-unit hole.  
+**Hormozi economics:** give. The record is the proof.  
+**Desk scar:** since June 1 the win rate is 55% and the ROI is 4%. The week is 62.4% and 16.5%. Both stay.
 
 ---
 
