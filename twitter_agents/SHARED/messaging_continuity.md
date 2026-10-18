@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-18 · HERO **GIVE** · NHL 2 of 3, soccer, Oklahoma State cover |
+| Last updated | 2026-10-18 · HERO **GIVE** · Bills-Raiders Over 52.5 is now 53.5 |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** Recap. No ask. |
-| Account arc | Jackets and Stars hit. Blues lost 5-2. Oklahoma State +4.5 covered. NFL slate unnamed. |
+| Ask temperature | **Give.** His favorite play. No ask. |
+| Account arc | Two $2K tickets at -117 on 52.5. Live 53.5 at +100, flagged -110. 3u. Locks 4:10. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/18 ~12:25 ET | Hero **GIVE** | `They got Over 52.5. The number is 53.5 now.` / Bills-Raiders | **C** | none | **Staged** |
 | 10/18 ~10:10 ET | Hero **GIVE** | `2 of the 3 NHL plays we gave out hit.` / soccer, OK State +4.5 | **P** | none | **Staged** |
 | 10/17 ~6:58 ET | Hero **GIVE** | `3 units on each. Different evidence on every one.` / Jackets, Stars, Blues | **C** | none | **Staged** |
 | 10/17 ~6:11 ET | Hero **GIVE** | `24-11 on spreads. The line is against him.` / Oklahoma State +4.5 and +178 | **C** | none | **Staged** |
@@ -38,11 +39,11 @@
 ---
 
 ## Angle lock
-**ONE:** We gave out 3 NHL plays and 2 hit.  
-**Hook:** `2 of the 3 NHL plays we gave out hit.`  
-**Body:** Columbus 1-0 OT · Dallas 4-0 · St. Louis lost 5-2 · 3 units each · soccer awesome, no matches named · Oklahoma State 32-35, +4.5 covered · NFL unnamed.  
+**ONE:** Two proven bettors took Bills-Raiders Over 52.5, and the board is 53.5.  
+**Hook:** `They got Over 52.5. The number is 53.5 now.`  
+**Body:** $2K each at -117, 1.0×, steam 4.7% · totals 7-4 and 10-6 · shapes +1.3% and +2.7% · second guy L10 4-6 · tracked $4K/$5K · market $35K/$16K · +100, flagged -110 · 3u · 4:10.  
 **Ask:** none.  
-**Killed:** leading with the moneyline loss · a week record · unit profit · invented soccer teams · an NFL side · trial paragraph
+**Killed:** selling 27-16 as the last 30 days · invented sharp line · tier · gold · a second NFL game · trial paragraph
 
 ---
 
@@ -68,16 +69,16 @@
 
 ---
 
-## FORWARD LOOK — after this week recap
-1. **The NFL card, when he sends it.** One idea from the live tickets. Do not preview teams from a blank slate.
-2. If he wants the week in units, he has to bring the number.
-3. No ask on the recap.
+## FORWARD LOOK — after this Bills-Raiders over
+1. **Grade 53.5 on the number they had.** They got 52.5. The live bet is 53.5 at +100. Do not grade them as the same total.
+2. If he sends the rest of the slate, do not open with "favorite play" again.
+3. No ask on this one.
 
-**NOT:** a fake week record · leading with the +178 loss · three NFL sides with no cards
+**NOT:** a second total with the same hook · 27-16 as a 30-day record · sharp numbers that were cut off the card
 
-**Avatar:** they have 2 of 3 in the NHL and a college cover. They do not have a Sunday side yet.  
-**Hormozi economics:** give. The recap is the say-do.  
-**Desk scar:** St. Louis lost 5-2. The tweet names it. The +178 stays off the open.
+**Avatar:** the week recap is already out. This is the Sunday number that already moved.  
+**Hormozi economics:** give. The point move is the proof.  
+**Desk scar:** tracked money is $5,000 on the under. The market is $35,000 on the over. Both stay.
 
 ---
 
