@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Player Props Loading</title>
+</head>
+<body>
+    <h1>Testing Player Props JSON Loading</h1>
+    <div id="result"></div>
+    
+    <script>
+        async function testLoad() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                console.log('Fetching player_props.json...');
+                const response = await fetch('/player_props.json');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    resultDiv.innerHTML = `<p style="color: red;">Failed to load: HTTP ${response.status}</p>`;
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('Data loaded:', data);
+                
+                resultDiv.innerHTML = `
+                    <p style="color: green;">✅ Successfully loaded player props!</p>
+                    <p><strong>Count:</strong> ${data.count || data.players?.length || 0} players</p>
+                    <p><strong>Last Updated:</strong> ${data.lastUpdated}</p>
+                    <h3>First 5 Players:</h3>
+                    <ul>
+                        ${data.players.slice(0, 5).map(p => 
+                            `<li>${p.name} (${p.team} @ ${p.opponent}) - EV: ${p.otEV}, Cover: ${p.otCoverProb}%</li>`
+                        ).join('')}
+                    </ul>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        testLoad();
+    </script>
+</body>
+</html>
+
+
