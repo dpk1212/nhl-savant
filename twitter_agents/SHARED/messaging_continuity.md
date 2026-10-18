@@ -7,17 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-18 · HERO **GIVE** · Oklahoma State +4.5 covered, +178 lost |
+| Last updated | 2026-10-18 · HERO **GIVE** · NHL 2 of 3, soccer, Oklahoma State cover |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** Week is real. No ask until an NFL spine shows up. |
-| Account arc | Houston 35, Oklahoma State 32. Spread covered by 1.5. Moneyline lost. NFL slate is unnamed. |
+| Ask temperature | **Give.** Recap. No ask. |
+| Account arc | Jackets and Stars hit. Blues lost 5-2. Oklahoma State +4.5 covered. NFL slate unnamed. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 10/18 ~10:06 ET | Hero **GIVE** | `Oklahoma State lost 35-32.` / +4.5 covered, +178 lost | **P + C** | none | **Staged** |
+| 10/18 ~10:10 ET | Hero **GIVE** | `2 of the 3 NHL plays we gave out hit.` / soccer, OK State +4.5 | **P** | none | **Staged** |
 | 10/17 ~6:58 ET | Hero **GIVE** | `3 units on each. Different evidence on every one.` / Jackets, Stars, Blues | **C** | none | **Staged** |
 | 10/17 ~6:11 ET | Hero **GIVE** | `24-11 on spreads. The line is against him.` / Oklahoma State +4.5 and +178 | **C** | none | **Staged** |
 | 10/16 ~5:35 ET | Hero **GIVE** | `We posted him at 10-4.` / 11-4 and $10K on the Rays | **P + C** | none | **Staged** |
@@ -38,11 +38,11 @@
 ---
 
 ## Angle lock
-**ONE:** Oklahoma State lost by 3, the +4.5 covered, and the moneyline lost.  
-**Hook:** `Oklahoma State lost 35-32.`  
-**Body:** cover by 1.5 · +178 lost · under usual size · line was against · soccer amazing, NHL solid, CFB excellent, in his words · NFL slate unnamed.  
+**ONE:** We gave out 3 NHL plays and 2 hit.  
+**Hook:** `2 of the 3 NHL plays we gave out hit.`  
+**Body:** Columbus 1-0 OT · Dallas 4-0 · St. Louis lost 5-2 · 3 units each · soccer awesome, no matches named · Oklahoma State 32-35, +4.5 covered · NFL unnamed.  
 **Ask:** none.  
-**Killed:** a week record · unit profit · other Saturday scores · naming an NFL side · calling the moneyline a win · trial paragraph
+**Killed:** leading with the moneyline loss · a week record · unit profit · invented soccer teams · an NFL side · trial paragraph
 
 ---
 
@@ -68,16 +68,16 @@
 
 ---
 
-## FORWARD LOOK — after this Oklahoma State grade
+## FORWARD LOOK — after this week recap
 1. **The NFL card, when he sends it.** One idea from the live tickets. Do not preview teams from a blank slate.
-2. If he wants the week in units, he has to bring the number. Do not back into one from soccer, NHL, and Saturday.
-3. An ask can wait until that NFL proof is posted. This recap spends the say-do.
+2. If he wants the week in units, he has to bring the number.
+3. No ask on the recap.
 
-**NOT:** a fake week record · the +178 as a win · three NFL sides with no cards
+**NOT:** a fake week record · leading with the +178 loss · three NFL sides with no cards
 
-**Avatar:** they have a final and a cover that came with a loss. They do not have a Sunday side yet.  
-**Hormozi economics:** give. The score is the pudding. A trial sentence here is a signup on a vibe.  
-**Desk scar:** the moneyline lost. The tweet says so.
+**Avatar:** they have 2 of 3 in the NHL and a college cover. They do not have a Sunday side yet.  
+**Hormozi economics:** give. The recap is the say-do.  
+**Desk scar:** St. Louis lost 5-2. The tweet names it. The +178 stays off the open.
 
 ---
 
