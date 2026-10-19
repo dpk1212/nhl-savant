@@ -1,36 +1,36 @@
 # MLB Predictions
 
-MLB predictions for Sunday, October 18, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
+MLB predictions for Monday, October 19, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 18 2026Oct 18
+Date: Oct 19 2026Oct 19
 
-[Oct 18, 5:08 PM ET\\
-\\
-![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
-\\
-Rays  D. Rasmussen \\
-\\
-51.9% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-54¢\\
+[Oct 19, 8:08 PM ET\\
 \\
 ![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
 \\
-Guardians  P. Messick \\
+Guardians  S. Armstrong \\
 \\
-48.1% \\
+42.0% \\
 \\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-46¢\\
+42¢\\
+\\
+![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
+\\
+Rays  F. Peralta \\
+\\
+58.0% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+59¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_208_cle_tb)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_209_tb_cle)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -94,7 +94,7 @@ Get Dimers Pro
 
 ## Featured offers
 
-All  Sportsbooks  Prediction Markets
+All  Sportsbooks  Prediction Markets  DFS
 
 ![Swipe icon](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20)Swipe across to view more offers
 
@@ -166,6 +166,18 @@ Claim now
 
 How to claim
 
+![logo](https://imgix.cosmicjs.com/c263f0f0-a7a8-11f1-b05a-3f2735d232a4-UD26_PrimaryMark_OverDark.png?auto=format,compress&h=200)
+
+TRENDING
+
+T&Cs apply.
+
+Claim Now
+
+[Read review](https://www.dimers.com/dfs/underdog-fantasy)
+
+How to claim
+
 ![logo](https://imgix.cosmicjs.com/682438f0-bde9-11f1-af12-19c569209b1c-fd-predicts.png?auto=format,compress&h=200)
 
 TRENDING
@@ -214,7 +226,7 @@ How to claim
 
 ![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
 
-LIMITED-TIME
+RECOMMENDED
 
 T&Cs apply.
 
@@ -234,33 +246,23 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/673e3170-1a24-11f1-912c-9d3f03b09963-OG-LOGO-1a-1.png?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/9d7e0a60-ceaa-11ef-ac4c-9fb95c248ff6-HorizontalPrimaryDark-1.png?auto=format,compress&h=200)
 
-RECOMMENDED
+DFS & PICKS
 
 T&Cs apply.
 
 Claim Now
 
-How to claim
-
-![logo](https://imgix.cosmicjs.com/1092c8d0-116c-11ef-911e-9f1d49670742-BetRivers-Big.png?auto=format,compress&h=200)
-
-NEW PLAYERS
-
-T&Cs apply.
-
-Claim now
-
-[Read review](https://www.dimers.com/betting/betrivers-sportsbook)
+[Read review](https://www.dimers.com/dfs/betr)
 
 How to claim
 
-## MLB predictions for Sunday
+## MLB predictions for Monday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Sunday, the Rays have a 51.9% chance of beating the Guardians at Progressive Field.
+On Monday, the Rays have a 58.1% chance of beating the Guardians at Tropicana Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
