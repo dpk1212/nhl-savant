@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-18 · HERO **GIVE** · 11-1 today, +35.39u on the week |
+| Last updated | 2026-10-19 · HERO **GIVE** · Leafs set, -127 vs Pinnacle -135 |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** Closed day. No ask. |
-| Account arc | Today 11-1, +19.50u. Soccer 4-0. Week 58-35-2, +35.39u, 4 still open. Since June 1, +153.99u, 29.9u off the Sep 14 peak. |
+| Ask temperature | **Give.** No ask. |
+| Account arc | Two sharps locked at 1.7×. Group 36-22, +$62.1K, L10 10-10. Lead is 16-11 and +$2.3K. 3u. Puck drop 7:40. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/19 ~7:31 ET | Hero **GIVE** | `Pinnacle is -135. We're -127.` / two Leafs sharps at 1.7× | **C** | none | **Staged** |
 | 10/18 ~7:51 ET | Hero **GIVE** | `11-1 today. +19.50 units.` / week +35.39u, June +153.99u | **P** | none | **Staged** |
 | 10/18 ~12:43 ET | Hero **GIVE** | `Carolina is -150, on the road.` / $110K at 4.7× | **C** | none | **Staged** |
 | 10/18 ~12:25 ET | Hero **GIVE** | `They got Over 52.5. It's 53.5 now.` / Bills-Raiders | **C** | none | **Staged** |
@@ -41,11 +42,11 @@
 ---
 
 ## Angle lock
-**ONE:** Today was 11-1 for +19.50 units, and the last 7 days are +35.39.  
-**Hook:** `11-1 today. +19.50 units.`  
-**Body:** soccer 4-0 inside the day · week 58-35-2, +16.5%, 62.4%, 4 still open · v12 since June 1 is 748-611-14, +153.99u, 55% · 29.9u under the Sep 14 peak.  
+**ONE:** Two sharps are locked on the Leafs at 1.7×, and we have -127 against Pinnacle -135.  
+**Hook:** `Pinnacle is -135. We're -127.`  
+**Body:** 5ce139 at -127 yesterday, +34% · 2e259c at -122 today, 16-11, +$2.3K, $2K ticket · group 36-22, +$62.1K, +30%, L10 10-10 · tracked $13K mostly losers, nothing on San Jose · confirmed $2K · market $54K/$45K · flagged -122, sharp -133 · 3u to win 2.36 · set.  
 **Ask:** none.  
-**Killed:** adding soccer on top of 11-1 · calling +153.99u a 30-day number · Hurricanes no-play · CLV at zero · tier names · AGS · v12 in line 1 · trial paragraph
+**Killed:** giving the lead the group's $62K · hit-edge label · HC · gold · saying it is still flagged · the portfolio's other 14 bets · trial paragraph
 
 ---
 
@@ -71,16 +72,16 @@
 
 ---
 
-## FORWARD LOOK — after this 11-1 give
-1. **Leave the day closed.** If he names which one lost, that is the reply. Do not guess it.
-2. The 4 open picks from the week get graded when they finish. Do not roll them into the +35.39.
-3. An ask can wait. This post is the say-do. The next one needs a new live ticket.
+## FORWARD LOOK — after this Leafs give
+1. **Grade it at -127.** Pinnacle was -135. If Toronto loses, the 10-10 and the loser bar are the reply.
+2. Do not reprint the Sunday 11-1 on the back of this ticket.
+3. No ask.
 
-**NOT:** a second 11-1 · v12 in line 1 · the Hurricanes no-play · a trial paragraph on the back of +19.50
+**NOT:** the group's $62K as the lead's month · hit edge as the hook · a second game from the portfolio list
 
-**Avatar:** they have a closed Sunday and a week that actually paid. They also have the June number and the 29.9-unit hole.  
-**Hormozi economics:** give. The record is the proof.  
-**Desk scar:** since June 1 the win rate is 55% and the ROI is 4%. The week is 62.4% and 16.5%. Both stay.
+**Avatar:** they have a set favorite and a better number than Pinnacle. The last 10 of the pair are even.  
+**Hormozi economics:** give. The price gap is the proof.  
+**Desk scar:** most of the $13,000 on Toronto is from bettors who have been losing. The proven ticket is $2,000.
 
 ---
 
