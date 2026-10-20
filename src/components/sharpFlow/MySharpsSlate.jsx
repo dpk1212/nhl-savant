@@ -238,7 +238,7 @@ export default function MySharpsSlate({
         title="My Sharps"
         body="Follow the wallets you trust. Their bets land here, next to locked picks and HC positions."
         action="Unlock My Sharps"
-        href="#/pricing?promo=NHL40"
+        href="#/pricing?promo=FALL50"
       />
     );
   }

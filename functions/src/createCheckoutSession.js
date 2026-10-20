@@ -37,15 +37,15 @@ const TRIAL_DAYS = {
   pro: 10,
 };
 
-// Opening week — mirrors frontend PAYWALL_PROMO / PROMO_CODES.NHL40.
-// Auto-applied at Checkout for monthly/weekly only. Stripe coupon is 40%
+// NBA tip-off week — mirrors frontend src/lib/paywallPromo.js FALL50.
+// Auto-applied at Checkout for monthly/weekly only. Stripe coupon is 50%
 // once (first invoice = first week on weekly, first month on monthly).
 // Keep it restricted to scout + elite prices. Annual stays full price.
 const FLASH_PROMO = {
-  code: 'NHL40',
-  codeAliases: ['NHL40', 'nhl40'],
+  code: 'FALL50',
+  codeAliases: ['FALL50', 'fall50'],
   tiers: new Set(['scout', 'elite']),
-  endMs: Date.parse('2026-10-05T04:00:00Z'), // Mon Oct 5, 12:00am ET
+  endMs: Date.parse('2026-10-28T04:00:00Z'), // Wed Oct 28, 12:00am ET
 };
 
 async function resolveFlashPromoId(stripeClient, tier) {
@@ -219,7 +219,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
       },
     };
 
-    // Opening week: auto-apply NHL40 on monthly/weekly so users don't miss the code.
+    // Tip-off week: auto-apply FALL50 on monthly/weekly so users don't miss the code.
     // Stripe forbids discounts + allow_promotion_codes together.
     const flashPromoId = await resolveFlashPromoId(stripeClient, tier);
     if (flashPromoId) {
