@@ -59,6 +59,7 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **HARD mute-exception 1-for** | 2026-09-24+: ≥1 HARD FOR restores tape-weak / maxsr / fools / crowded · tape-weak S/T stays muted · **2026-10-04+** that HARD FOR must be sized **≥1.0×** (0.18× sprinkle stays muted) · `rescuedBy=hard-mkt-hold` |
 | **HARD+ margin floor** | 2026-09-30+: unique HARD margin (FOR−AG) ≥ +1 and ≥1 HARD FOR sized ≥1.0× → **2u** · fills MONITORING 0u and leftover / steam-tail / market-skill / **board-share** · **2026-10-02: ≥2 FOR lean rolled back** · skip ev-drift / fav-juice / fade / ev-lt2 / hard-ag · `flooredBy=hard-unopp-hold` · MONITORING → `HARD-UNOPP` |
 | **S/T HARD+ FOR require** | 2026-09-26+: SPREAD/TOTAL needs ≥1 HARD FOR else 0u · ML exempt · **2026-10-04+** that HARD FOR must be sized **≥1.0×** so RANK/Q1/SHARP cannot publish S/T on a sprinkle · `mutedBy=st-hard-for` |
+| **Heavy-favorite last-publish mute** | 2026-09-05+: american odds juicier than **−375** → **0u** · **2026-10-20+** re-runs after PRESS / TRUST / PRESS-M so rescue rungs cannot lock those favorites · no resize · `mutedBy=fav-juice` · stamp `v8_favJuiceAction` |
 
 ---
 

@@ -7,6 +7,7 @@
 import assert from 'assert';
 import {
   applyFavJuiceMuteOverlay,
+  applyFavJuiceLastPublish,
   applyNoConfirmedMuteOverlay,
   isFavJuiceMuteLive,
   FAV_JUICE_MUTE_FROM,
@@ -99,6 +100,67 @@ holdExact({ units: 2.03, odds: 250 }, 2.03, 'long dog HOLD — do not steal dog 
     units: afterNc.units, odds: -200, pickDate: '2026-09-05',
   });
   ok(afterFav.units === 3 && afterFav.action === 'HOLD', 'normal favorite keeps exact units');
+}
+
+// ── Last publish: press / TRUST / PRESS-M cannot punch through ───────────
+{
+  const early = mute({ units: 2, odds: -400 });
+  ok(early.action === 'MUTE' && early.units === 0, 'early chain mute zeros the long fav');
+  const pressRestake = applyFavJuiceLastPublish({
+    units: 3,
+    odds: -400,
+    pickDate: '2026-10-20',
+    priorPolicy: early,
+  });
+  ok(pressRestake.muted === true && pressRestake.units === 0, 'PRESS 3u @ -400 does not lock');
+  ok(pressRestake.policy?.mutedBy === FAV_JUICE_MUTED_BY, 'last publish stamps fav-juice');
+  ok(pressRestake.policy?.unitsPrePolicy === 3, 'preserves the press units as pre');
+}
+{
+  const trustG = applyFavJuiceLastPublish({
+    units: 4,
+    odds: -1567,
+    pickDate: '2026-10-20',
+    priorPolicy: null,
+  });
+  ok(trustG.muted && trustG.units === 0, 'TRUST-G 4u @ -1567 does not lock');
+}
+{
+  const pressM = applyFavJuiceLastPublish({
+    units: 1,
+    odds: -376,
+    pickDate: '2026-10-20',
+  });
+  ok(pressM.muted && pressM.units === 0, 'PRESS-M 1u @ -376 does not lock');
+}
+{
+  const keep = applyFavJuiceLastPublish({
+    units: 3,
+    odds: -150,
+    pickDate: '2026-10-20',
+    priorPolicy: { action: 'HOLD', mutedBy: null },
+  });
+  ok(keep.muted === false && keep.units === 3, '-150 PRESS stake is under the cap');
+  ok(keep.policy?.action === 'HOLD', 'keeps prior HOLD, does not invent a mute');
+}
+{
+  const prior = mute({ units: 2, odds: -500 });
+  const alreadyZero = applyFavJuiceLastPublish({
+    units: 0,
+    odds: -500,
+    pickDate: '2026-10-20',
+    priorPolicy: prior,
+  });
+  ok(alreadyZero.muted === false && alreadyZero.units === 0, 'already 0u is not a new mute');
+  ok(alreadyZero.policy === prior, 'keeps the earlier MUTE stamp');
+}
+{
+  const preCutover = applyFavJuiceLastPublish({
+    units: 3,
+    odds: -500,
+    pickDate: '2026-09-04',
+  });
+  ok(preCutover.muted === false && preCutover.units === 3, 'pre-cutover press stake is not rewritten');
 }
 
 console.log(`OK — ${n} assertions`);

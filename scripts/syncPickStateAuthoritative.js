@@ -113,6 +113,7 @@ import {
   applyTopCrowdedConvictionMuteOverlay,
   applyEvDriftEdgeMuteOverlay,
   applyFavJuiceMuteOverlay,
+  applyFavJuiceLastPublish,
   maxForSizeRatio,
   leadForSizeRatio,
   meanForRoiNorm,
@@ -3778,8 +3779,10 @@ async function createMissingLockedPicks({
         peakUnitsApplied = steamTailPolicyCreate.units;
       }
 
-      // Heavy-favorite mute — after ALL sizing (incl. steam-tail). Does not
-      // change oddsCap or path math. American odds juicier than -375 → 0u.
+      // Heavy-favorite mute — diagnostic for the legacy chain (after
+      // steam-tail). Press / TRUST / PRESS-M can restake after this;
+      // applyFavJuiceLastPublish re-runs after the ladder. American
+      // odds juicier than -375 → 0u. Does not change oddsCap or path math.
       let favJuicePolicyCreate = null;
       if (createV121Eligible && peakUnitsApplied > 0) {
         favJuicePolicyCreate = applyFavJuiceMuteOverlay({
@@ -4101,6 +4104,21 @@ async function createMissingLockedPicks({
           hcStakeTierCreate = peakUnitsApplied > 0 ? PRESS_M_STAKE_TIER : 'MONITORING';
         }
         pressAppliedCreate = true;
+      }
+      // Last publish mute — press / TRUST / PRESS-M cannot lock a
+      // long favorite. Keeps an earlier MUTE stamp when already 0u.
+      if (pressAppliedCreate && peakUnitsApplied > 0) {
+        const favJuiceLastCreate = applyFavJuiceLastPublish({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          pickDate: TARGET_DATE,
+          priorPolicy: favJuicePolicyCreate,
+        });
+        peakUnitsApplied = favJuiceLastCreate.units;
+        if (favJuiceLastCreate.muted) {
+          favJuicePolicyCreate = favJuiceLastCreate.policy;
+          hcStakeTierCreate = 'MONITORING';
+        }
       }
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
@@ -4481,6 +4499,8 @@ async function createMissingLockedPicks({
         if (v8Stamps.v8_hardUnoppPromote != null) delete v8Stamps.v8_hardUnoppPromote;
         if (peakUnitsApplied > 0) {
           delete v8Stamps.mutedBy;
+        } else if (favJuicePolicyCreate?.mutedBy) {
+          v8Stamps.mutedBy = favJuicePolicyCreate.mutedBy;
         } else if (scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0) {
           v8Stamps.mutedBy = (pressEvalCreate?.floorFade?.status === 'VETO' && isFadeFLive(TARGET_DATE))
             ? FADE_F_VETO_MUTED_BY
@@ -5898,9 +5918,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = steamTailPolicy.units;
   }
 
-  // ─── Heavy-favorite mute (after ALL sizing, incl. steam-tail) ─────────
-  // American odds juicier than -375 → 0u. Does not change oddsCap or
-  // path math. Manual stake exempt. Date-gated inside the overlay.
+  // ─── Heavy-favorite mute (legacy-chain diagnostic, after steam-tail) ──
+  // American odds juicier than -375 → 0u. Press / TRUST / PRESS-M can
+  // restake after this; applyFavJuiceLastPublish re-runs after the
+  // ladder. Does not change oddsCap or path math. Manual stake exempt.
   let favJuicePolicy = null;
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
     favJuicePolicy = applyFavJuiceMuteOverlay({
@@ -6255,6 +6276,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // Last publish mute — press / TRUST / PRESS-M cannot lock a long
+  // favorite. Manual stake exempt. Keeps an earlier MUTE stamp when
+  // already 0u.
+  if (pressApplied && finalUnitsApplied > 0 && !skipManualFlinch) {
+    const favJuiceLast = applyFavJuiceLastPublish({
+      units: finalUnitsApplied,
+      odds: sideOdds,
+      pickDate,
+      priorPolicy: favJuicePolicy,
+    });
+    finalUnitsApplied = favJuiceLast.units;
+    if (favJuiceLast.muted) {
+      favJuicePolicy = favJuiceLast.policy;
+      hcStakeTier = 'MONITORING';
+    }
+  }
+
   const operatorKilled = isOperatorKilled(pick, side, sd);
   if (operatorKilled) finalUnitsApplied = 0;
 
@@ -6480,6 +6518,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     // stamps from pre-cutover syncs are cleared so the card reads clean.
     if (finalUnitsApplied > 0) {
       if (sd.mutedBy != null) patch.mutedBy = admin.firestore.FieldValue.delete();
+      if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    } else if (favJuicePolicy?.mutedBy) {
+      patch.mutedBy = favJuicePolicy.mutedBy;
       if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
     } else if (mutedByAgs) {
       patch.mutedBy = 'ags-quality-veto';
@@ -8146,7 +8187,8 @@ async function main() {
   if (isFavJuiceMuteLive(TARGET_DATE)) {
     console.log(
       `Heavy-favorite mute LIVE: american odds < ${FAV_JUICE_MUTE_THR} → 0u`
-      + ` · from ${FAV_JUICE_MUTE_FROM} · after steam-tail · no resize · mutedBy=${FAV_JUICE_MUTED_BY}`,
+      + ` · from ${FAV_JUICE_MUTE_FROM} · last publish after press / TRUST / PRESS-M`
+      + ` · no resize · mutedBy=${FAV_JUICE_MUTED_BY}`,
     );
   } else {
     console.log(`Heavy-favorite mute: not live before ${FAV_JUICE_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);

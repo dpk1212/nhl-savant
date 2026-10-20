@@ -3,6 +3,7 @@
  * Usage: node tests/testPressLadderOverlay.mjs
  */
 import assert from 'assert';
+import { applyFavJuiceLastPublish, FAV_JUICE_MUTED_BY } from '../src/lib/walletClvSkill.js';
 import {
   evaluatePressLadder,
   pressStamp,
@@ -1314,6 +1315,22 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const stNull = trustStamp(null);
   for (const [k, val] of Object.entries(stNull)) eq(val, null, `trustStamp(null).${k} null`);
   const stLift = pressStamp(full, 7); eq(stLift.v8_trustLift, true, 'lift stamped'); eq(stLift.v8_trustMktFor[0].status, 'STABLE_ON', 'ML market status stamped');
+}
+
+// Last publish mute: a long favorite the ladder would stake does not lock.
+{
+  const longFav = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -400, steamOn: false,
+  });
+  ok(longFav.units > 0, `ladder would stake a -400 (${longFav.units}u ${longFav.rung})`);
+  const last = applyFavJuiceLastPublish({
+    units: longFav.units,
+    odds: -400,
+    pickDate: '2026-10-20',
+  });
+  ok(last.muted && last.units === 0, 'last publish zeros the long-fav press stake');
+  eq(last.policy?.mutedBy, FAV_JUICE_MUTED_BY, 'mutedBy=fav-juice after press');
 }
 
 console.log(`testPressLadderOverlay: ${n} assertions passed`);
