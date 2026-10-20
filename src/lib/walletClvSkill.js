@@ -1603,11 +1603,13 @@ export function applyEvDriftEdgeMuteOverlay({
   };
 }
 
-// ── Heavy-favorite mute (after ALL sizing — does not change math) ──────────
-// 2026-09-05+: after steam-tail (last size overlay). Full-cancel any
-// remaining ticket whose American odds are juicier than -375.
-// Dogs already have a stepped oddsCap. Favorites were uncapped by odds.
-// This overlay does NOT touch oddsCap / path units / steam-tail math.
+// ── Heavy-favorite mute (last publish choke — does not change math) ────────
+// 2026-09-05+: full-cancel any remaining ticket whose American odds are
+// juicier than -375. Dogs already have a stepped oddsCap. Favorites were
+// uncapped by odds. This overlay does NOT touch oddsCap / path / press math.
+// The early chain apply (after steam-tail) is diagnostic; press / TRUST /
+// PRESS-M can restake after it. `applyFavJuiceLastPublish` re-runs after
+// those rungs so a long favorite cannot lock.
 // Hard fences:
 //   • odds missing / non-finite → HOLD (do not invent a cut)
 //   • odds >= -375 (incl. plus-money) → HOLD at exact incoming units
@@ -1658,6 +1660,29 @@ export function applyFavJuiceMuteOverlay({
     unitsPrePolicy: pre,
     odds: oddsIn,
   };
+}
+
+/**
+ * Last publish mute after a later rescue (press / TRUST / PRESS-M)
+ * restakes a side. Identity unless published size is still > 0 AND
+ * american odds < -375. Does not overwrite an earlier MUTE stamp when
+ * incoming units are already 0.
+ */
+export function applyFavJuiceLastPublish({
+  units,
+  odds = null,
+  pickDate = null,
+  priorPolicy = null,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  if (!(pre > 0)) {
+    return { units: 0, policy: priorPolicy, muted: false };
+  }
+  const policy = applyFavJuiceMuteOverlay({ units: pre, odds, pickDate });
+  if (policy.action === 'MUTE') {
+    return { units: 0, policy, muted: true };
+  }
+  return { units: pre, policy: priorPolicy, muted: false };
 }
 
 // ── Path × EDGE blended expected win rate (display / calibration) ───────────
