@@ -1,0 +1,25 @@
+# One-shot: grade 2026-10-20 Napoli ML as WIN (UCL 4-3 FT).
+name: grade-napoli-bod-ml
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/napoli-ml-win-grade-24aa
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Grade Napoli ML WIN in Firebase
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/_grade_napoli_bod_ml.mjs
