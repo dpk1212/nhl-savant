@@ -8,29 +8,35 @@ Date: Oct 19 2026Oct 19
 
 [Oct 19, 8:08 PM ET\\
 \\
+R\\
+\\
+H\\
+\\
+E\\
+\\
 ![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
 \\
-Guardians  S. Armstrong \\
+Guardians \\
 \\
-42.0% \\
+3 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+7 \\
 \\
-42¢\\
+0 \\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
-Rays  F. Peralta \\
+Rays \\
 \\
-58.0% \\
+7 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+7 \\
 \\
-59¢\\
+0 \\
 \\
-MLB\\
+FINAL\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_209_tb_cle)
+See Game Recap](https://www.dimers.com/mlb/predictions/2026_209_tb_cle)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -104,7 +110,7 @@ FEATURED
 
 T&Cs apply.
 
-Claim now
+[Claim now](https://affiliates.routy.app/route/320036?affId=10466&ts=5015351&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/draftkings-sportsbook)
 
@@ -116,7 +122,7 @@ HOTTEST
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://affiliates.routy.app/route/154967?affId=10159&ts=5008256&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/prediction-betting/kalshi)
 
@@ -128,7 +134,7 @@ RECOMMENDED
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://polymarket-app.onelink.me/S8ac/DIMERS?src=main-column&promo=true)
 
 How to claim
 
@@ -138,7 +144,7 @@ TRENDING
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://affiliates.routy.app/route/319978?affId=10466&ts=5015351&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/bet365-sportsbook)
 
@@ -150,7 +156,7 @@ LIMITED-TIME
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://platform.routy.app/route/5000585?affid=10466&ts=5015351&src=main-column&promo=true)
 
 How to claim
 
@@ -160,7 +166,7 @@ NEW PLAYERS
 
 T&Cs apply.
 
-Claim now
+[Claim now](https://affiliates.routy.app/route/319984?affId=10466&ts=5015351&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/hardrock-sportsbook)
 
@@ -172,7 +178,7 @@ TRENDING
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://platform.routy.app/route/503334?affid=10466&ts=5015351&src=main-column)
 
 [Read review](https://www.dimers.com/dfs/underdog-fantasy)
 
@@ -184,7 +190,7 @@ TRENDING
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://platform.routy.app/route/5000001?affid=10466&ts=5015351&src=main-column&promo=true)
 
 How to claim
 
@@ -194,7 +200,7 @@ HOTTEST
 
 T&Cs apply.
 
-Claim Now!
+[Claim Now!](https://affiliates.routy.app/route/390629?affId=10159&ts=5008256&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/espn-bet-sportsbook)
 
@@ -206,7 +212,7 @@ NEW
 
 T&Cs apply.
 
-Claim Now!
+[Claim Now!](https://prophetx.onelink.me/E5Yi/DIMERS?src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/social-sportsbooks/get-prophet-x)
 
@@ -218,7 +224,7 @@ NEW PLAYERS
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://platform.routy.app/route/506509?affid=10466&ts=5015351&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/fanduel-sportsbook)
 
@@ -230,7 +236,7 @@ RECOMMENDED
 
 T&Cs apply.
 
-Claim now
+[Claim now](https://affiliates.routy.app/route/319960?affId=10466&ts=5015351&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/betmgm-sportsbook)
 
@@ -242,7 +248,7 @@ FEATURED
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://affiliates.routy.app/route/275281?affId=10159&ts=5008256&src=main-column&promo=true)
 
 How to claim
 
@@ -252,7 +258,7 @@ DFS & PICKS
 
 T&Cs apply.
 
-Claim Now
+[Claim Now](https://engagebetr.onelink.me/auSX/Dimers?src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/dfs/betr)
 
@@ -262,7 +268,7 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Monday, the Rays have a 58.1% chance of beating the Guardians at Tropicana Field.
+On Monday, the Rays have a 57.5% chance of beating the Guardians at Tropicana Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
