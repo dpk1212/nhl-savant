@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-20 · HERO **ASK** · Leafs cashed, Delaware 5u, Celtics, BIG, Fall50 |
+| Last updated | 2026-10-20 · HERO **GIVE** · $129K on the Capitals, sharps on the Kings |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Ask.** Proof opens. Fall50 closes. No link. |
-| Account arc | Leafs 3u cashed. Delaware $3K at 3.5×, ML book is 3-2. Celtics tracked money is against. BIG is 6-0 in six bets. |
+| Ask temperature | **Give.** The split is the engagement. No second Fall50. |
+| Account arc | Kings +144 vs Pin +140, 2.5u, 6:55. Delaware -131 to -144, now 3u, 6:45. Montreal -203 vs Pin -214, card win rate 60%. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/20 ~6:44 ET | Hero **GIVE** | `$129,000 is on the Capitals.` / two sharps on the Kings +144 | **C + S** | none | **Staged** |
 | 10/20 ~11:35 ET | Hero **ASK** | `The Leafs cashed. 3 units.` / Delaware 5u, Celtics, BIG, Fall50 | **P + C** | Fall50 | **Staged** |
 | 10/19 ~7:31 ET | Hero **GIVE** | `Pinnacle is -135. We're -127.` / two Leafs sharps at 1.7× | **C** | none | **Staged** · Leafs cashed |
 | 10/18 ~7:51 ET | Hero **GIVE** | `11-1 today. +19.50 units.` / week +35.39u, June +153.99u | **P** | none | **Staged** |
@@ -43,11 +44,11 @@
 ---
 
 ## Angle lock
-**ONE:** The Leafs cashed, and the size today is a spread bettor pressing Delaware.  
-**Hook:** `The Leafs cashed. 3 units.`  
-**Body:** Delaware 29-20, ML 1-1, $3K at 3.5×, market $9.5K on Missouri State, -130 vs Pin -135, 5u, 6:45 · Celtics most tracked money against, $1K at 1.5×, 36-23, beat close 47%, -108 vs Pin -112, 3u, 2:45 · BIG 6-0, +$2.6K, beat close 50%, $524 · Fall50, 50% off first month or week, works after a cancel.  
-**Ask:** Fall50. No link.  
-**Killed:** selling the Delaware month as a moneylines record · calling BIG a size-up · a Leafs score · tier · HC · gold · first-week-free on top of the code · a link in line 1
+**ONE:** $129,000 is on the Capitals. Two sharps are on the Kings at +144.  
+**Hook:** `$129,000 is on the Capitals.`  
+**Body:** 5ce139 $4.8K at +150, ML 21-14, +$59.8K · 2e259c $1.7K at +144, 0-2 at this size · group 38-24, +$63.4K, L10 10-10 · +144 vs Pin +140 · 2.5u, 6:55 · Delaware -131 to -144, 3u, market $137K, tracked-against warning, 6:45 · Montreal -203 vs Pin -214, 60% vs 67% implied, 3u, 6:55.  
+**Ask:** none.  
+**Killed:** Fall50 repeat · hit-edge label on the Kings · calling the $4,800 a loser ticket · Delaware still at 5 units · gold · HC · a link · three equal essays
 
 ---
 

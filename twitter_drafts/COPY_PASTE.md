@@ -1,58 +1,59 @@
-# Twitter — 2026-10-20 · HERO ASK · Leafs cashed, Delaware, Celtics, BIG
-**Pathway:** Hormozi. One idea. Proof opens. Fall50 closes.
+# Twitter — 2026-10-20 · HERO GIVE · $129K on the Capitals, sharps on the Kings
+**Pathway:** Hormozi. One idea. Give. The disagreement is the engagement. No ask.
 
 | | |
 |--|--|
-| WHO | Anyone who wants the Tuesday slate and has bounced off a signup before. |
-| PURPOSE | **Ask.** The tickets are the proof. The code is the fork. |
-| ONE | The Leafs cashed, and the size today is a spread bettor pressing Delaware. |
-| SPCL | **P + C.** Yesterday's ticket, then the 3.5×. |
-| Ask | **Fall50.** 50% off the first month or week. Works again after a cancel. No link. |
+| WHO | Anyone about to lay Washington because the board is loaded. |
+| PURPOSE | **Give.** Replies come from the split, not from a question. |
+| ONE | $129,000 is on the Capitals. Two sharps are on the Kings at +144. |
+| SPCL | **C + S.** The pile, then the price. |
+| Ask | **None.** Do not repeat Fall50. |
 
-**Attach:** Delaware card, Celtics card, then the BIG profile.  
-Delaware locks **6:45 ET.** Celtics locks **2:45 ET.** No lock time on the Counter-Strike crop. Do not invent one. Do not say tier, HC, or gold.
+**Attach:** Kings card, then the together list. Delaware and Montreal if they fit.  
+Kings and Montreal lock **6:55 ET.** Delaware locks **6:45.** Do not say gold or HC.
 
-### Receipts
-- Leafs won. The ticket was **3.0u**. Do not invent the score.
-- **Delaware ML -130**, flagged **-131**. Pinnacle **-135**. He filled **-127** at 8:43 AM. **5.0u**, to win +3.70u. Locks 6:45. Kick 7:00.
-- Lead `…4c8ed9`: CFB last 30 **29-20**, **+$9,900**, +23%. All-time **45-33**, +20%. Moneylines last 30 **1-1**, **+$2,000**. All-time moneylines **3-2**. Ticket **$3,000** at **3.5×**. Plays like this **62.3%** at **+2.2%**. Beat close **58%**. Last 10 **7-3**. Visible tape is spreads.
-- Tracked **$3,900** vs nothing. Confirmed **$3,900** vs **$0**. All money **$4,400** Delaware vs **$9,500** Missouri State.
-- **Celtics ML -108**, flagged **-109**. Pinnacle **-112**. **3.0u**, to win +2.68u. Locks 2:45. Tip 3:00.
-- Card: **$8,100** on the side with 1 proven winner, and most of the tracked money is against it. Bar **$5,200** vs **$2,000**, 72% on Boston. Confirmed **$1,700** vs **$0**. All money **$266,000** vs **$206,000**. Losing **$17,000** vs **$6,800** on our side.
-- Profile ticket **$1,000** at **-109**, **1.5×**. NBA last 30 **36-23**, **+$4,300**, +21%. All-time **83-67**. Moneylines last 30 **19-14**, **+$2,000**. Beat close **47%**. Plays like this **54.5%** at **-5%**. Last 10 **5-3**. Steam 8.6% open.
-- **BIG +110**, The MongolZ @ BIG. **$524**, **1.0×**. **6-0**, **+$2,600**, +84%. All-time is the same six bets. Beat close **50%**. No unit size on the crop.
+### Kings
+- **+144**, flagged **+144**. Pinnacle **+140**. Sharp **+141**. Fair **+146**. Hit edge **+0.6**. Leave the label out.
+- **2.5u**, to win **+3.50u**.
+- `…5ce139`: **$4,800** at **+150**, **1.0×**, in at 1:12 PM. Moneylines **21-14**, 32%, last 30 **+$59,800**. NHL **+$54,100**. Last 10 **5-5**. At this size **3-1** on 4 bets.
+- `…2e259c`: **$1,700** at **+144**, **1.4×**, in at 6:15 PM. Card line **17-12**, last 30 **+$2,400**. Moneylines on the together row **17-10**, **+$3,600**. At this size **0-2** on 2 bets. Last 10 **5-5**.
+- Group: **+$63,400**, **38-24**, **+29%**, last 10 **10-10**. Line **+136 → +140**, marked against.
+- Tracked **$6,500**, nothing on Washington. Confirmed **$1,700** vs **$0**. All money **$25,000** vs **$129,000**. Losing money **$4,800** on the Capitals, **$0** on the Kings.
+
+### Delaware — update, not a second essay
+- Now **-144**, flagged **-131**. Was 5 units at -130 this morning. Card is **3.0u**, to win +1.88u.
+- Bar **$54,000** vs **$9,200**. Red line: most of the tracked money is against Delaware.
+- All money **$137,000** vs **$56,000**. The $3,000 at **3.5×** is still the lead. Pinnacle **-160**.
+
+### Montreal
+- **-203**, flagged **-203**. Pinnacle **-214**. Sharp **-212**. Fair **-198**. Actual win **60%**. Implied **67%**. Hit edge **-7.0**.
+- **3.0u**, to win +1.40u. Ticket **$2,000** at **1.0×**. `…51176e` NHL **14-6**, **+$17,000**. Moneylines **11-3**, **+$14,000**, +51%. Beat close **57%**. Plays like this **73.3%** at **+21.7%**. Last 10 **6-4**.
+- Nothing tracked on the Sharks. All money **$20,000** vs **$16,000**.
 
 ---
 
 ## COPY THIS
 
 ```
-The Leafs cashed. 3 units.
+$129,000 is on the Capitals.
+$6,500 is on the Kings.
 
-Delaware. 5 units.
-He's 29-20 on college football the last 30 days, up $9,900.
-He almost never bets moneylines. Those are 1-1 in that stretch. All-time he's 3-2.
-Today he has $3,000 on Delaware, 3.5× his usual.
-$3,900 on Delaware. Nothing tracked on Missouri State.
-The rest of the market is $9,500 on Missouri State and $4,400 on Delaware.
-We're -130. Pinnacle is -135. We flagged it at -131.
-Locks 6:45.
+Two sharps. One has $4,800 in at +150, his usual size. His moneylines are 21-14, up $59,800 the last 30 days.
+The other has $1,700 at +144. He's 0-2 at this size.
+Together they are 38-24, up $63,400. The last 10 are 10-10.
 
-Celtics. 3 units. The NBA regular season starts today.
-Most of the tracked money is against Boston.
-The proven ticket is $1,000, 1.5× his usual. He's 36-23 the last 30 days, up $4,300. All-time he's 83-67.
-He's beaten the close 47% of the time.
-The bar is $5,200 on the Celtics and $2,000 on Detroit.
-We're -108. Pinnacle is -112. We flagged it at -109.
-Locks 2:45.
+Nothing tracked is on Washington.
+We're +144. Pinnacle is +140. Same number we flagged.
+2.5 units, to win 3.50. Locks 6:55.
 
-Counter-Strike. BIG is +110.
-He's 6-0 since we started tracking him. Up $2,600. Six bets. That's the whole book.
-He's beaten the close 50% of the time.
-His ticket is $524.
+Delaware moved. We flagged it at -131. It's -144.
+The market is $137,000 on Delaware and $56,000 on Missouri State.
+The card says most of the tracked money is against them.
+He still has $3,000 in, 3.5× his usual. 3 units. Locks 6:45.
 
-Fall50 at checkout. 50% off your first month or your first week.
-It works if you signed up before and cancelled.
+Montreal is -203. Pinnacle is -214.
+He's 14-6, up $17,000, at his usual size. The price implies 67%. The card has them at 60%.
+3 units. Locks 6:55.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
