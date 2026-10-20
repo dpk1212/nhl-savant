@@ -7,17 +7,18 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-19 · HERO **GIVE** · Leafs set, -127 vs Pinnacle -135 |
+| Last updated | 2026-10-20 · HERO **ASK** · Leafs cashed, Delaware 5u, Celtics, BIG, Fall50 |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** No ask. |
-| Account arc | Two sharps locked at 1.7×. Group 36-22, +$62.1K, L10 10-10. Lead is 16-11 and +$2.3K. 3u. Puck drop 7:40. |
+| Ask temperature | **Ask.** Proof opens. Fall50 closes. No link. |
+| Account arc | Leafs 3u cashed. Delaware $3K at 3.5×, ML book is 3-2. Celtics tracked money is against. BIG is 6-0 in six bets. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 10/19 ~7:31 ET | Hero **GIVE** | `Pinnacle is -135. We're -127.` / two Leafs sharps at 1.7× | **C** | none | **Staged** |
+| 10/20 ~11:35 ET | Hero **ASK** | `The Leafs cashed. 3 units.` / Delaware 5u, Celtics, BIG, Fall50 | **P + C** | Fall50 | **Staged** |
+| 10/19 ~7:31 ET | Hero **GIVE** | `Pinnacle is -135. We're -127.` / two Leafs sharps at 1.7× | **C** | none | **Staged** · Leafs cashed |
 | 10/18 ~7:51 ET | Hero **GIVE** | `11-1 today. +19.50 units.` / week +35.39u, June +153.99u | **P** | none | **Staged** |
 | 10/18 ~12:43 ET | Hero **GIVE** | `Carolina is -150, on the road.` / $110K at 4.7× | **C** | none | **Staged** |
 | 10/18 ~12:25 ET | Hero **GIVE** | `They got Over 52.5. It's 53.5 now.` / Bills-Raiders | **C** | none | **Staged** |
@@ -42,11 +43,11 @@
 ---
 
 ## Angle lock
-**ONE:** Two sharps are locked on the Leafs at 1.7×, and we have -127 against Pinnacle -135.  
-**Hook:** `Pinnacle is -135. We're -127.`  
-**Body:** 5ce139 at -127 yesterday, +34% · 2e259c at -122 today, 16-11, +$2.3K, $2K ticket · group 36-22, +$62.1K, +30%, L10 10-10 · tracked $13K mostly losers, nothing on San Jose · confirmed $2K · market $54K/$45K · flagged -122, sharp -133 · 3u to win 2.36 · set.  
-**Ask:** none.  
-**Killed:** giving the lead the group's $62K · hit-edge label · HC · gold · saying it is still flagged · the portfolio's other 14 bets · trial paragraph
+**ONE:** The Leafs cashed, and the size today is a spread bettor pressing Delaware.  
+**Hook:** `The Leafs cashed. 3 units.`  
+**Body:** Delaware 29-20, ML 1-1, $3K at 3.5×, market $9.5K on Missouri State, -130 vs Pin -135, 5u, 6:45 · Celtics most tracked money against, $1K at 1.5×, 36-23, beat close 47%, -108 vs Pin -112, 3u, 2:45 · BIG 6-0, +$2.6K, beat close 50%, $524 · Fall50, 50% off first month or week, works after a cancel.  
+**Ask:** Fall50. No link.  
+**Killed:** selling the Delaware month as a moneylines record · calling BIG a size-up · a Leafs score · tier · HC · gold · first-week-free on top of the code · a link in line 1
 
 ---
 
@@ -72,16 +73,16 @@
 
 ---
 
-## FORWARD LOOK — after this Leafs give
-1. **Grade it at -127.** Pinnacle was -135. If Toronto loses, the 10-10 and the loser bar are the reply.
-2. Do not reprint the Sunday 11-1 on the back of this ticket.
-3. No ask.
+## FORWARD LOOK — after this Fall50 ask
+1. **Grade Delaware and the Celtics apart.** Delaware is the 5-unit press. Boston is the fade. BIG is six bets.
+2. If someone replies about the code, answer the checkout. Do not write a second promo tweet today.
+3. The Leafs result is spent. Do not reprint 3 units.
 
-**NOT:** the group's $62K as the lead's month · hit edge as the hook · a second game from the portfolio list
+**NOT:** a second Fall50 open · BIG as a proven closer · Delaware's 29-20 as a moneylines record
 
-**Avatar:** they have a set favorite and a better number than Pinnacle. The last 10 of the pair are even.  
-**Hormozi economics:** give. The price gap is the proof.  
-**Desk scar:** most of the $13,000 on Toronto is from bettors who have been losing. The proven ticket is $2,000.
+**Avatar:** they saw Toronto cash. They need the three tickets and one way back in.  
+**Hormozi economics:** ask, because he put the code on the slate. The plays open.  
+**Desk scar:** the Celtics card says most of the tracked money is against Boston, and that bettor has beaten the close 47% of the time.
 
 ---
 

@@ -1,48 +1,58 @@
-# Twitter — 2026-10-19 · HERO GIVE · Leafs set, -127 against Pinnacle -135
-**Pathway:** Hormozi. One idea. Give. Receipt shape.
+# Twitter — 2026-10-20 · HERO ASK · Leafs cashed, Delaware, Celtics, BIG
+**Pathway:** Hormozi. One idea. Proof opens. Fall50 closes.
 
 | | |
 |--|--|
-| WHO | Anyone looking at Toronto -127 with nine minutes to puck drop. |
-| PURPOSE | **Give.** |
-| ONE | Two sharps are locked on the Leafs at 1.7×, and we have -127 against Pinnacle -135. |
-| SPCL | **C.** The Pinnacle gap. |
-| Ask | **None.** |
+| WHO | Anyone who wants the Tuesday slate and has bounced off a signup before. |
+| PURPOSE | **Ask.** The tickets are the proof. The code is the fork. |
+| ONE | The Leafs cashed, and the size today is a spread bettor pressing Delaware. |
+| SPCL | **P + C.** Yesterday's ticket, then the 3.5×. |
+| Ask | **Fall50.** 50% off the first month or week. Works again after a cancel. No link. |
 
-**Attach:** the Leafs card, then the together list.  
-**SET.** Puck drop **7:40 ET.** Do not say it is still flagged. Do not say gold or HC.
+**Attach:** Delaware card, Celtics card, then the BIG profile.  
+Delaware locks **6:45 ET.** Celtics locks **2:45 ET.** No lock time on the Counter-Strike crop. Do not invent one. Do not say tier, HC, or gold.
 
 ### Receipts
-- Leafs ML **-127**, flagged **-122**. Pinnacle at the lock **-135**. Sharp line **-133**. Fair **-128**.
-- **3.0u**, to win **+2.36u**.
-- Two sharps, both **1.7×**, together **$9,800**. `…5ce139` in at **-127** yesterday, row ROI **+34%**. `…2e259c` in at **-122** today at 12:22 PM, row ROI **+11%**.
-- Card lead is `…2e259c`: **16-11**, 59%, last 30 days **+$2,300**. His proven ticket is **$2,000**. Do not give him the group's $62,100.
-- Group, last 30 days: **+$62,100**, moneylines **36-22**, **+30%**. Last 10: **10-10**.
-- Tracked **$13,000** on the Leafs, nothing on the Sharks. The bar is mostly bettors who have been losing. Confirmed **$2,000** vs **$0**.
-- All money **$54,000** vs **$45,000**.
-- Losing row is $11,000 to $266 on our side. The red bar already shows the losers on Toronto. Leave the row out.
-- Hit edge is +9.9. Leave the label out. Pinnacle is the receipt.
+- Leafs won. The ticket was **3.0u**. Do not invent the score.
+- **Delaware ML -130**, flagged **-131**. Pinnacle **-135**. He filled **-127** at 8:43 AM. **5.0u**, to win +3.70u. Locks 6:45. Kick 7:00.
+- Lead `…4c8ed9`: CFB last 30 **29-20**, **+$9,900**, +23%. All-time **45-33**, +20%. Moneylines last 30 **1-1**, **+$2,000**. All-time moneylines **3-2**. Ticket **$3,000** at **3.5×**. Plays like this **62.3%** at **+2.2%**. Beat close **58%**. Last 10 **7-3**. Visible tape is spreads.
+- Tracked **$3,900** vs nothing. Confirmed **$3,900** vs **$0**. All money **$4,400** Delaware vs **$9,500** Missouri State.
+- **Celtics ML -108**, flagged **-109**. Pinnacle **-112**. **3.0u**, to win +2.68u. Locks 2:45. Tip 3:00.
+- Card: **$8,100** on the side with 1 proven winner, and most of the tracked money is against it. Bar **$5,200** vs **$2,000**, 72% on Boston. Confirmed **$1,700** vs **$0**. All money **$266,000** vs **$206,000**. Losing **$17,000** vs **$6,800** on our side.
+- Profile ticket **$1,000** at **-109**, **1.5×**. NBA last 30 **36-23**, **+$4,300**, +21%. All-time **83-67**. Moneylines last 30 **19-14**, **+$2,000**. Beat close **47%**. Plays like this **54.5%** at **-5%**. Last 10 **5-3**. Steam 8.6% open.
+- **BIG +110**, The MongolZ @ BIG. **$524**, **1.0×**. **6-0**, **+$2,600**, +84%. All-time is the same six bets. Beat close **50%**. No unit size on the crop.
 
 ---
 
 ## COPY THIS
 
 ```
-Pinnacle is -135. We're -127.
-Two sharps are locked on the Leafs. Both at 1.7× their usual size.
+The Leafs cashed. 3 units.
 
-One got in at -127 yesterday. The other got -122 today.
-Together they are 36-22 on moneylines, up $62,100, at +30%.
-The last 10 are 10-10.
+Delaware. 5 units.
+He's 29-20 on college football the last 30 days, up $9,900.
+He almost never bets moneylines. Those are 1-1 in that stretch. All-time he's 3-2.
+Today he has $3,000 on Delaware, 3.5× his usual.
+$3,900 on Delaware. Nothing tracked on Missouri State.
+The rest of the market is $9,500 on Missouri State and $4,400 on Delaware.
+We're -130. Pinnacle is -135. We flagged it at -131.
+Locks 6:45.
 
-The lead is 16-11, up $2,300 the last 30 days. His ticket is $2,000.
-$13,000 is on Toronto. Nothing is on San Jose.
-Most of that $13,000 is from bettors who have been losing.
-Confirmed money is $2,000 on the Leafs and nothing on the Sharks.
+Celtics. 3 units. The NBA regular season starts today.
+Most of the tracked money is against Boston.
+The proven ticket is $1,000, 1.5× his usual. He's 36-23 the last 30 days, up $4,300. All-time he's 83-67.
+He's beaten the close 47% of the time.
+The bar is $5,200 on the Celtics and $2,000 on Detroit.
+We're -108. Pinnacle is -112. We flagged it at -109.
+Locks 2:45.
 
-The rest of the market is $54,000 on Toronto and $45,000 on San Jose.
-We flagged this at -122. The sharp line is -133.
-3 units, to win 2.36. Set.
+Counter-Strike. BIG is +110.
+He's 6-0 since we started tracking him. Up $2,600. Six bets. That's the whole book.
+He's beaten the close 50% of the time.
+His ticket is $524.
+
+Fall50 at checkout. 50% off your first month or your first week.
+It works if you signed up before and cancelled.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
