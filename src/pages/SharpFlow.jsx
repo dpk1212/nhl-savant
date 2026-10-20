@@ -21,6 +21,7 @@ import { useUnitDisplayScale } from '../hooks/useUnitDisplayScale';
 import { useMySharps } from '../hooks/useMySharps';
 import { scaleUnits } from '../lib/unitDisplayScale.js';
 import { redirectToCheckout } from '../utils/stripe';
+import { PAYWALL_PROMO, promoPrice } from '../lib/paywallPromo.js';
 import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
 import ConfirmedActionDesk, { focusMySharpsDesk } from '../components/sharpFlow/ConfirmedActionDesk';
@@ -1039,17 +1040,12 @@ function computeRecentWindowStats(picks, daysBack = 7) {
   return { ready: true, w, l, pu, total, profit, record: `${w}-${l}${pu ? `-${pu}` : ''}` };
 }
 
-// Sharp Flow paywall — opening week (mirrors Pricing.jsx PROMO_CODES.NHL40).
-// NHL40 is monthly/weekly only — annual stays full price (Stripe coupon
-// is 40% once, restricted to scout/elite prices). First week on weekly,
-// first month on monthly. Ends Sunday night ET, opening week.
-const PAYWALL_PROMO = {
-  code: 'NHL40',
-  discount: 0.40,
-  label: 'NHL Opening',
-  endMs: new Date('2026-10-05T04:00:00Z').getTime(), // Mon Oct 5, 12:00am ET
-  tiers: ['elite', 'scout'], // monthly + weekly
-};
+// Sharp Flow paywall — NBA tip-off week (src/lib/paywallPromo.js).
+// FALL50 is monthly/weekly only — annual stays full price. Stripe coupon
+// is 50% once (first week on weekly, first month on monthly).
+const PAYWALL_PROMO_PCT = Math.round((PAYWALL_PROMO.discount || 0) * 100);
+const ELITE_PROMO = promoPrice(25.99);
+const SCOUT_PROMO = promoPrice(7.99);
 
 // Plan order + default selection push Monthly/Weekly. Annual stays available
 // at the bottom — just not the preselected "BEST VALUE" anchor that was
@@ -1060,15 +1056,15 @@ const PAYWALL_PLANS = [
     name: 'Monthly',
     trialDays: 7,
     badge: 'MOST POPULAR',
-    badgePromo: '40% · 1 MONTH',
+    badgePromo: `${PAYWALL_PROMO_PCT}% · 1 MONTH`,
     save: null,
-    savePromo: 'SAVE 40%',
+    savePromo: `SAVE ${PAYWALL_PROMO_PCT}%`,
     promoEligible: true,
-    heroFull: '$25.99', heroPromo: '$15.59', heroPer: '/mo',
+    heroFull: '$25.99', heroPromo: ELITE_PROMO, heroPer: '/mo',
     billFull: null, billPromo: null,
-    chargeFull: '$25.99/mo', chargePromo: '$15.59/mo',
+    chargeFull: '$25.99/mo', chargePromo: `${ELITE_PROMO}/mo`,
     sub: 'One blown $20 parlay costs more',
-    subPromo: '40% off your first month',
+    subPromo: `${PAYWALL_PROMO_PCT}% off your first month`,
     winMath: 'One 1u win (+$91 at $100/unit) covers your next 5 months',
   },
   {
@@ -1076,15 +1072,15 @@ const PAYWALL_PLANS = [
     name: 'Weekly',
     trialDays: 5,
     badge: null,
-    badgePromo: '40% · 1 WEEK',
+    badgePromo: `${PAYWALL_PROMO_PCT}% · 1 WEEK`,
     save: null,
-    savePromo: 'SAVE 40%',
+    savePromo: `SAVE ${PAYWALL_PROMO_PCT}%`,
     promoEligible: true,
-    heroFull: '$7.99', heroPromo: '$4.79', heroPer: '/wk',
+    heroFull: '$7.99', heroPromo: SCOUT_PROMO, heroPer: '/wk',
     billFull: null, billPromo: null,
-    chargeFull: '$7.99/wk', chargePromo: '$4.79/wk',
+    chargeFull: '$7.99/wk', chargePromo: `${SCOUT_PROMO}/wk`,
     sub: 'Less than one stadium beer',
-    subPromo: '40% off your first week',
+    subPromo: `${PAYWALL_PROMO_PCT}% off your first week`,
     winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
   },
   {
@@ -1100,7 +1096,7 @@ const PAYWALL_PLANS = [
     billFull: 'billed $150/yr', billPromo: 'billed $150/yr',
     chargeFull: '$150/yr', chargePromo: '$150/yr',
     sub: 'Cheaper per month than Netflix',
-    subPromo: 'Full year at $12.50/mo — 40% off is weekly & monthly',
+    subPromo: `Full year at $12.50/mo — ${PAYWALL_PROMO_PCT}% off is weekly & monthly`,
     winMath: 'One 1u win (+$91 at $100/unit) covers 90% of your entire year',
   },
 ];
@@ -14550,7 +14546,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           textAlign: 'center',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase', lineHeight: 1.35 }}>
-            NHL OPENING · CODE {promoCode} · {promoPct}% OFF YOUR FIRST WEEK OR MONTH — THROUGH SUNDAY NIGHT ET
+            NBA TIP-OFF · CODE {promoCode} · {promoPct}% OFF YOUR FIRST WEEK OR MONTH — THROUGH {PAYWALL_PROMO.endCopy.toUpperCase()}
           </span>
         </div>
       )}
@@ -14888,7 +14884,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
               }}>
                 <Flame size={13} color={B.gold} />
                 <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
-                  {promoPct}% OFF — ENDS SATURDAY NOON ET
+                  {promoPct}% OFF — ENDS {PAYWALL_PROMO.endCopy.toUpperCase()}
                 </span>
                 <Flame size={13} color={B.gold} />
               </div>
@@ -15130,7 +15126,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     )}
                     {promoActive && !plan.promoEligible && (
                       <span style={{ color: B.textMuted, fontWeight: 600 }}>
-                        {' · 40% off the first week or month is on weekly and monthly'}
+                        {` · ${promoPct}% off the first week or month is on weekly and monthly`}
                       </span>
                     )}
                   </span>

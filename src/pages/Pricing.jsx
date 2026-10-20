@@ -8,6 +8,7 @@ import { redirectToCheckout } from '../utils/stripe';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 import AuthModal from '../components/AuthModal';
 import DiscountLottery from '../components/DiscountLottery';
+import { PROMO_CODES, DEFAULT_PROMO_CODE, PAYWALL_PROMO } from '../lib/paywallPromo.js';
 
 // Prize definitions for calculating discounts
 const PRIZES = [
@@ -22,22 +23,6 @@ const logEvent = (eventName, params) => {
   if (analytics) {
     firebaseLogEvent(analytics, eventName, params);
   }
-};
-
-const PROMO_CODES = {
-  // Opening week — monthly (elite) + weekly (scout) only. Annual (pro) excluded.
-  // Stripe coupon is 40% once (first invoice): one week on Scout, one month on Elite.
-  // Promotion code NHL40 must stay limited to those two prices.
-  NHL40: {
-    code: 'NHL40',
-    discount: 40,
-    label: 'NHL Opening',
-    forLife: false,
-    flash: true,
-    durationLabel: 'your first week (Weekly) or first month (Monthly)',
-    expires: new Date('2026-10-05T04:00:00Z'), // Mon Oct 5, 12:00am ET — end of opening week
-    tiers: ['scout', 'elite'],
-  },
 };
 
 const Pricing = () => {
@@ -55,10 +40,10 @@ const Pricing = () => {
   const [promoApplied, setPromoApplied] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
 
-  // Check for promo code in URL query params — also auto-apply live NHL40
+  // Check for promo code in URL query params — also auto-apply live FALL50
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const promo = (params.get('promo') || 'NHL40')?.toUpperCase();
+    const promo = (params.get('promo') || DEFAULT_PROMO_CODE)?.toUpperCase();
     if (promo && PROMO_CODES[promo]) {
       const p = PROMO_CODES[promo];
       if (p.expires && new Date() > p.expires) return;
@@ -228,7 +213,7 @@ const Pricing = () => {
     return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
   })();
 
-  // During opening week: Monthly + Weekly highlighted. Annual stays full price.
+  // During tip-off week: Monthly + Weekly highlighted. Annual stays full price.
   const tiers = [
     {
       id: 'elite',
@@ -239,12 +224,12 @@ const Pricing = () => {
       trial: '7-day free trial',
       description: 'The full edge, month to month',
       popular: true,
-      popularLabel: flashLive ? 'NHL Opening' : 'Most Popular',
+      popularLabel: flashLive ? (activeDiscount.label || 'NBA Tip-Off') : 'Most Popular',
       priceAnchor: flashLive
-        ? '40% off your first month with code NHL40'
+        ? `${activeDiscount.discount}% off your first month with code ${activeDiscount.code}`
         : 'One blown $20 parlay costs more than this',
       pricePerDay: '87¢/day',
-      savings: flashLive ? 'Save 40% your first month' : 'Save $9/month vs weekly',
+      savings: flashLive ? `Save ${activeDiscount.discount}% your first month` : 'Save $9/month vs weekly',
       saleBadge: ' FIRST MONTH',
       cta: 'Start 7-Day Trial',
       highlight: flashLive ? 'Opening week — monthly & weekly' : 'Most popular with serious bettors'
@@ -258,15 +243,15 @@ const Pricing = () => {
       trial: '5-day free trial',
       description: 'Follow the sharps, week to week',
       featured: flashLive,
-      featuredLabel: 'Opening Week',
+      featuredLabel: 'NBA Tip-Off',
       priceAnchor: flashLive
-        ? '40% off your first week with code NHL40'
+        ? `${activeDiscount.discount}% off your first week with code ${activeDiscount.code}`
         : 'Less than one stadium beer',
       pricePerDay: '$1.14/day',
-      savings: flashLive ? 'Save 40% your first week' : null,
+      savings: flashLive ? `Save ${activeDiscount.discount}% your first week` : null,
       saleBadge: ' FIRST WEEK',
       cta: 'Start 5-Day Trial',
-      highlight: flashLive ? 'Same 40% off for opening week' : 'No commitment — cancel any week'
+      highlight: flashLive ? `Same ${activeDiscount.discount}% off for tip-off week` : 'No commitment — cancel any week'
     },
     {
       id: 'pro',
@@ -306,7 +291,7 @@ const Pricing = () => {
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
-        {/* Opening-week promo banner (NHL40) */}
+        {/* Tip-off week promo banner (FALL50) */}
         {flashLive && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(16,185,129,0.1) 100%)',
@@ -334,7 +319,7 @@ const Pricing = () => {
               color: 'rgba(241,245,249,0.8)',
               lineHeight: 1.5,
             }}>
-              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off {activeDiscount.durationLabel || 'your first week or month'}</strong> on Monthly & Weekly — through opening week, for the start of the NHL season. Annual excluded.
+              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off {activeDiscount.durationLabel || 'your first week or month'}</strong> on Monthly & Weekly — through {PAYWALL_PROMO.endCopy}, for {PAYWALL_PROMO.seasonCopy}. Annual excluded.
               <br />Use code <strong style={{
                 color: '#D4AF37',
                 padding: '0.1rem 0.4rem',
@@ -462,7 +447,7 @@ const Pricing = () => {
               fontSize: window.innerWidth < 640 ? '0.938rem' : '1rem',
               color: 'rgba(241,245,249,0.8)', marginBottom: '0.75rem', lineHeight: 1.5,
             }}>
-              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is {activeDiscount.discount}% off your first week (Weekly) or first month (Monthly). Through Sunday night ET, opening week. Annual excluded.
+              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is {activeDiscount.discount}% off your first week (Weekly) or first month (Monthly). Through {PAYWALL_PROMO.endCopy}. Annual excluded.
             </p>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
@@ -1014,7 +999,7 @@ const Pricing = () => {
                   {tierInfo.description}
                 </p>
 
-                {/* Price — NHL40 only discounts monthly/weekly */}
+                {/* Price — FALL50 only discounts monthly/weekly */}
                 <div style={{ marginBottom: '1rem' }}>
                   {onSale ? (
                     <>
