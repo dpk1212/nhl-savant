@@ -7,17 +7,18 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-20 · HERO **GIVE** · $129K on the Capitals, sharps on the Kings |
+| Last updated | 2026-10-20 · HERO **GIVE** · +41.34u week, Delaware and the Kings cashed, Montreal lost in OT |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** The split is the engagement. No second Fall50. |
-| Account arc | Kings +144 vs Pin +140, 2.5u, 6:55. Delaware -131 to -144, now 3u, 6:45. Montreal -203 vs Pin -214, card win rate 60%. |
+| Ask temperature | **Give.** The week is the proof. No second Fall50. |
+| Account arc | Last 7 days 58-30-2, +41.34u. Soccer 15-2, +18.54u. NHL 15-12, +4.32u. Tonight +2.38u on the three posted. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 10/20 ~6:44 ET | Hero **GIVE** | `$129,000 is on the Capitals.` / two sharps on the Kings +144 | **C + S** | none | **Staged** |
+| 10/20 ~10:09 ET | Hero **GIVE** | `+41.34 units. 58-30-2.` / Delaware 58-35, Kings 5-2, Montreal 4-3 OT | **P + C** | none | **Staged** |
+| 10/20 ~6:44 ET | Hero **GIVE** | `$129,000 is on the Capitals.` / two sharps on the Kings +144 | **C + S** | none | **Staged** · Kings cashed 5-2 |
 | 10/20 ~11:35 ET | Hero **ASK** | `The Leafs cashed. 3 units.` / Delaware 5u, Celtics, BIG, Fall50 | **P + C** | Fall50 | **Staged** |
 | 10/19 ~7:31 ET | Hero **GIVE** | `Pinnacle is -135. We're -127.` / two Leafs sharps at 1.7× | **C** | none | **Staged** · Leafs cashed |
 | 10/18 ~7:51 ET | Hero **GIVE** | `11-1 today. +19.50 units.` / week +35.39u, June +153.99u | **P** | none | **Staged** |
@@ -44,11 +45,11 @@
 ---
 
 ## Angle lock
-**ONE:** $129,000 is on the Capitals. Two sharps are on the Kings at +144.  
-**Hook:** `$129,000 is on the Capitals.`  
-**Body:** 5ce139 $4.8K at +150, ML 21-14, +$59.8K · 2e259c $1.7K at +144, 0-2 at this size · group 38-24, +$63.4K, L10 10-10 · +144 vs Pin +140 · 2.5u, 6:55 · Delaware -131 to -144, 3u, market $137K, tracked-against warning, 6:45 · Montreal -203 vs Pin -214, 60% vs 67% implied, 3u, 6:55.  
+**ONE:** Last 7 days are +41.34 units, and tonight still has an overtime loss in it.  
+**Hook:** `+41.34 units. 58-30-2. Last 7 days.`  
+**Body:** Soccer 15-2, +18.54u, 88.2% · CFB sweep, Delaware 58-35, 3u at -144 flagged -131, +1.88u · Kings 5-2 at +144, 2.5u, +3.50u, $129K was on Washington · Montreal 4-3 OT, up two, -203, card 60% vs 67% implied, -3u · three tickets +2.38u · NHL week 15-12, +4.32u · 90 graded, 207u risked, +20% · v12 last, not in the hook.  
 **Ask:** none.  
-**Killed:** Fall50 repeat · hit-edge label on the Kings · calling the $4,800 a loser ticket · Delaware still at 5 units · gold · HC · a link · three equal essays
+**Killed:** v12 in line 1 · "on fire" · attaching +41.34u to the June 1 badge · a made-up CFB count · a made-up soccer-today record · Fall50 · gold · HC · a link
 
 ---
 
@@ -57,33 +58,32 @@
 
 **Still spent:** grind-EV · better-way · MVP25 · `$5.35` · Vault-as-open · Camden · fade-Trent · `+60u` / `+125u` / `$79.5k`
 
-**Still open:** whatever is live after today’s locks · weekly report · fence-sitter DMs
+**Still open:** tomorrow's card · Celtics and BIG, still ungraded · weekly report · fence-sitter DMs
 
 **Don't:** dollar-stack · trial paragraph · clone today’s `+98.88` · lock-alert identity
 
 ---
 
 ## Unfinished
-- NFL slate today. Wait for his card. Do not invent the sides.
+- Celtics and BIG from the morning slate. He did not grade them. Do not fold them into +41.34u.
 - Grade Jackets, Stars, and Blues as three results if he brings them. Do not blend them into the week line.
-- Grade the Rays -103 after the 5:45 lock
-- Grade the Devils -122 after the 6:55 lock
-- Grade the Oilers +106 after the 8:55 lock
 - Weekly report (Power)
 - Fence-sitter DMs
 
+**Graded tonight:** Delaware 58-35 win, +1.88u. Kings 5-2 win, +3.50u. Montreal 4-3 OT loss, -3u. Three tickets +2.38u.
+
 ---
 
-## FORWARD LOOK — after this Fall50 ask
-1. **Grade Delaware and the Celtics apart.** Delaware is the 5-unit press. Boston is the fade. BIG is six bets.
-2. If someone replies about the code, answer the checkout. Do not write a second promo tweet today.
-3. The Leafs result is spent. Do not reprint 3 units.
+## FORWARD LOOK — after this week grade
+1. **Tomorrow's card.** One live ticket. The week number is spent the moment this posts.
+2. If the OT loss draws replies, answer that ticket. Do not write a second scoreboard.
+3. An ask can wait until a new proof is up. Fall50 already ran today.
 
-**NOT:** a second Fall50 open · BIG as a proven closer · Delaware's 29-20 as a moneylines record
+**NOT:** reprinting +41.34u · calling the NHL week a heater · a v12 launch essay · another Fall50 open · a CFB record we did not count
 
-**Avatar:** they saw Toronto cash. They need the three tickets and one way back in.  
-**Hormozi economics:** ask, because he put the code on the slate. The plays open.  
-**Desk scar:** the Celtics card says most of the tracked money is against Boston, and that bettor has beaten the close 47% of the time.
+**Avatar:** they just watched a dog cash and a favorite lose in overtime on the same night as a +41-unit week. They need the next ticket, not a second trophy.  
+**Hormozi economics:** give. The pudding just landed.  
+**Desk scar:** NHL is 15-12, +4.32 units. Soccer carried the week.
 
 ---
 

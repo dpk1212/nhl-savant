@@ -1,59 +1,47 @@
-# Twitter — 2026-10-20 · HERO GIVE · $129K on the Capitals, sharps on the Kings
-**Pathway:** Hormozi. One idea. Give. The disagreement is the engagement. No ask.
+# Twitter — 2026-10-20 · HERO GIVE · +41.34u week, grade the night
+**Pathway:** Hormozi. One idea. Give. The week is the hook. The overtime loss stays in the recap.
 
 | | |
 |--|--|
-| WHO | Anyone about to lay Washington because the board is loaded. |
-| PURPOSE | **Give.** Replies come from the split, not from a question. |
-| ONE | $129,000 is on the Capitals. Two sharps are on the Kings at +144. |
-| SPCL | **C + S.** The pile, then the price. |
-| Ask | **None.** Do not repeat Fall50. |
+| WHO | Anyone who saw the three posts and is about to treat a green week like a hot streak. |
+| PURPOSE | **Give.** Grade what we posted. No ask. |
+| ONE | Last 7 days are +41.34 units, and tonight still has an overtime loss in it. |
+| SPCL | **P + C.** Say-do on the three tickets. The board is the receipt. |
+| Ask | **None.** Fall50 already went out. Do not repeat it. |
 
-**Attach:** Kings card, then the together list. Delaware and Montreal if they fit.  
-Kings and Montreal lock **6:55 ET.** Delaware locks **6:45.** Do not say gold or HC.
+**Attach:** the all-sports 7-day card, then soccer. NHL card only if a third image fits, because 15-12 is the scar.  
+Do not say gold, HC, or "on fire." Do not put v12 in the first three lines.
 
-### Kings
-- **+144**, flagged **+144**. Pinnacle **+140**. Sharp **+141**. Fair **+146**. Hit edge **+0.6**. Leave the label out.
-- **2.5u**, to win **+3.50u**.
-- `…5ce139`: **$4,800** at **+150**, **1.0×**, in at 1:12 PM. Moneylines **21-14**, 32%, last 30 **+$59,800**. NHL **+$54,100**. Last 10 **5-5**. At this size **3-1** on 4 bets.
-- `…2e259c`: **$1,700** at **+144**, **1.4×**, in at 6:15 PM. Card line **17-12**, last 30 **+$2,400**. Moneylines on the together row **17-10**, **+$3,600**. At this size **0-2** on 2 bets. Last 10 **5-5**.
-- Group: **+$63,400**, **38-24**, **+29%**, last 10 **10-10**. Line **+136 → +140**, marked against.
-- Tracked **$6,500**, nothing on Washington. Confirmed **$1,700** vs **$0**. All money **$25,000** vs **$129,000**. Losing money **$4,800** on the Capitals, **$0** on the Kings.
+### Board (screenshots, 10:09 PM)
+- **All, v12, last 7 days:** +41.34u, +20.0% ROI, ≈ +$4,134 at $100/unit. Header says last 7 days. Subline says 8d · 90 graded. Record **58-30-2**. Win 65.9%. Breakeven 52.4%. Risked 207.0u. Use the header and the record. Do not call it "since June 1." The June-1 badge is a different window.
+- **Soccer:** +18.54u, +38.2%, ≈ +$1,854. 7d · 17 graded. **15-2**. 88.2%. Breakeven 52.4%. Risked 48.5u. He said soccer was awesome today. No separate today record on the card, so do not invent one.
+- **NHL:** +4.32u, +7.0%, ≈ +$432. 8d · 27 graded. **15-12**. 55.6%. Risked 61.5u. This is the scar. The week was not a hockey heater.
 
-### Delaware — update, not a second essay
-- Now **-144**, flagged **-131**. Was 5 units at -130 this morning. Card is **3.0u**, to win +1.88u.
-- Bar **$54,000** vs **$9,200**. Red line: most of the tracked money is against Delaware.
-- All money **$137,000** vs **$56,000**. The $3,000 at **3.5×** is still the lead. Pinnacle **-160**.
-
-### Montreal
-- **-203**, flagged **-203**. Pinnacle **-214**. Sharp **-212**. Fair **-198**. Actual win **60%**. Implied **67%**. Hit edge **-7.0**.
-- **3.0u**, to win +1.40u. Ticket **$2,000** at **1.0×**. `…51176e` NHL **14-6**, **+$17,000**. Moneylines **11-3**, **+$14,000**, +51%. Beat close **57%**. Plays like this **73.3%** at **+21.7%**. Last 10 **6-4**.
-- Nothing tracked on the Sharks. All money **$20,000** vs **$16,000**.
+### Tonight, verified
+- Delaware 58, Missouri State 35. Final box. Card was **-144**, flagged **-131**, **3.0u**, to win **+1.88u**. He said college football was a sweep. Delaware is the one we posted. Do not invent the rest of the CFB count.
+- Kings 5, Capitals 2. **+144**, Pinnacle **+140**, **2.5u**, to win **+3.50u**. $129,000 was on Washington.
+- Sharks 4, Canadiens 3, overtime. Montreal had a two-goal lead. **-203**, price implied 67%, card win rate 60%, **3.0u**, loss **-3u**.
+- The three posted tickets: +1.88 + 3.50 − 3.00 = **+2.38u**.
 
 ---
 
 ## COPY THIS
 
 ```
-$129,000 is on the Capitals.
-$6,500 is on the Kings.
++41.34 units. 58-30-2. Last 7 days.
 
-Two sharps. One has $4,800 in at +150, his usual size. His moneylines are 21-14, up $59,800 the last 30 days.
-The other has $1,700 at +144. He's 0-2 at this size.
-Together they are 38-24, up $63,400. The last 10 are 10-10.
+Soccer is 15-2. +18.54 units. 88.2%. It showed up again today.
+College football was a sweep. Delaware won 58-35.
+The Kings won 5-2 at +144. Montreal lost 4-3 in overtime.
 
-Nothing tracked is on Washington.
-We're +144. Pinnacle is +140. Same number we flagged.
-2.5 units, to win 3.50. Locks 6:55.
+Delaware was 3 units at -144. We flagged it at -131. +1.88 units.
+The Kings were 2.5 units. $129,000 was on the Capitals. Pinnacle was +140. +3.50 units.
+Montreal was 3 units at -203. They had a two-goal lead. The price implied 67%. The card had them at 60%. -3 units.
 
-Delaware moved. We flagged it at -131. It's -144.
-The market is $137,000 on Delaware and $56,000 on Missouri State.
-The card says most of the tracked money is against them.
-He still has $3,000 in, 3.5× his usual. 3 units. Locks 6:45.
-
-Montreal is -203. Pinnacle is -214.
-He's 14-6, up $17,000, at his usual size. The price implies 67%. The card has them at 60%.
-3 units. Locks 6:55.
+The three we posted finished +2.38 units.
+NHL on the same board is 15-12. +4.32 units.
+90 graded. 207 units risked. +20%.
+That's v12.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.
