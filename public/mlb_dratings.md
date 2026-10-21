@@ -40,32 +40,32 @@ Close
 
 # MLB Baseball Predictions
 
-Updated 2 sec ago
+Updated 23 sec ago
 
 All ConferencesALNL
 
-- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#scroll-completed)
-- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#scroll-season)
-- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#scroll-simulation)
-- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#scroll-completed)
+- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#scroll-season)
+- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#scroll-simulation)
+- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#scroll-related)
 
 ## Upcoming Games for October 23, 2026
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#)
 
 | Time | Teams | Pitchers | Win | Best<br>ML | Best<br>Spread | Runs | Total<br>Runs | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [10/23/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/6b3093f7-774e-5d4c-ae62-ad4e6b36860a) | [Tampa Bay Rays](https://www.dratings.com/teams/mlb-baseball-ratings/4-tampa-bay-rays)(98-64)<br>[Milwaukee Brewers](https://www.dratings.com/teams/mlb-baseball-ratings/23-milwaukee-brewers)(103-59) | Unknown<br>Unknown | 43.6%<br>56.4% | +140<br>-150<br>+140<br>-150 | +1½-175<br>-1½+160<br>+1½-175<br>-1½+160 | 3.67<br>4.35 | 8.02 | o6-105<br>u6-105<br>o6+100<br>u6-120 |  |  |
+| [10/23/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/6b3093f7-774e-5d4c-ae62-ad4e6b36860a) | [Tampa Bay Rays](https://www.dratings.com/teams/mlb-baseball-ratings/4-tampa-bay-rays)(98-64)<br>[Milwaukee Brewers](https://www.dratings.com/teams/mlb-baseball-ratings/23-milwaukee-brewers)(103-59) | UNDECIDED UNDECIDED<br>Jacob Misiorowski | 35.5%<br>64.5% | +144<br>-154<br>+150<br>-155 | +1½-175<br>-1½+155<br>+1½-175<br>-1½+160 | 2.68<br>4.19 | 6.87 | o6-105<br>u6-105<br>o6-105<br>u6-115 | Volatility Bet Value Active |  |
 
 Games for Oct 22, 2026
 
-Games for Oct 24, 2026
+[Games for Oct 24, 2026](https://www.dratings.com/predictor/mlb-baseball-predictions/upcoming/2#scroll-upcoming)
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Runs | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -92,13 +92,13 @@ Games for Oct 24, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792523132959#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1792609850228#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
-| **Sportsbooks** | 1 | 1-0 (1.000) | 0 | -0.53529 |  |
-| **Sportsbooks** | 1 | 1-0 (1.000) | 0 | -0.53471 |  |
-| **DRatings** | 1 | 1-0 (1.000) | 0 | -0.56398 | -0.02869<br>-0.02927 |
+| **Sportsbooks** | 0 | 0-0 (0.000) | 0 |  |  |
+| **Sportsbooks** | 0 | 0-0 (0.000) | 0 |  |  |
+| **DRatings** | 0 | 0-0 (0.000) | 0 |  |  |
 
 ## Predictions Methodology
 
