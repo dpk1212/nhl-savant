@@ -23,6 +23,7 @@ import {
 } from '../../../lib/shopTicketLine.js';
 import { unitMarketHit } from '../../../lib/unitMarketHit.js';
 import { portfolioWalletsOnCard } from '../../../lib/mySharps.js';
+import { FAV_JUICE_MUTE_THR } from '../../../lib/walletClvSkill.js';
 
 function fmtAmericanPrice(o) {
   if (o == null || !Number.isFinite(Number(o)) || Number(o) === 0) return '—';
@@ -101,7 +102,7 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
     return pre ? `${label} · ${pre}` : label;
   }
   if (mutedBy === 'fav-juice') {
-    return pre ? `Favorite juicier than -375 · ${pre}` : 'Favorite juicier than -375 — no ticket';
+    return pre ? `Favorite juicier than ${FAV_JUICE_MUTE_THR} · ${pre}` : `Favorite juicier than ${FAV_JUICE_MUTE_THR} — no ticket`;
   }
   if (mutedBy === 'ev-lt2-no-steam') {
     return pre ? `Bad price, no confirmation · ${pre}` : 'Bad price — no market confirmation';
@@ -136,7 +137,7 @@ function noPlayReason({ mutedBy, tapeAction, stakePath, pressReason } = {}) {
   }
   if (mutedBy === 'no-confirmed') return 'No confirmed money on our side';
   if (mutedBy === 'steam-tail') return 'Unconfirmed size — no steam';
-  if (mutedBy === 'fav-juice') return 'Favorite juicier than -375';
+  if (mutedBy === 'fav-juice') return `Favorite juicier than ${FAV_JUICE_MUTE_THR}`;
   if (mutedBy === 'ev-lt2-no-steam') return 'Bad price with no market confirmation';
   if (mutedBy === 'st-fat') return 'Spread/total size';
   if (mutedBy === 'ml-mkt-skill') return 'No ML skill wallet on our side';

@@ -1321,12 +1321,12 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
 {
   const longFav = evaluatePressLadder({
     walletDetails: [wd('aaaaaa', 'home', 3500), wd('dddddd', 'away', 100)],
-    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -400, steamOn: false,
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles, sideOdds: -450, steamOn: false,
   });
-  ok(longFav.units > 0, `ladder would stake a -400 (${longFav.units}u ${longFav.rung})`);
+  ok(longFav.units > 0, `ladder would stake a -450 (${longFav.units}u ${longFav.rung})`);
   const last = applyFavJuiceLastPublish({
     units: longFav.units,
-    odds: -400,
+    odds: -450,
     pickDate: '2026-10-20',
   });
   ok(last.muted && last.units === 0, 'last publish zeros the long-fav press stake');

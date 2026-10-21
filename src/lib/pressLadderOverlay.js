@@ -194,7 +194,7 @@
  * rescues, floors, tape, EDGE bands, the mute chain, HARD+ layer, form×tier)
  * is retired for pickDate ≥ PRESS_LADDER_FROM. The v12 score > 0 gate,
  * manual stake, oddsCap, operator kill, the T-15 freeze, and the
- * heavy-favorite last-publish mute (american odds juicier than -375 → 0u)
+ * heavy-favorite last-publish mute (american odds juicier than -425 → 0u)
  * stay. Press / TRUST / PRESS-M cannot lock those long favorites.
  *
  * Fail-closed: missing walletDetails or profiles → nothing fires (0u).

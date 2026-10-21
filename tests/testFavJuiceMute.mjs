@@ -1,6 +1,6 @@
 /**
  * Heavy-favorite mute (2026-09-05+).
- * Last publish mute after all sizing when american odds are juicier than -375.
+ * Last publish mute after all sizing when american odds are juicier than -425.
  * HOLD identity otherwise. Does not resize, repath, or touch oddsCap.
  * Usage: node tests/testFavJuiceMute.mjs
  */
@@ -28,27 +28,22 @@ function mute(args) {
 ok(isFavJuiceMuteLive('2026-09-05'), 'live on cutover');
 ok(!isFavJuiceMuteLive('2026-09-04'), 'not live before cutover');
 ok(FAV_JUICE_MUTE_FROM === '2026-09-05', 'cutover date');
-ok(FAV_JUICE_MUTE_THR === -375, 'threshold');
+ok(FAV_JUICE_MUTE_THR === -425, 'threshold');
 
-// ── MUTE: juicier than -375 ──────────────────────────────────────────────
+// ── MUTE: juicier than -425 ──────────────────────────────────────────────
 {
-  const r = mute({ units: 2, odds: -376 });
-  ok(r.action === 'MUTE' && r.units === 0, '-376 2u → mute');
+  const r = mute({ units: 2, odds: -426 });
+  ok(r.action === 'MUTE' && r.units === 0, '-426 2u → mute');
   ok(r.mutedBy === FAV_JUICE_MUTED_BY, 'fav-juice stamp');
   ok(r.unitsPrePolicy === 2, 'preserves pre units');
-  ok(r.reason === 'fav_juice_lt_-375', 'reason');
+  ok(r.reason === 'fav_juice_lt_-425', 'reason');
 }
 {
   const r = mute({ units: 5.4, odds: -1567 });
   ok(r.action === 'MUTE' && r.units === 0, 'Miami-style -1567 5.4u → mute');
   ok(r.unitsPrePolicy === 5.4, '5.4u pre identity');
 }
-{
-  const r = mute({ units: 3, odds: -400 });
-  ok(r.action === 'MUTE' && r.units === 0, '-400 3u → mute');
-}
-
-// ── HOLD: -375 and shorter juice, plus-money, missing odds ───────────────
+// ── HOLD: -425 and shorter juice, plus-money, missing odds ───────────────
 function holdExact(args, expectU, msg) {
   const r = mute(args);
   ok(r.units === expectU, `${msg} units ${r.units} === ${expectU}`);
@@ -56,8 +51,9 @@ function holdExact(args, expectU, msg) {
   ok(r.mutedBy == null, `${msg} no mutedBy`);
 }
 
-holdExact({ units: 3, odds: -375 }, 3, '-375 is the cap, not muted');
-holdExact({ units: 3, odds: -374 }, 3, '-374 HOLD');
+holdExact({ units: 3, odds: -425 }, 3, '-425 is the cap, not muted');
+holdExact({ units: 3, odds: -400 }, 3, '-400 is inside the raised cap');
+holdExact({ units: 3, odds: -424 }, 3, '-424 HOLD');
 holdExact({ units: 5.4, odds: -110 }, 5.4, 'small fav HOLD exact units');
 holdExact({ units: 2, odds: 120 }, 2, 'plus-money dog HOLD — oddsCap is a different dial');
 holdExact({ units: 2.03, odds: 250 }, 2.03, 'long dog HOLD — do not steal dog oddsCap');
@@ -104,15 +100,15 @@ holdExact({ units: 2.03, odds: 250 }, 2.03, 'long dog HOLD — do not steal dog 
 
 // ── Last publish: press / TRUST / PRESS-M cannot punch through ───────────
 {
-  const early = mute({ units: 2, odds: -400 });
+  const early = mute({ units: 2, odds: -450 });
   ok(early.action === 'MUTE' && early.units === 0, 'early chain mute zeros the long fav');
   const pressRestake = applyFavJuiceLastPublish({
     units: 3,
-    odds: -400,
+    odds: -450,
     pickDate: '2026-10-20',
     priorPolicy: early,
   });
-  ok(pressRestake.muted === true && pressRestake.units === 0, 'PRESS 3u @ -400 does not lock');
+  ok(pressRestake.muted === true && pressRestake.units === 0, 'PRESS 3u @ -450 does not lock');
   ok(pressRestake.policy?.mutedBy === FAV_JUICE_MUTED_BY, 'last publish stamps fav-juice');
   ok(pressRestake.policy?.unitsPrePolicy === 3, 'preserves the press units as pre');
 }
@@ -128,10 +124,10 @@ holdExact({ units: 2.03, odds: 250 }, 2.03, 'long dog HOLD — do not steal dog 
 {
   const pressM = applyFavJuiceLastPublish({
     units: 1,
-    odds: -376,
+    odds: -426,
     pickDate: '2026-10-20',
   });
-  ok(pressM.muted && pressM.units === 0, 'PRESS-M 1u @ -376 does not lock');
+  ok(pressM.muted && pressM.units === 0, 'PRESS-M 1u @ -426 does not lock');
 }
 {
   const keep = applyFavJuiceLastPublish({

@@ -3782,7 +3782,7 @@ async function createMissingLockedPicks({
       // Heavy-favorite mute — diagnostic for the legacy chain (after
       // steam-tail). Press / TRUST / PRESS-M can restake after this;
       // applyFavJuiceLastPublish re-runs after the ladder. American
-      // odds juicier than -375 → 0u. Does not change oddsCap or path math.
+      // odds juicier than -425 → 0u. Does not change oddsCap or path math.
       let favJuicePolicyCreate = null;
       if (createV121Eligible && peakUnitsApplied > 0) {
         favJuicePolicyCreate = applyFavJuiceMuteOverlay({
@@ -5919,7 +5919,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── Heavy-favorite mute (legacy-chain diagnostic, after steam-tail) ──
-  // American odds juicier than -375 → 0u. Press / TRUST / PRESS-M can
+  // American odds juicier than -425 → 0u. Press / TRUST / PRESS-M can
   // restake after this; applyFavJuiceLastPublish re-runs after the
   // ladder. Does not change oddsCap or path math. Manual stake exempt.
   let favJuicePolicy = null;

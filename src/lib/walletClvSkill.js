@@ -1605,18 +1605,18 @@ export function applyEvDriftEdgeMuteOverlay({
 
 // ── Heavy-favorite mute (last publish choke — does not change math) ────────
 // 2026-09-05+: full-cancel any remaining ticket whose American odds are
-// juicier than -375. Dogs already have a stepped oddsCap. Favorites were
+// juicier than -425. Dogs already have a stepped oddsCap. Favorites were
 // uncapped by odds. This overlay does NOT touch oddsCap / path / press math.
 // The early chain apply (after steam-tail) is diagnostic; press / TRUST /
 // PRESS-M can restake after it. `applyFavJuiceLastPublish` re-runs after
 // those rungs so a long favorite cannot lock.
 // Hard fences:
 //   • odds missing / non-finite → HOLD (do not invent a cut)
-//   • odds >= -375 (incl. plus-money) → HOLD at exact incoming units
+//   • odds >= -425 (incl. plus-money) → HOLD at exact incoming units
 //   • already 0u → PASS
 //   • pre-cutover → EXEMPT
 export const FAV_JUICE_MUTE_FROM = '2026-09-05';
-export const FAV_JUICE_MUTE_THR = -375;
+export const FAV_JUICE_MUTE_THR = -425;
 export const FAV_JUICE_MUTED_BY = 'fav-juice';
 
 export function isFavJuiceMuteLive(pickDate) {
@@ -1625,7 +1625,7 @@ export function isFavJuiceMuteLive(pickDate) {
 
 /**
  * Last publish mute for heavy favorites. Never resizes or repaths.
- * Identity unless published size is still > 0 AND american odds < -375.
+ * Identity unless published size is still > 0 AND american odds < -425.
  */
 export function applyFavJuiceMuteOverlay({
   units,
@@ -1665,7 +1665,7 @@ export function applyFavJuiceMuteOverlay({
 /**
  * Last publish mute after a later rescue (press / TRUST / PRESS-M)
  * restakes a side. Identity unless published size is still > 0 AND
- * american odds < -375. Does not overwrite an earlier MUTE stamp when
+ * american odds < -425. Does not overwrite an earlier MUTE stamp when
  * incoming units are already 0.
  */
 export function applyFavJuiceLastPublish({
