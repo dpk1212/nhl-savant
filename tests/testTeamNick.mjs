@@ -25,6 +25,11 @@ check('White Sox vs Red Sox', shortTeamNick('Chicago White Sox', 'Boston Red Sox
 check('Red Sox vs White Sox', shortTeamNick('Boston Red Sox', 'Chicago White Sox') === 'Red Sox');
 check('Man City vs Hull City', shortTeamNick('Manchester City FC', 'Hull City') === 'Manchester City');
 check('Yankees untouched', shortTeamNick('New York Yankees', 'Boston Red Sox') === 'Yankees');
+check('UNiTY esports vs Betclic Apogee', shortTeamNick('UNiTY esports', 'Betclic Apogee Esports') === 'UNiTY');
+check('Betclic Apogee vs UNiTY', shortTeamNick('Betclic Apogee Esports', 'UNiTY esports') === 'Apogee');
+check('FUT Esports drops the shared suffix', shortTeamNick('FUT Esports', 'TYLOO') === 'FUT');
+check('Aurora Gaming drops the shared suffix', shortTeamNick('Aurora Gaming', 'TheMongolz') === 'Aurora');
+check('case-different Sox still expands', shortTeamNick('Boston Red sox', 'Chicago White Sox') === 'Red sox');
 check('Draw passthrough via teamLabel', teamLabel({ away: 'Chelsea FC', home: 'Fulham FC' }, 'draw') === 'Draw');
 check('Action hero is Chelsea not FC', teamLabel({ away: 'Chelsea FC', home: 'Fulham FC' }, 'away') === 'Chelsea');
 check('Action hero is Fulham not FC', teamLabel({ away: 'Chelsea FC', home: 'Fulham FC' }, 'home') === 'Fulham');

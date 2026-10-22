@@ -126,11 +126,14 @@ const LEAGUE_FALLBACK = {
   LOL: { c1: '#C8AA6E', c2: '#1c180e' },
 };
 
-/** Trailing/leading club tokens that are never a unique nick (Chelsea FC vs Fulham FC). */
-const GENERIC_CLUB_TOKENS = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'club']);
+/** Trailing/leading club tokens that are never a unique nick (Chelsea FC vs Fulham FC, UNiTY esports vs Betclic Apogee Esports). */
+const GENERIC_CLUB_TOKENS = new Set([
+  'fc', 'cf', 'afc', 'sc', 'ac', 'club',
+  'esports', 'esport', 'gaming',
+]);
 
 function clubTokenKey(word) {
-  return String(word || '').toLowerCase().replace(/\./g, '');
+  return String(word || '').toLowerCase().replace(/[.\-]/g, '');
 }
 
 function teamTokens(name) {
@@ -161,7 +164,7 @@ function nickTwo(name) {
 export function shortTeamNick(name, other = null) {
   if (!name) return '—';
   const last = nickLast(name);
-  if (other && nickLast(other) === last) return nickTwo(name);
+  if (other && clubTokenKey(nickLast(other)) === clubTokenKey(last)) return nickTwo(name);
   return last;
 }
 
