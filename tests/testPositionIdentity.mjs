@@ -10,7 +10,7 @@ import {
   positionDocIdLegacy,
   resolvePositionDocId,
 } from '../scripts/lib/positionIdentity.js';
-import { buildGradedPlays } from '../src/lib/mySharpsDesk.js';
+import { buildGradedPlays, marketTape } from '../src/lib/mySharpsDesk.js';
 
 const wallet = '0xe18ecc345e00ee7c4f2d1f676f3dd2acb112f826';
 const base = {
@@ -88,5 +88,48 @@ const plays = buildGradedPlays([
 assert.equal(plays.n, 2, 'both Kennesaw numbers stay on the graded book');
 assert.equal(plays.losses, 2);
 assert.equal(plays.pnl, -35400);
+
+const tape = marketTape(new Map([['12f826', {
+  bySport: {
+    CFB: {
+      form: {
+        recentAction: [
+          {
+            date: '2026-10-22',
+            marketType: 'SPREAD',
+            side: 'home',
+            label: 'Kennesaw State',
+            line: 10.5,
+            gameKey: 'lib_kenn',
+            away: 'Liberty',
+            home: 'Kennesaw State',
+            invested: 27200,
+            dollarPnl: -27200,
+            won: 0,
+          },
+          {
+            date: '2026-10-22',
+            marketType: 'SPREAD',
+            side: 'home',
+            label: 'Kennesaw State',
+            line: 8.5,
+            gameKey: 'lib_kenn',
+            away: 'Liberty',
+            home: 'Kennesaw State',
+            invested: 8200,
+            dollarPnl: -8200,
+            won: 0,
+          },
+        ],
+      },
+    },
+  },
+}]]), '12f826', 'CFB', 'SPREAD');
+assert.equal(tape.plays.length, 2, 'My Sharps tape keeps both Kennesaw losses');
+assert.deepEqual(
+  tape.plays.map((p) => p.pick).sort(),
+  ['Kennesaw State +10.5', 'Kennesaw State +8.5'],
+);
+assert.equal(tape.plays.reduce((s, p) => s + p.pnl, 0), -35400);
 
 console.log('OK — position identity splits alt-line tickets');
