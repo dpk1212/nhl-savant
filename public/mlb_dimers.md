@@ -1,42 +1,36 @@
 # MLB Predictions
 
-MLB predictions for Monday, October 19, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
+MLB predictions for Friday, October 23, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 19 2026Oct 19
+Date: Oct 23 2026Oct 23
 
-[Oct 19, 8:08 PM ET\\
-\\
-R\\
-\\
-H\\
-\\
-E\\
-\\
-![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
-\\
-Guardians \\
-\\
-3 \\
-\\
-7 \\
-\\
-0 \\
+[Oct 23, 8:00 PM ET\\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
-Rays \\
+Rays  N. Martinez \\
 \\
-7 \\
+39.2% \\
 \\
-7 \\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
-0 \\
+37¢\\
 \\
-FINAL\\
+![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
 \\
-See Game Recap](https://www.dimers.com/mlb/predictions/2026_209_tb_cle)
+Brewers  J. Misiorowski \\
+\\
+60.8% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+63¢\\
+\\
+MLB\\
+\\
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_213_mil_tb)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -264,11 +258,11 @@ T&Cs apply.
 
 How to claim
 
-## MLB predictions for Monday
+## MLB predictions for Friday
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Monday, the Rays have a 57.5% chance of beating the Guardians at Tropicana Field.
+On Friday, the Brewers have a 60.9% chance of beating the Rays at American Family Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
