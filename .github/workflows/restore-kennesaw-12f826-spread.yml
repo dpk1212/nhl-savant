@@ -1,0 +1,31 @@
+# One-shot: restore ··12f826 Kennesaw +10.5 LOSS that the line-blind doc id ate.
+name: restore-kennesaw-12f826-spread
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/spread-line-ticket-id-24aa
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Restore missing Kennesaw +10.5 LOSS
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/_restore_kennesaw_12f826_spread.mjs
+      - name: Rebuild wallet profiles so My Sharps shows both losses
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/exportWalletProfiles.js --write-firebase

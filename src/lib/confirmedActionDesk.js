@@ -803,7 +803,7 @@ export function buildConfirmedActionRows({
     const pin = pinMoveFor(pinnacleHistory, sport, gameKey, side, steam);
 
     rows.push({
-      id: `${sport}|${gameKey}|${marketType}|${short}|${side}`,
+      id: `${sport}|${gameKey}|${marketType}|${short}|${side}|${entryLine ?? ''}|${pos.asset ? String(pos.asset).slice(-12) : ''}`,
       sport,
       slug: pos.slug || pos.eventSlug || null,
       gameKey,
