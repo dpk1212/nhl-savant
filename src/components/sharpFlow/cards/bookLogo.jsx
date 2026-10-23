@@ -3,12 +3,7 @@
  * Files live in public/books/ — Cipher SVG app icons where we have them,
  * App Store / site icons otherwise. No letter-mark fallbacks for known books.
  */
-export function shopBookKey(name) {
-  return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-/** Prediction-market / exchange books (Odds API `us_ex`). Not retail "best". */
-export const EXCHANGE_BOOK_KEYS = ['novig', 'polymarket', 'kalshi'];
+export { shopBookKey, EXCHANGE_BOOK_KEYS } from './bookKeys.js';
 
 /** Unique brands with a real mark on disk. Aliases (circasports, hardrockbet) share a file. */
 export const BOOK_LOGO_BRANDS = [

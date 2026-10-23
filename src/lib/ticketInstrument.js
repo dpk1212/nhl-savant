@@ -528,3 +528,62 @@ export function stampTape(bound, tapeNow = null, mainOdds = null) {
   if (bound?.offMain) return null;
   return Number.isFinite(mainOdds) && mainOdds !== 0 ? mainOdds : null;
 }
+
+function juiceClose(a, b, tol = 3) {
+  return Number.isFinite(a) && Number.isFinite(b)
+    && Math.abs(Math.round(a) - Math.round(b)) <= tol;
+}
+
+/**
+ * One-off inverted alts (JSU +4.5 Poly vs book JSU −3): never glue MAIN
+ * juice onto a vault line books do not quote, and never pair a flagged
+ * line with the other venue's American.
+ *
+ * Same-line alts (chi_ten +2.5 / −108) and MAIN tickets are unchanged.
+ * Does not flip the hero line — one-wallet alts (Liberty −3.5) stay.
+ */
+export function repairCrossedLineOdds({
+  heroLine = null,
+  heroOdds = null,
+  mainLine = null,
+  mainOdds = null,
+  vaultLine = null,
+  vaultOdds = null,
+  sameLineBookOdds = null,
+  flaggedLine = null,
+  flaggedOdds = null,
+} = {}) {
+  const offMain = Number.isFinite(heroLine) && Number.isFinite(mainLine)
+    && !linesClose(heroLine, mainLine);
+  const hasSameLineBook = Number.isFinite(sameLineBookOdds) && sameLineBookOdds !== 0;
+  let outHeroOdds = Number.isFinite(heroOdds) && heroOdds !== 0 ? heroOdds : null;
+  let outFlagLine = Number.isFinite(flaggedLine) ? flaggedLine : null;
+  let outFlagOdds = Number.isFinite(flaggedOdds) && flaggedOdds !== 0 ? flaggedOdds : null;
+  let repaired = false;
+
+  if (offMain && !hasSameLineBook && juiceClose(outHeroOdds, mainOdds)
+      && Number.isFinite(vaultOdds) && vaultOdds !== 0) {
+    outHeroOdds = vaultOdds;
+    repaired = true;
+  }
+
+  if (Number.isFinite(outFlagLine) && Number.isFinite(outFlagOdds)) {
+    if (Number.isFinite(mainLine) && linesClose(outFlagLine, mainLine)
+        && juiceClose(outFlagOdds, vaultOdds) && Number.isFinite(mainOdds) && mainOdds !== 0) {
+      outFlagOdds = mainOdds;
+      repaired = true;
+    } else if (Number.isFinite(vaultLine) && linesClose(outFlagLine, vaultLine)
+        && juiceClose(outFlagOdds, mainOdds) && Number.isFinite(vaultOdds) && vaultOdds !== 0) {
+      outFlagOdds = vaultOdds;
+      repaired = true;
+    }
+  }
+
+  return {
+    heroLine,
+    heroOdds: outHeroOdds,
+    flaggedLine: outFlagLine,
+    flaggedOdds: outFlagOdds,
+    repaired,
+  };
+}
