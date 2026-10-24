@@ -1,47 +1,59 @@
-# Twitter — 2026-10-20 · HERO GIVE · +41.34u week, grade the night
-**Pathway:** Hormozi. One idea. Give. The week is the hook. The overtime loss stays in the recap.
+# Twitter — 2026-10-24 · HERO GIVE · Heat 0-2, tracked money on the Hornets
+**Pathway:** Hormozi. One idea. Give. His line is the hook. The split is the proof.
 
 | | |
 |--|--|
-| WHO | Anyone who saw the three posts and is about to treat a green week like a hot streak. |
-| PURPOSE | **Give.** Grade what we posted. No ask. |
-| ONE | Last 7 days are +41.34 units, and tonight still has an overtime loss in it. |
-| SPCL | **P + C.** Say-do on the three tickets. The board is the receipt. |
-| Ask | **None.** Fall50 already went out. Do not repeat it. |
+| WHO | Anyone about to talk themselves into Miami because 0-3 feels impossible. |
+| PURPOSE | **Give.** The question is the fork. No ask. |
+| ONE | The Heat are 0-2, and most of the tracked money is on the Hornets. |
+| SPCL | **C + L.** The piles, then the 0-3 question in his voice. |
+| Ask | **None.** |
 
-**Attach:** the all-sports 7-day card, then soccer. NHL card only if a third image fits, because 15-12 is the scar.  
-Do not say gold, HC, or "on fire." Do not put v12 in the first three lines.
+**Attach:** Heat card, then the 27-11 profile.  
+Do not say gold, tier, HC, or top play. Sharp / fair / hit edge are cut off. Do not invent them.  
+Locks **5:55 PM ET.** Game **6:10** on the card.
 
-### Board (screenshots, 10:09 PM)
-- **All, v12, last 7 days:** +41.34u, +20.0% ROI, ≈ +$4,134 at $100/unit. Header says last 7 days. Subline says 8d · 90 graded. Record **58-30-2**. Win 65.9%. Breakeven 52.4%. Risked 207.0u. Use the header and the record. Do not call it "since June 1." The June-1 badge is a different window.
-- **Soccer:** +18.54u, +38.2%, ≈ +$1,854. 7d · 17 graded. **15-2**. 88.2%. Breakeven 52.4%. Risked 48.5u. He said soccer was awesome today. No separate today record on the card, so do not invent one.
-- **NHL:** +4.32u, +7.0%, ≈ +$432. 8d · 27 graded. **15-12**. 55.6%. Risked 61.5u. This is the scar. The week was not a hockey heater.
+### The record
+- Heat are **0-2**. Opener lost by 25 to Minnesota. Friday: Detroit **128-111**. Saturday is the back-to-back in Charlotte.
+- Hornets are **1-1**. Friday: Atlanta **128-81**.
+- A loss makes Miami **0-3**. First 0-2 start since 2022-23. Leave the history line out. The two scores are enough.
 
-### Tonight, verified
-- Delaware 58, Missouri State 35. Final box. Card was **-144**, flagged **-131**, **3.0u**, to win **+1.88u**. He said college football was a sweep. Delaware is the one we posted. Do not invent the rest of the CFB count.
-- Kings 5, Capitals 2. **+144**, Pinnacle **+140**, **2.5u**, to win **+3.50u**. $129,000 was on Washington.
-- Sharks 4, Canadiens 3, overtime. Montreal had a two-goal lead. **-203**, price implied 67%, card win rate 60%, **3.0u**, loss **-3u**.
-- The three posted tickets: +1.88 + 3.50 − 3.00 = **+2.38u**.
+### The card
+- Heat ML **M -132** (57%), **+0.7%** on the price. Flagged **-141** (59%). Do not sell the +0.7%.
+- **4.0u**, to win **+2.90u**. 4 at -132 is about 3.03 to win. Print the card's 2.90. Do not "correct" it.
+- Tracked **$6.3K** on the Heat, **$31K** on the Hornets. **17%** here. Red line: most of the tracked money is against this one.
+- Proven callout: **$289** at **1.9×**, plus **2 more proven**. This is not the lead's $784.
+- Lead `…d9dcb1`: **27-11**, 71%, L30 **+$4.2K**. Header also shows +29% ROI. Action tab shows **+20% $ ROI** on the same 27-11. Use the dollars.
+- Confirmed **$1.4K** vs **$0**. All money **$214K** vs **$116K**. Losing money **$11K** vs **$31K**. The two $31K figures are separate labels. Do not merge them in the tweet. Losing money stays in the notes.
+- Chart ran from about -165 toward -131. Max **$5K**.
+
+### The profile (same lead, different ticket)
+- **$784** at **60¢ / -150**, placed Oct 23, 11:09 PM ET. Slider **1.4×** usual. Not the card's 1.9×.
+- Beat close **67%**. Plays like this: **61.6%** WR, **+1.6%** ROI. This is the scar. His 71% is the whole NBA book.
+- L10 **9-1**. Unopposed. **Line against.** Last night: Raptors spread -127, $400, 0.7×, W. Raptors ML -203, $813, 1.4×, W. Say he cashed Toronto. Do not list both prices.
+- NBA moneylines **9-3**, **+$2.4K**, +26% $ ROI, 75%. All-time ML matches the L30. Whole record is 27-11.
 
 ---
 
 ## COPY THIS
 
 ```
-+41.34 units. 58-30-2. Last 7 days.
+No way the Heat start 0-3. Right?
 
-Soccer is 15-2. +18.54 units. 88.2%. It showed up again today.
-College football was a sweep. Delaware won 58-35.
-The Kings won 5-2 at +144. Montreal lost 4-3 in overtime.
+They're 0-2. Lost the opener by 25, then 128-111 to Detroit. This is the back-to-back.
 
-Delaware was 3 units at -144. We flagged it at -131. +1.88 units.
-The Kings were 2.5 units. $129,000 was on the Capitals. Pinnacle was +140. +3.50 units.
-Montreal was 3 units at -203. They had a two-goal lead. The price implied 67%. The card had them at 60%. -3 units.
+$31,000 of the tracked money is on the Hornets. $6,300 is on the Heat. 17% of the bar.
+Charlotte lost 128-81 last night.
+The market is $214,000 on Miami and $116,000 on Charlotte.
+Confirmed is $1,400 on the Heat and nothing on the Hornets.
 
-The three we posted finished +2.38 units.
-NHL on the same board is 15-12. +4.32 units.
-90 graded. 207 units risked. +20%.
-That's v12.
+The lead is 27-11, up $4,200. His moneylines are 9-3, up $2,400.
+He's beaten the close 67% of the time. Last 10 are 9-1. He cashed Toronto last night.
+He got in at -150, 1.4× his usual size. We're -132. We flagged it at -141.
+Plays like this are 61.6%, at +1.6%.
+
+Another proven winner has $289 in, 1.9× his usual size, and two more proven are on Miami.
+4 units, to win 2.90. Locks 5:55.
 ```
 
 **Do not post from here.** Stage only. Never auto-publish.

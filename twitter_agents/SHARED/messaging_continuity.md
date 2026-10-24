@@ -7,16 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-10-20 · HERO **GIVE** · +41.34u week, Delaware and the Kings cashed, Montreal lost in OT |
+| Last updated | 2026-10-24 · HERO **GIVE** · Heat 0-2, tracked money on the Hornets |
 | CSV window | Content Sep 17–23. Overlay ask-shape binds. |
-| Ask temperature | **Give.** The week is the proof. No second Fall50. |
-| Account arc | Last 7 days 58-30-2, +41.34u. Soccer 15-2, +18.54u. NHL 15-12, +4.32u. Tonight +2.38u on the three posted. |
+| Ask temperature | **Give.** The 0-3 question is the fork. No ask. |
+| Account arc | Heat ML -132, flagged -141, 4u, lock 5:55. Lead 27-11 at -150. Tracked $31K on Charlotte, market $214K on Miami. |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
+| 10/24 ~11:35 ET | Hero **GIVE** | `No way the Heat start 0-3.` / $31K tracked on the Hornets | **C + L** | none | **Staged** |
 | 10/20 ~10:09 ET | Hero **GIVE** | `+41.34 units. 58-30-2.` / Delaware 58-35, Kings 5-2, Montreal 4-3 OT | **P + C** | none | **Staged** |
 | 10/20 ~6:44 ET | Hero **GIVE** | `$129,000 is on the Capitals.` / two sharps on the Kings +144 | **C + S** | none | **Staged** · Kings cashed 5-2 |
 | 10/20 ~11:35 ET | Hero **ASK** | `The Leafs cashed. 3 units.` / Delaware 5u, Celtics, BIG, Fall50 | **P + C** | Fall50 | **Staged** |
@@ -45,11 +46,11 @@
 ---
 
 ## Angle lock
-**ONE:** Last 7 days are +41.34 units, and tonight still has an overtime loss in it.  
-**Hook:** `+41.34 units. 58-30-2. Last 7 days.`  
-**Body:** Soccer 15-2, +18.54u, 88.2% · CFB sweep, Delaware 58-35, 3u at -144 flagged -131, +1.88u · Kings 5-2 at +144, 2.5u, +3.50u, $129K was on Washington · Montreal 4-3 OT, up two, -203, card 60% vs 67% implied, -3u · three tickets +2.38u · NHL week 15-12, +4.32u · 90 graded, 207u risked, +20% · v12 last, not in the hook.  
+**ONE:** The Heat are 0-2, and most of the tracked money is on the Hornets.  
+**Hook:** `No way the Heat start 0-3. Right?`  
+**Body:** Opener by 25, Detroit 128-111, back-to-back · tracked $31K vs $6.3K, 17% · Charlotte lost 128-81 · market $214K vs $116K · confirmed $1.4K vs $0 · lead 27-11, +$4.2K, ML 9-3 +$2.4K, beat close 67%, L10 9-1, in at -150 1.4×, we're -132 flagged -141 · plays like this 61.6% at +1.6% · other proven $289 at 1.9× plus two more · 4u to win 2.90 · lock 5:55.  
 **Ask:** none.  
-**Killed:** v12 in line 1 · "on fire" · attaching +41.34u to the June 1 badge · a made-up CFB count · a made-up soccer-today record · Fall50 · gold · HC · a link
+**Killed:** gold · tier · HC · Giannis as the reason · merging the $289 ticket with the $784 ticket · merging +29% ROI with +20% dollar ROI · inventing the cut-off sharp/fair/hit-edge row · Fall50 · a link
 
 ---
 
@@ -58,13 +59,14 @@
 
 **Still spent:** grind-EV · better-way · MVP25 · `$5.35` · Vault-as-open · Camden · fade-Trent · `+60u` / `+125u` / `$79.5k`
 
-**Still open:** tomorrow's card · Celtics and BIG, still ungraded · weekly report · fence-sitter DMs
+**Still open:** grade the Heat after 5:55 · Celtics and BIG, still ungraded · weekly report · fence-sitter DMs
 
 **Don't:** dollar-stack · trial paragraph · clone today’s `+98.88` · lock-alert identity
 
 ---
 
 ## Unfinished
+- Grade Heat ML after the 5:55 lock. 4 units at -132, to win 2.90 on the card.
 - Celtics and BIG from the morning slate. He did not grade them. Do not fold them into +41.34u.
 - Grade Jackets, Stars, and Blues as three results if he brings them. Do not blend them into the week line.
 - Weekly report (Power)
@@ -74,16 +76,16 @@
 
 ---
 
-## FORWARD LOOK — after this week grade
-1. **Tomorrow's card.** One live ticket. The week number is spent the moment this posts.
-2. If the OT loss draws replies, answer that ticket. Do not write a second scoreboard.
-3. An ask can wait until a new proof is up. Fall50 already ran today.
+## FORWARD LOOK — after this Heat post
+1. **Grade it.** 0-3 or the first win. Either result is the next post. Do not preview a second side before this locks.
+2. If replies argue Charlotte, point at the $31,000 and the 61.6%. Do not write a second Heat essay.
+3. An ask waits. This is a give.
 
-**NOT:** reprinting +41.34u · calling the NHL week a heater · a v12 launch essay · another Fall50 open · a CFB record we did not count
+**NOT:** reprinting +41.34u · a Giannis redemption post · calling 27-11 his moneyline record · gold · tier
 
-**Avatar:** they just watched a dog cash and a favorite lose in overtime on the same night as a +41-unit week. They need the next ticket, not a second trophy.  
-**Hormozi economics:** give. The pudding just landed.  
-**Desk scar:** NHL is 15-12, +4.32 units. Soccer carried the week.
+**Avatar:** they want to believe 0-3 can't happen. They need the pile on the Hornets and the price he already missed.  
+**Hormozi economics:** give. The question is the engagement.  
+**Desk scar:** plays like this are 61.6% at +1.6%, and the line has already moved against his -150.
 
 ---
 
