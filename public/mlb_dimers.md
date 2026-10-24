@@ -4,33 +4,33 @@ MLB predictions for Friday, October 23, 2026, powered by advanced data science. 
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 23 2026Oct 23
+Date: Oct 24 2026Oct 24
 
-[Oct 23, 8:00 PM ET\\
+[Oct 24, 8:00 PM ET\\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
-Rays  N. Martinez \\
+Rays  D. Rasmussen \\
 \\
-39.2% \\
-\\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
-\\
-37¢\\
-\\
-![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
-\\
-Brewers  J. Misiorowski \\
-\\
-60.8% \\
+47.4% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-63¢\\
+48¢\\
+\\
+![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
+\\
+Brewers  L. Henderson \\
+\\
+52.6% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+53¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_213_mil_tb)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_214_mil_tb)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -262,7 +262,7 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Friday, the Brewers have a 60.9% chance of beating the Rays at American Family Field.
+On Friday, the Brewers have a 60.8% chance of beating the Rays at American Family Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
