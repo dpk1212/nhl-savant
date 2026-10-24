@@ -287,6 +287,25 @@ function espnEventDateET(e) {
   return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
+// ESPN stamps postponed / canceled / suspended games as state=post with
+// empty scores. parseInt(undefined)||0 then grades that as 0-0 — Overs
+// become fake LOSS, Unders fake WIN (2026-10-16 TB@CLE rainout: Over 6.5
+// shipped -2u). Deny no-play statuses before treating post as a final.
+function isEspnPlayableFinal(statusType) {
+  if (!statusType) return false;
+  const name = String(statusType.name || '');
+  if (name.startsWith('STATUS_POSTPONED')) return false;
+  if (name.startsWith('STATUS_CANCELED')) return false;
+  if (name.startsWith('STATUS_CANCELLED')) return false;
+  if (name.startsWith('STATUS_SUSPENDED')) return false;
+  if (name.startsWith('STATUS_RAIN_DELAY')) return false;
+  if (name.startsWith('STATUS_DELAYED')) return false;
+  if (name.startsWith('STATUS_FORFEIT')) return false;
+  return name.startsWith('STATUS_FINAL')
+    || statusType.completed === true
+    || statusType.state === 'post';
+}
+
 async function fetchMLBFinalsFromStatsApi(dateStr) {
   if (!dateStr) return [];
   try {
@@ -330,10 +349,7 @@ async function fetchMLBFinalGames(dateStr) {
     const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
     const data = await espnJson(`${ESPN_MLB_URL}${ymd}`);
     const espnGames = !data ? [] : (data.events || [])
-      .filter(e => {
-        const st = e.competitions?.[0]?.status?.type;
-        return st?.state === 'post' || st?.completed;
-      })
+      .filter(e => isEspnPlayableFinal(e.competitions?.[0]?.status?.type))
       .map(e => {
         const comp = e.competitions[0];
         const comps = comp.competitors || [];
@@ -364,10 +380,7 @@ async function fetchNBAFinalGames(dateStr) {
     const data = await espnJson(`${ESPN_NBA_URL}${ymd}`);
     if (!data) return [];
     return (data.events || [])
-      .filter(e => {
-        const st = e.competitions?.[0]?.status?.type;
-        return st?.state === 'post' || st?.completed;
-      })
+      .filter(e => isEspnPlayableFinal(e.competitions?.[0]?.status?.type))
       .map(e => {
         const comp = e.competitions[0];
         const comps = comp.competitors || [];
@@ -395,10 +408,7 @@ async function fetchWNBAFinalGames(dateStr) {
     const data = await espnJson(`${ESPN_WNBA_URL}${ymd}`);
     if (!data) return [];
     return (data.events || [])
-      .filter(e => {
-        const st = e.competitions?.[0]?.status?.type;
-        return st?.state === 'post' || st?.completed;
-      })
+      .filter(e => isEspnPlayableFinal(e.competitions?.[0]?.status?.type))
       .map(e => {
         const comp = e.competitions[0];
         const comps = comp.competitors || [];
@@ -430,7 +440,7 @@ async function fetchWNBAFinalGames(dateStr) {
 
 function mapEspnNflEvent(e) {
   const st = e.competitions?.[0]?.status?.type;
-  if (!(st?.state === 'post' || st?.completed || String(st?.name || '').startsWith('STATUS_FINAL'))) {
+  if (!isEspnPlayableFinal(st)) {
     return null;
   }
   const comp = e.competitions[0];
@@ -547,7 +557,7 @@ async function fetchNFLFinalGames(dateStr) {
 
 function mapEspnCfbEvent(e) {
   const st = e.competitions?.[0]?.status?.type;
-  if (!(st?.state === 'post' || st?.completed || String(st?.name || '').startsWith('STATUS_FINAL'))) {
+  if (!isEspnPlayableFinal(st)) {
     return null;
   }
   const comp = e.competitions[0];
@@ -665,7 +675,7 @@ async function fetchSOCFinalGames(dateStr) {
       if (!data) continue;
       for (const e of data.events || []) {
         const st = e.competitions?.[0]?.status?.type;
-        if (!(st?.state === 'post' || st?.completed)) continue;
+        if (!isEspnPlayableFinal(st)) continue;
         const comp = e.competitions[0];
         const comps = comp.competitors || [];
         const away = comps.find(c => c.homeAway === 'away') || {};
@@ -709,12 +719,7 @@ async function fetchUFCFinalFights(dateStr) {
       const cardDateET = espnEventDateET(ev);
       for (const comp of ev.competitions || []) {
         const st = comp.status?.type;
-        const name = st?.name || '';
-        if (name.startsWith('STATUS_POSTPONED') || name.startsWith('STATUS_CANCELED')
-          || name.startsWith('STATUS_CANCELLED') || name.startsWith('STATUS_SUSPENDED')) {
-          continue;
-        }
-        if (st?.state !== 'post' && !st?.completed && !name.startsWith('STATUS_FINAL')) continue;
+        if (!isEspnPlayableFinal(st)) continue;
         const comps = comp.competitors || [];
         if (comps.length < 2) continue;
         const fighterName = (c) => c.athlete?.displayName || c.team?.displayName || c.team?.name || '';
@@ -844,12 +849,7 @@ async function fetchATPFinalMatches(dateStr) {
           const typeSlug = comp.type?.slug || '';
           if (typeSlug && typeSlug !== 'mens-singles') continue;
           const st = comp.status?.type;
-          const name = st?.name || '';
-          if (name.startsWith('STATUS_POSTPONED') || name.startsWith('STATUS_CANCELED')
-            || name.startsWith('STATUS_CANCELLED') || name.startsWith('STATUS_SUSPENDED')) {
-            continue;
-          }
-          if (st?.state !== 'post' && !st?.completed && !name.startsWith('STATUS_FINAL')) continue;
+          if (!isEspnPlayableFinal(st)) continue;
           const comps = comp.competitors || [];
           if (comps.length < 2) continue;
           const nameOf = (c) => c.athlete?.displayName || c.athlete?.fullName || '';
@@ -1803,7 +1803,7 @@ async function main() {
 }
 
 // Exported for tests (tests/testGradeDateGuard.mjs) — pure helpers, no I/O.
-export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone };
+export { espnEventDateET, isEspnPlayableFinal, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone };
 
 // Only run when executed directly (node scripts/gradeSharpActions.js), so
 // tests can import the helpers without triggering a live grading pass.
