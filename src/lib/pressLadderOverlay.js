@@ -214,6 +214,19 @@
  * heavy-favorite last-publish mute (american odds juicier than -425 → 0u)
  * stay. Press / TRUST / PRESS-M cannot lock those long favorites.
  *
+ * Press-edge / net clamp (PRESS_EDGE_NET_FROM, 2026-10-25) — last size
+ * cut, after the ladder, the odds cap and the favorite-juice mute.
+ * Live card Oct 6–25, the units that actually shipped: press edge in
+ * [0, 5) at 2u or more was 23-31, −35.0u, and still −20.2u when the
+ * close record was healthy; press edge under 0 with net ≤ −8 at 2u or
+ * more was 7-14, −25.6u, and none of those plays are in the first cell.
+ * Both go to 0u. A favorite with a healthier close record stays (26-7,
+ * +21.1u at 3u+). Press edge of 5 or more stays, including a bad close
+ * record (15-9, +11.5u). Under 2u stays. Missing edge or missing net
+ * fails open on the clause that needs it. Manual stake and operator
+ * kill still win. Compared at the stamped tenth, the same number the
+ * card stores on v8_pressEdge.
+ *
  * Fail-closed: missing walletDetails or profiles → nothing fires (0u).
  */
 import { isConfirmedSportRec } from './whitelistTier.js';
@@ -240,6 +253,19 @@ export const PRESS_BAND_4_UNITS = [2, 1, 2];
 export const PRESS_DOG_IMPLIED_MAX = 0.50;
 export const PRESS_DOG_UNITS = 1;
 export const PRESS_ST_IMPLIED_PCT = 52.4;
+
+/**
+ * Last size clamp (2026-10-25). After the ladder, odds cap and fav-juice
+ * have already set the units that would ship.
+ *   hole    — stamped press edge in [0, 5) and units ≥ 2 → 0
+ *   closers — stamped press edge < 0 and netMeanPrior ≤ −8 and units ≥ 2 → 0
+ */
+export const PRESS_EDGE_NET_FROM = '2026-10-25';
+export const PRESS_EDGE_NET_HOLE_MIN = 0;
+export const PRESS_EDGE_NET_HOLE_MAX = 5;
+export const PRESS_EDGE_NET_BAD = -8;
+export const PRESS_EDGE_NET_MIN_UNITS = 2;
+export const PRESS_EDGE_NET_MUTED_BY = 'press-edge-net';
 
 /**
  * Rung sizing (re-sized 2026-10-07 from the Aug 1 → Oct 5 audit, every
@@ -584,6 +610,83 @@ export function isPressLadderLive(pickDate) {
 
 export function isPressStampLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= PRESS_STAMP_FROM;
+}
+
+export function isPressEdgeNetLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= PRESS_EDGE_NET_FROM;
+}
+
+/** Stamped press edge: one decimal, the same rounding v8_pressEdge uses. */
+export function stampedPressEdge(edge) {
+  if (edge == null || edge === '') return null;
+  const n = Number(edge);
+  if (!Number.isFinite(n)) return null;
+  const rounded = Math.round(n * 10) / 10;
+  return rounded === 0 ? 0 : rounded;
+}
+
+/**
+ * Last size clamp. Identity unless the shipped units are at least 2 and
+ * the side is in one of the two cells. Pre-cutover, a missing press edge,
+ * and a missing net (on the closer cell only) leave the units alone.
+ *
+ * @returns {{
+ *   units: number, action: 'MUTE'|'HOLD'|'PASS'|'EXEMPT', reason: string|null,
+ *   mutedBy: string|null, unitsPrePolicy: number, clause: 'hole'|'closers'|null,
+ * }}
+ */
+export function applyPressEdgeNetClamp({
+  units,
+  pressEdge = null,
+  netMeanPrior = null,
+  pickDate = null,
+} = {}) {
+  const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
+  const hold = (action, reason = null) => ({
+    units: pre,
+    action,
+    reason,
+    mutedBy: null,
+    unitsPrePolicy: pre,
+    clause: null,
+  });
+  if (!(pre >= PRESS_EDGE_NET_MIN_UNITS)) return hold('PASS');
+  if (!isPressEdgeNetLive(pickDate)) return hold('EXEMPT', 'pre_cutover');
+  const edge = stampedPressEdge(pressEdge);
+  const netRaw = netMeanPrior == null || netMeanPrior === '' ? null : Number(netMeanPrior);
+  const netIn = netRaw != null && Number.isFinite(netRaw);
+  if (edge != null && edge >= PRESS_EDGE_NET_HOLE_MIN && edge < PRESS_EDGE_NET_HOLE_MAX) {
+    return {
+      units: 0,
+      action: 'MUTE',
+      reason: 'press_edge_0_5',
+      mutedBy: PRESS_EDGE_NET_MUTED_BY,
+      unitsPrePolicy: pre,
+      clause: 'hole',
+    };
+  }
+  if (edge != null && edge < 0 && netIn && netRaw <= PRESS_EDGE_NET_BAD) {
+    return {
+      units: 0,
+      action: 'MUTE',
+      reason: 'press_edge_neg_bad_net',
+      mutedBy: PRESS_EDGE_NET_MUTED_BY,
+      unitsPrePolicy: pre,
+      clause: 'closers',
+    };
+  }
+  return hold('HOLD');
+}
+
+/** Firestore fields for the clamp. Null reason / clause clear a prior mute. */
+export function pressEdgeNetStamp(policy) {
+  if (!policy) return {};
+  return {
+    v8_pressEdgeNetAction: policy.action,
+    v8_pressEdgeNetReason: policy.reason ?? null,
+    v8_pressEdgeNetClause: policy.clause ?? null,
+    v8_unitsPrePressEdgeNet: policy.unitsPrePolicy,
+  };
 }
 
 export function isPressMirrorLive(pickDate) {

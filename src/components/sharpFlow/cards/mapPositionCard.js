@@ -2026,6 +2026,8 @@ export function mapLockedPickToCardFixture(pick, {
     fairBook: pick.fairBook || pick.oddsSource || pick.book || null,
     tierPerf: tierPerf || null,
     mutedBy: pick.mutedBy || null,
+    pressEdgeNetReason: pick.v8_pressEdgeNetReason || null,
+    unitsPrePressEdgeNet: Number.isFinite(pick.v8_unitsPrePressEdgeNet) ? pick.v8_unitsPrePressEdgeNet : null,
     unitsPreTape: Number.isFinite(pick.unitsPreTape) ? pick.unitsPreTape
       : Number.isFinite(pick.v8_unitsPreTape) ? pick.v8_unitsPreTape
       : null,

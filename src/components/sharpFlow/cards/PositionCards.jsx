@@ -73,9 +73,9 @@ function pressGateCopy(pressReason, { long = false } = {}) {
 }
 
 /** Audit tooltip for a 0u / NO PLAY card — technical mute reason. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, unitsPreHardAg, unitsPreHardStFor, steamTailReason, pressReason, stakePath } = {}) {
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, unitsPreSteamTail, unitsPreFavJuice, unitsPreStFat, unitsPreMarketSkill, unitsPreHardAg, unitsPreHardStFor, unitsPrePressEdgeNet, steamTailReason, pressReason, pressEdgeNetReason, stakePath } = {}) {
   const preU = [
-    unitsPreHardStFor, unitsPreHardAg, unitsPreMarketSkill, unitsPreStFat, unitsPreFavJuice, unitsPreSteamTail,
+    unitsPrePressEdgeNet, unitsPreHardStFor, unitsPreHardAg, unitsPreMarketSkill, unitsPreStFat, unitsPreFavJuice, unitsPreSteamTail,
     unitsPreNoConfirmed, unitsPreMaxSrSub4, unitsPreFlinchFailOpen, unitsPreTape,
   ].find((n) => Number.isFinite(n) && n > 0) ?? null;
   const pre = preU != null
@@ -122,6 +122,12 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   if (mutedBy === 'hard-ag') {
     return pre ? `Best wallet against us · ${pre}` : 'Best wallet against us';
   }
+  if (mutedBy === 'press-edge-net') {
+    const which = pressEdgeNetReason === 'press_edge_neg_bad_net'
+      ? 'Favorite, wallets missing the close'
+      : 'Book within 5 points of the price';
+    return pre ? `${which} · ${pre}` : `${which} — no ticket`;
+  }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
   if (mutedBy === 'press-gate' || mutedBy === 'fade-f-veto') return pressGateCopy(pressReason, { long: true });
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
@@ -131,7 +137,7 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
 }
 
 /** Subscriber line under NO PLAY — why this is not a lock. */
-function noPlayReason({ mutedBy, tapeAction, stakePath, pressReason } = {}) {
+function noPlayReason({ mutedBy, tapeAction, stakePath, pressReason, pressEdgeNetReason } = {}) {
   if (mutedBy === 'tape-weak' || tapeAction === 'mute' || tapeAction === 'MUTE') {
     return 'Muted on tape';
   }
@@ -144,6 +150,11 @@ function noPlayReason({ mutedBy, tapeAction, stakePath, pressReason } = {}) {
   if (mutedBy === 'st-qual-wipe') return 'Qualified spread/total money not on our side';
   if (mutedBy === 'st-hard-slip' || mutedBy === 'st-hard-for') return 'No tracked sharp on our side';
   if (mutedBy === 'hard-ag') return 'Best wallet on the other side';
+  if (mutedBy === 'press-edge-net') {
+    return pressEdgeNetReason === 'press_edge_neg_bad_net'
+      ? 'Favorite, wallets missing the close'
+      : 'Book within 5 points of the price';
+  }
   if (mutedBy === 'press-gate' || mutedBy === 'fade-f-veto') return pressGateCopy(pressReason);
   if (stakePath === 'FADE') return "Didn't meet the size bar";
   return "Didn't meet the size bar";
@@ -3141,6 +3152,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
     unitsPreHardStFor: f.unitsPreHardStFor,
     steamTailReason: f.steamTailReason || f.v8_steamTailReason || null,
     pressReason: f.pressReason || f.v8_pressReason || null,
+    pressEdgeNetReason: f.pressEdgeNetReason || f.v8_pressEdgeNetReason || null,
+    unitsPrePressEdgeNet: f.unitsPrePressEdgeNet,
     stakePath: f.stakePath,
   };
   const muteTip = trackedMuteLabel(muteArgs);

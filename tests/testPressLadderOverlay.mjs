@@ -13,6 +13,12 @@ import {
   isHeavyFavorite,
   isPressLadderLive,
   isPressStampLive,
+  isPressEdgeNetLive,
+  applyPressEdgeNetClamp,
+  pressEdgeNetStamp,
+  stampedPressEdge,
+  PRESS_EDGE_NET_FROM,
+  PRESS_EDGE_NET_MUTED_BY,
   PRESS_LADDER_FROM,
   PRESS_STAMP_FROM,
   PRESS_STAKE_TIER,
@@ -1418,6 +1424,40 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   });
   ok(last.muted && last.units === 0, 'last publish zeros the long-fav press stake');
   eq(last.policy?.mutedBy, FAV_JUICE_MUTED_BY, 'mutedBy=fav-juice after press');
+}
+
+// Last size clamp: two cells at 2u+ go to 0. Everything else keeps its size.
+{
+  const LIVE = '2026-10-25';
+  const PRE = '2026-10-24';
+  eq(isPressEdgeNetLive(LIVE), true, 'clamp live on the cutover date');
+  eq(isPressEdgeNetLive(PRE), false, 'clamp off the day before');
+  eq(PRESS_EDGE_NET_FROM, LIVE, 'cutover date');
+  eq(stampedPressEdge(4.95), 5, '4.95 stamps as 5 and stays');
+  eq(stampedPressEdge(-0.04), 0, '-0.04 stamps as 0 and is the hole');
+  const hole = applyPressEdgeNetClamp({ units: 4, pressEdge: 3.2, netMeanPrior: 2, pickDate: LIVE });
+  eq(hole.units, 0, 'hole 4u → 0'); eq(hole.action, 'MUTE', 'hole mute'); eq(hole.clause, 'hole', 'hole clause');
+  eq(hole.reason, 'press_edge_0_5', 'hole reason'); eq(hole.mutedBy, PRESS_EDGE_NET_MUTED_BY, 'hole mutedBy');
+  eq(hole.unitsPrePolicy, 4, 'hole remembers the ladder size');
+  // Healthy net does not save the hole.
+  eq(applyPressEdgeNetClamp({ units: 3, pressEdge: 0, netMeanPrior: 4, pickDate: LIVE }).units, 0, 'edge 0 is the hole');
+  eq(applyPressEdgeNetClamp({ units: 2, pressEdge: 4.94, netMeanPrior: 9, pickDate: LIVE }).units, 0, '4.94 stamps as 4.9');
+  eq(applyPressEdgeNetClamp({ units: 4, pressEdge: 4.95, netMeanPrior: -20, pickDate: LIVE }).units, 4, 'stamped 5 stays, even with a bad net');
+  eq(applyPressEdgeNetClamp({ units: 5, pressEdge: 12, netMeanPrior: -12, pickDate: LIVE }).units, 5, 'edge 5+ stays');
+  const closers = applyPressEdgeNetClamp({ units: 3, pressEdge: -2.4, netMeanPrior: -8, pickDate: LIVE });
+  eq(closers.units, 0, 'favorite with net -8 → 0'); eq(closers.clause, 'closers', 'closers clause');
+  eq(closers.reason, 'press_edge_neg_bad_net', 'closers reason');
+  eq(applyPressEdgeNetClamp({ units: 4, pressEdge: -1, netMeanPrior: -7.99, pickDate: LIVE }).units, 4, 'net better than -8 stays');
+  eq(applyPressEdgeNetClamp({ units: 4, pressEdge: -6, netMeanPrior: null, pickDate: LIVE }).units, 4, 'missing net fails the closer clause open');
+  eq(applyPressEdgeNetClamp({ units: 4, pressEdge: null, netMeanPrior: -20, pickDate: LIVE }).units, 4, 'missing edge fails open');
+  eq(applyPressEdgeNetClamp({ units: 1, pressEdge: 2, netMeanPrior: -20, pickDate: LIVE }).action, 'PASS', '1u stays');
+  eq(applyPressEdgeNetClamp({ units: 1.5, pressEdge: 1, netMeanPrior: -20, pickDate: LIVE }).units, 1.5, '1.5u stays');
+  const pre = applyPressEdgeNetClamp({ units: 4, pressEdge: 1, netMeanPrior: -20, pickDate: PRE });
+  eq(pre.units, 4, 'day before the cutover is unchanged'); eq(pre.action, 'EXEMPT', 'pre-cutover exempt');
+  const st = pressEdgeNetStamp(hole);
+  eq(st.v8_pressEdgeNetAction, 'MUTE', 'stamp action'); eq(st.v8_pressEdgeNetClause, 'hole', 'stamp clause');
+  eq(st.v8_unitsPrePressEdgeNet, 4, 'stamp pre units');
+  eq(pressEdgeNetStamp(applyPressEdgeNetClamp({ units: 4, pressEdge: 8, pickDate: LIVE })).v8_pressEdgeNetReason, null, 'hold clears the reason');
 }
 
 console.log(`testPressLadderOverlay: ${n} assertions passed`);
