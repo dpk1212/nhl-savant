@@ -4,33 +4,33 @@ MLB predictions for Friday, October 23, 2026, powered by advanced data science. 
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 24 2026Oct 24
+Date: Oct 26 2026Oct 26
 
-[Oct 24, 8:00 PM ET\\
-\\
-![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
-\\
-Rays  D. Rasmussen \\
-\\
-47.4% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-48¢\\
+[Oct 26, 8:00 PM ET\\
 \\
 ![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
 \\
-Brewers  L. Henderson \\
+Brewers  R. Gasser \\
 \\
-52.6% \\
+47.6% \\
+\\
+![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
+\\
++114\\
+\\
+![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
+\\
+Rays  F. Peralta \\
+\\
+52.4% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-53¢\\
+51¢\\
 \\
 MLB\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_214_mil_tb)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_216_tb_mil)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
