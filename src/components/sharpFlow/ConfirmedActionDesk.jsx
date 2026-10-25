@@ -815,7 +815,7 @@ function ActionExpandPanel({ row, isMobile }) {
           </div>
           {[...visibleLegs].reverse().map((leg, i) => (
             <TicketLegRow
-              key={`${leg.date}-${leg.side}-${leg.gameKey || i}`}
+              key={`${leg.date}-${leg.side}-${leg.gameKey || i}-${leg.line ?? ''}-${leg.invested ?? i}`}
               leg={leg}
               showSize={tab === 'recent' || formListIsActionFallback}
               pnlMode={sparkMode}

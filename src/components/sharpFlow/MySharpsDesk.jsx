@@ -754,7 +754,7 @@ function MarketPlays({ openRows, tape, usual, showExits = false }) {
         const face = openPlayFace(r);
         const matchup = r.away && r.home ? `${r.away} @ ${r.home}` : null;
         return (
-          <div key={`${r.gameKey}-${r.side}-${i}`} style={{ padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
+          <div key={`${r.gameKey}-${r.side}-${r.entryLine ?? ''}-${i}`} style={{ padding: '0.32rem 0', borderTop: `1px solid ${B.hair}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>
