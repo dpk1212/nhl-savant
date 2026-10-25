@@ -11,6 +11,9 @@ import {
   isTrustedWallet,
   isTrustOn,
   isTrustOff,
+  isTrustYoung,
+  trustAgeDays,
+  TRUST_MIN_AGE_DAYS,
   TRUST_TIER_MIN_N,
   TRUST_FORM_WINDOW,
   TRUST_FORM_MIN_N,
@@ -133,6 +136,33 @@ const bet = (i, won, price = 0.5) => ({ date: day(i), price, won });
   eq(sum.lastBetDate, day(11), 'last bet date'); eq(sum.asOf, day(12), 'as of next day');
   eq(trustSummary(null), null, 'null summary');
   eq(buildTrustState([]).status, 'UNPROVEN', 'empty → UNPROVEN'); eq(buildTrustState([]).n, 0, 'empty n 0');
+}
+
+// 7. Book age (2026-10-26): firstBetDate on the summary, age on a pick date, young flag, isTrustedWallet honours it
+{
+  eq(TRUST_MIN_AGE_DAYS, 15, 'age floor 15 days');
+  const s = buildTrustState(Array.from({ length: 12 }, (_, i) => bet(i, i % 3 !== 0, 0.5)));
+  eq(s.firstBetDate, day(0), 'state carries the first decided bet date');
+  const sum = trustSummary(s);
+  eq(sum.firstBetDate, day(0), 'summary carries firstBetDate'); eq(sum.daysActive, 12, 'daysActive first → day after last');
+  // Age on a pick date is first bet → pick date, whatever daysActive says.
+  eq(trustAgeDays(sum, day(14)), 14, 'age 14 on day 14'); eq(trustAgeDays(sum, day(15)), 15, 'age 15 on day 15'); eq(trustAgeDays(sum, day(40)), 40, 'age 40 a month on');
+  eq(trustAgeDays(sum, `${day(20)}T15:00:00Z`), 20, 'timestamp asOf is cut to the day');
+  eq(trustAgeDays(sum, day(0)), 0, 'pick on the first bet day → 0');
+  // Without a pick date, or on a record without firstBetDate, the export's daysActive stands in.
+  eq(trustAgeDays(sum), 12, 'no asOf → daysActive'); eq(trustAgeDays({ tier: 5, status: 'STABLE_ON', daysActive: 3 }, day(30)), 3, 'no firstBetDate → daysActive');
+  eq(trustAgeDays({ tier: 5, status: 'STABLE_ON' }, day(30)), null, 'neither → null'); eq(trustAgeDays(null, day(30)), null, 'null record → null');
+  // Young = would pass the gate on tier / status and only the age floor stops it.
+  ok(isTrustYoung({ tier: 5, status: 'STABLE_ON' }, 14), 'tier 5 ON at 14 days is young');
+  ok(!isTrustYoung({ tier: 5, status: 'STABLE_ON' }, 15), '15 days is not young');
+  ok(!isTrustYoung({ tier: 3, status: 'STABLE_ON' }, 2), 'tier 3 is not "young", it is simply not trusted');
+  ok(!isTrustYoung({ tier: 5, status: 'STABLE_OFF' }, 2), 'form OFF is not "young"');
+  ok(!isTrustYoung({ tier: 5, status: 'STABLE_ON' }, null), 'unknown age is never young');
+  ok(isTrustYoung({ tier: 4, status: 'REGAINED_ON' }, 20, 21), 'custom floor');
+  // isTrustedWallet reads the packed flag only — a record without it is unchanged.
+  ok(isTrustedWallet({ tier: 5, status: 'STABLE_ON', age: 2 }), 'age alone does not untrust (the read sets young)');
+  ok(!isTrustedWallet({ tier: 5, status: 'STABLE_ON', age: 2, young: true }), 'young → not trusted');
+  ok(isTrustedWallet({ tier: 5, status: 'STABLE_ON', age: 40, young: false }), 'young false → trusted');
 }
 
 console.log(`testWalletTrustStatus: ${n} assertions passed`);
