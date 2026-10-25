@@ -355,6 +355,14 @@ import {
   pressStamp,
   isPressLadderLive,
   isPressStampLive,
+  isPressEdgeNetLive,
+  applyPressEdgeNetClamp,
+  pressEdgeNetStamp,
+  PRESS_EDGE_NET_FROM,
+  PRESS_EDGE_NET_HOLE_MAX,
+  PRESS_EDGE_NET_BAD,
+  PRESS_EDGE_NET_MIN_UNITS,
+  PRESS_EDGE_NET_MUTED_BY,
   PRESS_LADDER_FROM,
   PRESS_GATE_MUTED_BY,
   isPressMirrorLive,
@@ -4120,6 +4128,21 @@ async function createMissingLockedPicks({
           hcStakeTierCreate = 'MONITORING';
         }
       }
+      // Last size clamp — two cells the live card lost at 2u and up.
+      // Runs on the units that would ship (post odds cap, post fav-juice).
+      let pressEdgeNetPolicyCreate = null;
+      if (pressAppliedCreate) {
+        pressEdgeNetPolicyCreate = applyPressEdgeNetClamp({
+          units: peakUnitsApplied,
+          pressEdge: pressEvalCreate?.edge ?? null,
+          netMeanPrior: netCreate?.netMeanPrior ?? null,
+          pickDate: TARGET_DATE,
+        });
+        if (pressEdgeNetPolicyCreate.action === 'MUTE') {
+          peakUnitsApplied = 0;
+          hcStakeTierCreate = 'MONITORING';
+        }
+      }
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
       }
@@ -4280,6 +4303,9 @@ async function createMissingLockedPicks({
           now,
         ));
         v8Stamps.v8_pressApplied = pressAppliedCreate;
+        if (pressEdgeNetPolicyCreate) {
+          Object.assign(v8Stamps, pressEdgeNetStamp(pressEdgeNetPolicyCreate));
+        }
       }
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
@@ -4501,6 +4527,8 @@ async function createMissingLockedPicks({
           delete v8Stamps.mutedBy;
         } else if (favJuicePolicyCreate?.mutedBy) {
           v8Stamps.mutedBy = favJuicePolicyCreate.mutedBy;
+        } else if (pressEdgeNetPolicyCreate?.mutedBy) {
+          v8Stamps.mutedBy = pressEdgeNetPolicyCreate.mutedBy;
         } else if (scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0) {
           v8Stamps.mutedBy = (pressEvalCreate?.floorFade?.status === 'VETO' && isFadeFLive(TARGET_DATE))
             ? FADE_F_VETO_MUTED_BY
@@ -4637,6 +4665,7 @@ async function createMissingLockedPicks({
           ...(boardSharePolicyCreate?.reason ? [boardSharePolicyCreate.reason] : []),
           ...(unitTierPolicyCreate?.reason ? [unitTierPolicyCreate.reason] : []),
           ...(favJuicePolicyCreate?.reason ? [favJuicePolicyCreate.reason] : []),
+          ...(pressEdgeNetPolicyCreate?.reason ? [pressEdgeNetPolicyCreate.reason] : []),
           ...(steamTailPolicyCreate?.reason ? [steamTailPolicyCreate.reason] : []),
           ...(evDriftPolicyCreate?.reason ? [evDriftPolicyCreate.reason] : []),
           ...(topCrowdedPolicyCreate?.reason ? [topCrowdedPolicyCreate.reason] : []),
@@ -6293,6 +6322,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // Last size clamp. The ladder has already written the units that would
+  // ship, including the odds cap and the favorite-juice mute. Manual stake
+  // never entered the ladder, so it is not resized here.
+  let pressEdgeNetPolicy = null;
+  if (pressApplied && !skipManualFlinch) {
+    pressEdgeNetPolicy = applyPressEdgeNetClamp({
+      units: finalUnitsApplied,
+      pressEdge: pressEval?.edge ?? null,
+      netMeanPrior: netLive?.netMeanPrior ?? null,
+      pickDate,
+    });
+    if (pressEdgeNetPolicy.action === 'MUTE') {
+      finalUnitsApplied = 0;
+      hcStakeTier = 'MONITORING';
+    }
+  }
+
   const operatorKilled = isOperatorKilled(pick, side, sd);
   if (operatorKilled) finalUnitsApplied = 0;
 
@@ -6369,6 +6415,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (sportUnlockPolicy?.reason && !reasons.includes(sportUnlockPolicy.reason)) reasons.push(sportUnlockPolicy.reason);
   if (steamTailPolicy?.reason && !reasons.includes(steamTailPolicy.reason)) reasons.push(steamTailPolicy.reason);
   if (favJuicePolicy?.reason && !reasons.includes(favJuicePolicy.reason)) reasons.push(favJuicePolicy.reason);
+  if (pressEdgeNetPolicy?.reason && !reasons.includes(pressEdgeNetPolicy.reason)) reasons.push(pressEdgeNetPolicy.reason);
   if (unitTierPolicy?.reason && !reasons.includes(unitTierPolicy.reason)) reasons.push(unitTierPolicy.reason);
   if (boardSharePolicy?.reason && !reasons.includes(boardSharePolicy.reason)) reasons.push(boardSharePolicy.reason);
   if (stFatPolicy?.reason && !reasons.includes(stFatPolicy.reason)) reasons.push(stFatPolicy.reason);
@@ -6521,6 +6568,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
     } else if (favJuicePolicy?.mutedBy) {
       patch.mutedBy = favJuicePolicy.mutedBy;
+      if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    } else if (pressEdgeNetPolicy?.mutedBy) {
+      patch.mutedBy = pressEdgeNetPolicy.mutedBy;
       if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
     } else if (mutedByAgs) {
       patch.mutedBy = 'ags-quality-veto';
@@ -6707,6 +6757,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const pressRecord = pressMirrorApplied ? pressMirrorEval(pressEval, pressMirror) : pressEval;
     Object.assign(patch, pressStamp(pressRecord, now));
     patch.v8_pressApplied = pressApplied;
+    if (pressEdgeNetPolicy) Object.assign(patch, pressEdgeNetStamp(pressEdgeNetPolicy));
     const prevRung = sd.v8_pressRung ?? null;
     const prevUnits = sd.v8_pressUnits ?? null;
     if (prevRung !== pressRecord.rung || prevUnits !== pressRecord.units) {
@@ -7368,6 +7419,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     changes.push(`CLV-TOP2 cap: ${unitsBeforeClv}u → ${finalUnitsApplied}u (cap ${GLOBAL_UNIT_CAP})`);
   }
 
+
+  if (pressEdgeNetPolicy?.action === 'MUTE') {
+    const edgeTxt = pressEval?.edge == null ? '—' : Number(pressEval.edge).toFixed(1);
+    const netTxt = netLive?.netMeanPrior == null ? '—' : Number(netLive.netMeanPrior).toFixed(1);
+    changes.push(
+      `PRESS-EDGE-NET: ${pressEdgeNetPolicy.reason} ${pressEdgeNetPolicy.unitsPrePolicy}u → 0u`
+      + ` (edge=${edgeTxt} net=${netTxt})`,
+    );
+  }
 
   if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
     changes.push(`finalUnits: ${sd.finalUnits}u → ${finalUnitsApplied}u`);
@@ -8320,6 +8380,18 @@ async function main() {
       + ` · PRESS-X Door-2 margin ≥1 with every Door-2 against under size → ${PRESS_X_UNITS}u steam off / ${PRESS_X_UNITS_STEAM_ON}u steam on · PRESS-N deep-book (n≥50) press with no Door-2 either side → ${PRESS_N_UNITS_CLEAN}u clean / ${PRESS_N_UNITS_MOVED}u moved · PRESS-U same shape with no press → ${PRESS_U_UNITS}u · STEAM-C steam on with proven wallets net against, all under size, no press against → ${STEAM_C_UNITS}u · R6 two veterans ≥1.0× no press → ${R6_UNITS}u · score ≤0 or gate fail → 0u (${PRESS_GATE_MUTED_BY})`
       + ` · from ${PRESS_LADDER_FROM} · legacy chain runs for stamps only · manual stake wins`,
     );
+    if (isPressEdgeNetLive(TARGET_DATE)) {
+      console.log(
+        `PRESS-EDGE-NET LIVE: after the ladder, odds cap and fav-juice, units ≥ ${PRESS_EDGE_NET_MIN_UNITS}`
+        + ` with press edge in [0, ${PRESS_EDGE_NET_HOLE_MAX}) → 0u`
+        + ` · press edge < 0 and net ≤ ${PRESS_EDGE_NET_BAD} → 0u`
+        + ` · favorites with a healthier close record stay · press edge ≥ ${PRESS_EDGE_NET_HOLE_MAX} stays`
+        + ` · under ${PRESS_EDGE_NET_MIN_UNITS}u stays · missing edge or net fails open on that clause`
+        + ` · mutedBy=${PRESS_EDGE_NET_MUTED_BY} · from ${PRESS_EDGE_NET_FROM} · manual stake and operator kill win`,
+      );
+    } else {
+      console.log(`PRESS-EDGE-NET: not live before ${PRESS_EDGE_NET_FROM} (TARGET_DATE=${TARGET_DATE})`);
+    }
     if (isSteamSLive(TARGET_DATE)) {
       console.log(
         `STEAM-S LIVE: steam on + no press either side + biggest AG 1.0–1.5× + seasoned AG ≥ seasoned FOR (≥1 seasoned AG) + money FOR 20–60% + implied ≥40% → ${STEAM_S_UNITS}u (${STEAM_S_STAKE_TIER}) · from ${STEAM_S_FROM}`,
