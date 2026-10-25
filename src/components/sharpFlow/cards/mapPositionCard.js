@@ -16,6 +16,7 @@ import {
   pickSensationalTrust,
   sourceBPreferredBook,
 } from '../../../lib/walletSportBook.js';
+import { profileIsTrusted } from '../../../lib/walletTrustStatus.js';
 import {
   buildWideBoardMoneySplits,
   planTrackedLosersForMap,
@@ -353,6 +354,8 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         clvN,
         topQ,
         hardMarket,
+        // Tier 4+ form-on (market book or sport book). The loser cap must not drop these.
+        trusted: profileIsTrusted(profile, sport, opts.marketType),
         trust,
         trustBook,
         trustScore,
@@ -1650,7 +1653,7 @@ export function mapLockedPickToCardFixture(pick, {
       boardMoney?.walletRows || [],
       { sourceMkt: cardMkt },
     );
-    mapWallets = mapWallets.filter((w) => keepShorts.has(w.short));
+    mapWallets = mapWallets.filter((w) => keepShorts.has(String(w.short || '').toLowerCase()));
     if (addRaw.length) {
       const extras = enrichWallets(
         addRaw,

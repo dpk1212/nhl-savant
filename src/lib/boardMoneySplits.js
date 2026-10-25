@@ -115,9 +115,18 @@ export function planTrackedLosersForMap(mapRows, walletRows, { limit = MAP_TRACK
   });
 
   const keepShorts = new Set();
+  // Tier 4+ form-on wallets are often WR50 on the whitelist, so the loser
+  // cap used to drop them behind the three biggest tickets. They stay, and
+  // they do not consume a loser slot.
+  const trustedKept = new Set();
   for (const w of rows) {
     const short = String(w?.short || w?.wallet || '').slice(-6).toLowerCase();
     if (!short) continue;
+    if (w?.trusted === true) {
+      keepShorts.add(short);
+      trustedKept.add(short);
+      continue;
+    }
     if (!loserShortRank.has(short)) {
       keepShorts.add(short); // non-loser always kept
       continue;
@@ -126,7 +135,7 @@ export function planTrackedLosersForMap(mapRows, walletRows, { limit = MAP_TRACK
     if (loserShortRank.get(short).rank < cap) keepShorts.add(short);
   }
 
-  let loserKept = [...keepShorts].filter((s) => loserShortRank.has(s)).length;
+  let loserKept = [...keepShorts].filter((s) => loserShortRank.has(s) && !trustedKept.has(s)).length;
   const addRaw = [];
   for (const r of pool) {
     if (loserKept >= cap) break;

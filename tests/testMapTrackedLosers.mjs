@@ -7,6 +7,7 @@ import {
   planTrackedLosersForMap,
   MAP_TRACKED_LOSER_CAP,
 } from '../src/lib/boardMoneySplits.js';
+import { profileIsTrusted } from '../src/lib/walletTrustStatus.js';
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -69,6 +70,45 @@ function assert(cond, msg) {
   assert(ml.addRaw.length === 1 && ml.addRaw[0].wallet === 'loser1', 'spread dollars stay off the ML map');
   const sp = planTrackedLosersForMap(mapRows, walletRows, { sourceMkt: 'SPREAD' });
   assert(sp.addRaw.length === 1 && sp.addRaw[0].wallet === 'fcc12b', 'same bet still pins on the spread card');
+}
+
+// WR50 tier-4 wallets stay, and they do not eat the 3 loser slots.
+{
+  const mapRows = [
+    { short: 'd780f4', invested: 2240, trusted: true },
+    { short: 'caca29', invested: 4302, trusted: true },
+    { short: 'ab4b6e', invested: 49000 },
+    { short: 'bfe3bc', invested: 10763 },
+    { short: '7923c4', invested: 6755 },
+    { short: '0cd77e', invested: 5058 },
+  ];
+  const walletRows = mapRows.map((w) => ({
+    wallet: w.short,
+    invested: w.invested,
+    whitelist: 'WR50',
+    verdict: null,
+    marketSide: 'away',
+  }));
+  const { keepShorts } = planTrackedLosersForMap(mapRows, walletRows);
+  assert(keepShorts.has('d780f4') && keepShorts.has('caca29'), 'tier-4 wallets stay on the chart');
+  assert(keepShorts.has('ab4b6e') && keepShorts.has('bfe3bc') && keepShorts.has('7923c4'), 'top 3 dollar losers still pin');
+  assert(!keepShorts.has('0cd77e'), 'the next WR50 wallet is still capped');
+}
+
+{
+  const spreadFive = {
+    bySport: {
+      NBA: {
+        trust: { tier: 3, status: 'STABLE_ON' },
+        byMarket: { SPREAD: { trust: { tier: 5, status: 'STABLE_ON' } } },
+      },
+    },
+  };
+  const unproven = {
+    bySport: { NBA: { trust: { tier: 0, status: 'UNPROVEN' }, byMarket: { SPREAD: { trust: { tier: 0, status: 'UNPROVEN' } } } } },
+  };
+  assert(profileIsTrusted(spreadFive, 'NBA', 'SPREAD'), 'spread tier 5 counts when the sport book is tier 3');
+  assert(!profileIsTrusted(unproven, 'NBA', 'SPREAD'), 'unproven is not tier 4+');
 }
 
 console.log('testMapTrackedLosers: ok');
