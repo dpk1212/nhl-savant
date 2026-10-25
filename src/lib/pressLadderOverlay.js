@@ -189,6 +189,23 @@
  *     consensus stakes sit above that cap by design).
  *   • v8_trustLift: shadow flag on gated moneyline rungs — no units beyond
  *     the floor yet.
+ *   • Book age (TRUST_AGE_FROM, 2026-10-26): a tier-4+ wallet whose sport
+ *     book is under TRUST_MIN_AGE_DAYS old on the pick date counts for
+ *     nothing in the trust read — no gate, margin, veto, rescue, floor or
+ *     ceiling, FOR or AG. Day-of stamps Oct 9–24: wallet-lifted staked plays
+ *     carried only by books under 15 days 10-20-1 −28.7u (NBA 5-10-1, NHL
+ *     4-7, CFB 1-2, nothing in SOC / NFL / MLB), 15 days and older 67-34-1
+ *     +39.8u. Age is firstBetDate → pickDate off the profile's trust record
+ *     (sport level, applied to the market book too), daysActive before the
+ *     export carries firstBetDate. The young wallet's status is still read
+ *     and stamped (`young: true`, v8_trustYoung) so the floor can be audited.
+ *   • v8_t4 (2026-10-26): one durable block per side with the market-book
+ *     margin read as the ladder saw it — margin, trusted dollars, conviction,
+ *     HC, bucket, through / strong, the trusted FOR / AG wallets with tier,
+ *     status, n, edge, age, size ratio and ticket dollars, hedged and young
+ *     wallets, and the sport-level gate wallets. Written every cycle, so
+ *     margin × sport × market analysis reads the stamp instead of rebuilding
+ *     the day-of board.
  *
  * Everything else between the v12 score gate and the odds cap (HC ladder,
  * rescues, floors, tape, EDGE bands, the mute chain, HARD+ layer, form×tier)
@@ -201,7 +218,9 @@
  */
 import { isConfirmedSportRec } from './whitelistTier.js';
 import { stakeSizeRatio } from './sizeRatioBands.js';
-import { isTrustedWallet, isTrustOn, isTrustOff, TRUST_TIER_MIN } from './walletTrustStatus.js';
+import {
+  isTrustedWallet, isTrustOn, isTrustOff, isTrustYoung, trustAgeDays, TRUST_TIER_MIN, TRUST_MIN_AGE_DAYS,
+} from './walletTrustStatus.js';
 
 /** Stakes follow the press ladder for pick dates on/after this. */
 export const PRESS_LADDER_FROM = '2026-10-06';
@@ -413,7 +432,14 @@ export const TRUST_M_DOLLAR_MARGIN = 10000;
 // trims long dogs after this.
 export const TRUST_M_STRONG_FLOOR_UNITS = 3;
 export const TRUST_M_PLUS1_CEIL_UNITS = 3;
-export { TRUST_TIER_MIN };
+// Book age (see header). From this pick date a tier-4+ wallet whose sport
+// book is under TRUST_MIN_AGE_DAYS old counts for nothing in the trust read.
+export const TRUST_AGE_FROM = '2026-10-26';
+export { TRUST_TIER_MIN, TRUST_MIN_AGE_DAYS };
+
+export function isTrustAgeLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TRUST_AGE_FROM;
+}
 
 /** True when a stamped v8_trustRule carries the TRUST-M door (margin / conviction went through a gate, veto or mute). */
 export function isTrustMRule(rule) {
@@ -677,7 +703,7 @@ export function impliedFromAmerican(o) {
  * Sport book for one wallet as production exports it:
  * profile.bySport[sport].positions = { n, wins, wr, invested, settledPnl, dollarRoi }.
  */
-export function sportBook(profile, sport, marketType = null) {
+export function sportBook(profile, sport, marketType = null, asOf = null) {
   const rec = profile?.bySport?.[sport];
   const pos = rec?.positions;
   if (!pos || typeof pos !== 'object') return null;
@@ -685,18 +711,24 @@ export function sportBook(profile, sport, marketType = null) {
   const wr = Number(pos.wr);
   const l10 = rec?.form?.actionL10;
   const mkt = marketType ? String(marketType).toUpperCase() : null;
+  const trust = trustPick(rec?.trust, asOf);
+  const trustMkt = mkt ? trustPick(rec?.byMarket?.[mkt]?.trust, asOf) : null;
+  // The age floor reads the sport book's age on the market record too: the
+  // sport's first decided bet is never later than any market's, and the
+  // research cell was cut on the sport book.
+  if (trustMkt && trust && trust.age != null) trustMkt.age = trust.age;
   return {
     n,
     wr: Number.isFinite(wr) ? wr : null,
     door2: isConfirmedSportRec(rec),
     l10: l10 && typeof l10 === 'object' ? { w: Number(l10.w) || 0, l: Number(l10.l) || 0 } : null,
-    trust: trustPick(rec?.trust),
-    trustMkt: mkt ? trustPick(rec?.byMarket?.[mkt]?.trust) : null,
+    trust,
+    trustMkt,
   };
 }
 
-/** Compact trust record off a profile node; null when the export has not stamped one. */
-function trustPick(t) {
+/** Compact trust record off a profile node; null when the export has not stamped one. `age` is book age in days on `asOf`. */
+function trustPick(t, asOf = null) {
   if (!t || typeof t !== 'object' || typeof t.status !== 'string') return null;
   return {
     status: t.status,
@@ -704,6 +736,7 @@ function trustPick(t) {
     n: Number(t.n) || 0,
     edge: Number.isFinite(Number(t.edge)) ? Number(t.edge) : null,
     formOn: t.formOn === true,
+    age: trustAgeDays(t, asOf),
   };
 }
 
@@ -711,14 +744,14 @@ function trustPick(t) {
  * Per-wallet row the gate reads: direction, dollars, sport-local size ratio,
  * sport book depth / WR / Door-2 flag, trust status (sport + market).
  */
-export function pressWalletRows(walletDetails, side, sport, walletProfiles, marketType = null) {
+export function pressWalletRows(walletDetails, side, sport, walletProfiles, marketType = null, pickDate = null) {
   const rows = [];
   for (const wd of walletDetails || []) {
     if (!wd || !wd.side) continue;
     const invested = Number(wd.invested) || 0;
     if (!(invested > 0)) continue;
     const profile = profileForWallet(walletProfiles, wd.wallet);
-    const book = sportBook(profile, sport, marketType);
+    const book = sportBook(profile, sport, marketType, pickDate);
     const sr = stakeSizeRatio(wd, profile, sport);
     rows.push({
       wallet: shortId(wd.wallet),
@@ -741,17 +774,24 @@ export function pressWalletRows(walletDetails, side, sport, walletProfiles, mark
  * Trust read for one side: FOR / AG wallet statuses at the sport level
  * (the moneyline gate) and the market level (shadow). `gate` = at least one
  * FOR wallet with tier ≥ TRUST_TIER_MIN and form ON.
+ *
+ * With `ageLive`, a record whose book age is under TRUST_MIN_AGE_DAYS is
+ * packed with `young: true` and is not trusted anywhere in the read; `young`
+ * lists those wallets (market level, FOR and AG) for the stamp.
  */
-export function trustRead(rows) {
+export function trustRead(rows, { ageLive = false } = {}) {
   const pack = (r, t) => ({
     wallet: r.wallet,
     status: t?.status ?? 'UNPROVEN',
     tier: t?.tier ?? 0,
     n: t?.n ?? 0,
     edge: t?.edge ?? null,
+    // Book age in days on the pick date (null when the profile has no trust record).
+    age: t?.age ?? null,
+    young: ageLive && isTrustYoung(t, t?.age),
     // Sport-local size ratio of this bet (TRUST-S conviction input).
     ratio: Number.isFinite(r.ratio) ? r.ratio : null,
-    // Ticket dollars (TRUST-M dollar-margin input); not stamped.
+    // Ticket dollars (TRUST-M dollar-margin input); stamped on v8_t4 only.
     invested: Number(r.invested) || 0,
   });
   const forRows = rows.filter((r) => r.dir === 'FOR');
@@ -762,6 +802,10 @@ export function trustRead(rows) {
   const mktAg = agRows.map((r) => pack(r, r.trustMkt));
   const trusted = (list) => list.filter((w) => isTrustedWallet(w)).map((w) => w.wallet);
   const count = (list, fn) => list.filter((w) => fn(w.status)).length;
+  const young = [
+    ...mktFor.filter((w) => w.young).map((w) => ({ ...w, dir: 'FOR' })),
+    ...mktAg.filter((w) => w.young).map((w) => ({ ...w, dir: 'AG' })),
+  ];
   return {
     gate: trusted(sportFor).length >= 1,
     gateWallets: trusted(sportFor),
@@ -775,6 +819,8 @@ export function trustRead(rows) {
     mktGate: trusted(mktFor).length >= 1,
     mktFor,
     mktAg,
+    ageLive,
+    young,
     lift: false,
     rule: null,
   };
@@ -970,9 +1016,9 @@ export function applyTrustLayer(result, {
   walletDetails, side, sport, marketType, walletProfiles, sideOdds = null, pickDate = null, legacyUnits = null,
 } = {}) {
   const rows = (Array.isArray(walletDetails) && walletDetails.length && side && sport && walletProfiles)
-    ? pressWalletRows(walletDetails, side, sport, walletProfiles, marketType)
+    ? pressWalletRows(walletDetails, side, sport, walletProfiles, marketType, pickDate)
     : [];
-  const trust = rows.length ? trustRead(rows) : null;
+  const trust = rows.length ? trustRead(rows, { ageLive: isTrustAgeLive(pickDate) }) : null;
   const out = { ...result, trust };
   if (!trust || !isTrustLive(pickDate)) return out;
 
@@ -1164,7 +1210,7 @@ function evaluatePressLadderCore({
   if (!Array.isArray(walletDetails) || walletDetails.length === 0 || !side || !sport) return empty;
   if (!walletProfiles) return { ...empty, reason: 'no_wallet_profiles' };
 
-  const rows = pressWalletRows(walletDetails, side, sport, walletProfiles, marketType);
+  const rows = pressWalletRows(walletDetails, side, sport, walletProfiles, marketType, pickDate);
   if (rows.length === 0) return { ...empty, reason: 'no_wallet_rows' };
   // FLOOR-FADE read is computed on every evaluated side so the stamp carries
   // it even where the policy is not live yet or the side is already staked.
@@ -1435,12 +1481,64 @@ export function pressStamp(evalResult, now) {
   };
 }
 
+/** Margin bucket label the analysis reads: +2 · +1HC · +1 · 0 · − . */
+export function t4Bucket(margin, hc) {
+  if (margin >= TRUST_M_MARGIN) return '+2';
+  if (margin === 1) return hc ? '+1HC' : '+1';
+  return margin === 0 ? '0' : '−';
+}
+
+/**
+ * v8_t4 — the market-book T4+ read as the ladder saw it, on every evaluated
+ * side. Trusted FOR / AG are post hedge-netting and post age floor; `young`
+ * lists tier-4+ ON wallets the age floor excluded (FOR and AG); `hedged` the
+ * wallets netted out. `sportFor` / `sportAg` are the sport-level trusted
+ * wallets (the moneyline gate). Null when the side has no read.
+ */
+export function t4Stamp(trust) {
+  const t = trust ?? null;
+  if (!t || !Array.isArray(t.mktFor) || !Array.isArray(t.mktAg)) return null;
+  const m = trustMarginRead(t.mktFor, t.mktAg);
+  const hc = m.conviction || m.dollars >= TRUST_M_DOLLAR_MARGIN;
+  const row = (w) => ({
+    wallet: w.wallet ?? null,
+    status: w.status ?? null,
+    tier: Number(w.tier) || 0,
+    n: Number(w.n) || 0,
+    edge: Number.isFinite(Number(w.edge)) ? Number(w.edge) : null,
+    age: Number.isFinite(Number(w.age)) ? Number(w.age) : null,
+    ratio: Number.isFinite(Number(w.ratio)) ? Math.round(Number(w.ratio) * 100) / 100 : null,
+    invested: Math.round(Number(w.invested) || 0),
+  });
+  const young = Array.isArray(t.young) ? t.young : [];
+  return {
+    margin: m.margin,
+    dollars: Math.round(m.dollars),
+    conviction: m.conviction === true,
+    hc,
+    bucket: t4Bucket(m.margin, hc),
+    through: m.through === true,
+    strong: m.strong === true,
+    for: m.tFor.slice(0, 8).map(row),
+    ag: m.tAg.slice(0, 8).map(row),
+    hedged: m.hedged.length ? m.hedged.slice(0, 8) : null,
+    young: young.length ? young.slice(0, 8).map((w) => ({ ...row(w), dir: w.dir ?? null })) : null,
+    sportFor: Array.isArray(t.gateWallets) && t.gateWallets.length ? t.gateWallets.slice(0, 8) : null,
+    sportAg: Array.isArray(t.agTrusted) && t.agTrusted.length ? t.agTrusted.slice(0, 8) : null,
+    ageLive: t.ageLive === true,
+    minAge: TRUST_MIN_AGE_DAYS,
+  };
+}
+
 /** v8_trust* fields — written on every evaluated side (null when no read). */
 export function trustStamp(trust) {
   const t = trust ?? null;
   const pack = (list) => (Array.isArray(list) && list.length
-    ? list.slice(0, 6).map((w) => ({ wallet: w.wallet, status: w.status, tier: w.tier, n: w.n }))
+    ? list.slice(0, 6).map((w) => ({ wallet: w.wallet, status: w.status, tier: w.tier, n: w.n, age: w.age ?? null }))
     : null);
+  const young = t && Array.isArray(t.young) && t.young.length
+    ? t.young.slice(0, 6).map((w) => ({ wallet: w.wallet, dir: w.dir ?? null, status: w.status, tier: w.tier, n: w.n, age: w.age ?? null }))
+    : null;
   return {
     v8_trustGate: t ? t.gate === true : null,
     v8_trustGateWallets: t && t.gateWallets.length ? t.gateWallets.slice(0, 4) : null,
@@ -1451,7 +1549,9 @@ export function trustStamp(trust) {
     v8_trustMktGate: t ? t.mktGate === true : null,
     v8_trustMktFor: t ? pack(t.mktFor) : null,
     v8_trustMktAg: t ? pack(t.mktAg) : null,
+    v8_trustYoung: young,
     v8_trustLift: t ? t.lift === true : null,
     v8_trustRule: t ? (t.rule ?? null) : null,
+    v8_t4: t4Stamp(t),
   };
 }

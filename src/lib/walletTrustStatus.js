@@ -19,6 +19,18 @@
  *            REGAINED_ON (back at peak within 14 days, form ON) · STABLE_ON
  * Bookkeeping runs once per calendar day BEFORE that day's bets, so the
  * state for a day never sees that day's results.
+ *
+ * Book age (2026-10-26). A tier-4+ status also needs the wallet's sport book
+ * to be at least TRUST_MIN_AGE_DAYS old (first decided bet in the sport →
+ * the pick date). Tier only asks for 10 decided bets, which an NBA wallet
+ * clears in one night: …120215 had no NBA history before Oct 21 2026, went
+ * 21-for-36 on opening night, read tier 5 STABLE_ON on Oct 23 and lifted
+ * four sides to 3u (1-3). Day-of stamps Oct 9–24, 133 wallet-lifted staked
+ * plays by the youngest trusted FOR book: under 15 days 10-20-1 (−28.7u),
+ * 15 days and older 67-34-1 (+39.8u); 17 of the 31 young plays already had
+ * 30+ decided bets, so a volume floor would not have caught them. The
+ * young wallet's status is still computed and stamped (`young: true`); it
+ * is excluded from gates, margins, vetoes and rescues symmetrically.
  */
 
 export const TRUST_TIER_MIN_N = 10;
@@ -26,6 +38,7 @@ export const TRUST_FORM_WINDOW = 10;
 export const TRUST_FORM_MIN_N = 5;
 export const TRUST_REGAINED_DAYS = 14;
 export const TRUST_TIER_MIN = 4;
+export const TRUST_MIN_AGE_DAYS = 15;
 export const TRUST_ON_STATUSES = Object.freeze(['STABLE_ON', 'REGAINED_ON']);
 export const TRUST_OFF_STATUSES = Object.freeze(['STABLE_OFF', 'FALLEN_OFF']);
 
@@ -72,9 +85,37 @@ export function isTrustOff(status) {
   return TRUST_OFF_STATUSES.includes(status);
 }
 
-/** Tier ≥ TRUST_TIER_MIN and form ON — the live moneyline gate. */
+/**
+ * Tier ≥ TRUST_TIER_MIN and form ON — the live moneyline gate. A record
+ * flagged `young` (book under TRUST_MIN_AGE_DAYS on the pick date, see
+ * trustRead) is not trusted whatever its tier.
+ */
 export function isTrustedWallet(trust, tierMin = TRUST_TIER_MIN) {
-  return !!trust && Number(trust.tier) >= tierMin && isTrustOn(trust.status);
+  return !!trust && Number(trust.tier) >= tierMin && isTrustOn(trust.status) && trust.young !== true;
+}
+
+/**
+ * Age of a trust record's book in days on `asOf` (YYYY-MM-DD): first decided
+ * bet → asOf when the record carries `firstBetDate`, else the export's own
+ * `daysActive` (first bet → the day after the last bet). Null when neither
+ * is stamped, which never trips the age floor.
+ */
+export function trustAgeDays(trust, asOf = null) {
+  if (!trust || typeof trust !== 'object') return null;
+  const first = typeof trust.firstBetDate === 'string' && trust.firstBetDate.length >= 10 ? trust.firstBetDate.slice(0, 10) : null;
+  const day = typeof asOf === 'string' && asOf.length >= 10 ? asOf.slice(0, 10) : null;
+  if (first && day) {
+    const d = daysBetween(first, day);
+    return Number.isFinite(d) ? Math.max(0, d) : null;
+  }
+  const active = Number(trust.daysActive);
+  return Number.isFinite(active) ? active : null;
+}
+
+/** True when the record's tier / status would pass the gate and only the age floor stops it. */
+export function isTrustYoung(trust, age, minAge = TRUST_MIN_AGE_DAYS) {
+  return !!trust && Number(trust.tier) >= TRUST_TIER_MIN && isTrustOn(trust.status)
+    && Number.isFinite(age) && age < minAge;
 }
 
 /**
@@ -124,6 +165,7 @@ export function buildTrustState(rows, { asOf = null } = {}) {
       sinceFall: fallen ? daysBetween(s.fellAt, date) : null,
       regained: s.regained,
       daysActive: s.first ? daysBetween(s.first, date) : 0,
+      firstBetDate: s.first ?? null,
       asOf: date,
     };
   };
@@ -161,6 +203,7 @@ export function trustSummary(state) {
     fallen: state.fallen,
     sinceFall: state.sinceFall,
     daysActive: state.daysActive,
+    firstBetDate: state.firstBetDate ?? null,
     lastBetDate: state.lastBetDate ?? null,
     asOf: state.asOf,
   };

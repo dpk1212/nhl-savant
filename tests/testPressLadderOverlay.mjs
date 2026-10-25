@@ -88,6 +88,10 @@ import {
   trustMTag,
   TRUST_M_STRONG_FLOOR_UNITS,
   TRUST_M_PLUS1_CEIL_UNITS,
+  TRUST_AGE_FROM,
+  TRUST_MIN_AGE_DAYS,
+  isTrustAgeLive,
+  t4Bucket,
 } from '../src/lib/pressLadderOverlay.js';
 
 let n = 0;
@@ -1315,6 +1319,89 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const stNull = trustStamp(null);
   for (const [k, val] of Object.entries(stNull)) eq(val, null, `trustStamp(null).${k} null`);
   const stLift = pressStamp(full, 7); eq(stLift.v8_trustLift, true, 'lift stamped'); eq(stLift.v8_trustMktFor[0].status, 'STABLE_ON', 'ML market status stamped');
+
+  // F. Book age (2026-10-26): a tier-4+ wallet whose sport book is under 15 days old counts for nothing, FOR or AG.
+  eq(TRUST_AGE_FROM, '2026-10-26', 'age floor live date'); eq(TRUST_MIN_AGE_DAYS, 15, 'age floor 15 days');
+  ok(!isTrustAgeLive('2026-10-25') && isTrustAgeLive('2026-10-26') && !isTrustAgeLive(null), 'age live gate');
+  const AGE = '2026-10-30';
+  const PRE_AGE = '2026-10-25';
+  const Ty = (status, tier, first, n = 20) => ({ ...T(status, tier, n), firstBetDate: first, daysActive: 3 });
+  const profilesAge = new Map([
+    profileT('yyyyyy', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: Ty('STABLE_ON', 5, '2026-10-21'), trustMkt: { ML: Ty('STABLE_ON', 5, '2026-10-22'), SPREAD: Ty('STABLE_ON', 5, '2026-10-22') } }), // 9 days old on AGE
+    profileT('oooooo', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: Ty('STABLE_ON', 5, '2026-09-01'), trustMkt: { ML: Ty('STABLE_ON', 5, '2026-09-10'), SPREAD: Ty('STABLE_ON', 5, '2026-09-10') } }), // 59 days
+    profileT('kkkkkk', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: Ty('STABLE_ON', 5, '2026-10-15'), trustMkt: { ML: Ty('STABLE_ON', 5, '2026-10-15') } }), // exactly 15 days
+    profileT('bbbbbb', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('STABLE_ON', 4) }), // no age fields → never young
+    profileT('dddddd', SPORT, { n: 3, wr: 67, dollarRoi: 20, usual: 100 }),
+  ]);
+  const ageML = (forWallet, pickDate, over = {}) => evaluatePressLadder({
+    walletDetails: [wd(forWallet, 'home', 2000), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesAge, sideOdds: +110, steamOn: false,
+    pickDate, legacyUnits: 2, ...over,
+  });
+  // Rows carry the age; the market record takes the sport book's age.
+  const ageRows = pressWalletRows([wd('yyyyyy', 'home', 2000)], 'home', SPORT, profilesAge, 'ML', AGE);
+  eq(ageRows[0].trust.age, 9, 'sport book age on the pick date'); eq(ageRows[0].trustMkt.age, 9, 'market record reads the sport age');
+  eq(pressWalletRows([wd('yyyyyy', 'home', 2000)], 'home', SPORT, profilesAge, 'ML', PRE_AGE)[0].trust.age, 4, 'age moves with the pick date');
+  eq(pressWalletRows([wd('yyyyyy', 'home', 2000)], 'home', SPORT, profilesAge, 'ML')[0].trust.age, 3, 'no pick date → export daysActive');
+  eq(pressWalletRows([wd('bbbbbb', 'home', 2000)], 'home', SPORT, profilesAge, 'ML', AGE)[0].trust.age, null, 'no age fields → null');
+  // Young FOR: no TRUST-G rescue, gate off, status still read and flagged.
+  const yFor = ageML('yyyyyy', AGE);
+  eq(yFor.units, 0, 'young tier-5 FOR → no rescue'); eq(yFor.rung, null, 'no rung'); eq(yFor.trust.gate, false, 'gate off');
+  eq(yFor.trust.for[0].status, 'STABLE_ON', 'status still read'); eq(yFor.trust.for[0].tier, 5, 'tier still read'); eq(yFor.trust.for[0].young, true, 'flagged young');
+  eq(yFor.trust.young.length, 1, 'one young wallet'); eq(yFor.trust.young[0].wallet, 'yyyyyy', 'young wallet'); eq(yFor.trust.young[0].dir, 'FOR', 'young dir'); eq(yFor.trust.young[0].age, 9, 'young age');
+  eq(yFor.trust.ageLive, true, 'age live flag');
+  // Same wallet before the live date: the rescue fires, age stamped, nothing young.
+  const yPre = ageML('yyyyyy', PRE_AGE);
+  eq(yPre.rung, TRUST_G_STAKE_TIER, 'before TRUST_AGE_FROM the young wallet still rescues'); eq(yPre.units, TRUST_G_UNITS, '3u');
+  eq(yPre.trust.young.length, 0, 'nothing young before the live date'); eq(yPre.trust.for[0].age, 4, 'age stamped anyway'); eq(yPre.trust.ageLive, false, 'age not live');
+  // Seasoned books rescue as before: 59 days, exactly 15 days, and a record with no age fields.
+  eq(ageML('oooooo', AGE).rung, TRUST_G_STAKE_TIER, '59-day book rescues'); eq(ageML('oooooo', AGE).trust.for[0].age, 59, 'age 59');
+  eq(ageML('kkkkkk', AGE).rung, TRUST_G_STAKE_TIER, 'exactly 15 days is not young'); eq(ageML('kkkkkk', AGE).trust.for[0].young, false, 'kkkkkk not young');
+  eq(ageML('bbbbbb', AGE).rung, TRUST_G_STAKE_TIER, 'no age fields → trusted as before'); eq(ageML('bbbbbb', AGE).trust.for[0].young, false, 'unknown age never young');
+  // Symmetric: a young wallet AGAINST does not veto a spread; before the live date it does.
+  const ageSp = (pickDate) => evaluatePressLadder({
+    walletDetails: [wd('oooooo', 'home', 1500), wd('yyyyyy', 'away', 1500)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesAge, sideOdds: -110, steamOn: false, pickDate,
+  });
+  const spLive = ageSp(AGE);
+  ok(spLive.units > 0, `young AG does not veto (${spLive.units}u ${spLive.reason})`); ok(spLive.reason.includes('trust_s_for_oooooo'), spLive.reason);
+  ok(!spLive.reason.includes('veto'), 'no veto in reason'); eq(spLive.trust.young[0].wallet, 'yyyyyy', 'young AG listed'); eq(spLive.trust.young[0].dir, 'AG', 'young dir AG');
+  const spPreAge = ageSp(PRE_AGE);
+  eq(spPreAge.units, 0, 'before the live date the same AG wallet vetoes'); ok(spPreAge.reason.startsWith('trust_s_veto_ag_yyyyyy'), spPreAge.reason);
+  // Margin: a young FOR wallet drops out of the market-book margin.
+  const ageM = (pickDate) => evaluatePressLadder({
+    walletDetails: [wd('oooooo', 'home', 600), wd('yyyyyy', 'home', 600), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesAge, sideOdds: +110, steamOn: false, pickDate, legacyUnits: 2,
+  });
+  const mLive = pressStamp(ageM(AGE), 9); const mPre = pressStamp(ageM(PRE_AGE), 9);
+  eq(mPre.v8_t4.margin, 2, 'before: margin +2'); eq(mPre.v8_t4.strong, true, 'before: strong'); eq(mPre.v8_t4.bucket, '+2', 'before: bucket +2');
+  eq(mLive.v8_t4.margin, 1, 'live: young wallet out → margin +1'); eq(mLive.v8_t4.strong, false, 'live: not strong');
+  eq(mLive.v8_t4.for.length, 1, 'one trusted FOR row'); eq(mLive.v8_t4.for[0].wallet, 'oooooo', 'the seasoned one'); eq(mLive.v8_t4.young[0].wallet, 'yyyyyy', 'young listed on v8_t4');
+  eq(mLive.v8_trustYoung[0].wallet, 'yyyyyy', 'v8_trustYoung stamped'); eq(mLive.v8_trustYoung[0].age, 9, 'with age'); eq(mPre.v8_trustYoung, null, 'before: no young stamp');
+  eq(mLive.v8_trustMktFor[1].age, 9, 'age on the compact pack too');
+
+  // G. v8_t4: the durable margin block — bucket, HC, wallet rows with ratio / dollars / age, nothing undefined.
+  eq(t4Bucket(3, false), '+2', 'bucket +2'); eq(t4Bucket(2, true), '+2', '+2 whatever HC'); eq(t4Bucket(1, true), '+1HC', '+1HC'); eq(t4Bucket(1, false), '+1', '+1'); eq(t4Bucket(0, true), '0', '0'); eq(t4Bucket(-1, false), '−', 'negative');
+  const t4 = mLive.v8_t4;
+  eq(t4.dollars, 600, 'trusted dollars FOR − AG'); eq(t4.hc, false, '$600 < 10k and 1.2× usual → no HC'); eq(t4.conviction, false, 'no conviction'); eq(t4.bucket, '+1', 'bucket +1'); eq(t4.through, false, 'not through');
+  eq(t4.for[0].invested, 600, 'row dollars'); eq(t4.for[0].ratio, 1.2, 'row size ratio'); eq(t4.for[0].tier, 5, 'row tier'); eq(t4.for[0].status, 'STABLE_ON', 'row status'); eq(t4.for[0].age, 59, 'row age'); eq(t4.for[0].n, 20, 'row n');
+  ok('ratio' in t4.for[0], 'row carries size ratio'); eq(t4.ag.length, 0, 'no trusted AG'); eq(t4.hedged, null, 'no hedge'); eq(t4.sportFor.join(','), 'oooooo', 'sport-level gate wallets');
+  eq(t4.sportAg, null, 'no sport AG'); eq(t4.ageLive, true, 'age live'); eq(t4.minAge, 15, 'floor recorded');
+  const bigM = pressStamp(evaluatePressLadder({
+    walletDetails: [wd('oooooo', 'home', 12000), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesAge, sideOdds: +110, steamOn: false, pickDate: AGE, legacyUnits: 2,
+  }), 9).v8_t4;
+  eq(bigM.margin, 1, 'margin 1'); eq(bigM.dollars, 12000, '$12k'); eq(bigM.hc, true, '$ ≥ 10k → HC'); eq(bigM.bucket, '+1HC', 'bucket +1HC'); eq(bigM.through, true, '+1 with $ margin goes through');
+  const walk = (v, path) => { if (v === undefined) throw new Error(`undefined at ${path}`); if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, `${path}.${k}`); };
+  walk(mLive.v8_t4, 'v8_t4'); walk(mLive.v8_trustYoung, 'v8_trustYoung'); n++;
+  eq(pressStamp(evaluatePressLadder({ walletDetails: [], side: 'home', sport: SPORT }), 1).v8_t4, null, 'empty eval → v8_t4 null');
+  eq(trustStamp(null).v8_t4, null, 'trustStamp(null).v8_t4 null'); eq(trustStamp(null).v8_trustYoung, null, 'trustStamp(null).v8_trustYoung null');
+  // Hedged wallet shows on v8_t4.hedged and is out of both lists.
+  const hedge = pressStamp(evaluatePressLadder({
+    walletDetails: [wd('oooooo', 'home', 1000), wd('oooooo', 'away', 1000), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'SPREAD', walletProfiles: profilesAge, sideOdds: -110, steamOn: false, pickDate: AGE,
+  }), 9).v8_t4;
+  eq(hedge.hedged.join(','), 'oooooo', 'hedged listed'); eq(hedge.for.length, 0, 'netted out of FOR'); eq(hedge.ag.length, 0, 'netted out of AG'); eq(hedge.margin, 0, 'margin 0'); eq(hedge.bucket, '0', 'bucket 0');
 }
 
 // Last publish mute: a long favorite the ladder would stake does not lock.
