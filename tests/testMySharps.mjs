@@ -854,6 +854,20 @@ const windowed = portfolioWindowBook([
 assert.equal(windowed.pathEnd, 4000);
 assert.equal(windowed.honest.record, '1–0');
 assert.equal(windowed.sports[0].sport, 'NFL');
+const last7 = portfolioWindowBook([
+  {
+    walletShort: 'a',
+    tape: [
+      { date: '2026-09-28', sport: 'NFL', market: 'ML', pnl: 4000, won: 1, invested: 8000 },
+      { date: '2026-09-23', sport: 'NFL', market: 'SPREAD', pnl: 500, won: 1, invested: 1000 },
+      { date: '2026-09-20', sport: 'NFL', market: 'ML', pnl: 1000, won: 1, invested: 2000 },
+    ],
+  },
+], 'l7', { today: '2026-09-29' });
+assert.equal(last7.window, 'l7');
+assert.equal(last7.pathEnd, 4500);
+assert.equal(last7.honest.record, '2–0');
+assert.equal(last7.markets.length, 2);
 const last90 = portfolioWindowBook([
   {
     walletShort: 'a',

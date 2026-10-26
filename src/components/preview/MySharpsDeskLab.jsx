@@ -35,6 +35,12 @@ const seed = parseMySharpsDoc({
   },
 });
 
+function etDay(offset) {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const [y, m, d] = today.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + offset)).toISOString().slice(0, 10);
+}
+
 function bookPath(end, n = 24) {
   const out = [];
   for (let i = 0; i < n; i += 1) {
@@ -78,6 +84,9 @@ const profiles = new Map([
           actionL10: { w: 7, l: 3 },
           actionDollarCurve: bookPath(51000),
           recentAction: [
+            { date: etDay(-1), marketType: 'TOTAL', side: 'under', line: 8.5, gameKey: 'lad_sd', away: 'LAD', home: 'SD', invested: 5200, dollarPnl: 2400, won: 1 },
+            { date: etDay(-4), marketType: 'ML', side: 'home', team: 'Yankees', gameKey: 'bos_nyy2', away: 'BOS', home: 'NYY', invested: 3100, dollarPnl: -3100, won: 0 },
+            { date: etDay(-5), marketType: 'SPREAD', side: 'away', team: 'Dodgers', line: 1.5, gameKey: 'lad_sf', away: 'LAD', home: 'SF', invested: 2000, dollarPnl: 1700, won: 1 },
             { date: '2026-09-20', marketType: 'TOTAL', side: 'under', line: 8.5, gameKey: 'tor_bal', away: 'TOR', home: 'BAL', invested: 4900, dollarPnl: 2100, won: 1 },
             { date: '2026-09-19', marketType: 'ML', side: 'home', team: 'Yankees', gameKey: 'bos_nyy', away: 'BOS', home: 'NYY', invested: 3200, dollarPnl: -1400, won: 0 },
             { date: '2026-09-18', marketType: 'TOTAL', side: 'over', line: 9, gameKey: 'laa_oak', away: 'LAA', home: 'OAK', invested: 1800, dollarPnl: 900, won: 1 },
@@ -171,7 +180,14 @@ const profiles = new Map([
           from: '2026-07-20', curve: [0, 2000, 6400],
         },
         positions: { n: 4, wins: 3, losses: 1, wr: 75, dollarRoi: 18, invested: 21000 },
-        form: { actionL5: { w: 3, l: 1 } },
+        form: {
+          actionL5: { w: 3, l: 1 },
+          recentAction: [
+            { date: etDay(-1), marketType: 'SPREAD', side: 'home', team: 'Lions', line: -3.5, gameKey: 'gb_det', away: 'GB', home: 'DET', invested: 4000, dollarPnl: 1600, won: 1 },
+            { date: etDay(-3), marketType: 'ML', side: 'away', team: 'Bills', gameKey: 'buf_ne', away: 'BUF', home: 'NE', invested: 2500, dollarPnl: -2500, won: 0 },
+            { date: etDay(-5), marketType: 'TOTAL', side: 'under', line: 45.5, gameKey: 'kc_lv', away: 'KC', home: 'LV', invested: 1800, dollarPnl: 900, won: 1 },
+          ],
+        },
         byMarket: {
           SPREAD: { positions: { n: 4, wins: 3, losses: 1, wr: 75, dollarRoi: 18 }, recentActionWindow: { n: 4, wins: 3, losses: 1, settledPnl: 3800, dollarRoi: 18 } },
         },
@@ -469,7 +485,7 @@ export default function MySharpsDeskLab() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0B0F1F', color: '#F8FAFC', padding: phone ? '0.7rem 0.45rem 3rem' : '1.6rem 1.2rem 4rem' }}>
-      <div style={{ maxWidth: 980, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <MySharpsDesk
           ready
           signedIn

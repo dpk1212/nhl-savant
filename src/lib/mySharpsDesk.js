@@ -1967,14 +1967,15 @@ function portfolioL90Book(holdings) {
 }
 
 /**
- * Yesterday comes from the stored tape. Last-90 uses the official window
- * stamped on the profile. 30 days stays on recentActionWindow.
+ * Yesterday and the last 7 days come from the stored tape. Last-90 uses the
+ * official window stamped on the profile. 30 days stays on recentActionWindow.
+ * L7 is today and the six days before it, in America/New_York.
  */
 export function portfolioWindowBook(holdings, window, { today = null } = {}) {
   if (window === 'l90') return portfolioL90Book(holdings);
   const todayET = today || new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   const yesterday = ymdShift(todayET, -1);
-  const since = window === 'l90' ? ymdShift(todayET, -89) : yesterday;
+  const since = window === 'l7' ? ymdShift(todayET, -6) : yesterday;
   const exact = window === 'yesterday';
   const kept = [];
   let earliest = null;
@@ -2018,7 +2019,7 @@ export function portfolioWindowBook(holdings, window, { today = null } = {}) {
     window,
     since: exact ? yesterday : since,
     from: earliest,
-    partial: window === 'l90' && !!earliest && earliest > since,
+    partial: window === 'l7' && !!earliest && earliest > since,
     path,
     pathEnd: path.length ? path[path.length - 1] : overall.pnl,
     roi: overall.roi,
