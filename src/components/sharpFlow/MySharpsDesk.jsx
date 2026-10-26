@@ -24,7 +24,7 @@ import {
   suggestTailStake,
   summarizeTails,
 } from '../../lib/mySharpsDesk.js';
-import { betsFeedKey, betsFeedOn } from '../../lib/mySharps.js';
+import { SIZED_UP_RATIO, betsFeedKey, betsFeedOn } from '../../lib/mySharps.js';
 import { getTeamIdentity, shortTeamNick, teamLogoUrl } from '../../utils/teamIdentity.js';
 import { quoteTicketShop, ticketIsFrozen, ticketLineTape } from '../../lib/shopTicketLine.js';
 import { impliedFromAmerican } from '../../lib/oddsEv.js';
@@ -263,16 +263,32 @@ function heatLine(heat) {
   return null;
 }
 
-function openOnSport(holding, sport, actionRows) {
-  if (!sport) return { n: holding.openN || 0, invested: holding.openInvested || 0 };
-  const mine = (actionRows || []).filter((r) =>
-    sameSharp(r.walletShort, holding.walletShort)
-    && String(r.sport || '').toUpperCase() === sport
-  );
-  return {
-    n: mine.length,
-    invested: mine.reduce((s, r) => s + (Number(r.invested) || 0), 0),
-  };
+function stakeRatio(row) {
+  const n = Number(row?.displaySizeRatio ?? row?.sizeRatio);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function positionSlip(holding, sport, market, actionRows) {
+  const rows = (actionRows || []).filter((r) => {
+    if (!sameSharp(r.walletShort, holding.walletShort)) return false;
+    if (sport && String(r.sport || '').toUpperCase() !== sport) return false;
+    if (market) {
+      const typed = MARKET_LABEL[r.marketType] || r.marketType;
+      if (legMarketLabel(r) !== market && typed !== market) return false;
+    }
+    return true;
+  });
+  let invested = 0;
+  let sizedN = 0;
+  let maxRatio = 0;
+  for (const r of rows) {
+    invested += Number(r.invested) || 0;
+    const ratio = stakeRatio(r);
+    if (ratio > maxRatio) maxRatio = ratio;
+    if (ratio >= SIZED_UP_RATIO) sizedN += 1;
+  }
+  rows.sort((a, b) => (stakeRatio(b) - stakeRatio(a)) || ((Number(b.invested) || 0) - (Number(a.invested) || 0)));
+  return { rows, n: rows.length, invested, sizedN, maxRatio };
 }
 
 function pathFromLegs(legs) {
@@ -449,8 +465,43 @@ function Hairline({ points, height = 28 }) {
   );
 }
 
+function OpenMark({ openN, sizedN, maxRatio, onOpenBets }) {
+  if (!openN) return null;
+  const hot = sizedN > 0;
+  const multiple = hot ? relativeLabel(maxRatio) : null;
+  return (
+    <button
+      type="button"
+      data-open="1"
+      data-sized={hot ? '1' : '0'}
+      aria-label={hot ? `${openN} open, ${sizedN} sized up. Open bets` : `${openN} open. Open bets`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenBets?.();
+      }}
+      style={{
+        flexShrink: 0,
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap: 6,
+        borderRadius: 999,
+        border: `1px solid ${hot ? B.goldBorder : 'rgba(255,255,255,0.14)'}`,
+        background: hot ? 'rgba(212,175,55,0.14)' : 'rgba(255,255,255,0.03)',
+        padding: '0.16rem 0.48rem',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+      }}
+    >
+      <span style={{ ...T.kicker, color: hot ? B.goldSoft : B.textSec, letterSpacing: '0.06em' }}>{openN} open</span>
+      {multiple ? (
+        <span style={{ ...T.figure, color: B.goldSoft, fontSize: '0.72rem' }}>{multiple}</span>
+      ) : null}
+    </button>
+  );
+}
+
 function PortfolioSharp({
-  row, face, selected, isMobile, onToggle,
+  row, face, selected, isMobile, onToggle, onOpenBets,
 }) {
   const form = heatLine(face.heat);
   const record = face.honest?.record
@@ -459,6 +510,9 @@ function PortfolioSharp({
   const under = [record, isMobile ? face.lead : null, isMobile && Number.isFinite(face.roi) ? `${face.roi}%` : null]
     .filter(Boolean)
     .join(' · ');
+  const mark = (
+    <OpenMark openN={face.openN} sizedN={face.sizedN} maxRatio={face.maxRatio} onOpenBets={onOpenBets} />
+  );
   return (
     <div
       role="button"
@@ -500,6 +554,7 @@ function PortfolioSharp({
           {row.name ? (
             <span style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'", flexShrink: 0 }}>{row.tag}</span>
           ) : null}
+          {mark}
         </div>
         <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {under || '—'}
@@ -2885,15 +2940,19 @@ const textBtn = {
   color: B.textFaint,
 };
 
-function Kpi({ label, value, tone = B.text, scale = 'cell', mark = null }) {
+function Kpi({ label, value, tone = B.text, scale = 'cell', mark = null, rule = false }) {
   const figure = scale === 'hero'
-    ? { ...T.hero, fontSize: 'clamp(2.15rem, 4.6vw, 3.15rem)', marginTop: 6 }
+    ? { ...T.hero, fontSize: 'clamp(2.35rem, 5vw, 3.4rem)', marginTop: 6 }
     : scale === 'kpi'
-      ? { ...T.hero, fontSize: 'clamp(1.2rem, 2.2vw, 1.65rem)', marginTop: 6 }
+      ? { ...T.hero, fontSize: 'clamp(1.35rem, 2.4vw, 1.85rem)', marginTop: 6 }
       : { ...T.figure, fontSize: '1.2rem', marginTop: 4 };
   return (
     <div
-      style={{ minWidth: 0 }}
+      style={{
+        minWidth: 0,
+        borderLeft: rule ? `1px solid rgba(255,255,255,0.08)` : 'none',
+        paddingLeft: rule ? 18 : 0,
+      }}
       {...(mark ? { 'data-kpi': mark, ...(mark === 'book' ? { 'data-hero': 'book' } : {}) } : {})}
     >
       <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>{label}</div>
@@ -3044,48 +3103,73 @@ function SortHead({ id, sort, onSort, align = 'right', children }) {
   );
 }
 
-function RecentPicks({ results, openRows }) {
-  const open = [...(openRows || [])].sort((a, b) => (Number(b.invested) || 0) - (Number(a.invested) || 0));
-  const shownOpen = open.slice(0, 4);
-  const graded = results || [];
-  if (!shownOpen.length && !graded.length) {
-    return (
-      <div style={{ ...T.meta, color: B.textFaint, padding: '0.9rem 0 0.15rem' }}>
-        No open tickets and no graded picks on file.
-      </div>
-    );
-  }
+function OpenPositions({ rows, onOpenBets }) {
+  const list = rows || [];
+  const shown = list.slice(0, 5);
+  const invested = list.reduce((s, r) => s + (Number(r.invested) || 0), 0);
+  const sizedN = list.filter((r) => stakeRatio(r) >= SIZED_UP_RATIO).length;
+  const maxRatio = list.reduce((m, r) => Math.max(m, stakeRatio(r)), 0);
   return (
-    <div style={{ marginTop: 18 }}>
-      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Recent picks</div>
-      {shownOpen.length ? (
-        <div style={{ ...T.kicker, color: B.textMuted, letterSpacing: '0.08em', margin: '10px 0 2px' }}>
-          Open{open.length > shownOpen.length ? ` · ${shownOpen.length} of ${open.length}` : ''}
+    <div data-open-book="1" style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 10px', minWidth: 0 }}>
+          <span style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Open</span>
+          <span style={{ ...T.figure, color: list.length ? B.text : B.textFaint, fontSize: '0.95rem' }}>{list.length}</span>
+          {invested > 0 ? (
+            <span style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(invested, { signed: false })}</span>
+          ) : null}
+          {sizedN ? (
+            <span style={{ ...T.kicker, color: B.goldSoft, letterSpacing: '0.08em' }}>
+              {sizedN} sized{maxRatio ? ` · ${relativeLabel(maxRatio)}` : ''}
+            </span>
+          ) : null}
         </div>
-      ) : null}
-      {shownOpen.map((r, i) => {
+        <button type="button" onClick={onOpenBets} style={{ ...textBtn, color: B.goldSoft }}>Bets</button>
+      </div>
+      {list.length ? shown.map((r, i) => {
         const play = openPlayFace(r);
         const matchup = r.away && r.home ? `${r.away} @ ${r.home}` : null;
+        const ratio = stakeRatio(r);
+        const multiple = relativeLabel(ratio);
+        const hot = ratio >= SIZED_UP_RATIO;
         return (
-          <div key={`${r.gameKey || 'open'}-${r.side || i}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '0.45rem 0', borderTop: `1px solid ${B.hair}` }}>
+          <div key={`${r.gameKey || 'open'}-${r.side || i}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '0.5rem 0', borderTop: `1px solid ${B.hair}` }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ ...T.name, fontSize: '0.84rem', color: B.text }}>
+              <div style={{ ...T.name, fontSize: '0.86rem', color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {play.name}
                 {play.price ? <span style={{ color: B.textSec, fontWeight: 550 }}> {play.price}</span> : null}
               </div>
               <div style={{ ...T.meta, color: B.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {[r.sport, matchup].filter(Boolean).join(' · ') || 'Open ticket'}
+                {[r.sport, MARKET_LABEL[r.marketType] || r.marketType, matchup].filter(Boolean).join(' · ') || 'Open ticket'}
               </div>
             </div>
-            <div style={{ ...T.figure, color: B.textSec, fontSize: '0.82rem', flexShrink: 0 }}>
-              {fmtVol(r.invested, { signed: false })}
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              {multiple ? (
+                <div style={{ ...T.kicker, letterSpacing: '0.06em', color: hot ? B.goldSoft : B.textFaint }}>{multiple}</div>
+              ) : null}
+              <div style={{ ...T.figure, color: B.textSec, fontSize: '0.82rem' }}>
+                {fmtVol(r.invested, { signed: false })}
+              </div>
             </div>
           </div>
         );
-      })}
-      {graded.length ? (
-        <div style={{ ...T.kicker, color: B.textMuted, letterSpacing: '0.08em', margin: '12px 0 2px' }}>Graded</div>
+      }) : (
+        <div style={{ ...T.meta, color: B.textFaint, padding: '0.55rem 0 0.1rem' }}>No open tickets.</div>
+      )}
+      {list.length > shown.length ? (
+        <div style={{ ...T.meta, color: B.textMuted, paddingTop: 4 }}>{shown.length} of {list.length}</div>
       ) : null}
+    </div>
+  );
+}
+
+function RecentPicks({ results }) {
+  const graded = results || [];
+  if (!graded.length) return null;
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Recent picks</div>
+      <div style={{ ...T.kicker, color: B.textMuted, letterSpacing: '0.08em', margin: '12px 0 2px' }}>Graded</div>
       {graded.map((leg) => (
         <div key={leg.id} style={{ display: 'grid', gridTemplateColumns: '46px minmax(0, 1fr) auto', gap: '0 10px', alignItems: 'baseline', padding: '0.42rem 0', borderTop: `1px solid ${B.hair}` }}>
           <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>{leg.date ? String(leg.date).slice(5) : '—'}</div>
@@ -3109,7 +3193,7 @@ function RecentPicks({ results, openRows }) {
 
 function SharpDetail({
   face, viewEnd, span, sport, market, walletProfiles, actionRows, startEditing,
-  onRename, onRemove, onToggleBets, onClose, contained = false,
+  onRename, onRemove, onToggleBets, onClose, onOpenBets, contained = false,
 }) {
   const holding = face.holding;
   const rootRef = useRef(null);
@@ -3120,12 +3204,7 @@ function SharpDetail({
   useEffect(() => {
     if (startEditing) rootRef.current?.scrollIntoView({ block: 'nearest' });
   }, [startEditing]);
-  const mineOpen = (actionRows || []).filter((r) => {
-    if (!sameSharp(r.walletShort, holding.walletShort)) return false;
-    if (sport && String(r.sport || '').toUpperCase() !== sport) return false;
-    if (market && legMarketLabel(r) !== market && (MARKET_LABEL[r.marketType] || r.marketType) !== market) return false;
-    return true;
-  });
+  const mineOpen = positionSlip(holding, sport, market, actionRows).rows;
   const graded = (dossier?.results || []).filter((leg) => !market || leg.market === market);
   const closePct = Number.isFinite(holding.clv?.pctPos) ? holding.clv.pctPos : null;
   const share = shareOfWindow(face.pnl, viewEnd);
@@ -3168,14 +3247,10 @@ function SharpDetail({
         <Kpi label="Close" value={closePct != null ? `${closePct}%` : '—'} mark="close" />
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', marginTop: 8, ...T.meta, fontFeatureSettings: "'tnum'" }}>
-        {face.openN ? (
-          <span style={{ color: B.textMuted }}>
-            {`${face.openN} open${face.openInvested ? ` · ${fmtVol(face.openInvested, { signed: false })}` : ''}`}
-          </span>
-        ) : null}
         {share != null ? <span style={{ color: B.textMuted }}>{share}% of this window</span> : null}
         {form ? <span style={{ color: heatColor(face.heat) }}>{form}</span> : null}
       </div>
+      <OpenPositions rows={mineOpen} onOpenBets={onOpenBets} />
       {face.spark?.length >= 2 ? (
         <div style={{ marginTop: 12 }}>
           <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Path</div>
@@ -3194,7 +3269,7 @@ function SharpDetail({
         marketFilter={market}
         onToggleBets={onToggleBets}
       />
-      <RecentPicks results={graded} openRows={mineOpen} />
+      <RecentPicks results={graded} />
     </div>
   );
 }
@@ -3271,7 +3346,7 @@ function PortfolioStage({
     const altBy = alt ? new Map(alt.wallets.map((w) => [w.walletShort, w])) : null;
     const openSource = openRows?.length ? openRows : actionRows;
     for (const h of holdings || []) {
-      const open = openOnSport(h, sport, openSource);
+      const open = positionSlip(h, sport, market, openSource);
       const altEntryEarly = altBy ? altBy.get(h.walletShort) : null;
       let pnl = h.l30Pnl;
       let roi = h.roi;
@@ -3316,6 +3391,8 @@ function PortfolioStage({
         heat,
         openN: open.n,
         openInvested: open.invested,
+        sizedN: open.sizedN,
+        maxRatio: open.maxRatio,
         lead: market && !sport
           ? matchedSportLead(h, span, market, altEntry)
           : windowLead(h, span, sport, altEntry, market),
@@ -3418,6 +3495,7 @@ function PortfolioStage({
       onRename={onRename}
       onRemove={onRemove}
       onToggleBets={onToggleBets}
+      onOpenBets={onOpenBets}
       onClose={() => onToggle?.(active.holding.walletShort)}
       contained={compact}
     />
@@ -3453,30 +3531,46 @@ function PortfolioStage({
         </div>
       </div>
 
-      <div style={{ marginTop: 18 }}>
+      <div style={{
+        ...PANEL,
+        position: 'relative',
+        overflow: 'hidden',
+        marginTop: 16,
+        padding: compact ? '1.05rem 0.95rem 0.9rem' : '1.2rem 1.25rem 1.05rem',
+      }}
+      >
+        <div style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          height: 2,
+          background: tone,
+        }}
+        />
         <div style={{ ...T.kicker, color: B.textFaint }}>
           {[spanLabel, sport, market].filter(Boolean).join(' · ')}{spanNote}
         </div>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: compact ? '1fr 1fr' : 'minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 0.7fr) minmax(0, 0.7fr)',
-          gap: compact ? '14px 18px' : '6px 28px',
+          gridTemplateColumns: compact ? '1fr 1fr' : 'minmax(0, 1.55fr) minmax(0, 0.85fr) minmax(0, 0.7fr) minmax(0, 0.7fr)',
+          gap: compact ? '16px 18px' : '8px 8px',
           alignItems: 'end',
-          marginTop: 10,
+          marginTop: 12,
         }}
         >
           <Kpi mark="book" scale="hero" label="Profit" value={Number.isFinite(headline) ? fmtVol(headline) : '—'} tone={tone} />
-          <Kpi mark="record" scale="kpi" label="Record" value={headlineRec?.record || '—'} />
-          <Kpi mark="win" scale="kpi" label="Win" value={headlineRec?.showPct ? `${headlineRec.wr}%` : '—'} />
-          <Kpi mark="roi" scale="kpi" label="ROI" value={Number.isFinite(headlineRoi) ? `${headlineRoi}%` : '—'} tone={pnlColor(headlineRoi, B.text)} />
+          <Kpi mark="record" scale="kpi" label="Record" value={headlineRec?.record || '—'} rule={!compact} />
+          <Kpi mark="win" scale="kpi" label="Win" value={headlineRec?.showPct ? `${headlineRec.wr}%` : '—'} rule={!compact} />
+          <Kpi mark="roi" scale="kpi" label="ROI" value={Number.isFinite(headlineRoi) ? `${headlineRoi}%` : '—'} tone={pnlColor(headlineRoi, B.text)} rule={!compact} />
         </div>
         {(sport || market) ? (
-          <div style={{ ...T.meta, color: B.textMuted, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
+          <div style={{ ...T.meta, color: B.textMuted, marginTop: 10, fontFeatureSettings: "'tnum'" }}>
             Book {Number.isFinite(bookEnd) ? fmtVol(bookEnd) : '—'}
             {sport && market && sportRow && Number.isFinite(sportRow.pnl) ? ` · ${sport} ${fmtVol(sportRow.pnl)}` : ''}
           </div>
         ) : null}
-        <div data-hero="tails" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', alignItems: 'baseline', marginTop: 8 }}>
+        <div data-hero="tails" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', alignItems: 'baseline', marginTop: 10 }}>
           <span style={{ ...T.kicker, color: B.textFaint }}>My tails</span>
           <span style={{ ...T.figure, color: pnlColor(tails.pnl, B.text), fontSize: '0.92rem' }}>
             {Number.isFinite(tails.pnl) ? fmtVol(tails.pnl) : '—'}
@@ -3560,6 +3654,7 @@ function PortfolioStage({
                     selected={open}
                     isMobile={compact}
                     onToggle={() => onToggle?.(id)}
+                    onOpenBets={onOpenBets}
                   />
                   {open && compact ? detail : null}
                 </div>
