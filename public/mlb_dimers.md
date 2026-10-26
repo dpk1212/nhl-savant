@@ -12,21 +12,21 @@ Date: Oct 26 2026Oct 26
 \\
 Brewers  R. Gasser \\
 \\
-47.6% \\
+48.0% \\
 \\
-![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+114\\
+49¢\\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
 Rays  F. Peralta \\
 \\
-52.4% \\
+52.0% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-51¢\\
+52¢\\
 \\
 MLB\\
 \\
