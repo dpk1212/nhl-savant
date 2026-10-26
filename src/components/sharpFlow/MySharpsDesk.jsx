@@ -12,6 +12,7 @@ import {
   buildPortfolioSnapshot,
   buildPortfolioStage,
   buildSharpDossier,
+  honestRecord,
   portfolioWindowBook,
   summarizeTape,
   blendRoi,
@@ -72,7 +73,7 @@ const T = {
   body: { fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.4 },
 };
 
-const PERF_GRID = '28px minmax(0, 1.35fr) minmax(52px, 0.85fr) 88px 50px 46px 74px';
+const PERF_GRID = '108px minmax(0, 1.45fr) minmax(88px, 1fr) 58px 108px';
 const PANEL = {
   borderRadius: 16,
   border: '1px solid rgba(255,255,255,0.08)',
@@ -274,20 +275,100 @@ function openOnSport(holding, sport, actionRows) {
   };
 }
 
+function pathFromLegs(legs) {
+  const pts = [];
+  let run = 0;
+  for (const leg of legs || []) {
+    if (!Number.isFinite(leg?.pnl)) continue;
+    run += leg.pnl;
+    pts.push(Math.round(run));
+  }
+  return pts.length >= 2 ? pts : [];
+}
+
+function leadFromLegs(legs, sport) {
+  const by = new Map();
+  for (const leg of legs || []) {
+    if (sport && leg.sport !== sport) continue;
+    const market = MARKET_LABEL[leg.market] || leg.market || 'Market';
+    const key = sport ? market : `${leg.sport} ${market}`.trim();
+    const cur = by.get(key) || { key, pnl: 0 };
+    cur.pnl += Number(leg.pnl) || 0;
+    by.set(key, cur);
+  }
+  const best = [...by.values()].sort((a, b) => b.pnl - a.pnl)[0];
+  return best?.key || null;
+}
+
+function windowLead(holding, span, sport, altEntry) {
+  if (span === 'yesterday') return leadFromLegs(altEntry?.legs, sport);
+  if (span === 'l90') {
+    const markets = (holding.l90?.markets || []).filter((m) => !sport || m.sport === sport);
+    const best = [...markets].sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0))[0];
+    if (!best) return null;
+    return sport ? best.label : `${best.sport} ${best.label}`;
+  }
+  const markets = (holding.markets || []).filter((m) => !sport || m.sport === sport);
+  let best = null;
+  for (const m of markets) {
+    const pnl = Number(m.l30?.pnl);
+    if (!Number.isFinite(pnl)) continue;
+    if (!best || pnl > best.pnl) best = { pnl, label: m.label, sport: m.sport };
+  }
+  if (best) return sport ? best.label : `${best.sport} ${best.label}`;
+  if (sport) return (holding.lines || []).find((l) => l.sport === sport)?.market || null;
+  return holding.where || null;
+}
+
+function windowSpark(holding, span, sport, altEntry) {
+  if (span === 'yesterday') {
+    const legs = (altEntry?.legs || []).filter((l) => !sport || l.sport === sport);
+    return pathFromLegs(legs);
+  }
+  if (sport && span === '30d') {
+    return pathFromLegs((holding.tape || []).filter((l) => l.sport === sport));
+  }
+  if (span === 'l90') return Array.isArray(holding.l90?.spark) ? holding.l90.spark : [];
+  return Array.isArray(holding.spark) ? holding.spark : [];
+}
+
+function Hairline({ points, height = 28 }) {
+  const pts = (points || []).map((n) => Number(n)).filter((n) => Number.isFinite(n));
+  if (pts.length < 2) return <div style={{ height }} />;
+  const w = 160;
+  const h = height;
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const span = (max - min) || 1;
+  const d = pts.map((v, i) => {
+    const x = (i / (pts.length - 1)) * (w - 2) + 1;
+    const y = 2 + (1 - (v - min) / span) * (h - 4);
+    return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const color = pts[pts.length - 1] >= 0 ? B.green : B.red;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={height} aria-hidden="true" style={{ display: 'block' }}>
+      <path d={d} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function PortfolioSharp({
-  row, face, maxAbs, selected, isMobile, rank, onToggle,
+  row, face, selected, isMobile, onToggle,
 }) {
   const form = heatLine(face.heat);
-  const close = Number.isFinite(row.clv?.pctPos) ? `${row.clv.pctPos}%` : '—';
-  const closeTone = Number.isFinite(row.clv?.pctPos) && row.clv.pctPos >= 55 ? B.goldSoft : B.textFaint;
   const record = face.honest?.record
     ? `${face.honest.record}${face.honest.showPct ? ` · ${face.honest.wr}%` : ''}`
     : null;
+  const under = [record, isMobile ? face.lead : null, isMobile && Number.isFinite(face.roi) ? `${face.roi}%` : null]
+    .filter(Boolean)
+    .join(' · ');
   return (
     <div
       role="button"
       tabIndex={0}
       data-on={selected ? '1' : '0'}
+      data-sharp={row.walletShort}
       className="pf-row"
       onClick={onToggle}
       onKeyDown={(e) => {
@@ -297,24 +378,22 @@ function PortfolioSharp({
       style={{
         display: 'grid',
         gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : PERF_GRID,
-        gap: isMobile ? '2px 12px' : '0 12px',
+        gap: isMobile ? '2px 12px' : '0 14px',
         alignItems: 'center',
-        padding: isMobile ? '0.72rem 0.85rem' : '0.62rem 0.85rem',
-        boxShadow: selected ? `inset 2px 0 0 ${B.gold}` : 'none',
+        padding: isMobile ? '0.78rem 0.9rem' : '0.72rem 0.95rem',
+        boxShadow: selected ? 'inset 0 -2px 0 #F8FAFC' : 'none',
         cursor: 'pointer',
       }}
     >
-      {isMobile ? null : (
-        <div style={{ ...T.meta, color: selected ? B.goldSoft : B.textFaint, fontFeatureSettings: "'tnum'" }}>
-          {String(rank).padStart(2, '0')}
-        </div>
-      )}
-      <div style={{ minWidth: 0 }}>
+      <div style={{ ...T.figure, color: pnlColor(face.pnl), fontSize: isMobile ? '1.05rem' : '1.18rem', textAlign: isMobile ? 'right' : 'left', order: isMobile ? 2 : 0 }}>
+        {Number.isFinite(face.pnl) ? fmtVol(face.pnl) : '—'}
+      </div>
+      <div style={{ minWidth: 0, order: isMobile ? 1 : 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
           <span style={{
             ...T.name,
-            fontSize: '0.92rem',
-            color: selected ? B.goldSoft : B.text,
+            fontSize: '0.95rem',
+            color: B.text,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -327,30 +406,24 @@ function PortfolioSharp({
           ) : null}
         </div>
         <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {record || '—'}
-          {form ? <span style={{ color: heatColor(face.heat) }}>{record ? ` · ${form}` : form}</span> : null}
-          {isMobile && Number.isFinite(face.roi) ? ` · ${face.roi}%` : ''}
-          {isMobile && face.openInvested ? ` · ${fmtVol(face.openInvested, { signed: false })} open` : ''}
+          {under || '—'}
+          {form ? <span style={{ color: heatColor(face.heat) }}>{under ? ` · ${form}` : form}</span> : null}
         </div>
-      </div>
-      {isMobile ? null : <WeightBar value={face.pnl} maxAbs={maxAbs} height={6} />}
-      <div style={{ ...T.figure, color: pnlColor(face.pnl), textAlign: 'right', fontSize: '0.98rem' }}>
-        {Number.isFinite(face.pnl) ? fmtVol(face.pnl) : '—'}
+        {isMobile && face.spark?.length >= 2 ? (
+          <div style={{ marginTop: 6 }}><Hairline points={face.spark} height={22} /></div>
+        ) : null}
       </div>
       {isMobile ? null : (
-        <div style={{ ...T.figure, color: pnlColor(face.roi, B.textFaint), textAlign: 'right', fontSize: '0.8rem' }}>
+        <div data-lead="1" style={{ ...T.body, color: B.textSec, fontSize: '0.84rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {face.lead || '—'}
+        </div>
+      )}
+      {isMobile ? null : (
+        <div style={{ ...T.figure, color: pnlColor(face.roi, B.textFaint), textAlign: 'right', fontSize: '0.84rem' }}>
           {Number.isFinite(face.roi) ? `${face.roi}%` : '—'}
         </div>
       )}
-      {isMobile ? null : (
-        <div style={{ ...T.figure, color: closeTone, textAlign: 'right', fontSize: '0.8rem' }}>{close}</div>
-      )}
-      {isMobile ? null : (
-        <div style={{ ...T.figure, color: face.openInvested ? B.textSec : B.textFaint, textAlign: 'right', fontSize: '0.8rem' }}>
-          {face.openInvested ? fmtVol(face.openInvested, { signed: false }) : '—'}
-          {face.openN > 1 ? <span style={{ ...T.meta, color: B.textFaint, marginLeft: 4 }}>{face.openN}</span> : null}
-        </div>
-      )}
+      {isMobile ? null : <Hairline points={face.spark} height={28} />}
     </div>
   );
 }
@@ -442,6 +515,28 @@ function BetsSwitch({ on, onClick, label }) {
   );
 }
 
+function SizeLine({ tiers }) {
+  if (!tiers?.tiers?.length) return null;
+  const shown = tiers.tiers.filter((t) => t.n > 0);
+  if (!shown.length) return null;
+  const best = shown.reduce((m, t) => (t.wr != null && (m == null || t.wr > m.wr) ? t : m), null);
+  const story = best && best.wr >= 55 ? best.id : null;
+  return (
+    <div style={{ marginTop: 14, ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+      <span style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Size</span>
+      {tiers.usual ? <span style={{ color: B.textSec, whiteSpace: 'nowrap' }}>{' · '}Usual {fmtVol(tiers.usual, { signed: false })}</span> : null}
+      {shown.map((t) => (
+        <span key={t.id} style={{ whiteSpace: 'nowrap' }}>
+          {' · '}
+          <span style={{ color: t.id === story ? B.green : B.textSec }}>
+            {t.kicker} {t.wr != null ? `${t.wr}%` : (t.record || t.n)}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function SizeTierStrip({ tiers }) {
   if (!tiers?.tiers?.length) return null;
   const rated = tiers.tiers.filter((t) => t.wr != null);
@@ -497,7 +592,27 @@ function SizeTierStrip({ tiers }) {
   );
 }
 
-function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets, sportFilter = null, plain = false }) {
+function marketWindow(m, span, tapeLegs) {
+  if (span === 'l90') {
+    if (!m.l90) return { pnl: null, honest: null };
+    return {
+      pnl: m.l90.pnl,
+      honest: m.l90.honest || honestRecord(m.l90.wins, m.l90.losses, m.l90.wr),
+    };
+  }
+  if (span === 'yesterday') {
+    const legs = (tapeLegs || []).filter((l) => (
+      l.sport === m.sport && String(l.market || '').toUpperCase() === m.market
+    ));
+    if (!legs.length) return { pnl: null, honest: null };
+    const a = summarizeTape(legs);
+    return { pnl: a.pnl, honest: a.honest };
+  }
+  if (!m.l30) return { pnl: null, honest: null };
+  return { pnl: m.l30.pnl, honest: honestRecord(m.l30.wins, m.l30.losses, m.l30.wr) };
+}
+
+function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets, sportFilter = null, plain = false, span = '30d', tapeLegs = [] }) {
   const [openKey, setOpenKey] = useState(null);
   const [showExits, setShowExits] = useState(false);
   const sizeTiers = sizeTiersForWallet(walletProfiles, holding.walletShort);
@@ -511,6 +626,30 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
   }
   for (const [sport, markets] of bySport) groups.push({ sport, markets });
   const openRows = (actionRows || []).filter((r) => sameSharp(r.walletShort, holding.walletShort));
+  const extraYesterday = [];
+  if (plain && span === 'yesterday') {
+    const known = new Set((holding.markets || []).map((m) => `${m.sport}:${m.market}`));
+    const by = new Map();
+    for (const leg of tapeLegs || []) {
+      if (sportFilter && leg.sport !== sportFilter) continue;
+      const key = `${leg.sport}:${String(leg.market || '').toUpperCase()}`;
+      if (known.has(key)) continue;
+      const cur = by.get(key) || [];
+      cur.push(leg);
+      by.set(key, cur);
+    }
+    for (const [key, legs] of by) {
+      const [sport, market] = key.split(':');
+      const a = summarizeTape(legs);
+      extraYesterday.push({
+        key,
+        label: `${sport} ${MARKET_LABEL[market] || market || 'Market'}`.trim(),
+        pnl: a.pnl,
+        honest: a.honest,
+      });
+    }
+    extraYesterday.sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0));
+  }
 
   return (
     <div
@@ -535,8 +674,11 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
           </button>
         </div>
       )}
+      {plain ? (
+        <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em', marginTop: 16 }}>Markets</div>
+      ) : null}
       {groups.length ? (
-        <div style={{ ...T.meta, color: B.textMuted, marginTop: plain ? 0 : 4 }}>
+        <div style={{ ...T.meta, color: B.textMuted, marginTop: plain ? 8 : 4 }}>
           {betsFollowLine(groups, holding.betsOff)}
         </div>
       ) : null}
@@ -559,8 +701,12 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
       {groups.length ? groups.map((g) => (
         <div key={g.sport} style={{ marginTop: 10 }}>
           <div style={{ ...T.kicker, color: B.textSec, letterSpacing: '0.08em', marginBottom: 4 }}>{g.sport}</div>
-          {g.markets.map((m) => {
+          {(plain
+            ? [...g.markets].sort((a, b) => (Number(marketWindow(b, span, tapeLegs).pnl) || -Infinity) - (Number(marketWindow(a, span, tapeLegs).pnl) || -Infinity))
+            : g.markets
+          ).map((m) => {
             const key = `${g.sport}:${m.market}`;
+            const win = plain ? marketWindow(m, span, tapeLegs) : null;
             const open = openKey === key;
             const feedOn = betsFeedOn(holding, g.sport, m.market);
             const mineOpen = openRows.filter((r) => {
@@ -572,9 +718,10 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
               return Number.isFinite(ratio) && ratio > best ? ratio : best;
             }, 0);
             const mark = sizeMark(hot);
-            const record = m.honest?.record
+            const allTime = m.honest?.record
               ? `All time ${m.honest.record}${m.n ? ` · ${m.n} bets` : ''}`
               : (m.n ? `All time · ${m.n} bets` : '—');
+            const record = plain ? (recordLine(win?.honest) || '—') : allTime;
             const tape = open ? marketTape(walletProfiles, holding.walletShort, g.sport, m.market, { limit: 80 }) : null;
             return (
               <div key={key} style={{ borderTop: `1px solid ${B.hair}` }}>
@@ -602,17 +749,13 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
                 >
                   {plain ? (
                     <>
-                      <span style={{ minWidth: 0 }}>
-                        <span style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{m.label}</span>
-                        <span style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'", marginLeft: 8 }}>{record}</span>
-                        <span style={{ display: 'block', ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'", marginTop: 2 }}>
-                          Book {Number.isFinite(m.roi) ? `${m.roi}%` : '—'}
-                          {m.usual ? ` · avg ${fmtVol(m.usual, { signed: false })}` : ''}
-                          {mark ? <span style={{ color: B.goldSoft }}> · {mark}</span> : null}
-                        </span>
+                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ ...T.name, color: B.text, fontSize: '0.86rem' }}>{m.label}</span>
+                        <span style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{' · '}{record}</span>
+                        {mark ? <span style={{ ...T.meta, color: B.goldSoft }}> · {mark}</span> : null}
                       </span>
-                      <span style={{ ...T.figure, color: pnlColor(m.l30?.pnl, B.textFaint), fontSize: '0.84rem', textAlign: 'right' }}>
-                        {Number.isFinite(m.l30?.pnl) ? fmtVol(m.l30.pnl) : '—'}
+                      <span style={{ ...T.figure, color: pnlColor(win?.pnl, B.textFaint), fontSize: '0.86rem', textAlign: 'right' }}>
+                        {Number.isFinite(win?.pnl) ? fmtVol(win.pnl) : '—'}
                       </span>
                     </>
                   ) : (
@@ -652,6 +795,17 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
           {holding.honest?.record ? `${holding.honest.text} across the book.` : 'Thin sample.'}
         </div>
       )}
+      {extraYesterday.map((row) => (
+        <div key={row.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '0.5rem 0', borderTop: `1px solid ${B.hair}` }}>
+          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ ...T.name, color: B.text, fontSize: '0.86rem' }}>{row.label}</span>
+            <span style={{ ...T.meta, color: B.textMuted, marginLeft: 10 }}>{recordLine(row.honest) || '—'}</span>
+          </span>
+          <span style={{ ...T.figure, color: pnlColor(row.pnl, B.textFaint), fontSize: '0.86rem' }}>
+            {Number.isFinite(row.pnl) ? fmtVol(row.pnl) : '—'}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -2512,25 +2666,6 @@ function AreaChart({ points, height = 210 }) {
   );
 }
 
-function WeightBar({ value, maxAbs, height = 10 }) {
-  const n = Number(value) || 0;
-  const pct = maxAbs > 0 ? Math.min(100, (Math.abs(n) / maxAbs) * 100) : 0;
-  const pos = n >= 0;
-  const color = pos ? B.green : B.red;
-  return (
-    <div style={{ height, borderRadius: 99, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-      <div style={{
-        width: `${Math.max(pct, n === 0 ? 0 : 3)}%`,
-        height: '100%',
-        borderRadius: 99,
-        background: `linear-gradient(90deg, ${color}99, ${color})`,
-        boxShadow: `0 0 12px ${color}55`,
-      }}
-      />
-    </div>
-  );
-}
-
 function useDeskWide() {
   const [wide, setWide] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1100 : true));
   useEffect(() => {
@@ -2547,7 +2682,7 @@ function shareOfWindow(part, total) {
   const t = Number(total);
   if (!Number.isFinite(p) || !Number.isFinite(t) || t === 0) return null;
   const pct = Math.round((p / t) * 100);
-  if (!Number.isFinite(pct) || pct === 0) return null;
+  if (!Number.isFinite(pct) || pct <= 0 || pct > 100) return null;
   return pct;
 }
 
@@ -2635,28 +2770,54 @@ function BookStat({ id, kicker, n, money, tone, onClick }) {
       data-book-stat={id}
       onClick={onClick}
       style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: `1px solid ${B.hair}`,
-        borderRadius: 12,
-        padding: '0.4rem 0.72rem 0.46rem',
+        background: 'none',
+        border: 'none',
+        padding: '0.15rem 0',
         textAlign: 'left',
         cursor: 'pointer',
         fontFamily: 'inherit',
-        minWidth: 108,
+        color: 'inherit',
       }}
     >
-      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{kicker}</div>
-      <div style={{ marginTop: 3, ...T.figure, color: tone, fontSize: '0.98rem' }}>
-        {n || 0}
-        {money ? (
-          <span style={{ color: B.textMuted, fontWeight: 550, marginLeft: 8 }}>{fmtVol(money, { signed: false })}</span>
-        ) : null}
-      </div>
+      <span style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{kicker}</span>
+      <span style={{ ...T.figure, color: tone, fontSize: '0.92rem', marginLeft: 6 }}>{n || 0}</span>
+      {money ? (
+        <span style={{ ...T.meta, color: B.textMuted, marginLeft: 6 }}>{fmtVol(money, { signed: false })}</span>
+      ) : null}
     </button>
   );
 }
 
-function SortHead({ id, sort, onSort, children }) {
+function SportLink({ label, pnl, on, onClick }) {
+  return (
+    <button
+      type="button"
+      data-sport={label}
+      aria-pressed={on}
+      onClick={onClick}
+      style={{
+        background: 'none',
+        border: 'none',
+        borderBottom: on ? '1px solid #F8FAFC' : '1px solid transparent',
+        padding: '0.2rem 0',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        color: on ? B.text : B.textMuted,
+        display: 'inline-flex',
+        gap: 8,
+        alignItems: 'baseline',
+        flex: '0 0 auto',
+      }}
+    >
+      <span style={{ ...T.kicker, color: 'inherit', letterSpacing: '0.1em' }}>{label}</span>
+      {Number.isFinite(pnl) ? (
+        <span style={{ ...T.figure, fontSize: '0.82rem', color: pnlColor(pnl, B.textSec) }}>{fmtVol(pnl)}</span>
+      ) : null}
+    </button>
+  );
+}
+
+function SortHead({ id, sort, onSort, align = 'right', children }) {
   const on = sort === id;
   return (
     <button
@@ -2667,14 +2828,14 @@ function SortHead({ id, sort, onSort, children }) {
         ...T.kicker,
         letterSpacing: '0.08em',
         color: on ? B.text : B.textFaint,
-        textAlign: 'right',
+        textAlign: align,
         background: 'none',
         border: 'none',
         borderBottom: on ? '1px solid rgba(248,250,252,0.7)' : '1px solid transparent',
         padding: '0 0 2px',
         cursor: 'pointer',
         fontFamily: 'inherit',
-        justifySelf: 'end',
+        justifySelf: align === 'left' ? 'start' : 'end',
       }}
     >
       {children}
@@ -2807,10 +2968,18 @@ function SharpDetail({
         ].filter(Boolean).join(' · ') || '—'}
       </div>
       {form ? <div style={{ ...T.meta, color: heatColor(face.heat), marginTop: 4 }}>{form}</div> : null}
-      <SizeTierStrip tiers={sizeTiersForWallet(walletProfiles, holding.walletShort)} />
+      {face.spark?.length >= 2 ? (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Path</div>
+          <AreaChart points={face.spark} height={contained ? 72 : 88} />
+        </div>
+      ) : null}
+      <SizeLine tiers={sizeTiersForWallet(walletProfiles, holding.walletShort)} />
       <RecentPicks results={dossier?.results} openRows={mineOpen} />
       <MarketBook
         plain
+        span={span}
+        tapeLegs={face.legs || []}
         holding={holding}
         walletProfiles={walletProfiles}
         actionRows={actionRows}
@@ -2862,6 +3031,12 @@ function BookSpotlight({ face, viewEnd, onOpen }) {
           share != null ? `${share}% of this window` : null,
         ].filter(Boolean).join(' · ') || '—'}
       </div>
+      {face.lead ? (
+        <div style={{ ...T.body, color: B.textSec, marginTop: 10 }}>{face.lead}</div>
+      ) : null}
+      {face.spark?.length >= 2 ? (
+        <div style={{ marginTop: 12 }}><Hairline points={face.spark} height={36} /></div>
+      ) : null}
       <div style={{ ...T.kicker, color: B.goldSoft, marginTop: 18, letterSpacing: '0.12em' }}>Open the book</div>
     </button>
   );
@@ -2881,25 +3056,6 @@ function PortfolioStage({
     () => (span === '30d' ? null : portfolioWindowBook(holdings, span)),
     [holdings, span],
   );
-  const markets = useMemo(() => {
-    if (alt) {
-      if (!sport) return alt.markets;
-      if (alt.marketsBySport) return alt.marketsBySport[sport] || [];
-      const legs = alt.wallets.flatMap((w) => (w.legs || []).filter((l) => l.sport === sport));
-      const by = new Map();
-      for (const leg of legs) {
-        const label = leg.market === 'SPREAD' ? 'Spread' : leg.market === 'TOTAL' ? 'Total' : (leg.market || 'Market');
-        const cur = by.get(label) || [];
-        cur.push(leg);
-        by.set(label, cur);
-      }
-      return [...by.entries()].map(([label, legsFor]) => {
-        const a = summarizeTape(legsFor);
-        return { label, ...a, n: a.wins + a.losses };
-      }).sort((a, b) => (Number(b.pnl) || 0) - (Number(a.pnl) || 0));
-    }
-    return sport ? buildPortfolioStage(holdings, sport).markets : stage.markets;
-  }, [alt, holdings, sport, stage]);
   const people = useMemo(() => {
     const rows = [];
     const altBy = alt ? new Map(alt.wallets.map((w) => [w.walletShort, w])) : null;
@@ -2933,6 +3089,7 @@ function PortfolioStage({
         honest = line.honest;
         heat = line.heat;
       }
+      const altEntry = altBy ? altBy.get(h.walletShort) : null;
       rows.push({
         holding: h,
         pnl,
@@ -2941,6 +3098,9 @@ function PortfolioStage({
         heat,
         openN: open.n,
         openInvested: open.invested,
+        lead: windowLead(h, span, sport, altEntry),
+        spark: windowSpark(h, span, sport, altEntry),
+        legs: altEntry?.legs || null,
       });
     }
     rows.sort((a, b) => {
@@ -2950,17 +3110,19 @@ function PortfolioStage({
       return (b.openInvested || 0) - (a.openInvested || 0);
     });
     return rows;
-  }, [holdings, sport, actionRows, openRows, alt]);
+  }, [holdings, sport, actionRows, openRows, alt, span]);
   const viewSports = alt ? alt.sports : stage.sports;
-  const viewPath = alt ? alt.path : stage.path;
   const viewEnd = alt ? alt.pathEnd : (stage.pathEnd ?? stage.bookPnl);
   const viewRoi = alt ? alt.roi : stage.roi;
   const rec = alt ? alt.honest : stage.honest;
-  const tone = pnlColor(viewEnd, B.text);
   const ranked = useMemo(() => rankPeople(people, sort), [people, sort]);
   const active = ranked.find((face) => face.holding.walletShort === selected) || null;
-  const maxSharp = Math.max(1, ...ranked.map((h) => Math.abs(h.pnl) || 0));
-  const maxSport = Math.max(1, ...viewSports.map((s) => Math.abs(s.pnl) || 0), Math.abs(Number(viewEnd)) || 0);
+  const bookEnd = viewEnd;
+  const sportRow = sport ? (viewSports.find((row) => row.sport === sport) || null) : null;
+  const headline = sportRow && Number.isFinite(sportRow.pnl) ? sportRow.pnl : bookEnd;
+  const headlineRec = sportRow?.honest || rec;
+  const headlineRoi = sport ? blendRoi(people.map((p) => ({ pnl: p.pnl, roi: p.roi }))) : viewRoi;
+  const tone = pnlColor(headline, B.text);
   const spanLabel = span === 'yesterday' ? 'Yesterday' : span === 'l90' ? 'Last 90 days' : '30-day path';
   const spanNote = span === 'l90' && alt && alt.ready === false
     ? ''
@@ -2984,7 +3146,7 @@ function PortfolioStage({
   const detail = active ? (
     <SharpDetail
       face={active}
-      viewEnd={viewEnd}
+      viewEnd={headline}
       span={span}
       sport={sport}
       walletProfiles={walletProfiles}
@@ -2997,12 +3159,12 @@ function PortfolioStage({
       contained={compact}
     />
   ) : (
-    <BookSpotlight face={ranked[0]} viewEnd={viewEnd} onOpen={onOpen} />
+    <BookSpotlight face={ranked[0]} viewEnd={headline} onOpen={onOpen} />
   );
 
   return (
     <section data-portfolio="desk" data-span={span} style={{ margin: '2px 0 8px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <Segmented
           value={span}
           onChange={setSpan}
@@ -3012,94 +3174,56 @@ function PortfolioStage({
             { id: 'l90', label: 'L90' },
           ]}
         />
-        <div>
-          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em', marginBottom: 6 }}>Open book</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {bookStats.map((cell) => (
-              <BookStat key={cell.id} {...cell} onClick={onOpenBets} />
-            ))}
-          </div>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'baseline' }}>
+          {bookStats.map((cell) => (
+            <BookStat key={cell.id} {...cell} onClick={onOpenBets} />
+          ))}
         </div>
       </div>
 
-      <div style={{ ...PANEL, borderRadius: 18, marginTop: 14, overflow: 'hidden' }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: compact || viewPath.length < 2 ? '1fr' : 'minmax(220px, 300px) minmax(0, 1fr)',
-          gap: 8,
-          alignItems: 'center',
-          padding: compact ? '1.05rem 1rem 0.85rem' : '1.15rem 1rem 0.85rem 1.25rem',
-        }}
-        >
-          <div>
-            <div style={{ ...T.kicker, color: B.textFaint }}>{spanLabel}{spanNote}</div>
-            <div data-hero="book" style={{ ...T.hero, color: tone, fontSize: compact ? '2.45rem' : '3.05rem', marginTop: 8 }}>
-              {Number.isFinite(viewEnd) ? fmtVol(viewEnd) : '—'}
-            </div>
-            <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
-              {recordLine(rec) || '—'}
-              {Number.isFinite(viewRoi) ? ` · ${viewRoi}% ROI` : ''}
-            </div>
-            <div data-hero="tails" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', alignItems: 'baseline', marginTop: 16 }}>
-              <span style={{ ...T.kicker, color: B.textFaint }}>My tails</span>
-              <span style={{ ...T.figure, color: pnlColor(tails.pnl, B.text), fontSize: '1rem' }}>
-                {Number.isFinite(tails.pnl) ? fmtVol(tails.pnl) : '—'}
-              </span>
-              <span style={{ ...T.meta, color: B.textMuted }}>{tails.line}</span>
-            </div>
+      <div style={{ marginTop: 18 }}>
+        <div style={{ ...T.kicker, color: B.textFaint }}>{sport ? `${sport}${spanNote}` : `${spanLabel}${spanNote}`}</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginTop: 6 }}>
+          <div data-hero="book" style={{ ...T.hero, color: tone, fontSize: compact ? '2.45rem' : '3.05rem' }}>
+            {Number.isFinite(headline) ? fmtVol(headline) : '—'}
           </div>
-          {viewPath.length >= 2 ? (
-            <div style={{ minWidth: 0, marginTop: compact ? 6 : 0 }}>
-              <AreaChart points={viewPath} height={compact ? 168 : 196} />
+          {sport ? (
+            <div style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+              Book {Number.isFinite(bookEnd) ? fmtVol(bookEnd) : '—'}
             </div>
           ) : null}
         </div>
-
-        {viewSports.length ? (
-          <div className="pf-rail" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0.8rem 1rem 0.9rem', borderTop: `1px solid ${B.hair}` }}>
-            <SportTile
-              label="Book"
-              pnl={viewEnd}
-              honest={rec}
-              maxAbs={maxSport}
-              on={!sport}
-              onClick={() => setSport(null)}
-            />
-            {viewSports.map((row) => (
-              <SportTile
-                key={row.sport}
-                label={row.sport}
-                pnl={row.pnl}
-                honest={row.honest}
-                maxAbs={maxSport}
-                on={sport === row.sport}
-                onClick={() => setSport(sport === row.sport ? null : row.sport)}
-              />
-            ))}
-          </div>
-        ) : null}
-
-        {markets.length ? (
-          <div className="pf-rail" style={{ display: 'flex', overflowX: 'auto', borderTop: `1px solid ${B.hair}` }}>
-            {markets.slice(0, 6).map((m) => (
-              <div key={m.label} style={{ flex: '1 0 132px', padding: '0.75rem 1rem 0.85rem', borderRight: `1px solid ${B.hair}` }}>
-                <div style={{ ...T.kicker, color: B.textFaint }}>{m.label}</div>
-                <div style={{ ...T.figure, color: pnlColor(m.pnl ?? m.roi, B.textSec), marginTop: 5, fontSize: '1.02rem' }}>
-                  {Number.isFinite(m.pnl) ? fmtVol(m.pnl) : (Number.isFinite(m.roi) ? `${m.roi}%` : '—')}
-                </div>
-                <div style={{ ...T.meta, color: B.textMuted, marginTop: 4, fontFeatureSettings: "'tnum'" }}>
-                  {m.honest?.text && m.honest.text !== '—' ? m.honest.text : '—'}
-                  {Number.isFinite(m.roi) && Number.isFinite(m.pnl) ? ` · ${m.roi}%` : ''}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
+          {recordLine(headlineRec) || '—'}
+          {Number.isFinite(headlineRoi) ? ` · ${headlineRoi}% ROI` : ''}
+        </div>
+        <div data-hero="tails" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', alignItems: 'baseline', marginTop: 8 }}>
+          <span style={{ ...T.kicker, color: B.textFaint }}>My tails</span>
+          <span style={{ ...T.figure, color: pnlColor(tails.pnl, B.text), fontSize: '0.92rem' }}>
+            {Number.isFinite(tails.pnl) ? fmtVol(tails.pnl) : '—'}
+          </span>
+          <span style={{ ...T.meta, color: B.textMuted }}>{tails.line}</span>
+        </div>
       </div>
+
+      {viewSports.length ? (
+        <div className="pf-rail" style={{ display: 'flex', gap: 18, overflowX: 'auto', marginTop: 16 }}>
+          <SportLink label="Book" on={!sport} onClick={() => setSport(null)} />
+          {viewSports.map((row) => (
+            <SportLink
+              key={row.sport}
+              label={row.sport}
+              pnl={row.pnl}
+              on={sport === row.sport}
+              onClick={() => setSport(sport === row.sport ? null : row.sport)}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: compact ? '1fr' : 'minmax(0, 1.2fr) minmax(320px, 0.86fr)',
+        gridTemplateColumns: compact ? '1fr' : 'minmax(0, 1.35fr) minmax(300px, 0.72fr)',
         gap: 14,
         alignItems: 'start',
         marginTop: 14,
@@ -3111,34 +3235,34 @@ function PortfolioStage({
             borderBottom: `1px solid ${B.hair}`,
             display: 'grid',
             gridTemplateColumns: compact ? 'minmax(0, 1fr) auto' : PERF_GRID,
-            gap: '0 12px',
+            gap: compact ? '0 12px' : '0 14px',
             alignItems: 'end',
-            padding: '0.75rem 0.85rem 0.6rem',
+            padding: '0.7rem 0.95rem 0.55rem',
           }}
           >
-            {compact ? null : <div />}
-            <div>
+            {compact ? (
               <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>
-                Performance{sport ? ` · ${sport}` : ''}
-              </div>
-              <div style={{ ...T.meta, color: B.textMuted, marginTop: 3, fontFeatureSettings: "'tnum'" }}>
                 {ranked.length} {ranked.length === 1 ? 'sharp' : 'sharps'}
               </div>
-            </div>
+            ) : (
+              <SortHead id="pnl" sort={sort} onSort={setSort} align="left">{colLabel}</SortHead>
+            )}
             {compact ? (
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
                 <SortHead id="pnl" sort={sort} onSort={setSort}>{colLabel}</SortHead>
                 <SortHead id="roi" sort={sort} onSort={setSort}>ROI</SortHead>
-                <SortHead id="open" sort={sort} onSort={setSort}>Open</SortHead>
               </div>
-            ) : <div />}
-            {compact ? null : <SortHead id="pnl" sort={sort} onSort={setSort}>{colLabel}</SortHead>}
+            ) : (
+              <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>
+                {ranked.length} {ranked.length === 1 ? 'sharp' : 'sharps'}
+              </div>
+            )}
+            {compact ? null : <div />}
             {compact ? null : <SortHead id="roi" sort={sort} onSort={setSort}>ROI</SortHead>}
-            {compact ? null : <SortHead id="close" sort={sort} onSort={setSort}>Close</SortHead>}
-            {compact ? null : <SortHead id="open" sort={sort} onSort={setSort}>Open</SortHead>}
+            {compact ? null : <div />}
           </div>
-          <div className="pf-scroll" style={{ maxHeight: compact ? 'none' : 640, overflowY: compact ? 'visible' : 'auto' }}>
-            {ranked.length ? ranked.map((face, index) => {
+          <div>
+            {ranked.length ? ranked.map((face) => {
               const id = face.holding.walletShort;
               const open = selected === id && !!active;
               return (
@@ -3146,10 +3270,8 @@ function PortfolioStage({
                   <PortfolioSharp
                     row={face.holding}
                     face={face}
-                    maxAbs={maxSharp}
                     selected={open}
                     isMobile={compact}
-                    rank={index + 1}
                     onToggle={() => onToggle?.(id)}
                   />
                   {open && compact ? detail : null}
@@ -3169,39 +3291,6 @@ function PortfolioStage({
     </section>
   );
 }
-
-function SportTile({ label, pnl, honest, maxAbs, on, onClick }) {
-  const line = honest?.text && honest.text !== '—' ? honest.text : (recordLine(honest) || '');
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      style={{
-        flex: '0 0 auto',
-        width: 148,
-        textAlign: 'left',
-        borderRadius: 12,
-        border: `1px solid ${on ? 'rgba(248,250,252,0.28)' : B.hair}`,
-        background: on ? 'rgba(255,255,255,0.045)' : 'transparent',
-        padding: '0.55rem 0.7rem 0.62rem',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        color: 'inherit',
-      }}
-    >
-      <div style={{ ...T.kicker, color: on ? B.text : B.textFaint }}>{label}</div>
-      <div style={{ ...T.figure, color: pnlColor(pnl), fontSize: '1.05rem', marginTop: 6 }}>
-        {Number.isFinite(pnl) ? fmtVol(pnl) : '—'}
-      </div>
-      <div style={{ marginTop: 8 }}><WeightBar value={pnl} maxAbs={maxAbs} height={3} /></div>
-      <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {line}
-      </div>
-    </button>
-  );
-}
-
 
 function Scale({ label, min, max, step, value, text, onChange }) {
   return (
@@ -3750,7 +3839,7 @@ export default function MySharpsDesk({
 
   return (
     <div style={{ margin: '0.2rem 0 2.6rem' }} data-room={room}>
-      <style>{`.ms-name::placeholder{color:${B.textFaint};}.ms-scale{accent-color:#D4AF37;width:148px;}.pf-row:hover{background:rgba(255,255,255,0.035);}.pf-row[data-on="1"]{background:rgba(255,255,255,0.05);}.pf-row[data-on="1"]:hover{background:rgba(255,255,255,0.065);}.pf-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.16) transparent;}.pf-rail{scrollbar-width:none;}.pf-rail::-webkit-scrollbar{display:none;}`}</style>
+      <style>{`.ms-name::placeholder{color:${B.textFaint};}.ms-scale{accent-color:#D4AF37;width:148px;}.pf-row:hover{background:rgba(255,255,255,0.035);}.pf-row[data-on="1"]{background:transparent;}.pf-row[data-on="1"]:hover{background:rgba(255,255,255,0.03);}.pf-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.16) transparent;}.pf-rail{scrollbar-width:none;}.pf-rail::-webkit-scrollbar{display:none;}`}</style>
       <RoomBar room={room} onChange={setRoom} betCount={betCount} />
 
       {room === 'book' ? (
