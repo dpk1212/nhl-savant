@@ -2,7 +2,7 @@
  * My Sharps — a book the customer runs.
  * Portfolio is the fund. Bets are the decisions. Find is how the list gets built.
  */
-import React, { useEffect, useId, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Star } from 'lucide-react';
 import {
   HONEST_PCT_N,
@@ -72,7 +72,13 @@ const T = {
   body: { fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.4 },
 };
 
-const SHARP_GRID = 'minmax(0, 1.15fr) minmax(72px, 1.2fr) 92px 52px 56px 76px';
+const PERF_GRID = '28px minmax(0, 1.35fr) minmax(52px, 0.85fr) 88px 50px 46px 74px';
+const PANEL = {
+  borderRadius: 16,
+  border: '1px solid rgba(255,255,255,0.08)',
+  background: B.card,
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+};
 const MARKET_LABEL = { ML: 'ML', SPREAD: 'Spread', TOTAL: 'Total' };
 const FIND_SPORTS = ['All', 'MLB', 'NFL', 'NBA', 'NHL', 'CFB', 'CBB', 'SOC', 'UFC', 'WNBA'];
 const FIND_SORTS = [
@@ -192,92 +198,6 @@ function RoomBar({ room, onChange, betCount }) {
   );
 }
 
-function Hero({ snapshot, isMobile, onOpenBets }) {
-  const pnl = snapshot.l30?.pnl;
-  const roi = snapshot.l30?.roi;
-  const rec = snapshot.l30?.honest;
-  const tails = snapshot.tails;
-  const tailLine = (tails.wins + tails.losses) > 0
-    ? `${tails.honest.record}${tails.honest.showPct ? ` · ${tails.honest.wr}%` : ''}${tails.openN ? ` · ${tails.openN} open` : ''}`
-    : (tails.openN ? `${tails.openN} open` : 'Mark a bet');
-  const cells = [
-    { id: 'together', kicker: 'Together', n: snapshot.together.n, money: snapshot.together.invested, color: B.goldSoft },
-    { id: 'split', kicker: 'Split', n: snapshot.split.n, money: snapshot.split.invested, color: snapshot.split.n ? B.red : B.textFaint },
-    { id: 'open', kicker: 'Open', n: snapshot.open.n, money: snapshot.open.invested, color: B.goldSoft },
-  ];
-  return (
-    <div style={{
-      borderRadius: 16,
-      border: `1px solid ${B.goldBorder}`,
-      background: 'linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(20,24,33,0.2) 38%, #10141c 100%)',
-      overflow: 'hidden',
-      marginBottom: 8,
-    }}
-    >
-      <div style={{ height: 3, background: 'linear-gradient(90deg, transparent, #D4AF37 40%, #E8D28A, transparent)' }} />
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1.35fr 1fr',
-        gap: isMobile ? 16 : 24,
-        padding: isMobile ? '1.05rem 1rem 0.85rem' : '1.2rem 1.25rem 0.95rem',
-      }}
-      >
-        <div>
-          <div style={{ ...T.kicker, color: B.gold }}>Their 30 days</div>
-          <div data-hero="book" style={{ ...T.hero, color: pnlColor(pnl), fontSize: isMobile ? '2.2rem' : T.hero.fontSize, marginTop: 8 }}>
-            {Number.isFinite(pnl) ? fmtVol(pnl) : '—'}
-          </div>
-          <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
-            {rec?.record ? rec.record : '—'}
-            {rec?.showPct ? ` · ${rec.wr}%` : ''}
-            {Number.isFinite(roi) ? ` · ${roi}% ROI` : ''}
-          </div>
-        </div>
-        <div>
-          <div style={{ ...T.kicker, color: B.textMuted }}>My tails</div>
-          <div data-hero="tails" style={{ ...T.hero, color: pnlColor(tails.pnl, B.text), fontSize: isMobile ? '2.2rem' : T.hero.fontSize, marginTop: 8 }}>
-            {Number.isFinite(tails.pnl) ? fmtVol(tails.pnl) : '—'}
-          </div>
-          <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
-            {tailLine}
-          </div>
-        </div>
-      </div>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        borderTop: `1px solid ${B.line}`,
-      }}
-      >
-        {cells.map((cell) => (
-          <button
-            key={cell.id}
-            type="button"
-            onClick={onOpenBets}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderRight: cell.id === 'open' ? 'none' : `1px solid ${B.hair}`,
-              textAlign: 'left',
-              padding: isMobile ? '0.75rem 0.7rem 0.85rem' : '0.85rem 1rem 0.95rem',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            <div style={{ ...T.kicker, color: B.textFaint }}>{cell.kicker}</div>
-            <div style={{ ...T.figure, color: cell.color, marginTop: 4, fontSize: isMobile ? '0.95rem' : '1.05rem' }}>
-              {cell.n || 0}
-              <span style={{ color: B.textMuted, fontWeight: 550, marginLeft: 8 }}>
-                {cell.money ? fmtVol(cell.money, { signed: false }) : ''}
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function Head({ children, align = 'left' }) {
   return <div style={{ ...T.kicker, color: B.textFaint, textAlign: align, letterSpacing: '0.08em' }}>{children}</div>;
 }
@@ -355,7 +275,7 @@ function openOnSport(holding, sport, actionRows) {
 }
 
 function PortfolioSharp({
-  row, face, maxAbs, selected, isMobile, onToggle, onOpen, onRename, startEditing,
+  row, face, maxAbs, selected, isMobile, rank, onToggle,
 }) {
   const form = heatLine(face.heat);
   const close = Number.isFinite(row.clv?.pctPos) ? `${row.clv.pctPos}%` : '—';
@@ -367,6 +287,8 @@ function PortfolioSharp({
     <div
       role="button"
       tabIndex={0}
+      data-on={selected ? '1' : '0'}
+      className="pf-row"
       onClick={onToggle}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
@@ -374,60 +296,61 @@ function PortfolioSharp({
       }}
       style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : SHARP_GRID,
-        gap: isMobile ? '6px 12px' : '0 14px',
+        gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : PERF_GRID,
+        gap: isMobile ? '2px 12px' : '0 12px',
         alignItems: 'center',
-        padding: '0.72rem 0.15rem 0.72rem 0.35rem',
-        boxShadow: selected ? `inset 3px 0 0 ${B.gold}` : 'none',
-        background: selected ? 'rgba(212,175,55,0.05)' : 'transparent',
+        padding: isMobile ? '0.72rem 0.85rem' : '0.62rem 0.85rem',
+        boxShadow: selected ? `inset 2px 0 0 ${B.gold}` : 'none',
         cursor: 'pointer',
       }}
     >
+      {isMobile ? null : (
+        <div style={{ ...T.meta, color: selected ? B.goldSoft : B.textFaint, fontFeatureSettings: "'tnum'" }}>
+          {String(rank).padStart(2, '0')}
+        </div>
+      )}
       <div style={{ minWidth: 0 }}>
-        <NameField
-          name={row.name}
-          tag={row.tag}
-          selected={selected}
-          startEditing={startEditing}
-          onRename={onRename}
-          onOpen={onOpen}
-        />
-        <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>
-          {isMobile ? (
-            <>
-              {face.honest?.text && face.honest.text !== '—' ? face.honest.text : '—'}
-              {form ? <span style={{ color: heatColor(face.heat) }}>{` · ${form}`}</span> : null}
-              {Number.isFinite(face.roi) ? ` · ${face.roi}% ROI` : ''}
-              {Number.isFinite(row.clv?.pctPos) ? ` · close ${row.clv.pctPos}%` : ''}
-              {face.openInvested ? ` · ${fmtVol(face.openInvested, { signed: false })} open` : ''}
-            </>
-          ) : (
-            <>
-              {record || '—'}
-              {form ? <span style={{ color: heatColor(face.heat) }}>{record ? ` · ${form}` : form}</span> : null}
-            </>
-          )}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+          <span style={{
+            ...T.name,
+            fontSize: '0.92rem',
+            color: selected ? B.goldSoft : B.text,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          >
+            {row.name || row.tag}
+          </span>
+          {row.name ? (
+            <span style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'", flexShrink: 0 }}>{row.tag}</span>
+          ) : null}
+        </div>
+        <div style={{ ...T.meta, color: B.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {record || '—'}
+          {form ? <span style={{ color: heatColor(face.heat) }}>{record ? ` · ${form}` : form}</span> : null}
+          {isMobile && Number.isFinite(face.roi) ? ` · ${face.roi}%` : ''}
+          {isMobile && face.openInvested ? ` · ${fmtVol(face.openInvested, { signed: false })} open` : ''}
         </div>
       </div>
-      {isMobile ? null : <WeightBar value={face.pnl} maxAbs={maxAbs} />}
-      <div style={{ ...T.figure, color: pnlColor(face.pnl), textAlign: 'right', fontSize: '1.02rem' }}>
+      {isMobile ? null : <WeightBar value={face.pnl} maxAbs={maxAbs} height={6} />}
+      <div style={{ ...T.figure, color: pnlColor(face.pnl), textAlign: 'right', fontSize: '0.98rem' }}>
         {Number.isFinite(face.pnl) ? fmtVol(face.pnl) : '—'}
       </div>
       {isMobile ? null : (
-        <div style={{ ...T.figure, color: pnlColor(face.roi, B.textFaint), textAlign: 'right', fontSize: '0.82rem' }}>
+        <div style={{ ...T.figure, color: pnlColor(face.roi, B.textFaint), textAlign: 'right', fontSize: '0.8rem' }}>
           {Number.isFinite(face.roi) ? `${face.roi}%` : '—'}
         </div>
       )}
       {isMobile ? null : (
-        <div style={{ ...T.figure, color: closeTone, textAlign: 'right', fontSize: '0.82rem' }}>{close}</div>
+        <div style={{ ...T.figure, color: closeTone, textAlign: 'right', fontSize: '0.8rem' }}>{close}</div>
       )}
       {isMobile ? null : (
-        <div style={{ ...T.figure, color: face.openInvested ? B.goldSoft : B.textFaint, textAlign: 'right', fontSize: '0.82rem' }}>
+        <div style={{ ...T.figure, color: face.openInvested ? B.textSec : B.textFaint, textAlign: 'right', fontSize: '0.8rem' }}>
           {face.openInvested ? fmtVol(face.openInvested, { signed: false }) : '—'}
           {face.openN > 1 ? <span style={{ ...T.meta, color: B.textFaint, marginLeft: 4 }}>{face.openN}</span> : null}
         </div>
       )}
-      {isMobile ? <div style={{ gridColumn: '1 / -1' }}><WeightBar value={face.pnl} maxAbs={maxAbs} /></div> : null}
     </div>
   );
 }
@@ -524,16 +447,9 @@ function SizeTierStrip({ tiers }) {
   const rated = tiers.tiers.filter((t) => t.wr != null);
   const bestWr = rated.reduce((m, t) => Math.max(m, t.wr), 0);
   return (
-    <div style={{
-      marginTop: 14,
-      padding: '0.9rem 0.8rem 0.8rem',
-      borderRadius: 14,
-      border: `1px solid ${B.goldBorder}`,
-      background: 'linear-gradient(180deg, rgba(212,175,55,0.14) 0%, rgba(255,255,255,0.03) 46%, rgba(0,0,0,0.15) 100%)',
-    }}
-    >
+    <div style={{ marginTop: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-        <div style={{ ...T.kicker, color: B.gold, letterSpacing: '0.14em' }}>Win rate by size</div>
+        <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Win rate by size</div>
         {tiers.usual ? (
           <div style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
             Usual {fmtVol(tiers.usual, { signed: false })}
@@ -561,8 +477,8 @@ function SizeTierStrip({ tiers }) {
                 boxShadow: lead ? '0 0 18px rgba(16,185,129,0.16)' : 'none',
               }}
             >
-              <div style={{ ...T.kicker, color: lead ? B.green : B.goldSoft, letterSpacing: '0.08em' }}>{tier.kicker}</div>
-              <div style={{ ...T.hero, color, marginTop: 8, fontSize: '1.72rem' }}>
+              <div style={{ ...T.kicker, color: lead ? B.green : B.textMuted, letterSpacing: '0.08em' }}>{tier.kicker}</div>
+              <div style={{ ...T.hero, color, marginTop: 8, fontSize: '1.45rem' }}>
                 {tier.wr != null ? `${tier.wr}%` : (tier.record || '—')}
               </div>
               <div style={{ marginTop: 10, height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
@@ -581,7 +497,7 @@ function SizeTierStrip({ tiers }) {
   );
 }
 
-function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets, sportFilter = null }) {
+function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onToggleBets, sportFilter = null, plain = false }) {
   const [openKey, setOpenKey] = useState(null);
   const [showExits, setShowExits] = useState(false);
   const sizeTiers = sizeTiersForWallet(walletProfiles, holding.walletShort);
@@ -598,7 +514,7 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
 
   return (
     <div
-      style={{
+      style={plain ? { marginTop: 6 } : {
         margin: '0 0 0.35rem',
         padding: '0.85rem 0.85rem 0.45rem',
         borderRadius: 12,
@@ -607,22 +523,24 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-        <div style={{ ...T.kicker, color: B.gold }}>Market book</div>
-        <button
-          type="button"
-          onClick={onRemove}
-          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', ...T.meta, color: B.textFaint, fontFamily: 'inherit' }}
-        >
-          Remove {label}
-        </button>
-      </div>
+      {plain ? null : (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+          <div style={{ ...T.kicker, color: B.textFaint }}>Market book</div>
+          <button
+            type="button"
+            onClick={onRemove}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', ...T.meta, color: B.textFaint, fontFamily: 'inherit' }}
+          >
+            Remove {label}
+          </button>
+        </div>
+      )}
       {groups.length ? (
-        <div style={{ ...T.meta, color: B.textMuted, marginTop: 4 }}>
+        <div style={{ ...T.meta, color: B.textMuted, marginTop: plain ? 0 : 4 }}>
           {betsFollowLine(groups, holding.betsOff)}
         </div>
       ) : null}
-      <SizeTierStrip tiers={sizeTiers} />
+      {plain ? null : <SizeTierStrip tiers={sizeTiers} />}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -668,11 +586,12 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
                   style={{
                     flex: 1,
                     minWidth: 0,
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '6px 14px',
-                    padding: '0.48rem 0',
+                    display: plain ? 'grid' : 'flex',
+                    gridTemplateColumns: plain ? 'minmax(0, 1fr) auto' : undefined,
+                    flexWrap: plain ? undefined : 'wrap',
+                    alignItems: plain ? 'center' : 'center',
+                    gap: plain ? '1px 12px' : '6px 14px',
+                    padding: '0.5rem 0',
                     background: 'transparent',
                     border: 'none',
                     color: 'inherit',
@@ -681,18 +600,37 @@ function MarketBook({ holding, walletProfiles, actionRows = [], onRemove, onTogg
                     fontFamily: 'inherit',
                   }}
                 >
-                  <span style={{ ...T.name, color: B.text, fontSize: '0.84rem', minWidth: 64 }}>{m.label}</span>
-                  <span style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'", flex: '1 1 120px' }}>{record}</span>
-                  <span style={{ ...T.figure, color: pnlColor(m.roi, B.textFaint), fontSize: '0.82rem' }}>
-                    Book {Number.isFinite(m.roi) ? `${m.roi}%` : '—'}
-                  </span>
-                  <span style={{ ...T.figure, color: pnlColor(m.l30?.pnl, B.textFaint), fontSize: '0.82rem' }}>
-                    30d {Number.isFinite(m.l30?.pnl) ? fmtVol(m.l30.pnl) : '—'}
-                  </span>
-                  <span style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                    {m.usual ? `avg ${fmtVol(m.usual, { signed: false })}` : 'avg —'}
-                    {mark ? <span style={{ color: B.goldSoft }}> · {mark}</span> : null}
-                  </span>
+                  {plain ? (
+                    <>
+                      <span style={{ minWidth: 0 }}>
+                        <span style={{ ...T.name, color: B.text, fontSize: '0.84rem' }}>{m.label}</span>
+                        <span style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'", marginLeft: 8 }}>{record}</span>
+                        <span style={{ display: 'block', ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'", marginTop: 2 }}>
+                          Book {Number.isFinite(m.roi) ? `${m.roi}%` : '—'}
+                          {m.usual ? ` · avg ${fmtVol(m.usual, { signed: false })}` : ''}
+                          {mark ? <span style={{ color: B.goldSoft }}> · {mark}</span> : null}
+                        </span>
+                      </span>
+                      <span style={{ ...T.figure, color: pnlColor(m.l30?.pnl, B.textFaint), fontSize: '0.84rem', textAlign: 'right' }}>
+                        {Number.isFinite(m.l30?.pnl) ? fmtVol(m.l30.pnl) : '—'}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ ...T.name, color: B.text, fontSize: '0.84rem', minWidth: 64 }}>{m.label}</span>
+                      <span style={{ ...T.meta, color: B.textMuted, fontFeatureSettings: "'tnum'", flex: '1 1 120px' }}>{record}</span>
+                      <span style={{ ...T.figure, color: pnlColor(m.roi, B.textFaint), fontSize: '0.82rem' }}>
+                        Book {Number.isFinite(m.roi) ? `${m.roi}%` : '—'}
+                      </span>
+                      <span style={{ ...T.figure, color: pnlColor(m.l30?.pnl, B.textFaint), fontSize: '0.82rem' }}>
+                        30d {Number.isFinite(m.l30?.pnl) ? fmtVol(m.l30.pnl) : '—'}
+                      </span>
+                      <span style={{ ...T.meta, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                        {m.usual ? `avg ${fmtVol(m.usual, { signed: false })}` : 'avg —'}
+                        {mark ? <span style={{ color: B.goldSoft }}> · {mark}</span> : null}
+                      </span>
+                    </>
+                  )}
                 </button>
                   <BetsSwitch
                     on={feedOn}
@@ -2493,6 +2431,7 @@ function fmtSince(key) {
 
 function AreaChart({ points, height = 210 }) {
   const uid = useId().replace(/:/g, '');
+  const [hover, setHover] = useState(null);
   const pts = (points || []).map((n) => Number(n)).filter((n) => Number.isFinite(n));
   if (pts.length < 2) return null;
   const w = 720;
@@ -2501,7 +2440,7 @@ function AreaChart({ points, height = 210 }) {
   const max = Math.max(0, ...pts);
   const span = (max - min) || 1;
   const x = (i) => (i / (pts.length - 1)) * (w - 28) + 14;
-  const y = (v) => 16 + (1 - (v - min) / span) * (h - 32);
+  const y = (v) => 22 + (1 - (v - min) / span) * (h - 40);
   const d = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
   const end = pts[pts.length - 1];
   const color = end >= 0 ? B.green : B.red;
@@ -2510,11 +2449,31 @@ function AreaChart({ points, height = 210 }) {
   const grids = [0.25, 0.5, 0.75].map((t) => y(min + span * t));
   const ex = x(pts.length - 1);
   const ey = y(end);
+  const hi = hover == null ? null : Math.min(pts.length - 1, Math.max(0, hover));
+  const hx = hi == null ? null : x(hi);
+  const hy = hi == null ? null : y(pts[hi]);
+  const pick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width) return;
+    const rel = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    setHover(Math.round(rel * (pts.length - 1)));
+  };
+  const label = hi == null ? '' : fmtVol(pts[hi]);
+  const anchorEnd = hx != null && hx > w * 0.62;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={height} role="img" aria-label="Dollar path">
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      width="100%"
+      height={height}
+      role="img"
+      aria-label="Dollar path"
+      style={{ display: 'block', cursor: 'crosshair' }}
+      onPointerMove={pick}
+      onPointerLeave={() => setHover(null)}
+    >
       <defs>
         <linearGradient id={`fill-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.38" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.32" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
         <filter id={`glow-${uid}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -2526,13 +2485,29 @@ function AreaChart({ points, height = 210 }) {
         </filter>
       </defs>
       {grids.map((gy) => (
-        <line key={gy} x1="14" x2={w - 14} y1={gy} y2={gy} stroke="rgba(255,255,255,0.04)" />
+        <line key={gy} x1="14" x2={w - 14} y1={gy} y2={gy} stroke="rgba(255,255,255,0.045)" />
       ))}
-      <line x1="14" x2={w - 14} y1={zero} y2={zero} stroke="rgba(212,175,55,0.35)" strokeDasharray="3 6" />
+      <line x1="14" x2={w - 14} y1={zero} y2={zero} stroke="rgba(255,255,255,0.16)" strokeDasharray="2 5" />
       <path d={area} fill={`url(#fill-${uid})`} />
-      <path d={d} fill="none" stroke={color} strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" filter={`url(#glow-${uid})`} />
-      <circle cx={ex} cy={ey} r="7" fill={color} opacity="0.22" />
-      <circle cx={ex} cy={ey} r="3.4" fill={color} />
+      <path d={d} fill="none" stroke={color} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" filter={`url(#glow-${uid})`} />
+      <circle cx={ex} cy={ey} r="7" fill={color} opacity="0.2" />
+      <circle cx={ex} cy={ey} r="3.2" fill={color} />
+      {hx != null ? (
+        <>
+          <line x1={hx} x2={hx} y1="16" y2={h - 12} stroke="rgba(255,255,255,0.22)" />
+          <circle cx={hx} cy={hy} r="4.2" fill="#F8FAFC" />
+          <text
+            x={anchorEnd ? hx - 10 : hx + 10}
+            y="18"
+            textAnchor={anchorEnd ? 'end' : 'start'}
+            fill="#F8FAFC"
+            fontSize="15"
+            fontWeight="650"
+          >
+            {label}
+          </text>
+        </>
+      ) : null}
     </svg>
   );
 }
@@ -2556,12 +2531,351 @@ function WeightBar({ value, maxAbs, height = 10 }) {
   );
 }
 
+function useDeskWide() {
+  const [wide, setWide] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1100 : true));
+  useEffect(() => {
+    const apply = () => setWide(window.innerWidth >= 1100);
+    apply();
+    window.addEventListener('resize', apply);
+    return () => window.removeEventListener('resize', apply);
+  }, []);
+  return wide;
+}
+
+function shareOfWindow(part, total) {
+  const p = Number(part);
+  const t = Number(total);
+  if (!Number.isFinite(p) || !Number.isFinite(t) || t === 0) return null;
+  const pct = Math.round((p / t) * 100);
+  if (!Number.isFinite(pct) || pct === 0) return null;
+  return pct;
+}
+
+function recordLine(honest) {
+  if (!honest?.record || honest.record === '—') return null;
+  return `${honest.record}${honest.showPct ? ` · ${honest.wr}%` : ''}`;
+}
+
+function tailSummary(tails) {
+  const graded = (Number(tails?.wins) || 0) + (Number(tails?.losses) || 0) > 0;
+  const line = graded
+    ? `${tails.honest?.record || ''}${tails.honest?.showPct ? ` · ${tails.honest.wr}%` : ''}${tails.openN ? ` · ${tails.openN} open` : ''}`
+    : (tails?.openN ? `${tails.openN} open` : 'Mark a bet');
+  return { line, pnl: Number.isFinite(tails?.pnl) ? tails.pnl : null };
+}
+
+function rankPeople(rows, sort) {
+  const num = (v) => (Number.isFinite(v) ? v : -Infinity);
+  const copy = [...(rows || [])];
+  copy.sort((a, b) => {
+    if (sort === 'roi') return num(b.roi) - num(a.roi) || num(b.pnl) - num(a.pnl);
+    if (sort === 'close') return num(b.holding?.clv?.pctPos) - num(a.holding?.clv?.pctPos) || num(b.pnl) - num(a.pnl);
+    if (sort === 'open') return (b.openInvested || 0) - (a.openInvested || 0) || num(b.pnl) - num(a.pnl);
+    return num(b.pnl) - num(a.pnl) || (b.openInvested || 0) - (a.openInvested || 0);
+  });
+  return copy;
+}
+
+const textBtn = {
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  ...T.meta,
+  color: B.textFaint,
+};
+
+function Segmented({ value, options, onChange }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Performance window"
+      style={{
+        display: 'inline-flex',
+        padding: 3,
+        borderRadius: 999,
+        background: 'rgba(255,255,255,0.04)',
+        border: `1px solid ${B.hair}`,
+      }}
+    >
+      {options.map((opt) => {
+        const on = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(opt.id)}
+            style={{
+              ...T.kicker,
+              letterSpacing: '0.08em',
+              border: 'none',
+              borderRadius: 999,
+              padding: '0.42rem 0.78rem',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              background: on ? '#F8FAFC' : 'transparent',
+              color: on ? '#0c1016' : B.textMuted,
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function BookStat({ id, kicker, n, money, tone, onClick }) {
+  return (
+    <button
+      type="button"
+      data-book-stat={id}
+      onClick={onClick}
+      style={{
+        background: 'rgba(255,255,255,0.02)',
+        border: `1px solid ${B.hair}`,
+        borderRadius: 12,
+        padding: '0.4rem 0.72rem 0.46rem',
+        textAlign: 'left',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        minWidth: 108,
+      }}
+    >
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>{kicker}</div>
+      <div style={{ marginTop: 3, ...T.figure, color: tone, fontSize: '0.98rem' }}>
+        {n || 0}
+        {money ? (
+          <span style={{ color: B.textMuted, fontWeight: 550, marginLeft: 8 }}>{fmtVol(money, { signed: false })}</span>
+        ) : null}
+      </div>
+    </button>
+  );
+}
+
+function SortHead({ id, sort, onSort, children }) {
+  const on = sort === id;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(id)}
+      aria-pressed={on}
+      style={{
+        ...T.kicker,
+        letterSpacing: '0.08em',
+        color: on ? B.text : B.textFaint,
+        textAlign: 'right',
+        background: 'none',
+        border: 'none',
+        borderBottom: on ? '1px solid rgba(248,250,252,0.7)' : '1px solid transparent',
+        padding: '0 0 2px',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        justifySelf: 'end',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RecentPicks({ results, openRows }) {
+  const open = [...(openRows || [])].sort((a, b) => (Number(b.invested) || 0) - (Number(a.invested) || 0));
+  const shownOpen = open.slice(0, 4);
+  const graded = results || [];
+  if (!shownOpen.length && !graded.length) {
+    return (
+      <div style={{ ...T.meta, color: B.textFaint, padding: '0.9rem 0 0.15rem' }}>
+        No open tickets and no graded picks on file.
+      </div>
+    );
+  }
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>Recent picks</div>
+      {shownOpen.length ? (
+        <div style={{ ...T.kicker, color: B.textMuted, letterSpacing: '0.08em', margin: '10px 0 2px' }}>
+          Open{open.length > shownOpen.length ? ` · ${shownOpen.length} of ${open.length}` : ''}
+        </div>
+      ) : null}
+      {shownOpen.map((r, i) => {
+        const play = openPlayFace(r);
+        const matchup = r.away && r.home ? `${r.away} @ ${r.home}` : null;
+        return (
+          <div key={`${r.gameKey || 'open'}-${r.side || i}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '0.45rem 0', borderTop: `1px solid ${B.hair}` }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ ...T.name, fontSize: '0.84rem', color: B.text }}>
+                {play.name}
+                {play.price ? <span style={{ color: B.textSec, fontWeight: 550 }}> {play.price}</span> : null}
+              </div>
+              <div style={{ ...T.meta, color: B.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {[r.sport, matchup].filter(Boolean).join(' · ') || 'Open ticket'}
+              </div>
+            </div>
+            <div style={{ ...T.figure, color: B.textSec, fontSize: '0.82rem', flexShrink: 0 }}>
+              {fmtVol(r.invested, { signed: false })}
+            </div>
+          </div>
+        );
+      })}
+      {graded.length ? (
+        <div style={{ ...T.kicker, color: B.textMuted, letterSpacing: '0.08em', margin: '12px 0 2px' }}>Graded</div>
+      ) : null}
+      {graded.map((leg) => (
+        <div key={leg.id} style={{ display: 'grid', gridTemplateColumns: '46px minmax(0, 1fr) auto', gap: '0 10px', alignItems: 'baseline', padding: '0.42rem 0', borderTop: `1px solid ${B.hair}` }}>
+          <div style={{ ...T.meta, color: B.textFaint, fontFeatureSettings: "'tnum'" }}>{leg.date ? String(leg.date).slice(5) : '—'}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ ...T.name, fontSize: '0.84rem', color: B.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{leg.pick}</div>
+            <div style={{ ...T.meta, color: B.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {[leg.sport, leg.market, leg.matchup].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ ...T.kicker, letterSpacing: '0.08em', color: leg.won ? B.green : B.red }}>{leg.won ? 'W' : 'L'}</div>
+            <div style={{ ...T.figure, color: pnlColor(leg.pnl, B.textFaint), fontSize: '0.78rem' }}>
+              {Number.isFinite(leg.pnl) ? fmtVol(leg.pnl) : ''}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SharpDetail({
+  face, viewEnd, span, sport, walletProfiles, actionRows, startEditing,
+  onRename, onRemove, onToggleBets, onClose, contained = false,
+}) {
+  const holding = face.holding;
+  const rootRef = useRef(null);
+  const dossier = useMemo(
+    () => buildSharpDossier(walletProfiles, holding.walletShort, { sport: sport || 'All', limit: 8 }),
+    [walletProfiles, holding.walletShort, sport],
+  );
+  useEffect(() => {
+    if (startEditing) rootRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [startEditing]);
+  const mineOpen = (actionRows || []).filter((r) => {
+    if (!sameSharp(r.walletShort, holding.walletShort)) return false;
+    if (!sport) return true;
+    return String(r.sport || '').toUpperCase() === sport;
+  });
+  const close = Number.isFinite(holding.clv?.pctPos) ? `${holding.clv.pctPos}% close` : null;
+  const share = shareOfWindow(face.pnl, viewEnd);
+  const form = heatLine(face.heat);
+  const windowWord = span === 'yesterday' ? 'Yesterday' : span === 'l90' ? 'Last 90 days' : '30 days';
+  return (
+    <div
+      ref={rootRef}
+      data-sharp-detail={holding.walletShort}
+      style={{
+        ...PANEL,
+        padding: '1rem 1rem 0.9rem',
+        maxHeight: contained ? 'none' : 'calc(100vh - 28px)',
+        overflow: contained ? 'visible' : 'auto',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+        <div style={{ ...T.kicker, color: B.textFaint }}>{windowWord}{sport ? ` · ${sport}` : ''}</div>
+        <div style={{ display: 'flex', gap: 14 }}>
+          <button type="button" onClick={onClose} style={{ ...textBtn, color: B.textSec }}>Close</button>
+          <button type="button" onClick={() => onRemove?.(holding.walletShort)} style={textBtn}>Remove</button>
+        </div>
+      </div>
+      <div style={{ marginTop: 8 }}>
+        <NameField
+          name={holding.name}
+          tag={holding.tag}
+          selected
+          startEditing={startEditing}
+          onRename={(name) => onRename?.(holding.walletShort, name)}
+        />
+      </div>
+      <div style={{ ...T.hero, fontSize: '2.05rem', color: pnlColor(face.pnl), marginTop: 8 }}>
+        {Number.isFinite(face.pnl) ? fmtVol(face.pnl) : '—'}
+      </div>
+      <div style={{ ...T.meta, color: B.textSec, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
+        {[
+          recordLine(face.honest),
+          Number.isFinite(face.roi) ? `${face.roi}% ROI` : null,
+          close,
+          face.openN ? `${face.openN} open${face.openInvested ? ` · ${fmtVol(face.openInvested, { signed: false })}` : ''}` : null,
+          share != null ? `${share}% of this window` : null,
+        ].filter(Boolean).join(' · ') || '—'}
+      </div>
+      {form ? <div style={{ ...T.meta, color: heatColor(face.heat), marginTop: 4 }}>{form}</div> : null}
+      <SizeTierStrip tiers={sizeTiersForWallet(walletProfiles, holding.walletShort)} />
+      <RecentPicks results={dossier?.results} openRows={mineOpen} />
+      <MarketBook
+        plain
+        holding={holding}
+        walletProfiles={walletProfiles}
+        actionRows={actionRows}
+        sportFilter={sport}
+        onToggleBets={onToggleBets}
+      />
+    </div>
+  );
+}
+
+function BookSpotlight({ face, viewEnd, onOpen }) {
+  if (!face) {
+    return (
+      <div style={{ ...PANEL, padding: '1.15rem 1.05rem' }}>
+        <div style={{ ...T.kicker, color: B.textFaint }}>Sharp</div>
+        <div style={{ ...T.body, color: B.textSec, marginTop: 10 }}>
+          Select a name to open the book and the recent picks.
+        </div>
+      </div>
+    );
+  }
+  const holding = face.holding;
+  const share = shareOfWindow(face.pnl, viewEnd);
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen?.(holding.walletShort)}
+      style={{
+        ...PANEL,
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        padding: '1.15rem 1.05rem 1.1rem',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        color: 'inherit',
+      }}
+    >
+      <div style={{ ...T.kicker, color: B.textFaint }}>Leading this window</div>
+      <div style={{ ...T.name, fontSize: '1.2rem', color: B.text, marginTop: 10 }}>{holding.name || holding.tag}</div>
+      {holding.name ? <div style={{ ...T.meta, color: B.textFaint, marginTop: 3 }}>{holding.tag}</div> : null}
+      <div style={{ ...T.hero, fontSize: '2.2rem', color: pnlColor(face.pnl), marginTop: 12 }}>
+        {Number.isFinite(face.pnl) ? fmtVol(face.pnl) : '—'}
+      </div>
+      <div style={{ ...T.meta, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
+        {[
+          recordLine(face.honest),
+          Number.isFinite(face.roi) ? `${face.roi}% ROI` : null,
+          share != null ? `${share}% of this window` : null,
+        ].filter(Boolean).join(' · ') || '—'}
+      </div>
+      <div style={{ ...T.kicker, color: B.goldSoft, marginTop: 18, letterSpacing: '0.12em' }}>Open the book</div>
+    </button>
+  );
+}
+
 function PortfolioStage({
-  holdings, isMobile, selected, nameFocus, onToggle, onOpen, onRename, onRemove,
-  walletProfiles, actionRows, openRows, onToggleBets,
+  snapshot = {}, holdings, isMobile, selected, nameFocus, onToggle, onOpen, onRename, onRemove,
+  walletProfiles, actionRows, openRows, onToggleBets, onOpenBets,
 }) {
   const [sport, setSport] = useState(null);
   const [span, setSpan] = useState('30d');
+  const [sort, setSort] = useState('pnl');
+  const wide = useDeskWide();
+  const compact = isMobile || !wide;
   const stage = useMemo(() => buildPortfolioStage(holdings), [holdings]);
   const alt = useMemo(
     () => (span === '30d' ? null : portfolioWindowBook(holdings, span)),
@@ -2589,8 +2903,9 @@ function PortfolioStage({
   const people = useMemo(() => {
     const rows = [];
     const altBy = alt ? new Map(alt.wallets.map((w) => [w.walletShort, w])) : null;
+    const openSource = openRows?.length ? openRows : actionRows;
     for (const h of holdings || []) {
-      const open = openOnSport(h, sport, actionRows);
+      const open = openOnSport(h, sport, openSource);
       let pnl = h.l30Pnl;
       let roi = h.roi;
       let honest = h.honest;
@@ -2635,16 +2950,17 @@ function PortfolioStage({
       return (b.openInvested || 0) - (a.openInvested || 0);
     });
     return rows;
-  }, [holdings, sport, actionRows, alt]);
+  }, [holdings, sport, actionRows, openRows, alt]);
   const viewSports = alt ? alt.sports : stage.sports;
   const viewPath = alt ? alt.path : stage.path;
   const viewEnd = alt ? alt.pathEnd : (stage.pathEnd ?? stage.bookPnl);
   const viewRoi = alt ? alt.roi : stage.roi;
   const rec = alt ? alt.honest : stage.honest;
-  if (!viewPath.length && !people.length && !viewSports.length && span === '30d') return null;
   const tone = pnlColor(viewEnd, B.text);
-  const maxSharp = Math.max(1, ...people.map((h) => Math.abs(h.pnl) || 0));
-  const maxSport = Math.max(1, ...viewSports.map((s) => Math.abs(s.pnl) || 0));
+  const ranked = useMemo(() => rankPeople(people, sort), [people, sort]);
+  const active = ranked.find((face) => face.holding.walletShort === selected) || null;
+  const maxSharp = Math.max(1, ...ranked.map((h) => Math.abs(h.pnl) || 0));
+  const maxSport = Math.max(1, ...viewSports.map((s) => Math.abs(s.pnl) || 0), Math.abs(Number(viewEnd)) || 0);
   const spanLabel = span === 'yesterday' ? 'Yesterday' : span === 'l90' ? 'Last 90 days' : '30-day path';
   const spanNote = span === 'l90' && alt && alt.ready === false
     ? ''
@@ -2652,187 +2968,240 @@ function PortfolioStage({
       ? ` · tape from ${Number(alt.from.slice(5, 7))}/${Number(alt.from.slice(8))}`
       : '');
   const colLabel = span === 'yesterday' ? 'Yest' : span === 'l90' ? 'L90' : '30d';
+  const tails = tailSummary(snapshot.tails);
+  const bookStats = [
+    { id: 'together', kicker: 'Together', n: snapshot.together?.n, money: snapshot.together?.invested, tone: snapshot.together?.n ? B.goldSoft : B.textFaint },
+    { id: 'split', kicker: 'Split', n: snapshot.split?.n, money: snapshot.split?.invested, tone: snapshot.split?.n ? B.red : B.textFaint },
+    { id: 'open', kicker: 'Open', n: snapshot.open?.n, money: snapshot.open?.invested, tone: snapshot.open?.n ? B.text : B.textFaint },
+  ];
+  const ticketSource = openRows?.length ? openRows : actionRows;
+  const emptyCopy = span === 'l90' && alt && alt.ready === false
+    ? '90-day records rebuild with the wallet profiles. 30D is the full month.'
+    : (sport
+      ? `No one on this list has a ${sport} book${span === 'yesterday' ? ' yesterday' : ''}.`
+      : (span === 'yesterday' ? 'Nothing graded yesterday.' : 'Nobody on the list.'));
+
+  const detail = active ? (
+    <SharpDetail
+      face={active}
+      viewEnd={viewEnd}
+      span={span}
+      sport={sport}
+      walletProfiles={walletProfiles}
+      actionRows={ticketSource}
+      startEditing={nameFocus === active.holding.walletShort}
+      onRename={onRename}
+      onRemove={onRemove}
+      onToggleBets={onToggleBets}
+      onClose={() => onToggle?.(active.holding.walletShort)}
+      contained={compact}
+    />
+  ) : (
+    <BookSpotlight face={ranked[0]} viewEnd={viewEnd} onOpen={onOpen} />
+  );
+
   return (
-    <section style={{
-      position: 'relative',
-      margin: '12px 0 18px',
-      borderRadius: 18,
-      border: `1px solid ${B.goldBorder}`,
-      background: `radial-gradient(120% 80% at 80% 0%, ${(viewEnd ?? 0) >= 0 ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.12)'}, transparent 46%), #10141c`,
-      overflow: 'hidden',
-    }}
-    >
-      <div style={{ height: 3, background: 'linear-gradient(90deg, transparent, #D4AF37 35%, #E8D28A 60%, transparent)' }} />
-      <div style={{ padding: isMobile ? '1rem 0.85rem 1.05rem' : '1.15rem 1.25rem 1.2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16 }}>
+    <section data-portfolio="desk" data-span={span} style={{ margin: '2px 0 8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
+        <Segmented
+          value={span}
+          onChange={setSpan}
+          options={[
+            { id: 'yesterday', label: 'Yesterday' },
+            { id: '30d', label: '30D' },
+            { id: 'l90', label: 'L90' },
+          ]}
+        />
+        <div>
+          <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em', marginBottom: 6 }}>Open book</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {bookStats.map((cell) => (
+              <BookStat key={cell.id} {...cell} onClick={onOpenBets} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ ...PANEL, borderRadius: 18, marginTop: 14, overflow: 'hidden' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: compact || viewPath.length < 2 ? '1fr' : 'minmax(220px, 300px) minmax(0, 1fr)',
+          gap: 8,
+          alignItems: 'center',
+          padding: compact ? '1.05rem 1rem 0.85rem' : '1.15rem 1rem 0.85rem 1.25rem',
+        }}
+        >
           <div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-              {[
-                { id: 'yesterday', label: 'Yesterday' },
-                { id: '30d', label: '30D' },
-                { id: 'l90', label: 'L90' },
-              ].map((chip) => (
-                <FilterBtn key={chip.id} on={span === chip.id} onClick={() => setSpan(chip.id)}>{chip.label}</FilterBtn>
-              ))}
+            <div style={{ ...T.kicker, color: B.textFaint }}>{spanLabel}{spanNote}</div>
+            <div data-hero="book" style={{ ...T.hero, color: tone, fontSize: compact ? '2.45rem' : '3.05rem', marginTop: 8 }}>
+              {Number.isFinite(viewEnd) ? fmtVol(viewEnd) : '—'}
             </div>
             <div style={{ ...T.body, color: B.textSec, marginTop: 8, fontFeatureSettings: "'tnum'" }}>
-              {spanLabel}{spanNote}
-              {rec?.record && rec.record !== '—' ? ` · ${rec.record}` : ''}
-              {rec?.showPct ? ` · ${rec.wr}%` : ''}
+              {recordLine(rec) || '—'}
               {Number.isFinite(viewRoi) ? ` · ${viewRoi}% ROI` : ''}
             </div>
-          </div>
-          {viewPath.length ? (
-            <div style={{ ...T.hero, color: tone, fontSize: isMobile ? '1.85rem' : '2.35rem', textAlign: 'right' }}>
-              {fmtVol(viewEnd)}
+            <div data-hero="tails" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', alignItems: 'baseline', marginTop: 16 }}>
+              <span style={{ ...T.kicker, color: B.textFaint }}>My tails</span>
+              <span style={{ ...T.figure, color: pnlColor(tails.pnl, B.text), fontSize: '1rem' }}>
+                {Number.isFinite(tails.pnl) ? fmtVol(tails.pnl) : '—'}
+              </span>
+              <span style={{ ...T.meta, color: B.textMuted }}>{tails.line}</span>
             </div>
-          ) : (
-            <div style={{ ...T.hero, color: B.textFaint, fontSize: isMobile ? '1.4rem' : '1.7rem', textAlign: 'right' }}>—</div>
-          )}
-        </div>
-        {viewPath.length ? (
-          <div style={{ marginTop: 4 }}>
-            <AreaChart points={viewPath} height={isMobile ? 168 : 214} />
           </div>
-        ) : null}
+          {viewPath.length >= 2 ? (
+            <div style={{ minWidth: 0, marginTop: compact ? 6 : 0 }}>
+              <AreaChart points={viewPath} height={compact ? 168 : 196} />
+            </div>
+          ) : null}
+        </div>
+
         {viewSports.length ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr 1fr' : `repeat(${Math.min(viewSports.length, 4)}, minmax(0, 1fr))`,
-            gap: 10,
-            marginTop: 16,
-          }}
-          >
-            {viewSports.slice(0, 4).map((row) => {
-              const on = sport === row.sport;
-              return (
-                <button
-                  key={row.sport}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setSport(on ? null : row.sport)}
-                  style={{
-                    borderRadius: 12,
-                    border: `1px solid ${on ? B.goldBorder : B.hair}`,
-                    background: on ? B.goldDim : 'rgba(255,255,255,0.025)',
-                    padding: '0.7rem 0.75rem 0.75rem',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    color: 'inherit',
-                  }}
-                >
-                  <div style={{ ...T.kicker, color: on ? B.gold : B.textFaint }}>{row.sport}</div>
-                  <div style={{ ...T.figure, color: pnlColor(row.pnl), fontSize: '1.15rem', marginTop: 6 }}>{fmtVol(row.pnl)}</div>
-                  <div style={{ marginTop: 8 }}><WeightBar value={row.pnl} maxAbs={maxSport} height={6} /></div>
-                  <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
-                    {row.honest?.text && row.honest.text !== '—' ? row.honest.text : ''}
-                  </div>
-                </button>
-              );
-            })}
+          <div className="pf-rail" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0.8rem 1rem 0.9rem', borderTop: `1px solid ${B.hair}` }}>
+            <SportTile
+              label="Book"
+              pnl={viewEnd}
+              honest={rec}
+              maxAbs={maxSport}
+              on={!sport}
+              onClick={() => setSport(null)}
+            />
+            {viewSports.map((row) => (
+              <SportTile
+                key={row.sport}
+                label={row.sport}
+                pnl={row.pnl}
+                honest={row.honest}
+                maxAbs={maxSport}
+                on={sport === row.sport}
+                onClick={() => setSport(sport === row.sport ? null : row.sport)}
+              />
+            ))}
           </div>
         ) : null}
-        <div style={{ marginTop: 18 }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? 'minmax(0, 1fr) auto' : SHARP_GRID,
-            gap: '0 14px',
-            alignItems: 'end',
-            padding: '0 0.15rem 0.35rem 0.35rem',
-          }}
-          >
-            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em' }}>
-              Who made it{sport ? ` · ${sport}` : ''}
-            </div>
-            {isMobile ? <div /> : <div />}
-            {isMobile ? null : <Head align="right">{colLabel}</Head>}
-            {isMobile ? null : <Head align="right">ROI</Head>}
-            {isMobile ? null : <Head align="right">Close</Head>}
-            {isMobile ? null : <Head align="right">Open</Head>}
-          </div>
-          {people.length ? people.map((face) => {
-            const id = face.holding.walletShort;
-            const open = selected === id;
-            return (
-              <div key={id} style={{ borderTop: `1px solid ${B.hair}` }}>
-                <PortfolioSharp
-                  row={face.holding}
-                  face={face}
-                  maxAbs={maxSharp}
-                  selected={open}
-                  isMobile={isMobile}
-                  startEditing={nameFocus === id}
-                  onToggle={() => onToggle?.(id)}
-                  onOpen={() => onOpen?.(id)}
-                  onRename={(name) => onRename?.(id, name)}
-                />
-                {open ? (
-                  <MarketBook
-                    holding={face.holding}
-                    walletProfiles={walletProfiles}
-                    actionRows={openRows?.length ? openRows : actionRows}
-                    sportFilter={sport}
-                    onToggleBets={onToggleBets}
-                    onRemove={() => onRemove?.(id)}
-                  />
-                ) : null}
-              </div>
-            );
-          }) : (
-            <div style={{ ...T.body, color: B.textFaint, padding: '0.9rem 0.35rem' }}>
-              {span === 'l90' && alt && alt.ready === false
-                ? '90-day records rebuild with the wallet profiles. 30D is the full month.'
-                : (sport
-                  ? `No one on this list has a ${sport} book${span === 'yesterday' ? ' yesterday' : ''}.`
-                  : (span === 'yesterday' ? 'Nothing graded yesterday.' : 'Nobody on the list.'))}
-            </div>
-          )}
-        </div>
+
         {markets.length ? (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.1em', marginBottom: 8 }}>
-              Where{sport ? ` · ${sport}` : ''}
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : `repeat(${Math.min(markets.length, 3)}, minmax(0, 1fr))`,
-              gap: 10,
-            }}
-            >
-              {markets.slice(0, 3).map((m) => (
-                <div key={m.label} style={{
-                  borderRadius: 12,
-                  borderTop: `1px solid ${B.line}`,
-                  borderRight: `1px solid ${B.line}`,
-                  borderBottom: `1px solid ${B.line}`,
-                  borderLeft: `3px solid ${pnlColor(m.pnl ?? m.roi, B.gold)}`,
-                  padding: '0.7rem 0.8rem',
-                }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
-                    <div style={{ ...T.kicker, color: B.goldSoft }}>{m.label}</div>
-                    <div style={{ ...T.figure, color: pnlColor(m.pnl, B.textSec), fontSize: '0.95rem' }}>
-                      {Number.isFinite(m.pnl) ? fmtVol(m.pnl) : (Number.isFinite(m.roi) ? `${m.roi}%` : '—')}
-                    </div>
-                  </div>
-                  <div style={{ ...T.meta, color: B.textSec, marginTop: 6, fontFeatureSettings: "'tnum'" }}>
-                    {m.honest?.text && m.honest.text !== '—' ? m.honest.text : '—'}
-                    {m.n ? ` · ${m.n} bets` : ''}
-                  </div>
-                  <div style={{ ...T.meta, color: B.textMuted, marginTop: 2 }}>
-                    {Number.isFinite(m.roi) ? `${m.roi}% book` : ''}
-                    {Number.isFinite(m.pnl) ? ` · ${colLabel === '30d' ? '30 days' : colLabel}` : ''}
-                  </div>
+          <div className="pf-rail" style={{ display: 'flex', overflowX: 'auto', borderTop: `1px solid ${B.hair}` }}>
+            {markets.slice(0, 6).map((m) => (
+              <div key={m.label} style={{ flex: '1 0 132px', padding: '0.75rem 1rem 0.85rem', borderRight: `1px solid ${B.hair}` }}>
+                <div style={{ ...T.kicker, color: B.textFaint }}>{m.label}</div>
+                <div style={{ ...T.figure, color: pnlColor(m.pnl ?? m.roi, B.textSec), marginTop: 5, fontSize: '1.02rem' }}>
+                  {Number.isFinite(m.pnl) ? fmtVol(m.pnl) : (Number.isFinite(m.roi) ? `${m.roi}%` : '—')}
                 </div>
-              ))}
-            </div>
+                <div style={{ ...T.meta, color: B.textMuted, marginTop: 4, fontFeatureSettings: "'tnum'" }}>
+                  {m.honest?.text && m.honest.text !== '—' ? m.honest.text : '—'}
+                  {Number.isFinite(m.roi) && Number.isFinite(m.pnl) ? ` · ${m.roi}%` : ''}
+                </div>
+              </div>
+            ))}
           </div>
         ) : null}
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: compact ? '1fr' : 'minmax(0, 1.2fr) minmax(320px, 0.86fr)',
+        gap: 14,
+        alignItems: 'start',
+        marginTop: 14,
+      }}
+      >
+        <div style={{ ...PANEL, overflow: 'hidden' }}>
+          <div style={{
+            background: B.card,
+            borderBottom: `1px solid ${B.hair}`,
+            display: 'grid',
+            gridTemplateColumns: compact ? 'minmax(0, 1fr) auto' : PERF_GRID,
+            gap: '0 12px',
+            alignItems: 'end',
+            padding: '0.75rem 0.85rem 0.6rem',
+          }}
+          >
+            {compact ? null : <div />}
+            <div>
+              <div style={{ ...T.kicker, color: B.textFaint, letterSpacing: '0.12em' }}>
+                Performance{sport ? ` · ${sport}` : ''}
+              </div>
+              <div style={{ ...T.meta, color: B.textMuted, marginTop: 3, fontFeatureSettings: "'tnum'" }}>
+                {ranked.length} {ranked.length === 1 ? 'sharp' : 'sharps'}
+              </div>
+            </div>
+            {compact ? (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <SortHead id="pnl" sort={sort} onSort={setSort}>{colLabel}</SortHead>
+                <SortHead id="roi" sort={sort} onSort={setSort}>ROI</SortHead>
+                <SortHead id="open" sort={sort} onSort={setSort}>Open</SortHead>
+              </div>
+            ) : <div />}
+            {compact ? null : <SortHead id="pnl" sort={sort} onSort={setSort}>{colLabel}</SortHead>}
+            {compact ? null : <SortHead id="roi" sort={sort} onSort={setSort}>ROI</SortHead>}
+            {compact ? null : <SortHead id="close" sort={sort} onSort={setSort}>Close</SortHead>}
+            {compact ? null : <SortHead id="open" sort={sort} onSort={setSort}>Open</SortHead>}
+          </div>
+          <div className="pf-scroll" style={{ maxHeight: compact ? 'none' : 640, overflowY: compact ? 'visible' : 'auto' }}>
+            {ranked.length ? ranked.map((face, index) => {
+              const id = face.holding.walletShort;
+              const open = selected === id && !!active;
+              return (
+                <div key={id} style={{ borderBottom: `1px solid ${B.hair}` }}>
+                  <PortfolioSharp
+                    row={face.holding}
+                    face={face}
+                    maxAbs={maxSharp}
+                    selected={open}
+                    isMobile={compact}
+                    rank={index + 1}
+                    onToggle={() => onToggle?.(id)}
+                  />
+                  {open && compact ? detail : null}
+                </div>
+              );
+            }) : (
+              <div style={{ ...T.body, color: B.textFaint, padding: '1rem 0.9rem' }}>{emptyCopy}</div>
+            )}
+          </div>
+        </div>
+        {compact ? null : (
+          <div style={{ position: 'sticky', top: 12 }}>
+            {detail}
+          </div>
+        )}
       </div>
     </section>
   );
 }
+
+function SportTile({ label, pnl, honest, maxAbs, on, onClick }) {
+  const line = honest?.text && honest.text !== '—' ? honest.text : (recordLine(honest) || '');
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      style={{
+        flex: '0 0 auto',
+        width: 148,
+        textAlign: 'left',
+        borderRadius: 12,
+        border: `1px solid ${on ? 'rgba(248,250,252,0.28)' : B.hair}`,
+        background: on ? 'rgba(255,255,255,0.045)' : 'transparent',
+        padding: '0.55rem 0.7rem 0.62rem',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        color: 'inherit',
+      }}
+    >
+      <div style={{ ...T.kicker, color: on ? B.text : B.textFaint }}>{label}</div>
+      <div style={{ ...T.figure, color: pnlColor(pnl), fontSize: '1.05rem', marginTop: 6 }}>
+        {Number.isFinite(pnl) ? fmtVol(pnl) : '—'}
+      </div>
+      <div style={{ marginTop: 8 }}><WeightBar value={pnl} maxAbs={maxAbs} height={3} /></div>
+      <div style={{ ...T.meta, color: B.textMuted, marginTop: 6, fontFeatureSettings: "'tnum'", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {line}
+      </div>
+    </button>
+  );
+}
+
 
 function Scale({ label, min, max, step, value, text, onChange }) {
   return (
@@ -3381,40 +3750,39 @@ export default function MySharpsDesk({
 
   return (
     <div style={{ margin: '0.2rem 0 2.6rem' }} data-room={room}>
-      <style>{`.ms-name::placeholder{color:${B.textFaint};}.ms-scale{accent-color:#D4AF37;width:148px;}`}</style>
+      <style>{`.ms-name::placeholder{color:${B.textFaint};}.ms-scale{accent-color:#D4AF37;width:148px;}.pf-row:hover{background:rgba(255,255,255,0.035);}.pf-row[data-on="1"]{background:rgba(255,255,255,0.05);}.pf-row[data-on="1"]:hover{background:rgba(255,255,255,0.065);}.pf-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.16) transparent;}.pf-rail{scrollbar-width:none;}.pf-rail::-webkit-scrollbar{display:none;}`}</style>
       <RoomBar room={room} onChange={setRoom} betCount={betCount} />
 
       {room === 'book' ? (
-        <>
-          <Hero snapshot={snapshot} isMobile={isMobile} onOpenBets={() => setRoom('bets')} />
-          {holdings.length ? (
-            <PortfolioStage
-              holdings={holdings}
-              isMobile={isMobile}
-              selected={focus}
-              nameFocus={nameFocus}
-              walletProfiles={walletProfiles}
-              actionRows={actionRows}
-              openRows={weekRows}
-              onToggleBets={onToggleBets}
-              onToggle={(id) => setSelected((cur) => (cur === id ? null : id))}
-              onOpen={(id) => setSelected(id)}
-              onRename={(id, name) => {
-                setNameFocus(null);
-                onRename?.(id, name);
-              }}
-              onRemove={(id) => {
-                setSelected(null);
-                onRemove?.(id);
-              }}
-            />
-          ) : (
-            <div style={{ padding: '1.6rem 0 0.4rem' }}>
-              <div style={{ ...T.hero, fontSize: '1.45rem', color: B.text }}>Nobody on the list</div>
-              <button type="button" onClick={() => setRoom('find')} style={{ ...goldBtn, marginTop: 14 }}>Find sharps</button>
-            </div>
-          )}
-        </>
+        holdings.length ? (
+          <PortfolioStage
+            snapshot={snapshot}
+            holdings={holdings}
+            isMobile={isMobile}
+            selected={focus}
+            nameFocus={nameFocus}
+            walletProfiles={walletProfiles}
+            actionRows={actionRows}
+            openRows={weekRows}
+            onOpenBets={() => setRoom('bets')}
+            onToggleBets={onToggleBets}
+            onToggle={(id) => setSelected((cur) => (cur === id ? null : id))}
+            onOpen={(id) => setSelected(id)}
+            onRename={(id, name) => {
+              setNameFocus(null);
+              onRename?.(id, name);
+            }}
+            onRemove={(id) => {
+              setSelected(null);
+              onRemove?.(id);
+            }}
+          />
+        ) : (
+          <div style={{ padding: '1.6rem 0 0.4rem' }}>
+            <div style={{ ...T.hero, fontSize: '1.45rem', color: B.text }}>Nobody on the list</div>
+            <button type="button" onClick={() => setRoom('find')} style={{ ...goldBtn, marginTop: 14 }}>Find sharps</button>
+          </div>
+        )
       ) : null}
 
       {room === 'bets' ? (
