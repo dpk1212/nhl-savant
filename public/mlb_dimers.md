@@ -8,29 +8,35 @@ Date: Oct 26 2026Oct 26
 
 [Oct 26, 8:00 PM ET\\
 \\
+R\\
+\\
+H\\
+\\
+E\\
+\\
 ![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
 \\
-Brewers  R. Gasser \\
+Brewers \\
 \\
-48.0% \\
+10 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+16 \\
 \\
-49¢\\
+0 \\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
-Rays  F. Peralta \\
+Rays \\
 \\
-52.0% \\
+1 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+3 \\
 \\
-52¢\\
+1 \\
 \\
-MLB\\
+FINAL\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_216_tb_mil)
+See Game Recap](https://www.dimers.com/mlb/predictions/2026_216_tb_mil)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
