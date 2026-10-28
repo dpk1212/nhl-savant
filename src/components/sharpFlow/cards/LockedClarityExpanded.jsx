@@ -696,25 +696,15 @@ function Pill({ children, c, solid, title }) {
   );
 }
 
-function rosterMark(w) {
-  if (w?.hardMarket) return { text: 'MKT', color: GOLD };
-  if (!w?.proven && w?.skillEligible) return { text: 'SEC', color: BLUE };
-  return null;
-}
-
 function rosterMeta(w) {
   const bits = [];
   if (w.record) bits.push({ text: w.record, color: C.textSec });
   if (Number.isFinite(w.wr)) bits.push({ text: `${w.wr}%`, color: C.textSec });
-  if (Number.isFinite(w.roi)) {
+  const roi = Number.isFinite(w.roi) ? w.roi : (Number.isFinite(w.dollarRoi) ? w.dollarRoi : null);
+  if (roi != null) {
     bits.push({
-      text: `${w.roi >= 0 ? '+' : ''}${w.roi}%`,
-      color: w.roi >= 0 ? GREEN : VS,
-    });
-  } else if (Number.isFinite(w.dollarRoi)) {
-    bits.push({
-      text: `${w.dollarRoi >= 0 ? '+' : ''}${w.dollarRoi}%`,
-      color: w.dollarRoi >= 0 ? GREEN : VS,
+      text: `${roi >= 0 ? '+' : ''}${roi}% ROI`,
+      color: roi >= 0 ? GREEN : VS,
     });
   }
   if (Number.isFinite(w.priorClvPct)) {
@@ -820,7 +810,6 @@ function SharpRoster({
                 const name = saved ? (mySharps?.names?.[normalizeWalletShort(w.short)] || null) : null;
                 const sr = walletDisplaySizeRatio(w);
                 const hot = Number.isFinite(sr) && sr >= MARKET_SPECIALIST_PRESS_SR;
-                const mark = rosterMark(w);
                 const meta = rosterMeta(w);
                 const canToggle = !!(mySharps?.onToggle && (saved || mySharps.ready));
                 const blocked = !saved && !!mySharps?.atCap;
@@ -906,7 +895,7 @@ function SharpRoster({
                           fontFeatureSettings: "'tnum'",
                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                         }}>
-                          {meta.length === 0 && !mark && (
+                          {meta.length === 0 && (
                             <span style={{ color: C.textFaint }}>No book yet</span>
                           )}
                           {meta.map((bit, i) => (
@@ -915,15 +904,6 @@ function SharpRoster({
                               {bit.text}
                             </span>
                           ))}
-                          {mark && (
-                            <span style={{
-                              marginLeft: meta.length ? 6 : 0,
-                              fontFamily: MONO, fontSize: 8, fontWeight: 700,
-                              letterSpacing: '0.08em', color: mark.color,
-                            }}>
-                              {mark.text}
-                            </span>
-                          )}
                         </span>
                         {Number.isFinite(sr) && (
                           <span style={{
@@ -1551,9 +1531,9 @@ export default function LockedClarityExpanded({
                       else setSaveNote('');
                     }}
                     style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '6px 11px', borderRadius: 999, cursor: saveBlocked ? 'default' : 'pointer',
-                      fontFamily: 'inherit', fontSize: 12, fontWeight: 700, letterSpacing: '0.01em',
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '3px 8px', borderRadius: 999, cursor: saveBlocked ? 'default' : 'pointer',
+                      fontFamily: 'inherit', fontSize: 11, fontWeight: 700, letterSpacing: '0.01em',
                       color: selectedSaved ? '#0a0904' : GOLD_HI,
                       background: selectedSaved
                         ? 'linear-gradient(180deg, #F3E3AC 0%, #E8D28A 42%, #D4AF37 100%)'
@@ -1562,7 +1542,7 @@ export default function LockedClarityExpanded({
                       opacity: saveBlocked ? 0.55 : 1,
                     }}
                   >
-                    <Star size={12} fill={selectedSaved ? '#0a0904' : 'none'} color={selectedSaved ? '#0a0904' : GOLD_HI} />
+                    <Star size={10} fill={selectedSaved ? '#0a0904' : 'none'} color={selectedSaved ? '#0a0904' : GOLD_HI} />
                     {selectedSaved
                       ? 'Remove from My Sharps'
                       : (saveBlocked ? 'My Sharps is full' : 'Add to My Sharps')}
