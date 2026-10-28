@@ -183,11 +183,14 @@ function SplitBar({
   const theirsFill = barFill(accentTheirs);
 
   // Premium: a full-width split you can actually read. Ops keeps the block.
-  const barH = premium ? 8 : 6;
+  const barH = premium ? 9 : 6;
   return (
     <div style={{
       display: 'flex', height: barH, borderRadius: 999, overflow: 'hidden',
-      background: premium ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.06)',
+      background: premium ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.06)',
+      boxShadow: premium
+        ? 'inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.45)'
+        : undefined,
       gap: premium ? 3 : 0,
       minHeight: barH,
     }}>
@@ -268,15 +271,15 @@ function CompactSplitRow({
           {pct}%
         </div>
         <div style={{
-          marginTop: 4, fontSize: 11, fontWeight: 650, letterSpacing: '-0.02em',
-          color, fontFeatureSettings: "'tnum'", opacity: 0.9,
+          marginTop: 3, fontSize: 10.5, fontWeight: 600, letterSpacing: '-0.01em',
+          color, fontFeatureSettings: "'tnum'", opacity: 0.72,
         }}>
           {usd}
         </div>
       </div>
     );
     return (
-      <div title={tip || undefined} style={{ marginBottom: 14 }}>
+      <div title={tip || undefined} style={{ marginBottom: 16 }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: '64px minmax(0, 1fr) 64px',
@@ -287,18 +290,21 @@ function CompactSplitRow({
           <div style={{ minWidth: 0 }}>
             <div style={{
               display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: 6,
-              marginBottom: 6,
+              marginBottom: 7, minWidth: 0,
             }}>
               <span style={{
-                fontSize: 10, fontWeight: 650, letterSpacing: '0.14em',
-                textTransform: 'uppercase', color: C.textMuted,
+                fontSize: 9, fontWeight: 700, letterSpacing: label.length > 12 ? '0.11em' : '0.16em',
+                textTransform: 'uppercase', color: '#A8B3C7',
+                whiteSpace: 'nowrap',
               }}>
                 {label}
               </span>
               {tag ? (
                 <span style={{
-                  fontSize: 9.5, fontWeight: 700, letterSpacing: '0.04em',
+                  flexShrink: 0,
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
                   color: tag.color || GOLD,
+                  whiteSpace: 'nowrap',
                 }}>
                   {tag.text}
                 </span>
@@ -424,7 +430,7 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
   const confirmedRow = hasConfirmed && (
     <CompactSplitRow
       key="confirmed"
-      label={subscriber ? 'Confirmed' : 'Confirmed winners'}
+      label={subscriber ? 'Confirmed Sharp' : 'Confirmed winners'}
       ours={confirmed.ours}
       theirs={confirmed.theirs}
       oursLabel={oursLabel}
@@ -433,7 +439,7 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
       accentTheirs={subscriber ? SLATE_DIM : VS}
       hcOursPct={hcShareOfOurs}
       tag={hcTag}
-      tip="CONFIRMED open positions on this market (bleeders excluded). Gold = HC (≥1.5×)"
+      tip="Confirmed Sharp open positions on this market (bleeders excluded). Gold = HC (≥1.5×)"
       premium={subscriber}
     />
   );
@@ -454,7 +460,7 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
   const losersRow = hasLosers && (
     <CompactSplitRow
       key="losers"
-      label={subscriber ? 'Losing' : 'Losing wallets'}
+      label={subscriber ? 'Tracked Losers' : 'Losing wallets'}
       ours={losers.ours}
       theirs={losers.theirs}
       oursLabel={oursLabel}
