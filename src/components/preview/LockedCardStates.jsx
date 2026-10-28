@@ -2,7 +2,9 @@
  * LockedCardStates — production LockedPositionCardView fixtures.
  * Open at #/locked-card-states.
  */
+import { useState } from 'react';
 import { LockedPositionCardView } from '../sharpFlow/cards/PositionCards';
+import { normalizeWalletShort } from '../../lib/mySharps.js';
 
 const now = Date.now();
 const H = 36e5;
@@ -47,10 +49,12 @@ const showcaseBoard = [
   {
     short: 'flat01', side: 'ours', proven: true, whitelisted: true, whitelist: 'FLAT',
     invested: 2100, sizeRatio: 0.9, displaySizeRatio: 0.9,
+    record: '8-7', wr: 53, roi: 4, priorClvPct: 51,
   },
   {
     short: 'lose9a', side: 'against', proven: false, whitelisted: false, whitelist: 'WR50',
     invested: 1800, sizeRatio: 0.4, displaySizeRatio: 0.4,
+    record: '5-12', wr: 29, roi: -24, priorClvPct: 36,
   },
 ];
 
@@ -63,10 +67,12 @@ const contestedBoard = [
   {
     short: 'b3e811', side: 'ours', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
     invested: 3600, sizeRatio: 1.2, displaySizeRatio: 1.2,
+    record: '9-6', wr: 60, roi: 14, priorClvPct: 54,
   },
   {
     short: 'flat22', side: 'ours', proven: true, whitelisted: true, whitelist: 'FLAT',
     invested: 1800, sizeRatio: 0.7, displaySizeRatio: 0.7,
+    record: '7-6', wr: 54, roi: 3, priorClvPct: 49,
   },
   {
     short: 'c9vs01', side: 'against', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
@@ -76,10 +82,13 @@ const contestedBoard = [
   {
     short: 'lose01', side: 'against', proven: false, whitelisted: false, whitelist: 'WR50',
     invested: 3200, sizeRatio: 0.5, displaySizeRatio: 0.5,
+    record: '6-11', wr: 35, roi: -18, priorClvPct: 41,
   },
   {
     short: 'lose02', side: 'ours', proven: false, whitelisted: false, whitelist: 'WR50',
+    skillEligible: true,
     invested: 900, sizeRatio: 0.3, displaySizeRatio: 0.3,
+    record: '4-9', wr: 31, roi: -22, priorClvPct: 38,
   },
 ];
 
@@ -165,6 +174,7 @@ const FIXTURES = [
       home: 'Jacksonville Jaguars',
       gameTime: '7:30 PM',
       pickLabel: 'Jaguars ML',
+      ourMarketLabel: 'Jaguars ML',
       marketType: 'ml',
       lockOdds: 108,
       gotOdds: 117,
@@ -302,6 +312,35 @@ const FIXTURES = [
   },
 ];
 
+function LabCard({ title, f }) {
+  const [shorts, setShorts] = useState(() => new Set(['b3e811']));
+  const mySharps = {
+    shorts,
+    names: { b3e811: 'Harbor' },
+    ready: true,
+    atCap: false,
+    onToggle: async ({ walletShort }) => {
+      const id = normalizeWalletShort(walletShort);
+      if (!id) return { reason: 'auth' };
+      setShorts((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      return {};
+    },
+  };
+  return (
+    <div>
+      <div style={{ color: '#647089', fontSize: '0.62rem', fontWeight: 700, marginBottom: 6, letterSpacing: '0.06em' }}>
+        {title}
+      </div>
+      <LockedPositionCardView f={f} defaultExpanded mySharps={mySharps} />
+    </div>
+  );
+}
+
 export default function LockedCardStates() {
   return (
     <div style={{ minHeight: '100vh', background: '#0B0F1F', padding: '2rem 1rem' }}>
@@ -311,12 +350,7 @@ export default function LockedCardStates() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: 18 }}>
           {FIXTURES.map(({ title, f }) => (
-            <div key={title}>
-              <div style={{ color: '#647089', fontSize: '0.62rem', fontWeight: 700, marginBottom: 6, letterSpacing: '0.06em' }}>
-                {title}
-              </div>
-              <LockedPositionCardView f={f} defaultExpanded />
-            </div>
+            <LabCard key={title} title={title} f={f} />
           ))}
         </div>
       </div>
