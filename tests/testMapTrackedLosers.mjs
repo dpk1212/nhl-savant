@@ -95,6 +95,30 @@ function assert(cond, msg) {
   assert(!keepShorts.has('0cd77e'), 'the next WR50 wallet is still capped');
 }
 
+// A tier-4 ticket near the top of the dollar list must not push the third
+// real loser out, and it must not come back as a second dot.
+{
+  const mapRows = [
+    { short: 'bigone', invested: 69000 },
+    { short: 'ab4b6e', invested: 49000, trusted: true },
+    { short: 'midone', invested: 14488 },
+    { short: 'bfe3bc', invested: 9259 },
+    { short: '7923c4', invested: 6755 },
+  ];
+  const walletRows = mapRows.map((w) => ({
+    wallet: w.short,
+    invested: w.invested,
+    whitelist: 'WR50',
+    verdict: null,
+    marketSide: w.short === 'midone' ? 'home' : 'away',
+  }));
+  const { keepShorts, addRaw } = planTrackedLosersForMap(mapRows, walletRows);
+  assert(keepShorts.has('ab4b6e'), 'tier-4 wallet still stays');
+  assert(keepShorts.has('bigone') && keepShorts.has('midone') && keepShorts.has('bfe3bc'), 'next three losers still pin');
+  assert(!keepShorts.has('7923c4'), 'the loser after those three is still capped');
+  assert(addRaw.length === 0, 'a wallet already on the map is not stubbed again');
+}
+
 {
   const spreadFive = {
     bySport: {

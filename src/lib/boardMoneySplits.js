@@ -108,23 +108,31 @@ export function planTrackedLosersForMap(mapRows, walletRows, { limit = MAP_TRACK
     .slice()
     .sort((a, b) => (b.invested || 0) - (a.invested || 0));
 
+  // Tier 4+ form-on wallets are often WR50, so they sit in this pool.
+  // They stay on the chart and must not take one of the three loser slots,
+  // or the next real loser falls out of the cap and comes back as a stub.
+  const trustedShorts = new Set();
+  for (const w of rows) {
+    if (w?.trusted !== true) continue;
+    const short = String(w?.short || w?.wallet || '').slice(-6).toLowerCase();
+    if (short) trustedShorts.add(short);
+  }
+
   const loserShortRank = new Map();
-  pool.forEach((r, i) => {
+  let loserRank = 0;
+  for (const r of pool) {
     const short = String(r.wallet || '').slice(-6).toLowerCase();
-    if (short && !loserShortRank.has(short)) loserShortRank.set(short, { row: r, rank: i });
-  });
+    if (!short || loserShortRank.has(short) || trustedShorts.has(short)) continue;
+    loserShortRank.set(short, { row: r, rank: loserRank });
+    loserRank += 1;
+  }
 
   const keepShorts = new Set();
-  // Tier 4+ form-on wallets are often WR50 on the whitelist, so the loser
-  // cap used to drop them behind the three biggest tickets. They stay, and
-  // they do not consume a loser slot.
-  const trustedKept = new Set();
   for (const w of rows) {
     const short = String(w?.short || w?.wallet || '').slice(-6).toLowerCase();
     if (!short) continue;
-    if (w?.trusted === true) {
+    if (trustedShorts.has(short)) {
       keepShorts.add(short);
-      trustedKept.add(short);
       continue;
     }
     if (!loserShortRank.has(short)) {
@@ -135,12 +143,12 @@ export function planTrackedLosersForMap(mapRows, walletRows, { limit = MAP_TRACK
     if (loserShortRank.get(short).rank < cap) keepShorts.add(short);
   }
 
-  let loserKept = [...keepShorts].filter((s) => loserShortRank.has(s) && !trustedKept.has(s)).length;
+  let loserKept = [...keepShorts].filter((s) => loserShortRank.has(s)).length;
   const addRaw = [];
   for (const r of pool) {
     if (loserKept >= cap) break;
     const short = String(r.wallet || '').slice(-6).toLowerCase();
-    if (!short || keepShorts.has(short)) continue;
+    if (!short || keepShorts.has(short) || trustedShorts.has(short)) continue;
     addRaw.push({
       wallet: short,
       side: r.marketSide || null,
