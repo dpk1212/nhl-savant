@@ -152,18 +152,14 @@ export function computeCollapsedBattleSplits(f) {
  * that produced invalid CSS (`rgba(...)88`) and the Losing bar painted empty.
  * Solid backgroundColor is always set so a bad gradient cannot blank the bar.
  */
-function barFill(color, softHex = '88') {
+function barFill(color) {
   const c = String(color || '').trim();
   if (!c) return { backgroundColor: GREEN };
-  if (c[0] === '#') {
-    const hex = c.length >= 7 ? c.slice(0, 7) : c;
-    return {
-      backgroundColor: hex,
-      backgroundImage: `linear-gradient(90deg, ${hex}${softHex}, ${hex})`,
-    };
-  }
-  // rgba / rgb / named — use as-is (already has alpha if rgba)
-  return { backgroundColor: c };
+  const hex = c[0] === '#' && c.length >= 7 ? c.slice(0, 7) : c;
+  return {
+    backgroundColor: hex,
+    backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 64%)',
+  };
 }
 
 function SplitBar({
@@ -180,20 +176,19 @@ function SplitBar({
   const hcW = showHcSplit ? Math.max(1, Math.round((o * hcOursPct) / 100)) : 0;
   const restW = showHcSplit ? Math.max(0, o - hcW) : o;
   const oursFill = o > 0 && Number.isFinite(hcOursPct) && hcOursPct >= 100
-    ? barFill(GOLD, 'aa')
-    : barFill(accentOurs, premium ? 'cc' : '88');
-  const hcFill = barFill(GOLD, 'aa');
-  const restFill = barFill(accentOurs, premium ? '99' : '66');
-  const theirsFill = barFill(accentTheirs, premium ? '77' : '55');
+    ? barFill(GOLD)
+    : barFill(accentOurs);
+  const hcFill = barFill(GOLD);
+  const restFill = barFill(accentOurs);
+  const theirsFill = barFill(accentTheirs);
 
-  // Premium: hairline bar with a seam between the sides (Kraken trading
-  // activity / Stake overview). Ops keeps the solid 6px block.
-  const barH = premium ? 4 : 6;
+  // Premium: a full-width split you can actually read. Ops keeps the block.
+  const barH = premium ? 8 : 6;
   return (
     <div style={{
       display: 'flex', height: barH, borderRadius: 999, overflow: 'hidden',
-      background: premium ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.06)',
-      gap: premium ? 2 : 0,
+      background: premium ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.06)',
+      gap: premium ? 3 : 0,
       minHeight: barH,
     }}>
       {showHcSplit ? (
@@ -253,34 +248,62 @@ function CompactSplitRow({
   tip = null,
   hcOursPct = null,
   premium = false,
-  scale = 1,
 }) {
   const total = ours + theirs;
   if (total <= 0) return null;
   const oursPct = Math.round((ours / total) * 100);
   const theirsPct = Math.max(0, 100 - oursPct);
+  const oursColor = ours > 0 ? accentOurs : C.textFaint;
+  const theirsColor = theirs > 0 ? accentTheirs : C.textFaint;
 
   if (premium) {
-    // One line per split on a SHARED dollar scale: bar length = row total
-    // relative to the biggest pool on the card, so you SEE where the big
-    // money is — row-normalized bars hide magnitude. Label · bar · dollars.
-    const pctW = Math.max(4, Math.round(scale * 100));
-    return (
-      <div
-        title={tip || undefined}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 11,
-        }}
-      >
-        <span style={{
-          width: 84, flexShrink: 0,
-          fontSize: 11, fontWeight: 500, color: C.textMuted,
-          letterSpacing: '0.01em', whiteSpace: 'nowrap',
+    // Full-width split. The percent is the read; the dollars stay under it.
+    // Length no longer shrinks with the pool — $1.5K vs $0 was a speck.
+    const end = (pct, usd, color, align) => (
+      <div style={{ textAlign: align, minWidth: 0 }}>
+        <div style={{
+          fontSize: 16, fontWeight: 750, letterSpacing: '-0.03em', lineHeight: 1,
+          color, fontFeatureSettings: "'tnum'",
         }}>
-          {label}
-        </span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ width: `${pctW}%` }}>
+          {pct}%
+        </div>
+        <div style={{
+          marginTop: 4, fontSize: 11, fontWeight: 650, letterSpacing: '-0.02em',
+          color, fontFeatureSettings: "'tnum'", opacity: 0.9,
+        }}>
+          {usd}
+        </div>
+      </div>
+    );
+    return (
+      <div title={tip || undefined} style={{ marginBottom: 14 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '64px minmax(0, 1fr) 64px',
+          columnGap: 10,
+          alignItems: 'center',
+        }}>
+          {end(oursPct, fmtUsd(ours), oursColor, 'left')}
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: 6,
+              marginBottom: 6,
+            }}>
+              <span style={{
+                fontSize: 10, fontWeight: 650, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: C.textMuted,
+              }}>
+                {label}
+              </span>
+              {tag ? (
+                <span style={{
+                  fontSize: 9.5, fontWeight: 700, letterSpacing: '0.04em',
+                  color: tag.color || GOLD,
+                }}>
+                  {tag.text}
+                </span>
+              ) : null}
+            </div>
             <SplitBar
               oursPct={Math.max(oursPct, 0)}
               theirsPct={theirsPct}
@@ -290,24 +313,8 @@ function CompactSplitRow({
               premium
             />
           </div>
+          {end(theirsPct, fmtUsd(theirs), theirsColor, 'right')}
         </div>
-        <span style={{
-          flexShrink: 0, display: 'inline-flex', alignItems: 'baseline', gap: 6,
-          fontFeatureSettings: "'tnum'", fontSize: 13.5, fontWeight: 700,
-          letterSpacing: '-0.02em', whiteSpace: 'nowrap',
-        }}>
-          <span style={{ color: accentOurs }}>{fmtUsd(ours)}</span>
-          <span style={{ fontSize: 10, fontWeight: 450, color: C.textFaint }}>·</span>
-          <span style={{ color: theirs > 0 ? accentTheirs : C.textFaint, fontWeight: 550 }}>{fmtUsd(theirs)}</span>
-          {tag && (
-            <span style={{
-              fontSize: 9.5, fontWeight: 600, letterSpacing: '0.01em',
-              color: tag.color || GOLD, marginLeft: 2,
-            }}>
-              {tag.text}
-            </span>
-          )}
-        </span>
       </div>
     );
   }
@@ -386,8 +393,9 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
   // The other side is neutral slate, never alarm-red — and losing money on
   // the other side is good news, so it must not paint the card red. Red is
   // reserved for the only real threat: tracked losers on OUR side.
-  const SLATE = '#D7DEE9';
-  const SLATE_DIM = '#5C6678';
+  const SLATE = '#F4F7FB';
+  const SLATE_DIM = '#6E788A';
+  const SLATE_SOFT = '#C5CEDA';
   const losersMostlyOurs = losers.oursPct != null && losers.oursPct >= 60;
   const loserOursAccent = subscriber
     ? (losersMostlyOurs ? VS : SLATE_DIM)
@@ -413,9 +421,6 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
         : null))
     : null;
 
-  // Shared dollar scale across the three pools — bar length says magnitude.
-  const maxTotal = Math.max(confirmed.total, full.total, losers.total, 1);
-
   const confirmedRow = hasConfirmed && (
     <CompactSplitRow
       key="confirmed"
@@ -430,7 +435,6 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
       tag={hcTag}
       tip="CONFIRMED open positions on this market (bleeders excluded). Gold = HC (≥1.5×)"
       premium={subscriber}
-      scale={confirmed.total / maxTotal}
     />
   );
   const fullRow = hasFull && (
@@ -445,7 +449,6 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
       accentTheirs={subscriber ? SLATE_DIM : VS}
       tip={fullTip}
       premium={subscriber}
-      scale={full.total / maxTotal}
     />
   );
   const losersRow = hasLosers && (
@@ -457,11 +460,10 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
       oursLabel={oursLabel}
       theirsLabel={theirsLabel}
       accentOurs={loserOursAccent}
-      accentTheirs={subscriber ? SLATE_DIM : VS}
+      accentTheirs={subscriber ? (losersMostlyOurs ? SLATE_DIM : SLATE_SOFT) : VS}
       tag={losersTag}
       tip="Tracked losers on this market: WR50, unranked, bleeders, positions-negative. No anon exchange prints."
       premium={subscriber}
-      scale={losers.total / maxTotal}
     />
   );
 
