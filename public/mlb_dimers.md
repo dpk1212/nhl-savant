@@ -4,9 +4,9 @@ MLB predictions for Friday, October 23, 2026, powered by advanced data science. 
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 26 2026Oct 26
+Date: Oct 27 2026Oct 27
 
-[Oct 26, 8:00 PM ET\\
+[Oct 27, 8:00 PM ET\\
 \\
 R\\
 \\
@@ -18,25 +18,25 @@ E\\
 \\
 Brewers \\
 \\
-10 \\
+3 \\
 \\
-16 \\
+8 \\
 \\
-0 \\
+2 \\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
 Rays \\
 \\
-1 \\
+4 \\
 \\
-3 \\
+9 \\
 \\
 1 \\
 \\
 FINAL\\
 \\
-See Game Recap](https://www.dimers.com/mlb/predictions/2026_216_tb_mil)
+See Game Recap](https://www.dimers.com/mlb/predictions/2026_217_tb_mil)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
