@@ -3,6 +3,7 @@
  * Usage: node tests/testPaywallPromo.mjs
  */
 import assert from 'assert';
+import fs from 'fs';
 import {
   PAYWALL_PROMO,
   PROMO_CODES,
@@ -25,7 +26,7 @@ function eq(a, b, msg) {
 eq(PAYWALL_PROMO.code, 'FALL50', 'code');
 eq(PAYWALL_PROMO.discount, 0.50, '50%');
 eq(DEFAULT_PROMO_CODE, 'FALL50', 'default code');
-eq(PAYWALL_PROMO.endMs, Date.parse('2026-10-28T04:00:00Z'), 'ends Wed Oct 28 12:00am ET');
+eq(PAYWALL_PROMO.endMs, Date.parse('2026-11-04T05:00:00Z'), 'ends Wed Nov 4 12:00am ET');
 ok(Array.isArray(PAYWALL_PROMO.tiers) && PAYWALL_PROMO.tiers.includes('elite') && PAYWALL_PROMO.tiers.includes('scout'), 'weekly + monthly');
 ok(!PAYWALL_PROMO.tiers.includes('pro'), 'annual excluded');
 
@@ -33,6 +34,7 @@ eq(promoPrice(25.99), '$13.00', 'monthly 50%');
 eq(promoPrice(7.99), '$4.00', 'weekly 50%');
 
 ok(isPaywallPromoLive(Date.parse('2026-10-20T19:00:00Z')), 'live on opening night');
+ok(isPaywallPromoLive(Date.parse('2026-10-28T12:00:00Z')), 'live the morning the first window had ended');
 ok(isPaywallPromoLive(PAYWALL_PROMO.endMs), 'live at the end instant');
 ok(!isPaywallPromoLive(PAYWALL_PROMO.endMs + 1), 'dead after the end instant');
 
@@ -52,5 +54,11 @@ ok(week.remaining > 0, 'remaining positive');
 const gone = formatPromoCountdown(-5);
 eq(gone.remaining, 0, 'negative remaining clamps to 0');
 eq(gone.days, 0, 'zero days after expiry');
+
+const endLiteral = "Date.parse('2026-11-04T05:00:00Z')";
+const checkout = fs.readFileSync(new URL('../functions/src/createCheckoutSession.js', import.meta.url), 'utf8');
+const stripeScript = fs.readFileSync(new URL('../scripts/ensureFall50Promo.mjs', import.meta.url), 'utf8');
+ok(checkout.includes(endLiteral), 'checkout function uses the same end');
+ok(stripeScript.includes(endLiteral), 'stripe script uses the same end');
 
 console.log(`OK — ${n} assertions`);

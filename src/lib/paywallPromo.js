@@ -4,15 +4,15 @@
  * (elite). Annual stays full price. Stripe promotion code must match `code`
  * and stay restricted to those two prices.
  *
- * Window: opening night Tue Oct 20 → Tue Oct 27 night ET
- * (Wed Oct 28, 12:00am ET).
+ * Window: restored for one more week. Through Tue Nov 3 night ET
+ * (Wed Nov 4, 12:00am ET). DST ended Nov 1, so that midnight is 05:00 UTC.
  */
 export const PAYWALL_PROMO = {
   code: 'FALL50',
   discount: 0.50,
   label: 'NBA Tip-Off',
-  endMs: Date.parse('2026-10-28T04:00:00Z'),
-  endCopy: 'Tuesday night ET',
+  endMs: Date.parse('2026-11-04T05:00:00Z'),
+  endCopy: 'Tuesday, November 3',
   seasonCopy: 'the start of the NBA season',
   tiers: ['elite', 'scout'],
 };

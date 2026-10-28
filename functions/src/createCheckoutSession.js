@@ -45,7 +45,7 @@ const FLASH_PROMO = {
   code: 'FALL50',
   codeAliases: ['FALL50', 'fall50'],
   tiers: new Set(['scout', 'elite']),
-  endMs: Date.parse('2026-10-28T04:00:00Z'), // Wed Oct 28, 12:00am ET
+  endMs: Date.parse('2026-11-04T05:00:00Z'), // Wed Nov 4, 12:00am ET
 };
 
 async function resolveFlashPromoId(stripeClient, tier) {
