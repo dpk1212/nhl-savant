@@ -918,6 +918,19 @@ function ActionExpandPanel({ row, isMobile }) {
           )}
         </div>
       </div>
+      {openCardAside(row) ? (
+        <div style={{
+          margin: '-0.15rem 0 0.9rem',
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          lineHeight: 1.45,
+          color: B.textMuted,
+          fontFeatureSettings: "'tnum'",
+        }}
+        >
+          {openCardAside(row)}
+        </div>
+      ) : null}
 
       <BetTypeRollupStrip
         sport={row.sport}
@@ -1107,229 +1120,98 @@ function TeamCrest({ name, sport, size = 42 }) {
   );
 }
 
-const STAT_KICKER = {
-  fontSize: '0.58rem',
-  fontWeight: 760,
-  letterSpacing: '0.16em',
-  textTransform: 'uppercase',
-  color: '#64748B',
-  lineHeight: 1,
-};
-
-function airyNote(text) {
-  return String(text || '').replaceAll(' · ', '  ').trim();
-}
-
-/** Label, then the number alone, then the meaning. Never a badge glued to the figure. */
-function StatStack({ kicker, value, note, valueColor, noteColor, spark, valueSize, stackSpark = false }) {
-  const caption = airyNote(note);
+/**
+ * The only three facts on the face. The number is the point.
+ * The sentence under it explains. Nothing else competes.
+ */
+function DecisionRow({ heroes, spark, isMobile }) {
+  if (!heroes.length) return null;
+  const figure = isMobile ? '1.42rem' : '1.7rem';
   return (
-    <div style={{ minWidth: 0 }}>
-      <div style={{ ...STAT_KICKER, marginBottom: '0.42rem' }}>{kicker}</div>
-      <div style={{
-        fontSize: valueSize,
-        fontWeight: 680,
-        letterSpacing: '-0.045em',
-        lineHeight: 1,
-        color: valueColor,
-        fontFeatureSettings: "'tnum'",
-      }}
-      >
-        {value}
-      </div>
-      {caption || spark ? (
-        <div style={{
-          marginTop: '0.4rem',
-          display: 'flex',
-          flexDirection: stackSpark ? 'column' : 'row',
-          alignItems: stackSpark ? 'flex-start' : 'center',
-          gap: stackSpark ? '0.28rem' : '0.6rem',
-          minWidth: 0,
-        }}
-        >
-          {caption ? (
-            <span style={{
-              minWidth: 0,
-              fontSize: '0.78rem',
-              fontWeight: 640,
-              lineHeight: 1.3,
-              color: noteColor || B.textMuted,
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: `repeat(${Math.min(heroes.length, 3)}, minmax(0, 1fr))`,
+      columnGap: isMobile ? '0.8rem' : '2.5rem',
+      marginTop: isMobile ? '1.05rem' : '1.2rem',
+      paddingTop: isMobile ? '0.95rem' : '1.1rem',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+    }}
+    >
+      {heroes.map((h) => {
+        const tone = REASON_TONE[h.tone] || REASON_TONE.text;
+        const spot = h.key === 'spot';
+        const [head] = String(h.title || '').split(' · ');
+        const value = h.key === 'size' ? (h.figure || h.title) : (spot ? head : h.title);
+        const caption = h.sub || '';
+        return (
+          <div key={h.key} data-reason={h.key} style={{ minWidth: 0 }}>
+            <div style={{
+              fontSize: spot ? (isMobile ? '1.08rem' : '1.22rem') : figure,
+              fontWeight: 650,
+              letterSpacing: '-0.045em',
+              lineHeight: 1,
+              color: tone,
               fontFeatureSettings: "'tnum'",
             }}
             >
-              {caption}
-            </span>
-          ) : null}
-          {spark || null}
-        </div>
-      ) : null}
+              {value}
+            </div>
+            {caption || (h.key === 'book' && spark) ? (
+              <div style={{
+                marginTop: '0.48rem',
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                gap: isMobile ? '0.28rem' : '0.55rem',
+                minWidth: 0,
+              }}
+              >
+                {caption ? (
+                  <span style={{
+                    minWidth: 0,
+                    fontSize: isMobile ? '0.75rem' : '0.84rem',
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                    color: h.subTone ? (REASON_TONE[h.subTone] || B.textMuted) : B.textMuted,
+                    fontFeatureSettings: "'tnum'",
+                  }}
+                  >
+                    {caption}
+                  </span>
+                ) : null}
+                {h.key === 'book' && spark ? (
+                  <FlatSpark points={spark} width={isMobile ? 42 : 56} height={16} />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function heroView(h) {
-  const tone = REASON_TONE[h.tone] || REASON_TONE.text;
-  if (h.key === 'size') {
-    return {
-      kicker: h.mark || 'Size',
-      value: h.figure || h.title,
-      note: h.sub,
-      valueColor: tone,
-      noteColor: B.textMuted,
-    };
-  }
-  if (h.key === 'book') {
-    return {
-      kicker: h.window === '30d' ? 'Last 30' : 'Book',
-      value: h.title,
-      note: h.sub,
-      valueColor: tone,
-      noteColor: h.subTone ? (REASON_TONE[h.subTone] || B.textMuted) : B.textMuted,
-      spark: true,
-    };
-  }
-  const [head, extra] = String(h.title || '').split(' · ');
-  const sub = h.sub || '';
-  const note = extra && sub && !sub.includes(extra) ? `${extra}  ${sub}` : (sub || extra || '');
-  return {
-    kicker: 'Spot',
-    value: head,
-    note,
-    valueColor: tone,
-    noteColor: B.textMuted,
-  };
-}
-
-function likeThisStat(text) {
-  if (!text) return null;
-  const bits = String(text).split('·').map((s) => s.trim()).filter((s) => s && !/^plays like this$/i.test(s));
-  if (!bits.length) return null;
-  return { label: 'Like this', value: bits[0], note: bits[1] || null };
-}
-
-/** The quiet facts, each in its own column. Same gap, no run-on dots. */
-function proofStats(row) {
-  const items = [];
-  if (row?.pinMove === 'with') items.push({ label: 'Line', value: 'With' });
-  else if (row?.pinMove === 'against') items.push({ label: 'Line', value: 'Against' });
-  if (row?.steam?.show && row.steam.tag) {
-    const tag = String(row.steam.tag).replace(/^steam\s+/i, '');
-    items.push({ label: 'Steam', value: tag });
+/** Facts that belong inside the open card, not on the poster. */
+function openCardAside(row) {
+  const bits = [];
+  if (row?.pinMove === 'with') {
+    const tag = row?.steam?.show && row.steam.tag
+      ? String(row.steam.tag).replace(/^steam\s+/i, '')
+      : null;
+    bits.push(tag ? `With the line, steam ${tag}` : 'With the line');
+  } else if (row?.pinMove === 'against') {
+    bits.push('Against the line');
   }
   const l10 = row?.form?.l10;
   const w = Number(l10?.w);
   const l = Number(l10?.l);
-  if (Number.isFinite(w) && Number.isFinite(l) && (w + l) > 0) {
-    items.push({ label: 'Last 10', value: `${w}-${l}` });
-  } else if (row?.formText && row.formText !== '—') {
-    items.push({ label: 'Form', value: row.formText });
+  if (Number.isFinite(w) && Number.isFinite(l) && (w + l) > 0) bits.push(`Last 10 is ${w}-${l}`);
+  if (Number.isFinite(row?.trust?.priorClvPct)) bits.push(`Beat close ${row.trust.priorClvPct}%`);
+  if (row?.cellHistText) {
+    const rest = String(row.cellHistText).replace(/^plays like this\s*·\s*/i, '').replace(/\s*·\s*/g, ', ').trim();
+    if (rest) bits.push(`Plays like this ${rest}`);
   }
-  const trust = row?.trust;
-  if (trust?.record) items.push({ label: 'Record', value: trust.record });
-  if (Number.isFinite(trust?.roi)) {
-    items.push({
-      label: 'Book',
-      value: `${trust.roi >= 0 ? '+' : ''}${trust.roi}%`,
-      note: 'ROI',
-      valueColor: trust.roi >= 0 ? '#34D399' : '#F07178',
-    });
-  }
-  if (Number.isFinite(trust?.wr)) items.push({ label: 'Wins', value: `${trust.wr}%` });
-  if (Number.isFinite(trust?.priorClvPct)) {
-    items.push({
-      label: 'Beat close',
-      value: `${trust.priorClvPct}%`,
-      valueColor: trust.priorClvPct >= 55 ? '#E8D28A' : B.text,
-    });
-  }
-  const like = likeThisStat(row?.cellHistText);
-  if (like) items.push(like);
-  return items;
-}
-
-function HeroStats({ heroes, spark, isMobile }) {
-  if (!heroes.length) return null;
-  const size = isMobile ? '1.32rem' : '1.48rem';
-  return heroes.map((h) => {
-    const view = heroView(h);
-    return (
-      <div
-        key={h.key}
-        data-reason={h.key}
-        style={{
-          minWidth: 0,
-          borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.07)',
-          paddingLeft: isMobile ? 0 : '1.15rem',
-        }}
-      >
-        <StatStack
-          kicker={view.kicker}
-          value={view.value}
-          note={view.note}
-          valueColor={view.valueColor}
-          noteColor={view.noteColor}
-          valueSize={h.key === 'spot' ? (isMobile ? '1.05rem' : '1.16rem') : size}
-          stackSpark={isMobile}
-          spark={view.spark && spark ? <FlatSpark points={spark} width={isMobile ? 48 : 52} height={16} /> : null}
-        />
-      </div>
-    );
-  });
-}
-
-function ProofRail({ items, isMobile }) {
-  if (!items.length) return null;
-  return (
-    <div
-      data-proof="rail"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile
-          ? 'repeat(3, minmax(0, 1fr))'
-          : `repeat(${items.length}, minmax(0, 1fr))`,
-        columnGap: isMobile ? '0.7rem' : '1.15rem',
-        rowGap: '0.85rem',
-        marginTop: isMobile ? '0.95rem' : '1.05rem',
-        paddingTop: '0.9rem',
-        borderTop: '1px solid rgba(255,255,255,0.07)',
-      }}
-    >
-      {items.map((item) => (
-        <div key={item.label} style={{ minWidth: 0 }}>
-          <div style={{ ...STAT_KICKER, marginBottom: '0.32rem' }}>{item.label}</div>
-          <div style={{
-            fontSize: isMobile ? '0.86rem' : '0.95rem',
-            fontWeight: 680,
-            letterSpacing: '-0.03em',
-            lineHeight: 1.1,
-            color: item.valueColor || B.text,
-            fontFeatureSettings: "'tnum'",
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-          >
-            {item.value}
-          </div>
-          {item.note ? (
-            <div style={{
-              marginTop: '0.18rem',
-              fontSize: '0.68rem',
-              fontWeight: 640,
-              color: B.textMuted,
-              fontFeatureSettings: "'tnum'",
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-            >
-              {item.note}
-            </div>
-          ) : null}
-        </div>
-      ))}
-    </div>
-  );
+  return bits.join('    ·    ');
 }
 
 function Pill({ active, onClick, children }) {
@@ -1731,7 +1613,6 @@ function ActionRow({
     ? row.away
     : (row.side === 'home' && row.home ? row.home : row.team);
   const kick = formatActionKickoff(row.commenceMs);
-  const postedAge = agoTxt(row.ts);
   const play = (
     <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: isMobile ? '0.7rem' : '0.85rem' }}>
       <TeamCrest name={crestName} sport={row.sport} size={isMobile ? 44 : 52} />
@@ -1807,60 +1688,47 @@ function ActionRow({
           {row.americanLabel}
         </div>
       ) : null}
-      <div data-kickoff={kick?.tone || 'posted'} style={{ marginTop: '0.38rem' }}>
+      <div data-kickoff={kick?.tone || 'posted'} style={{ marginTop: '0.42rem' }}>
         {kick ? (
-          <div style={{
-            fontSize: isMobile ? '0.86rem' : '0.95rem',
-            fontWeight: 680,
-            letterSpacing: '-0.02em',
-            color: B.text,
-            fontFeatureSettings: "'tnum'",
-            lineHeight: 1,
-          }}
-          >
-            {kick.time} ET
-          </div>
+          <>
+            <div style={{
+              fontSize: isMobile ? '0.92rem' : '1rem',
+              fontWeight: 650,
+              letterSpacing: '-0.03em',
+              color: B.text,
+              fontFeatureSettings: "'tnum'",
+              lineHeight: 1,
+            }}
+            >
+              {kick.time}
+            </div>
+            <div style={{
+              marginTop: '0.28rem',
+              fontSize: '0.68rem',
+              fontWeight: 720,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: kick.tone === 'live' ? '#34D399' : '#E8D28A',
+            }}
+            >
+              {kick.kicker}
+            </div>
+          </>
         ) : (
           <div style={{ ...T.micro, color: B.textSubtle }}>Kickoff —</div>
         )}
       </div>
     </div>
   );
-  const clockMeta = (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'flex-end',
-      alignItems: 'baseline',
-      gap: '1.15rem',
-      marginTop: '0.55rem',
-    }}
-    >
-      {kick ? (
-        <span style={{ ...STAT_KICKER, color: kick.tone === 'live' ? '#34D399' : '#E8D28A' }}>
-          {kick.kicker}
-        </span>
-      ) : null}
-      {Number.isFinite(row.cents) ? (
-        <span style={{ fontSize: '0.75rem', fontWeight: 650, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-          {row.cents}¢
-        </span>
-      ) : null}
-      <span style={{ fontSize: '0.75rem', fontWeight: 620, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-        {postedAge === 'now' ? 'Just posted' : `${postedAge} ago`}
-      </span>
-    </div>
-  );
   const hair = topPlay ? (
     <div aria-hidden style={{ height: 2, background: 'linear-gradient(90deg, transparent, #E8D28A 18%, #D4AF37 50%, transparent)' }} />
   ) : null;
 
-  const facePad = isMobile ? '1rem 0.95rem 0.9rem' : '1.15rem 1.25rem 1rem';
+  const facePad = isMobile ? '1.05rem 1rem 1rem' : '1.25rem 1.4rem 1.15rem';
   const reasons = actionCardReasons(row);
   const spark = row.l30ChipCurve?.length >= 5
     ? row.l30ChipCurve
     : (row.flatCurve?.length >= 5 ? row.flatCurve : null);
-  const proof = proofStats(row);
-  const heroCount = reasons.heroes.length;
 
   return (
     <div
@@ -1873,56 +1741,17 @@ function ActionRow({
       {hair}
       <button {...headerBtnProps}>
         <div style={{ padding: facePad }}>
-          {isMobile ? (
-            <>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                alignItems: 'flex-start',
-              }}
-              >
-                {play}
-                {price}
-              </div>
-              {clockMeta}
-              {heroCount ? (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${Math.min(heroCount, 3)}, minmax(0, 1fr))`,
-                  gap: '0.85rem 0.75rem',
-                  marginTop: '0.95rem',
-                  paddingTop: '0.9rem',
-                  borderTop: '1px solid rgba(255,255,255,0.07)',
-                }}
-                >
-                  <HeroStats heroes={reasons.heroes} spark={spark} isMobile />
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: heroCount
-                ? `minmax(188px, 1.15fr) repeat(${heroCount}, minmax(108px, 1fr)) auto`
-                : 'minmax(0, 1fr) auto',
-              columnGap: '1.2rem',
-              alignItems: 'start',
-            }}
-            >
-              {play}
-              <HeroStats heroes={reasons.heroes} spark={spark} isMobile={false} />
-              <div style={{
-                borderLeft: heroCount ? '1px solid rgba(255,255,255,0.07)' : 'none',
-                paddingLeft: heroCount ? '1.15rem' : 0,
-              }}
-              >
-                {price}
-              </div>
-            </div>
-          )}
-          {isMobile ? null : clockMeta}
-          <ProofRail items={proof} isMobile={isMobile} />
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: isMobile ? '0.85rem' : '2rem',
+          }}
+          >
+            {play}
+            {price}
+          </div>
+          <DecisionRow heroes={reasons.heroes} spark={spark} isMobile={isMobile} />
         </div>
       </button>
       <PortfolioAdd saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
