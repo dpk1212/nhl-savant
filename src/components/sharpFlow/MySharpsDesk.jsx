@@ -8,6 +8,7 @@ import {
   HONEST_PCT_N,
   buildDeskHoldings,
   buildFindCandidates,
+  findWalletNeedle,
   buildMySharpsBoard,
   buildPortfolioSnapshot,
   buildPortfolioStage,
@@ -3871,8 +3872,78 @@ function TicketContext({ item, isMobile, openLine, onOpenLine }) {
   );
 }
 
+function WalletDigitSearch({ value, onChange }) {
+  const [hot, setHot] = useState(false);
+  const on = hot || !!value;
+  return (
+    <label
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        width: 'min(420px, 100%)',
+        marginBottom: 10,
+        padding: '0.48rem 0.75rem 0.48rem 0.85rem',
+        borderRadius: 999,
+        border: `1px solid ${on ? B.goldBorder : B.line}`,
+        background: on ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+        boxShadow: on ? 'inset 0 1px 0 rgba(255,255,255,0.06)' : 'none',
+      }}
+    >
+      <span style={{ ...T.kicker, color: on ? B.goldSoft : B.textFaint, letterSpacing: '0.12em' }}>··</span>
+      <input
+        data-wallet-search
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setHot(true)}
+        onBlur={() => setHot(false)}
+        placeholder="Wallet digits"
+        aria-label="Search by wallet digits"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          color: B.text,
+          caretColor: B.goldSoft,
+          fontFamily: 'inherit',
+          fontSize: '0.92rem',
+          fontWeight: 650,
+          letterSpacing: '0.04em',
+          fontFeatureSettings: "'tnum'",
+        }}
+      />
+      {value ? (
+        <button
+          type="button"
+          aria-label="Clear wallet search"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onChange('')}
+          style={{
+            ...T.kicker,
+            letterSpacing: '0.08em',
+            border: 'none',
+            background: 'transparent',
+            color: B.goldSoft,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            padding: '0.15rem 0.2rem',
+          }}
+        >
+          Clear
+        </button>
+      ) : null}
+      <style>{`input[data-wallet-search]::placeholder{color:#475569;font-weight:500;letter-spacing:0.04em}`}</style>
+    </label>
+  );
+}
+
 function FindRoom({
-  rows, total, savedCount, cap, filters, setFilters, onAdd, notice, isMobile, walletProfiles,
+  rows, total, savedCount, cap, filters, setFilters, onAdd, notice, isMobile, walletProfiles, savedShorts = [],
 }) {
   const lead = rows[0] || null;
   const hero = findHeroNumber(lead, filters.sort || 'roi');
@@ -3885,6 +3956,10 @@ function FindRoom({
   const heat = lead?.heat?.key === 'hot' || lead?.heat?.key === 'cold'
     ? `${lead.heat.label} ${lead.heat.window} ${lead.heat.record}`
     : null;
+  const needle = findWalletNeedle(filters.query);
+  const searching = !!String(filters.query || '').trim();
+  const savedHit = typeof needle === 'string' && needle.length > 0
+    && savedShorts.some((s) => String(s || '').toLowerCase().includes(needle));
   const identity = lead
     ? [
       lead.tag,
@@ -3893,9 +3968,16 @@ function FindRoom({
       lead.honest?.text,
       lead.n ? `${lead.n} bets` : null,
     ].filter(Boolean).join(' · ')
-    : 'No wallets clear these filters.';
+    : (savedHit ? 'Already on your list.' : (searching ? 'No wallet matches those digits.' : 'No wallets clear these filters.'));
+  const emptyLine = savedHit
+    ? 'Already on your list.'
+    : (searching ? 'No wallet matches those digits.' : 'Widen the cut, or drop the 100-bet floor.');
   return (
     <div>
+      <WalletDigitSearch
+        value={filters.query || ''}
+        onChange={(query) => setFilters((f) => ({ ...f, query }))}
+      />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
         {FIND_SPORTS.map((sp) => (
           <FilterBtn key={sp} on={filters.sport === sp} onClick={() => setFilters((f) => ({ ...f, sport: sp }))}>{sp}</FilterBtn>
@@ -4026,7 +4108,7 @@ function FindRoom({
           <Head align="right"> </Head>
         </div>
       ) : (
-        <div style={{ ...T.body, color: B.textFaint, padding: '1.2rem 0' }}>Widen the cut, or drop the 100-bet floor.</div>
+        <div style={{ ...T.body, color: B.textFaint, padding: '1.2rem 0' }}>{emptyLine}</div>
       )}
       {rows.map((row) => {
         const thin = (row.n || 0) < HONEST_PCT_N;
@@ -4136,7 +4218,7 @@ export default function MySharpsDesk({
   const [betLens, setBetLens] = useState(null);
   const [openBet, setOpenBet] = useState(null);
   const [filters, setFilters] = useState({
-    sport: 'All', market: 'All', window: 'book', minBets: 0, minRoi: null, sort: 'roi',
+    sport: 'All', market: 'All', window: 'book', minBets: 0, minRoi: null, query: '', sort: 'roi',
   });
 
   const setRoom = (next) => {
@@ -4279,6 +4361,7 @@ export default function MySharpsDesk({
           notice={notice}
           isMobile={isMobile}
           walletProfiles={walletProfiles}
+          savedShorts={shorts}
         />
       ) : null}
     </div>

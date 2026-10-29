@@ -2437,8 +2437,21 @@ function findSlice(prof, { sport, market, window }) {
 }
 
 /**
+ * Digits Find compares to a wallet short. A longer paste uses its last 6,
+ * which is the short shown on the row.
+ */
+export function findWalletNeedle(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return '';
+  const q = text.toLowerCase().replace(/[^a-f0-9]/g, '');
+  if (!q) return null;
+  return q.length > 6 ? q.slice(-6) : q;
+}
+
+/**
  * Wallets the customer does not have yet, scored on one sport slice.
  * Window `l30` only includes a 30-day book. `book` is the longer record.
+ * `query` matches wallet digits and is applied before the display cap.
  */
 export function buildFindCandidates(walletProfiles, {
   exclude = [],
@@ -2447,10 +2460,12 @@ export function buildFindCandidates(walletProfiles, {
   window = 'book',
   minBets = 0,
   minRoi = null,
+  query = '',
   limit = 60,
   sort = 'roi',
 } = {}) {
   const skip = new Set((exclude || []).map((s) => String(s || '').toLowerCase()));
+  const needle = findWalletNeedle(query);
   const seen = new Set();
   const rows = [];
   const entries = walletProfiles && typeof walletProfiles.entries === 'function'
@@ -2459,6 +2474,7 @@ export function buildFindCandidates(walletProfiles, {
   for (const [key, prof] of entries) {
     const short = normalizeWalletShort(prof?.walletShort || key);
     if (!short || skip.has(short) || seen.has(short)) continue;
+    if (needle === null || (needle && !short.includes(needle))) continue;
     seen.add(short);
     const slice = findSlice(prof, { sport, market, window });
     if (!slice) continue;

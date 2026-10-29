@@ -30,6 +30,7 @@ import {
   buildDeskReport,
   blendDollarCurves,
   buildFindCandidates,
+  findWalletNeedle,
   buildPortfolioSnapshot,
   buildPortfolioStage,
   portfolioWindowBook,
@@ -725,6 +726,25 @@ for (const sp of ['ATP', 'CS2', 'LOL']) {
 }
 assert.equal(buildFindCandidates(freshSports, { sport: 'ATP', window: 'book' }).rows[0].walletShort, 'atp0aa');
 assert.equal(buildFindCandidates(freshSports, { sport: 'MLB', window: 'book' }).rows[0].sport, 'MLB');
+
+assert.equal(findWalletNeedle('··936218'), '936218');
+assert.equal(findWalletNeedle('0x' + 'ab'.repeat(16) + '4cc7f1'), '4cc7f1');
+assert.equal(findWalletNeedle('··cs20bb'), 'c20bb');
+assert.equal(findWalletNeedle(''), '');
+assert.equal(findWalletNeedle('zzzz'), null);
+const byDigits = buildFindCandidates(freshSports, { query: '20b', window: 'book', limit: 1 });
+assert.equal(byDigits.total, 1);
+assert.equal(byDigits.rows[0].walletShort, 'cs20bb');
+assert.equal(buildFindCandidates(freshSports, { query: '··0aa', window: 'book' }).rows[0].walletShort, 'atp0aa');
+const hexBook = new Map([
+  ['4cc7f1', { bySport: { LOL: { whitelistTier: 'CONFIRMED', positions: { n: 8, wins: 5, losses: 3, wr: 62, dollarRoi: 4, invested: 9000 } } } }],
+  ['936218', { bySport: { UFC: { whitelistTier: 'CONFIRMED', positions: { n: 8, wins: 6, losses: 2, wr: 75, dollarRoi: 80, invested: 9000 } } } }],
+]);
+assert.equal(buildFindCandidates(hexBook, { query: '··4cc7f1', limit: 1 }).rows[0].walletShort, '4cc7f1');
+assert.equal(buildFindCandidates(hexBook, { query: '0x' + 'ab'.repeat(16) + '4cc7f1', limit: 1 }).rows[0].walletShort, '4cc7f1');
+assert.equal(buildFindCandidates(freshSports, { query: 'cs20', sport: 'ATP', window: 'book' }).total, 0);
+assert.equal(buildFindCandidates(freshSports, { query: 'zzzz', window: 'book' }).total, 0);
+assert.equal(buildFindCandidates(freshSports, { query: 'atp0aa', exclude: ['atp0aa'], window: 'book' }).total, 0);
 
 const blended = blendDollarCurves([[0, 100], [0, 50, 100]], 3);
 assert.equal(blended.length, 3);
