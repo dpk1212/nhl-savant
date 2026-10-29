@@ -1476,14 +1476,14 @@ function TrustLine({ trust }) {
 
 /** Historic cell WR/ROI from as-of Sharp tier × size × opposition. */
 function PortfolioAdd({ saved, onToggle, disabled }) {
-  const label = saved ? 'In your portfolio' : 'Add to portfolio';
+  const label = saved ? 'In My Sharps' : 'Add to My Sharps';
   return (
     <button
       type="button"
       data-portfolio={saved ? 'saved' : 'add'}
-      title={saved ? 'Remove this sharp from your portfolio' : 'Add this sharp to your portfolio'}
+      title={saved ? 'Remove this sharp from My Sharps' : 'Add this sharp to My Sharps'}
       aria-pressed={saved}
-      aria-label={saved ? 'Remove this sharp from your portfolio' : 'Add this sharp to your portfolio'}
+      aria-label={saved ? 'Remove this sharp from My Sharps' : 'Add this sharp to My Sharps'}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1659,65 +1659,62 @@ function ActionRow({
     </div>
   );
   const price = (
-    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flexShrink: 0 }}>
+      <div style={{ textAlign: 'right' }}>
         <div style={{
           ...T.money,
           color: '#E8D28A',
-          fontSize: isMobile ? '1.32rem' : '1.55rem',
+          fontSize: isMobile ? '1.38rem' : '1.62rem',
           fontWeight: 640,
-          letterSpacing: '-0.04em',
-          fontFeatureSettings: "'tnum'",
-        }}
-        >
-          {fmtVol(row.invested)}
-        </div>
-        {chevron}
-      </div>
-      {row.americanLabel ? (
-        <div style={{
-          marginTop: '0.36rem',
-          fontSize: isMobile ? '0.95rem' : '1.05rem',
-          fontWeight: 680,
-          letterSpacing: '-0.03em',
-          color: B.text,
+          letterSpacing: '-0.045em',
           fontFeatureSettings: "'tnum'",
           lineHeight: 1,
         }}
         >
-          {row.americanLabel}
+          {fmtVol(row.invested)}
         </div>
-      ) : null}
-      <div data-kickoff={kick?.tone || 'posted'} style={{ marginTop: '0.42rem' }}>
-        {kick ? (
-          <>
+        {row.americanLabel ? (
+          <div style={{
+            marginTop: '0.55rem',
+            fontSize: isMobile ? '0.95rem' : '1.02rem',
+            fontWeight: 650,
+            letterSpacing: '-0.03em',
+            color: B.text,
+            fontFeatureSettings: "'tnum'",
+            lineHeight: 1,
+          }}
+          >
+            {row.americanLabel}
+          </div>
+        ) : null}
+        <div data-kickoff={kick?.tone || 'posted'} style={{ marginTop: row.americanLabel ? '0.42rem' : '0.55rem' }}>
+          {kick ? (
             <div style={{
-              fontSize: isMobile ? '0.92rem' : '1rem',
-              fontWeight: 650,
-              letterSpacing: '-0.03em',
-              color: B.text,
+              fontSize: '0.8rem',
+              fontWeight: 620,
+              letterSpacing: '0.01em',
+              color: B.textMuted,
               fontFeatureSettings: "'tnum'",
               lineHeight: 1,
             }}
             >
               {kick.time}
+              {kick.tone === 'live' ? (
+                <span style={{ color: '#34D399', fontWeight: 720, letterSpacing: '0.12em', marginLeft: '0.55rem' }}>
+                  LIVE
+                </span>
+              ) : (kick.tone && kick.tone !== 'today' ? (
+                <span style={{ color: B.textSubtle, fontWeight: 700, letterSpacing: '0.08em', marginLeft: '0.55rem' }}>
+                  {kick.kicker}
+                </span>
+              ) : null)}
             </div>
-            <div style={{
-              marginTop: '0.28rem',
-              fontSize: '0.68rem',
-              fontWeight: 720,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: kick.tone === 'live' ? '#34D399' : '#E8D28A',
-            }}
-            >
-              {kick.kicker}
-            </div>
-          </>
-        ) : (
-          <div style={{ ...T.micro, color: B.textSubtle }}>Kickoff —</div>
-        )}
+          ) : (
+            <div style={{ ...T.micro, color: B.textSubtle }}>Kickoff —</div>
+          )}
+        </div>
       </div>
+      <div style={{ marginTop: '0.15rem' }}>{chevron}</div>
     </div>
   );
   const hair = topPlay ? (
