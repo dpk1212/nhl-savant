@@ -322,6 +322,42 @@ const profiles = new Map([
       },
     },
   }],
+  ['atp0aa', {
+    clvSkill: { n: 10, pctPos: 70 },
+    bySport: {
+      ATP: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 16, wins: 13, losses: 3, wr: 81, dollarRoi: 38, invested: 57000 },
+        byMarket: {
+          ML: { positions: { n: 16, wins: 13, losses: 3, wr: 81, dollarRoi: 38, invested: 57000 } },
+        },
+      },
+    },
+  }],
+  ['cs20bb', {
+    clvSkill: { n: 14, pctPos: 64 },
+    bySport: {
+      CS2: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 20, wins: 12, losses: 8, wr: 60, dollarRoi: 18, invested: 40000 },
+        byMarket: {
+          ML: { positions: { n: 20, wins: 12, losses: 8, wr: 60, dollarRoi: 18, invested: 40000 } },
+        },
+      },
+    },
+  }],
+  ['lol0cc', {
+    clvSkill: { n: 8, pctPos: 62 },
+    bySport: {
+      LOL: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 12, wins: 8, losses: 4, wr: 67, dollarRoi: 25, invested: 22000 },
+        byMarket: {
+          ML: { positions: { n: 12, wins: 8, losses: 4, wr: 67, dollarRoi: 25, invested: 22000 } },
+        },
+      },
+    },
+  }],
 ]);
 
 const torCommence = Date.parse('2026-09-22T18:36:00-04:00');

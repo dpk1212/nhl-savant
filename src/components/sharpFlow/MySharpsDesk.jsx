@@ -81,7 +81,7 @@ const PANEL = {
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
 };
 const MARKET_LABEL = { ML: 'ML', SPREAD: 'Spread', TOTAL: 'Total' };
-const FIND_SPORTS = ['All', 'MLB', 'NFL', 'NBA', 'NHL', 'CFB', 'CBB', 'SOC', 'UFC', 'WNBA'];
+const FIND_SPORTS = ['All', 'MLB', 'NFL', 'NBA', 'NHL', 'CFB', 'CBB', 'SOC', 'UFC', 'WNBA', 'ATP', 'CS2', 'LOL'];
 const FIND_SORTS = [
   { id: 'roi', kicker: 'Return' },
   { id: 'close', kicker: 'Close' },

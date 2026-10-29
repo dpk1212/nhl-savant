@@ -711,6 +711,21 @@ assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort:
 assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort: 'close' }).rows[0].walletShort, 'deep');
 assert.equal(buildFindCandidates(rankBook, { sport: 'MLB', window: 'book', sort: 'size' }).rows[0].walletShort, 'deep');
 
+const freshSports = new Map([
+  ['atp0aa', { bySport: { ATP: { whitelistTier: 'CONFIRMED', positions: { n: 16, wins: 13, losses: 3, wr: 81, dollarRoi: 38, invested: 50000 } } } }],
+  ['cs20bb', { bySport: { CS2: { whitelistTier: 'CONFIRMED', positions: { n: 20, wins: 12, losses: 8, wr: 60, dollarRoi: 18, invested: 40000 } } } }],
+  ['lol0cc', { bySport: { LOL: { whitelistTier: 'CONFIRMED', positions: { n: 12, wins: 8, losses: 4, wr: 67, dollarRoi: 25, invested: 22000 } } } }],
+  ['mlb0dd', { bySport: { MLB: { whitelistTier: 'CONFIRMED', positions: { n: 40, wins: 24, losses: 16, wr: 60, dollarRoi: 12, invested: 80000 } } } }],
+]);
+assert.equal(buildFindCandidates(freshSports, { window: 'book' }).total, 4);
+for (const sp of ['ATP', 'CS2', 'LOL']) {
+  const hit = buildFindCandidates(freshSports, { sport: sp, window: 'book' });
+  assert.equal(hit.total, 1);
+  assert.equal(hit.rows[0].sport, sp);
+}
+assert.equal(buildFindCandidates(freshSports, { sport: 'ATP', window: 'book' }).rows[0].walletShort, 'atp0aa');
+assert.equal(buildFindCandidates(freshSports, { sport: 'MLB', window: 'book' }).rows[0].sport, 'MLB');
+
 const blended = blendDollarCurves([[0, 100], [0, 50, 100]], 3);
 assert.equal(blended.length, 3);
 assert.equal(blended[0], 0);
