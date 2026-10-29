@@ -20,7 +20,7 @@ import {
   actionCardReasons,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
-import { shortTeamNick } from '../../utils/teamIdentity.js';
+import { getTeamIdentity, shortTeamNick, teamLogoUrl } from '../../utils/teamIdentity.js';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
 import { useMySharps } from '../../hooks/useMySharps';
@@ -848,7 +848,55 @@ const REASON_TONE = {
   amber: '#F5B942',
   red: '#F07178',
   muted: '#94A3B8',
+  text: '#F8FAFC',
 };
+
+function TeamCrest({ name, sport, size = 42 }) {
+  const [failed, setFailed] = useState(false);
+  const src = failed ? null : teamLogoUrl(name, sport);
+  const id = getTeamIdentity(name, sport);
+  const abbr = /^(over|under)$/i.test(String(name || ''))
+    ? String(name).slice(0, 1).toUpperCase()
+    : (id.abbr && id.abbr !== '?' ? id.abbr : String(sport || '').slice(0, 3));
+  return (
+    <div style={{
+      width: size,
+      height: size,
+      borderRadius: 12,
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      background: src ? 'rgba(255,255,255,0.045)' : `linear-gradient(145deg, ${id.c1}, ${id.c2})`,
+      border: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+    }}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          width={size - 8}
+          height={size - 8}
+          onError={() => setFailed(true)}
+          style={{ width: size - 8, height: size - 8, objectFit: 'contain', display: 'block' }}
+        />
+      ) : (
+        <span style={{
+          color: '#fff',
+          fontWeight: 800,
+          fontSize: Math.max(11, size * 0.28),
+          letterSpacing: '-0.04em',
+          lineHeight: 1,
+        }}
+        >
+          {abbr}
+        </span>
+      )}
+    </div>
+  );
+}
 
 /** Verdicts that make a ticket one of the best, each with what the word means. */
 function SignalLine({ row, isMobile = false }) {
@@ -858,24 +906,7 @@ function SignalLine({ row, isMobile = false }) {
     ? row.l30ChipCurve
     : (row.flatCurve?.length >= 5 ? row.flatCurve : null);
   if (!heroes.length && !support.length && l30 == null && !spark) return null;
-
-  const book = (l30 != null || spark) ? (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
-      {spark ? <FlatSpark points={spark} width={isMobile ? 72 : 64} height={20} /> : null}
-      {l30 != null ? (
-        <span style={{
-          fontSize: '0.78rem',
-          fontWeight: 720,
-          fontFeatureSettings: "'tnum'",
-          color: l30 >= 0 ? '#34D399' : REASON_TONE.red,
-          whiteSpace: 'nowrap',
-        }}
-        >
-          L30 {fmtBookPnl(l30)}
-        </span>
-      ) : null}
-    </span>
-  ) : null;
+  const bookIsHero = heroes.some((h) => h.key === 'book');
 
   return (
     <div data-top-play={topPlay ? 'true' : undefined} style={{ marginTop: '0.95rem' }}>
@@ -885,58 +916,121 @@ function SignalLine({ row, isMobile = false }) {
             display: 'grid',
             gridTemplateColumns: isMobile
               ? '1fr 1fr'
-              : `repeat(${heroes.length}, minmax(0, 220px))`,
-            justifyContent: 'start',
-            gap: isMobile ? '0.85rem 0.85rem' : '0.35rem 0',
-            paddingTop: '0.85rem',
+              : `repeat(${heroes.length}, minmax(0, 1fr))`,
+            gap: isMobile ? '0.9rem 0.75rem' : '0.2rem 0',
+            paddingTop: '0.9rem',
             borderTop: '1px solid rgba(255,255,255,0.07)',
           }}
         >
-          {heroes.map((h, i) => (
+          {heroes.map((h, i) => {
+            const tone = REASON_TONE[h.tone] || REASON_TONE.text;
+            const spotInline = isMobile && h.key === 'spot';
+            const statSize = isMobile ? '1.38rem' : '1.58rem';
+            return (
             <div
               key={h.key}
               data-reason={h.key}
               style={{
                 minWidth: 0,
+                gridColumn: spotInline ? '1 / -1' : undefined,
                 paddingLeft: !isMobile && i > 0 ? '1.15rem' : 0,
+                paddingTop: spotInline ? '0.15rem' : 0,
                 borderLeft: !isMobile && i > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                borderTop: spotInline ? '1px solid rgba(255,255,255,0.06)' : 'none',
               }}
             >
-              <div style={{
-                fontSize: isMobile ? '1.02rem' : '1.12rem',
-                fontWeight: 650,
-                letterSpacing: '-0.028em',
-                lineHeight: 1.1,
-                color: REASON_TONE[h.tone] || REASON_TONE.muted,
-                textTransform: h.key === 'size' ? 'capitalize' : 'none',
-                fontFeatureSettings: "'tnum'",
-              }}
-              >
-                {h.title}
-              </div>
-              <div style={{
-                marginTop: '0.28rem',
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                lineHeight: 1.35,
-                color: B.textMuted,
-              }}
-              >
-                {h.sub}
-              </div>
+              {h.key === 'size' && h.figure ? (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', minWidth: 0 }}>
+                  <span style={{
+                    fontSize: statSize,
+                    fontWeight: 680,
+                    letterSpacing: '-0.045em',
+                    lineHeight: 1,
+                    color: tone,
+                    fontFeatureSettings: "'tnum'",
+                  }}
+                  >
+                    {h.figure}
+                  </span>
+                  <span style={{
+                    fontSize: '0.68rem',
+                    fontWeight: 780,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: tone,
+                  }}
+                  >
+                    {h.mark}
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontSize: h.emphasis ? statSize : (isMobile ? '1.02rem' : '1.12rem'),
+                    fontWeight: 650,
+                    letterSpacing: '-0.04em',
+                    lineHeight: 1,
+                    color: tone,
+                    fontFeatureSettings: "'tnum'",
+                  }}
+                  >
+                    {spotInline ? `${h.title}${h.sub ? ` · ${h.sub}` : ''}` : h.title}
+                  </span>
+                  {h.window ? (
+                    <span style={{
+                      fontSize: '0.6rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: tone,
+                      opacity: 0.9,
+                      padding: '0.14rem 0.34rem 0.1rem',
+                      borderRadius: 4,
+                      border: `1px solid ${tone}66`,
+                      lineHeight: 1,
+                    }}
+                    >
+                      {h.window}
+                    </span>
+                  ) : null}
+                </div>
+              )}
+              {spotInline ? null : (
+                <div style={{
+                  marginTop: '0.32rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  minWidth: 0,
+                }}
+                >
+                  <span style={{
+                    fontSize: h.key === 'book' ? (isMobile ? '0.86rem' : '0.95rem') : '0.72rem',
+                    fontWeight: h.key === 'book' ? 720 : 640,
+                    lineHeight: 1.3,
+                    color: h.subTone ? (REASON_TONE[h.subTone] || B.textMuted) : B.textMuted,
+                    fontFeatureSettings: "'tnum'",
+                  }}
+                  >
+                    {h.sub}
+                  </span>
+                  {h.key === 'book' && spark ? (
+                    <FlatSpark points={spark} width={isMobile ? 44 : 58} height={16} />
+                  ) : null}
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : null}
-      {(support.length || book) ? (
+      {support.length || (!bookIsHero && (l30 != null || spark)) ? (
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           gap: '0.35rem 0.85rem',
-          marginTop: heroes.length ? '0.8rem' : 0,
-          paddingTop: heroes.length ? 0 : '0.72rem',
-          borderTop: heroes.length ? 'none' : '1px solid rgba(255,255,255,0.06)',
+          marginTop: '0.75rem',
         }}
         >
           {support.length ? (
@@ -945,13 +1039,27 @@ function SignalLine({ row, isMobile = false }) {
               fontWeight: 640,
               color: B.textSec,
               fontFeatureSettings: "'tnum'",
-              textTransform: 'capitalize',
             }}
             >
               {support.join('  ·  ')}
             </span>
-          ) : <span />}
-          {book ? <span style={{ marginLeft: 'auto' }}>{book}</span> : null}
+          ) : null}
+          {!bookIsHero && (l30 != null || spark) ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginLeft: 'auto' }}>
+              {spark ? <FlatSpark points={spark} width={56} height={18} /> : null}
+              {l30 != null ? (
+                <span style={{
+                  fontSize: '0.74rem',
+                  fontWeight: 720,
+                  color: l30 >= 0 ? REASON_TONE.green : REASON_TONE.red,
+                  fontFeatureSettings: "'tnum'",
+                }}
+                >
+                  L30 {fmtBookPnl(l30)}
+                </span>
+              ) : null}
+            </span>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -1195,7 +1303,7 @@ function TrustLine({ trust }) {
             color: roiHot ? B.green : B.textMuted,
           }}>
             {Number.isFinite(trust.roi)
-              ? `${trust.roi >= 0 ? '+' : ''}${trust.roi}% ROI`
+              ? `Book ${trust.roi >= 0 ? '+' : ''}${trust.roi}% ROI`
               : null}
             {Number.isFinite(trust.roi) && Number.isFinite(trust.wr) ? ' · ' : ''}
             {Number.isFinite(trust.wr) ? `${trust.wr}% wins` : ''}
@@ -1372,8 +1480,10 @@ function ActionRow({
     ? `Tier ${row.skillLabel}`
     : (row.skillLabel === 'Thin sample' ? 'Thin' : null);
   const play = (
-    <div style={{ minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+    <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: isMobile ? '0.7rem' : '0.85rem' }}>
+      <TeamCrest name={row.team} sport={row.sport} size={isMobile ? 44 : 52} />
+      <div style={{ minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', marginBottom: '0.28rem', flexWrap: 'wrap' }}>
         <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: sportColor(row.sport), boxShadow: `0 0 8px ${sportColor(row.sport)}` }} />
         <span style={{ ...T.tiny, color: sportColor(row.sport), letterSpacing: '0.14em' }}>{row.sport}</span>
         <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.12em' }}>{row.marketLabel || row.marketType}</span>
@@ -1404,10 +1514,13 @@ function ActionRow({
       </div>
       <div style={{
         ...T.body, color: B.textMuted, marginTop: '0.22rem',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        whiteSpace: isMobile ? 'normal' : 'nowrap',
+        overflow: 'hidden',
+        textOverflow: isMobile ? 'clip' : 'ellipsis',
       }}
       >
         <MatchupLine away={row.away} home={row.home} side={row.side} fallback={matchup} />
+      </div>
       </div>
     </div>
   );

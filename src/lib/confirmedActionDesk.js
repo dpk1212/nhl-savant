@@ -1162,10 +1162,23 @@ function l10Record(row) {
   return null;
 }
 
+function fmtSignedPct(n) {
+  const v = Math.round(Number(n));
+  return `${v >= 0 ? '+' : ''}${v}%`;
+}
+
+function fmtL30Money(pnl) {
+  const abs = Math.abs(pnl);
+  const body = abs >= 1000
+    ? `$${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}K`
+    : `$${Math.round(abs)}`;
+  return pnl >= 0 ? `+${body}` : `-${body}`;
+}
+
 /**
- * Up to three verdicts that decide whether a ticket is one of the best.
- * Field is always there. Top play, a moving line, an extreme size, and a
- * real L10 fill the other seats. Form drops first when the card is full.
+ * The three facts a bettor reads first: how big this bet is versus usual,
+ * the last-30 profit and ROI, then whether the spot is clean.
+ * Steam and the line stay on the quiet line. A 2-0 sample stays there too.
  * @returns {{ heroes: object[], support: string[], topPlay: boolean }}
  */
 export function actionCardReasons(row) {
@@ -1178,85 +1191,77 @@ export function actionCardReasons(row) {
   const oppN = Number(row?.opposedBy) || 0;
   const clear = row?.opposed === 'clear';
   const word = sizeLabel && sizeLabel !== '—' ? sizeLabel : (hot ? 'press' : cool ? 'light' : 'usual');
-  const sizeText = Number.isFinite(ratio) ? `${ratio.toFixed(1)}× ${word}` : null;
-  const rec = l10Record(row);
-  const formRate = rec ? rec.w / rec.n : null;
-  const formHot = rec && rec.n >= 8 && formRate >= 0.65;
-  const formCold = rec && rec.n >= 8 && formRate <= 0.4;
-
   const heroes = [];
-  if (topPlay) {
+
+  if (Number.isFinite(ratio)) {
     heroes.push({
-      key: 'top',
-      title: 'Top play',
-      sub: 'Market specialist',
-      tone: 'gold',
+      key: 'size',
+      figure: `${ratio.toFixed(1)}×`,
+      mark: word,
+      title: `${ratio.toFixed(1)}× ${word}`,
+      sub: hot ? 'Bigger than their usual' : (cool ? 'Smaller than their usual' : (word === 'lean' ? 'Under their usual' : 'Their usual size')),
+      tone: hot ? 'gold' : (cool ? 'muted' : 'text'),
+      emphasis: true,
     });
   }
-  heroes.push(clear
+
+  const l30 = Number(row?.l30Pnl);
+  const l30Roi = Number(row?.sportAction?.roi);
+  const bookRoi = Number(row?.trust?.roi);
+  if (Number.isFinite(l30)) {
+    const windowRoi = Number.isFinite(l30Roi) ? l30Roi : null;
+    const fallbackRoi = windowRoi == null && Number.isFinite(bookRoi) ? bookRoi : null;
+    const shownRoi = windowRoi != null ? windowRoi : fallbackRoi;
+    heroes.push({
+      key: 'book',
+      title: fmtL30Money(l30),
+      window: '30d',
+      sub: windowRoi != null
+        ? `${fmtSignedPct(windowRoi)} ROI`
+        : (fallbackRoi != null ? `Book ${fmtSignedPct(fallbackRoi)} ROI` : 'Last 30 days'),
+      tone: l30 >= 0 ? 'green' : 'red',
+      subTone: shownRoi == null ? null : (shownRoi >= 0 ? 'green' : 'red'),
+      emphasis: true,
+    });
+  } else if (Number.isFinite(bookRoi)) {
+    heroes.push({
+      key: 'book',
+      title: `${fmtSignedPct(bookRoi)} ROI`,
+      sub: 'Sport book',
+      tone: bookRoi >= 0 ? 'green' : 'red',
+      subTone: bookRoi >= 0 ? 'green' : 'red',
+      emphasis: true,
+    });
+  }
+
+  const fieldTitle = clear ? 'Unopposed' : (oppN > 1 ? `Contested · ${oppN}` : 'Contested');
+  const fieldSub = clear
+    ? 'No sharp on the other side'
+    : (oppN > 1 ? `${oppN} sharps on the other side` : 'A sharp on the other side');
+  heroes.push(topPlay
     ? {
-      key: 'field',
-      title: 'Unopposed',
-      sub: 'No sharp on the other side',
-      tone: 'green',
+      key: 'spot',
+      title: 'Top play',
+      sub: clear ? 'Unopposed' : fieldTitle,
+      tone: 'gold',
     }
     : {
-      key: 'field',
-      title: oppN > 1 ? `Contested · ${oppN}` : 'Contested',
-      sub: oppN > 1 ? `${oppN} sharps on the other side` : 'A sharp on the other side',
-      tone: 'amber',
+      key: 'spot',
+      title: fieldTitle,
+      sub: fieldSub,
+      tone: clear ? 'green' : 'amber',
     });
 
+  const support = [];
   const steamOn = !!(row?.steam?.show && row.steam.tag);
   const steamText = steamOn
     ? (row.steam.goldConfirmed ? row.steam.tag : `Steam ${row.steam.tag}`)
     : null;
-  if (row?.pinMove === 'with' || steamOn) {
-    heroes.push({
-      key: 'line',
-      title: 'Line with',
-      sub: steamText || 'Price moving this way',
-      tone: row?.steam?.tier === 'gold' ? 'gold' : 'green',
-    });
-  } else if (row?.pinMove === 'against') {
-    heroes.push({
-      key: 'line',
-      title: 'Line against',
-      sub: 'Price moving the other way',
-      tone: 'red',
-    });
-  }
-
-  if (sizeText && (hot || cool)) {
-    heroes.push({
-      key: 'size',
-      title: sizeText,
-      sub: hot ? 'Bigger than their usual' : 'Smaller than their usual',
-      tone: hot ? 'gold' : 'muted',
-    });
-  }
-
-  if (rec && (formHot || formCold)) {
-    heroes.push({
-      key: 'form',
-      title: `L10 ${rec.w}-${rec.l}`,
-      sub: formHot ? `${rec.w} of their last ${rec.n}` : `Only ${rec.w} of their last ${rec.n}`,
-      tone: formHot ? 'green' : 'red',
-    });
-  }
-
-  const dropOrder = ['form', 'size', 'line'];
-  while (heroes.length > 3) {
-    const drop = dropOrder.find((key) => heroes.some((h) => h.key === key));
-    if (!drop) break;
-    heroes.splice(heroes.findIndex((h) => h.key === drop), 1);
-  }
-
-  const shown = new Set(heroes.map((h) => h.key));
-  const support = [];
-  if (sizeText && !shown.has('size')) support.push(sizeText);
-  if (rec && !shown.has('form')) support.push(`L10 ${rec.w}-${rec.l}`);
-  else if (!rec && row?.formText && row.formText !== '—') support.push(row.formText);
+  if (row?.pinMove === 'with' || steamOn) support.push(steamText ? `Line with · ${steamText}` : 'Line with');
+  else if (row?.pinMove === 'against') support.push('Line against');
+  const rec = l10Record(row);
+  if (rec) support.push(`L10 ${rec.w}-${rec.l}`);
+  else if (row?.formText && row.formText !== '—') support.push(row.formText);
 
   return { heroes, support, topPlay };
 }

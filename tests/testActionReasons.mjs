@@ -14,15 +14,24 @@ const best = {
   pinMove: 'with',
   steam: { show: true, tag: '7.0% open', tier: 'steam' },
   displaySizeRatio: 1,
-  displaySizeBand: 'full',
-  displaySizeLabel: 'usual',
+  displaySizeBand: 'lean',
+  displaySizeLabel: 'lean',
+  l30Pnl: 6000,
+  sportAction: { roi: 35 },
   form: { l10: { w: 7, l: 3 } },
 };
-assert.deepEqual(keys(best), ['top', 'field', 'line'], 'a full best ticket keeps top, field, and the line');
-assert.equal(actionCardReasons(best).heroes[0].sub, 'Market specialist');
-assert.equal(actionCardReasons(best).heroes[1].title, 'Unopposed');
-assert.equal(actionCardReasons(best).heroes[2].sub, 'Steam 7.0% open');
-assert.deepEqual(actionCardReasons(best).support, ['1.0× usual', 'L10 7-3']);
+assert.deepEqual(keys(best), ['size', 'book', 'spot']);
+assert.equal(actionCardReasons(best).heroes[0].title, '1.0× lean');
+assert.equal(actionCardReasons(best).heroes[0].figure, '1.0×');
+assert.equal(actionCardReasons(best).heroes[0].mark, 'lean');
+assert.equal(actionCardReasons(best).heroes[0].sub, 'Under their usual');
+assert.equal(actionCardReasons(best).heroes[1].title, '+$6.0K');
+assert.equal(actionCardReasons(best).heroes[1].window, '30d');
+assert.equal(actionCardReasons(best).heroes[1].sub, '+35% ROI');
+assert.equal(actionCardReasons(best).heroes[2].title, 'Top play');
+assert.equal(actionCardReasons(best).heroes[2].sub, 'Unopposed');
+assert.deepEqual(actionCardReasons(best).support, ['Line with · Steam 7.0% open', 'L10 7-3']);
+assert.equal(actionCardReasons(best).support.some((s) => /steam/i.test(s) && s.startsWith('Line')), true);
 
 const pressFight = {
   topPlay: false,
@@ -31,45 +40,43 @@ const pressFight = {
   displaySizeRatio: 8.6,
   displaySizeBand: 'press',
   displaySizeLabel: 'press',
+  l30Pnl: 4600,
+  sportAction: { roi: 41 },
   form: { l10: { w: 2, l: 0 } },
 };
-assert.deepEqual(keys(pressFight), ['field', 'size'], 'a short hot streak does not take a seat from the press');
-assert.equal(actionCardReasons(pressFight).heroes[0].title, 'Contested · 2');
-assert.equal(actionCardReasons(pressFight).heroes[1].sub, 'Bigger than their usual');
-assert.deepEqual(actionCardReasons(pressFight).support, ['L10 2-0']);
+assert.deepEqual(keys(pressFight), ['size', 'book', 'spot']);
+assert.equal(actionCardReasons(pressFight).heroes[0].sub, 'Bigger than their usual');
+assert.equal(actionCardReasons(pressFight).heroes[0].tone, 'gold');
+assert.equal(actionCardReasons(pressFight).heroes[2].title, 'Contested · 2');
+assert.ok(actionCardReasons(pressFight).support.includes('L10 2-0'));
+assert.equal(actionCardReasons(pressFight).support.some((s) => s.startsWith('Line')), false);
 
-const lightHot = {
+const light = {
   opposed: 'contested',
   opposedBy: 1,
   displaySizeRatio: 0.2,
   displaySizeBand: 'light',
   displaySizeLabel: 'light',
+  l30Pnl: -1200,
   form: { l10: { w: 8, l: 2 } },
+  trust: { roi: 12 },
 };
-assert.deepEqual(keys(lightHot), ['field', 'size', 'form']);
-assert.equal(actionCardReasons(lightHot).heroes[2].sub, '8 of their last 10');
+assert.equal(actionCardReasons(light).heroes[0].sub, 'Smaller than their usual');
+assert.equal(actionCardReasons(light).heroes[1].title, '-$1.2K');
+assert.equal(actionCardReasons(light).heroes[1].tone, 'red');
+assert.equal(actionCardReasons(light).heroes[1].window, '30d');
+assert.equal(actionCardReasons(light).heroes[1].sub, 'Book +12% ROI');
+assert.equal(actionCardReasons(light).heroes[1].subTone, 'green');
 
-const crowded = {
-  topPlay: true,
+const noBook = {
   opposed: 'clear',
-  pinMove: 'with',
-  steam: { show: true, tag: '4.0% 1h' },
-  displaySizeRatio: 2.2,
-  displaySizeBand: 'press',
-  displaySizeLabel: 'press',
-  form: { l10: { w: 8, l: 2 } },
-};
-assert.deepEqual(keys(crowded), ['top', 'field', 'line'], 'form drops before the line when four reasons compete');
-assert.ok(actionCardReasons(crowded).support.includes('2.2× press'));
-assert.ok(actionCardReasons(crowded).support.includes('L10 8-2'));
-
-const cold = {
-  opposed: 'clear',
-  displaySizeRatio: 1,
+  displaySizeRatio: 1.1,
   displaySizeBand: 'full',
   displaySizeLabel: 'usual',
-  form: { l10: { w: 2, l: 8 } },
+  trust: { roi: 18 },
 };
-assert.equal(actionCardReasons(cold).heroes.find((h) => h.key === 'form').sub, 'Only 2 of their last 10');
+assert.deepEqual(keys(noBook), ['size', 'book', 'spot']);
+assert.equal(actionCardReasons(noBook).heroes[1].title, '+18% ROI');
+assert.equal(actionCardReasons(noBook).heroes[1].sub, 'Sport book');
 
 console.log('testActionReasons: ok');
