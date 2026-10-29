@@ -341,96 +341,140 @@ function legPickName(leg) {
   return shortTeamNick(raw, side === 'away' ? home : away);
 }
 
-function TicketLegRow({ leg, showSize, pnlMode = 'flat' }) {
+function legCrestName(leg) {
+  const side = String(leg?.side || '').toLowerCase();
+  if (side === 'over' || side === 'under' || side === 'draw') {
+    return side.charAt(0).toUpperCase() + side.slice(1);
+  }
+  if (side === 'away' && leg?.away) return leg.away;
+  if (side === 'home' && leg?.home) return leg.home;
+  if (leg?.label && !/^(away|home)$/i.test(String(leg.label))) return leg.label;
+  return legPickName(leg);
+}
+
+function TicketLegRow({ leg, showSize, pnlMode = 'flat', isMobile = false, sport }) {
   const win = leg.won === 1;
   const ratio = Number(leg.sizeRatio);
   const band = leg.sizeBand;
   const pickName = legPickName(leg);
+  const crestName = legCrestName(leg);
   const mktLine = formatLegMarket(leg.marketType, Number(leg.line));
   const matchup = legMatchup(leg);
   const oddsTxt = formatAmerican(Number(leg.odds));
   const dollar = legDollarPnl(leg);
-  const mid = showSize
-    ? (
-      <span style={{ ...T.micro, color: Number.isFinite(ratio) && ratio >= 1.5 ? B.gold : B.textSec, minWidth: 0 }}>
-        {Number.isFinite(ratio) ? `${ratio.toFixed(1)}× ${sizeWord(band, ratio)}` : '—'}
-        {Number.isFinite(leg.invested) && leg.invested > 0 ? (
-          <span style={{ color: B.textSubtle }}> · {fmtVol(leg.invested)}</span>
-        ) : null}
-      </span>
-    )
+  const sizeHot = Number.isFinite(ratio) && ratio >= 1.5;
+  const midText = showSize
+    ? (Number.isFinite(ratio) ? `${ratio.toFixed(1)}× ${sizeWord(band, ratio)}` : '—')
     : pnlMode === 'actual'
-      ? (
-        <span style={{
-          ...T.micro,
-          color: Number.isFinite(dollar) ? (dollar >= 0 ? B.green : B.red) : B.textSubtle,
-        }}>
-          {Number.isFinite(dollar) ? fmtSparkEnd(dollar, 'actual') : '—'}
-        </span>
-      )
-      : (
-        <span style={{ ...T.micro, color: B.textSec }}>
-          {Number.isFinite(leg.flat)
-            ? `${leg.flat >= 0 ? '+' : ''}${leg.flat.toFixed(2)}u`
-            : (Number.isFinite(leg.invested) && leg.invested > 0 ? fmtVol(leg.invested) : '—')}
-        </span>
-      );
+      ? (Number.isFinite(dollar) ? fmtSparkEnd(dollar, 'actual') : '—')
+      : (Number.isFinite(leg.flat)
+        ? `${leg.flat >= 0 ? '+' : ''}${leg.flat.toFixed(2)}u`
+        : (Number.isFinite(leg.invested) && leg.invested > 0 ? fmtVol(leg.invested) : '—'));
+  const midColor = showSize
+    ? (sizeHot ? '#E8D28A' : B.textSec)
+    : pnlMode === 'actual'
+      ? (Number.isFinite(dollar) ? (dollar >= 0 ? '#34D399' : '#F07178') : B.textSubtle)
+      : B.textSec;
+  const stakeNote = showSize && Number.isFinite(leg.invested) && leg.invested > 0
+    ? fmtVol(leg.invested)
+    : null;
+  const detail = [mktLine, matchup].filter(Boolean).join('  ·  ');
+  const result = (
+    <span style={{
+      ...T.tiny,
+      justifySelf: 'end',
+      padding: '0.18rem 0.42rem',
+      borderRadius: 999,
+      color: win ? '#34D399' : '#F07178',
+      background: win ? 'rgba(52,211,153,0.12)' : 'rgba(240,113,120,0.12)',
+      letterSpacing: '0.08em',
+      lineHeight: 1.1,
+    }}
+    >
+      {win ? 'W' : 'L'}
+    </span>
+  );
 
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: LEG_ROW_GRID,
-      gap: '0.35rem 0.45rem',
+      gridTemplateColumns: isMobile
+        ? '2.7rem 28px minmax(0, 1fr) auto'
+        : '3.6rem 32px minmax(0, 1fr) 3.4rem minmax(5.2rem, auto) auto',
+      gap: isMobile ? '0.28rem 0.5rem' : '0.35rem 0.75rem',
       alignItems: 'center',
-      padding: '0.45rem 0.1rem',
-      borderBottom: `1px solid ${B.borderSubtle}`,
+      padding: isMobile ? '0.62rem 0.05rem' : '0.72rem 0.1rem',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
       fontFeatureSettings: "'tnum'",
-    }}>
-      <span style={{ ...T.micro, color: B.textMuted }}>{fmtLegDate(leg.date)}</span>
-      <span style={{
-        ...T.micro, color: B.textSec, minWidth: 0,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-      }}>
-        {pickName ? (
-          <span style={{ color: B.text, fontWeight: 800 }}>{String(pickName).toUpperCase()}</span>
-        ) : null}
-        {pickName && (mktLine || matchup) ? (
-          <span style={{ color: B.textSubtle }}> · </span>
-        ) : null}
-        {mktLine ? (
-          <span style={{ color: B.textSubtle }}>{mktLine}</span>
-        ) : null}
-        {mktLine && matchup ? (
-          <span style={{ color: B.textSubtle }}> · </span>
-        ) : null}
-        {matchup ? (
-          <span style={{ color: B.textMuted }}>{matchup}</span>
-        ) : null}
+    }}
+    >
+      <span style={{ fontSize: '0.68rem', fontWeight: 650, color: B.textMuted, letterSpacing: '0.01em' }}>
+        {fmtLegDate(leg.date)}
       </span>
-      <span style={{
-        ...T.micro, color: oddsTxt ? B.textSec : B.textSubtle,
-        textAlign: 'right', fontFeatureSettings: "'tnum'",
-      }}>
-        {oddsTxt || '—'}
-      </span>
-      {mid}
-      <span style={{
-        ...T.tiny,
-        justifySelf: 'end',
-        padding: '0.16rem 0.4rem',
-        borderRadius: 5,
-        color: win ? B.green : B.red,
-        background: win ? B.greenDim : 'rgba(239,68,68,0.12)',
-        border: `1px solid ${win ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
-        textAlign: 'center',
-      }}>
-        {win ? 'W' : 'L'}
-      </span>
+      <TeamCrest name={crestName} sport={leg.sport || sport} size={isMobile ? 26 : 30} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{
+          fontSize: isMobile ? '0.88rem' : '0.96rem',
+          fontWeight: 680,
+          letterSpacing: '-0.03em',
+          color: B.text,
+          lineHeight: 1.1,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+        >
+          {pickName || '—'}
+        </div>
+        {detail ? (
+          <div style={{
+            marginTop: '0.16rem',
+            fontSize: '0.68rem',
+            fontWeight: 600,
+            color: B.textMuted,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          >
+            {detail}
+          </div>
+        ) : null}
+      </div>
+      {isMobile ? (
+        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.22rem' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: oddsTxt ? B.textSec : B.textSubtle }}>
+            {oddsTxt || '—'}
+          </span>
+          <span style={{ fontSize: '0.72rem', fontWeight: 720, color: midColor }}>
+            {midText}
+            {stakeNote ? <span style={{ color: B.textSubtle, fontWeight: 600 }}> · {stakeNote}</span> : null}
+          </span>
+          {result}
+        </div>
+      ) : (
+        <>
+          <span style={{
+            fontSize: '0.78rem', fontWeight: 700, color: oddsTxt ? B.text : B.textSubtle,
+            textAlign: 'right',
+          }}
+          >
+            {oddsTxt || '—'}
+          </span>
+          <span style={{ textAlign: 'right', minWidth: 0 }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 720, color: midColor }}>{midText}</span>
+            {stakeNote ? (
+              <span style={{ display: 'block', marginTop: '0.1rem', fontSize: '0.64rem', fontWeight: 650, color: B.textSubtle }}>
+                {stakeNote}
+              </span>
+            ) : null}
+          </span>
+          {result}
+        </>
+      )}
     </div>
   );
 }
-
-const LEG_ROW_GRID = '3.6rem minmax(0, 1.5fr) 2.8rem minmax(4rem, 0.9fr) 2.4rem';
 
 /** 30d W-L / ROI from recent legs when profile market×sport stamp is missing. */
 function rollupFromRecentLegs(legs, { mode = 'actual', windowDays = 30 } = {}) {
@@ -479,60 +523,102 @@ function fmtBookPnl(pnl) {
   return pnl >= 0 ? `+${body}` : `-${body}`;
 }
 
-function BookInline({ book, sep }) {
+function bookRecord(book) {
   if (!book) return null;
-  const roiHot = Number.isFinite(book.roi) && book.roi > 0;
-  const roiCold = Number.isFinite(book.roi) && book.roi < 0;
-  const roiKind = book.source === 'action' ? '$ ROI' : 'flat ROI';
+  if (book.record) return book.record;
+  if (Number.isFinite(book.n)) return `${book.n} bets`;
+  return null;
+}
+
+function bookRoiText(book) {
+  if (!book || !Number.isFinite(book.roi)) return null;
+  const kind = book.source === 'action' ? 'ROI' : 'flat';
+  return `${book.roi >= 0 ? '+' : ''}${book.roi}% ${kind}`;
+}
+
+function bookBits(book) {
+  if (!book) return [];
+  const pnl = Number.isFinite(book.settledPnl) ? book.settledPnl : null;
+  return [
+    bookRecord(book),
+    fmtBookPnl(pnl),
+    bookRoiText(book),
+    Number.isFinite(book.wr) ? `${book.wr}% wins` : null,
+  ].filter(Boolean);
+}
+
+function ScopeHero({ book, empty }) {
+  if (!book) {
+    return (
+      <div style={{ ...T.micro, color: B.textSubtle, padding: '0.45rem 0 0.15rem' }}>{empty}</div>
+    );
+  }
   const pnl = Number.isFinite(book.settledPnl) ? book.settledPnl : null;
   const pnlLabel = fmtBookPnl(pnl);
+  const record = bookRecord(book) || '—';
+  const sub = [bookRoiText(book), Number.isFinite(book.wr) ? `${book.wr}% wins` : null]
+    .filter(Boolean)
+    .join('  ·  ');
   return (
     <>
-      {book.record && (
-        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-          {book.record}
+      <div style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: '0.65rem',
+        marginTop: '0.42rem',
+      }}
+      >
+        <span style={{
+          fontSize: '1.48rem',
+          fontWeight: 680,
+          letterSpacing: '-0.045em',
+          lineHeight: 1,
+          color: B.text,
+          fontFeatureSettings: "'tnum'",
+        }}
+        >
+          {record}
         </span>
-      )}
-      {!book.record && Number.isFinite(book.n) && (
-        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-          {book.n} bets
-        </span>
-      )}
-      {pnlLabel && (
-        <>
-          {sep}
+        {pnlLabel ? (
           <span style={{
-            ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
-            color: pnl >= 0 ? B.green : B.red,
-          }}>
+            fontSize: '1.48rem',
+            fontWeight: 680,
+            letterSpacing: '-0.045em',
+            lineHeight: 1,
+            color: pnl >= 0 ? '#34D399' : '#F07178',
+            fontFeatureSettings: "'tnum'",
+          }}
+          >
             {pnlLabel}
           </span>
-        </>
-      )}
-      {Number.isFinite(book.roi) && (
-        <>
-          {sep}
-          <span style={{
-            ...T.micro, fontWeight: 700,
-            color: roiHot ? B.green : roiCold ? B.red : B.textMuted,
-          }}>
-            {book.roi >= 0 ? '+' : ''}{book.roi}% {roiKind}
-          </span>
-        </>
-      )}
-      {Number.isFinite(book.wr) && (
-        <>
-          {sep}
-          <span style={{ ...T.micro, color: B.textMuted }}>{book.wr}% WR</span>
-        </>
-      )}
+        ) : null}
+      </div>
+      {sub ? (
+        <div style={{
+          marginTop: '0.38rem',
+          fontSize: '0.78rem',
+          fontWeight: 650,
+          color: B.textSec,
+          fontFeatureSettings: "'tnum'",
+        }}
+        >
+          {sub}
+        </div>
+      ) : null}
     </>
   );
 }
 
+function windowEyebrow(book, fallback) {
+  if (!book?.window) return fallback;
+  if (book.window === 'all') return 'All time';
+  return `Last ${book.window}`;
+}
+
 /**
- * Action tab: L30 first (matches locked card), then all-time next to it.
- * Featured tab: single book (all-time picks).
+ * Action tab: L30 is the loud book, all-time sits under it.
+ * Featured tab: one book per scope.
  */
 function BetTypeRollupStrip({
   sport,
@@ -542,6 +628,7 @@ function BetTypeRollupStrip({
   sportAllTime = null,
   marketAllTime = null,
   showDualWindows = false,
+  isMobile = false,
 }) {
   const mkt = String(marketType || '').toUpperCase();
   const mktLabel = mkt === 'ML' ? 'ML' : mkt;
@@ -571,63 +658,142 @@ function BetTypeRollupStrip({
   ].filter(Boolean);
   if (!rows.length) return null;
 
-  const sep = (
-    <span style={{ color: B.textSubtle, opacity: 0.55, fontWeight: 500, userSelect: 'none' }}>·</span>
-  );
-
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: '0.4rem',
-      marginBottom: '0.7rem', fontFeatureSettings: "'tnum'",
-    }}>
-      {rows.map(({ key, label, l30, all, single }) => (
-        <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
-          <span style={{
-            ...T.tiny, fontWeight: 800, letterSpacing: '0.06em',
-            color: B.gold, textTransform: 'uppercase',
-          }}>
-            {label}
-          </span>
-          {showDualWindows ? (
-            <>
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
-                gap: '0.28rem 0.4rem',
-              }}>
-                <span style={{ ...T.tiny, fontWeight: 800, color: B.green, letterSpacing: '0.04em' }}>
-                  L30
-                </span>
-                {l30 ? <BookInline book={l30} sep={sep} /> : (
-                  <span style={{ ...T.micro, color: B.textSubtle }}>no sample</span>
-                )}
-              </div>
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
-                gap: '0.28rem 0.4rem',
-              }}>
-                <span style={{ ...T.tiny, fontWeight: 800, color: B.textSubtle, letterSpacing: '0.04em' }}>
-                  ALL-TIME
-                </span>
-                {all ? <BookInline book={all} sep={sep} /> : (
-                  <span style={{ ...T.micro, color: B.textSubtle }}>—</span>
-                )}
-              </div>
-            </>
-          ) : (
+      display: 'grid',
+      gridTemplateColumns: isMobile || rows.length < 2 ? '1fr' : '1fr 1fr',
+      gap: '0.65rem',
+      marginBottom: '0.85rem',
+    }}
+    >
+      {rows.map(({ key, label, l30, all, single }) => {
+        const quiet = bookBits(all).join('  ·  ');
+        return (
+          <div
+            key={key}
+            data-scope={key}
+            style={{
+              minWidth: 0,
+              padding: isMobile ? '0.78rem 0.82rem 0.72rem' : '0.88rem 0.95rem 0.78rem',
+              borderRadius: 14,
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015))',
+              border: '1px solid rgba(255,255,255,0.07)',
+            }}
+          >
             <div style={{
-              display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
-              gap: '0.28rem 0.4rem',
-            }}>
-              <BookInline book={single} sep={sep} />
-              {single && (
-                <span style={{ ...T.tiny, color: B.textSubtle, marginLeft: '0.1rem' }}>
-                  ({single.window === 'all' ? 'all-time' : `last ${single.window}`})
-                </span>
-              )}
+              ...T.tiny,
+              fontWeight: 800,
+              letterSpacing: '0.14em',
+              color: '#E8D28A',
+            }}
+            >
+              {label}
             </div>
-          )}
-        </div>
-      ))}
+            {showDualWindows ? (
+              <>
+                <div style={{
+                  ...T.tiny,
+                  marginTop: '0.55rem',
+                  letterSpacing: '0.12em',
+                  color: B.textMuted,
+                }}
+                >
+                  Last 30 days
+                </div>
+                <ScopeHero book={l30} empty="No 30-day sample" />
+                <div style={{
+                  marginTop: '0.72rem',
+                  paddingTop: '0.55rem',
+                  borderTop: '1px solid rgba(255,255,255,0.06)',
+                  display: 'flex',
+                  gap: '0.55rem',
+                  alignItems: 'baseline',
+                  minWidth: 0,
+                }}
+                >
+                  <span style={{
+                    ...T.tiny,
+                    flexShrink: 0,
+                    letterSpacing: '0.12em',
+                    color: B.textSubtle,
+                  }}
+                  >
+                    All time
+                  </span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 650,
+                    color: B.textMuted,
+                    fontFeatureSettings: "'tnum'",
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  >
+                    {quiet || '—'}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  ...T.tiny,
+                  marginTop: '0.55rem',
+                  letterSpacing: '0.12em',
+                  color: B.textMuted,
+                }}
+                >
+                  {windowEyebrow(single, 'Book')}
+                </div>
+                <ScopeHero book={single} empty="No book yet" />
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Segmented({ value, onChange, options }) {
+  return (
+    <div
+      role="tablist"
+      style={{
+        display: 'inline-flex',
+        padding: 3,
+        borderRadius: 11,
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        maxWidth: '100%',
+      }}
+    >
+      {options.map((opt) => {
+        const on = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(opt.id)}
+            style={{
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: 8,
+              padding: '0.42rem 0.78rem',
+              background: on ? 'rgba(212,175,55,0.16)' : 'transparent',
+              color: on ? '#E8D28A' : B.textMuted,
+              fontSize: '0.72rem',
+              fontWeight: 740,
+              letterSpacing: '0.02em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -690,48 +856,67 @@ function ActionExpandPanel({ row, isMobile }) {
   const sportAllTime = useActionBooks ? (row.sportActionAll || null) : null;
   const marketAllTime = useActionBooks ? (row.marketActionAll || null) : null;
 
+  const sizeHead = tab === 'recent' || formListIsActionFallback
+    ? 'Size'
+    : (sparkMode === 'actual' ? 'Actual' : 'Flat');
+  const curveKind = spark?.kind === 'wl'
+    ? 'Win / loss'
+    : (sparkMode === 'actual' ? 'Actual dollars' : 'Flat 1 unit');
+
   return (
     <div
       className="sf-action-expand"
+      data-expand="book"
       style={{
-        borderTop: `1px solid ${B.borderSubtle}`,
-        background: 'linear-gradient(180deg, rgba(26,31,46,0.95) 0%, rgba(20,24,33,0.98) 100%)',
-        padding: isMobile ? '0.85rem 1rem 1rem' : '0.95rem 1.25rem 1.1rem',
+        borderTop: '1px solid rgba(232,210,138,0.16)',
+        background: 'linear-gradient(180deg, rgba(18,22,32,0.98) 0%, rgba(12,15,22,1) 100%)',
+        padding: isMobile ? '0.95rem 0.9rem 1.05rem' : '1.15rem 1.35rem 1.2rem',
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', alignItems: 'center', marginBottom: '0.35rem' }}>
-        <Pill active={tab === 'form'} onClick={() => { setTab('form'); setShowMore(false); }}>
-          Their featured
-        </Pill>
-        <Pill active={tab === 'recent'} onClick={() => { setTab('recent'); setShowMore(false); }}>
-          Their Action
-        </Pill>
-      </div>
-      <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.55rem', lineHeight: 1.4 }}>
-        {tab === 'form' ? (
-          formListIsActionFallback
-            ? 'No featured locks yet — showing this sharp’s Action tickets instead.'
-            : (
-              <>
-                This sharp’s prior <span style={{ color: B.textSec, fontWeight: 700 }}>featured</span> picks
-                {formRecord(10) ? (
-                  <span style={{ color: B.textSec, fontWeight: 700 }}>
-                    {' · '}L10 {formRecord(10)}
-                    {formRecord(5) ? ` · L5 ${formRecord(5)}` : ''}
-                  </span>
-                ) : null}
-              </>
-            )
-        ) : (
-          <>
-            This sharp’s other graded <span style={{ color: B.textSec, fontWeight: 700 }}>Action</span> tickets
-            {actionTotalN ? ` · last ${curveDays}d` : ''}
-            {actionTotalN > action.length
-              ? ` · showing ${action.length} of ${actionTotalN}`
-              : null}
-          </>
-        )}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.55rem 0.85rem',
+        marginBottom: '0.85rem',
+      }}
+      >
+        <Segmented
+          value={tab}
+          onChange={(id) => { setTab(id); setShowMore(false); }}
+          options={[
+            { id: 'recent', label: 'Their Action' },
+            { id: 'form', label: 'Their featured' },
+          ]}
+        />
+        <div style={{
+          fontSize: '0.7rem',
+          fontWeight: 620,
+          color: B.textMuted,
+          lineHeight: 1.35,
+          fontFeatureSettings: "'tnum'",
+        }}
+        >
+          {tab === 'form' ? (
+            formListIsActionFallback
+              ? 'No featured locks yet. Showing Action tickets.'
+              : (
+                <>
+                  Featured picks
+                  {formRecord(10) ? ` · L10 ${formRecord(10)}` : ''}
+                  {formRecord(5) ? ` · L5 ${formRecord(5)}` : ''}
+                </>
+              )
+          ) : (
+            <>
+              Graded Action tickets
+              {actionTotalN ? ` · last ${curveDays}d` : ''}
+              {actionTotalN > action.length ? ` · ${action.length} of ${actionTotalN}` : ''}
+            </>
+          )}
+        </div>
       </div>
 
       <BetTypeRollupStrip
@@ -742,47 +927,64 @@ function ActionExpandPanel({ row, isMobile }) {
         sportAllTime={sportAllTime}
         marketAllTime={marketAllTime}
         showDualWindows={useActionBooks}
+        isMobile={isMobile}
       />
 
-      <div style={{ marginBottom: '0.75rem' }}>
+      <div style={{
+        marginBottom: '0.9rem',
+        padding: isMobile ? '0.7rem 0.72rem 0.55rem' : '0.8rem 0.9rem 0.62rem',
+        borderRadius: 14,
+        background: 'rgba(0,0,0,0.28)',
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}
+      >
         <div style={{
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem',
-          marginBottom: '0.4rem',
-        }}>
-          <span style={{ ...T.tiny, color: B.textSubtle }}>
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.45rem',
+          marginBottom: '0.45rem',
+        }}
+        >
+          <span style={{ ...T.tiny, letterSpacing: '0.12em', color: B.textMuted }}>
             Last {curveDays} days
-            {spark?.kind === 'wl' ? ' · win / loss' : sparkMode === 'actual' ? ' · actual $' : ' · flat 1u'}
           </span>
-          <span style={{ display: 'inline-flex', gap: '0.25rem', marginLeft: 'auto' }}>
-            <Pill active={sparkMode === 'actual'} onClick={() => setSparkMode('actual')}>Actual</Pill>
-            <Pill active={sparkMode === 'flat'} onClick={() => setSparkMode('flat')}>Flat</Pill>
+          <span style={{ fontSize: '0.68rem', fontWeight: 650, color: B.textSubtle }}>
+            {curveKind}
+          </span>
+          <span style={{ marginLeft: 'auto' }}>
+            <Segmented
+              value={sparkMode}
+              onChange={setSparkMode}
+              options={[
+                { id: 'actual', label: 'Actual' },
+                { id: 'flat', label: 'Flat' },
+              ]}
+            />
           </span>
         </div>
         {spark ? (
           <PremiumSpark
             points={spark.points}
-            width={isMobile ? 280 : 420}
-            height={isMobile ? 56 : 68}
+            width={isMobile ? 280 : 520}
+            height={isMobile ? 64 : 78}
             endLabel={spark.endLabel}
           />
         ) : (
-          <div style={{
-            ...T.micro, color: B.textSubtle,
-            padding: '0.65rem 0.2rem',
-          }}>
+          <div style={{ ...T.micro, color: B.textSubtle, padding: '0.7rem 0.15rem' }}>
             Not enough graded tickets in the last {curveDays} days for a curve.
           </div>
         )}
       </div>
 
       {tab === 'form' && row.trust && (
-        <div style={{ marginBottom: '0.55rem' }}>
+        <div style={{ marginBottom: '0.7rem' }}>
           <TrustLine trust={row.trust} />
         </div>
       )}
 
       {visibleLegs.length === 0 ? (
-        <div style={{ ...T.micro, color: B.textMuted, padding: '0.5rem 0.1rem 0.15rem' }}>
+        <div style={{ ...T.micro, color: B.textMuted, padding: '0.35rem 0.1rem 0.15rem' }}>
           {tab === 'form'
             ? 'No featured picks for this sharp in this sport yet.'
             : 'No graded Action tickets for this sharp in this sport yet.'}
@@ -790,22 +992,17 @@ function ActionExpandPanel({ row, isMobile }) {
       ) : (
         <div>
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: LEG_ROW_GRID,
-            gap: '0.35rem 0.45rem',
-            padding: '0 0.1rem 0.3rem',
-            ...T.tiny,
-            color: B.textSubtle,
-          }}>
-            <span>Date</span>
-            <span>Pick</span>
-            <span style={{ textAlign: 'right' }}>Odds</span>
-            <span>
-              {tab === 'recent' || formListIsActionFallback
-                ? 'Size'
-                : (sparkMode === 'actual' ? 'Actual' : 'Flat')}
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            gap: '0.6rem',
+            padding: '0 0.1rem 0.35rem',
+          }}
+          >
+            <span style={{ ...T.tiny, letterSpacing: '0.14em', color: '#E8D28A' }}>Tickets</span>
+            <span style={{ ...T.tiny, letterSpacing: '0.1em', color: B.textSubtle }}>
+              {isMobile ? sizeHead : `Odds  ·  ${sizeHead}  ·  Result`}
             </span>
-            <span style={{ textAlign: 'right' }}>W/L</span>
           </div>
           {[...visibleLegs].reverse().map((leg, i) => (
             <TicketLegRow
@@ -813,6 +1010,8 @@ function ActionExpandPanel({ row, isMobile }) {
               leg={leg}
               showSize={tab === 'recent' || formListIsActionFallback}
               pnlMode={sparkMode}
+              isMobile={isMobile}
+              sport={row.sport}
             />
           ))}
           {legs.length > previewN && (
@@ -820,21 +1019,24 @@ function ActionExpandPanel({ row, isMobile }) {
               type="button"
               onClick={() => setShowMore((v) => !v)}
               style={{
-                marginTop: '0.55rem',
-                background: 'transparent',
-                border: 'none',
+                marginTop: '0.7rem',
+                width: '100%',
+                background: 'rgba(212,175,55,0.08)',
+                border: '1px solid rgba(212,175,55,0.22)',
+                borderRadius: 10,
                 cursor: 'pointer',
-                ...T.micro,
-                fontWeight: 700,
-                color: B.gold,
-                padding: '0.2rem 0',
+                fontSize: '0.72rem',
+                fontWeight: 740,
+                letterSpacing: '0.04em',
+                color: '#E8D28A',
+                padding: '0.55rem 0.7rem',
               }}
             >
               {showMore
                 ? 'Show less'
                 : (actionTotalN > legs.length && tab === 'recent'
-                  ? `Show all ${legs.length} of ${actionTotalN} (last ${curveDays}d)`
-                  : `Show all ${legs.length} (last ${curveDays}d)`)}
+                  ? `Show all ${legs.length} of ${actionTotalN}`
+                  : `Show all ${legs.length}`)}
             </button>
           )}
         </div>
@@ -863,7 +1065,7 @@ function TeamCrest({ name, sport, size = 42 }) {
     <div style={{
       width: size,
       height: size,
-      borderRadius: 12,
+      borderRadius: Math.max(7, Math.round(size * 0.26)),
       flexShrink: 0,
       display: 'flex',
       alignItems: 'center',
@@ -874,7 +1076,9 @@ function TeamCrest({ name, sport, size = 42 }) {
         : `linear-gradient(145deg, ${id.c1}, ${id.c2})`,
       border: src ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.08)',
       boxShadow: src
-        ? '0 6px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.65)'
+        ? (size < 36
+          ? '0 2px 6px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.65)'
+          : '0 6px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.65)')
         : 'inset 0 1px 0 rgba(255,255,255,0.06)',
     }}
     >
@@ -1419,79 +1623,6 @@ function LeanMark({ lean }) {
   );
 }
 
-function KickoffMark({ ms, postedTs, isMobile }) {
-  const kick = formatActionKickoff(ms);
-  const posted = entryClock(postedTs);
-  const kicker = kick?.kicker || (posted ? 'Posted' : '');
-  const time = kick?.time || posted || '';
-  if (!kicker && !time) return null;
-  const kickerColor = kick?.tone === 'live'
-    ? '#34D399'
-    : (kick?.tone === 'today' || kick?.tone === 'next' ? '#E8D28A' : B.textMuted);
-  return (
-    <div
-      data-kickoff={kick?.tone || 'posted'}
-      style={{ width: isMobile ? 68 : 82, flexShrink: 0 }}
-    >
-      <div style={{
-        ...T.tiny,
-        color: kickerColor,
-        letterSpacing: '0.14em',
-        fontSize: '0.56rem',
-        lineHeight: 1.2,
-      }}
-      >
-        {kicker}
-      </div>
-      <div style={{
-        marginTop: 3,
-        fontSize: isMobile ? '0.92rem' : '1.05rem',
-        fontWeight: 720,
-        letterSpacing: '-0.03em',
-        lineHeight: 1.05,
-        color: B.text,
-        fontFeatureSettings: "'tnum'",
-      }}
-      >
-        {time}
-      </div>
-    </div>
-  );
-}
-
-function SideRow({ full, label, sport, picked, isMobile }) {
-  const crest = isMobile ? 32 : 38;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 10, minWidth: 0 }}>
-      <TeamCrest name={full} sport={sport} size={crest} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-        {picked ? (
-          <span aria-hidden style={{
-            width: 5, height: 5, borderRadius: 99, flexShrink: 0,
-            background: '#E8D28A', boxShadow: '0 0 8px #E8D28A',
-          }}
-          />
-        ) : (
-          <span aria-hidden style={{ width: 5, flexShrink: 0 }} />
-        )}
-        <span style={{
-          fontSize: picked ? (isMobile ? '1.02rem' : '1.16rem') : (isMobile ? '0.86rem' : '0.96rem'),
-          fontWeight: picked ? 720 : 560,
-          letterSpacing: '-0.032em',
-          lineHeight: 1.1,
-          color: picked ? B.text : B.textMuted,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-        >
-          {label}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function ActionRow({
   row, sportFilter = 'All', isMobile, expanded, onToggle,
   saved = false, onToggleSave, canSave = false, lean = null,
@@ -1555,40 +1686,17 @@ function ActionRow({
   const tierMark = row.skillLabel && String(row.skillLabel).length <= 2
     ? `Tier ${row.skillLabel}`
     : (row.skillLabel === 'Thin sample' ? 'Thin' : null);
-  const hasPair = !!(row.away && row.home);
-  const totalPick = row.side === 'over' || row.side === 'under';
-  const awayNick = hasPair ? shortTeamNick(row.away, row.home) : (row.team || '—');
-  const homeNick = hasPair ? shortTeamNick(row.home, row.away) : null;
-  const lineBit = Number.isFinite(Number(row.entryLine)) ? String(row.entryLine) : '';
-  const totalLabel = totalPick
-    ? `${row.side === 'over' ? 'Over' : 'Under'}${lineBit ? ` ${lineBit}` : ''}`
-    : null;
+  const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
+  const crestName = row.side === 'away' && row.away
+    ? row.away
+    : (row.side === 'home' && row.home ? row.home : row.team);
+  const kick = formatActionKickoff(row.commenceMs);
+  const postedAge = agoTxt(row.ts);
   const play = (
-    <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14 }}>
-      <KickoffMark ms={row.commenceMs} postedTs={row.ts} isMobile={isMobile} />
-      <div style={{ minWidth: 0, flex: 1 }}>
-        {hasPair ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 6 : 7 }}>
-            <SideRow full={row.away} label={awayNick} sport={row.sport} picked={!totalPick && row.side === 'away'} isMobile={isMobile} />
-            {totalLabel ? (
-              <div style={{
-                marginLeft: (isMobile ? 32 : 38) + (isMobile ? 8 : 10) + 11,
-                fontSize: isMobile ? '0.92rem' : '1.02rem',
-                fontWeight: 750,
-                letterSpacing: '-0.03em',
-                lineHeight: 1,
-                color: '#E8D28A',
-              }}
-              >
-                {totalLabel}
-              </div>
-            ) : null}
-            <SideRow full={row.home} label={homeNick} sport={row.sport} picked={!totalPick && row.side === 'home'} isMobile={isMobile} />
-          </div>
-        ) : (
-          <SideRow full={row.team} label={row.team || '—'} sport={row.sport} picked isMobile={isMobile} />
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', marginTop: '0.48rem', flexWrap: 'wrap' }}>
+    <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: isMobile ? '0.7rem' : '0.85rem' }}>
+      <TeamCrest name={crestName} sport={row.sport} size={isMobile ? 44 : 52} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', marginBottom: '0.28rem', flexWrap: 'wrap' }}>
           <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: sportColor(row.sport), boxShadow: `0 0 8px ${sportColor(row.sport)}` }} />
           <span style={{ ...T.tiny, color: sportColor(row.sport), letterSpacing: '0.14em' }}>{row.sport}</span>
           <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.12em' }}>{row.marketLabel || row.marketType}</span>
@@ -1605,6 +1713,26 @@ function ActionRow({
             </span>
           ) : null}
           <LeanMark lean={lean} />
+        </div>
+        <div style={{
+          ...T.name,
+          color: B.text,
+          fontSize: isMobile ? '1.28rem' : '1.55rem',
+          fontWeight: 640,
+          letterSpacing: '-0.038em',
+          lineHeight: 1.05,
+        }}
+        >
+          {row.team}
+        </div>
+        <div style={{
+          ...T.body, color: B.textMuted, marginTop: '0.22rem',
+          whiteSpace: isMobile ? 'normal' : 'nowrap',
+          overflow: 'hidden',
+          textOverflow: isMobile ? 'clip' : 'ellipsis',
+        }}
+        >
+          <MatchupLine away={row.away} home={row.home} side={row.side} fallback={matchup} />
         </div>
       </div>
     </div>
@@ -1636,8 +1764,21 @@ function ActionRow({
           {row.americanLabel || ''}
         </div>
       ) : null}
-      <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.28rem', fontFeatureSettings: "'tnum'" }}>
-        {agoTxt(row.ts) === 'now' ? 'Just posted' : `${agoTxt(row.ts)} ago`}
+      <div
+        data-kickoff={kick?.tone || 'posted'}
+        style={{ ...T.micro, color: B.textSec, marginTop: '0.32rem', fontFeatureSettings: "'tnum'", fontWeight: 700 }}
+      >
+        {kick ? (
+          <>
+            <span style={{ color: kick.tone === 'live' ? '#34D399' : '#E8D28A', letterSpacing: '0.08em' }}>
+              {kick.kicker}
+            </span>
+            <span style={{ color: B.text }}> · {kick.time} ET</span>
+          </>
+        ) : 'Kickoff —'}
+      </div>
+      <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.16rem', fontFeatureSettings: "'tnum'" }}>
+        {postedAge === 'now' ? 'Just posted' : `${postedAge} ago`}
       </div>
     </div>
   );
@@ -1662,7 +1803,7 @@ function ActionRow({
             display: 'flex',
             justifyContent: 'space-between',
             gap: isMobile ? '0.75rem' : '1.4rem',
-            alignItems: 'center',
+            alignItems: 'flex-start',
           }}
           >
             {play}
