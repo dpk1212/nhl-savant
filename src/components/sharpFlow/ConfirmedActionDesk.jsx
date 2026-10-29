@@ -1107,170 +1107,227 @@ function TeamCrest({ name, sport, size = 42 }) {
   );
 }
 
-/** Verdicts that make a ticket one of the best, each with what the word means. */
-function SignalLine({ row, isMobile = false }) {
-  const { heroes, support, topPlay } = actionCardReasons(row);
-  const l30 = Number.isFinite(row.l30Pnl) ? row.l30Pnl : null;
-  const spark = row.l30ChipCurve?.length >= 5
-    ? row.l30ChipCurve
-    : (row.flatCurve?.length >= 5 ? row.flatCurve : null);
-  if (!heroes.length && !support.length && l30 == null && !spark) return null;
-  const bookIsHero = heroes.some((h) => h.key === 'book');
+const STAT_KICKER = {
+  fontSize: '0.58rem',
+  fontWeight: 760,
+  letterSpacing: '0.16em',
+  textTransform: 'uppercase',
+  color: '#64748B',
+  lineHeight: 1,
+};
 
+function airyNote(text) {
+  return String(text || '').replaceAll(' · ', '  ').trim();
+}
+
+/** Label, then the number alone, then the meaning. Never a badge glued to the figure. */
+function StatStack({ kicker, value, note, valueColor, noteColor, spark, valueSize, stackSpark = false }) {
+  const caption = airyNote(note);
   return (
-    <div data-top-play={topPlay ? 'true' : undefined} style={{ marginTop: '0.95rem' }}>
-      {heroes.length ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile
-              ? '1fr 1fr'
-              : `repeat(${heroes.length}, minmax(0, 1fr))`,
-            gap: isMobile ? '0.9rem 0.75rem' : '0.2rem 0',
-            paddingTop: '0.9rem',
-            borderTop: '1px solid rgba(255,255,255,0.07)',
-          }}
-        >
-          {heroes.map((h, i) => {
-            const tone = REASON_TONE[h.tone] || REASON_TONE.text;
-            const spotInline = isMobile && h.key === 'spot';
-            const statSize = isMobile ? '1.38rem' : '1.58rem';
-            return (
-            <div
-              key={h.key}
-              data-reason={h.key}
-              style={{
-                minWidth: 0,
-                gridColumn: spotInline ? '1 / -1' : undefined,
-                paddingLeft: !isMobile && i > 0 ? '1.15rem' : 0,
-                paddingTop: spotInline ? '0.15rem' : 0,
-                borderLeft: !isMobile && i > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
-                borderTop: spotInline ? '1px solid rgba(255,255,255,0.06)' : 'none',
-              }}
-            >
-              {h.key === 'size' && h.figure ? (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', minWidth: 0 }}>
-                  <span style={{
-                    fontSize: statSize,
-                    fontWeight: 680,
-                    letterSpacing: '-0.045em',
-                    lineHeight: 1,
-                    color: tone,
-                    fontFeatureSettings: "'tnum'",
-                  }}
-                  >
-                    {h.figure}
-                  </span>
-                  <span style={{
-                    fontSize: '0.68rem',
-                    fontWeight: 780,
-                    letterSpacing: '0.14em',
-                    textTransform: 'uppercase',
-                    color: tone,
-                  }}
-                  >
-                    {h.mark}
-                  </span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flexWrap: 'wrap' }}>
-                  <span style={{
-                    fontSize: h.emphasis ? statSize : (isMobile ? '1.02rem' : '1.12rem'),
-                    fontWeight: 650,
-                    letterSpacing: '-0.04em',
-                    lineHeight: 1,
-                    color: tone,
-                    fontFeatureSettings: "'tnum'",
-                  }}
-                  >
-                    {spotInline ? `${h.title}${h.sub ? ` · ${h.sub}` : ''}` : h.title}
-                  </span>
-                  {h.window ? (
-                    <span style={{
-                      fontSize: '0.6rem',
-                      fontWeight: 800,
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase',
-                      color: tone,
-                      opacity: 0.9,
-                      padding: '0.14rem 0.34rem 0.1rem',
-                      borderRadius: 4,
-                      border: `1px solid ${tone}66`,
-                      lineHeight: 1,
-                    }}
-                    >
-                      {h.window}
-                    </span>
-                  ) : null}
-                </div>
-              )}
-              {spotInline ? null : (
-                <div style={{
-                  marginTop: '0.32rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  minWidth: 0,
-                }}
-                >
-                  <span style={{
-                    fontSize: h.key === 'book' ? (isMobile ? '0.86rem' : '0.95rem') : '0.72rem',
-                    fontWeight: h.key === 'book' ? 720 : 640,
-                    lineHeight: 1.3,
-                    color: h.subTone ? (REASON_TONE[h.subTone] || B.textMuted) : B.textMuted,
-                    fontFeatureSettings: "'tnum'",
-                  }}
-                  >
-                    {h.sub}
-                  </span>
-                  {h.key === 'book' && spark ? (
-                    <FlatSpark points={spark} width={isMobile ? 44 : 58} height={16} />
-                  ) : null}
-                </div>
-              )}
-            </div>
-            );
-          })}
-        </div>
-      ) : null}
-      {support.length || (!bookIsHero && (l30 != null || spark)) ? (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ ...STAT_KICKER, marginBottom: '0.42rem' }}>{kicker}</div>
+      <div style={{
+        fontSize: valueSize,
+        fontWeight: 680,
+        letterSpacing: '-0.045em',
+        lineHeight: 1,
+        color: valueColor,
+        fontFeatureSettings: "'tnum'",
+      }}
+      >
+        {value}
+      </div>
+      {caption || spark ? (
         <div style={{
+          marginTop: '0.4rem',
           display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: '0.35rem 0.85rem',
-          marginTop: '0.75rem',
+          flexDirection: stackSpark ? 'column' : 'row',
+          alignItems: stackSpark ? 'flex-start' : 'center',
+          gap: stackSpark ? '0.28rem' : '0.6rem',
+          minWidth: 0,
         }}
         >
-          {support.length ? (
+          {caption ? (
             <span style={{
-              fontSize: '0.74rem',
+              minWidth: 0,
+              fontSize: '0.78rem',
               fontWeight: 640,
-              color: B.textSec,
+              lineHeight: 1.3,
+              color: noteColor || B.textMuted,
               fontFeatureSettings: "'tnum'",
             }}
             >
-              {support.join('  ·  ')}
+              {caption}
             </span>
           ) : null}
-          {!bookIsHero && (l30 != null || spark) ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginLeft: 'auto' }}>
-              {spark ? <FlatSpark points={spark} width={56} height={18} /> : null}
-              {l30 != null ? (
-                <span style={{
-                  fontSize: '0.74rem',
-                  fontWeight: 720,
-                  color: l30 >= 0 ? REASON_TONE.green : REASON_TONE.red,
-                  fontFeatureSettings: "'tnum'",
-                }}
-                >
-                  L30 {fmtBookPnl(l30)}
-                </span>
-              ) : null}
-            </span>
-          ) : null}
+          {spark || null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function heroView(h) {
+  const tone = REASON_TONE[h.tone] || REASON_TONE.text;
+  if (h.key === 'size') {
+    return {
+      kicker: h.mark || 'Size',
+      value: h.figure || h.title,
+      note: h.sub,
+      valueColor: tone,
+      noteColor: B.textMuted,
+    };
+  }
+  if (h.key === 'book') {
+    return {
+      kicker: h.window === '30d' ? 'Last 30' : 'Book',
+      value: h.title,
+      note: h.sub,
+      valueColor: tone,
+      noteColor: h.subTone ? (REASON_TONE[h.subTone] || B.textMuted) : B.textMuted,
+      spark: true,
+    };
+  }
+  const [head, extra] = String(h.title || '').split(' · ');
+  const sub = h.sub || '';
+  const note = extra && sub && !sub.includes(extra) ? `${extra}  ${sub}` : (sub || extra || '');
+  return {
+    kicker: 'Spot',
+    value: head,
+    note,
+    valueColor: tone,
+    noteColor: B.textMuted,
+  };
+}
+
+function likeThisStat(text) {
+  if (!text) return null;
+  const bits = String(text).split('·').map((s) => s.trim()).filter((s) => s && !/^plays like this$/i.test(s));
+  if (!bits.length) return null;
+  return { label: 'Like this', value: bits[0], note: bits[1] || null };
+}
+
+/** The quiet facts, each in its own column. Same gap, no run-on dots. */
+function proofStats(row) {
+  const items = [];
+  if (row?.pinMove === 'with') items.push({ label: 'Line', value: 'With' });
+  else if (row?.pinMove === 'against') items.push({ label: 'Line', value: 'Against' });
+  if (row?.steam?.show && row.steam.tag) {
+    const tag = String(row.steam.tag).replace(/^steam\s+/i, '');
+    items.push({ label: 'Steam', value: tag });
+  }
+  const l10 = row?.form?.l10;
+  const w = Number(l10?.w);
+  const l = Number(l10?.l);
+  if (Number.isFinite(w) && Number.isFinite(l) && (w + l) > 0) {
+    items.push({ label: 'Last 10', value: `${w}-${l}` });
+  } else if (row?.formText && row.formText !== '—') {
+    items.push({ label: 'Form', value: row.formText });
+  }
+  const trust = row?.trust;
+  if (trust?.record) items.push({ label: 'Record', value: trust.record });
+  if (Number.isFinite(trust?.roi)) {
+    items.push({
+      label: 'Book',
+      value: `${trust.roi >= 0 ? '+' : ''}${trust.roi}%`,
+      note: 'ROI',
+      valueColor: trust.roi >= 0 ? '#34D399' : '#F07178',
+    });
+  }
+  if (Number.isFinite(trust?.wr)) items.push({ label: 'Wins', value: `${trust.wr}%` });
+  if (Number.isFinite(trust?.priorClvPct)) {
+    items.push({
+      label: 'Beat close',
+      value: `${trust.priorClvPct}%`,
+      valueColor: trust.priorClvPct >= 55 ? '#E8D28A' : B.text,
+    });
+  }
+  const like = likeThisStat(row?.cellHistText);
+  if (like) items.push(like);
+  return items;
+}
+
+function HeroStats({ heroes, spark, isMobile }) {
+  if (!heroes.length) return null;
+  const size = isMobile ? '1.32rem' : '1.48rem';
+  return heroes.map((h) => {
+    const view = heroView(h);
+    return (
+      <div
+        key={h.key}
+        data-reason={h.key}
+        style={{
+          minWidth: 0,
+          borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.07)',
+          paddingLeft: isMobile ? 0 : '1.15rem',
+        }}
+      >
+        <StatStack
+          kicker={view.kicker}
+          value={view.value}
+          note={view.note}
+          valueColor={view.valueColor}
+          noteColor={view.noteColor}
+          valueSize={h.key === 'spot' ? (isMobile ? '1.05rem' : '1.16rem') : size}
+          stackSpark={isMobile}
+          spark={view.spark && spark ? <FlatSpark points={spark} width={isMobile ? 48 : 52} height={16} /> : null}
+        />
+      </div>
+    );
+  });
+}
+
+function ProofRail({ items, isMobile }) {
+  if (!items.length) return null;
+  return (
+    <div
+      data-proof="rail"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile
+          ? 'repeat(3, minmax(0, 1fr))'
+          : `repeat(${items.length}, minmax(0, 1fr))`,
+        columnGap: isMobile ? '0.7rem' : '1.15rem',
+        rowGap: '0.85rem',
+        marginTop: isMobile ? '0.95rem' : '1.05rem',
+        paddingTop: '0.9rem',
+        borderTop: '1px solid rgba(255,255,255,0.07)',
+      }}
+    >
+      {items.map((item) => (
+        <div key={item.label} style={{ minWidth: 0 }}>
+          <div style={{ ...STAT_KICKER, marginBottom: '0.32rem' }}>{item.label}</div>
+          <div style={{
+            fontSize: isMobile ? '0.86rem' : '0.95rem',
+            fontWeight: 680,
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1,
+            color: item.valueColor || B.text,
+            fontFeatureSettings: "'tnum'",
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+          >
+            {item.value}
+          </div>
+          {item.note ? (
+            <div style={{
+              marginTop: '0.18rem',
+              fontSize: '0.68rem',
+              fontWeight: 640,
+              color: B.textMuted,
+              fontFeatureSettings: "'tnum'",
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+            >
+              {item.note}
+            </div>
+          ) : null}
+        </div>
+      ))}
     </div>
   );
 }
@@ -1536,22 +1593,6 @@ function TrustLine({ trust }) {
 }
 
 /** Historic cell WR/ROI from as-of Sharp tier × size × opposition. */
-function CellHistLine({ text }) {
-  if (!text) return null;
-  return (
-    <div style={{
-      marginTop: '0.28rem',
-      ...T.micro,
-      fontWeight: 600,
-      color: B.textSubtle,
-      fontFeatureSettings: "'tnum'",
-      letterSpacing: '0.01em',
-    }}>
-      {text}
-    </div>
-  );
-}
-
 function PortfolioAdd({ saved, onToggle, disabled }) {
   const label = saved ? 'In your portfolio' : 'Add to portfolio';
   return (
@@ -1630,7 +1671,6 @@ function ActionRow({
   const [hover, setHover] = useState(false);
   if (!rowMatchesActionSport(row, sportFilter)) return null;
   const topPlay = row.topPlay === true || isActionTopPlay(row);
-  const trust = row.trust;
   const reduceMotion = typeof window !== 'undefined'
     && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
@@ -1753,40 +1793,74 @@ function ActionRow({
         </div>
         {chevron}
       </div>
-      {(row.americanLabel || Number.isFinite(row.cents)) ? (
+      {row.americanLabel ? (
         <div style={{
-          ...T.odds, color: B.text, marginTop: '0.18rem',
-          fontFeatureSettings: "'tnum'", fontSize: isMobile ? '0.9rem' : T.odds.fontSize,
+          marginTop: '0.36rem',
+          fontSize: isMobile ? '0.95rem' : '1.05rem',
+          fontWeight: 680,
+          letterSpacing: '-0.03em',
+          color: B.text,
+          fontFeatureSettings: "'tnum'",
+          lineHeight: 1,
         }}
         >
-          {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
-          {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
-          {row.americanLabel || ''}
+          {row.americanLabel}
         </div>
       ) : null}
-      <div
-        data-kickoff={kick?.tone || 'posted'}
-        style={{ ...T.micro, color: B.textSec, marginTop: '0.32rem', fontFeatureSettings: "'tnum'", fontWeight: 700 }}
-      >
+      <div data-kickoff={kick?.tone || 'posted'} style={{ marginTop: '0.38rem' }}>
         {kick ? (
-          <>
-            <span style={{ color: kick.tone === 'live' ? '#34D399' : '#E8D28A', letterSpacing: '0.08em' }}>
-              {kick.kicker}
-            </span>
-            <span style={{ color: B.text }}> · {kick.time} ET</span>
-          </>
-        ) : 'Kickoff —'}
+          <div style={{
+            fontSize: isMobile ? '0.86rem' : '0.95rem',
+            fontWeight: 680,
+            letterSpacing: '-0.02em',
+            color: B.text,
+            fontFeatureSettings: "'tnum'",
+            lineHeight: 1,
+          }}
+          >
+            {kick.time} ET
+          </div>
+        ) : (
+          <div style={{ ...T.micro, color: B.textSubtle }}>Kickoff —</div>
+        )}
       </div>
-      <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.16rem', fontFeatureSettings: "'tnum'" }}>
+    </div>
+  );
+  const clockMeta = (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'flex-end',
+      alignItems: 'baseline',
+      gap: '1.15rem',
+      marginTop: '0.55rem',
+    }}
+    >
+      {kick ? (
+        <span style={{ ...STAT_KICKER, color: kick.tone === 'live' ? '#34D399' : '#E8D28A' }}>
+          {kick.kicker}
+        </span>
+      ) : null}
+      {Number.isFinite(row.cents) ? (
+        <span style={{ fontSize: '0.75rem', fontWeight: 650, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+          {row.cents}¢
+        </span>
+      ) : null}
+      <span style={{ fontSize: '0.75rem', fontWeight: 620, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
         {postedAge === 'now' ? 'Just posted' : `${postedAge} ago`}
-      </div>
+      </span>
     </div>
   );
   const hair = topPlay ? (
     <div aria-hidden style={{ height: 2, background: 'linear-gradient(90deg, transparent, #E8D28A 18%, #D4AF37 50%, transparent)' }} />
   ) : null;
 
-  const facePad = isMobile ? '1.05rem 1rem 0.85rem' : '1.2rem 1.35rem 0.95rem';
+  const facePad = isMobile ? '1rem 0.95rem 0.9rem' : '1.15rem 1.25rem 1rem';
+  const reasons = actionCardReasons(row);
+  const spark = row.l30ChipCurve?.length >= 5
+    ? row.l30ChipCurve
+    : (row.flatCurve?.length >= 5 ? row.flatCurve : null);
+  const proof = proofStats(row);
+  const heroCount = reasons.heroes.length;
 
   return (
     <div
@@ -1799,19 +1873,56 @@ function ActionRow({
       {hair}
       <button {...headerBtnProps}>
         <div style={{ padding: facePad }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: isMobile ? '0.75rem' : '1.4rem',
-            alignItems: 'flex-start',
-          }}
-          >
-            {play}
-            {price}
-          </div>
-          <SignalLine row={row} isMobile={isMobile} />
-          <TrustLine trust={trust} />
-          <CellHistLine text={row.cellHistText} />
+          {isMobile ? (
+            <>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: '0.75rem',
+                alignItems: 'flex-start',
+              }}
+              >
+                {play}
+                {price}
+              </div>
+              {clockMeta}
+              {heroCount ? (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${Math.min(heroCount, 3)}, minmax(0, 1fr))`,
+                  gap: '0.85rem 0.75rem',
+                  marginTop: '0.95rem',
+                  paddingTop: '0.9rem',
+                  borderTop: '1px solid rgba(255,255,255,0.07)',
+                }}
+                >
+                  <HeroStats heroes={reasons.heroes} spark={spark} isMobile />
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: heroCount
+                ? `minmax(188px, 1.15fr) repeat(${heroCount}, minmax(108px, 1fr)) auto`
+                : 'minmax(0, 1fr) auto',
+              columnGap: '1.2rem',
+              alignItems: 'start',
+            }}
+            >
+              {play}
+              <HeroStats heroes={reasons.heroes} spark={spark} isMobile={false} />
+              <div style={{
+                borderLeft: heroCount ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                paddingLeft: heroCount ? '1.15rem' : 0,
+              }}
+              >
+                {price}
+              </div>
+            </div>
+          )}
+          {isMobile ? null : clockMeta}
+          <ProofRail items={proof} isMobile={isMobile} />
         </div>
       </button>
       <PortfolioAdd saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
