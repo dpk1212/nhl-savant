@@ -389,6 +389,89 @@ function pctToAmerican(pct) {
   return americanFromProb(p);
 }
 
+/** No sportsbook tape. Polymarket is the line, and it has to move. */
+const BOOKLESS_LINE_SPORTS = new Set(['ATP', 'CS2', 'LOL']);
+
+export function isBooklessLineSport(sport) {
+  return BOOKLESS_LINE_SPORTS.has(String(sport || '').toUpperCase());
+}
+
+function polySidePct(polyGame, sideKey) {
+  if (!polyGame) return null;
+  const raw = sideKey === 'away' ? polyGame.awayProb
+    : sideKey === 'draw' ? polyGame.drawProb
+      : polyGame.homeProb;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 && n < 100 ? n : null;
+}
+
+/** priceHistory.points are the away side, in percent. Home is the complement. */
+function polySideHistoryPcts(polyGame, sideKey) {
+  if (!polyGame || sideKey === 'draw') {
+    const live = polySidePct(polyGame, sideKey);
+    return live == null ? [] : [live];
+  }
+  const raw = polyGame.priceHistory?.points;
+  const awayPts = Array.isArray(raw) ? raw.map(Number).filter((n) => Number.isFinite(n)) : [];
+  const sidePts = awayPts
+    .map((awayPct) => (sideKey === 'away' ? awayPct : Number((100 - awayPct).toFixed(1))))
+    .filter((n) => n > 0 && n < 100);
+  const live = polySidePct(polyGame, sideKey);
+  if (live != null && (sidePts.length === 0 || Math.abs(sidePts[sidePts.length - 1] - live) > 0.05)) {
+    sidePts.push(live);
+  }
+  return sidePts;
+}
+
+/** Moneyline board when Pinnacle is not in the feed. Current Poly price is fair/now. */
+function buildPolyMoneylineBoard(pick, sideKey, polyGame) {
+  const pcts = polySideHistoryPcts(polyGame, sideKey);
+  if (!pcts.length) return null;
+  const path = pcts
+    .map((pct) => {
+      const odds = pctToAmerican(pct);
+      return Number.isFinite(odds) && odds !== 0 ? { odds, max: null, t: null } : null;
+    })
+    .filter(Boolean);
+  if (!path.length) return null;
+  const pinPath = path.length === 1
+    ? [{ ...path[0], mark: 'open' }, { ...path[0], mark: 'now' }]
+    : path;
+  const fairNow = pinPath[pinPath.length - 1].odds;
+  const fairProb = pcts[pcts.length - 1] / 100;
+  const ourLabel = sideKey === 'draw' ? 'Draw'
+    : (sideKey === 'away' ? shortTeam(pick.away, pick.home) : shortTeam(pick.home, pick.away));
+  const oppLabel = sideKey === 'draw' ? null
+    : (sideKey === 'away' ? shortTeam(pick.home, pick.away) : shortTeam(pick.away, pick.home));
+  const oppSide = sideKey === 'away' ? 'home' : sideKey === 'home' ? 'away' : null;
+  const oppOdds = oppSide ? pctToAmerican(polySidePct(polyGame, oppSide)) : null;
+  return {
+    pinSeries: pinPath.map((p) => p.odds),
+    pinPath,
+    books: [{ name: 'Polymarket', odds: fairNow, sharp: true }],
+    bestOdds: fairNow,
+    bestBook: 'Polymarket',
+    fairNow,
+    fairNoVig: fairNow,
+    fairProb,
+    fairIsNoVig: true,
+    fairDisplay: fairNow,
+    marketLine: null,
+    liveMarketLine: null,
+    lineMoved: false,
+    ourLabel,
+    liveLabel: null,
+    oppLabel,
+    oppBestOdds: Number.isFinite(oppOdds) ? oppOdds : null,
+    oppBestBook: Number.isFinite(oppOdds) ? 'Polymarket' : null,
+    liveBestOdds: null,
+    liveBestBook: null,
+    liveFair: null,
+    liveFairIsNoVig: false,
+    updatedAgoSec: null,
+  };
+}
+
 /** Novig / Polymarket / Kalshi onto the shop rail. Snapshot first; live ML feeds as backup. */
 function appendExchangeQuotes(books, {
   pinnGame,
@@ -666,7 +749,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     liveFairIsNoVig: false,
     updatedAgoSec: null,
   };
-  if (!pick || !pinnacleHistory) return empty;
+  if (!pick) return empty;
   const sport = pick.sport;
   // docId is date_sport_gameKey — prefer explicit gameKey
   let gk = pick.gameKey;
@@ -680,9 +763,6 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       gk = rest || null;
     }
   }
-  const pinnGame = sport && gk ? lookupPinnGame(pinnacleHistory, sport, gk) : null;
-  if (!pinnGame) return empty;
-
   const mt = String(pick.marketType || 'ml').toLowerCase();
   const isTotal = mt === 'total';
   const isSpread = mt === 'spread';
@@ -693,6 +773,16 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     homeShort: shortTeam(pick.home, pick.away),
     teamShort: shortTeam(pick.team, pick.away === pick.team ? pick.home : pick.away),
   });
+  // Esports and tennis have no book. Polymarket history is the moving line,
+  // so the card does not sit on an earlier American stamp.
+  if (!isTotal && !isSpread && isBooklessLineSport(sport)) {
+    const polyGame = opts.polyData?.[sport]?.[gk] || null;
+    const polyBoard = buildPolyMoneylineBoard(pick, sideKey, polyGame);
+    if (polyBoard) return polyBoard;
+  }
+  if (!pinnacleHistory) return empty;
+  const pinnGame = sport && gk ? lookupPinnGame(pinnacleHistory, sport, gk) : null;
+  if (!pinnGame) return empty;
 
   const books = [];
   let pinSeries = null;
@@ -1868,9 +1958,20 @@ export function mapLockedPickToCardFixture(pick, {
     ),
   });
   if (Number.isFinite(pay.polyReceipt)) polyEntryOdds = pay.polyReceipt;
-  const payOdds = Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds;
+  let payOdds = Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds;
   const polyForLabel = Number.isFinite(pay.polyReceipt) ? pay.polyReceipt
     : (Number.isFinite(polyEntryOdds) ? polyEntryOdds : null);
+  // Bookless ML, still before the seal: the number on the card is the
+  // live Polymarket price. The receipt stays underneath as "flagged at".
+  if (!isTotal && !isSpread && isBooklessLineSport(pick.sport) && !ticketFrozen
+      && Number.isFinite(market.fairNow) && market.fairNow !== 0) {
+    payOdds = market.fairNow;
+    const receipt = Number.isFinite(polyForLabel) ? polyForLabel : lockOdds;
+    if (Number.isFinite(receipt) && Math.round(receipt) !== Math.round(payOdds)) {
+      const lbl = fmtFlaggedAtLabel(receipt);
+      if (lbl) mainNowLabel = lbl;
+    }
+  }
   if (!flaggedAtLabel && Number.isFinite(polyForLabel) && Number.isFinite(payOdds)
       && Math.round(polyForLabel) !== Math.round(payOdds)) {
     const lbl = fmtFlaggedAtLabel(polyForLabel);
