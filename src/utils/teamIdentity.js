@@ -1,3 +1,5 @@
+import { logoForTeam } from './teamLogoIndex.js';
+
 /**
  * teamIdentity — crest abbreviation + brand colors for NHL / NBA / MLB.
  *
@@ -268,6 +270,8 @@ const NFL_NICK = {
 
 /** ESPN crest PNG for a pro team we can name. Null for totals words and unknown clubs. */
 export function teamLogoUrl(name, sport) {
+  const indexed = logoForTeam(name, sport);
+  if (indexed) return indexed;
   const league = (sport || '').toUpperCase();
   const path = ESPN_LEAGUE[league];
   if (league === 'NFL' && path) {

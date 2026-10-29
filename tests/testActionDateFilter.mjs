@@ -8,6 +8,7 @@ import {
   formatActionDateChip,
   actionDateParts,
   etDateKey,
+  formatActionKickoff,
   rowMatchesActionDate,
   filterActionRows,
 } from '../src/lib/confirmedActionDesk.js';
@@ -29,6 +30,20 @@ assert.deepEqual(actionDateParts('2026-09-18', '2026-09-18'), { kicker: 'TODAY',
 assert.deepEqual(actionDateParts('2026-09-19', '2026-09-18'), { kicker: 'SAT', day: '19' });
 assert.deepEqual(actionDateParts('2026-09-20', '2026-09-18'), { kicker: 'SUN', day: '20' });
 assert.deepEqual(actionDateParts('2026-09-21', '2026-09-18'), { kicker: 'MON', day: '21' });
+
+const kickNow = Date.parse('2026-10-29T20:00:00Z');
+assert.equal(formatActionKickoff(null, kickNow), null);
+assert.deepEqual(formatActionKickoff(Date.parse('2026-10-29T23:20:00Z'), kickNow), {
+  kicker: 'Today', time: '7:20 PM', tone: 'today',
+});
+assert.deepEqual(formatActionKickoff(Date.parse('2026-10-29T18:30:00Z'), kickNow), {
+  kicker: 'Live', time: '2:30 PM', tone: 'live',
+});
+assert.deepEqual(formatActionKickoff(Date.parse('2026-10-30T23:00:00Z'), kickNow), {
+  kicker: 'Tomorrow', time: '7:00 PM', tone: 'next',
+});
+assert.equal(formatActionKickoff(Date.parse('2026-10-29T10:00:00Z'), kickNow).kicker, 'Today');
+assert.equal(formatActionKickoff(Date.parse('2026-10-31T20:00:00Z'), kickNow).tone, 'later');
 
 const mlbToday = { sport: 'MLB', invested: 2000, commenceMs: Date.parse('2026-09-18T23:06:00Z') };
 const cfbSat = { sport: 'CFB', invested: 4100, commenceMs: Date.parse('2026-09-19T23:00:00Z') };

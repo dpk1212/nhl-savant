@@ -11,7 +11,6 @@ if (typeof window !== 'undefined') {
 }
 
 const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-const commence = new Date(Date.now() + 90 * 60 * 1000).toISOString();
 const nowSec = Math.floor(Date.now() / 1000);
 
 function curve(end) {
@@ -154,6 +153,7 @@ const profiles = new Map([
 
 function ticket({
   sport, gameKey, away, home, side, wallet, invested, price, hoursAgo, market = 'ML', line = null,
+  kickHours = 4.5,
 }) {
   const slug = `${sport.toLowerCase()}-${gameKey.replace('_', '-')}-${today}`;
   return {
@@ -163,7 +163,7 @@ function ticket({
     v8_sizeRatio: null,
     entryAvgPrice: price,
     firstSeen: new Date(Date.now() - hoursAgo * 3600 * 1000).toISOString(),
-    commenceTime: commence,
+    commenceTime: new Date(Date.now() + kickHours * 3600 * 1000).toISOString(),
     slug,
     status: 'PENDING',
     ...(line == null ? {} : { entryLine: line, spreadLine: line }),
@@ -190,15 +190,15 @@ const sharpPositions = {
       positions: [
         ticket({
           sport: 'CS2', gameKey: 'ast_fire', away: 'Eternal Fire', home: 'Astralis',
-          side: 'away', wallet: 'b1b1b1', invested: 12100, price: 0.38, hoursAgo: 2,
+          side: 'away', wallet: 'b1b1b1', invested: 12100, price: 0.38, hoursAgo: 2, kickHours: -1.5,
         }),
         ticket({
           sport: 'CS2', gameKey: 'ast_fire', away: 'Eternal Fire', home: 'Astralis',
-          side: 'home', wallet: 'b1foe1', invested: 2400, price: 0.62, hoursAgo: 3,
+          side: 'home', wallet: 'b1foe1', invested: 2400, price: 0.62, hoursAgo: 3, kickHours: -1.5,
         }),
         ticket({
           sport: 'CS2', gameKey: 'ast_fire', away: 'Eternal Fire', home: 'Astralis',
-          side: 'home', wallet: 'b1foe2', invested: 1800, price: 0.6, hoursAgo: 4,
+          side: 'home', wallet: 'b1foe2', invested: 1800, price: 0.6, hoursAgo: 4, kickHours: -1.5,
         }),
       ],
     },
@@ -208,7 +208,7 @@ const sharpPositions = {
       positions: [
         ticket({
           sport: 'CS2', gameKey: 'tyl_ibs', away: 'TYLOO', home: 'Iberian Soul',
-          side: 'home', wallet: 'b2b2b2', invested: 7300, price: 0.59, hoursAgo: 3,
+          side: 'home', wallet: 'b2b2b2', invested: 7300, price: 0.59, hoursAgo: 3, kickHours: 2,
         }),
       ],
     },
@@ -220,11 +220,11 @@ const sharpPositions = {
       positions: [
         ticket({
           sport: 'NBA', gameKey: 'por_mem', away: 'Trail Blazers', home: 'Grizzlies',
-          side: 'home', wallet: 'c1c1c1', invested: 1400, price: 0.28, hoursAgo: 2,
+          side: 'home', wallet: 'c1c1c1', invested: 1400, price: 0.28, hoursAgo: 2, kickHours: 6,
         }),
         ticket({
           sport: 'NBA', gameKey: 'por_mem', away: 'Trail Blazers', home: 'Grizzlies',
-          side: 'away', wallet: 'c2c2c2', invested: 900, price: 0.72, hoursAgo: 5,
+          side: 'away', wallet: 'c2c2c2', invested: 900, price: 0.72, hoursAgo: 5, kickHours: 6,
         }),
       ],
     },

@@ -16,6 +16,7 @@ import {
   etDateKey,
   formatActionDateChip,
   actionDateParts,
+  formatActionKickoff,
   isActionTopPlay,
   actionCardReasons,
 } from '../../lib/confirmedActionDesk.js';
@@ -868,9 +869,13 @@ function TeamCrest({ name, sport, size = 42 }) {
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
-      background: src ? 'rgba(255,255,255,0.045)' : `linear-gradient(145deg, ${id.c1}, ${id.c2})`,
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+      background: src
+        ? 'radial-gradient(circle at 50% 42%, #ffffff 0%, #eceae4 72%)'
+        : `linear-gradient(145deg, ${id.c1}, ${id.c2})`,
+      border: src ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.08)',
+      boxShadow: src
+        ? '0 6px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.65)'
+        : 'inset 0 1px 0 rgba(255,255,255,0.06)',
     }}
     >
       {src ? (
@@ -880,7 +885,7 @@ function TeamCrest({ name, sport, size = 42 }) {
           width={size - 8}
           height={size - 8}
           onError={() => setFailed(true)}
-          style={{ width: size - 8, height: size - 8, objectFit: 'contain', display: 'block' }}
+          style={{ width: size - 10, height: size - 10, objectFit: 'contain', display: 'block' }}
         />
       ) : (
         <span style={{
@@ -1414,14 +1419,85 @@ function LeanMark({ lean }) {
   );
 }
 
+function KickoffMark({ ms, postedTs, isMobile }) {
+  const kick = formatActionKickoff(ms);
+  const posted = entryClock(postedTs);
+  const kicker = kick?.kicker || (posted ? 'Posted' : '');
+  const time = kick?.time || posted || '';
+  if (!kicker && !time) return null;
+  const kickerColor = kick?.tone === 'live'
+    ? '#34D399'
+    : (kick?.tone === 'today' || kick?.tone === 'next' ? '#E8D28A' : B.textMuted);
+  return (
+    <div
+      data-kickoff={kick?.tone || 'posted'}
+      style={{ width: isMobile ? 68 : 82, flexShrink: 0 }}
+    >
+      <div style={{
+        ...T.tiny,
+        color: kickerColor,
+        letterSpacing: '0.14em',
+        fontSize: '0.56rem',
+        lineHeight: 1.2,
+      }}
+      >
+        {kicker}
+      </div>
+      <div style={{
+        marginTop: 3,
+        fontSize: isMobile ? '0.92rem' : '1.05rem',
+        fontWeight: 720,
+        letterSpacing: '-0.03em',
+        lineHeight: 1.05,
+        color: B.text,
+        fontFeatureSettings: "'tnum'",
+      }}
+      >
+        {time}
+      </div>
+    </div>
+  );
+}
+
+function SideRow({ full, label, sport, picked, isMobile }) {
+  const crest = isMobile ? 32 : 38;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 10, minWidth: 0 }}>
+      <TeamCrest name={full} sport={sport} size={crest} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+        {picked ? (
+          <span aria-hidden style={{
+            width: 5, height: 5, borderRadius: 99, flexShrink: 0,
+            background: '#E8D28A', boxShadow: '0 0 8px #E8D28A',
+          }}
+          />
+        ) : (
+          <span aria-hidden style={{ width: 5, flexShrink: 0 }} />
+        )}
+        <span style={{
+          fontSize: picked ? (isMobile ? '1.02rem' : '1.16rem') : (isMobile ? '0.86rem' : '0.96rem'),
+          fontWeight: picked ? 720 : 560,
+          letterSpacing: '-0.032em',
+          lineHeight: 1.1,
+          color: picked ? B.text : B.textMuted,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+        >
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function ActionRow({
   row, sportFilter = 'All', isMobile, expanded, onToggle,
   saved = false, onToggleSave, canSave = false, lean = null,
 }) {
   const [hover, setHover] = useState(false);
-  const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
   if (!rowMatchesActionSport(row, sportFilter)) return null;
-  const clock = entryClock(row.ts);
   const topPlay = row.topPlay === true || isActionTopPlay(row);
   const trust = row.trust;
   const reduceMotion = typeof window !== 'undefined'
@@ -1479,48 +1555,57 @@ function ActionRow({
   const tierMark = row.skillLabel && String(row.skillLabel).length <= 2
     ? `Tier ${row.skillLabel}`
     : (row.skillLabel === 'Thin sample' ? 'Thin' : null);
+  const hasPair = !!(row.away && row.home);
+  const totalPick = row.side === 'over' || row.side === 'under';
+  const awayNick = hasPair ? shortTeamNick(row.away, row.home) : (row.team || '—');
+  const homeNick = hasPair ? shortTeamNick(row.home, row.away) : null;
+  const lineBit = Number.isFinite(Number(row.entryLine)) ? String(row.entryLine) : '';
+  const totalLabel = totalPick
+    ? `${row.side === 'over' ? 'Over' : 'Under'}${lineBit ? ` ${lineBit}` : ''}`
+    : null;
   const play = (
-    <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: isMobile ? '0.7rem' : '0.85rem' }}>
-      <TeamCrest name={row.team} sport={row.sport} size={isMobile ? 44 : 52} />
-      <div style={{ minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', marginBottom: '0.28rem', flexWrap: 'wrap' }}>
-        <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: sportColor(row.sport), boxShadow: `0 0 8px ${sportColor(row.sport)}` }} />
-        <span style={{ ...T.tiny, color: sportColor(row.sport), letterSpacing: '0.14em' }}>{row.sport}</span>
-        <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.12em' }}>{row.marketLabel || row.marketType}</span>
-        {tierMark ? (
-          <span style={{
-            ...T.tiny,
-            fontSize: row.skillKey === 'high' ? '0.68rem' : T.tiny.fontSize,
-            fontWeight: row.skillKey === 'high' ? 800 : 700,
-            color: row.skillKey === 'high' ? '#E8D28A' : B.textMuted,
-            letterSpacing: '0.12em',
-          }}
-          >
-            {tierMark}
-          </span>
-        ) : null}
-        <LeanMark lean={lean} />
-      </div>
-      <div style={{
-        ...T.name,
-        color: B.text,
-        fontSize: isMobile ? '1.28rem' : '1.55rem',
-        fontWeight: 640,
-        letterSpacing: '-0.038em',
-        lineHeight: 1.05,
-      }}
-      >
-        {row.team}
-      </div>
-      <div style={{
-        ...T.body, color: B.textMuted, marginTop: '0.22rem',
-        whiteSpace: isMobile ? 'normal' : 'nowrap',
-        overflow: 'hidden',
-        textOverflow: isMobile ? 'clip' : 'ellipsis',
-      }}
-      >
-        <MatchupLine away={row.away} home={row.home} side={row.side} fallback={matchup} />
-      </div>
+    <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14 }}>
+      <KickoffMark ms={row.commenceMs} postedTs={row.ts} isMobile={isMobile} />
+      <div style={{ minWidth: 0, flex: 1 }}>
+        {hasPair ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 6 : 7 }}>
+            <SideRow full={row.away} label={awayNick} sport={row.sport} picked={!totalPick && row.side === 'away'} isMobile={isMobile} />
+            {totalLabel ? (
+              <div style={{
+                marginLeft: (isMobile ? 32 : 38) + (isMobile ? 8 : 10) + 11,
+                fontSize: isMobile ? '0.92rem' : '1.02rem',
+                fontWeight: 750,
+                letterSpacing: '-0.03em',
+                lineHeight: 1,
+                color: '#E8D28A',
+              }}
+              >
+                {totalLabel}
+              </div>
+            ) : null}
+            <SideRow full={row.home} label={homeNick} sport={row.sport} picked={!totalPick && row.side === 'home'} isMobile={isMobile} />
+          </div>
+        ) : (
+          <SideRow full={row.team} label={row.team || '—'} sport={row.sport} picked isMobile={isMobile} />
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', marginTop: '0.48rem', flexWrap: 'wrap' }}>
+          <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: sportColor(row.sport), boxShadow: `0 0 8px ${sportColor(row.sport)}` }} />
+          <span style={{ ...T.tiny, color: sportColor(row.sport), letterSpacing: '0.14em' }}>{row.sport}</span>
+          <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.12em' }}>{row.marketLabel || row.marketType}</span>
+          {tierMark ? (
+            <span style={{
+              ...T.tiny,
+              fontSize: row.skillKey === 'high' ? '0.68rem' : T.tiny.fontSize,
+              fontWeight: row.skillKey === 'high' ? 800 : 700,
+              color: row.skillKey === 'high' ? '#E8D28A' : B.textMuted,
+              letterSpacing: '0.12em',
+            }}
+            >
+              {tierMark}
+            </span>
+          ) : null}
+          <LeanMark lean={lean} />
+        </div>
       </div>
     </div>
   );
@@ -1552,9 +1637,7 @@ function ActionRow({
         </div>
       ) : null}
       <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.28rem', fontFeatureSettings: "'tnum'" }}>
-        {clock ? `${clock} ET` : '—'}
-        <span style={{ margin: '0 0.3rem', opacity: 0.45 }}>·</span>
-        {agoTxt(row.ts)}
+        {agoTxt(row.ts) === 'now' ? 'Just posted' : `${agoTxt(row.ts)} ago`}
       </div>
     </div>
   );
@@ -1579,7 +1662,7 @@ function ActionRow({
             display: 'flex',
             justifyContent: 'space-between',
             gap: isMobile ? '0.75rem' : '1.4rem',
-            alignItems: 'flex-start',
+            alignItems: 'center',
           }}
           >
             {play}

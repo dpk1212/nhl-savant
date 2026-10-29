@@ -70,6 +70,39 @@ export function actionDateParts(dateKey, todayKey) {
   return { kicker: wk, day };
 }
 
+function shiftEtDateKey(dateKey, days) {
+  const [y, m, d] = String(dateKey || '').split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return etDateKey(Date.UTC(y, m - 1, d + days, 17));
+}
+
+/**
+ * Game clock for an Action ticket. Live covers the same hold as the date rail.
+ * @returns {{ kicker: string, time: string, tone: 'live'|'today'|'next'|'later' } | null}
+ */
+export function formatActionKickoff(ms, nowMs = Date.now()) {
+  if (ms == null || ms === '') return null;
+  const t = Number(ms);
+  if (!Number.isFinite(t) || t <= 0) return null;
+  const time = new Date(t).toLocaleTimeString('en-US', {
+    timeZone: 'America/New_York',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  const key = etDateKey(t);
+  const today = etDateKey(nowMs);
+  if (t <= nowMs && (nowMs - t) <= LIVE_HOLD_MS) return { kicker: 'Live', time, tone: 'live' };
+  if (key && key === today) return { kicker: 'Today', time, tone: 'today' };
+  if (key && key === shiftEtDateKey(today, 1)) return { kicker: 'Tomorrow', time, tone: 'next' };
+  const when = new Date(t).toLocaleDateString('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  return { kicker: when, time, tone: 'later' };
+}
+
 export function parseActionCommenceMs(...cands) {
   for (const raw of cands) {
     if (raw == null || raw === '') continue;
