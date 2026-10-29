@@ -4,9 +4,9 @@ MLB predictions for Friday, October 23, 2026, powered by advanced data science. 
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
-Date: Oct 27 2026Oct 27
+Date: Oct 28 2026Oct 28
 
-[Oct 27, 8:00 PM ET\\
+[Oct 28, 8:00 PM ET\\
 \\
 R\\
 \\
@@ -18,7 +18,7 @@ E\\
 \\
 Brewers \\
 \\
-3 \\
+4 \\
 \\
 8 \\
 \\
@@ -28,15 +28,15 @@ Brewers \\
 \\
 Rays \\
 \\
+1 \\
+\\
 4 \\
 \\
-9 \\
-\\
-1 \\
+0 \\
 \\
 FINAL\\
 \\
-See Game Recap](https://www.dimers.com/mlb/predictions/2026_217_tb_mil)
+See Game Recap](https://www.dimers.com/mlb/predictions/2026_218_tb_mil)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -203,18 +203,6 @@ T&Cs apply.
 [Claim Now!](https://affiliates.routy.app/route/390629?affId=10159&ts=5008256&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/espn-bet-sportsbook)
-
-How to claim
-
-![logo](https://imgix.cosmicjs.com/b0dbfa50-9401-11f0-91b7-43b80d803b75-logo-prophetx-ac-v5-1.png?auto=format,compress&h=200)
-
-NEW
-
-T&Cs apply.
-
-[Claim Now!](https://prophetx.onelink.me/E5Yi/DIMERS?src=main-column&promo=true)
-
-[Read review](https://www.dimers.com/social-sportsbooks/get-prophet-x)
 
 How to claim
 
