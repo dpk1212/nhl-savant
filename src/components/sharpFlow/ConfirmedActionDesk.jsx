@@ -17,6 +17,7 @@ import {
   formatActionDateChip,
   actionDateParts,
   isActionTopPlay,
+  actionCardReasons,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import { shortTeamNick } from '../../utils/teamIdentity.js';
@@ -841,65 +842,32 @@ function ActionExpandPanel({ row, isMobile }) {
   );
 }
 
-/** One quiet line of the facts that change the bet. No chip boxes. */
+const REASON_TONE = {
+  gold: '#E8D28A',
+  green: '#34D399',
+  amber: '#F5B942',
+  red: '#F07178',
+  muted: '#94A3B8',
+};
+
+/** Verdicts that make a ticket one of the best, each with what the word means. */
 function SignalLine({ row, isMobile = false }) {
-  const ratio = Number.isFinite(row.displaySizeRatio) ? row.displaySizeRatio : row.sizeRatio;
-  const band = row.displaySizeBand || row.sizeBand;
-  const sizeLabel = row.displaySizeLabel || row.sizeLabel;
-  const hot = band === 'press' || (Number.isFinite(ratio) && ratio >= 1.5);
-  const cool = band === 'light' || (Number.isFinite(ratio) && ratio < 0.5);
-  const topPlay = row.topPlay === true || isActionTopPlay(row);
-  const oppN = Number(row.opposedBy) || 0;
-  const clear = row.opposed === 'clear';
-  const facts = [];
-
-  if (topPlay) facts.push({ key: 'top', text: 'Top play', color: '#E8D28A' });
-  if (Number.isFinite(ratio)) {
-    const word = sizeLabel && sizeLabel !== '—' ? sizeLabel : (hot ? 'press' : cool ? 'light' : 'usual');
-    facts.push({
-      key: 'size',
-      text: `${ratio.toFixed(1)}× ${word}`,
-      color: hot ? '#E8D28A' : (cool ? B.textMuted : B.textSec),
-    });
-  }
-  if (row.formText && row.formText !== '—') facts.push({ key: 'form', text: row.formText, color: B.textSec });
-  facts.push({
-    key: 'opp',
-    text: clear ? 'Unopposed' : (oppN > 1 ? `Sharp contested · ${oppN}` : 'Sharp contested'),
-    color: clear ? B.green : B.amber,
-  });
-  if (row.pinMove === 'with') facts.push({ key: 'pin', text: 'Line with', color: B.green });
-  if (row.pinMove === 'against') facts.push({ key: 'pin', text: 'Line against', color: B.red });
-  if (row.steam?.show && row.steam.tag) {
-    facts.push({
-      key: 'steam',
-      text: row.steam.goldConfirmed ? row.steam.tag : `Steam ${row.steam.tag}`,
-      color: row.steam.tier === 'gold' ? '#E8D28A' : B.green,
-    });
-  }
-
+  const { heroes, support, topPlay } = actionCardReasons(row);
   const l30 = Number.isFinite(row.l30Pnl) ? row.l30Pnl : null;
   const spark = row.l30ChipCurve?.length >= 5
     ? row.l30ChipCurve
     : (row.flatCurve?.length >= 5 ? row.flatCurve : null);
-  if (!facts.length && l30 == null && !spark) return null;
+  if (!heroes.length && !support.length && l30 == null && !spark) return null;
 
   const book = (l30 != null || spark) ? (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.45rem',
-      justifySelf: 'end',
-      marginTop: isMobile ? '0.15rem' : 0,
-    }}
-    >
-      {spark ? <FlatSpark points={spark} width={isMobile ? 64 : 56} height={18} /> : null}
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+      {spark ? <FlatSpark points={spark} width={isMobile ? 72 : 64} height={20} /> : null}
       {l30 != null ? (
         <span style={{
-          fontSize: '0.74rem',
+          fontSize: '0.78rem',
           fontWeight: 720,
           fontFeatureSettings: "'tnum'",
-          color: l30 >= 0 ? B.green : B.red,
+          color: l30 >= 0 ? '#34D399' : REASON_TONE.red,
           whiteSpace: 'nowrap',
         }}
         >
@@ -910,40 +878,82 @@ function SignalLine({ row, isMobile = false }) {
   ) : null;
 
   return (
-    <div
-      data-top-play={topPlay ? 'true' : undefined}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: (!isMobile && book) ? 'minmax(0, 1fr) auto' : 'minmax(0, 1fr)',
-        gap: '0.35rem 1.1rem',
-        alignItems: 'center',
-        marginTop: '0.85rem',
-        paddingTop: '0.72rem',
-        borderTop: '1px solid rgba(255,255,255,0.055)',
-      }}
-    >
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', rowGap: '0.28rem', minWidth: 0 }}>
-        {facts.map((f, i) => (
-          <span
-            key={f.key}
-            style={{
+    <div data-top-play={topPlay ? 'true' : undefined} style={{ marginTop: '0.95rem' }}>
+      {heroes.length ? (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile
+              ? '1fr 1fr'
+              : `repeat(${heroes.length}, minmax(0, 220px))`,
+            justifyContent: 'start',
+            gap: isMobile ? '0.85rem 0.85rem' : '0.35rem 0',
+            paddingTop: '0.85rem',
+            borderTop: '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          {heroes.map((h, i) => (
+            <div
+              key={h.key}
+              data-reason={h.key}
+              style={{
+                minWidth: 0,
+                paddingLeft: !isMobile && i > 0 ? '1.15rem' : 0,
+                borderLeft: !isMobile && i > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+              }}
+            >
+              <div style={{
+                fontSize: isMobile ? '1.02rem' : '1.12rem',
+                fontWeight: 650,
+                letterSpacing: '-0.028em',
+                lineHeight: 1.1,
+                color: REASON_TONE[h.tone] || REASON_TONE.muted,
+                textTransform: h.key === 'size' ? 'capitalize' : 'none',
+                fontFeatureSettings: "'tnum'",
+              }}
+              >
+                {h.title}
+              </div>
+              <div style={{
+                marginTop: '0.28rem',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                lineHeight: 1.35,
+                color: B.textMuted,
+              }}
+              >
+                {h.sub}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {(support.length || book) ? (
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.35rem 0.85rem',
+          marginTop: heroes.length ? '0.8rem' : 0,
+          paddingTop: heroes.length ? 0 : '0.72rem',
+          borderTop: heroes.length ? 'none' : '1px solid rgba(255,255,255,0.06)',
+        }}
+        >
+          {support.length ? (
+            <span style={{
               fontSize: '0.74rem',
               fontWeight: 640,
-              letterSpacing: '0.005em',
-              color: f.color,
+              color: B.textSec,
               fontFeatureSettings: "'tnum'",
-              whiteSpace: 'nowrap',
-              textTransform: f.key === 'size' ? 'capitalize' : 'none',
+              textTransform: 'capitalize',
             }}
-          >
-            {f.text}
-            {i < facts.length - 1 ? (
-              <span aria-hidden style={{ color: 'rgba(148,163,184,0.45)', fontWeight: 500, padding: '0 0.38rem' }}>·</span>
-            ) : null}
-          </span>
-        ))}
-      </div>
-      {isMobile ? <span style={{ display: 'flex', justifyContent: 'flex-end' }}>{book}</span> : book}
+            >
+              {support.join('  ·  ')}
+            </span>
+          ) : <span />}
+          {book ? <span style={{ marginLeft: 'auto' }}>{book}</span> : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1368,7 +1378,16 @@ function ActionRow({
         <span style={{ ...T.tiny, color: sportColor(row.sport), letterSpacing: '0.14em' }}>{row.sport}</span>
         <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.12em' }}>{row.marketLabel || row.marketType}</span>
         {tierMark ? (
-          <span style={{ ...T.tiny, color: row.skillKey === 'high' ? '#E8D28A' : B.textMuted, letterSpacing: '0.12em' }}>{tierMark}</span>
+          <span style={{
+            ...T.tiny,
+            fontSize: row.skillKey === 'high' ? '0.68rem' : T.tiny.fontSize,
+            fontWeight: row.skillKey === 'high' ? 800 : 700,
+            color: row.skillKey === 'high' ? '#E8D28A' : B.textMuted,
+            letterSpacing: '0.12em',
+          }}
+          >
+            {tierMark}
+          </span>
         ) : null}
         <LeanMark lean={lean} />
       </div>
@@ -1453,9 +1472,9 @@ function ActionRow({
             {play}
             {price}
           </div>
+          <SignalLine row={row} isMobile={isMobile} />
           <TrustLine trust={trust} />
           <CellHistLine text={row.cellHistText} />
-          <SignalLine row={row} isMobile={isMobile} />
         </div>
       </button>
       <PortfolioAdd saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />

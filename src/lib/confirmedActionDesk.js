@@ -1150,3 +1150,113 @@ export function buildConfirmedActionMarquee(rows, limit = 18) {
       opposed: r.opposed,
     }));
 }
+
+/** L10 only. A 2-0 sample is not enough to feature the form. */
+function l10Record(row) {
+  const block = row?.form?.l10;
+  const w = Number(block?.w);
+  const l = Number(block?.l);
+  if (Number.isFinite(w) && Number.isFinite(l) && (w + l) > 0) {
+    return { w, l, n: w + l };
+  }
+  return null;
+}
+
+/**
+ * Up to three verdicts that decide whether a ticket is one of the best.
+ * Field is always there. Top play, a moving line, an extreme size, and a
+ * real L10 fill the other seats. Form drops first when the card is full.
+ * @returns {{ heroes: object[], support: string[], topPlay: boolean }}
+ */
+export function actionCardReasons(row) {
+  const ratio = Number.isFinite(row?.displaySizeRatio) ? row.displaySizeRatio : row?.sizeRatio;
+  const band = row?.displaySizeBand || row?.sizeBand;
+  const sizeLabel = row?.displaySizeLabel || row?.sizeLabel;
+  const hot = band === 'press' || (Number.isFinite(ratio) && ratio >= 1.5);
+  const cool = band === 'light' || (Number.isFinite(ratio) && ratio < 0.5);
+  const topPlay = row?.topPlay === true || isActionTopPlay(row);
+  const oppN = Number(row?.opposedBy) || 0;
+  const clear = row?.opposed === 'clear';
+  const word = sizeLabel && sizeLabel !== '—' ? sizeLabel : (hot ? 'press' : cool ? 'light' : 'usual');
+  const sizeText = Number.isFinite(ratio) ? `${ratio.toFixed(1)}× ${word}` : null;
+  const rec = l10Record(row);
+  const formRate = rec ? rec.w / rec.n : null;
+  const formHot = rec && rec.n >= 8 && formRate >= 0.65;
+  const formCold = rec && rec.n >= 8 && formRate <= 0.4;
+
+  const heroes = [];
+  if (topPlay) {
+    heroes.push({
+      key: 'top',
+      title: 'Top play',
+      sub: 'Market specialist',
+      tone: 'gold',
+    });
+  }
+  heroes.push(clear
+    ? {
+      key: 'field',
+      title: 'Unopposed',
+      sub: 'No sharp on the other side',
+      tone: 'green',
+    }
+    : {
+      key: 'field',
+      title: oppN > 1 ? `Contested · ${oppN}` : 'Contested',
+      sub: oppN > 1 ? `${oppN} sharps on the other side` : 'A sharp on the other side',
+      tone: 'amber',
+    });
+
+  const steamOn = !!(row?.steam?.show && row.steam.tag);
+  const steamText = steamOn
+    ? (row.steam.goldConfirmed ? row.steam.tag : `Steam ${row.steam.tag}`)
+    : null;
+  if (row?.pinMove === 'with' || steamOn) {
+    heroes.push({
+      key: 'line',
+      title: 'Line with',
+      sub: steamText || 'Price moving this way',
+      tone: row?.steam?.tier === 'gold' ? 'gold' : 'green',
+    });
+  } else if (row?.pinMove === 'against') {
+    heroes.push({
+      key: 'line',
+      title: 'Line against',
+      sub: 'Price moving the other way',
+      tone: 'red',
+    });
+  }
+
+  if (sizeText && (hot || cool)) {
+    heroes.push({
+      key: 'size',
+      title: sizeText,
+      sub: hot ? 'Bigger than their usual' : 'Smaller than their usual',
+      tone: hot ? 'gold' : 'muted',
+    });
+  }
+
+  if (rec && (formHot || formCold)) {
+    heroes.push({
+      key: 'form',
+      title: `L10 ${rec.w}-${rec.l}`,
+      sub: formHot ? `${rec.w} of their last ${rec.n}` : `Only ${rec.w} of their last ${rec.n}`,
+      tone: formHot ? 'green' : 'red',
+    });
+  }
+
+  const dropOrder = ['form', 'size', 'line'];
+  while (heroes.length > 3) {
+    const drop = dropOrder.find((key) => heroes.some((h) => h.key === key));
+    if (!drop) break;
+    heroes.splice(heroes.findIndex((h) => h.key === drop), 1);
+  }
+
+  const shown = new Set(heroes.map((h) => h.key));
+  const support = [];
+  if (sizeText && !shown.has('size')) support.push(sizeText);
+  if (rec && !shown.has('form')) support.push(`L10 ${rec.w}-${rec.l}`);
+  else if (!rec && row?.formText && row.formText !== '—') support.push(row.formText);
+
+  return { heroes, support, topPlay };
+}
