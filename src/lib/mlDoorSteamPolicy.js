@@ -32,7 +32,13 @@
 export const ML_DOOR_STEAM_FROM = '2026-10-29';
 export const ML_DOOR_NEVER_MUTED_BY = 'ml-door-never';
 export const ML_DOOR_RESCUE_BY = 'ml-door-rescue';
+export const ML_DOOR_STAKE_TIER = 'ML-DOOR';
 export const ML_DOOR_MAX_UNITS = 6;
+
+/** Actions are lowercase. The cron must use this, not a capital compare. */
+export function mlDoorKind(action) {
+  return String(action || '').toLowerCase();
+}
 
 const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
 const UNCOUNTED = new Set(['no_wallet_details', 'no_wallet_profiles', 'no_wallet_rows']);

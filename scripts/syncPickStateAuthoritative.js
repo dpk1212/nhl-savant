@@ -351,7 +351,9 @@ import {
 import { oddsCap } from '../src/lib/oddsCap.js';
 import {
   applyMlDoorSteamPolicy,
+  mlDoorKind,
   mlDoorSteamStamp,
+  ML_DOOR_STAKE_TIER,
   ML_DOOR_UNCOUNTED_REASONS,
 } from '../src/lib/mlDoorSteamPolicy.js';
 import {
@@ -4201,8 +4203,8 @@ async function createMissingLockedPicks({
             && !(pressEvalCreate?.floorFade?.status === 'VETO' && isFadeFLive(TARGET_DATE)),
         });
         peakUnitsApplied = mlDoorPolicyCreate.units;
-        if (mlDoorPolicyCreate.action === 'CUT') hcStakeTierCreate = 'MONITORING';
-        if (mlDoorPolicyCreate.action === 'RESCUE') hcStakeTierCreate = 'ML-DOOR';
+        if (mlDoorKind(mlDoorPolicyCreate.action) === 'cut') hcStakeTierCreate = 'MONITORING';
+        if (mlDoorKind(mlDoorPolicyCreate.action) === 'rescue') hcStakeTierCreate = ML_DOOR_STAKE_TIER;
       }
       let top3PolicyCreate = null;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -4598,10 +4600,10 @@ async function createMissingLockedPicks({
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
-      } else if (mlDoorPolicyCreate?.action === 'CUT') {
+      } else if (mlDoorKind(mlDoorPolicyCreate?.action) === 'cut') {
         v8Stamps.mutedBy = mlDoorPolicyCreate.mutedBy;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
-      } else if (mlDoorPolicyCreate?.action === 'RESCUE') {
+      } else if (mlDoorKind(mlDoorPolicyCreate?.action) === 'rescue') {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = mlDoorPolicyCreate.rescuedBy;
       } else if (top3PolicyCreate?.action === 'rescue' || top3PolicyCreate?.action === 'floor') {
@@ -6471,8 +6473,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         && !(pressEval?.floorFade?.status === 'VETO' && isFadeFLive(pickDate)),
     });
     finalUnitsApplied = mlDoorPolicy.units;
-    if (mlDoorPolicy.action === 'CUT') hcStakeTier = 'MONITORING';
-    if (mlDoorPolicy.action === 'RESCUE') hcStakeTier = 'ML-DOOR';
+    if (mlDoorKind(mlDoorPolicy.action) === 'cut') hcStakeTier = 'MONITORING';
+    if (mlDoorKind(mlDoorPolicy.action) === 'rescue') hcStakeTier = ML_DOOR_STAKE_TIER;
   }
 
   let top3Policy = null;
@@ -6723,10 +6725,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
-  } else if (mlDoorPolicy?.action === 'CUT') {
+  } else if (mlDoorKind(mlDoorPolicy?.action) === 'cut') {
     patch.mutedBy = mlDoorPolicy.mutedBy;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
-  } else if (mlDoorPolicy?.action === 'RESCUE') {
+  } else if (mlDoorKind(mlDoorPolicy?.action) === 'rescue') {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = mlDoorPolicy.rescuedBy;
   } else if (top3Policy?.action === 'rescue' || top3Policy?.action === 'floor') {

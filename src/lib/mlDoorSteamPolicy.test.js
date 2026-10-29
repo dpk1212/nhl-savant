@@ -4,6 +4,7 @@ import {
   applyMlDoorSteamPolicy,
   classifyMlDoorTiming,
   mlDoorIsGold,
+  mlDoorKind,
   mlDoorSteamOn,
 } from './mlDoorSteamPolicy.js';
 
@@ -93,6 +94,8 @@ test('cut to 0u: never, Door-2 margin exactly +1, price under +200', () => {
     tapeLog: [FIRST_OFF, LOCK_OFF],
   });
   assert.equal(cut.action, 'cut');
+  assert.equal(mlDoorKind(cut.action), 'cut');
+  assert.equal(mlDoorKind('CUT'), 'cut');
   assert.equal(cut.units, 0);
   assert.equal(cut.mutedBy, 'ml-door-never');
   assert.equal(apply({
@@ -127,6 +130,8 @@ test('rescue 1u only for a press-gate favorite, never, Door-2 even or +2', () =>
     pressGateMuted: true,
   });
   assert.equal(even.action, 'rescue');
+  assert.equal(mlDoorKind(even.action), 'rescue');
+  assert.equal(mlDoorKind('RESCUE'), 'rescue');
   assert.equal(even.units, 1);
   assert.equal(even.rescuedBy, 'ml-door-rescue');
   assert.equal(apply({
