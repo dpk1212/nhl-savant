@@ -1216,6 +1216,9 @@ export const AGS_V12_STAKE_TIER_META = {
   'MINI-':       { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
   DISSENT:       { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
   WINNER:        { label: 'SHARP PLAY', short: 'WIN',  color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 4,                     ribbon: null, stars: 4 },
+  // 2026-10-29: ML-DOOR — press-gate favorite, steam never, Door-2 even or
+  // +2, rescued to 1u. The card shows cron finalUnits.
+  'ML-DOOR':     { label: 'LEAN',      short: 'DOOR',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
   MONITORING:    { label: 'MONITORING', short: 'WATCH', color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 0,                     ribbon: null, stars: 0 },
   FADE:          { label: 'PASS',      short: 'PASS',   color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   units: 0,                     ribbon: null, stars: 0 },
 };
