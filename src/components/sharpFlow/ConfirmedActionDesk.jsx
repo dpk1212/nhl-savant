@@ -3,7 +3,7 @@
  * Sparse header. Dense, scannable rows. No product lectures.
  */
 import React, { useEffect, useMemo, useState, memo } from 'react';
-import { Activity, ChevronDown, Star } from 'lucide-react';
+import { Activity, ChevronDown } from 'lucide-react';
 import {
   buildConfirmedActionRows,
   mergePortfolioActionRows,
@@ -19,7 +19,6 @@ import {
   isActionTopPlay,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
-import SteamTag from './cards/SteamTag';
 import { shortTeamNick } from '../../utils/teamIdentity.js';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
@@ -109,13 +108,6 @@ function sportColor(sport) {
   if (sport === 'CBB') return '#FF6B35';
   if (sport === 'CFB') return '#BF5700';
   return B.gold;
-}
-
-function skillTone(key) {
-  if (key === 'high') return { color: B.gold, bg: B.goldDim, border: B.goldBorder };
-  if (key === 'mid') return { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' };
-  if (key === 'low') return { color: B.textSec, bg: 'rgba(148,163,184,0.08)', border: B.border };
-  return { color: B.textMuted, bg: 'rgba(100,116,139,0.08)', border: B.borderSubtle };
 }
 
 const SORTS = [
@@ -849,88 +841,110 @@ function ActionExpandPanel({ row, isMobile }) {
   );
 }
 
-function Chip({ children, tone, dataTopPlay = false }) {
-  return (
-    <span
-      data-top-play={dataTopPlay ? 'true' : undefined}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.28rem',
-        padding: '0.22rem 0.5rem',
-        borderRadius: '6px',
-        ...T.micro,
-        fontWeight: 700,
-        color: tone?.color || B.textSec,
-        background: tone?.bg || 'rgba(148,163,184,0.07)',
-        border: `1px solid ${tone?.border || B.borderSubtle}`,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {children}
-    </span>
-  );
-}
+/** One quiet line of the facts that change the bet. No chip boxes. */
+function SignalLine({ row, isMobile = false }) {
+  const ratio = Number.isFinite(row.displaySizeRatio) ? row.displaySizeRatio : row.sizeRatio;
+  const band = row.displaySizeBand || row.sizeBand;
+  const sizeLabel = row.displaySizeLabel || row.sizeLabel;
+  const hot = band === 'press' || (Number.isFinite(ratio) && ratio >= 1.5);
+  const cool = band === 'light' || (Number.isFinite(ratio) && ratio < 0.5);
+  const topPlay = row.topPlay === true || isActionTopPlay(row);
+  const oppN = Number(row.opposedBy) || 0;
+  const clear = row.opposed === 'clear';
+  const facts = [];
 
-/** Relative size vs this wallet's usual — visual punch, not just "1.6× press". */
-function SizeBar({ ratio, band, label }) {
-  if (!Number.isFinite(ratio)) return null;
-  const cap = 2.5;
-  const pct = Math.max(8, Math.min(100, (ratio / cap) * 100));
-  const usualPct = (1 / cap) * 100;
-  const hot = band === 'press' || ratio >= 1.5;
-  const cool = band === 'light' || ratio < 0.5;
-  const fill = hot
-    ? `linear-gradient(90deg, #B8860B 0%, ${B.gold} 55%, #F5D76E 100%)`
-    : cool
-      ? `linear-gradient(90deg, ${B.textSubtle} 0%, ${B.textMuted} 100%)`
-      : `linear-gradient(90deg, #0EA5E9 0%, ${B.green} 100%)`;
-  const word = label && label !== '—' ? label : (hot ? 'press' : cool ? 'light' : 'usual');
+  if (topPlay) facts.push({ key: 'top', text: 'Top play', color: '#E8D28A' });
+  if (Number.isFinite(ratio)) {
+    const word = sizeLabel && sizeLabel !== '—' ? sizeLabel : (hot ? 'press' : cool ? 'light' : 'usual');
+    facts.push({
+      key: 'size',
+      text: `${ratio.toFixed(1)}× ${word}`,
+      color: hot ? '#E8D28A' : (cool ? B.textMuted : B.textSec),
+    });
+  }
+  if (row.formText && row.formText !== '—') facts.push({ key: 'form', text: row.formText, color: B.textSec });
+  facts.push({
+    key: 'opp',
+    text: clear ? 'Unopposed' : (oppN > 1 ? `Sharp contested · ${oppN}` : 'Sharp contested'),
+    color: clear ? B.green : B.amber,
+  });
+  if (row.pinMove === 'with') facts.push({ key: 'pin', text: 'Line with', color: B.green });
+  if (row.pinMove === 'against') facts.push({ key: 'pin', text: 'Line against', color: B.red });
+  if (row.steam?.show && row.steam.tag) {
+    facts.push({
+      key: 'steam',
+      text: row.steam.goldConfirmed ? row.steam.tag : `Steam ${row.steam.tag}`,
+      color: row.steam.tier === 'gold' ? '#E8D28A' : B.green,
+    });
+  }
 
-  return (
+  const l30 = Number.isFinite(row.l30Pnl) ? row.l30Pnl : null;
+  const spark = row.l30ChipCurve?.length >= 5
+    ? row.l30ChipCurve
+    : (row.flatCurve?.length >= 5 ? row.flatCurve : null);
+  if (!facts.length && l30 == null && !spark) return null;
+
+  const book = (l30 != null || spark) ? (
     <span style={{
       display: 'inline-flex',
       alignItems: 'center',
       gap: '0.45rem',
-      padding: '0.28rem 0.55rem 0.28rem 0.5rem',
-      borderRadius: '7px',
-      background: hot ? B.goldDim : 'rgba(148,163,184,0.06)',
-      border: `1px solid ${hot ? B.goldBorder : B.borderSubtle}`,
-      minWidth: 118,
-    }}>
-      <span style={{ position: 'relative', width: 52, height: 7, flexShrink: 0 }}>
+      justifySelf: 'end',
+      marginTop: isMobile ? '0.15rem' : 0,
+    }}
+    >
+      {spark ? <FlatSpark points={spark} width={isMobile ? 64 : 56} height={18} /> : null}
+      {l30 != null ? (
         <span style={{
-          position: 'absolute', inset: 0, borderRadius: 99,
-          background: 'rgba(148,163,184,0.14)',
-        }} />
-        {/* usual marker */}
-        <span style={{
-          position: 'absolute', top: -2, bottom: -2, left: `${usualPct}%`,
-          width: 1.5, borderRadius: 1,
-          background: 'rgba(248,250,252,0.35)',
-          transform: 'translateX(-50%)',
-        }} />
-        <span style={{
-          position: 'absolute', left: 0, top: 0, bottom: 0,
-          width: `${pct}%`, borderRadius: 99,
-          background: fill,
-          boxShadow: hot ? '0 0 10px rgba(212,175,55,0.45)' : 'none',
-        }} />
-      </span>
-      <span style={{
-        ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
-        color: hot ? B.gold : B.text,
-        lineHeight: 1,
-      }}>
-        {ratio.toFixed(1)}×
-      </span>
-      <span style={{
-        ...T.tiny, color: hot ? B.gold : B.textMuted,
-        letterSpacing: '0.04em', textTransform: 'capitalize',
-      }}>
-        {word}
-      </span>
+          fontSize: '0.74rem',
+          fontWeight: 720,
+          fontFeatureSettings: "'tnum'",
+          color: l30 >= 0 ? B.green : B.red,
+          whiteSpace: 'nowrap',
+        }}
+        >
+          L30 {fmtBookPnl(l30)}
+        </span>
+      ) : null}
     </span>
+  ) : null;
+
+  return (
+    <div
+      data-top-play={topPlay ? 'true' : undefined}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: (!isMobile && book) ? 'minmax(0, 1fr) auto' : 'minmax(0, 1fr)',
+        gap: '0.35rem 1.1rem',
+        alignItems: 'center',
+        marginTop: '0.85rem',
+        paddingTop: '0.72rem',
+        borderTop: '1px solid rgba(255,255,255,0.055)',
+      }}
+    >
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', rowGap: '0.28rem', minWidth: 0 }}>
+        {facts.map((f, i) => (
+          <span
+            key={f.key}
+            style={{
+              fontSize: '0.74rem',
+              fontWeight: 640,
+              letterSpacing: '0.005em',
+              color: f.color,
+              fontFeatureSettings: "'tnum'",
+              whiteSpace: 'nowrap',
+              textTransform: f.key === 'size' ? 'capitalize' : 'none',
+            }}
+          >
+            {f.text}
+            {i < facts.length - 1 ? (
+              <span aria-hidden style={{ color: 'rgba(148,163,184,0.45)', fontWeight: 500, padding: '0 0.38rem' }}>·</span>
+            ) : null}
+          </span>
+        ))}
+      </div>
+      {isMobile ? <span style={{ display: 'flex', justifyContent: 'flex-end' }}>{book}</span> : book}
+    </div>
   );
 }
 
@@ -1128,77 +1142,6 @@ const ActionTape = memo(function ActionTape({ items }) {
   );
 });
 
-function signalChips(row) {
-  const sk = skillTone(row.skillKey);
-  const topPlay = row.topPlay === true || isActionTopPlay(row);
-  const oppN = Number(row.opposedBy) || 0;
-  const opp = row.opposed === 'clear'
-    ? { label: 'Unopposed', tone: { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' } }
-    : {
-      label: oppN > 1 ? `Sharp contested · ${oppN}` : 'Sharp contested',
-      tone: { color: B.amber, bg: B.amberDim, border: 'rgba(245,158,11,0.3)' },
-    };
-  const pin = row.pinMove === 'with'
-    ? { label: 'Line with', tone: { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' } }
-    : row.pinMove === 'against'
-      ? { label: 'Line against', tone: { color: B.red, bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)' } }
-      : null;
-
-  return (
-    <>
-      {topPlay && (
-        <Chip tone={{ color: B.gold, bg: B.goldDim, border: B.goldBorder }} dataTopPlay>
-          Top play
-        </Chip>
-      )}
-      <Chip tone={sk}>
-        <span style={{ opacity: 0.65, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.55rem' }}>
-          Sharp tier
-        </span>
-        {row.skillLabel}
-      </Chip>
-      <SizeBar
-        ratio={Number.isFinite(row.displaySizeRatio) ? row.displaySizeRatio : row.sizeRatio}
-        band={row.displaySizeBand || row.sizeBand}
-        label={row.displaySizeLabel || row.sizeLabel}
-      />
-      {row.formText !== '—' && <Chip>{row.formText}</Chip>}
-      <Chip tone={opp.tone}>{opp.label}</Chip>
-      {pin && <Chip tone={pin.tone}>{pin.label}</Chip>}
-      {row.steam?.show && (
-        <Chip tone={row.steam.tier === 'gold'
-          ? { color: B.gold, bg: B.goldDim, border: B.goldBorder }
-          : { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' }}>
-          {row.steam.goldConfirmed ? row.steam.tag : `Steam ${row.steam.tag}`}
-        </Chip>
-      )}
-      {Number.isFinite(row.l30Pnl) ? (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-          <FlatSpark points={row.l30ChipCurve?.length >= 2 ? row.l30ChipCurve : [0, row.l30Pnl]} />
-          <span style={{
-            ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
-            color: row.l30Pnl >= 0 ? B.green : B.red,
-          }}>
-            L30 {fmtBookPnl(row.l30Pnl)}
-          </span>
-        </span>
-      ) : row.flatCurve?.length >= 5 ? (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-          <FlatSpark points={row.flatCurve} />
-          {Number.isFinite(row.flatEnd) && (
-            <span style={{
-              ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-              color: row.flatEnd >= 0 ? B.green : B.red,
-            }}>
-              {row.flatEnd >= 0 ? '+' : ''}{row.flatEnd.toFixed(1)}
-            </span>
-          )}
-        </span>
-      ) : null}
-    </>
-  );
-}
-
 /**
  * Quiet proof line under the ticket — not a second card deck.
  * Record anchors; ROI / wins / beat-close trail as secondary type.
@@ -1282,28 +1225,61 @@ function CellHistLine({ text }) {
   );
 }
 
-function SaveStar({ saved, onToggle, disabled }) {
+function PortfolioAdd({ saved, onToggle, disabled }) {
+  const label = saved ? 'In your portfolio' : 'Add to portfolio';
   return (
     <button
       type="button"
-      title={saved ? 'Remove from My Sharps' : 'Add to My Sharps'}
+      data-portfolio={saved ? 'saved' : 'add'}
+      title={saved ? 'Remove this sharp from your portfolio' : 'Add this sharp to your portfolio'}
       aria-pressed={saved}
+      aria-label={saved ? 'Remove this sharp from your portfolio' : 'Add this sharp to your portfolio'}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!disabled) onToggle();
+        if (!disabled) onToggle?.();
       }}
       style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        width: '100%',
+        margin: 0,
+        padding: '0.72rem 1rem',
         border: 'none',
-        background: 'transparent',
-        padding: 0,
+        borderTop: `1px solid ${saved ? 'rgba(212,175,55,0.28)' : 'rgba(232,210,138,0.18)'}`,
+        background: saved
+          ? 'linear-gradient(180deg, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.06) 100%)'
+          : 'linear-gradient(180deg, rgba(232,210,138,0.09) 0%, rgba(232,210,138,0.025) 100%)',
+        color: '#E8D28A',
+        fontFamily: 'inherit',
+        fontSize: '0.8rem',
+        fontWeight: 680,
+        letterSpacing: '0.01em',
         cursor: disabled ? 'default' : 'pointer',
-        display: 'grid',
-        placeItems: 'center',
-        color: saved ? B.gold : B.textSubtle,
+        opacity: disabled ? 0.45 : 1,
       }}
     >
-      <Star size={14} fill={saved ? B.gold : 'none'} color={saved ? B.gold : B.textSubtle} />
+      <span
+        aria-hidden
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 18,
+          height: 18,
+          borderRadius: 99,
+          border: '1px solid rgba(232,210,138,0.55)',
+          background: saved ? 'rgba(232,210,138,0.18)' : 'transparent',
+          fontSize: '0.78rem',
+          lineHeight: 1,
+          fontWeight: 700,
+        }}
+      >
+        {saved ? '✓' : '+'}
+      </span>
+      {label}
     </button>
   );
 }
@@ -1329,25 +1305,23 @@ function ActionRow({
   if (!rowMatchesActionSport(row, sportFilter)) return null;
   const clock = entryClock(row.ts);
   const topPlay = row.topPlay === true || isActionTopPlay(row);
-  const accent = topPlay ? B.gold
-    : row.skillKey === 'high' ? B.gold
-      : row.skillKey === 'mid' ? B.green
-        : B.border;
   const trust = row.trust;
   const reduceMotion = typeof window !== 'undefined'
     && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
   const shell = {
-    borderRadius: '12px',
-    border: `1px solid ${expanded || hover ? B.goldBorder : B.border}`,
-    borderLeft: `3px solid ${accent}`,
+    position: 'relative',
+    borderRadius: 18,
+    border: `1px solid ${expanded || hover ? 'rgba(212,175,55,0.42)' : 'rgba(255,255,255,0.07)'}`,
     background: hover || expanded
-      ? `linear-gradient(105deg, ${B.cardHover} 0%, ${B.card} 70%)`
-      : B.card,
-    boxShadow: hover || expanded ? '0 10px 32px rgba(0,0,0,0.35)' : 'none',
+      ? 'linear-gradient(165deg, rgba(212,175,55,0.07) 0%, #141820 38%, #10141c 100%)'
+      : 'linear-gradient(165deg, rgba(255,255,255,0.035) 0%, #12161e 38%, #0e1218 100%)',
+    boxShadow: hover || expanded
+      ? '0 22px 48px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.07)'
+      : '0 10px 28px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.05)',
     transition: reduceMotion
       ? 'none'
-      : 'border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
+      : 'border-color 180ms ease, box-shadow 180ms ease, background 180ms ease',
     overflow: 'hidden',
   };
 
@@ -1381,142 +1355,111 @@ function ActionRow({
       padding: 0,
       cursor: 'pointer',
       color: 'inherit',
+      font: 'inherit',
     },
   };
-
-  if (isMobile) {
-    return (
-      <div data-action-sport={row.sport} data-top-play={topPlay ? 'true' : undefined} style={shell}>
-        <button {...headerBtnProps}>
-          <div style={{ padding: '1rem 1rem 0.85rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginBottom: '0.3rem' }}>
-                  <SaveStar saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
-                  <LeanMark lean={lean} />
-                  <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
-                  <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                  <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
-                  <SteamTag steam={row.steam} compact />
-                </div>
-                <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>
-                  <MatchupLine away={row.away} home={row.home} side={row.side} fallback={matchup} />
-                </div>
-                <TrustLine trust={trust} />
-                <CellHistLine text={row.cellHistText} />
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.2rem' }}>
-                  {chevron}
-                </div>
-                <div style={{ ...T.money, color: B.gold, fontSize: '1.25rem', fontFeatureSettings: "'tnum'" }}>
-                  {fmtVol(row.invested)}
-                </div>
-                {(row.americanLabel || Number.isFinite(row.cents)) && (
-                  <div style={{ ...T.odds, color: B.text, marginTop: '0.15rem', fontFeatureSettings: "'tnum'", fontSize: '0.9rem' }}>
-                    {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
-                    {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
-                    {row.americanLabel || ''}
-                  </div>
-                )}
-                <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.2rem', fontFeatureSettings: "'tnum'" }}>
-                  {clock ? `${clock} ET` : ''}{clock ? ' · ' : ''}{agoTxt(row.ts)}
-                </div>
-              </div>
-            </div>
-            <div style={{
-              display: 'flex', flexWrap: 'wrap', gap: '0.35rem',
-              marginTop: '0.75rem', paddingTop: '0.7rem',
-              borderTop: `1px solid ${B.borderSubtle}`,
-            }}>
-              {signalChips(row)}
-            </div>
-          </div>
-        </button>
-        {expanded && <ActionExpandPanel row={row} isMobile />}
+  const tierMark = row.skillLabel && String(row.skillLabel).length <= 2
+    ? `Tier ${row.skillLabel}`
+    : (row.skillLabel === 'Thin sample' ? 'Thin' : null);
+  const play = (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+        <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: sportColor(row.sport), boxShadow: `0 0 8px ${sportColor(row.sport)}` }} />
+        <span style={{ ...T.tiny, color: sportColor(row.sport), letterSpacing: '0.14em' }}>{row.sport}</span>
+        <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.12em' }}>{row.marketLabel || row.marketType}</span>
+        {tierMark ? (
+          <span style={{ ...T.tiny, color: row.skillKey === 'high' ? '#E8D28A' : B.textMuted, letterSpacing: '0.12em' }}>{tierMark}</span>
+        ) : null}
+        <LeanMark lean={lean} />
       </div>
-    );
-  }
+      <div style={{
+        ...T.name,
+        color: B.text,
+        fontSize: isMobile ? '1.28rem' : '1.55rem',
+        fontWeight: 640,
+        letterSpacing: '-0.038em',
+        lineHeight: 1.05,
+      }}
+      >
+        {row.team}
+      </div>
+      <div style={{
+        ...T.body, color: B.textMuted, marginTop: '0.22rem',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}
+      >
+        <MatchupLine away={row.away} home={row.home} side={row.side} fallback={matchup} />
+      </div>
+    </div>
+  );
+  const price = (
+    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+        <div style={{
+          ...T.money,
+          color: '#E8D28A',
+          fontSize: isMobile ? '1.32rem' : '1.55rem',
+          fontWeight: 640,
+          letterSpacing: '-0.04em',
+          fontFeatureSettings: "'tnum'",
+        }}
+        >
+          {fmtVol(row.invested)}
+        </div>
+        {chevron}
+      </div>
+      {(row.americanLabel || Number.isFinite(row.cents)) ? (
+        <div style={{
+          ...T.odds, color: B.text, marginTop: '0.18rem',
+          fontFeatureSettings: "'tnum'", fontSize: isMobile ? '0.9rem' : T.odds.fontSize,
+        }}
+        >
+          {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
+          {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
+          {row.americanLabel || ''}
+        </div>
+      ) : null}
+      <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.28rem', fontFeatureSettings: "'tnum'" }}>
+        {clock ? `${clock} ET` : '—'}
+        <span style={{ margin: '0 0.3rem', opacity: 0.45 }}>·</span>
+        {agoTxt(row.ts)}
+      </div>
+    </div>
+  );
+  const hair = topPlay ? (
+    <div aria-hidden style={{ height: 2, background: 'linear-gradient(90deg, transparent, #E8D28A 18%, #D4AF37 50%, transparent)' }} />
+  ) : null;
+
+  const facePad = isMobile ? '1.05rem 1rem 0.85rem' : '1.2rem 1.35rem 0.95rem';
 
   return (
     <div
       data-action-sport={row.sport}
       data-top-play={topPlay ? 'true' : undefined}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseEnter={() => { if (!isMobile) setHover(true); }}
+      onMouseLeave={() => { if (!isMobile) setHover(false); }}
       style={shell}
     >
+      {hair}
       <button {...headerBtnProps}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(240px, 1.4fr) minmax(280px, 1.6fr) auto auto',
-          gap: '1.25rem',
-          alignItems: 'center',
-          padding: '1.1rem 1.25rem',
-        }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
-              <SaveStar saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
-              <LeanMark lean={lean} />
-              <span style={{
-                ...T.tiny, color: sportColor(row.sport),
-                padding: '0.12rem 0.38rem', borderRadius: '4px',
-                background: 'rgba(255,255,255,0.03)', border: `1px solid ${B.borderSubtle}`,
-              }}>
-                {row.sport}
-              </span>
-              <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-              <div style={{ ...T.name, color: B.text }}>{row.team}</div>
-              <SteamTag steam={row.steam} compact />
-            </div>
-            <div style={{
-              ...T.body, color: B.textMuted, marginTop: '0.28rem',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>
-              <MatchupLine away={row.away} home={row.home} side={row.side} fallback={matchup} />
-            </div>
-            <TrustLine trust={trust} />
-            <CellHistLine text={row.cellHistText} />
+        <div style={{ padding: facePad }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: isMobile ? '0.75rem' : '1.4rem',
+            alignItems: 'flex-start',
+          }}
+          >
+            {play}
+            {price}
           </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
-            {signalChips(row)}
-          </div>
-
-          <div style={{ textAlign: 'right', minWidth: 132 }}>
-            <div style={{ ...T.money, color: B.gold, fontFeatureSettings: "'tnum'" }}>
-              {fmtVol(row.invested)}
-            </div>
-            {(row.americanLabel || Number.isFinite(row.cents)) ? (
-              <div style={{
-                ...T.odds, color: B.text, marginTop: '0.2rem',
-                fontFeatureSettings: "'tnum'",
-              }}>
-                {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
-                {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
-                {row.americanLabel || ''}
-              </div>
-            ) : null}
-            <div style={{
-              ...T.micro, color: B.textSubtle, marginTop: '0.35rem',
-              fontFeatureSettings: "'tnum'",
-            }}>
-              {clock ? `${clock} ET` : '—'}
-              <span style={{ margin: '0 0.3rem', opacity: 0.5 }}>·</span>
-              {agoTxt(row.ts)}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '0.15rem' }}>
-            {chevron}
-          </div>
+          <TrustLine trust={trust} />
+          <CellHistLine text={row.cellHistText} />
+          <SignalLine row={row} isMobile={isMobile} />
         </div>
       </button>
-      {expanded && <ActionExpandPanel row={row} isMobile={false} />}
+      <PortfolioAdd saved={saved} onToggle={onToggleSave} disabled={!canSave && !saved} />
+      {expanded && <ActionExpandPanel row={row} isMobile={isMobile} />}
     </div>
   );
 }
@@ -1820,7 +1763,7 @@ export default function ConfirmedActionDesk({
         <div
           key={`${sportFilter || 'All'}:${selectedDate}:${deskMode}`}
           data-action-list={sportFilter || 'All'}
-          style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
         >
           {visible.map((r) => (
             <ActionRow
