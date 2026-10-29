@@ -2,10 +2,13 @@
  * Wide board money for locked-card battle bars.
  *
  * Accuracy rules (2026-08-21 audit + loser feed):
- *   1. Count ONLY the pick's market axis (ML+SPREAD together; TOTAL = O/U only).
- *      Never fold ML/SPREAD into "against" on a totals pick.
- *   2. Never paint ML sampleCash as Over/Under. TOTAL exchange uses Kalshi
- *      totalTradeFlow (O/U only). ML/spread exchange uses away/home tradeFlow.
+ *   1. Count ONLY the pick's own market. A moneyline card is ML tickets only,
+ *      a spread card is spread tickets only, a total is O/U only.
+ *      Never fold another market into these bars.
+ *   2. Never paint ML sampleCash as Over/Under or as a spread. TOTAL exchange
+ *      uses Kalshi totalTradeFlow (O/U only). ML exchange uses away/home
+ *      tradeFlow. Spread has no separate flow tape, so it does not borrow
+ *      the moneyline's.
  *   3. Full = wallets + whales (deduped by wallet|side) + exchange residual
  *      (exchange minus whale $ already counted — no double-count).
  *      TOTAL whales with outcome Over/Under come from Kalshi total markets.
@@ -155,10 +158,10 @@ function normSide(side) {
 }
 
 /**
- * Open-position rows for the pick's market axis only.
- * ML/SPREAD pick → ML + SPREAD files (skip TOTAL).
- * TOTAL pick     → TOTAL file only (never fold team ML/spread into against).
+ * Open-position rows for the pick's market only.
+ * ML card → ML file. SPREAD card → SPREAD file. TOTAL card → TOTAL file.
  */
+
 function collectWalletRows({
   sport,
   gameKey,
@@ -181,12 +184,8 @@ function collectWalletRows({
   for (const { mk, data } of files) {
     if (!data || !sport || !gameKey) continue;
 
-    // Market-axis gate — no cross-market pollution.
-    if (mkt === 'TOTAL') {
-      if (mk !== 'TOTAL') continue;
-    } else if (mk === 'TOTAL') {
-      continue;
-    }
+    // This card's market only. A Packers ML bar must not count Panthers +4.5.
+    if (mk !== mkt) continue;
 
     const positions = data[sport]?.[gameKey]?.positions;
     if (!Array.isArray(positions)) continue;
@@ -279,6 +278,15 @@ function outcomeToSide(outcome, {
   return null;
 }
 
+/** Trade-level market tag, when the feed actually has one. Missing tag is not ML. */
+function explicitWhaleMarket(t) {
+  const m = String(t?.marketType || t?.market || '').toLowerCase();
+  if (m === 'total' || m === 'totals') return 'TOTAL';
+  if (m === 'spread' || m === 'spreads') return 'SPREAD';
+  if (m === 'ml' || m === 'moneyline') return 'ML';
+  return null;
+}
+
 function collectWhaleRows({
   sport,
   gameKey,
@@ -296,9 +304,15 @@ function collectWhaleRows({
   const rows = [];
   const poly = polyData?.[sport]?.[gameKey];
   const kalshi = kalshiData?.[sport]?.[gameKey];
+  const mkt = marketKeyOf(marketType);
   const ctx = { playSideNorm, marketType, away, home, awayShort, homeShort };
 
   const pushTrade = (t, source) => {
+    // Whale prints are an ML/total mix unless the trade names its market.
+    // A spread card must not inherit moneyline whale dollars.
+    const tag = explicitWhaleMarket(t);
+    if (tag && tag !== mkt) return;
+    if (!tag && mkt === 'SPREAD') return;
     const amt = Number(t?.amount) || 0;
     if (amt < BOARD_MONEY_MIN_INVESTED) return;
     const side = outcomeToSide(t.outcome, ctx);
@@ -340,7 +354,7 @@ function whalesNotInWallets(whaleRows, walletRows) {
   });
 }
 
-/** ML/spread trade-flow sample cash → ours/against. Not used for TOTAL. */
+/** Moneyline trade-flow sample cash → ours/against. Not used for TOTAL or SPREAD. */
 export function exchangeFlowSplit({
   sport,
   gameKey,
@@ -486,17 +500,19 @@ export function buildWideBoardMoneySplits({
     .reduce((s, w) => s + w.invested, 0);
   const hcPct = confirmed.ours > 0 ? Math.round((hcOurs / confirmed.ours) * 100) : null;
 
-  // TOTAL: use Kalshi O/U totalTradeFlow only — never ML away/home sampleCash.
-  // ML/SPREAD: existing exchangeFlowSplit (poly + kalshi ML tradeFlow).
+  // TOTAL: Kalshi O/U totalTradeFlow only — never ML away/home sampleCash.
+  // ML: poly + kalshi moneyline tradeFlow.
+  // SPREAD: no flow tape of its own, so do not borrow the moneyline's.
   let exchangeRaw = splitOf(0, 0);
   let exchange = splitOf(0, 0);
   if (includeExchange) {
-    if (marketKeyOf(marketType) === 'TOTAL') {
+    const mkt = marketKeyOf(marketType);
+    if (mkt === 'TOTAL') {
       exchangeRaw = totalExchangeFlowSplit({
         sport, gameKey, playSideNorm, kalshiData,
       });
       exchange = exchangeResidual(exchangeRaw, whalesAll);
-    } else {
+    } else if (mkt === 'ML') {
       exchangeRaw = exchangeFlowSplit({ sport, gameKey, playSideNorm, polyData, kalshiData });
       exchange = exchangeResidual(exchangeRaw, whalesAll);
     }
