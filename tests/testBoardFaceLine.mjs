@@ -1,6 +1,6 @@
 /**
- * The line under the locked scoreboard follows the picture.
- * It does not restate the dollars on the bar, and it does not lead with a wallet hash.
+ * The line under the confirmed poster follows that picture.
+ * It does not restate the dollars on the poster, and it does not lead with a wallet hash.
  */
 import { buildBoardFaceLine } from '../src/components/sharpFlow/cards/boardFaceLine.js';
 
@@ -21,65 +21,68 @@ function assertFace(face, { headline, proof, wallet }) {
   if (face.wallet !== wallet) throw new Error(`wallet ${face.wallet}`);
   const blob = `${face.headline || ''} ${face.proof || ''}`;
   if (blob.includes('64% WR')) throw new Error(`win rate leaked: ${blob}`);
-  if (/\$760|\$405|\$3\.4K|\$33K|\$3400|\$33000/.test(blob)) throw new Error(`restated the bar: ${blob}`);
+  if (/\$760|\$405|\$2K|\$2\.0K|\$33K|\$2000|\$33000/.test(blob)) throw new Error(`restated the poster: ${blob}`);
 }
 
 const both = buildBoardFaceLine({
   sport: 'NBA',
   units: 2,
-  confirmedOnSide: 1,
-  against: { proven: 1, invested: 405, abbr: 'Celtics' },
-  sharpUsd: 760,
+  side: 'away',
+  away: 'Chicago Bulls',
+  home: 'Boston Celtics',
+  against: { abbr: 'Celtics' },
+  boardMoneyConfirmed: { ours: 760, theirs: 405 },
 }, lead);
 assertFace(both, {
-  headline: 'Proven on both sides.',
+  headline: 'Confirmed on both sides.',
   proof: '14-8, L30 +$5.6K',
   wallet: '…1895dc',
 });
 
-const oursOnly = buildBoardFaceLine({
-  units: 2,
-  confirmedOnSide: 1,
-  against: { proven: 0, invested: 0 },
-  sharpUsd: 760,
-}, lead);
-assertFace(oursOnly, {
-  headline: null,
-  proof: '14-8, L30 +$5.6K',
-  wallet: '…1895dc',
-});
-
-const buried = buildBoardFaceLine({
+const sweep = buildBoardFaceLine({
   units: 1,
   side: 'away',
   away: 'Los Angeles Lakers',
   home: 'Golden State Warriors',
-  confirmedOnSide: 1,
-  against: { proven: 0, invested: 33000, abbr: 'Warriors' },
+  against: { abbr: 'Warriors', invested: 33000 },
   sharpUsd: 3400,
+  boardMoneyConfirmed: { ours: 2000, theirs: 0 },
 }, lead);
-assertFace(buried, {
-  headline: 'Most of the tracked money is on the Warriors.',
+assertFace(sweep, {
+  headline: 'Confirmed winners are on the Lakers.',
   proof: '14-8, L30 +$5.6K',
   wallet: '…1895dc',
 });
-if (/proven on both/i.test(buried.headline)) throw new Error(buried.headline);
+if (/warriors/i.test(sweep.headline) && /tracked/i.test(sweep.headline)) throw new Error(sweep.headline);
 
-const buriedProven = buildBoardFaceLine({
+const buriedConfirmed = buildBoardFaceLine({
   units: 1,
-  confirmedOnSide: 1,
-  against: { proven: 2, invested: 20000, abbr: 'Celtics' },
-  sharpUsd: 4000,
+  side: 'away',
+  away: 'Chicago Bulls',
+  home: 'Boston Celtics',
+  against: { abbr: 'Celtics' },
+  boardMoneyConfirmed: { ours: 4000, theirs: 20000 },
 }, lead);
-if (buriedProven.headline !== 'Most of the tracked money is on the Celtics.') {
-  throw new Error(buriedProven.headline);
+if (buriedConfirmed.headline !== 'Most of the confirmed money is on the Celtics.') {
+  throw new Error(buriedConfirmed.headline);
+}
+
+const oursHeavy = buildBoardFaceLine({
+  units: 2,
+  side: 'home',
+  away: 'Carolina Panthers',
+  home: 'Jacksonville Jaguars',
+  against: { abbr: 'Panthers' },
+  boardMoneyConfirmed: { ours: 9800, theirs: 2400 },
+}, lead);
+if (oursHeavy.headline !== 'Most of the confirmed money is on the Jaguars.') {
+  throw new Error(oursHeavy.headline);
 }
 
 const muted = buildBoardFaceLine({
   units: 0,
   tapeAction: 'mute',
-  confirmedOnSide: 0,
-  against: { proven: 0 },
+  boardMoneyConfirmed: { ours: 0, theirs: 0 },
 }, null);
 if (muted !== 'The system stood this one down.') throw new Error(muted);
 

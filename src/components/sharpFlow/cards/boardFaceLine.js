@@ -1,8 +1,8 @@
 /**
- * The line under the locked scoreboard.
- * It follows the picture: a buried side says so, a proven fight says so,
- * and the résumé is the record plus last-30 proof. It does not restate
- * the dollars already printed on the bar, and it does not lead with a wallet hash.
+ * The line under the confirmed poster.
+ * A sweep names the side that has the winners. A split names the fight.
+ * The résumé is the record plus last-30 proof. It does not restate the
+ * dollars already on the poster, and it does not lead with a wallet hash.
  */
 
 function nick(s) {
@@ -32,25 +32,18 @@ export function theirSideLabel(f) {
   return 'other side';
 }
 
-/** Same dollars the scoreboard draws. */
-export function sideDollars(f) {
-  if (!f) return { ours: 0, theirs: 0 };
-  let rows = [];
-  if (Array.isArray(f.mapWallets) && f.mapWallets.length) rows = f.mapWallets;
-  else if (Array.isArray(f.wallets) && f.wallets.length) {
-    rows = f.wallets.map((w) => ({ ...w, side: w.side === 'against' ? 'against' : 'ours' }));
-  }
-  rows = rows.filter((w) => (Number(w?.invested) || 0) > 0);
-  if (rows.length) {
-    const sum = (side) => rows
-      .filter((w) => (side === 'against' ? w.side === 'against' : w.side !== 'against'))
-      .reduce((s, w) => s + (Number(w.invested) || 0), 0);
-    return { ours: sum('ours'), theirs: sum('against') };
-  }
+/** Confirmed-winner dollars. Same stamp the poster draws. */
+export function confirmedSplit(f) {
+  const stamped = f?.boardMoneyConfirmed || f?.boardMoney?.confirmed;
   return {
-    ours: Number(f.sharpUsd ?? f.sideInvested) || 0,
-    theirs: Number(f.against?.invested) || 0,
+    ours: Math.max(0, Number(stamped?.ours) || 0),
+    theirs: Math.max(0, Number(stamped?.theirs) || 0),
   };
+}
+
+function onThe(label) {
+  if (label === 'our side' || label === 'other side') return label;
+  return `the ${label}`;
 }
 
 function proofOf(lead) {
@@ -74,17 +67,16 @@ export function buildBoardFaceLine(f, lead) {
   const units = Number(f.units) || 0;
   if (muted && !(units > 0)) return 'The system stood this one down.';
 
-  const { ours, theirs } = sideDollars(f);
-  const mountain = theirs > 0 && theirs >= ours * 2;
-  const theirProven = Math.max(0, Number(f.against?.proven) || 0);
-  const ourProven = Math.max(0, Number(f.confirmedOnSide) || 0);
-  const both = ourProven >= 1 && theirProven >= 1;
-
+  const { ours, theirs } = confirmedSplit(f);
   let headline = null;
-  if (mountain) {
-    headline = `Most of the tracked money is on the ${theirSideLabel(f)}.`;
-  } else if (both) {
-    headline = 'Proven on both sides.';
+  if (ours > 0 && theirs <= 0) {
+    headline = `Confirmed winners are on ${onThe(ourSideLabel(f))}.`;
+  } else if (theirs > 0 && ours <= 0) {
+    headline = `Confirmed winners are on ${onThe(theirSideLabel(f))}.`;
+  } else if (ours > 0 && theirs > 0) {
+    if (theirs >= ours * 2) headline = `Most of the confirmed money is on ${onThe(theirSideLabel(f))}.`;
+    else if (ours >= theirs * 2) headline = `Most of the confirmed money is on ${onThe(ourSideLabel(f))}.`;
+    else headline = 'Confirmed on both sides.';
   }
 
   const proof = proofOf(lead);
