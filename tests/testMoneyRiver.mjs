@@ -50,6 +50,13 @@ assert(buried.ourPill.lines.some((l) => l.text === '100% of sharp $'), 'sharp sh
 assert(buried.theirPill.tone === 'fade', buried.theirPill.tone);
 assert(buried.theirPill.lines[0].text === '$33K', buried.theirPill.lines[0].text);
 assert(buried.rows.every((r) => r.thick > 0 && Number.isFinite(r.targetY)), 'ribbon geometry');
+assert(buried.panel.dots && buried.panel.dots.green === 13 && buried.panel.dots.red === 7, JSON.stringify(buried.panel.dots));
+assert(buried.panel.dots.green > buried.panel.dots.red, 'solo record still draws');
+const buriedSharp = buried.rows.find((r) => r.short === '1895dc');
+const buriedFade = buried.rows.find((r) => r.side === 'against');
+assert(buriedFade.thick > buriedSharp.thick * 2, 'stake sets the width');
+assert(Math.abs(buriedSharp.y - buriedSharp.targetY) < 0.5, 'one wallet meets its pile');
+assert(Math.abs(buriedFade.y - buriedFade.targetY) < 0.5, 'the fade meets its pile');
 assert(!JSON.stringify(buried).includes('14.2'), 'no example roi');
 assert(!('fade' in buried) && !('lead' in buried), 'lead and fade are gone');
 
@@ -87,6 +94,12 @@ const oursFlow = split.rows.filter((r) => r.side !== 'against');
 for (let i = 1; i < oursFlow.length; i += 1) {
   assert(oursFlow[i].targetY > oursFlow[i - 1].targetY, 'ribbons stack');
 }
+assert(split.panel.dots.green === 13 && split.panel.dots.red === 7, JSON.stringify(split.panel.dots));
+const ordered = split.rows.slice().sort((a, b) => a.y - b.y);
+for (let i = 1; i < ordered.length; i += 1) {
+  assert(ordered[i].y - ordered[i - 1].y >= 31, 'rows stay apart');
+}
+assert(split.ourBox.top + split.ourBox.height <= split.theirBox.top, 'piles stay apart');
 
 const incomplete = buildMoneyRiver({
   units: 2,
@@ -101,5 +114,6 @@ const incomplete = buildMoneyRiver({
 });
 assert(incomplete.panel.caption === 'Of sharp money', 'missing record blocks the pool');
 assert(!incomplete.panel.stats.some((s) => s.label === 'Record'), 'incomplete books are not pooled');
+assert(incomplete.panel.dots == null, 'an incomplete book draws no dots');
 
 console.log('money river ok');

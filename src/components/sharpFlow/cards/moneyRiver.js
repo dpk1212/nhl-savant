@@ -8,7 +8,7 @@ import { HC_RATIO } from '../../../lib/ags.js';
 import { ourSideLabel, theirSideLabel } from './boardFaceLine.js';
 
 const ROW_H = 32;
-const NODE_GAP = 10;
+const NODE_GAP = 8;
 const RIBBON_GAP = 2;
 const SHARP_CAP = 4;
 const OPP_CAP = 2;
@@ -165,57 +165,65 @@ function placeRibbons(group) {
 }
 
 /**
- * Sankey geometry. Each ribbon keeps its own thickness and lands in a
- * stacked slot on its destination, so the flows bundle instead of meeting
- * at one point.
+ * Sankey geometry. Stake sets the thickness. Each side is one block: the
+ * rows and the destination share a center, so a single wallet meets its
+ * pile in a straight line and a cluster fans into it.
  */
-export function layoutRiver(rows, { rowH = ROW_H } = {}) {
-  const tagged = rows.map((r, i) => ({ ...r, y: i * rowH + rowH / 2 }));
+export function layoutRiver(rows, { rowH = ROW_H, minH = {} } = {}) {
+  const tagged = rows.map((r) => ({ ...r }));
   const groups = [
     { side: 'ours', list: tagged.filter((r) => r.side !== 'against') },
     { side: 'against', list: tagged.filter((r) => r.side === 'against') },
   ].filter((g) => g.list.length);
+  if (!tagged.length) {
+    return { rows: tagged, height: rowH, ourBox: null, theirBox: null };
+  }
 
   const maxInv = Math.max(1, ...tagged.map((r) => r.invested || 0));
   for (const row of tagged) {
     const t = Math.max(0, row.invested || 0) / maxInv;
-    row.thick = 2.4 + Math.pow(t, 0.8) * 14;
+    row.thick = 2.6 + Math.pow(t, 0.65) * 20;
   }
 
+  let cursor = 0;
   for (const group of groups) {
     const gaps = Math.max(0, group.list.length - 1) * RIBBON_GAP;
     const sum = group.list.reduce((s, r) => s + r.thick, 0);
-    const maxStack = 46;
+    const maxStack = 44;
     if (sum + gaps > maxStack) {
       const scale = (maxStack - gaps) / sum;
       group.list.forEach((r) => { r.thick *= scale; });
     }
     const stack = group.list.reduce((s, r) => s + r.thick, 0) + gaps;
-    group.nodeH = Math.max(54, Math.ceil(stack + 20));
-    const mid = group.list.reduce((s, r) => s + r.y, 0) / group.list.length;
+    const rowsH = group.list.length * rowH;
+    const wanted = Math.max(minH[group.side] || 54, Math.ceil(stack + 16));
+    const blockH = Math.max(rowsH, wanted);
+    group.nodeH = wanted;
+    const mid = cursor + blockH / 2;
     group.top = mid - group.nodeH / 2;
-  }
-
-  if (groups.length === 2) {
-    const [a, b] = groups;
-    if (a.top + a.nodeH + NODE_GAP > b.top) b.top = a.top + a.nodeH + NODE_GAP;
-    if (a.top < 0) {
-      b.top += -a.top;
-      a.top = 0;
-    }
-  } else if (groups.length === 1 && groups[0].top < 0) {
-    groups[0].top = 0;
+    const span = (group.list.length - 1) * rowH;
+    const first = mid - span / 2;
+    group.list.forEach((row, i) => { row.y = first + i * rowH; });
+    cursor += blockH + NODE_GAP;
   }
 
   for (const group of groups) placeRibbons(group);
 
-  const contentH = Math.max(tagged.length, 1) * rowH;
-  const height = Math.max(contentH, ...groups.map((g) => g.top + g.nodeH), 1);
+  const height = Math.max(cursor - NODE_GAP, rowH);
   const box = (side) => {
     const group = groups.find((g) => g.side === side);
     return group ? { top: group.top, height: group.nodeH } : null;
   };
   return { rows: tagged, height, ourBox: box('ours'), theirBox: box('against') };
+}
+
+/** Twenty dots, green then red, in the same proportion as the record. */
+export function recordDots(wins, losses) {
+  const decided = (Number(wins) || 0) + (Number(losses) || 0);
+  if (decided < 2) return null;
+  const slots = 20;
+  const green = Math.max(0, Math.min(slots, Math.round(((Number(wins) || 0) / decided) * slots)));
+  return { green, red: slots - green };
 }
 
 function winLabel(wins, losses) {
@@ -250,6 +258,13 @@ function displaySide(f, which) {
 
 function dashRecord(rec) {
   return rec ? rec.label.replace('-', '\u2013') : null;
+}
+
+/** Pill height the river must reserve so the destination copy fits. */
+function pillBlock(p) {
+  if (!p?.lines?.length) return 54;
+  const body = p.lines.reduce((sum, line) => sum + (line.tone === 'quiet' ? 13 : 17), 0);
+  return Math.max(56, 28 + body + p.lines.length);
 }
 
 function pill(side, title, sharpUsd, loserUsd, sharpPct, loserPct) {
@@ -356,9 +371,6 @@ export function buildMoneyRiver(f) {
   if (!placedOurs) withBook.push(...extra.filter((r) => r.side === 'ours'));
   withBook.push(...extra.filter((r) => r.side === 'against'));
 
-  const laid = layoutRiver(withBook);
-  if (!laid.rows.length && ourSharpUsd <= 0 && theirSharpUsd <= 0 && loserTotal <= 0) return null;
-
   const pool = pooled(sharps);
   const n = sharps.length;
   const hc = ourHc.length;
@@ -380,6 +392,9 @@ export function buildMoneyRiver(f) {
     ].filter(Boolean).join(' \u00b7 '),
     hero: pool ? `${pool.label}%` : (share != null ? `${share}%` : null),
     caption: pool ? 'Win' : 'Of sharp money',
+    dots: pool
+      ? recordDots(pool.wins, pool.losses)
+      : (solo ? recordDots(solo.wins, solo.losses) : null),
     stats: (pool
       ? [recordStat, moneyStat, shareStat]
       : [recordStat, moneyStat, sizedStat]
@@ -390,6 +405,10 @@ export function buildMoneyRiver(f) {
   const theirsName = displaySide(f, 'against');
   const ourPill = pill('ours', oursName, ourSharpUsd, ourLoserUsd, sharpPct(ourSharpUsd), loserPct(ourLoserUsd));
   const theirPill = pill('against', theirsName, theirSharpUsd, theirLoserUsd, sharpPct(theirSharpUsd), loserPct(theirLoserUsd));
+  const laid = layoutRiver(withBook, {
+    minH: { ours: pillBlock(ourPill), against: pillBlock(theirPill) },
+  });
+  if (!laid.rows.length && ourSharpUsd <= 0 && theirSharpUsd <= 0 && loserTotal <= 0) return null;
 
   return {
     panel,
