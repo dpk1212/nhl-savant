@@ -354,8 +354,30 @@ const FIXTURES = [
         recent: tape(6, 'LWWLWWWLWWLWW'),
       }],
       mapWallets: [
-        { short: '1895dc', side: 'ours', invested: 3400, proven: true, whitelisted: true, whitelist: 'CONFIRMED' },
-        { short: 'war99', side: 'against', invested: 33000, proven: false, whitelist: 'WR50' },
+        {
+          short: 'd9dcb1', side: 'ours', invested: 1008, sizeRatio: 1.6,
+          proven: true, whitelisted: true, whitelist: 'CONFIRMED',
+          wins: 15, losses: 6, bookPnl: 940, l30Roi: 6.3,
+          recent: tape(1, 'WWLWWWWLWWWWW'),
+        },
+        {
+          short: 'c6c4d6', side: 'ours', invested: 614, sizeRatio: 1.1,
+          proven: true, whitelisted: true, whitelist: 'CONFIRMED',
+          wins: 6, losses: 2, bookPnl: 1636, l30Roi: 15.6,
+          recent: tape(8, 'WWLWW'),
+        },
+        {
+          short: 'bf28eb', side: 'ours', invested: 1243, whitelist: 'WR50',
+          wins: 7, losses: 4, bookPnl: 3454, l30Roi: 17.1,
+        },
+        {
+          short: '2a8409', side: 'against', invested: 50186,
+          wins: 15, losses: 15, bookPnl: 360578, l30Roi: 29,
+        },
+        {
+          short: '8996d3', side: 'against', invested: 800, whitelist: 'WR50',
+          wins: 4, losses: 8, bookPnl: -47146, l30Roi: -40.2,
+        },
       ],
       boardMoneyFull: { ours: 3400, theirs: 33000, total: 36400, oursPct: 9 },
       boardMoneyLosers: { ours: 0, theirs: 33000, total: 33000, oursPct: 0 },
