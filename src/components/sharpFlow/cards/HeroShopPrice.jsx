@@ -20,6 +20,8 @@ export default function HeroShopPrice({
   books,
   fallbackOdds,
   americanOnly = false,
+  hideEv = false,
+  color = '#9aa6bd',
   logoSize = 18,
   fontSize = '1.12rem',
 }) {
@@ -44,7 +46,7 @@ export default function HeroShopPrice({
         fontSize,
         fontWeight: 550,
         letterSpacing: '-0.02em',
-        color: '#9aa6bd',
+        color,
         lineHeight: 1.05,
         fontFeatureSettings: "'tnum'",
       }}
@@ -58,7 +60,7 @@ export default function HeroShopPrice({
         </span>
       ) : null}
       <span>{priceLabel}</span>
-      {evLabel ? (
+      {evLabel && !hideEv ? (
         <span style={{
           color: GREEN, fontWeight: 750, letterSpacing: '-0.03em',
         }}>

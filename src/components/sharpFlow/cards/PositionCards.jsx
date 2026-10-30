@@ -14,6 +14,7 @@ import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
 import HeroShopPrice from './HeroShopPrice.jsx';
+import TeamCrest, { pickCrestName } from './TeamCrest.jsx';
 import {
   pinPostedOdds,
   shopRailHidden,
@@ -2301,14 +2302,8 @@ function LockFreezeStatus({ commenceMs, compact, strip, bare, banner }) {
         }}
       >
         <Clock size={11} strokeWidth={2.8} style={{ color: tone, flexShrink: 0 }} />
-        <span style={{
-          fontSize: 9, fontWeight: 800, letterSpacing: '0.11em',
-          color: B.goldHi, textTransform: 'uppercase',
-        }}>
-          Flagged
-        </span>
         <span>
-          locks in <span style={{ fontWeight: 700, color: tone }}>{rem}</span>
+          Locks in <span style={{ fontWeight: 700, color: tone }}>{rem}</span>
           {' · '}{lockEt} ET
         </span>
       </div>
@@ -2746,72 +2741,65 @@ function CollapsedHeader({ live, inClassName }) {
  * type step above everything else — and the stake is the one gold number.
  * Elite scale contrast: 1.6rem pick / 20px stake against 11–13px body.
  */
-function CollapsedHero({ live, pickClass, americanOnly = false }) {
-  const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip, contextLine } = live;
+function CollapsedHero({ live, pickClass }) {
+  const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip } = live;
+  const crest = pickCrestName(f);
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-      gap: 16, position: 'relative', zIndex: 2,
+      gap: '0.85rem', position: 'relative', zIndex: 2,
     }}>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap',
-          fontFeatureSettings: "'tnum'",
-        }}>
-          <div
-            className={pickClass}
-            style={{
-              fontSize: '1.9rem', fontWeight: 750, letterSpacing: '-0.042em',
-              color: C.text, lineHeight: 1.02,
-            }}
-          >
-            {f.pickLabel}
-          </div>
-          <HeroShopPrice
-            bestOdds={f.bestOdds}
-            bestBook={f.bestBook}
-            books={f.books}
-            fallbackOdds={heroPx}
-            americanOnly={americanOnly}
-            logoSize={18}
-            fontSize="1.12rem"
-          />
+      {crest ? <TeamCrest name={crest} sport={f.sport} size={44} /> : null}
+      <div style={{ minWidth: 0, flex: 1, paddingTop: crest ? 2 : 0, containerType: 'inline-size' }}>
+        <div
+          className={pickClass}
+          style={{
+            fontSize: 'clamp(1.35rem, 22cqi, 1.85rem)', fontWeight: 750, letterSpacing: '-0.042em',
+            color: C.text, lineHeight: 1.05, whiteSpace: 'nowrap',
+          }}
+        >
+          {f.pickLabel}
         </div>
-        {contextLine && (
-          <div
-            title="Ticket we grade and pay"
-            style={{
-              marginTop: 6, fontSize: 11, fontWeight: 450,
-              letterSpacing: '0.005em', color: C.textFaint, lineHeight: 1.35,
-            }}
-          >
-            {contextLine}
-          </div>
-        )}
       </div>
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-        gap: 2, flexShrink: 0, paddingTop: 1,
+        flexShrink: 0, paddingTop: 2, textAlign: 'right',
       }}>
         <span
           className="live-stake"
           title={tracked ? muteTip : undefined}
           style={{
-            fontSize: tracked ? 12 : 20, fontWeight: tracked ? 650 : 700,
-            fontFeatureSettings: "'tnum'", letterSpacing: tracked ? '0.01em' : '-0.03em',
-            color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1.25,
+            fontSize: tracked ? 12 : '1.45rem', fontWeight: tracked ? 650 : 680,
+            fontFeatureSettings: "'tnum'", letterSpacing: tracked ? '0.01em' : '-0.04em',
+            color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1,
             textAlign: 'right', maxWidth: tracked ? 148 : undefined,
           }}
         >
           {stakeLabel}
         </span>
+        {!tracked && (
+          <div style={{ marginTop: '0.55rem' }}>
+            <HeroShopPrice
+              bestOdds={f.bestOdds}
+              bestBook={f.bestBook}
+              books={f.books}
+              fallbackOdds={heroPx}
+              americanOnly
+              hideEv
+              color={C.text}
+              logoSize={16}
+              fontSize="1rem"
+            />
+          </div>
+        )}
         {payoutLabel && (
           <span style={{
-            fontSize: 12, fontWeight: 600, fontFeatureSettings: "'tnum'",
-            color: payoutColor, letterSpacing: '-0.01em',
+            marginTop: '0.38rem',
+            fontSize: 12.5, fontWeight: 650, fontFeatureSettings: "'tnum'",
+            color: payoutColor, letterSpacing: '-0.01em', lineHeight: 1,
           }}>
             {!graded && (
-              <span style={{ color: C.textFaint, fontWeight: 450, marginRight: 4 }}>to win</span>
+              <span style={{ display: 'block', marginBottom: 3, color: C.textFaint, fontWeight: 500, fontSize: 10 }}>to win</span>
             )}
             {payoutLabel}
           </span>
@@ -2820,7 +2808,7 @@ function CollapsedHero({ live, pickClass, americanOnly = false }) {
       <ChevronDown
         size={14}
         strokeWidth={2}
-        style={{ color: C.textFaint, flexShrink: 0, marginTop: 8, opacity: 0.4 }}
+        style={{ color: C.textFaint, flexShrink: 0, marginTop: 6, marginLeft: 2, opacity: 0.45 }}
       />
     </div>
   );
@@ -3060,7 +3048,7 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
   const mine = portfolioWalletsOnCard(f, mySharps?.shorts);
   const hero = <CollapsedHero live={live} pickClass="live-pick" />;
   const trust = (
-    <LockedCollapsedStrength f={f} face="subscriber" boardAbove mine={mine} />
+    <LockedCollapsedStrength f={f} face="subscriber" mine={mine} />
   );
   const money = <LockedCollapsedBattleBars f={f} face="subscriber" flush />;
   const tape = (
@@ -3174,11 +3162,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
         ? `${resultPnl >= 0 ? '+' : ''}${Number(resultPnl).toFixed(2)}u`
         : `+${Number(f.toWin).toFixed(2)}u`;
     const payoutColor = graded ? resultColor : B.profit;
-    const contextLine = f.mainNowLabel || f.entryLadderLabel
-      || (f.lineMoved && f.liveMarketLabel ? f.liveMarketLabel : null);
     const liveFace = {
       f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor,
-      accent, edgeAura, cardBorder, muteTip, ticketFrozen, setExpanded, contextLine,
+      accent, edgeAura, cardBorder, muteTip, ticketFrozen, setExpanded,
     };
 
     // Shipped collapsed face. Limit keeps qualified money above the tape.

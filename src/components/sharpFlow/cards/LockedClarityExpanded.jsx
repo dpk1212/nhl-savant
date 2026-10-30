@@ -1151,14 +1151,14 @@ export default function LockedClarityExpanded({
             fontSize={15}
           />
           <SteamTag steam={f.steam} compact />
-          {f.mainNowLabel && (
+          {(f.mainNowLabel || f.entryLadderLabel) && (
             <span
               title="Ticket we grade and pay"
               style={{
                 width: '100%', fontSize: 11, fontWeight: 500, color: C.textFaint, marginTop: 2,
               }}
             >
-              {f.mainNowLabel}
+              {f.mainNowLabel || f.entryLadderLabel}
             </span>
           )}
           {!tracked && f.units > 0 && (

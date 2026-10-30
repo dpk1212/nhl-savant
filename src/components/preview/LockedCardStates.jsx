@@ -176,6 +176,7 @@ const FIXTURES = [
       pickLabel: 'Jaguars ML',
       ourMarketLabel: 'Jaguars ML',
       marketType: 'ml',
+      side: 'home',
       lockOdds: 108,
       gotOdds: 117,
       heroOdds: 108,
@@ -242,6 +243,7 @@ const FIXTURES = [
       gameTime: '4:11 PM',
       pickLabel: 'Brewers ML',
       marketType: 'ml',
+      side: 'home',
       lockOdds: -126,
       gotOdds: -126,
       heroOdds: -126,
@@ -336,7 +338,7 @@ function LabCard({ title, f }) {
       <div style={{ color: '#647089', fontSize: '0.62rem', fontWeight: 700, marginBottom: 6, letterSpacing: '0.06em' }}>
         {title}
       </div>
-      <LockedPositionCardView f={f} defaultExpanded mySharps={mySharps} />
+      <LockedPositionCardView f={f} mySharps={mySharps} />
     </div>
   );
 }

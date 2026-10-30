@@ -15,12 +15,12 @@
  */
 import { HC_RATIO } from '../../../lib/ags.js';
 import { isMySharpShort, normalizeWalletShort } from '../../../lib/mySharps.js';
+import TeamCrest, { boardCrestName } from './TeamCrest.jsx';
 
 const C = {
   text: '#F4F7FB',
   textSec: '#9aa6bd',
   textMuted: '#647089',
-  textFaint: '#4a5568',
 };
 const GREEN = '#2fd57e';
 const VS = '#F07167';
@@ -35,6 +35,11 @@ function fmtUsd(v) {
   return `$${Math.round(n)}`;
 }
 
+function nick(s) {
+  const w = String(s || '').trim().split(/\s+/).filter(Boolean);
+  return w.length ? w[w.length - 1] : '';
+}
+
 function ourSideLabel(f) {
   const pick = String(f?.pickLabel || '').trim();
   const total = pick.match(/^(Over|Under)\b/i);
@@ -42,8 +47,8 @@ function ourSideLabel(f) {
     const w = total[1];
     return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
   }
-  if (f?.side === 'home' && f.homeShort) return f.homeShort;
-  if (f?.side === 'away' && f.awayShort) return f.awayShort;
+  if (f?.side === 'home') return f.homeShort || nick(f.home) || 'our side';
+  if (f?.side === 'away') return f.awayShort || nick(f.away) || 'our side';
   return 'our side';
 }
 
@@ -94,7 +99,7 @@ const BLOCK_STYLE = {
   ours: {
     hc: { background: GOLD, opacity: 0.95 },
     proven: { background: GREEN, opacity: 0.8 },
-    loser: { background: '#A05A54', opacity: 0.55 },
+    loser: { background: '#145C38', opacity: 0.9 },
   },
   against: {
     hc: { background: VS, backgroundImage: STRIPES, opacity: 0.9 },
@@ -102,12 +107,6 @@ const BLOCK_STYLE = {
     loser: { background: '#96A2B8', backgroundImage: STRIPES, opacity: 0.35 },
   },
 };
-
-const LEGEND = [
-  { cls: 'hc', label: 'HC', tip: 'High-conviction confirmed winner — bet ≥1.5× their usual size', color: GOLD, opacity: 0.95 },
-  { cls: 'proven', label: 'proven', tip: 'Confirmed winning wallet', color: GREEN, opacity: 0.8 },
-  { cls: 'loser', label: 'losers', tip: 'Tracked losing wallets — shown honestly on either side', color: '#A05A54', opacity: 0.8 },
-];
 
 function blockTip(w, side, { saved = false, name = null } = {}) {
   const bits = [];
@@ -145,7 +144,9 @@ export default function LockedCollapsedBoard({ f, mineShorts = null, names = nul
   const theirsUsd = sum(theirs);
   const total = oursUsd + theirsUsd;
   if (total <= 0) return null;
-  const oursPct = (oursUsd / total) * 100;
+  const againstProven = Math.max(0, Number(f.against?.proven) || 0);
+  const dimAgainst = theirsUsd > 0 && againstProven < 1
+    && !theirs.some((w) => !w._agg && (isWinnerPool(w) || w.proven));
 
   // Strongest at the seam: ours sorted weakest→strongest left to right,
   // theirs strongest→weakest. Min visible width so a $50 wallet still exists.
@@ -153,17 +154,20 @@ export default function LockedCollapsedBoard({ f, mineShorts = null, names = nul
     || (a.invested || 0) - (b.invested || 0));
   const sortTheirs = [...theirs].sort((a, b) => RANK[classify(a)] - RANK[classify(b)]
     || (b.invested || 0) - (a.invested || 0));
-  const MIN_W = 1.4;
-  const widthOf = (w) => Math.max(MIN_W, ((Number(w.invested) || 0) / total) * 100);
+  const widthOf = (w, sideUsd) => {
+    const share = sideUsd > 0 ? ((Number(w.invested) || 0) / sideUsd) * 100 : 0;
+    return Math.max(share, 8);
+  };
 
-  const block = (w, side, i, arr) => {
+  const block = (w, side, i, arr, sideUsd) => {
     const cls = classify(w);
     const st = BLOCK_STYLE[side][cls] || BLOCK_STYLE[side].proven;
-    const first = side === 'ours' && i === 0;
-    const last = side === 'against' && i === arr.length - 1;
+    const first = i === 0;
+    const last = i === arr.length - 1;
     const saved = !w._agg && isMySharpShort(mineShorts, w.short);
     const id = normalizeWalletShort(w.short);
     const name = saved ? (names?.[id] || null) : null;
+    const radius = first && last ? 6 : first ? '6px 2px 2px 6px' : last ? '2px 6px 6px 2px' : 2;
     return (
       <div
         key={`${side}-${i}`}
@@ -172,15 +176,13 @@ export default function LockedCollapsedBoard({ f, mineShorts = null, names = nul
           ? (side === 'ours' ? `${fmtUsd(w.invested)} qualified on our side` : `${fmtUsd(w.invested)} qualified against`)
           : blockTip(w, side, { saved, name })}
         style={{
-          width: `${widthOf(w).toFixed(2)}%`,
+          width: `${widthOf(w, sideUsd).toFixed(2)}%`,
           height: '100%',
-          borderRadius: first ? '5px 1px 1px 5px' : last ? '1px 5px 5px 1px' : 1,
-          flexShrink: 1, minWidth: 3,
+          borderRadius: radius,
+          flexShrink: 1, minWidth: 4,
           position: 'relative',
           zIndex: saved ? 2 : 0,
           ...st,
-          // Portfolio is a ring, not a new color. HC is already gold; the
-          // hairline is what says this block is on the list.
           ...(saved ? {
             opacity: 1,
             boxShadow: 'inset 0 0 0 2px #F3E3AC, 0 0 8px rgba(212,175,55,0.85)',
@@ -190,103 +192,74 @@ export default function LockedCollapsedBoard({ f, mineShorts = null, names = nul
     );
   };
 
-  // Dynamic legend — only name the colors that actually stand on our side.
-  const oursClasses = new Set(ours.map((w) => (w._agg ? 'proven' : classify(w))));
-  const legendItems = LEGEND.filter((l) => oursClasses.has(l.cls));
+  const end = (which, usd, dim) => {
+    const label = which === 'ours' ? ourSideLabel(f) : theirSideLabel(f);
+    const crest = boardCrestName(f, which);
+    const right = which === 'against';
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, minWidth: 0,
+        flexDirection: right ? 'row-reverse' : 'row',
+        opacity: dim ? 0.62 : 1,
+      }}>
+        {crest ? (
+          <TeamCrest name={crest} sport={f.sport} size={right ? 26 : 30} dim={!!dim} />
+        ) : null}
+        <div style={{ textAlign: right ? 'right' : 'left', minWidth: 0 }}>
+          <div style={{
+            fontSize: right ? '1.02rem' : '1.22rem',
+            fontWeight: 720,
+            letterSpacing: '-0.03em',
+            color: dim ? C.textMuted : (right ? C.textSec : C.text),
+            fontFeatureSettings: "'tnum'",
+            lineHeight: 1,
+          }}
+          >
+            {fmtUsd(usd)}
+          </div>
+          <div style={{
+            marginTop: 4,
+            fontSize: 11,
+            fontWeight: 600,
+            color: C.textMuted,
+            letterSpacing: '0.01em',
+            lineHeight: 1,
+          }}
+          >
+            {label}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div style={{ marginTop: 16, position: 'relative' }}>
-      {/* Seam marker — the split, stated once, exactly where it happens.
-          The label takes the tone of the number: strong lean gold, split
-          slate, board-against-us red. 21% in celebration gold was a lie. */}
+    <div data-board="score" style={{ marginTop: 18, position: 'relative' }}>
       <div style={{
-        position: 'relative', height: 15, marginBottom: 3,
-        fontFeatureSettings: "'tnum'",
-      }}>
-        <span style={{
-          position: 'absolute',
-          left: `${Math.max(7, Math.min(93, oursPct)).toFixed(1)}%`,
-          transform: 'translateX(-50%)',
-          fontSize: 10.5, fontWeight: 750, letterSpacing: '0.01em',
-          color: oursPct >= 60 ? GOLD : oursPct >= 40 ? C.textSec : VS,
-          whiteSpace: 'nowrap', lineHeight: 1,
-        }}>
-          {Math.round(oursPct)}% here
-        </span>
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16,
+      }}
+      >
+        {end('ours', oursUsd, false)}
+        {theirsUsd > 0 ? end('against', theirsUsd, dimAgainst) : null}
       </div>
-
-      {/* The board — every wallet, real dollars, one battle line */}
       <div style={{
-        display: 'flex', alignItems: 'stretch', height: 22, gap: 1.5,
-        position: 'relative',
-      }}>
-        {sortOurs.map((w, i) => block(w, 'ours', i, sortOurs))}
+        display: 'flex', alignItems: 'stretch', height: 12, marginTop: 10,
+        gap: theirsUsd > 0 ? 8 : 0,
+      }}
+      >
+        <div style={{ flex: `${oursUsd} 1 0px`, display: 'flex', gap: 1.5, minWidth: 12 }}>
+          {sortOurs.map((w, i) => block(w, 'ours', i, sortOurs, oursUsd))}
+        </div>
         {theirsUsd > 0 && (
           <div style={{
-            width: 2, flexShrink: 0, borderRadius: 1,
-            background: 'rgba(244,247,251,0.55)',
-          }} />
+            flex: `${theirsUsd} 1 0px`, display: 'flex', gap: 1.5, minWidth: 12,
+            opacity: dimAgainst ? 0.55 : 1,
+          }}
+          >
+            {sortTheirs.map((w, i) => block(w, 'against', i, sortTheirs, theirsUsd))}
+          </div>
         )}
-        {sortTheirs.map((w, i) => block(w, 'against', i, sortTheirs))}
       </div>
-
-      {/* Dollars at the ends — the caption the eye wants next */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-        marginTop: 7, fontFeatureSettings: "'tnum'",
-      }}>
-        <span
-          title="All tracked money on this side — winners and losers; blocks show who"
-          style={{ fontSize: 12.5, fontWeight: 700, color: C.text, letterSpacing: '-0.02em' }}
-        >
-          {fmtUsd(oursUsd)}
-          <span style={{ fontSize: 10.5, fontWeight: 450, color: C.textFaint, marginLeft: 5 }}>
-            on
-          </span>
-          <span style={{ fontSize: 10.5, fontWeight: 650, color: C.textSec, marginLeft: 4 }}>
-            {ourSideLabel(f)}
-          </span>
-        </span>
-        <span style={{ fontSize: 12.5, fontWeight: 550, color: theirsUsd > 0 ? C.textMuted : C.textFaint, letterSpacing: '-0.02em' }}>
-          {theirsUsd > 0 ? (
-            <>
-              <span style={{ fontSize: 10.5, fontWeight: 650, color: C.textMuted, marginRight: 4 }}>
-                {theirSideLabel(f)}
-              </span>
-              {fmtUsd(theirsUsd)}
-            </>
-          ) : 'nothing against'}
-        </span>
-      </div>
-
-      {/* Legend — the code key, only for colors actually on the board */}
-      {legendItems.length > 0 && !aggregate && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10, marginTop: 6,
-          fontSize: 9.5, fontWeight: 500, color: C.textFaint, letterSpacing: '0.015em',
-          whiteSpace: 'nowrap',
-        }}>
-          {legendItems.map((l) => (
-            <span key={l.cls} title={l.tip} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <span style={{
-                width: 6, height: 6, borderRadius: 2,
-                background: l.color, opacity: l.opacity,
-              }} />
-              {l.label}
-            </span>
-          ))}
-          {theirsUsd > 0 && (
-            <span title="Striped blocks are money against us" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <span style={{
-                width: 6, height: 6, borderRadius: 2,
-                background: '#96A2B8', backgroundImage: STRIPES, opacity: 0.75,
-              }} />
-              against
-            </span>
-          )}
-          <span style={{ marginLeft: 'auto' }}>hover a block</span>
-        </div>
-      )}
     </div>
   );
 }
