@@ -446,6 +446,8 @@ import {
   TRUST_M_STRONG_FLOOR_UNITS,
   TRUST_M_PLUS1_CEIL_UNITS,
   isTrustMRule,
+  isTrustAgsBypass,
+  groupHasTrustedWallet,
   isTrustedPositionWallet,
 } from '../src/lib/pressLadderOverlay.js';
 
@@ -3171,9 +3173,12 @@ async function createMissingLockedPicks({
       if (sideAlready) continue;
       if (docAlready && !top3Early.fires) continue;
       const live = computeWalletConsensus(positions, side, sport, walletProfiles);
-      // Quick-skip: no whitelist activity at all on this side.
+      // Quick-skip: no Door-2, no HC, and no trusted wallet on this game.
+      // Door-2 misses a market-trusted total (Houston 2026-10-30, 2a8409 / a1be00).
+      // Trust is read on the whole cluster so the other side can still veto.
       // A top-3 pick wallet is not required to be on the whitelist.
-      if (!top3Early.fires && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) continue;
+      const trustedOnGame = groupHasTrustedWallet(positions, walletProfiles, sport, marketType);
+      if (!top3Early.fires && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
 
       // Build walletDetails for AGS-U (sport-local size — Action parity).
       const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType);
@@ -3216,9 +3221,13 @@ async function createMissingLockedPicks({
       let pressMirrorCreate = null;
       let pressMirrorShapeCreate = null;
       let pressMirrorForceCreate = false;
+      let trustProbeCreate = false;
       if (isPressMirrorLive(TARGET_DATE) && !(Number.isFinite(scoreV12) && scoreV12 > 0)) {
+        // pickDate so a later read of this eval sees trust units. PRESS-M
+        // reads gate flags only; the trust layer does not change those.
         pressMirrorShapeCreate = evaluatePressLadder({
           walletDetails, side, sport, marketType, walletProfiles, sideOdds: null, steamOn: false,
+          pickDate: TARGET_DATE,
         });
         pressMirrorCreate = evaluatePressMirror({
           shapeEval: pressMirrorShapeCreate,
@@ -3247,6 +3256,11 @@ async function createMissingLockedPicks({
           console.log(`  UNOPP AGS bypass: ${docId} ${side} (agsv12_no_signal → force create)`);
         } else if (top3Early.fires) {
           console.log(`  TOP3-PICK bypass: ${docId} ${side} (agsv12_no_signal → force create ${top3Early.units}u)`);
+        } else if (trustedOnGame) {
+          // Odds are not known yet. TRUST-S stakes inside an implied window,
+          // so the decision waits for the ladder call that has the ticket price.
+          trustProbeCreate = true;
+          console.log(`  TRUST probe: ${docId} ${side} (agsv12_no_signal · trusted wallet on ${marketType})`);
         } else {
           skipped.push({ docId, side, reason: 'agsv12_no_signal' });
           continue;
@@ -3264,6 +3278,9 @@ async function createMissingLockedPicks({
           );
         } else if (top3Early.fires) {
           console.log(`  TOP3-PICK bypass: ${docId} ${side} (agsv12_mute score=${scoreV12} → force create ${top3Early.units}u)`);
+        } else if (trustedOnGame) {
+          trustProbeCreate = true;
+          console.log(`  TRUST probe: ${docId} ${side} (agsv12_mute score=${scoreV12} · trusted wallet on ${marketType})`);
         } else {
           skipped.push({ docId, side, reason: 'agsv12_mute_below_zero', score: scoreV12 });
           continue;
@@ -4135,11 +4152,10 @@ async function createMissingLockedPicks({
         });
       }
       if (isPressLadderLive(TARGET_DATE)) {
-        // TRUST-M: a side the trust layer put through on market-book margin /
-        // conviction is staked through the AGS quality gate (no V12 score).
-        const trustMForceCreate = !!pressEvalCreate && pressEvalCreate.units > 0
-          && isTrustMRule(pressEvalCreate.trust?.rule);
-        const pressScoreOkCreate = (scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0) || trustMForceCreate;
+        // TRUST: a TRUST rung ships through the AGS quality gate (no V12 score).
+        // isTrustMRule misses TRUST-T (`trust_t` / `trust_m_floor`).
+        const trustForceCreate = isTrustAgsBypass(pressEvalCreate);
+        const pressScoreOkCreate = (scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0) || trustForceCreate;
         const pressUnitsCreate = pressScoreOkCreate && pressEvalCreate && pressEvalCreate.units > 0
           ? pressEvalCreate.units
           : (pressMirrorForceCreate ? PRESS_M_UNITS : 0);
@@ -4777,6 +4793,32 @@ async function createMissingLockedPicks({
         evaluatedAt: now,
         syncedBy: 'server-cron',
       };
+      // A trusted wallet opened this side. Write it only when the ladder, at
+      // the real ticket price, still wants a TRUST stake. Caps that take the
+      // units to 0 do not leave a 0u LOCKED card.
+      const trustKeepsCreate = isTrustAgsBypass(pressEvalCreate) && peakUnitsApplied > 0;
+      if (trustProbeCreate
+        && !(Number.isFinite(scoreV12) && scoreV12 > 0)
+        && !pressMirrorForceCreate
+        && !q1ForceBypassAgs
+        && !unoppForceBypassAgs
+        && !top3Early.fires
+        && !trustKeepsCreate) {
+        skipped.push({
+          docId, side, reason: 'trust_rung_no_stake',
+          rung: pressEvalCreate?.rung || null,
+          units: pressEvalCreate?.units ?? 0,
+        });
+        console.log(
+          `  TRUST no stake: ${docId} ${side} (score=${scoreV12 ?? '∅'} · ${pressEvalCreate?.rung || 'none'} ${pressEvalCreate?.units ?? 0}u)`,
+        );
+        continue;
+      }
+      if (trustProbeCreate && trustKeepsCreate) {
+        console.log(
+          `  TRUST stake: ${docId} ${side} ${pressEvalCreate.rung} ${peakUnitsApplied}u (score=${scoreV12 ?? '∅'} · ${pressEvalCreate.trust?.rule || 'rung'})`,
+        );
+      }
       newSides[side] = {
         team: team || side,
         lockStage: 'LOCKED',
@@ -6370,17 +6412,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const pressLive = isPressLadderLive(pickDate);
   let pressMirrorApplied = false;
   if (pressLive && !skipManualFlinch) {
-    // TRUST-M: a side the trust layer put through on market-book margin /
-    // conviction is staked through the AGS quality mute (agsv12 ≤ 0 / no
-    // signal) the same way PRESS-M is — the stake is the trusted book's.
-    const trustMForce = !!pressEval && pressEval.units > 0 && isTrustMRule(pressEval.trust?.rule);
-    if (trustMForce && appliedStatus !== 'ACTIVE' && mutedByAgs) {
+    // TRUST: a TRUST rung ships through the AGS quality mute (agsv12 ≤ 0 /
+    // no signal) the same way PRESS-M does. isTrustMRule misses TRUST-T.
+    const trustForce = isTrustAgsBypass(pressEval);
+    if (trustForce && appliedStatus !== 'ACTIVE' && mutedByAgs) {
       appliedStatus = 'ACTIVE';
-      appliedReason = 'trust_m_ags_bypass';
+      appliedReason = isTrustMRule(pressEval.trust?.rule) ? 'trust_m_ags_bypass' : 'trust_rung_ags_bypass';
       mutedByAgs = false;
     }
     const pressScoreOk = (appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0)
-      || (trustMForce && appliedStatus === 'ACTIVE');
+      || (trustForce && appliedStatus === 'ACTIVE');
     const pressMirrorOk = !pressScoreOk && appliedStatus === 'ACTIVE' && pressMirrorFires;
     const pressUnitsRaw = pressScoreOk && pressEval && pressEval.units > 0
       ? pressEval.units
@@ -6507,9 +6548,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
-  // CONFIRMED-UNOPP rescue that forced through an AGS mute.
+  // CONFIRMED-UNOPP / TRUST rescue that forced through an AGS mute.
   let appliedLockStage = lockStage;
   let lockStageReason = null;
+  const trustShip = appliedStatus === 'ACTIVE'
+    && finalUnitsApplied > 0
+    && isTrustAgsBypass(pressEval);
   const passesShipFloor = (
     appliedStatus === 'ACTIVE'
     && scoreV12Live != null
@@ -6526,15 +6570,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && (top3Policy?.action === 'rescue' || top3Policy?.action === 'floor' || top3Policy?.fires)
-  );
+  ) || trustShip;
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
       appliedLockStage = 'LOCKED';
       lockStageReason = (scoreV12Live != null && scoreV12Live > 0)
         ? 'agsv12_positive_score'
         : (pressMirrorApplied ? PRESS_M_SUPERSEDED_REASON
-          : (top3Policy?.fires ? 'top3_pick_ags_bypass'
-            : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass')));
+          : (trustShip
+            ? (isTrustMRule(pressEval?.trust?.rule) ? 'trust_m_ags_bypass' : 'trust_rung_ags_bypass')
+            : (top3Policy?.fires ? 'top3_pick_ags_bypass'
+              : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass'))));
     } else {
       appliedLockStage = 'LOCKED';
     }
@@ -8596,6 +8642,7 @@ async function main() {
         + ` · TRUST-T: total with ${TRUST_T_MIN_FOR}+ wallets trusted in this sport's totals market for + none against → ${TRUST_T_UNITS}u, ${TRUST_T_PRESS_UNITS}u at implied ≤${Math.round(TRUST_T_PRESS_IMPLIED_MAX * 100)}% (${TRUST_T_STAKE_TIER}); exactly one trusted wallet for → 0u; trusted wallets both sides → 0u`
         + ` · a wallet holding both sides of the same spread/total is a self-hedge and is netted out of both lists before TRUST-S/T read (+hedge_<wallet>)`
         + ` · TRUST-M: market-book trusted margin (for − against) ≥ ${TRUST_M_MARGIN}, or +1 with conviction (ticket ≥ ${TRUST_M_CONVICTION_RATIO}× usual or trusted $ margin ≥ $${TRUST_M_DOLLAR_MARGIN / 1000}k), goes through FADE-F / TRUST-S/T vetoes, the TRUST-T lone mute and the AGS quality mute (trust_m_ags_bypass); stakes a 0u moneyline at ${TRUST_M_ML_UNITS}u (trust_m_ml_for_…) and floors a 0u spread / total at ${TRUST_M_FLOOR_UNITS}u (trust_m_floor_…); trusted wallets' open tickets survive the ${30}-min freshness prune · TRUST-M sizing: margin ≥ ${TRUST_M_MARGIN} floors every staked side at ${TRUST_M_STRONG_FLOOR_UNITS}u in every market, over the caps (+trust_m_floor${TRUST_M_STRONG_FLOOR_UNITS}_m…); margin +1 ceils at ${TRUST_M_PLUS1_CEIL_UNITS}u, HC or not (+trust_m_ceil${TRUST_M_PLUS1_CEIL_UNITS}_m1)`
+        + ` · a TRUST rung (TRUST-G/S/T, including trust_t, which is not a trust_m token) ships through an AGS score that is not > 0 on create and on reconcile (trust_rung_ags_bypass). Create keeps a game that has a trusted wallet when Door-2 and HC are both zero, then writes the side only if that rung still has units at the ticket price`
         + ` · spreads cap ${SPREAD_CAP_UNITS}u, totals cap ${ST_CAP_UNITS}u · gated moneyline rungs flagged v8_trustLift (shadow) · from ${TRUST_FROM}`,
       );
     } else {

@@ -473,6 +473,40 @@ export function isTrustMRule(rule) {
 }
 
 /**
+ * A TRUST stake that ships when the v12 score is not > 0.
+ * `isTrustMRule` only matches a `trust_m` token. TRUST-T consensus stamps
+ * `trust_t`, and a margin ≥ 2 then adds `trust_m_floor`, so that predicate
+ * drops the stake (Houston total, 2026-10-30). A PRESS / STEAM rung with no
+ * trust rule stays on the v12 score gate.
+ */
+export function isTrustAgsBypass(pressEval) {
+  if (!pressEval || !(Number(pressEval.units) > 0)) return false;
+  const rung = String(pressEval.rung || '');
+  if (rung.startsWith('TRUST')) return true;
+  const rule = pressEval.trust?.rule;
+  if (typeof rule !== 'string' || !rule) return false;
+  if (isTrustMRule(rule)) return true;
+  if (/(^|\+)trust_(t|s|g)(\+|$)/.test(rule)) return true;
+  if (/(^|\+)trust_m_(floor|ceil)(\+|$)/.test(rule)) return true;
+  return false;
+}
+
+/**
+ * True when any ticket in the cluster is trusted on this sport's book or on
+ * `marketType`'s book. Same predicate as the freshness keep. The age floor
+ * is applied inside the ladder, not here, so a young wallet can open the
+ * create path and still be scored at 0u.
+ */
+export function groupHasTrustedWallet(positions, walletProfiles, sport, marketType) {
+  if (!Array.isArray(positions) || !walletProfiles) return false;
+  for (const p of positions) {
+    const wallet = p?.walletShort || p?.wallet;
+    if (wallet && isTrustedPositionWallet(walletProfiles, wallet, sport, marketType)) return true;
+  }
+  return false;
+}
+
+/**
  * Market-book margin read for TRUST-M: trusted FOR / AG with self-hedges
  * netted, head margin, trusted dollar margin, conviction, and whether the
  * side goes through (`through`): margin ≥ TRUST_M_MARGIN, or margin +1 with
@@ -1046,8 +1080,10 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * (+trust_m_over_fade_f_…), a TRUST-S/T veto (+trust_m_over_ag_…) and the
  * TRUST-T lone mute; it stakes a 0u moneyline at TRUST_M_ML_UNITS
  * (trust_m_ml_for_…) and floors a spread / total the FOR path would leave
- * at 0u at TRUST_M_FLOOR_UNITS (trust_m_floor_…). The sync applies a
- * trust_m stake through the AGS quality gate as well (trust_m_ags_bypass).
+ * at 0u at TRUST_M_FLOOR_UNITS (trust_m_floor_…). The sync ships any TRUST
+ * stake through an AGS score that is not > 0 (isTrustAgsBypass). A trust_m
+ * rule logs trust_m_ags_bypass; TRUST-T/S/G (trust_t is not a trust_m token)
+ * log trust_rung_ags_bypass.
  * Sizing (v3): a staked margin ≥ TRUST_M_MARGIN side floors at
  * TRUST_M_STRONG_FLOOR_UNITS in every market, over the spread / totals caps
  * (+trust_m_floor3_m…); a margin +1 side ceils at TRUST_M_PLUS1_CEIL_UNITS
