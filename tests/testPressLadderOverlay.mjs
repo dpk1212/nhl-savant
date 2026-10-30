@@ -90,6 +90,9 @@ import {
   TRUST_M_CONVICTION_RATIO,
   TRUST_M_DOLLAR_MARGIN,
   isTrustMRule,
+  isTrustAgsBypass,
+  groupHasTrustedWallet,
+  isTrustedPositionWallet,
   trustMarginRead,
   trustMTag,
   TRUST_M_STRONG_FLOOR_UNITS,
@@ -1458,6 +1461,108 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(st.v8_pressEdgeNetAction, 'MUTE', 'stamp action'); eq(st.v8_pressEdgeNetClause, 'hole', 'stamp clause');
   eq(st.v8_unitsPrePressEdgeNet, 4, 'stamp pre units');
   eq(pressEdgeNetStamp(applyPressEdgeNetClamp({ units: 4, pressEdge: 8, pickDate: LIVE })).v8_pressEdgeNetReason, null, 'hold clears the reason');
+}
+
+// Create-path coverage: a market-trusted total with no Door-2 still has a
+// TRUST stake when v12 score is not > 0. isTrustMRule misses trust_t.
+{
+  const DAY = '2026-10-30';
+  const NBA = 'NBA';
+  const T = (status, tier) => ({ status, tier, n: 20, edge: 8, formOn: status.endsWith('_ON') });
+  const book = (short, { wr, trust = null, trustMkt = {} }) => {
+    const byMarket = {};
+    for (const [m, t] of Object.entries(trustMkt)) byMarket[m] = { trust: t };
+    return [short, { bySport: { [NBA]: {
+      positions: { n: 40, wr, dollarRoi: 10, invested: 400000, wins: Math.round(40 * wr / 100), settledPnl: 0 },
+      trust, byMarket,
+    } } }];
+  };
+  const nbaProfiles = new Map([
+    book('a1be00', { wr: 54, trust: T('FALLEN_OFF', 4), trustMkt: { TOTAL: T('STABLE_ON', 5) } }),
+    book('2a8409', { wr: 48, trust: T('UNPROVEN', 0), trustMkt: { TOTAL: T('UNPROVEN', 0) } }),
+    book('ef68ca', { wr: 52, trust: T('FALLEN_OFF', 3), trustMkt: { TOTAL: T('STABLE_ON', 5) } }),
+    book('aaedcd', { wr: 51, trust: T('STABLE_OFF', 5), trustMkt: { TOTAL: T('STABLE_ON', 5), SPREAD: T('STABLE_ON', 5) } }),
+  ]);
+  const positions = [
+    { wallet: '0x' + 'a'.repeat(34) + 'a1be00', side: 'over' },
+    { wallet: '2a8409', side: 'over' },
+  ];
+  ok(groupHasTrustedWallet(positions, nbaProfiles, NBA, 'TOTAL'), 'market-trusted total opens the game');
+  ok(!groupHasTrustedWallet([{ wallet: '2a8409', side: 'over' }], nbaProfiles, NBA, 'TOTAL'), 'unproven total does not');
+  ok(!groupHasTrustedWallet(positions, nbaProfiles, NBA, 'ML'), 'ML book is not the totals book');
+  ok(isTrustedPositionWallet(nbaProfiles, 'a1be00', NBA, 'TOTAL'), 'a1be00 totals trusted');
+  ok(!isTrustedPositionWallet(nbaProfiles, '2a8409', NBA, 'TOTAL'), '2a8409 totals not trusted');
+
+  const lone = evaluatePressLadder({
+    walletDetails: [{ wallet: 'a1be00', side: 'over', invested: 18200 }, { wallet: '2a8409', side: 'over', invested: 51606 }],
+    side: 'over', sport: NBA, marketType: 'TOTAL', walletProfiles: nbaProfiles, sideOdds: -110, steamOn: false, pickDate: DAY,
+  });
+  eq(lone.rung, 'TRUST-T', 'lone $18k through is TRUST-T');
+  eq(lone.units, 1, 'dollar margin floors a lone total at 1u');
+  ok(isTrustMRule(lone.trust.rule), 'lone through is a trust_m rule');
+  ok(isTrustAgsBypass(lone), 'lone through bypasses a non-positive v12 score');
+  ok(!lone.gate.pass, 'neither wallet is Door-2');
+
+  const pair = evaluatePressLadder({
+    walletDetails: [
+      { wallet: 'a1be00', side: 'over', invested: 18200 },
+      { wallet: 'aaedcd', side: 'over', invested: 900 },
+      { wallet: '2a8409', side: 'over', invested: 51606 },
+    ],
+    side: 'over', sport: NBA, marketType: 'TOTAL', walletProfiles: nbaProfiles, sideOdds: -110, steamOn: false, pickDate: DAY,
+  });
+  eq(pair.rung, 'TRUST-T', 'two trusted FOR stay TRUST-T');
+  eq(pair.units, 3, 'margin +2 floors the 2.5u consensus at 3u');
+  ok(!isTrustMRule(pair.trust.rule), `trust_t + trust_m_floor is not a trust_m token (${pair.trust.rule})`);
+  ok(isTrustAgsBypass(pair), 'TRUST-T still ships when isTrustMRule is false');
+
+  const quiet = evaluatePressLadder({
+    walletDetails: [{ wallet: 'a1be00', side: 'over', invested: 900 }, { wallet: '2a8409', side: 'over', invested: 500 }],
+    side: 'over', sport: NBA, marketType: 'TOTAL', walletProfiles: nbaProfiles, sideOdds: -110, steamOn: false, pickDate: DAY,
+  });
+  eq(quiet.units, 0, 'lone total without conviction stays 0u');
+  ok(!isTrustAgsBypass(quiet), 'a lone mute is not a bypass');
+
+  const hedged = evaluatePressLadder({
+    walletDetails: [
+      { wallet: 'a1be00', side: 'over', invested: 18200 },
+      { wallet: 'aaedcd', side: 'over', invested: 533 },
+      { wallet: 'aaedcd', side: 'under', invested: 200 },
+    ],
+    side: 'over', sport: NBA, marketType: 'TOTAL', walletProfiles: nbaProfiles, sideOdds: -110, steamOn: false, pickDate: DAY,
+  });
+  eq(hedged.units, 1, 'a self-hedge nets out and the remaining $18k total floors at 1u');
+  ok(isTrustAgsBypass(hedged), 'the floored over still ships');
+  const vetoed = evaluatePressLadder({
+    walletDetails: [
+      { wallet: 'a1be00', side: 'over', invested: 18200 },
+      { wallet: 'ef68ca', side: 'under', invested: 1090 },
+    ],
+    side: 'over', sport: NBA, marketType: 'TOTAL', walletProfiles: nbaProfiles, sideOdds: -110, steamOn: false, pickDate: DAY,
+  });
+  eq(vetoed.units, 0, 'one trusted over and one trusted under stand down');
+  ok(!isTrustAgsBypass(vetoed), 'a veto is not a bypass');
+
+  const spreadNull = evaluatePressLadder({
+    walletDetails: [{ wallet: 'aaedcd', side: 'home', invested: 2000 }],
+    side: 'home', sport: NBA, marketType: 'SPREAD', walletProfiles: nbaProfiles, sideOdds: null, steamOn: false, pickDate: DAY,
+  });
+  eq(spreadNull.units, 0, 'TRUST-S with no price and no margin-through is 0u');
+  ok(!isTrustAgsBypass(spreadNull), 'null odds do not invent a spread stake');
+  const spreadWin = evaluatePressLadder({
+    walletDetails: [{ wallet: 'aaedcd', side: 'home', invested: 2000 }],
+    side: 'home', sport: NBA, marketType: 'SPREAD', walletProfiles: nbaProfiles, sideOdds: -110, steamOn: false, pickDate: DAY,
+  });
+  ok(spreadWin.units > 0 && isTrustAgsBypass(spreadWin), 'the same spread inside the window is a TRUST stake');
+
+  const pressOnly = evaluatePressLadder({
+    walletDetails: [{ wallet: 'aaaaaa', side: 'home', invested: 3500 }, { wallet: 'dddddd', side: 'away', invested: 100 }],
+    side: 'home', sport: 'MLB', marketType: 'ML', walletProfiles: profiles, sideOdds: -120, steamOn: false, pickDate: DAY,
+  });
+  ok(pressOnly.units > 0 && pressOnly.rung === 'PRESS', `unprofiled press stays PRESS (${pressOnly.rung} ${pressOnly.units}u)`);
+  ok(!isTrustAgsBypass(pressOnly), 'a non-trust rung does not bypass');
+  ok(!isTrustAgsBypass(null) && !isTrustAgsBypass({ units: 0, rung: 'TRUST-T' }) && !isTrustAgsBypass({ units: 2, rung: 'PRESS', trust: { rule: 'st_cap' } }), 'empty, 0u, and a cap-only press stay off');
+  ok(!groupHasTrustedWallet(null, nbaProfiles, NBA, 'TOTAL') && !groupHasTrustedWallet(positions, null, NBA, 'TOTAL'), 'missing inputs fail closed');
 }
 
 console.log(`testPressLadderOverlay: ${n} assertions passed`);
