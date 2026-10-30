@@ -14,7 +14,6 @@ import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 import LockedCollapsedBoard from './LockedCollapsedBoard';
 import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
 import HeroShopPrice from './HeroShopPrice.jsx';
-import TeamCrest, { pickCrestName } from './TeamCrest.jsx';
 import {
   pinPostedOdds,
   shopRailHidden,
@@ -2743,14 +2742,12 @@ function CollapsedHeader({ live, inClassName }) {
  */
 function CollapsedHero({ live, pickClass }) {
   const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip } = live;
-  const crest = pickCrestName(f);
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
       gap: '0.85rem', position: 'relative', zIndex: 2,
     }}>
-      {crest ? <TeamCrest name={crest} sport={f.sport} size={44} /> : null}
-      <div style={{ minWidth: 0, flex: 1, paddingTop: crest ? 2 : 0, containerType: 'inline-size' }}>
+      <div style={{ minWidth: 0, flex: 1, paddingTop: 2, containerType: 'inline-size' }}>
         <div
           className={pickClass}
           style={{
@@ -2786,6 +2783,7 @@ function CollapsedHero({ live, pickClass }) {
               fallbackOdds={heroPx}
               americanOnly
               hideEv
+              hideLogo
               color={C.text}
               logoSize={16}
               fontSize="1rem"

@@ -21,6 +21,7 @@ export default function HeroShopPrice({
   fallbackOdds,
   americanOnly = false,
   hideEv = false,
+  hideLogo = false,
   color = '#9aa6bd',
   logoSize = 18,
   fontSize = '1.12rem',
@@ -51,7 +52,7 @@ export default function HeroShopPrice({
         fontFeatureSettings: "'tnum'",
       }}
     >
-      {book ? (
+      {book && !hideLogo ? (
         <span style={{
           width: logoSize, height: logoSize, borderRadius: 4, overflow: 'hidden',
           display: 'grid', placeItems: 'center', flexShrink: 0,

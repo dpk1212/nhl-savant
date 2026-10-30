@@ -4,8 +4,8 @@ import { buildBoardFaceLine } from './boardFaceLine.js';
 
 /**
  * Collapsed Locked — the line under the scoreboard.
- * One sentence names the lead and, when both sides are proven, says so.
- * It does not restate the dollars already printed on the bar.
+ * A buried side says so. A proven fight says so. The résumé is the
+ * record and the last-30 proof, with the wallet as the signature.
  */
 const C = {
   text: '#F4F7FB',
@@ -129,20 +129,56 @@ export default function LockedCollapsedStrength({
   const sport = f.sport || lead?.sport || '';
 
   if (face === 'subscriber') {
-    const line = buildBoardFaceLine(f, lead);
-    if (!line) return null;
+    const faceLine = buildBoardFaceLine(f, lead);
+    if (!faceLine) return null;
+    if (typeof faceLine === 'string') {
+      return (
+        <div data-face-line style={{ marginTop: 16, marginBottom: 4, fontSize: 14.5, fontWeight: 520, color: C.textSec }}>
+          {faceLine}
+        </div>
+      );
+    }
+    const quiet = !!faceLine.headline;
     return (
       <div data-face-line style={{ marginTop: 16, marginBottom: 4 }}>
-        <div style={{
-          fontSize: 14.5, fontWeight: 520, letterSpacing: '-0.012em',
-          color: C.textSec, lineHeight: 1.45, fontFeatureSettings: "'tnum'",
-        }}
-        >
-          {leadMine ? (
-            <Star size={12} fill="#E8D28A" color="#E8D28A" style={{ marginRight: 5, verticalAlign: '-1px' }} />
-          ) : null}
-          {line}
-        </div>
+        {faceLine.headline ? (
+          <div style={{
+            fontSize: 14.5, fontWeight: 540, letterSpacing: '-0.014em',
+            color: C.textSec, lineHeight: 1.4,
+          }}
+          >
+            {faceLine.headline}
+          </div>
+        ) : null}
+        {(faceLine.proof || faceLine.wallet) ? (
+          <div style={{
+            marginTop: faceLine.headline ? 5 : 0,
+            fontSize: quiet ? 12.5 : 14.5,
+            fontWeight: 540,
+            letterSpacing: '-0.012em',
+            color: quiet ? C.textMuted : C.textSec,
+            lineHeight: 1.4,
+            fontFeatureSettings: "'tnum'",
+          }}
+          >
+            {faceLine.proof}
+            {faceLine.proof && faceLine.wallet ? (
+              <span style={{ color: C.textFaint, fontWeight: 450 }}> · </span>
+            ) : null}
+            {faceLine.wallet ? (
+              <span style={{
+                color: leadMine ? '#E8D28A' : (quiet ? C.textMuted : C.textSec),
+                fontWeight: 650,
+              }}
+              >
+                {leadMine ? (
+                  <Star size={11} fill="#E8D28A" color="#E8D28A" style={{ marginRight: 4, verticalAlign: '-1px' }} />
+                ) : null}
+                {faceLine.wallet}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     );
   }
