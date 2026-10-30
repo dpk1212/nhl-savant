@@ -41,6 +41,7 @@ const buried = buildMoneyRiver({
   boardMoneyConfirmed: { ours: 3400, theirs: 0 },
 });
 
+assert(buried.panel.eyebrow === 'Combined', buried.panel.eyebrow);
 assert(buried.panel.stats.map((s) => s.label).join('|') === 'Win|Record', JSON.stringify(buried.panel.stats));
 assert(buried.panel.stats[0].value === '63.6%', buried.panel.stats[0].value);
 assert(buried.panel.stats.some((s) => s.label === 'Record' && s.value === '14\u20138'), JSON.stringify(buried.panel.stats));
@@ -80,7 +81,8 @@ const split = buildMoneyRiver({
   boardMoneyFull: { ours: 11600, theirs: 9800 },
 });
 
-assert(split.panel.stats[0].label === 'Combined win', split.panel.stats[0].label);
+assert(split.panel.eyebrow === 'Combined', split.panel.eyebrow);
+assert(split.panel.stats[0].label === 'Win', split.panel.stats[0].label);
 assert(split.panel.stats[0].value === '63.9%', split.panel.stats[0].value);
 assert(split.panel.stats.some((s) => s.value === '23\u201313'), JSON.stringify(split.panel.stats));
 assert(!split.panel.stats.some((s) => /sharp|sized/i.test(s.label)), JSON.stringify(split.panel.stats));
@@ -124,9 +126,8 @@ const rated = buildMoneyRiver({
     { short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true, record: '8-6', roi: 10 },
   ],
 });
-const ratedRoi = rated.panel.stats.find((s) => s.label === 'Combined ROI');
-assert(ratedRoi.text == null && ratedRoi.value === '+16.7%', ratedRoi.value);
-assert(rated.rows.find((r) => r.short === 'aaaaaa').roi === 20, 'row keeps its roi');
+assert(!rated.panel.stats.some((s) => /roi/i.test(s.label)), 'all-time roi is not labeled L30');
+assert(rated.rows.find((r) => r.short === 'aaaaaa').roi === 20, 'row keeps its all-time roi');
 assert(!rated.panel.stats.some((s) => s.label === 'Profit'), 'roi without book profit stays off the strip');
 
 const partialRoi = buildMoneyRiver({
@@ -149,7 +150,7 @@ const tape = buildMoneyRiver({
   mapWallets: [
     {
       short: 'aaaaaa', side: 'ours', invested: 2000, whitelist: 'CONFIRMED', proven: true,
-      record: '10-4', roi: 20, bookPnl: 4000,
+      record: '10-4', roi: 20, l30Roi: 20, bookPnl: 4000,
       recent: [
         { date: '2026-10-01', won: 1 },
         { date: '2026-10-03', won: 0 },
@@ -157,7 +158,7 @@ const tape = buildMoneyRiver({
     },
     {
       short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true,
-      record: '8-6', roi: 10, bookPnl: -800,
+      record: '8-6', roi: 10, l30Roi: 10, bookPnl: -800,
       recent: [
         { date: '2026-10-02', won: 0 },
         { date: '2026-10-04', won: 1 },
@@ -166,10 +167,15 @@ const tape = buildMoneyRiver({
   ],
 });
 assert(JSON.stringify(tape.panel.dots) === JSON.stringify(['win', 'loss', 'loss', 'win']), JSON.stringify(tape.panel.dots));
+assert(tape.panel.eyebrow === 'Combined', tape.panel.eyebrow);
+assert(tape.panel.dotLabel === 'Last 4', tape.panel.dotLabel);
 assert(
-  tape.panel.stats.map((s) => s.label).join('|') === 'Combined win|Combined ROI|Profit|Record',
+  tape.panel.stats.map((s) => s.label).join('|') === 'Win|L30 ROI|Profit|Record',
   tape.panel.stats.map((s) => s.label).join('|'),
 );
+assert(tape.panel.stats.find((s) => s.label === 'L30 ROI').value === '+16.7%', tape.panel.stats.find((s) => s.label === 'L30 ROI').value);
+assert(tape.rows.find((r) => r.short === 'aaaaaa').meta === '10\u20134 \u00b7 +20% \u00b7 +$4K', tape.rows.find((r) => r.short === 'aaaaaa').meta);
+assert(tape.rows.find((r) => r.short === 'bbbbbb').meta === '8\u20136 \u00b7 +10% \u00b7 -$800', tape.rows.find((r) => r.short === 'bbbbbb').meta);
 assert(tape.panel.stats.find((s) => s.label === 'Profit').value === '+$3.2K', tape.panel.stats.find((s) => s.label === 'Profit').value);
 assert(!tape.panel.stats.some((s) => /sharp/i.test(s.label)));
 
@@ -184,5 +190,20 @@ const oneMissingPnl = buildMoneyRiver({
   ],
 });
 assert(!oneMissingPnl.panel.stats.some((s) => s.label === 'Profit'), 'one missing profit blocks the sum');
+
+const oneBook = buildMoneyRiver({
+  pickLabel: 'Bulls +15.5',
+  side: 'away',
+  away: 'Bulls',
+  home: 'Celtics',
+  mapWallets: [{
+    short: 'bulls1', side: 'ours', invested: 760, whitelist: 'CONFIRMED', proven: true,
+    wins: 10, losses: 4, bookPnl: 1600, l30Roi: 44, roi: 12,
+    trust: { secondary: ['14-8'], record: '14-8' },
+    record: '14-8',
+  }],
+});
+assert(oneBook.panel.stats.map((s) => `${s.label}:${s.value}`).join('|') === 'Win:71.4%|L30 ROI:+44%|Profit:+$1.6K|Record:10\u20134', oneBook.panel.stats.map((s) => s.value).join('|'));
+assert(oneBook.rows[0].meta === '10\u20134 \u00b7 +44% \u00b7 +$1.6K', oneBook.rows[0].meta);
 
 console.log('money river ok');

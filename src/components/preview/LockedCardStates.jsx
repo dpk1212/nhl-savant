@@ -47,6 +47,7 @@ const leadTrust = {
     record: '8-3', wr: 73, roi: 60, dollarRoi: 48, kind: 'positions', n: 11,
   },
   bookPnl: 8400,
+  l30Roi: 26,
   recent: tape(8, 'WLWWLWWW'),
 };
 
@@ -58,6 +59,7 @@ const showcaseBoard = [
     invested: 2100, sizeRatio: 0.9, displaySizeRatio: 0.9,
     record: '8-7', wr: 53, roi: 4, priorClvPct: 51,
     bookPnl: 1100,
+    l30Roi: 4,
     recent: tape(9, 'LWLWWLW'),
   },
   {
@@ -73,6 +75,7 @@ const contestedBoard = [
     sizeRatio: 1.8, displaySizeRatio: 1.8, whitelist: 'CONFIRMED', whitelisted: true, proven: true,
     hardMarket: true, priorClvPct: 58, roi: 22, wr: 67, record: '14-7',
     bookPnl: 18600,
+    l30Roi: 22,
     recent: tape(8, 'WWLWWWLW'),
   },
   {
@@ -80,6 +83,7 @@ const contestedBoard = [
     invested: 3600, sizeRatio: 1.2, displaySizeRatio: 1.2,
     record: '9-6', wr: 60, roi: 14, priorClvPct: 54,
     bookPnl: 6400,
+    l30Roi: 14,
     recent: tape(9, 'WLWWLWL'),
   },
   {
@@ -87,6 +91,7 @@ const contestedBoard = [
     invested: 1800, sizeRatio: 0.7, displaySizeRatio: 0.7,
     record: '7-6', wr: 54, roi: 3, priorClvPct: 49,
     bookPnl: 900,
+    l30Roi: 3,
     recent: tape(11, 'LWWLWL'),
   },
   {
@@ -345,6 +350,7 @@ const FIXTURES = [
           bookKind: 'positions',
         },
         bookPnl: 5600,
+        l30Roi: 26,
         recent: tape(6, 'LWWLWWWLWWLWW'),
       }],
       mapWallets: [
