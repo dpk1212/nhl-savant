@@ -3,7 +3,7 @@
  * Usage: node tests/testSourceBTrustBook.mjs
  */
 import assert from 'node:assert/strict';
-import { sourceBPreferredBook, recentResults } from '../src/lib/walletSportBook.js';
+import { sourceBPreferredBook, recentResults, l30Book } from '../src/lib/walletSportBook.js';
 
 const profile = {
   bySport: {
@@ -78,5 +78,15 @@ assert.deepEqual(recentResults({
 ]);
 assert.equal(recentResults({ form: { curveLegs: [{ date: '2026-09-01', won: true }] } })[0].won, 1);
 assert.equal(recentResults({ form: { recentAction: [{ won: 1 }] } }), null);
+
+const month = {
+  recentActionWindow: { n: 12, dollarRoi: 44.2, settledPnl: 1600 },
+  byMarket: {
+    SPREAD: { recentActionWindow: { n: 4, dollarRoi: 18, settledPnl: 400 } },
+  },
+};
+assert.equal(l30Book(month).roi, 44.2);
+assert.equal(l30Book(month, 'SPREAD').roi, 18);
+assert.equal(l30Book({ recentActionWindow: { n: 1, dollarRoi: 90 } }), null);
 
 console.log('testSourceBTrustBook: ok');

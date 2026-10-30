@@ -2,10 +2,11 @@
  * Display model for the locked money river.
  * Counts, records, and dollars come from the wallets already on the card.
  * A pooled win rate is shown only when every sharp on our side has a record.
- * Combined ROI is the stake-weighted blend of those same wallets' own ROI,
- * and only when every one of them has one. Profit is the sum of those
- * wallets' own book profit, on the same rule. The dots are real graded
- * bets in date order, oldest first. Sharp money stays on the river.
+ * Win, record, and profit come from each sharp's Source B book.
+ * L30 ROI is that same book's last-30-day dollar ROI, stake-weighted
+ * by this play. A stat is omitted unless every sharp on our side has it.
+ * The wallet line prints those same three figures. The dots are the
+ * graded bets behind that window, oldest first.
  */
 import { HC_RATIO } from '../../../lib/ags.js';
 import { ourSideLabel, theirSideLabel } from './boardFaceLine.js';
@@ -103,6 +104,7 @@ function poolOf(f) {
         roi: Number.isFinite(w?.roi) ? w.roi : (Number.isFinite(profile?.roi) ? profile.roi : null),
         dollarRoi: Number.isFinite(w?.dollarRoi) ? w.dollarRoi : (Number.isFinite(profile?.dollarRoi) ? profile.dollarRoi : null),
         bookPnl: Number.isFinite(w?.bookPnl) ? w.bookPnl : (Number.isFinite(profile?.bookPnl) ? profile.bookPnl : null),
+        l30Roi: Number.isFinite(w?.l30Roi) ? w.l30Roi : (Number.isFinite(profile?.l30Roi) ? profile.l30Roi : null),
         recent: Array.isArray(w?.recent) && w.recent.length
           ? w.recent
           : (Array.isArray(profile?.recent) ? profile.recent : null),
@@ -154,8 +156,28 @@ export function fmtSignedUsd(v) {
   return body;
 }
 
+/** The book the strip adds up. Wins and losses beat a trust caption. */
+function proofRecord(w) {
+  const wins = Number(w?.wins);
+  const losses = Number(w?.losses);
+  if (Number.isFinite(w?.wins) && Number.isFinite(w?.losses) && (wins + losses) > 0) {
+    return { wins, losses, label: `${wins}-${losses}` };
+  }
+  return walletRecord(w);
+}
+
+function rowLine(w, rec) {
+  const profit = Number.isFinite(w?.bookPnl) ? fmtSignedUsd(w.bookPnl) : null;
+  const stake = w?.invested ? fmtRiverUsd(w.invested) : null;
+  return [
+    rec?.label ? rec.label.replace('-', '\u2013') : null,
+    Number.isFinite(w?.l30Roi) ? fmtRoi(w.l30Roi) : null,
+    profit || stake,
+  ].filter(Boolean).join(' \u00b7 ');
+}
+
 function rowFrom(w, kind) {
-  const rec = walletRecord(w);
+  const rec = proofRecord(w);
   return {
     key: `${kind}-${w.side}-${w.short}`,
     short: w.short,
@@ -163,7 +185,10 @@ function rowFrom(w, kind) {
     kind,
     invested: w.invested,
     record: rec?.label || null,
+    l30Roi: Number.isFinite(w?.l30Roi) ? w.l30Roi : null,
+    bookPnl: Number.isFinite(w?.bookPnl) ? w.bookPnl : null,
     roi: walletRoi(w),
+    meta: rowLine(w, rec),
     more: 0,
   };
 }
@@ -278,7 +303,7 @@ function winLabel(wins, losses) {
 
 function pooled(sharps) {
   if (sharps.length < 2) return null;
-  const books = sharps.map(walletRecord);
+  const books = sharps.map(proofRecord);
   if (books.some((b) => !b)) return null;
   const wins = books.reduce((s, b) => s + b.wins, 0);
   const losses = books.reduce((s, b) => s + b.losses, 0);
@@ -311,22 +336,17 @@ function combinedProfit(sharps) {
   return fmtSignedUsd(books.reduce((s, n) => s + n, 0));
 }
 
-/** Stake-weighted ROI. Null unless every sharp on our side has one. */
-function combinedRoi(sharps) {
+/** Stake-weighted L30 ROI. Null unless every sharp on our side has one. */
+function combinedL30(sharps) {
   if (!sharps.length) return null;
   const books = sharps.map((w) => {
-    const roi = walletRoi(w);
-    if (!Number.isFinite(roi)) return null;
-    return { roi, invested: Math.max(0, Number(w.invested) || 0) };
+    if (!Number.isFinite(w?.l30Roi)) return null;
+    return { roi: w.l30Roi, invested: Math.max(0, Number(w.invested) || 0) };
   });
   if (books.some((b) => !b)) return null;
   const stake = books.reduce((s, b) => s + b.invested, 0);
   if (stake <= 0) return null;
-  const blended = books.reduce((s, b) => s + b.roi * b.invested, 0) / stake;
-  return {
-    text: fmtRoi(blended),
-    label: sharps.length > 1 ? 'Combined ROI' : 'ROI',
-  };
+  return fmtRoi(books.reduce((s, b) => s + b.roi * b.invested, 0) / stake);
 }
 
 /** Pill height the river must reserve so the destination copy fits. */
@@ -445,20 +465,25 @@ export function buildMoneyRiver(f) {
 
   const pool = pooled(sharps);
   const n = sharps.length;
-  const solo = n === 1 ? walletRecord(sharps[0]) : null;
+  const solo = n === 1 ? proofRecord(sharps[0]) : null;
   const winPct = pool?.label || (solo ? winLabel(solo.wins, solo.losses) : null);
-  const roi = combinedRoi(sharps);
+  const l30 = combinedL30(sharps);
   const profit = combinedProfit(sharps);
   const recordValue = pool ? pool.record : (solo ? dashRecord(solo) : null);
-  const moneyTone = (text) => (String(text).startsWith('-') ? 'loss' : String(text).startsWith('+') ? 'up' : 'plain');
+  const tone = (text) => (String(text).startsWith('-') ? 'loss' : 'plain');
   const stats = [
-    winPct ? { value: `${winPct}%`, label: n > 1 ? 'Combined win' : 'Win', tone: 'plain' } : null,
-    roi ? { value: roi.text, label: roi.label, tone: moneyTone(roi.text) } : null,
-    profit ? { value: profit, label: 'Profit', tone: moneyTone(profit) } : null,
-    recordValue ? { value: recordValue, label: 'Record', tone: 'record' } : null,
+    winPct ? { value: `${winPct}%`, label: 'Win', tone: 'plain' } : null,
+    l30 ? { value: l30, label: 'L30 ROI', tone: tone(l30) } : null,
+    profit ? { value: profit, label: 'Profit', tone: tone(profit) } : null,
+    recordValue ? { value: recordValue, label: 'Record', tone: 'plain' } : null,
   ].filter(Boolean);
   const dots = chronoDots(sharps);
-  const panel = n > 0 && (stats.length || dots) ? { stats, dots } : null;
+  const panel = n > 0 && (stats.length || dots) ? {
+    eyebrow: 'Combined',
+    stats,
+    dots,
+    dotLabel: dots ? `Last ${dots.length}` : null,
+  } : null;
 
   const oursName = displaySide(f, 'ours');
   const theirsName = displaySide(f, 'against');

@@ -87,6 +87,23 @@ function sourceBBook(pos, scope) {
   };
 }
 
+/**
+ * Last-30-day dollar ROI for the same book as the record.
+ * Market book uses that market's window. Otherwise the sport window.
+ * Null unless the window has two graded bets and a real dollar ROI.
+ */
+export function l30Book(sportRec, market = null) {
+  if (!sportRec) return null;
+  const key = marketKey(market);
+  const win = key
+    ? sportRec.byMarket?.[key]?.recentActionWindow
+    : sportRec.recentActionWindow;
+  const n = Number(win?.n) || 0;
+  const roi = Number(win?.dollarRoi);
+  if (n < 2 || !Number.isFinite(roi)) return null;
+  return { roi, n };
+}
+
 /** Graded bets in date order. The month's tape, else the older curve. */
 export function recentResults(sportRec, market = null) {
   const key = marketKey(market);

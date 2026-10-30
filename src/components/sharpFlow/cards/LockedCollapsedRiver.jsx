@@ -4,7 +4,7 @@
  */
 import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { Star } from 'lucide-react';
-import { buildMoneyRiver, fmtRiverUsd, fmtRoi } from './moneyRiver.js';
+import { buildMoneyRiver, fmtRiverUsd } from './moneyRiver.js';
 import { normalizeWalletShort } from '../../../lib/mySharps.js';
 
 const C = {
@@ -81,9 +81,8 @@ function rowName(row) {
 }
 
 function rowMeta(row) {
-  const stake = fmtRiverUsd(row.invested);
-  const roi = Number.isFinite(row.roi) ? fmtRoi(row.roi) : null;
-  return [row.record, roi, stake].filter(Boolean).join(' \u00b7 ');
+  if (row.meta) return row.meta;
+  return [row.record, fmtRiverUsd(row.invested)].filter(Boolean).join(' \u00b7 ');
 }
 
 function RiverRow({ row, mine }) {
@@ -224,58 +223,66 @@ function HeroFigure({ text }) {
   );
 }
 
-function RecordMark({ value }) {
-  const parts = String(value).split('\u2013');
-  if (parts.length !== 2) return value;
-  return (
-    <span>
-      <span style={{ color: GREEN }}>{parts[0]}</span>
-      <span style={{ color: 'rgba(244,247,251,0.28)' }}>{'\u2013'}</span>
-      <span style={{ color: CORAL }}>{parts[1]}</span>
-    </span>
-  );
-}
-
-function RecordDots({ dots }) {
+function RecordDots({ dots, label }) {
   if (!Array.isArray(dots) || dots.length < 2) return null;
   return (
-    <div aria-hidden style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 10 }}>
-      {dots.map((tone, i) => (
-        <span
-          key={i}
-          style={{
-            width: 5,
-            height: 5,
-            borderRadius: '50%',
-            background: tone === 'win' ? GREEN : '#E15A52',
-          }}
-        />
-      ))}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+      <div aria-hidden style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {dots.map((tone, i) => {
+          const last = i === dots.length - 1;
+          const color = tone === 'win' ? GREEN : '#E15A52';
+          return (
+            <span
+              key={i}
+              style={{
+                width: last ? 7 : 5,
+                height: last ? 7 : 5,
+                borderRadius: '50%',
+                background: color,
+                boxShadow: last ? `0 0 7px ${color}` : 'none',
+              }}
+            />
+          );
+        })}
+      </div>
+      {label ? (
+        <span style={{
+          fontSize: 8.5,
+          fontWeight: 650,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: C.textMuted,
+        }}
+        >
+          {label}
+        </span>
+      ) : null}
     </div>
   );
 }
 
-const TONE = {
-  plain: C.text,
-  up: '#2fd57e',
-  loss: '#f0524f',
-  record: C.text,
-};
-
-function ProofStat({ stat }) {
+function ProofStat({ stat, first }) {
+  const loss = stat.tone === 'loss';
   return (
-    <div style={{ minWidth: 0 }}>
+    <div style={{
+      minWidth: 0,
+      padding: '7px 8px 6px',
+      borderLeft: first ? 'none' : '1px solid rgba(148,163,184,0.16)',
+      background: stat.label === 'Win' ? 'rgba(47,213,126,0.10)' : 'transparent',
+      borderRadius: stat.label === 'Win' ? 8 : 0,
+    }}
+    >
       <div style={{
         fontSize: 17,
         fontWeight: 680,
         letterSpacing: '-0.03em',
-        color: TONE[stat.tone] || C.text,
+        color: loss ? '#f0524f' : C.text,
         fontFeatureSettings: "'tnum'",
         lineHeight: 1,
         whiteSpace: 'nowrap',
       }}
       >
-        {stat.tone === 'record' ? <RecordMark value={stat.value} /> : <HeroFigure text={stat.value} />}
+        <HeroFigure text={stat.value} />
       </div>
       <div style={{
         marginTop: 5,
@@ -299,17 +306,29 @@ function Proof({ panel }) {
   if (!stats.length && dots.length < 2) return null;
   return (
     <div data-proof="" style={{ paddingTop: 2 }}>
+      {panel?.eyebrow ? (
+        <div style={{
+          marginBottom: 6,
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: C.textMuted,
+        }}
+        >
+          {panel.eyebrow}
+        </div>
+      ) : null}
       {stats.length > 0 ? (
         <div style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${stats.length}, minmax(0, 1fr))`,
-          columnGap: 10,
         }}
         >
-          {stats.map((stat) => <ProofStat key={stat.label} stat={stat} />)}
+          {stats.map((stat, i) => <ProofStat key={stat.label} stat={stat} first={i === 0} />)}
         </div>
       ) : null}
-      {dots.length >= 2 ? <RecordDots dots={dots} /> : null}
+      {dots.length >= 2 ? <RecordDots dots={dots} label={panel?.dotLabel} /> : null}
     </div>
   );
 }
