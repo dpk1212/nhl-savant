@@ -2206,7 +2206,7 @@ function JourneyStop({ label, time, odds, color, active }) {
  * Compact: glass pill with tnum countdown → green Check seal when locked.
  * Expanded: larger digital time + progress bar to freeze (countdown) or seal copy.
  */
-function LockFreezeStatus({ commenceMs, compact, strip, bare, banner }) {
+function LockFreezeStatus({ commenceMs, compact, strip, bare, banner, phrase, leadDot }) {
   const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -2227,6 +2227,26 @@ function LockFreezeStatus({ commenceMs, compact, strip, bare, banner }) {
   const lockEt = new Date(lockEpoch).toLocaleTimeString('en-US', {
     timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit',
   });
+
+  // One phrase on the context line. The kickoff already names the hour,
+  // so this does not repeat a second clock.
+  if (phrase) {
+    if (frozen || !rem) return null;
+    const tone = urgent ? '#F87171' : closing ? B.goldHi : C.textSec;
+    return (
+      <span
+        title={`Locks 15 min before start · ${lockEt} ET`}
+        style={{
+          display: 'inline-flex', alignItems: 'baseline', gap: 6,
+          fontWeight: urgent || closing ? 650 : 500,
+          color: tone, fontFeatureSettings: "'tnum'",
+        }}
+      >
+        {leadDot ? <span style={{ color: C.textFaint, fontWeight: 500 }}>·</span> : null}
+        <span>locks in {rem}</span>
+      </span>
+    );
+  }
 
   // Full-width footer strip for the collapsed card — the countdown lives on
   // its own rail with a progress track filling toward T-15 (F1 "team lock
@@ -2638,53 +2658,69 @@ function CollapsedCardFrame({ live, children, extraClass }) {
 }
 
 /**
- * Premium header. One line of quiet Inter text — sport, matchup, time — and
- * exactly one piece of metal on the right (the IN seal). The lock countdown
- * is a text chip, not a boxed pill. Two chrome objects became one.
+ * Context, then the bet. Two quiet lines: who is playing, and when.
+ * The seal sits on the who-line. Kickoff and the lock countdown share
+ * the when-line so the card has one clock sentence.
  */
 function CollapsedHeader({ live, inClassName }) {
   const { f, tracked, graded, muteTip, ticketFrozen, accent, edgeAura } = live;
+  const isLive = !!(f.isLive || f.gameTime === 'LIVE');
+  const matchup = (() => {
+    const ok = (s) => s && !/^(over|under)$/i.test(s);
+    const nick = (s) => String(s || '').trim().split(/\s+/).pop();
+    const a = ok(f.awayShort) ? f.awayShort : nick(f.away);
+    const h = ok(f.homeShort) ? f.homeShort : nick(f.home);
+    return (a && h) ? `${a} @ ${h}` : `${f.away} @ ${f.home}`;
+  })();
   return (
     <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      marginBottom: 18, gap: 12, position: 'relative', zIndex: 2,
+      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+      marginBottom: 14, gap: 12, position: 'relative', zIndex: 2,
     }}>
-      <div style={{
-        minWidth: 0, flex: 1, display: 'flex', alignItems: 'baseline', gap: 7,
-        fontSize: 11.5, fontWeight: 500, color: C.textMuted,
-        overflow: 'hidden', whiteSpace: 'nowrap',
-      }}>
-        <span style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-          color: B.goldHi, textTransform: 'uppercase', flexShrink: 0,
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{
+          display: 'flex', alignItems: 'baseline', gap: 7,
+          fontSize: 12.5, fontWeight: 500, color: C.textMuted,
+          overflow: 'hidden', whiteSpace: 'nowrap',
         }}>
-          {f.sport}
-        </span>
-        <span style={{
-          overflow: 'hidden', textOverflow: 'ellipsis', color: C.textSec, fontWeight: 550,
-          letterSpacing: '0.005em',
-        }}>
-          {/* "Rockies @ Yankees" never truncates; "Colorado Rockies @ New
-              York Y…" always did. Totals cards stamp Over/Under into the
-              short fields, so fall back to the nickname (last word). */}
-          {(() => {
-            const ok = (s) => s && !/^(over|under)$/i.test(s);
-            const nick = (s) => String(s || '').trim().split(/\s+/).pop();
-            const a = ok(f.awayShort) ? f.awayShort : nick(f.away);
-            const h = ok(f.homeShort) ? f.homeShort : nick(f.home);
-            return (a && h) ? `${a} @ ${h}` : `${f.away} @ ${f.home}`;
-          })()}
-        </span>
-        {f.gameTime && (
           <span style={{
-            fontSize: 11, fontWeight: 500,
-            color: C.textFaint, fontFeatureSettings: "'tnum'", flexShrink: 0,
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+            color: B.goldHi, textTransform: 'uppercase', flexShrink: 0,
           }}>
-            {f.gameTime}
+            {f.sport}
           </span>
-        )}
+          <span style={{
+            overflow: 'hidden', textOverflow: 'ellipsis', color: C.textSec, fontWeight: 550,
+            letterSpacing: '0.005em',
+          }}>
+            {matchup}
+          </span>
+        </div>
+        <div
+          data-hero-when=""
+          style={{
+            marginTop: 5, minHeight: 16,
+            display: 'flex', alignItems: 'baseline', gap: 6,
+            fontSize: 12, fontWeight: 500, color: C.textSec,
+            fontFeatureSettings: "'tnum'", letterSpacing: '0.01em',
+          }}
+        >
+          {isLive ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: B.profit, fontWeight: 700, letterSpacing: '0.06em' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: B.profit, boxShadow: '0 0 8px rgba(47,213,126,0.75)' }} />
+              LIVE
+            </span>
+          ) : (
+            <>
+              {f.gameTime ? <span>{f.gameTime}</span> : null}
+              {!tracked && !graded && (
+                <LockFreezeStatus commenceMs={f.commenceMs} phrase leadDot={!!f.gameTime} />
+              )}
+            </>
+          )}
+        </div>
       </div>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0, paddingTop: 1 }}>
         {tracked ? (
           <span title={muteTip} style={NO_PLAY_PILL}>NO PLAY</span>
         ) : graded ? (
@@ -2730,28 +2766,35 @@ function CollapsedHeader({ live, inClassName }) {
             )}
           </>
         )}
+        <ChevronDown size={15} strokeWidth={2} style={{ color: C.textFaint, opacity: 0.5, flexShrink: 0 }} />
       </span>
     </div>
   );
 }
 
 /**
- * Premium hero. The pick is the one loud thing on the whole card — a full
- * type step above everything else — and the stake is the one gold number.
- * Elite scale contrast: 1.6rem pick / 20px stake against 11–13px body.
+ * The bet. One row: the play on the left, the stake on the right.
+ * Odds and the payout share the line under the stake, so the price
+ * is a pair and not a column of labels.
  */
 function CollapsedHero({ live, pickClass }) {
   const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip } = live;
   return (
-    <div style={{
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-      gap: '0.85rem', position: 'relative', zIndex: 2,
-    }}>
-      <div style={{ minWidth: 0, flex: 1, paddingTop: 2, containerType: 'inline-size' }}>
+    <div
+      data-hero="bet"
+      style={{
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        gap: 16, position: 'relative', zIndex: 2,
+        // The seal's chevron sits in the corner. This inset lines the stake
+        // up under the seal, clear of that mark.
+        paddingRight: 23,
+      }}
+    >
+      <div style={{ minWidth: 0, flex: 1, containerType: 'inline-size' }}>
         <div
           className={pickClass}
           style={{
-            fontSize: 'clamp(1.35rem, 22cqi, 1.85rem)', fontWeight: 750, letterSpacing: '-0.042em',
+            fontSize: 'clamp(1.4rem, 18cqi, 1.7rem)', fontWeight: 750, letterSpacing: '-0.04em',
             color: C.text, lineHeight: 1.05, whiteSpace: 'nowrap',
           }}
         >
@@ -2760,22 +2803,25 @@ function CollapsedHero({ live, pickClass }) {
       </div>
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-        flexShrink: 0, paddingTop: 2, textAlign: 'right',
+        flexShrink: 0, textAlign: 'right', gap: 5, paddingTop: 3,
       }}>
         <span
           className="live-stake"
           title={tracked ? muteTip : undefined}
           style={{
-            fontSize: tracked ? 12 : '1.45rem', fontWeight: tracked ? 650 : 680,
+            fontSize: tracked ? 12 : '1.4rem', fontWeight: tracked ? 650 : 680,
             fontFeatureSettings: "'tnum'", letterSpacing: tracked ? '0.01em' : '-0.04em',
             color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1,
-            textAlign: 'right', maxWidth: tracked ? 148 : undefined,
+            textAlign: 'right', maxWidth: tracked ? 160 : undefined,
           }}
         >
           {stakeLabel}
         </span>
         {!tracked && (
-          <div style={{ marginTop: '0.55rem' }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'baseline', justifyContent: 'flex-end',
+            gap: 7, lineHeight: 1, whiteSpace: 'nowrap',
+          }}>
             <HeroShopPrice
               bestOdds={f.bestOdds}
               bestBook={f.bestBook}
@@ -2784,30 +2830,22 @@ function CollapsedHero({ live, pickClass }) {
               americanOnly
               hideEv
               hideLogo
-              color={C.text}
+              color={C.textSec}
               logoSize={16}
-              fontSize="1rem"
+              fontSize="0.84rem"
             />
-          </div>
-        )}
-        {payoutLabel && (
-          <span style={{
-            marginTop: '0.38rem',
-            fontSize: 12.5, fontWeight: 650, fontFeatureSettings: "'tnum'",
-            color: payoutColor, letterSpacing: '-0.01em', lineHeight: 1,
-          }}>
-            {!graded && (
-              <span style={{ display: 'block', marginBottom: 3, color: C.textFaint, fontWeight: 500, fontSize: 10 }}>to win</span>
+            {payoutLabel && (
+              <span style={{
+                fontSize: '0.84rem', fontWeight: 650, fontFeatureSettings: "'tnum'",
+                color: payoutColor, letterSpacing: '-0.01em',
+              }}>
+                <span style={{ color: C.textFaint, fontWeight: 500, marginRight: 7 }}>·</span>
+                {graded ? payoutLabel : `to win ${payoutLabel}`}
+              </span>
             )}
-            {payoutLabel}
           </span>
         )}
       </div>
-      <ChevronDown
-        size={14}
-        strokeWidth={2}
-        style={{ color: C.textFaint, flexShrink: 0, marginTop: 6, marginLeft: 2, opacity: 0.45 }}
-      />
     </div>
   );
 }
@@ -3065,10 +3103,6 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
   return (
     <CollapsedCardFrame live={live} extraClass={`live-ticket live-order-${order}`}>
       <CollapsedHeader live={live} />
-      {/* Provisional state, said out loud — flagged now, official at T-15. */}
-      {!live.tracked && !live.graded && (
-        <LockFreezeStatus commenceMs={f.commenceMs} banner />
-      )}
       {order === 'verdict' && (
         <>{hero}{board}{trust}{perf}{tape}<SectionRule />{money}</>
       )}

@@ -83,7 +83,7 @@ export default function LockedCollapsedBoard({ f }) {
   );
 
   return (
-    <div data-board="score" style={{ marginTop: 18, position: 'relative' }}>
+    <div data-board="score" style={{ marginTop: 22, position: 'relative' }}>
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16,
       }}
