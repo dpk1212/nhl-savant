@@ -17,11 +17,13 @@ const GREEN = '#3DDC97';
 const GOLD = '#E8D28A';
 const AMBER = '#D4A574';
 const CORAL = '#F07167';
+const STEEL = '#C5D0E0';
 
 const INK = {
   hc: GOLD,
   sharp: GREEN,
   opp: AMBER,
+  track: STEEL,
   loser: CORAL,
 };
 
@@ -29,6 +31,7 @@ const RIBBON = {
   hc: ['#C6A15A', '#F8E7B0'],
   sharp: ['#14915A', '#B6FFD9'],
   opp: ['#C49262', '#F6D7B6'],
+  track: ['#8B98AD', '#F2F5F8'],
   loser: ['#D15A52', '#FFD0C8'],
 };
 
@@ -71,6 +74,11 @@ const PILL_SKIN = {
     border: '1px solid rgba(255,138,130,0.7)',
     background: 'linear-gradient(180deg, rgba(40,16,16,0.98), rgba(16,10,12,0.96))',
     shadow: '0 0 0 1px rgba(240,113,103,0.14), 0 10px 28px -16px rgba(240,113,103,0.9)',
+  },
+  track: {
+    border: '1px solid rgba(197,208,224,0.55)',
+    background: 'linear-gradient(180deg, rgba(28,34,44,0.98), rgba(12,16,22,0.96))',
+    shadow: '0 0 0 1px rgba(197,208,224,0.1), 0 10px 24px -16px rgba(197,208,224,0.45)',
   },
 };
 
@@ -185,7 +193,7 @@ function Destination({ pill, top, height }) {
               fontSize: line.tone === 'quiet' ? 12 : 16,
               fontWeight: line.tone === 'quiet' ? 700 : 750,
               letterSpacing: line.tone === 'quiet' ? '-0.02em' : '-0.03em',
-              color: line.tone === 'loser' ? CORAL : line.tone === 'quiet' ? C.text : C.text,
+              color: line.tone === 'loser' ? CORAL : line.tone === 'track' ? STEEL : C.text,
               fontFeatureSettings: "'tnum'",
               lineHeight: 1.05,
               whiteSpace: 'nowrap',
@@ -197,7 +205,7 @@ function Destination({ pill, top, height }) {
               <span style={{
                 fontSize: 10,
                 fontWeight: 650,
-                color: line.tone === 'loser' ? 'rgba(240,113,103,0.85)' : C.textSec,
+                color: line.tone === 'loser' ? 'rgba(240,113,103,0.85)' : line.tone === 'track' ? STEEL : C.textSec,
                 letterSpacing: '0.01em',
                 lineHeight: 1.15,
               }}
@@ -339,6 +347,7 @@ function Legend({ rows }) {
     kinds.has('hc') ? { kind: 'hc', label: 'Sized up' } : null,
     kinds.has('sharp') ? { kind: 'sharp', label: 'Sharp' } : null,
     kinds.has('opp') ? { kind: 'opp', label: 'Other side' } : null,
+    kinds.has('track') ? { kind: 'track', label: 'Unproven' } : null,
     kinds.has('loser') ? { kind: 'loser', label: 'Loser' } : null,
   ].filter(Boolean);
   if (!items.length) return null;

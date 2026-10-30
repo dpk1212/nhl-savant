@@ -49,8 +49,11 @@ assert(!buried.panel.stats.some((s) => /sharp/i.test(s.label)), 'sharp money sta
 assert(buried.ourPill.lines[0].text === '$3.4K', buried.ourPill.lines[0].text);
 assert(buried.ourPill.lines.some((l) => l.text === '100%' && l.caption === 'of sharp money'), 'sharp share');
 assert(!buried.panel.stats.some((s) => s.label === 'ROI'), 'no roi on the wallet, no roi stat');
-assert(buried.theirPill.tone === 'fade', buried.theirPill.tone);
+assert(buried.theirPill.tone === 'track', buried.theirPill.tone);
 assert(buried.theirPill.lines[0].text === '$33K', buried.theirPill.lines[0].text);
+assert(buried.theirPill.lines.some((l) => l.text === 'unproven'), JSON.stringify(buried.theirPill.lines));
+assert(!buried.theirPill.lines.some((l) => l.tone === 'loser' || /loser/i.test(l.caption || '') || /loser/i.test(l.text || '')), JSON.stringify(buried.theirPill.lines));
+assert(buried.rows.find((r) => r.short === 'war99').kind === 'track', 'no book stays unproven');
 assert(buried.rows.every((r) => r.thick > 0 && Number.isFinite(r.targetY)), 'ribbon geometry');
 assert(buried.panel.dots == null, 'a record with no tape draws no dots');
 const buriedSharp = buried.rows.find((r) => r.short === '1895dc');
@@ -213,5 +216,49 @@ assert(fmtSignedUsd(-1200000) === '-$1.2M', fmtSignedUsd(-1200000));
 assert(fmtSignedUsd(999600) === '+$1M', fmtSignedUsd(999600));
 assert(fmtSignedUsd(940) === '+$940', fmtSignedUsd(940));
 assert(fmtSignedUsd(25900) === '+$25.9K', fmtSignedUsd(25900));
+
+const books = buildMoneyRiver({
+  pickLabel: 'Lakers ML',
+  side: 'away',
+  away: 'Lakers',
+  home: 'Warriors',
+  mapWallets: [
+    {
+      short: 'd9dcb1', side: 'ours', invested: 1008, sizeRatio: 1.6,
+      whitelist: 'CONFIRMED', whitelisted: true, proven: true,
+      wins: 15, losses: 6, bookPnl: 940, l30Roi: 6.3,
+    },
+    {
+      short: 'c6c4d6', side: 'ours', invested: 614, sizeRatio: 1.1,
+      whitelist: 'CONFIRMED', whitelisted: true, proven: true,
+      wins: 6, losses: 2, bookPnl: 1636, l30Roi: 15.6,
+    },
+    {
+      short: 'bf28eb', side: 'ours', invested: 1243, whitelist: 'WR50',
+      wins: 7, losses: 4, bookPnl: 3454, l30Roi: 17.1,
+    },
+    {
+      short: '2a8409', side: 'against', invested: 50186,
+      wins: 15, losses: 15, bookPnl: 360578, l30Roi: 29,
+    },
+    {
+      short: '8996d3', side: 'against', invested: 800,
+      wins: 4, losses: 8, bookPnl: -47146, l30Roi: -40.2,
+    },
+  ],
+});
+assert(books.panel.stats.map((s) => s.value).join('|') === '72.4%|+9.8%|+$2.6K|21\u20138', books.panel.stats.map((s) => s.value).join('|'));
+assert(books.rows.find((r) => r.short === 'bf28eb').kind === 'track', 'winning moneyline slice is unproven');
+assert(books.rows.find((r) => r.short === 'bf28eb').meta === '7\u20134 \u00b7 +17.1% \u00b7 +$3.5K', books.rows.find((r) => r.short === 'bf28eb').meta);
+assert(books.rows.find((r) => r.short === '2a8409').kind === 'track', 'coin flip with a profit is unproven');
+assert(books.rows.find((r) => r.short === '2a8409').meta.includes('+$361K'), books.rows.find((r) => r.short === '2a8409').meta);
+assert(books.rows.find((r) => r.short === '8996d3').kind === 'loser', 'a down book stays a loser');
+assert(books.ourPill.lines.some((l) => l.caption === 'unproven' && l.tone === 'track'), JSON.stringify(books.ourPill.lines));
+assert(!books.ourPill.lines.some((l) => l.tone === 'loser'), 'our pill has no loser line');
+assert(books.theirPill.tone === 'track', books.theirPill.tone);
+assert(books.theirPill.lines[0].text === '$50.2K', books.theirPill.lines[0].text);
+assert(books.theirPill.lines.some((l) => l.text === 'unproven'), JSON.stringify(books.theirPill.lines));
+assert(books.theirPill.lines.some((l) => l.caption === 'losers'), 'the down book still has its own line');
+assert(!books.panel.stats.some((s) => s.value.includes('361')), 'the profit pile stays out of the proven strip');
 
 console.log('money river ok');

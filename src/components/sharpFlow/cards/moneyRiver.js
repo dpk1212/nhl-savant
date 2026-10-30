@@ -7,6 +7,8 @@
  * by this play. A stat is omitted unless every sharp on our side has it.
  * The wallet line prints those same three figures. The dots are the
  * graded bets behind that window, oldest first.
+ * Coral is a down book. A wallet outside the proven pool whose shown
+ * book is flat or up is unproven, so a winning line is not called a loser.
  */
 import { HC_RATIO } from '../../../lib/ags.js';
 import { ourSideLabel, theirSideLabel } from './boardFaceLine.js';
@@ -78,6 +80,17 @@ function isLoser(w) {
   return !!w && (Number(w.invested) || 0) > 0 && !isWinnerPool(w);
 }
 
+/**
+ * The book printed on the row. Profit wins, then the 30-day return,
+ * then the record. Missing figures are not a loss.
+ */
+function bookIsDown(w) {
+  if (Number.isFinite(w?.bookPnl)) return w.bookPnl < 0;
+  if (Number.isFinite(w?.l30Roi)) return w.l30Roi < 0;
+  const rec = proofRecord(w);
+  return !!rec && rec.losses > rec.wins;
+}
+
 function isSharp(w) {
   if (!w || isLoser(w)) return false;
   if (String(w.whitelist || '').toUpperCase() === 'CONFIRMED') return true;
@@ -130,7 +143,7 @@ function poolOf(f) {
 }
 
 function kindOf(w) {
-  if (isLoser(w)) return 'loser';
+  if (isLoser(w)) return bookIsDown(w) ? 'loser' : 'track';
   if (!isSharp(w)) return null;
   if (w.side !== 'against' && Number.isFinite(w.sizeRatio) && w.sizeRatio >= HC_RATIO) return 'hc';
   if (w.side === 'against') return 'opp';
@@ -219,12 +232,6 @@ function moreRow(side, kind, hidden) {
     roi: null,
     more: hidden.length,
   };
-}
-
-function stampSide(split, side) {
-  if (!split) return 0;
-  const n = Number(side === 'against' ? split.theirs : split.ours);
-  return Number.isFinite(n) ? n : 0;
 }
 
 function placeRibbons(group) {
@@ -372,26 +379,44 @@ function pillBlock(p) {
   return Math.max(56, 28 + body + p.lines.length);
 }
 
-function pill(side, title, sharpUsd, loserUsd, sharpPct, loserPct) {
+function pillTone(side, sharpUsd, trackUsd, loserUsd) {
+  if (loserUsd > sharpUsd && loserUsd > trackUsd) return 'fade';
+  if (sharpUsd > 0 && sharpUsd >= trackUsd) return side === 'against' ? 'opp' : 'ours';
+  if (trackUsd > 0) return 'track';
+  if (loserUsd > 0) return 'fade';
+  return side === 'against' ? 'opp' : 'ours';
+}
+
+function pill(side, title, sharpUsd, trackUsd, loserUsd, sharpPct, loserPct) {
   const lines = [];
-  if (side !== 'against' && sharpUsd > 0) {
+  const aside = (usd, caption, tone) => {
+    if (usd > 0) lines.push({ text: fmtRiverUsd(usd), caption, tone });
+  };
+  if (sharpUsd > 0) {
     lines.push({ text: fmtRiverUsd(sharpUsd), caption: null, tone: 'sharp' });
     if (sharpPct != null) lines.push({ text: `${sharpPct}%`, caption: 'of sharp money', tone: 'quiet' });
-    if (loserUsd > 0) lines.push({ text: fmtRiverUsd(loserUsd), caption: 'losers', tone: 'loser' });
-  } else if (sharpUsd > 0 && loserUsd > 0) {
-    lines.push({ text: fmtRiverUsd(sharpUsd), caption: 'sharp', tone: 'sharp' });
-    lines.push({ text: fmtRiverUsd(loserUsd), caption: 'losers', tone: 'loser' });
-  } else if (sharpUsd > 0) {
-    lines.push({ text: fmtRiverUsd(sharpUsd), caption: null, tone: 'sharp' });
-    if (sharpPct != null) lines.push({ text: `${sharpPct}%`, caption: 'of sharp money', tone: 'quiet' });
+    aside(trackUsd, 'unproven', 'track');
+    aside(loserUsd, 'losers', 'loser');
+  } else if (trackUsd > 0 && trackUsd >= loserUsd) {
+    lines.push({ text: fmtRiverUsd(trackUsd), caption: null, tone: 'track' });
+    lines.push({ text: 'unproven', caption: null, tone: 'quiet' });
+    aside(loserUsd, 'losers', 'loser');
   } else if (loserUsd > 0) {
     lines.push({ text: fmtRiverUsd(loserUsd), caption: null, tone: 'loser' });
     if (loserPct != null) lines.push({ text: `${loserPct}%`, caption: 'of loser money', tone: 'quiet' });
+    aside(trackUsd, 'unproven', 'track');
   } else {
     return null;
   }
-  const tone = loserUsd > sharpUsd ? 'fade' : (side === 'against' ? 'opp' : 'ours');
-  return { side, title: String(title || '').toUpperCase(), lines, tone, sharpUsd, loserUsd };
+  return {
+    side,
+    title: String(title || '').toUpperCase(),
+    lines,
+    tone: pillTone(side, sharpUsd, trackUsd, loserUsd),
+    sharpUsd,
+    trackUsd,
+    loserUsd,
+  };
 }
 
 /**
@@ -402,30 +427,39 @@ export function buildMoneyRiver(f) {
   const all = poolOf(f).map((w) => ({ ...w, kind: kindOf(w) })).filter((w) => w.kind);
   const ourHc = all.filter((w) => w.kind === 'hc');
   const ourSharp = all.filter((w) => w.kind === 'sharp');
+  const ourTrack = all.filter((w) => w.kind === 'track' && w.side !== 'against');
   const ourLosers = all.filter((w) => w.kind === 'loser' && w.side !== 'against');
   const opp = all.filter((w) => w.kind === 'opp');
+  const theirTrack = all.filter((w) => w.kind === 'track' && w.side === 'against');
   const theirLosers = all.filter((w) => w.kind === 'loser' && w.side === 'against');
+  const ourOutside = [...ourTrack, ...ourLosers];
+  const theirOutside = [...theirTrack, ...theirLosers];
 
   const sharps = [...ourHc, ...ourSharp];
   const hcShown = cap(ourHc, Math.min(SHARP_CAP, ourHc.length));
   const sharpRoom = Math.max(0, SHARP_CAP - hcShown.shown.length);
   const sharpShown = cap(ourSharp, sharpRoom);
-  const loserRoom = theirLosers.length ? 1 : 2;
-  const ourLoserShown = cap(ourLosers, loserRoom);
+  const outsideRoom = theirOutside.length ? 1 : 2;
+  const ourOut = cap(ourOutside, outsideRoom);
   const oppShown = cap(opp, OPP_CAP);
-  const theirLoserShown = cap(theirLosers, LOSER_CAP);
+  const theirOut = cap(theirOutside, LOSER_CAP);
+  const restKind = (hidden, provenKind) => {
+    if (hidden.some((w) => w.kind === 'track')) return 'track';
+    if (hidden.some((w) => w.kind === 'loser')) return 'loser';
+    return provenKind;
+  };
 
   const rows = [
     ...hcShown.shown.sort(byStake).map((w) => rowFrom(w, 'hc')),
     ...sharpShown.shown.sort(byStake).map((w) => rowFrom(w, 'sharp')),
-    ...ourLoserShown.shown.sort(byStake).map((w) => rowFrom(w, 'loser')),
-    moreRow('ours', ourLoserShown.hidden.length ? 'loser' : 'sharp', [
-      ...hcShown.hidden, ...sharpShown.hidden, ...ourLoserShown.hidden,
+    ...ourOut.shown.sort(byStake).map((w) => rowFrom(w, w.kind)),
+    moreRow('ours', restKind(ourOut.hidden, 'sharp'), [
+      ...hcShown.hidden, ...sharpShown.hidden, ...ourOut.hidden,
     ]),
     ...oppShown.shown.sort(byStake).map((w) => rowFrom(w, 'opp')),
-    ...theirLoserShown.shown.sort(byStake).map((w) => rowFrom(w, 'loser')),
-    moreRow('against', theirLoserShown.hidden.length || theirLosers.length ? 'loser' : 'opp', [
-      ...oppShown.hidden, ...theirLoserShown.hidden,
+    ...theirOut.shown.sort(byStake).map((w) => rowFrom(w, w.kind)),
+    moreRow('against', restKind([...oppShown.hidden, ...theirOut.hidden], 'opp'), [
+      ...oppShown.hidden, ...theirOut.hidden,
     ]),
   ].filter(Boolean);
 
@@ -433,48 +467,13 @@ export function buildMoneyRiver(f) {
   const ourSharpUsd = sum(sharps);
   const theirSharpUsd = sum(opp);
   const sharpTotal = ourSharpUsd + theirSharpUsd;
-  const ourLoserUsd = Math.max(sum(ourLosers), stampSide(f?.boardMoneyLosers || f?.boardMoney?.losers, 'ours'));
-  const theirLoserUsd = Math.max(sum(theirLosers), stampSide(f?.boardMoneyLosers || f?.boardMoney?.losers, 'against'));
+  const ourTrackUsd = sum(ourTrack);
+  const theirTrackUsd = sum(theirTrack);
+  const ourLoserUsd = sum(ourLosers);
+  const theirLoserUsd = sum(theirLosers);
   const loserTotal = ourLoserUsd + theirLoserUsd;
   const sharpPct = (usd) => (sharpTotal > 0 ? Math.round((usd / sharpTotal) * 100) : null);
   const loserPct = (usd) => (loserTotal > 0 ? Math.round((usd / loserTotal) * 100) : null);
-
-  const bookGap = (side, kind, walletUsd, bookUsd) => {
-    const gap = Math.round(bookUsd - walletUsd);
-    if (gap < 50) return null;
-    const row = rows.find((r) => r.side === side && r.more > 0 && r.kind === kind);
-    if (row) {
-      row.invested += gap;
-      return null;
-    }
-    return {
-      key: `book-${side}-${kind}`,
-      short: null,
-      side,
-      kind,
-      invested: gap,
-      record: null,
-      more: 0,
-      book: true,
-    };
-  };
-
-  const extra = [
-    bookGap('ours', 'loser', sum(ourLosers), ourLoserUsd),
-    bookGap('against', 'loser', sum(theirLosers), theirLoserUsd),
-  ].filter(Boolean);
-  // Book remainder sits with the side it belongs to, just before the other side.
-  const withBook = [];
-  let placedOurs = false;
-  for (const row of rows) {
-    if (!placedOurs && row.side === 'against') {
-      withBook.push(...extra.filter((r) => r.side === 'ours'));
-      placedOurs = true;
-    }
-    withBook.push(row);
-  }
-  if (!placedOurs) withBook.push(...extra.filter((r) => r.side === 'ours'));
-  withBook.push(...extra.filter((r) => r.side === 'against'));
 
   const pool = pooled(sharps);
   const n = sharps.length;
@@ -500,12 +499,12 @@ export function buildMoneyRiver(f) {
 
   const oursName = displaySide(f, 'ours');
   const theirsName = displaySide(f, 'against');
-  const ourPill = pill('ours', oursName, ourSharpUsd, ourLoserUsd, sharpPct(ourSharpUsd), loserPct(ourLoserUsd));
-  const theirPill = pill('against', theirsName, theirSharpUsd, theirLoserUsd, sharpPct(theirSharpUsd), loserPct(theirLoserUsd));
-  const laid = layoutRiver(withBook, {
+  const ourPill = pill('ours', oursName, ourSharpUsd, ourTrackUsd, ourLoserUsd, sharpPct(ourSharpUsd), loserPct(ourLoserUsd));
+  const theirPill = pill('against', theirsName, theirSharpUsd, theirTrackUsd, theirLoserUsd, sharpPct(theirSharpUsd), loserPct(theirLoserUsd));
+  const laid = layoutRiver(rows, {
     minH: { ours: pillBlock(ourPill), against: pillBlock(theirPill) },
   });
-  if (!laid.rows.length && ourSharpUsd <= 0 && theirSharpUsd <= 0 && loserTotal <= 0) return null;
+  if (!laid.rows.length && ourSharpUsd <= 0 && theirSharpUsd <= 0 && ourTrackUsd <= 0 && theirTrackUsd <= 0 && loserTotal <= 0) return null;
 
   return {
     panel,
