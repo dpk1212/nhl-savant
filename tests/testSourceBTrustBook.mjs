@@ -3,7 +3,7 @@
  * Usage: node tests/testSourceBTrustBook.mjs
  */
 import assert from 'node:assert/strict';
-import { sourceBPreferredBook } from '../src/lib/walletSportBook.js';
+import { sourceBPreferredBook, recentResults } from '../src/lib/walletSportBook.js';
 
 const profile = {
   bySport: {
@@ -12,7 +12,7 @@ const profile = {
       positions: { n: 19, wins: 12, losses: 7, wr: 63, positionFlatRoi: 7, dollarRoi: 9 },
       byMarket: {
         ML: {
-          positions: { n: 8, wins: 6, losses: 2, wr: 75, positionFlatRoi: 18, dollarRoi: 22 },
+          positions: { n: 8, wins: 6, losses: 2, wr: 75, positionFlatRoi: 18, dollarRoi: 22, settledPnl: 4200 },
         },
         SPREAD: {
           positions: { n: 11, wins: 4, losses: 7, wr: 36, positionFlatRoi: -12, dollarRoi: -8 },
@@ -34,6 +34,7 @@ assert.equal(ml.scope, 'market');
 assert.equal(ml.wins, 6);
 assert.equal(ml.losses, 2);
 assert.equal(ml.roi, 18);
+assert.equal(ml.settledPnl, 4200);
 assert.notEqual(ml.wins, 5, 'featured 5-1 picks are not the trust book');
 
 const spread = sourceBPreferredBook(profile, 'NBA', 'SPREAD');
@@ -47,5 +48,35 @@ assert.equal(thin, null, 'a one-bet Source B book is not a sample');
 
 const missing = sourceBPreferredBook(profile, 'MLB', 'ML');
 assert.equal(missing, null);
+
+const tape = recentResults({
+  form: {
+    recentAction: [
+      { date: '2026-10-02', won: 0, marketType: 'ML' },
+      { date: '2026-10-03', won: 1, marketType: 'SPREAD' },
+      { date: '2026-10-04', won: 1, marketType: 'ML' },
+    ],
+    curveLegs: [{ date: '2026-09-01', won: 1, marketType: 'ML' }],
+  },
+});
+assert.deepEqual(tape, [
+  { date: '2026-10-02', won: 0 },
+  { date: '2026-10-03', won: 1 },
+  { date: '2026-10-04', won: 1 },
+]);
+assert.deepEqual(recentResults({
+  form: {
+    recentAction: [
+      { date: '2026-10-02', won: 0, marketType: 'ML' },
+      { date: '2026-10-03', won: 1, marketType: 'SPREAD' },
+      { date: '2026-10-04', won: 1, marketType: 'ML' },
+    ],
+  },
+}, 'MONEYLINE'), [
+  { date: '2026-10-02', won: 0 },
+  { date: '2026-10-04', won: 1 },
+]);
+assert.equal(recentResults({ form: { curveLegs: [{ date: '2026-09-01', won: true }] } })[0].won, 1);
+assert.equal(recentResults({ form: { recentAction: [{ won: 1 }] } }), null);
 
 console.log('testSourceBTrustBook: ok');

@@ -41,18 +41,17 @@ const buried = buildMoneyRiver({
   boardMoneyConfirmed: { ours: 3400, theirs: 0 },
 });
 
-assert(buried.panel.hero === '100%', buried.panel.hero);
-assert(buried.panel.caption === 'Of sharp money', buried.panel.caption);
-assert(buried.panel.combined === false, 'one wallet is not combined');
+assert(buried.panel.stats.map((s) => s.label).join('|') === 'Win|Record', JSON.stringify(buried.panel.stats));
+assert(buried.panel.stats[0].value === '63.6%', buried.panel.stats[0].value);
 assert(buried.panel.stats.some((s) => s.label === 'Record' && s.value === '14\u20138'), JSON.stringify(buried.panel.stats));
+assert(!buried.panel.stats.some((s) => /sharp/i.test(s.label)), 'sharp money stays on the river');
 assert(buried.ourPill.lines[0].text === '$3.4K', buried.ourPill.lines[0].text);
 assert(buried.ourPill.lines.some((l) => l.text === '100%' && l.caption === 'of sharp money'), 'sharp share');
-assert(buried.panel.roi == null, 'no roi on the wallet, no combined roi');
+assert(!buried.panel.stats.some((s) => s.label === 'ROI'), 'no roi on the wallet, no roi stat');
 assert(buried.theirPill.tone === 'fade', buried.theirPill.tone);
 assert(buried.theirPill.lines[0].text === '$33K', buried.theirPill.lines[0].text);
 assert(buried.rows.every((r) => r.thick > 0 && Number.isFinite(r.targetY)), 'ribbon geometry');
-assert(buried.panel.dots && buried.panel.dots.green === 13 && buried.panel.dots.red === 7, JSON.stringify(buried.panel.dots));
-assert(buried.panel.dots.green > buried.panel.dots.red, 'solo record still draws');
+assert(buried.panel.dots == null, 'a record with no tape draws no dots');
 const buriedSharp = buried.rows.find((r) => r.short === '1895dc');
 const buriedFade = buried.rows.find((r) => r.side === 'against');
 assert(buriedFade.thick > buriedSharp.thick * 2, 'stake sets the width');
@@ -81,22 +80,21 @@ const split = buildMoneyRiver({
   boardMoneyFull: { ours: 11600, theirs: 9800 },
 });
 
-assert(split.panel.hero === '63.9%', split.panel.hero);
-assert(split.panel.caption === 'Win', split.panel.caption);
-assert(split.panel.combined === true, 'combined');
+assert(split.panel.stats[0].label === 'Combined win', split.panel.stats[0].label);
+assert(split.panel.stats[0].value === '63.9%', split.panel.stats[0].value);
 assert(split.panel.stats.some((s) => s.value === '23\u201313'), JSON.stringify(split.panel.stats));
-assert(split.panel.sub.includes('1 sized up'), split.panel.sub);
+assert(!split.panel.stats.some((s) => /sharp|sized/i.test(s.label)), JSON.stringify(split.panel.stats));
 assert(split.rows.some((r) => r.kind === 'hc' && r.short === 'a91f2c'), 'sized-up row');
 assert(split.rows.some((r) => r.kind === 'opp'), 'opposing sharp');
 assert(split.rows.some((r) => r.kind === 'loser' && r.side === 'ours'), 'loser on our side');
 assert(split.ourPill.lines.some((l) => l.text === '80%' && l.caption === 'of sharp money'), JSON.stringify(split.ourPill.lines));
-assert(split.panel.roi == null, 'records without roi are not blended');
+assert(!split.panel.stats.some((s) => /roi/i.test(s.label)), 'records without roi are not blended');
 assert(split.ourPill.lines[0].text === '$9.8K', split.ourPill.lines[0].text);
 const oursFlow = split.rows.filter((r) => r.side !== 'against');
 for (let i = 1; i < oursFlow.length; i += 1) {
   assert(oursFlow[i].targetY > oursFlow[i - 1].targetY, 'ribbons stack');
 }
-assert(split.panel.dots.green === 13 && split.panel.dots.red === 7, JSON.stringify(split.panel.dots));
+assert(split.panel.dots == null, 'no tape, no dots');
 const ordered = split.rows.slice().sort((a, b) => a.y - b.y);
 for (let i = 1; i < ordered.length; i += 1) {
   assert(ordered[i].y - ordered[i - 1].y >= 31, 'rows stay apart');
@@ -114,9 +112,7 @@ const incomplete = buildMoneyRiver({
     { short: 'bbbbbb', side: 'ours', invested: 800, whitelist: 'CONFIRMED', proven: true },
   ],
 });
-assert(incomplete.panel.caption === 'Of sharp money', 'missing record blocks the pool');
-assert(!incomplete.panel.stats.some((s) => s.label === 'Record'), 'incomplete books are not pooled');
-assert(incomplete.panel.dots == null, 'an incomplete book draws no dots');
+assert(incomplete.panel == null, 'a missing record blocks the combined strip');
 
 const rated = buildMoneyRiver({
   pickLabel: 'Lakers ML',
@@ -128,9 +124,10 @@ const rated = buildMoneyRiver({
     { short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true, record: '8-6', roi: 10 },
   ],
 });
-assert(rated.panel.roi.label === 'Combined ROI', rated.panel.roi.label);
-assert(rated.panel.roi.text === '+16.7%', rated.panel.roi.text);
+const ratedRoi = rated.panel.stats.find((s) => s.label === 'Combined ROI');
+assert(ratedRoi.text == null && ratedRoi.value === '+16.7%', ratedRoi.value);
 assert(rated.rows.find((r) => r.short === 'aaaaaa').roi === 20, 'row keeps its roi');
+assert(!rated.panel.stats.some((s) => s.label === 'Profit'), 'roi without book profit stays off the strip');
 
 const partialRoi = buildMoneyRiver({
   pickLabel: 'Lakers ML',
@@ -142,6 +139,50 @@ const partialRoi = buildMoneyRiver({
     { short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true, record: '8-6' },
   ],
 });
-assert(partialRoi.panel.roi == null, 'a missing roi blocks the blend');
+assert(!partialRoi.panel.stats.some((s) => /roi/i.test(s.label)), 'a missing roi blocks the blend');
+
+const tape = buildMoneyRiver({
+  pickLabel: 'Lakers ML',
+  side: 'away',
+  away: 'Lakers',
+  home: 'Warriors',
+  mapWallets: [
+    {
+      short: 'aaaaaa', side: 'ours', invested: 2000, whitelist: 'CONFIRMED', proven: true,
+      record: '10-4', roi: 20, bookPnl: 4000,
+      recent: [
+        { date: '2026-10-01', won: 1 },
+        { date: '2026-10-03', won: 0 },
+      ],
+    },
+    {
+      short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true,
+      record: '8-6', roi: 10, bookPnl: -800,
+      recent: [
+        { date: '2026-10-02', won: 0 },
+        { date: '2026-10-04', won: 1 },
+      ],
+    },
+  ],
+});
+assert(JSON.stringify(tape.panel.dots) === JSON.stringify(['win', 'loss', 'loss', 'win']), JSON.stringify(tape.panel.dots));
+assert(
+  tape.panel.stats.map((s) => s.label).join('|') === 'Combined win|Combined ROI|Profit|Record',
+  tape.panel.stats.map((s) => s.label).join('|'),
+);
+assert(tape.panel.stats.find((s) => s.label === 'Profit').value === '+$3.2K', tape.panel.stats.find((s) => s.label === 'Profit').value);
+assert(!tape.panel.stats.some((s) => /sharp/i.test(s.label)));
+
+const oneMissingPnl = buildMoneyRiver({
+  pickLabel: 'Lakers ML',
+  side: 'away',
+  away: 'Lakers',
+  home: 'Warriors',
+  mapWallets: [
+    { short: 'aaaaaa', side: 'ours', invested: 2000, whitelist: 'CONFIRMED', proven: true, record: '10-4', roi: 20, bookPnl: 4000 },
+    { short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true, record: '8-6', roi: 10 },
+  ],
+});
+assert(!oneMissingPnl.panel.stats.some((s) => s.label === 'Profit'), 'one missing profit blocks the sum');
 
 console.log('money river ok');

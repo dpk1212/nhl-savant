@@ -6,6 +6,11 @@ import { useState } from 'react';
 import { LockedPositionCardView } from '../sharpFlow/cards/PositionCards';
 import { normalizeWalletShort } from '../../lib/mySharps.js';
 
+const tape = (day, marks) => marks.split('').map((mark, i) => ({
+  date: `2026-10-${String(day + i).padStart(2, '0')}`,
+  won: mark === 'W' ? 1 : 0,
+}));
+
 const now = Date.now();
 const H = 36e5;
 const t0 = now - 8 * H;
@@ -41,6 +46,8 @@ const leadTrust = {
   trustBook: {
     record: '8-3', wr: 73, roi: 60, dollarRoi: 48, kind: 'positions', n: 11,
   },
+  bookPnl: 8400,
+  recent: tape(8, 'WLWWLWWW'),
 };
 
 /** Both-side board for battle bars (FULL / LOSERS / CONFIRMED+HC). */
@@ -50,6 +57,8 @@ const showcaseBoard = [
     short: 'flat01', side: 'ours', proven: true, whitelisted: true, whitelist: 'FLAT',
     invested: 2100, sizeRatio: 0.9, displaySizeRatio: 0.9,
     record: '8-7', wr: 53, roi: 4, priorClvPct: 51,
+    bookPnl: 1100,
+    recent: tape(9, 'LWLWWLW'),
   },
   {
     short: 'lose9a', side: 'against', proven: false, whitelisted: false, whitelist: 'WR50',
@@ -63,16 +72,22 @@ const contestedBoard = [
     short: 'a91f2c', side: 'ours', invested: 6200,
     sizeRatio: 1.8, displaySizeRatio: 1.8, whitelist: 'CONFIRMED', whitelisted: true, proven: true,
     hardMarket: true, priorClvPct: 58, roi: 22, wr: 67, record: '14-7',
+    bookPnl: 18600,
+    recent: tape(8, 'WWLWWWLW'),
   },
   {
     short: 'b3e811', side: 'ours', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
     invested: 3600, sizeRatio: 1.2, displaySizeRatio: 1.2,
     record: '9-6', wr: 60, roi: 14, priorClvPct: 54,
+    bookPnl: 6400,
+    recent: tape(9, 'WLWWLWL'),
   },
   {
     short: 'flat22', side: 'ours', proven: true, whitelisted: true, whitelist: 'FLAT',
     invested: 1800, sizeRatio: 0.7, displaySizeRatio: 0.7,
     record: '7-6', wr: 54, roi: 3, priorClvPct: 49,
+    bookPnl: 900,
+    recent: tape(11, 'LWWLWL'),
   },
   {
     short: 'c9vs01', side: 'against', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
@@ -329,6 +344,8 @@ const FIXTURES = [
           secondary: ['14-8', '64% WR'],
           bookKind: 'positions',
         },
+        bookPnl: 5600,
+        recent: tape(6, 'LWWLWWWLWWLWW'),
       }],
       mapWallets: [
         { short: '1895dc', side: 'ours', invested: 3400, proven: true, whitelisted: true, whitelist: 'CONFIRMED' },

@@ -1,5 +1,5 @@
 /**
- * The locked face under the pick. One proof number, then the river:
+ * The locked face under the pick. Four quiet stats, then the river:
  * each wallet drawn into the pile it joined.
  */
 import { useId, useLayoutEffect, useRef, useState } from 'react';
@@ -237,25 +237,17 @@ function RecordMark({ value }) {
 }
 
 function RecordDots({ dots }) {
-  if (!dots || (dots.green + dots.red) < 2) return null;
-  const cells = [
-    ...Array(dots.green).fill('win'),
-    ...Array(dots.red).fill('loss'),
-  ];
+  if (!Array.isArray(dots) || dots.length < 2) return null;
   return (
-    <div aria-hidden style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
-      {cells.map((tone, i) => (
+    <div aria-hidden style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 10 }}>
+      {dots.map((tone, i) => (
         <span
           key={i}
           style={{
-            width: 6,
-            height: 6,
-            marginLeft: i === 0 ? 0 : (i === dots.green ? 8 : 3.5),
+            width: 5,
+            height: 5,
             borderRadius: '50%',
             background: tone === 'win' ? GREEN : '#E15A52',
-            boxShadow: tone === 'win'
-              ? '0 0 6px rgba(61,220,151,0.75)'
-              : '0 0 4px rgba(225,90,82,0.4)',
           }}
         />
       ))}
@@ -263,134 +255,61 @@ function RecordDots({ dots }) {
   );
 }
 
-function Rate({ text, caption, tone = 'green' }) {
-  const color = tone === 'loss' ? CORAL : '#5EF0B1';
+const TONE = {
+  plain: C.text,
+  up: '#2fd57e',
+  loss: '#f0524f',
+  record: C.text,
+};
+
+function ProofStat({ stat }) {
   return (
-    <div style={{ textAlign: 'center', minWidth: 0 }}>
+    <div style={{ minWidth: 0 }}>
       <div style={{
-        fontSize: 30,
-        fontWeight: 740,
-        letterSpacing: '-0.045em',
-        color,
-        lineHeight: 0.9,
+        fontSize: 17,
+        fontWeight: 680,
+        letterSpacing: '-0.03em',
+        color: TONE[stat.tone] || C.text,
         fontFeatureSettings: "'tnum'",
+        lineHeight: 1,
+        whiteSpace: 'nowrap',
       }}
       >
-        <HeroFigure text={text} />
+        {stat.tone === 'record' ? <RecordMark value={stat.value} /> : <HeroFigure text={stat.value} />}
       </div>
       <div style={{
         marginTop: 5,
-        fontSize: 9,
-        fontWeight: 750,
-        letterSpacing: '0.14em',
+        fontSize: 8.5,
+        fontWeight: 650,
+        letterSpacing: '0.08em',
         textTransform: 'uppercase',
-        color: tone === 'loss' ? 'rgba(240,113,103,0.8)' : 'rgba(61,220,151,0.72)',
+        color: C.textMuted,
+        lineHeight: 1.25,
       }}
       >
-        {caption}
+        {stat.label}
       </div>
     </div>
   );
 }
 
 function Proof({ panel }) {
-  if (!panel?.hero) return null;
-  const stats = panel.stats || [];
+  const stats = panel?.stats || [];
+  const dots = Array.isArray(panel?.dots) ? panel.dots : [];
+  if (!stats.length && dots.length < 2) return null;
   return (
-    <div data-proof="" style={{
-      padding: '10px 12px 9px',
-      borderRadius: 12,
-      background: 'linear-gradient(180deg, rgba(61,220,151,0.12), rgba(61,220,151,0.04) 46%, rgba(6,12,18,0.28))',
-      border: '1px solid rgba(61,220,151,0.28)',
-    }}
-    >
-      <div style={{
-        fontSize: 10.5,
-        fontWeight: 750,
-        letterSpacing: '0.14em',
-        textTransform: 'uppercase',
-        color: GREEN,
-      }}
-      >
-        {panel.eyebrow}
-        {panel.combined ? (
-          <span style={{ color: 'rgba(61,220,151,0.62)' }}>{' · Combined'}</span>
-        ) : null}
-      </div>
-      {panel.sub ? (
-        <div style={{
-          marginTop: 3,
-          fontSize: 11.5,
-          fontWeight: 600,
-          color: 'rgba(186,232,210,0.78)',
-          letterSpacing: '0.01em',
-        }}
-        >
-          {panel.sub}
-        </div>
-      ) : null}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        gap: 28,
-        paddingTop: 8,
-      }}
-      >
-        <Rate text={panel.hero} caption={panel.caption} />
-        {panel.roi?.text ? (
-          <Rate
-            text={panel.roi.text}
-            caption={panel.roi.label}
-            tone={String(panel.roi.text).startsWith('-') ? 'loss' : 'green'}
-          />
-        ) : null}
-      </div>
-      {panel.dots ? <RecordDots dots={panel.dots} /> : null}
+    <div data-proof="" style={{ paddingTop: 2 }}>
       {stats.length > 0 ? (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${stats.length}, 1fr)`,
-          borderTop: '1px solid rgba(61,220,151,0.2)',
-          marginTop: 8,
-          paddingTop: 8,
+          gridTemplateColumns: `repeat(${stats.length}, minmax(0, 1fr))`,
+          columnGap: 10,
         }}
         >
-          {stats.map((stat, i) => (
-            <div
-              key={stat.label}
-              style={{
-                textAlign: 'center',
-                minWidth: 0,
-                borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-              }}
-            >
-              <div style={{
-                fontSize: 15,
-                fontWeight: 730,
-                letterSpacing: '-0.03em',
-                color: C.text,
-                fontFeatureSettings: "'tnum'",
-                lineHeight: 1,
-              }}
-              >
-                {stat.label === 'Record' ? <RecordMark value={stat.value} /> : stat.value}
-              </div>
-              <div style={{
-                marginTop: 6,
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: '0.13em',
-                textTransform: 'uppercase',
-                color: C.textMuted,
-              }}
-              >
-                {stat.label}
-              </div>
-            </div>
-          ))}
+          {stats.map((stat) => <ProofStat key={stat.label} stat={stat} />)}
         </div>
       ) : null}
+      {dots.length >= 2 ? <RecordDots dots={dots} /> : null}
     </div>
   );
 }
@@ -471,7 +390,7 @@ export default function LockedCollapsedRiver({ f, mine = null }) {
   });
 
   return (
-    <div data-river="" style={{ marginTop: 16 }}>
+    <div data-river="" style={{ marginTop: 14 }}>
       <Proof panel={model.panel} />
 
       {model.rows.length > 0 && (
