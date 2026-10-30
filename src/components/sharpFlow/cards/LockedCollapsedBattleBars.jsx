@@ -5,7 +5,6 @@
  *   Full split / Losing wallets / Confirmed winners
  */
 import { HC_RATIO } from '../../../lib/ags.js';
-import { ourSideLabel } from './boardFaceLine.js';
 
 const C = {
   text: '#F4F7FB',
@@ -228,6 +227,18 @@ function SplitBar({
   );
 }
 
+function ourSideLabel(f) {
+  const pick = String(f?.pickLabel || '').trim();
+  const total = pick.match(/^(Over|Under)\b/i);
+  if (total) {
+    const w = total[1];
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }
+  if (f?.side === 'home' && f.homeShort) return f.homeShort;
+  if (f?.side === 'away' && f.awayShort) return f.awayShort;
+  return 'Us';
+}
+
 function CompactSplitRow({
   label,
   ours,
@@ -375,9 +386,6 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
   if (!hasFull && !hasLosers && !hasConfirmed) return null;
 
   const subscriber = face === 'subscriber';
-  // The confirmed fight is the poster above the tear. These rows are the
-  // other two books: the whole market, and tracked losers.
-  if (subscriber && !hasFull && !hasLosers) return null;
   const oursLabel = subscriber ? ourSideLabel(f) : 'Us';
   const theirsLabel = f?.against?.abbr || 'Them';
   const hcShareOfOurs = confirmed.ours > 0 && hcOurs > 0
@@ -482,7 +490,7 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
           <span style={{
             fontSize: 10.5, fontWeight: 500, color: C.textFaint, letterSpacing: '0.01em',
           }}>
-            Market
+            Qualified money
           </span>
           <span style={{ fontSize: 10.5, fontWeight: 500, letterSpacing: '0.01em' }}>
             <span style={{ color: SLATE }}>{oursLabel}</span>
@@ -492,7 +500,7 @@ export default function LockedCollapsedBattleBars({ f, face = 'original', flush 
         </div>
       )}
       {subscriber
-        ? [fullRow, losersRow]
+        ? [confirmedRow, fullRow, losersRow]
         : [fullRow, losersRow, confirmedRow]}
     </div>
   );
