@@ -3,17 +3,15 @@ Close
 - [Ratings](https://www.dratings.com/sports/)
   - [NFL Ratings](https://www.dratings.com/sports/nfl-football-ratings/)
   - [FBS Ratings](https://www.dratings.com/sports/ncaa-fbs-football-ratings/)
-  - [MLB Ratings](https://www.dratings.com/sports/mlb-baseball-ratings/)
   - [NHL Ratings](https://www.dratings.com/sports/nhl-hockey-ratings/)
   - [NBA Ratings](https://www.dratings.com/sports/nba-basketball-ratings/)
-  - [WNBA Ratings](https://www.dratings.com/sports/wnba-basketball-ratings/)
+  - [CBB Ratings](https://www.dratings.com/sports/ncaa-college-basketball-ratings/)
 - [Predictions](https://www.dratings.com/predictor/)
   - [NFL Predictions](https://www.dratings.com/predictor/nfl-football-predictions/)
   - [CFB Predictions](https://www.dratings.com/predictor/ncaa-football-predictions/)
-  - [MLB Predictions](https://www.dratings.com/predictor/mlb-baseball-predictions/)
   - [NHL Predictions](https://www.dratings.com/predictor/nhl-hockey-predictions/)
   - [NBA Predictions](https://www.dratings.com/predictor/nba-basketball-predictions/)
-  - [WNBA Predictions](https://www.dratings.com/predictor/wnba-basketball-predictions/)
+  - [CBB Predictions](https://www.dratings.com/predictor/ncaa-basketball-predictions/)
   - [UFC Predictions](https://www.dratings.com/predictor/ufc-mma-predictions/)
 - [Tools](https://www.dratings.com/tools/)
   - [Odds Conversion Calculator](https://www.dratings.com/odds-conversion-calculator/)
@@ -40,27 +38,27 @@ Close
 
 # MLB Baseball Predictions
 
-Updated 20 hr ago
+Updated 1 day ago
 
 All ConferencesALNL
 
-- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#scroll-completed)
-- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#scroll-season)
-- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#scroll-simulation)
-- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#scroll-related)
+- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#scroll-completed)
+- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#scroll-season)
+- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#scroll-simulation)
+- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#scroll-related)
 
-## Upcoming Games for October 29, 2026
+## Upcoming Games for October 30, 2026
 
 There are no games on the schedule today.
 
-Games for Oct 28, 2026
+Games for Oct 29, 2026
 
-Games for Oct 30, 2026
+Games for Oct 31, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Runs | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -87,13 +85,13 @@ Games for Oct 30, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793304429992#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793390004351#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
-| **Sportsbooks** | 1 | 1-0 (1.000) | 0 | -0.57638 |  |
-| **Sportsbooks** | 1 | 1-0 (1.000) | 0 | -0.57054 |  |
-| **DRatings** | 1 | 1-0 (1.000) | 0 | -0.63392 | -0.05754<br>-0.06338 |
+| **Sportsbooks** | 0 | 0-0 (0.000) | 0 |  |  |
+| **Sportsbooks** | 0 | 0-0 (0.000) | 0 |  |  |
+| **DRatings** | 0 | 0-0 (0.000) | 0 |  |  |
 
 ## Predictions Methodology
 
