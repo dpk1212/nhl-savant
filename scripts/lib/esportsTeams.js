@@ -51,9 +51,35 @@ export function makeEsportsGameKey(a, b) {
   return `${aa}_${bb}`;
 }
 
+const GRADE_FILLER = new Set(['esports', 'gaming', 'team', 'club']);
+
+/**
+ * Grading key. bo3.gg drops the org word our cards keep:
+ * Inner Circle Esports / Aurora Gaming / BetBoom Team / FUT Esports /
+ * Team Nemesis. Prospect and academy stay in the key so they cannot
+ * grade as the main team. Game keys still use resolveEsportsTeam.
+ */
+export function esportsGradeKey(raw) {
+  const cleaned = String(raw || '')
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned || PROP_TITLE.test(cleaned)) return null;
+  const words = cleaned
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  const kept = words.filter((w) => !GRADE_FILLER.has(w));
+  const n = (kept.length ? kept : words).join('');
+  if (!n || n.length < 2) return null;
+  return n;
+}
+
 export function esportsTeamsMatch(rawA, rawB) {
-  const a = resolveEsportsTeam(rawA);
-  const b = resolveEsportsTeam(rawB);
+  const a = esportsGradeKey(rawA);
+  const b = esportsGradeKey(rawB);
   return !!(a && b && a === b);
 }
 
