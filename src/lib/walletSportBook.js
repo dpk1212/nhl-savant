@@ -80,10 +80,32 @@ function sourceBBook(pos, scope) {
     wr: Number.isFinite(Number(pos.wr)) ? Number(pos.wr) : (100 * wins) / decided,
     roi: Number.isFinite(Number(pos.positionFlatRoi)) ? Number(pos.positionFlatRoi) : null,
     dollarRoi: Number.isFinite(Number(pos.dollarRoi)) ? Number(pos.dollarRoi) : null,
+    settledPnl: Number.isFinite(Number(pos.settledPnl)) ? Math.round(Number(pos.settledPnl)) : null,
     kind: 'positions',
     scope,
     n,
   };
+}
+
+/** Graded bets in date order. The month's tape, else the older curve. */
+export function recentResults(sportRec, market = null) {
+  const key = marketKey(market);
+  const take = (legs) => (Array.isArray(legs) ? legs : [])
+    .map((leg) => {
+      const won = leg?.won === 1 || leg?.won === true ? 1
+        : leg?.won === 0 || leg?.won === false ? 0
+        : null;
+      if (won == null || !leg?.date) return null;
+      return { date: String(leg.date), won, market: marketKey(leg.marketType) };
+    })
+    .filter(Boolean);
+  const month = take(sportRec?.form?.recentAction);
+  const older = take(sportRec?.form?.curveLegs);
+  const src = month.length ? month : older;
+  if (!src.length) return null;
+  const scoped = key ? src.filter((leg) => leg.market === key) : src;
+  const use = scoped.length >= 2 ? scoped : src;
+  return use.map(({ date, won }) => ({ date, won }));
 }
 
 /**

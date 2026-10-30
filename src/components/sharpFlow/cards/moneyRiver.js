@@ -3,7 +3,9 @@
  * Counts, records, and dollars come from the wallets already on the card.
  * A pooled win rate is shown only when every sharp on our side has a record.
  * Combined ROI is the stake-weighted blend of those same wallets' own ROI,
- * and only when every one of them has one. No career profit, no last-20.
+ * and only when every one of them has one. Profit is the sum of those
+ * wallets' own book profit, on the same rule. The dots are real graded
+ * bets in date order, oldest first. Sharp money stays on the river.
  */
 import { HC_RATIO } from '../../../lib/ags.js';
 import { ourSideLabel, theirSideLabel } from './boardFaceLine.js';
@@ -100,6 +102,10 @@ function poolOf(f) {
         trustScore: Number(w?.trustScore) || Number(profile?.trustScore) || 0,
         roi: Number.isFinite(w?.roi) ? w.roi : (Number.isFinite(profile?.roi) ? profile.roi : null),
         dollarRoi: Number.isFinite(w?.dollarRoi) ? w.dollarRoi : (Number.isFinite(profile?.dollarRoi) ? profile.dollarRoi : null),
+        bookPnl: Number.isFinite(w?.bookPnl) ? w.bookPnl : (Number.isFinite(profile?.bookPnl) ? profile.bookPnl : null),
+        recent: Array.isArray(w?.recent) && w.recent.length
+          ? w.recent
+          : (Array.isArray(profile?.recent) ? profile.recent : null),
         proven: w.proven ?? profile?.proven ?? false,
         whitelist: w.whitelist || profile?.whitelist || null,
         whitelisted: w.whitelisted ?? profile?.whitelisted ?? false,
@@ -138,6 +144,14 @@ export function fmtRoi(n) {
     ? String(Math.round(rounded))
     : rounded.toFixed(1);
   return `${rounded > 0 ? '+' : ''}${body}%`;
+}
+
+export function fmtSignedUsd(v) {
+  const n = Math.round(Number(v) || 0);
+  const body = fmtRiverUsd(Math.abs(n));
+  if (n > 0) return `+${body}`;
+  if (n < 0) return `-${body}`;
+  return body;
 }
 
 function rowFrom(w, kind) {
@@ -237,13 +251,22 @@ export function layoutRiver(rows, { rowH = ROW_H, minH = {} } = {}) {
   return { rows: tagged, height, ourBox: box('ours'), theirBox: box('against') };
 }
 
-/** Twenty dots, green then red, in the same proportion as the record. */
-export function recordDots(wins, losses) {
-  const decided = (Number(wins) || 0) + (Number(losses) || 0);
-  if (decided < 2) return null;
-  const slots = 20;
-  const green = Math.max(0, Math.min(slots, Math.round(((Number(wins) || 0) / decided) * slots)));
-  return { green, red: slots - green };
+/** Newest graded bets across our sharps, oldest on the left. No invented order. */
+export function chronoDots(sharps) {
+  const legs = [];
+  for (const w of sharps) {
+    const tape = Array.isArray(w?.recent) ? w.recent : [];
+    for (const leg of tape) {
+      const won = leg?.won === 1 || leg?.won === true ? 1
+        : leg?.won === 0 || leg?.won === false ? 0
+        : null;
+      if (won == null) continue;
+      legs.push({ date: leg?.date ? String(leg.date) : '', won });
+    }
+  }
+  if (legs.length < 2) return null;
+  legs.sort((a, b) => a.date.localeCompare(b.date));
+  return legs.slice(-20).map((leg) => (leg.won === 1 ? 'win' : 'loss'));
 }
 
 function winLabel(wins, losses) {
@@ -278,6 +301,14 @@ function displaySide(f, which) {
 
 function dashRecord(rec) {
   return rec ? rec.label.replace('-', '\u2013') : null;
+}
+
+/** Book profit, summed. Null unless every sharp on our side has one. */
+function combinedProfit(sharps) {
+  if (!sharps.length) return null;
+  const books = sharps.map((w) => (Number.isFinite(w?.bookPnl) ? w.bookPnl : null));
+  if (books.some((n) => n == null)) return null;
+  return fmtSignedUsd(books.reduce((s, n) => s + n, 0));
 }
 
 /** Stake-weighted ROI. Null unless every sharp on our side has one. */
@@ -414,34 +445,20 @@ export function buildMoneyRiver(f) {
 
   const pool = pooled(sharps);
   const n = sharps.length;
-  const hc = ourHc.length;
-  const share = sharpPct(ourSharpUsd);
   const solo = n === 1 ? walletRecord(sharps[0]) : null;
-  const recordStat = pool
-    ? { value: pool.record, label: 'Record' }
-    : (solo ? { value: dashRecord(solo), label: 'Record' } : null);
-  const moneyStat = ourSharpUsd > 0 ? { value: fmtRiverUsd(ourSharpUsd), label: 'Sharp money' } : null;
-  const shareStat = share != null ? { value: `${share}%`, label: 'Sharp share' } : null;
-  const sizedStat = hc > 0 ? { value: String(hc), label: 'Sized up' } : null;
-  const panel = n > 0 ? {
-    eyebrow: n === 1 ? 'The sharp on this play' : `The ${n} sharps on this play`,
-    combined: n > 1,
-    sub: [
-      `${n} sharp${n === 1 ? '' : 's'}`,
-      hc > 0 ? `\u2605 ${hc} sized up` : null,
-      pool ? 'record on this sport' : null,
-    ].filter(Boolean).join(' \u00b7 '),
-    hero: pool ? `${pool.label}%` : (share != null ? `${share}%` : null),
-    caption: pool ? 'Win' : 'Of sharp money',
-    roi: combinedRoi(sharps),
-    dots: pool
-      ? recordDots(pool.wins, pool.losses)
-      : (solo ? recordDots(solo.wins, solo.losses) : null),
-    stats: (pool
-      ? [recordStat, moneyStat, shareStat]
-      : [recordStat, moneyStat, sizedStat]
-    ).filter(Boolean),
-  } : null;
+  const winPct = pool?.label || (solo ? winLabel(solo.wins, solo.losses) : null);
+  const roi = combinedRoi(sharps);
+  const profit = combinedProfit(sharps);
+  const recordValue = pool ? pool.record : (solo ? dashRecord(solo) : null);
+  const moneyTone = (text) => (String(text).startsWith('-') ? 'loss' : String(text).startsWith('+') ? 'up' : 'plain');
+  const stats = [
+    winPct ? { value: `${winPct}%`, label: n > 1 ? 'Combined win' : 'Win', tone: 'plain' } : null,
+    roi ? { value: roi.text, label: roi.label, tone: moneyTone(roi.text) } : null,
+    profit ? { value: profit, label: 'Profit', tone: moneyTone(profit) } : null,
+    recordValue ? { value: recordValue, label: 'Record', tone: 'record' } : null,
+  ].filter(Boolean);
+  const dots = chronoDots(sharps);
+  const panel = n > 0 && (stats.length || dots) ? { stats, dots } : null;
 
   const oursName = displaySide(f, 'ours');
   const theirsName = displaySide(f, 'against');

@@ -15,6 +15,7 @@ import {
   sportTrustBookPreferB,
   pickSensationalTrust,
   sourceBPreferredBook,
+  recentResults,
 } from '../../../lib/walletSportBook.js';
 import {
   buildWideBoardMoneySplits,
@@ -343,6 +344,8 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         wr: Number.isFinite(wr) ? Math.round(wr) : null,
         roi,
         dollarRoi,
+        bookPnl: Number.isFinite(preferredB?.settledPnl) ? preferredB.settledPnl : null,
+        recent: recentResults(sportRec, preferredB?.scope === 'market' ? opts.marketType : null),
         invested: w.invested || 0,
         avgSportBet,
         sizeBand,
