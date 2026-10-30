@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   esportFromSlug,
+  esportsTeamsMatch,
   extractEsportsTeamsFromTitle,
   makeEsportsGameKey,
   classifyEsportsMarket,
@@ -47,5 +48,17 @@ assert.equal(hit.sport, 'CS2');
 assert.equal(hit.key, 'teamfalcons_nip');
 assert.equal(matchEsportsPositionTitle('Counter-Strike: Team Falcons vs NIP (BO3) - Group A', games, `${csSlug}-game1`), null);
 assert.equal(matchEsportsPositionTitle('LoL: Cloud9 vs Karmine Corp (BO5) - Worlds Play-In', games, lolSlug).sport, 'LOL');
+
+assert.equal(esportsTeamsMatch('Inner Circle Esports', 'Inner Circle'), true);
+assert.equal(esportsTeamsMatch('Inner Circle Esports', 'Inner Circle Prospect'), false);
+assert.equal(esportsTeamsMatch('Inner Circle Esports', 'Inner Circle Academy'), false);
+assert.equal(esportsTeamsMatch('Aurora Gaming', 'Aurora'), true);
+assert.equal(esportsTeamsMatch('Aurora Gaming', 'Aurora Young Blud'), false);
+assert.equal(esportsTeamsMatch('BetBoom Team', 'BetBoom'), true);
+assert.equal(esportsTeamsMatch('FUT Esports', 'FUT'), true);
+assert.equal(esportsTeamsMatch('Team Nemesis', 'Nemesis'), true);
+assert.equal(esportsTeamsMatch('Team Nemesis', 'Nemesis Academy'), false);
+assert.equal(esportsTeamsMatch('FaZe', 'GamerLegion'), false);
+assert.equal(makeEsportsGameKey('Inner Circle Esports', 'Astralis'), 'innercircleesports_astralis');
 
 console.log('testEsportsTeams ok');

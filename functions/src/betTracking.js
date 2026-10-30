@@ -1034,9 +1034,29 @@ function resolveEsportsTeam(raw) {
   return n;
 }
 
+const ESPORTS_GRADE_FILLER = new Set(["esports", "gaming", "team", "club"]);
+
+function esportsGradeKey(raw) {
+  const cleaned = String(raw || "")
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return null;
+  const words = cleaned
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  const kept = words.filter((w) => !ESPORTS_GRADE_FILLER.has(w));
+  const n = (kept.length ? kept : words).join("");
+  if (!n || n.length < 2) return null;
+  return n;
+}
+
 function esportsTeamsMatch(a, b) {
-  const x = resolveEsportsTeam(a);
-  const y = resolveEsportsTeam(b);
+  const x = esportsGradeKey(a);
+  const y = esportsGradeKey(b);
   return !!(x && y && x === y);
 }
 
