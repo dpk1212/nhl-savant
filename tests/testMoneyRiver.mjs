@@ -2,7 +2,7 @@
  * The river tells the wallet battle with numbers the card already has.
  * A pooled win rate appears only when every sharp on our side has a record.
  */
-import { buildMoneyRiver } from '../src/components/sharpFlow/cards/moneyRiver.js';
+import { buildMoneyRiver, fmtSignedUsd } from '../src/components/sharpFlow/cards/moneyRiver.js';
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -41,7 +41,7 @@ const buried = buildMoneyRiver({
   boardMoneyConfirmed: { ours: 3400, theirs: 0 },
 });
 
-assert(buried.panel.eyebrow === 'Combined', buried.panel.eyebrow);
+assert(buried.panel.eyebrow === 'Combined Proven Sharps', buried.panel.eyebrow);
 assert(buried.panel.stats.map((s) => s.label).join('|') === 'Win|Record', JSON.stringify(buried.panel.stats));
 assert(buried.panel.stats[0].value === '63.6%', buried.panel.stats[0].value);
 assert(buried.panel.stats.some((s) => s.label === 'Record' && s.value === '14\u20138'), JSON.stringify(buried.panel.stats));
@@ -81,7 +81,7 @@ const split = buildMoneyRiver({
   boardMoneyFull: { ours: 11600, theirs: 9800 },
 });
 
-assert(split.panel.eyebrow === 'Combined', split.panel.eyebrow);
+assert(split.panel.eyebrow === 'Combined Proven Sharps', split.panel.eyebrow);
 assert(split.panel.stats[0].label === 'Win', split.panel.stats[0].label);
 assert(split.panel.stats[0].value === '63.9%', split.panel.stats[0].value);
 assert(split.panel.stats.some((s) => s.value === '23\u201313'), JSON.stringify(split.panel.stats));
@@ -167,7 +167,7 @@ const tape = buildMoneyRiver({
   ],
 });
 assert(JSON.stringify(tape.panel.dots) === JSON.stringify(['win', 'loss', 'loss', 'win']), JSON.stringify(tape.panel.dots));
-assert(tape.panel.eyebrow === 'Combined', tape.panel.eyebrow);
+assert(tape.panel.eyebrow === 'Combined Proven Sharps', tape.panel.eyebrow);
 assert(tape.panel.dotLabel === 'Last 4', tape.panel.dotLabel);
 assert(
   tape.panel.stats.map((s) => s.label).join('|') === 'Win|L30 ROI|Profit|Record',
@@ -205,5 +205,13 @@ const oneBook = buildMoneyRiver({
 });
 assert(oneBook.panel.stats.map((s) => `${s.label}:${s.value}`).join('|') === 'Win:71.4%|L30 ROI:+44%|Profit:+$1.6K|Record:10\u20134', oneBook.panel.stats.map((s) => s.value).join('|'));
 assert(oneBook.rows[0].meta === '10\u20134 \u00b7 +44% \u00b7 +$1.6K', oneBook.rows[0].meta);
+
+assert(fmtSignedUsd(1006000) === '+$1.01M', fmtSignedUsd(1006000));
+assert(fmtSignedUsd(1000000) === '+$1M', fmtSignedUsd(1000000));
+assert(fmtSignedUsd(2500000) === '+$2.5M', fmtSignedUsd(2500000));
+assert(fmtSignedUsd(-1200000) === '-$1.2M', fmtSignedUsd(-1200000));
+assert(fmtSignedUsd(999600) === '+$1M', fmtSignedUsd(999600));
+assert(fmtSignedUsd(940) === '+$940', fmtSignedUsd(940));
+assert(fmtSignedUsd(25900) === '+$25.9K', fmtSignedUsd(25900));
 
 console.log('money river ok');

@@ -18,16 +18,29 @@ const SHARP_CAP = 4;
 const OPP_CAP = 2;
 const LOSER_CAP = 3;
 
+function millionBody(m) {
+  if (m >= 100 || Math.abs(m - Math.round(m)) < 0.005) return String(Math.round(m));
+  const digits = m >= 10 ? 1 : 2;
+  return m.toFixed(digits).replace(/0+$/, '').replace(/\.$/, '');
+}
+
 export function fmtRiverUsd(v) {
   const n = Math.round(Number(v) || 0);
-  if (Math.abs(n) >= 1000) {
-    const k = n / 1000;
-    const body = Math.abs(k) >= 100 || Math.abs(k - Math.round(k)) < 0.05
-      ? String(Math.round(k))
-      : k.toFixed(1);
-    return `$${body}K`;
+  const abs = Math.abs(n);
+  const signed = (body) => `${n < 0 ? '-' : ''}${body}`;
+  if (abs >= 1000000) {
+    return signed(`$${millionBody(abs / 1000000)}M`);
   }
-  return `$${n}`;
+  if (abs >= 1000) {
+    const k = abs / 1000;
+    if (k >= 100 || Math.abs(k - Math.round(k)) < 0.05) {
+      const rounded = Math.round(k);
+      if (rounded >= 1000) return fmtRiverUsd((n < 0 ? -1 : 1) * rounded * 1000);
+      return signed(`$${rounded.toLocaleString('en-US')}K`);
+    }
+    return signed(`$${k.toFixed(1)}K`);
+  }
+  return signed(`$${abs.toLocaleString('en-US')}`);
 }
 
 export function walletRecord(w) {
@@ -479,7 +492,7 @@ export function buildMoneyRiver(f) {
   ].filter(Boolean);
   const dots = chronoDots(sharps);
   const panel = n > 0 && (stats.length || dots) ? {
-    eyebrow: 'Combined',
+    eyebrow: 'Combined Proven Sharps',
     stats,
     dots,
     dotLabel: dots ? `Last ${dots.length}` : null,
