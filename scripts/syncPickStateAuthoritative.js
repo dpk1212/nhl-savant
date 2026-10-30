@@ -40,6 +40,9 @@
  * T-15 freeze is the ONLY gate. Once now >= commenceTime - 15 min, writes
  * are skipped so the doc state is a stable record at lock-in time. Same
  * window the browser uses, so client and server agree on the cutoff.
+ * commenceTime follows the latest Polymarket start while the card is still
+ * pending and that start is in the future. A later correction reopens a
+ * seal taken against the old time.
  *
  * Usage:
  *   node scripts/syncPickStateAuthoritative.js                    # today
@@ -194,6 +197,7 @@ import {
 } from '../src/lib/expectedWin.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { cleanStoredTeam, stripPlayerPropsSuffix } from './lib/playerPropsEvent.js';
+import { adoptedCommenceMs, commenceMoveReopensLock } from './lib/commenceFollow.js';
 import { acceptFullGameSidePosition, acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import { flipUFCGameKey, remapUFCPinnSides, canonicalUFCKey, isUFCFlipAlias } from './lib/ufcFighters.js';
 import { slugDatesAreBoardLeftovers } from './lib/positionEventMatch.js';
@@ -8986,6 +8990,35 @@ async function main() {
           if (away) pick.away = away;
           if (home) pick.home = home;
           console.log(`  ↳ props name: ${col}/${pick._id} ${namePatch.away || pick.away} @ ${namePatch.home || pick.home}`);
+        }
+        const storedMs = commenceMs(pick.commenceTime);
+        const freshMs = commenceMs(meta.commenceTime);
+        const adopted = adoptedCommenceMs({
+          status: pick.status, storedMs, freshMs, nowMs: now,
+        });
+        if (adopted != null) {
+          const reopen = commenceMoveReopensLock(storedMs, adopted, now);
+          pick.commenceTime = adopted;
+          const timePatch = { commenceTime: adopted };
+          if (reopen) {
+            for (const [sideKey, sd] of Object.entries(sides)) {
+              if (!sd || sd.status === 'COMPLETED') continue;
+              if (sd.v8_ticketSealedAt != null) {
+                delete sd.v8_ticketSealedAt;
+                timePatch[`sides.${sideKey}.v8_ticketSealedAt`] = admin.firestore.FieldValue.delete();
+              }
+              if (sd.v8_lockBestAtT15 != null) {
+                delete sd.v8_lockBestAtT15;
+                timePatch[`sides.${sideKey}.v8_lockBestAtT15`] = admin.firestore.FieldValue.delete();
+              }
+            }
+          }
+          if (!DRY_RUN) await db.collection(col).doc(pick._id).update(timePatch);
+          const fromIso = Number.isFinite(storedMs) ? new Date(storedMs).toISOString() : 'none';
+          console.log(
+            `  ↳ start moved: ${col}/${pick._id} ${fromIso} → ${new Date(adopted).toISOString()}`
+            + (reopen ? ' (lock reopened)' : ''),
+          );
         }
       }
       if (liveUFCKeys.size
