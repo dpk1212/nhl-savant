@@ -9,9 +9,8 @@ import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags
 import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
 import LockTapeSwitch from './LockTapeSwitch';
-import LockedCollapsedStrength from './LockedCollapsedStrength';
-import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
-import LockedCollapsedBoard from './LockedCollapsedBoard';
+import LockedCollapsedRiver from './LockedCollapsedRiver';
+import TeamCrest, { pickCrestName } from './TeamCrest.jsx';
 import { BookLogo, shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
 import HeroShopPrice from './HeroShopPrice.jsx';
 import {
@@ -2773,9 +2772,8 @@ function CollapsedHeader({ live, inClassName }) {
 }
 
 /**
- * The bet. One row: the play on the left, the stake on the right.
- * Odds and the payout share the line under the stake, so the price
- * is a pair and not a column of labels.
+ * The bet. The play and its price sit on the left. The stake, and what
+ * it pays, sit on the right.
  */
 function CollapsedHero({ live, pickClass }) {
   const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip } = live;
@@ -2785,20 +2783,39 @@ function CollapsedHero({ live, pickClass }) {
       style={{
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         gap: 16, position: 'relative', zIndex: 2,
-        // The seal's chevron sits in the corner. This inset lines the stake
-        // up under the seal, clear of that mark.
         paddingRight: 23,
       }}
     >
-      <div style={{ minWidth: 0, flex: 1, containerType: 'inline-size' }}>
-        <div
-          className={pickClass}
-          style={{
-            fontSize: 'clamp(1.4rem, 18cqi, 1.7rem)', fontWeight: 750, letterSpacing: '-0.04em',
-            color: C.text, lineHeight: 1.05, whiteSpace: 'nowrap',
-          }}
-        >
-          {f.pickLabel}
+      <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        {pickCrestName(f) ? (
+          <span style={{ marginTop: 1 }}>
+            <TeamCrest name={pickCrestName(f)} sport={f.sport} size={34} />
+          </span>
+        ) : null}
+        <div style={{ minWidth: 0, flex: 1, containerType: 'inline-size' }}>
+          <div
+            className={pickClass}
+            style={{
+              fontSize: 'clamp(1.4rem, 18cqi, 1.7rem)', fontWeight: 750, letterSpacing: '-0.04em',
+              color: C.text, lineHeight: 1.05, whiteSpace: 'nowrap',
+            }}
+          >
+            {f.pickLabel}
+          </div>
+          {!tracked && (
+            <div style={{ marginTop: 6 }}>
+              <HeroShopPrice
+                bestOdds={f.bestOdds}
+                bestBook={f.bestBook}
+                books={f.books}
+                fallbackOdds={heroPx}
+                hideEv
+                hideLogo
+                color={C.textSec}
+                fontSize="0.92rem"
+              />
+            </div>
+          )}
         </div>
       </div>
       <div style={{
@@ -2817,32 +2834,13 @@ function CollapsedHero({ live, pickClass }) {
         >
           {stakeLabel}
         </span>
-        {!tracked && (
+        {!tracked && payoutLabel && (
           <span style={{
-            display: 'inline-flex', alignItems: 'baseline', justifyContent: 'flex-end',
-            gap: 7, lineHeight: 1, whiteSpace: 'nowrap',
-          }}>
-            <HeroShopPrice
-              bestOdds={f.bestOdds}
-              bestBook={f.bestBook}
-              books={f.books}
-              fallbackOdds={heroPx}
-              americanOnly
-              hideEv
-              hideLogo
-              color={C.textSec}
-              logoSize={16}
-              fontSize="0.84rem"
-            />
-            {payoutLabel && (
-              <span style={{
-                fontSize: '0.84rem', fontWeight: 650, fontFeatureSettings: "'tnum'",
-                color: payoutColor, letterSpacing: '-0.01em',
-              }}>
-                <span style={{ color: C.textFaint, fontWeight: 500, marginRight: 7 }}>·</span>
-                {graded ? payoutLabel : `to win ${payoutLabel}`}
-              </span>
-            )}
+            fontSize: '0.84rem', fontWeight: 650, fontFeatureSettings: "'tnum'",
+            color: payoutColor, letterSpacing: '-0.01em', lineHeight: 1,
+          }}
+          >
+            {graded ? payoutLabel : `to win ${payoutLabel}`}
           </span>
         )}
       </div>
@@ -3083,10 +3081,7 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
   const [bookOn, setBookOn] = useState(false);
   const mine = portfolioWalletsOnCard(f, mySharps?.shorts);
   const hero = <CollapsedHero live={live} pickClass="live-pick" />;
-  const trust = (
-    <LockedCollapsedStrength f={f} face="subscriber" mine={mine} />
-  );
-  const money = <LockedCollapsedBattleBars f={f} face="subscriber" flush />;
+  const river = <LockedCollapsedRiver f={f} mine={mine} />;
   const tape = (
     // The tape bleeds through the card — part of the surface, not an
     // exhibit in a box. The ledger row carries the takeaway; no caption.
@@ -3097,14 +3092,12 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
   const shop = <CollapsedShopStrip f={f} />;
 
   const perf = <TicketPerforation edgeAura={live.edgeAura} />;
-  // The cornerstone. Every wallet on the board, drawn to the dollar.
-  const board = <LockedCollapsedBoard f={f} mineShorts={mySharps?.shorts} names={mySharps?.names} />;
 
   return (
     <CollapsedCardFrame live={live} extraClass={`live-ticket live-order-${order}`}>
       <CollapsedHeader live={live} />
       {order === 'verdict' && (
-        <>{hero}{board}{trust}{perf}{tape}<SectionRule />{money}</>
+        <>{hero}{river}{perf}{tape}</>
       )}
       {order === 'evidence' && (
         <>
@@ -3112,22 +3105,19 @@ function CollapsedTicketFace({ live, order = 'verdict', gid, mySharps = null }) 
             <CollapsedSpark f={f} gid={gid} bleed />
           </div>
           <div style={{ marginTop: 18 }}>{hero}</div>
-          {board}
-          {trust}
+          {river}
           {perf}
-          {money}
         </>
       )}
       {order === 'brokerage' && (
         <>
-          {hero}{board}{trust}{perf}
-          {/* Keep the tape mounted. Swapping it with the money bars remounts
-              the switch, so the first Book click only hid the bars. */}
+          {hero}
+          {/* Keep the tape mounted. Hiding the river on Book leaves the
+              ladder the room, without remounting the switch. */}
           <div style={bookOn ? { display: 'none' } : undefined}>
-            {money}
-            <SectionRule />
+            {river}
           </div>
-          {tape}{shop}
+          {perf}{tape}{shop}
         </>
       )}
     </CollapsedCardFrame>
