@@ -42,16 +42,16 @@ const buried = buildMoneyRiver({
 });
 
 assert(buried.panel.hero === '100%', buried.panel.hero);
-assert(buried.panel.caption === 'of sharp money', buried.panel.caption);
-assert(buried.panel.support == null, 'one wallet is not a pooled record');
+assert(buried.panel.caption === 'Of sharp money', buried.panel.caption);
+assert(buried.panel.combined === false, 'one wallet is not combined');
+assert(buried.panel.stats.some((s) => s.label === 'Record' && s.value === '14\u20138'), JSON.stringify(buried.panel.stats));
 assert(buried.ourPill.lines[0].text === '$3.4K', buried.ourPill.lines[0].text);
 assert(buried.ourPill.lines.some((l) => l.text === '100% of sharp $'), 'sharp share');
 assert(buried.theirPill.tone === 'fade', buried.theirPill.tone);
 assert(buried.theirPill.lines[0].text === '$33K', buried.theirPill.lines[0].text);
-assert(buried.fade.text === '1 loser on Warriors', buried.fade.text);
-assert(buried.lead.proof === '14-8 · L30 +$5.6K', buried.lead.proof);
-assert(buried.allMoney.text === 'Warriors 91%', buried.allMoney.text);
+assert(buried.rows.every((r) => r.thick > 0 && Number.isFinite(r.targetY)), 'ribbon geometry');
 assert(!JSON.stringify(buried).includes('14.2'), 'no example roi');
+assert(!('fade' in buried) && !('lead' in buried), 'lead and fade are gone');
 
 const split = buildMoneyRiver({
   sport: 'NFL',
@@ -74,16 +74,19 @@ const split = buildMoneyRiver({
 });
 
 assert(split.panel.hero === '63.9%', split.panel.hero);
-assert(split.panel.caption === 'win', split.panel.caption);
-assert(split.panel.support === '23\u201313', split.panel.support);
+assert(split.panel.caption === 'Win', split.panel.caption);
+assert(split.panel.combined === true, 'combined');
+assert(split.panel.stats.some((s) => s.value === '23\u201313'), JSON.stringify(split.panel.stats));
 assert(split.panel.sub.includes('1 sized up'), split.panel.sub);
 assert(split.rows.some((r) => r.kind === 'hc' && r.short === 'a91f2c'), 'sized-up row');
 assert(split.rows.some((r) => r.kind === 'opp'), 'opposing sharp');
 assert(split.rows.some((r) => r.kind === 'loser' && r.side === 'ours'), 'loser on our side');
 assert(split.ourPill.lines.some((l) => l.text === '80% of sharp $'), JSON.stringify(split.ourPill.lines));
 assert(split.ourPill.lines[0].text === '$9.8K', split.ourPill.lines[0].text);
-assert(split.fade.text === '1 loser on CAR', split.fade.text);
-assert(split.allMoney.text === 'Jaguars 54%', split.allMoney.text);
+const oursFlow = split.rows.filter((r) => r.side !== 'against');
+for (let i = 1; i < oursFlow.length; i += 1) {
+  assert(oursFlow[i].targetY > oursFlow[i - 1].targetY, 'ribbons stack');
+}
 
 const incomplete = buildMoneyRiver({
   units: 2,
@@ -96,7 +99,7 @@ const incomplete = buildMoneyRiver({
     { short: 'bbbbbb', side: 'ours', invested: 800, whitelist: 'CONFIRMED', proven: true },
   ],
 });
-assert(incomplete.panel.caption === 'of sharp money', 'missing record blocks the pool');
-assert(incomplete.panel.support == null, incomplete.panel.support);
+assert(incomplete.panel.caption === 'Of sharp money', 'missing record blocks the pool');
+assert(!incomplete.panel.stats.some((s) => s.label === 'Record'), 'incomplete books are not pooled');
 
 console.log('money river ok');

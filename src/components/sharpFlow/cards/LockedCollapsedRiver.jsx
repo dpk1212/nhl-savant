@@ -25,6 +25,23 @@ const INK = {
   loser: CORAL,
 };
 
+const RIBBON = {
+  hc: ['#C6A15A', '#F6E7B2'],
+  sharp: ['#1EAE6C', '#8CFFC8'],
+  opp: ['#C49262', '#F0D0AE'],
+  loser: ['#D15A52', '#FFC1B8'],
+};
+
+function ribbonPath(y0, w, y1) {
+  const x1 = 72;
+  const dx = 30;
+  const y0a = y0 - w / 2;
+  const y0b = y0 + w / 2;
+  const y1a = y1 - w / 2;
+  const y1b = y1 + w / 2;
+  return `M 0 ${y0a} C ${dx} ${y0a}, ${x1 - dx} ${y1a}, ${x1} ${y1a} L ${x1} ${y1b} C ${x1 - dx} ${y1b}, ${dx} ${y0b}, 0 ${y0b} Z`;
+}
+
 const PILL_SKIN = {
   ours: {
     border: '1px solid rgba(61,220,151,0.55)',
@@ -60,23 +77,14 @@ function RiverRow({ row, mine }) {
   const named = mine && row.short && mine.has(normalizeWalletShort(row.short));
   return (
     <div style={{
-      height: 34,
+      height: 32,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
       minWidth: 0,
     }}
     >
-      <span style={{
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        flexShrink: 0,
-        background: color,
-        boxShadow: `0 0 8px ${color}`,
-      }}
-      />
-      <span style={{ minWidth: 0 }}>
+      <span style={{ minWidth: 0, flex: 1 }}>
         <span style={{
           display: 'flex',
           alignItems: 'center',
@@ -107,11 +115,20 @@ function RiverRow({ row, mine }) {
           {rowMeta(row)}
         </span>
       </span>
+      <span style={{
+        width: 7,
+        height: 7,
+        borderRadius: '50%',
+        flexShrink: 0,
+        background: color,
+        boxShadow: `0 0 0 3px ${color}22`,
+      }}
+      />
     </div>
   );
 }
 
-function Destination({ pill, top }) {
+function Destination({ pill, top, height }) {
   if (!pill) return null;
   const skin = PILL_SKIN[pill.tone] || PILL_SKIN.ours;
   return (
@@ -120,7 +137,7 @@ function Destination({ pill, top }) {
       left: 0,
       right: 0,
       top,
-      height: 70,
+      height,
       borderRadius: 12,
       border: skin.border,
       background: skin.background,
@@ -183,44 +200,48 @@ function Destination({ pill, top }) {
 
 function Proof({ panel }) {
   if (!panel?.hero) return null;
+  const stats = panel.stats || [];
   return (
     <div style={{
-      padding: '13px 14px 14px',
+      padding: '14px 14px 12px',
       borderRadius: 14,
-      background: 'linear-gradient(180deg, rgba(61,220,151,0.10), rgba(61,220,151,0.03) 46%, rgba(8,12,22,0.15))',
-      border: '1px solid rgba(61,220,151,0.22)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 0 28px -16px rgba(61,220,151,0.7)',
+      background: 'linear-gradient(180deg, rgba(61,220,151,0.11), rgba(61,220,151,0.035) 42%, rgba(8,12,22,0.2))',
+      border: '1px solid rgba(61,220,151,0.24)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
     }}
     >
       <div style={{
-        fontSize: 10,
+        fontSize: 10.5,
         fontWeight: 750,
-        letterSpacing: '0.14em',
+        letterSpacing: '0.13em',
         textTransform: 'uppercase',
         color: GREEN,
       }}
       >
         {panel.eyebrow}
+        {panel.combined ? (
+          <span style={{ color: 'rgba(61,220,151,0.62)' }}>{' · Combined'}</span>
+        ) : null}
       </div>
       {panel.sub ? (
         <div style={{
-          marginTop: 4,
-          fontSize: 12,
-          fontWeight: 550,
-          color: C.textSec,
+          marginTop: 5,
+          fontSize: 12.5,
+          fontWeight: 600,
+          color: 'rgba(61,220,151,0.82)',
           letterSpacing: '0.01em',
         }}
         >
           {panel.sub}
         </div>
       ) : null}
-      <div style={{ textAlign: 'center', paddingTop: panel.sub ? 10 : 12 }}>
+      <div style={{ textAlign: 'center', paddingTop: 12, paddingBottom: stats.length ? 12 : 2 }}>
         <div style={{
-          fontSize: 42,
-          fontWeight: 730,
-          letterSpacing: '-0.05em',
+          fontSize: 46,
+          fontWeight: 740,
+          letterSpacing: '-0.055em',
           color: GREEN,
-          lineHeight: 0.9,
+          lineHeight: 0.88,
           fontFeatureSettings: "'tnum'",
         }}
         >
@@ -232,79 +253,47 @@ function Proof({ panel }) {
           fontWeight: 750,
           letterSpacing: '0.16em',
           textTransform: 'uppercase',
-          color: 'rgba(61,220,151,0.72)',
+          color: 'rgba(61,220,151,0.7)',
         }}
         >
           {panel.caption}
         </div>
-        {panel.support ? (
-          <div style={{
-            marginTop: 6,
-            fontSize: 15,
-            fontWeight: 650,
-            letterSpacing: '-0.03em',
-            color: C.text,
-            fontFeatureSettings: "'tnum'",
-          }}
-          >
-            {panel.support}
-          </div>
-        ) : null}
       </div>
-    </div>
-  );
-}
-
-function Strip({ tone, kicker, text, detail }) {
-  const gold = tone === 'gold';
-  const warn = tone === 'warn';
-  const color = gold ? GOLD : CORAL;
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'baseline',
-      justifyContent: 'space-between',
-      gap: 10,
-      padding: '8px 10px',
-      borderRadius: 9,
-      background: gold ? 'rgba(232,210,138,0.06)' : warn ? 'rgba(240,113,103,0.08)' : 'rgba(240,113,103,0.05)',
-      border: `1px solid ${gold ? 'rgba(232,210,138,0.28)' : 'rgba(240,113,103,0.28)'}`,
-      borderLeft: `3px solid ${color}`,
-    }}
-    >
-      <span style={{
-        minWidth: 0,
-        fontSize: 12,
-        fontWeight: 600,
-        color: C.text,
-        letterSpacing: '-0.01em',
-        fontFeatureSettings: "'tnum'",
-      }}
-      >
-        <span style={{
-          fontSize: 9,
-          fontWeight: 800,
-          letterSpacing: '0.12em',
-          color,
-          marginRight: 6,
+      {stats.length > 0 ? (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${stats.length}, 1fr)`,
+          borderTop: '1px solid rgba(61,220,151,0.16)',
+          paddingTop: 10,
         }}
         >
-          {kicker}
-        </span>
-        {text}
-      </span>
-      {detail ? (
-        <span style={{
-          flexShrink: 0,
-          fontSize: 11.5,
-          fontWeight: 680,
-          color: gold ? C.textSec : CORAL,
-          fontFeatureSettings: "'tnum'",
-          letterSpacing: '-0.01em',
-        }}
-        >
-          {detail}
-        </span>
+          {stats.map((stat) => (
+            <div key={stat.label} style={{ textAlign: 'center', minWidth: 0 }}>
+              <div style={{
+                fontSize: 16,
+                fontWeight: 720,
+                letterSpacing: '-0.03em',
+                color: C.text,
+                fontFeatureSettings: "'tnum'",
+                lineHeight: 1,
+              }}
+              >
+                {stat.value}
+              </div>
+              <div style={{
+                marginTop: 5,
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: C.textMuted,
+              }}
+              >
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : null}
     </div>
   );
@@ -360,28 +349,21 @@ function Legend({ rows }) {
 export default function LockedCollapsedRiver({ f, mine = null }) {
   const model = buildMoneyRiver(f);
   const rawId = useId();
-  const glowId = `river${rawId.replace(/:/g, '')}`;
+  const gid = `river${rawId.replace(/:/g, '')}`;
   if (!model) return null;
   const mineIds = new Set((mine || []).map((w) => w.id));
-  const maxStake = Math.max(1, ...model.rows.map((r) => r.invested || 0));
-  const channels = model.rows.map((row) => {
-    const endY = row.side === 'against' ? model.theirY : model.ourY;
-    if (endY == null) return null;
-    const width = 2.4 + 6.5 * Math.sqrt((row.invested || 0) / maxStake);
-    return { row, endY, width, color: INK[row.kind] || GREEN };
-  }).filter(Boolean);
 
   return (
-    <div data-river="" style={{ marginTop: 18 }}>
+    <div data-river="" style={{ marginTop: 16 }}>
       <Proof panel={model.panel} />
 
       {model.rows.length > 0 && (
-        <div style={{ marginTop: model.panel ? 16 : 0 }}>
+        <div style={{ marginTop: model.panel ? 14 : 0 }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             gap: 12,
-            marginBottom: 6,
+            marginBottom: 4,
             fontSize: 9,
             fontWeight: 700,
             letterSpacing: '0.12em',
@@ -392,71 +374,51 @@ export default function LockedCollapsedRiver({ f, mine = null }) {
             <span>Wallet · record · stake</span>
             <span>Where it went</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'stretch', gap: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
             <div style={{ flex: '1 1 auto', minWidth: 0 }}>
               {model.rows.map((row) => (
                 <RiverRow key={row.key} row={row} mine={mineIds} />
               ))}
             </div>
             <svg
-              width="78"
+              width="72"
               height={model.height}
-              viewBox={`0 0 78 ${model.height}`}
+              viewBox={`0 0 72 ${model.height}`}
               aria-hidden
-              style={{ flex: '0 0 78px', overflow: 'visible' }}
+              style={{ flex: '0 0 72px', display: 'block' }}
             >
               <defs>
-                <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
-                  <feGaussianBlur stdDeviation="2.1" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
+                {model.rows.map((row) => {
+                  const [from, to] = RIBBON[row.kind] || RIBBON.sharp;
+                  return (
+                    <linearGradient key={row.key} id={`${gid}-${row.key}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0" stopColor={from} />
+                      <stop offset="1" stopColor={to} />
+                    </linearGradient>
+                  );
+                })}
               </defs>
-              {channels.map(({ row, endY, width, color }) => {
-                const d = `M 0 ${row.y} C 30 ${row.y}, 50 ${endY}, 78 ${endY}`;
-                return (
-                  <g key={row.key} filter={`url(#${glowId})`}>
-                    <path d={d} fill="none" stroke={color} strokeWidth={width + 3.5} strokeLinecap="round" opacity="0.22" />
-                    <path d={d} fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" opacity="0.95" />
-                  </g>
-                );
-              })}
+              {model.rows.map((row) => (
+                <path
+                  key={row.key}
+                  d={ribbonPath(row.y, row.thick, row.targetY)}
+                  fill={`url(#${gid}-${row.key})`}
+                  opacity="0.92"
+                />
+              ))}
             </svg>
-            <div style={{ position: 'relative', flex: '0 0 118px', height: model.height }}>
-              {model.ourPill && model.ourY != null ? (
-                <Destination pill={model.ourPill} top={model.ourY - model.pillH / 2} />
+            <div style={{ position: 'relative', flex: '0 0 116px', height: model.height }}>
+              {model.ourPill && model.ourBox ? (
+                <Destination pill={model.ourPill} top={model.ourBox.top} height={model.ourBox.height} />
               ) : null}
-              {model.theirPill && model.theirY != null ? (
-                <Destination pill={model.theirPill} top={model.theirY - model.pillH / 2} />
+              {model.theirPill && model.theirBox ? (
+                <Destination pill={model.theirPill} top={model.theirBox.top} height={model.theirBox.height} />
               ) : null}
             </div>
           </div>
           <Legend rows={model.rows} />
         </div>
       )}
-
-      {model.lead ? (
-        <div style={{ marginTop: 12 }}>
-          <Strip
-            tone="gold"
-            kicker="Lead"
-            text={[`\u2026${model.lead.short}`, model.lead.proof].filter(Boolean).join(' \u00b7 ')}
-            detail={model.allMoney ? `All money ${model.allMoney.text}` : null}
-          />
-        </div>
-      ) : null}
-      {model.fade ? (
-        <div style={{ marginTop: 6 }}>
-          <Strip
-            tone={model.fade.warn ? 'warn' : 'fade'}
-            kicker="Fade"
-            text={model.fade.text}
-            detail={model.fade.detail}
-          />
-        </div>
-      ) : null}
     </div>
   );
 }

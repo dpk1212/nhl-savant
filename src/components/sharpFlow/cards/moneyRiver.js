@@ -5,11 +5,11 @@
  * No blended ROI, no career profit, no last-20 sequence.
  */
 import { HC_RATIO } from '../../../lib/ags.js';
-import { ourSideLabel, sideDollars, theirSideLabel } from './boardFaceLine.js';
+import { ourSideLabel, theirSideLabel } from './boardFaceLine.js';
 
-const ROW_H = 34;
-const PILL_H = 70;
-const PILL_GAP = 12;
+const ROW_H = 32;
+const NODE_GAP = 10;
+const RIBBON_GAP = 2;
 const SHARP_CAP = 4;
 const OPP_CAP = 2;
 const LOSER_CAP = 3;
@@ -155,26 +155,67 @@ function stampSide(split, side) {
   return Number.isFinite(n) ? n : 0;
 }
 
-/**
- * Place pill centers on the rows that feed them, and push the pills apart
- * when two destinations would sit on top of each other.
- */
-export function layoutRiver(rows, { rowH = ROW_H, pillH = PILL_H, gap = PILL_GAP } = {}) {
-  const tagged = rows.map((r, i) => ({ ...r, y: i * rowH + rowH / 2 }));
-  const ours = tagged.filter((r) => r.side !== 'against');
-  const theirs = tagged.filter((r) => r.side === 'against');
-  const avg = (list) => list.reduce((s, r) => s + r.y, 0) / list.length;
-  const contentH = Math.max(tagged.length, 1) * rowH;
-  const bands = (ours.length ? 1 : 0) + (theirs.length ? 1 : 0);
-  const height = Math.max(contentH, bands * pillH + Math.max(0, bands - 1) * gap);
-  const clamp = (y) => Math.min(height - pillH / 2, Math.max(pillH / 2, y));
-  let ourY = ours.length ? clamp(avg(ours)) : null;
-  let theirY = theirs.length ? clamp(avg(theirs)) : null;
-  if (ourY != null && theirY != null && Math.abs(ourY - theirY) < pillH + gap) {
-    ourY = pillH / 2;
-    theirY = height - pillH / 2;
+function placeRibbons(group) {
+  const stack = group.list.reduce((s, r) => s + r.thick, 0) + Math.max(0, group.list.length - 1) * RIBBON_GAP;
+  let y = group.top + (group.nodeH - stack) / 2;
+  for (const row of group.list) {
+    row.targetY = y + row.thick / 2;
+    y += row.thick + RIBBON_GAP;
   }
-  return { rows: tagged, height, ourY, theirY, pillH };
+}
+
+/**
+ * Sankey geometry. Each ribbon keeps its own thickness and lands in a
+ * stacked slot on its destination, so the flows bundle instead of meeting
+ * at one point.
+ */
+export function layoutRiver(rows, { rowH = ROW_H } = {}) {
+  const tagged = rows.map((r, i) => ({ ...r, y: i * rowH + rowH / 2 }));
+  const groups = [
+    { side: 'ours', list: tagged.filter((r) => r.side !== 'against') },
+    { side: 'against', list: tagged.filter((r) => r.side === 'against') },
+  ].filter((g) => g.list.length);
+
+  const maxInv = Math.max(1, ...tagged.map((r) => r.invested || 0));
+  for (const row of tagged) {
+    const t = Math.max(0, row.invested || 0) / maxInv;
+    row.thick = 2.4 + Math.pow(t, 0.8) * 14;
+  }
+
+  for (const group of groups) {
+    const gaps = Math.max(0, group.list.length - 1) * RIBBON_GAP;
+    const sum = group.list.reduce((s, r) => s + r.thick, 0);
+    const maxStack = 46;
+    if (sum + gaps > maxStack) {
+      const scale = (maxStack - gaps) / sum;
+      group.list.forEach((r) => { r.thick *= scale; });
+    }
+    const stack = group.list.reduce((s, r) => s + r.thick, 0) + gaps;
+    group.nodeH = Math.max(54, Math.ceil(stack + 20));
+    const mid = group.list.reduce((s, r) => s + r.y, 0) / group.list.length;
+    group.top = mid - group.nodeH / 2;
+  }
+
+  if (groups.length === 2) {
+    const [a, b] = groups;
+    if (a.top + a.nodeH + NODE_GAP > b.top) b.top = a.top + a.nodeH + NODE_GAP;
+    if (a.top < 0) {
+      b.top += -a.top;
+      a.top = 0;
+    }
+  } else if (groups.length === 1 && groups[0].top < 0) {
+    groups[0].top = 0;
+  }
+
+  for (const group of groups) placeRibbons(group);
+
+  const contentH = Math.max(tagged.length, 1) * rowH;
+  const height = Math.max(contentH, ...groups.map((g) => g.top + g.nodeH), 1);
+  const box = (side) => {
+    const group = groups.find((g) => g.side === side);
+    return group ? { top: group.top, height: group.nodeH } : null;
+  };
+  return { rows: tagged, height, ourBox: box('ours'), theirBox: box('against') };
 }
 
 function winLabel(wins, losses) {
@@ -195,24 +236,6 @@ function pooled(sharps) {
   return { wins, losses, label, record: `${wins}\u2013${losses}` };
 }
 
-function pickLead(rows) {
-  const ours = rows.filter((w) => w.side !== 'against' && isSharp(w));
-  const list = (ours.length ? ours : rows.filter((w) => w.side !== 'against')).slice();
-  if (!list.length) return null;
-  list.sort((a, b) => (b.trustScore - a.trustScore) || ((b.invested || 0) - (a.invested || 0)));
-  return list[0];
-}
-
-function leadProof(lead) {
-  if (!lead) return null;
-  const rec = walletRecord(lead);
-  const banger = lead.trust?.banger?.label ? String(lead.trust.banger.label) : null;
-  const bits = [];
-  if (rec?.label) bits.push(rec.label);
-  if (banger && !bits.includes(banger)) bits.push(banger);
-  return bits.length ? bits.join(' · ') : null;
-}
-
 function displaySide(f, which) {
   const label = which === 'against' ? theirSideLabel(f) : ourSideLabel(f);
   if (which === 'ours' && label === 'our side') {
@@ -225,17 +248,8 @@ function displaySide(f, which) {
   return label;
 }
 
-function allMoney(f) {
-  const stamped = f?.boardMoneyFull || f?.boardMoney?.full;
-  const ours = stamped ? stampSide(stamped, 'ours') : sideDollars(f).ours;
-  const theirs = stamped ? stampSide(stamped, 'against') : sideDollars(f).theirs;
-  const total = ours + theirs;
-  if (total <= 0) return null;
-  const oursPct = Math.round((ours / total) * 100);
-  const theirPct = 100 - oursPct;
-  const side = theirs > ours ? displaySide(f, 'against') : displaySide(f, 'ours');
-  const pct = theirs > ours ? theirPct : oursPct;
-  return { text: `${side} ${pct}%` };
+function dashRecord(rec) {
+  return rec ? rec.label.replace('-', '\u2013') : null;
 }
 
 function pill(side, title, sharpUsd, loserUsd, sharpPct, loserPct) {
@@ -348,47 +362,42 @@ export function buildMoneyRiver(f) {
   const pool = pooled(sharps);
   const n = sharps.length;
   const hc = ourHc.length;
+  const share = sharpPct(ourSharpUsd);
+  const solo = n === 1 ? walletRecord(sharps[0]) : null;
+  const recordStat = pool
+    ? { value: pool.record, label: 'Record' }
+    : (solo ? { value: dashRecord(solo), label: 'Record' } : null);
+  const moneyStat = ourSharpUsd > 0 ? { value: fmtRiverUsd(ourSharpUsd), label: 'Sharp $' } : null;
+  const shareStat = share != null ? { value: `${share}%`, label: 'Of sharp $' } : null;
+  const sizedStat = hc > 0 ? { value: String(hc), label: 'Sized up' } : null;
   const panel = n > 0 ? {
     eyebrow: n === 1 ? 'The sharp on this play' : `The ${n} sharps on this play`,
+    combined: n > 1,
     sub: [
-      hc > 0 ? `${hc} sized up` : null,
+      `${n} sharp${n === 1 ? '' : 's'}`,
+      hc > 0 ? `\u2605 ${hc} sized up` : null,
       pool ? 'record on this sport' : null,
-    ].filter(Boolean).join(' · ') || null,
-    hero: pool ? `${pool.label}%` : (sharpPct(ourSharpUsd) != null ? `${sharpPct(ourSharpUsd)}%` : null),
-    caption: pool ? 'win' : 'of sharp money',
-    support: pool ? pool.record : null,
+    ].filter(Boolean).join(' \u00b7 '),
+    hero: pool ? `${pool.label}%` : (share != null ? `${share}%` : null),
+    caption: pool ? 'Win' : 'Of sharp money',
+    stats: (pool
+      ? [recordStat, moneyStat, shareStat]
+      : [recordStat, moneyStat, sizedStat]
+    ).filter(Boolean),
   } : null;
 
-  const lead = pickLead(all);
   const oursName = displaySide(f, 'ours');
   const theirsName = displaySide(f, 'against');
   const ourPill = pill('ours', oursName, ourSharpUsd, ourLoserUsd, sharpPct(ourSharpUsd), loserPct(ourLoserUsd));
   const theirPill = pill('against', theirsName, theirSharpUsd, theirLoserUsd, sharpPct(theirSharpUsd), loserPct(theirLoserUsd));
 
-  const fadeSide = theirLoserUsd >= ourLoserUsd ? 'against' : 'ours';
-  const fadeUsd = fadeSide === 'against' ? theirLoserUsd : ourLoserUsd;
-  const fadeCount = (fadeSide === 'against' ? theirLosers : ourLosers).length;
-  const fadeWalletUsd = sum(fadeSide === 'against' ? theirLosers : ourLosers);
-  const fadeKnown = fadeUsd <= 0 || fadeWalletUsd >= fadeUsd * 0.85;
-  const fade = fadeUsd > 0 ? {
-    text: fadeKnown && fadeCount > 0
-      ? `${fadeCount} loser${fadeCount === 1 ? '' : 's'} on ${fadeSide === 'against' ? theirsName : oursName}`
-      : `losers on ${fadeSide === 'against' ? theirsName : oursName}`,
-    detail: `${loserPct(fadeUsd) ?? 0}% · ${fmtRiverUsd(fadeUsd)}`,
-    warn: fadeSide === 'ours',
-  } : null;
-
   return {
     panel,
     rows: laid.rows,
     height: laid.height,
-    ourY: laid.ourY,
-    theirY: laid.theirY,
-    pillH: laid.pillH,
+    ourBox: laid.ourBox,
+    theirBox: laid.theirBox,
     ourPill,
     theirPill,
-    lead: lead?.short ? { short: lead.short, proof: leadProof(lead) } : null,
-    allMoney: allMoney(f),
-    fade,
   };
 }

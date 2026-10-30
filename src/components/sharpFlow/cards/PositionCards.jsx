@@ -2772,9 +2772,8 @@ function CollapsedHeader({ live, inClassName }) {
 }
 
 /**
- * The bet. One row: the play on the left, the stake on the right.
- * Odds and the payout share the line under the stake, so the price
- * is a pair and not a column of labels.
+ * The bet. The play and its price sit on the left. The stake, and what
+ * it pays, sit on the right.
  */
 function CollapsedHero({ live, pickClass }) {
   const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip } = live;
@@ -2784,13 +2783,15 @@ function CollapsedHero({ live, pickClass }) {
       style={{
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         gap: 16, position: 'relative', zIndex: 2,
-        // The seal's chevron sits in the corner. This inset lines the stake
-        // up under the seal, clear of that mark.
         paddingRight: 23,
       }}
     >
-      <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
-        {pickCrestName(f) ? <TeamCrest name={pickCrestName(f)} sport={f.sport} size={34} /> : null}
+      <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        {pickCrestName(f) ? (
+          <span style={{ marginTop: 1 }}>
+            <TeamCrest name={pickCrestName(f)} sport={f.sport} size={34} />
+          </span>
+        ) : null}
         <div style={{ minWidth: 0, flex: 1, containerType: 'inline-size' }}>
           <div
             className={pickClass}
@@ -2801,6 +2802,20 @@ function CollapsedHero({ live, pickClass }) {
           >
             {f.pickLabel}
           </div>
+          {!tracked && (
+            <div style={{ marginTop: 6 }}>
+              <HeroShopPrice
+                bestOdds={f.bestOdds}
+                bestBook={f.bestBook}
+                books={f.books}
+                fallbackOdds={heroPx}
+                hideEv
+                hideLogo
+                color={C.textSec}
+                fontSize="0.92rem"
+              />
+            </div>
+          )}
         </div>
       </div>
       <div style={{
@@ -2819,32 +2834,13 @@ function CollapsedHero({ live, pickClass }) {
         >
           {stakeLabel}
         </span>
-        {!tracked && (
+        {!tracked && payoutLabel && (
           <span style={{
-            display: 'inline-flex', alignItems: 'baseline', justifyContent: 'flex-end',
-            gap: 7, lineHeight: 1, whiteSpace: 'nowrap',
-          }}>
-            <HeroShopPrice
-              bestOdds={f.bestOdds}
-              bestBook={f.bestBook}
-              books={f.books}
-              fallbackOdds={heroPx}
-              americanOnly
-              hideEv
-              hideLogo
-              color={C.textSec}
-              logoSize={16}
-              fontSize="0.84rem"
-            />
-            {payoutLabel && (
-              <span style={{
-                fontSize: '0.84rem', fontWeight: 650, fontFeatureSettings: "'tnum'",
-                color: payoutColor, letterSpacing: '-0.01em',
-              }}>
-                <span style={{ color: C.textFaint, fontWeight: 500, marginRight: 7 }}>·</span>
-                {graded ? payoutLabel : `to win ${payoutLabel}`}
-              </span>
-            )}
+            fontSize: '0.84rem', fontWeight: 650, fontFeatureSettings: "'tnum'",
+            color: payoutColor, letterSpacing: '-0.01em', lineHeight: 1,
+          }}
+          >
+            {graded ? payoutLabel : `to win ${payoutLabel}`}
           </span>
         )}
       </div>
