@@ -2,7 +2,8 @@
  * Display model for the locked money river.
  * Counts, records, and dollars come from the wallets already on the card.
  * A pooled win rate is shown only when every sharp on our side has a record.
- * No blended ROI, no career profit, no last-20 sequence.
+ * Combined ROI is the stake-weighted blend of those same wallets' own ROI,
+ * and only when every one of them has one. No career profit, no last-20.
  */
 import { HC_RATIO } from '../../../lib/ags.js';
 import { ourSideLabel, theirSideLabel } from './boardFaceLine.js';
@@ -97,6 +98,8 @@ function poolOf(f) {
         losses: Number.isFinite(w?.losses) ? w.losses : profile?.losses,
         sizeRatio: Number.isFinite(ratio) ? ratio : (Number.isFinite(profileRatio) ? profileRatio : null),
         trustScore: Number(w?.trustScore) || Number(profile?.trustScore) || 0,
+        roi: Number.isFinite(w?.roi) ? w.roi : (Number.isFinite(profile?.roi) ? profile.roi : null),
+        dollarRoi: Number.isFinite(w?.dollarRoi) ? w.dollarRoi : (Number.isFinite(profile?.dollarRoi) ? profile.dollarRoi : null),
         proven: w.proven ?? profile?.proven ?? false,
         whitelist: w.whitelist || profile?.whitelist || null,
         whitelisted: w.whitelisted ?? profile?.whitelisted ?? false,
@@ -122,6 +125,21 @@ function cap(list, n) {
   return { shown: sorted.slice(0, n), hidden: sorted.slice(n) };
 }
 
+function walletRoi(w) {
+  if (Number.isFinite(w?.roi)) return w.roi;
+  if (Number.isFinite(w?.dollarRoi)) return w.dollarRoi;
+  return null;
+}
+
+export function fmtRoi(n) {
+  const rounded = Math.round(Number(n) * 10) / 10;
+  if (!Number.isFinite(rounded)) return null;
+  const body = Math.abs(rounded - Math.round(rounded)) < 0.05
+    ? String(Math.round(rounded))
+    : rounded.toFixed(1);
+  return `${rounded > 0 ? '+' : ''}${body}%`;
+}
+
 function rowFrom(w, kind) {
   const rec = walletRecord(w);
   return {
@@ -131,6 +149,7 @@ function rowFrom(w, kind) {
     kind,
     invested: w.invested,
     record: rec?.label || null,
+    roi: walletRoi(w),
     more: 0,
   };
 }
@@ -145,6 +164,7 @@ function moreRow(side, kind, hidden) {
     kind,
     invested,
     record: null,
+    roi: null,
     more: hidden.length,
   };
 }
@@ -182,14 +202,14 @@ export function layoutRiver(rows, { rowH = ROW_H, minH = {} } = {}) {
   const maxInv = Math.max(1, ...tagged.map((r) => r.invested || 0));
   for (const row of tagged) {
     const t = Math.max(0, row.invested || 0) / maxInv;
-    row.thick = 2.6 + Math.pow(t, 0.65) * 20;
+    row.thick = 2.4 + Math.pow(t, 0.75) * 14;
   }
 
   let cursor = 0;
   for (const group of groups) {
     const gaps = Math.max(0, group.list.length - 1) * RIBBON_GAP;
     const sum = group.list.reduce((s, r) => s + r.thick, 0);
-    const maxStack = 44;
+    const maxStack = 34;
     if (sum + gaps > maxStack) {
       const scale = (maxStack - gaps) / sum;
       group.list.forEach((r) => { r.thick *= scale; });
@@ -260,10 +280,31 @@ function dashRecord(rec) {
   return rec ? rec.label.replace('-', '\u2013') : null;
 }
 
+/** Stake-weighted ROI. Null unless every sharp on our side has one. */
+function combinedRoi(sharps) {
+  if (!sharps.length) return null;
+  const books = sharps.map((w) => {
+    const roi = walletRoi(w);
+    if (!Number.isFinite(roi)) return null;
+    return { roi, invested: Math.max(0, Number(w.invested) || 0) };
+  });
+  if (books.some((b) => !b)) return null;
+  const stake = books.reduce((s, b) => s + b.invested, 0);
+  if (stake <= 0) return null;
+  const blended = books.reduce((s, b) => s + b.roi * b.invested, 0) / stake;
+  return {
+    text: fmtRoi(blended),
+    label: sharps.length > 1 ? 'Combined ROI' : 'ROI',
+  };
+}
+
 /** Pill height the river must reserve so the destination copy fits. */
 function pillBlock(p) {
   if (!p?.lines?.length) return 54;
-  const body = p.lines.reduce((sum, line) => sum + (line.tone === 'quiet' ? 13 : 17), 0);
+  const body = p.lines.reduce((sum, line) => {
+    if (line.tone === 'quiet') return sum + (line.caption ? 24 : 13);
+    return sum + (line.caption ? 28 : 17);
+  }, 0);
   return Math.max(56, 28 + body + p.lines.length);
 }
 
@@ -271,17 +312,17 @@ function pill(side, title, sharpUsd, loserUsd, sharpPct, loserPct) {
   const lines = [];
   if (side !== 'against' && sharpUsd > 0) {
     lines.push({ text: fmtRiverUsd(sharpUsd), caption: null, tone: 'sharp' });
-    if (sharpPct != null) lines.push({ text: `${sharpPct}% of sharp $`, caption: null, tone: 'quiet' });
-    if (loserUsd > 0) lines.push({ text: `${fmtRiverUsd(loserUsd)} losers`, caption: null, tone: 'loser' });
+    if (sharpPct != null) lines.push({ text: `${sharpPct}%`, caption: 'of sharp money', tone: 'quiet' });
+    if (loserUsd > 0) lines.push({ text: fmtRiverUsd(loserUsd), caption: 'losers', tone: 'loser' });
   } else if (sharpUsd > 0 && loserUsd > 0) {
     lines.push({ text: fmtRiverUsd(sharpUsd), caption: 'sharp', tone: 'sharp' });
     lines.push({ text: fmtRiverUsd(loserUsd), caption: 'losers', tone: 'loser' });
   } else if (sharpUsd > 0) {
     lines.push({ text: fmtRiverUsd(sharpUsd), caption: null, tone: 'sharp' });
-    if (sharpPct != null) lines.push({ text: `${sharpPct}% of sharp $`, caption: null, tone: 'quiet' });
+    if (sharpPct != null) lines.push({ text: `${sharpPct}%`, caption: 'of sharp money', tone: 'quiet' });
   } else if (loserUsd > 0) {
     lines.push({ text: fmtRiverUsd(loserUsd), caption: null, tone: 'loser' });
-    if (loserPct != null) lines.push({ text: `${loserPct}% loser $`, caption: null, tone: 'quiet' });
+    if (loserPct != null) lines.push({ text: `${loserPct}%`, caption: 'of loser money', tone: 'quiet' });
   } else {
     return null;
   }
@@ -379,8 +420,8 @@ export function buildMoneyRiver(f) {
   const recordStat = pool
     ? { value: pool.record, label: 'Record' }
     : (solo ? { value: dashRecord(solo), label: 'Record' } : null);
-  const moneyStat = ourSharpUsd > 0 ? { value: fmtRiverUsd(ourSharpUsd), label: 'Sharp $' } : null;
-  const shareStat = share != null ? { value: `${share}%`, label: 'Of sharp $' } : null;
+  const moneyStat = ourSharpUsd > 0 ? { value: fmtRiverUsd(ourSharpUsd), label: 'Sharp money' } : null;
+  const shareStat = share != null ? { value: `${share}%`, label: 'Sharp share' } : null;
   const sizedStat = hc > 0 ? { value: String(hc), label: 'Sized up' } : null;
   const panel = n > 0 ? {
     eyebrow: n === 1 ? 'The sharp on this play' : `The ${n} sharps on this play`,
@@ -392,6 +433,7 @@ export function buildMoneyRiver(f) {
     ].filter(Boolean).join(' \u00b7 '),
     hero: pool ? `${pool.label}%` : (share != null ? `${share}%` : null),
     caption: pool ? 'Win' : 'Of sharp money',
+    roi: combinedRoi(sharps),
     dots: pool
       ? recordDots(pool.wins, pool.losses)
       : (solo ? recordDots(solo.wins, solo.losses) : null),

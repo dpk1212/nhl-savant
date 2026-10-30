@@ -46,7 +46,8 @@ assert(buried.panel.caption === 'Of sharp money', buried.panel.caption);
 assert(buried.panel.combined === false, 'one wallet is not combined');
 assert(buried.panel.stats.some((s) => s.label === 'Record' && s.value === '14\u20138'), JSON.stringify(buried.panel.stats));
 assert(buried.ourPill.lines[0].text === '$3.4K', buried.ourPill.lines[0].text);
-assert(buried.ourPill.lines.some((l) => l.text === '100% of sharp $'), 'sharp share');
+assert(buried.ourPill.lines.some((l) => l.text === '100%' && l.caption === 'of sharp money'), 'sharp share');
+assert(buried.panel.roi == null, 'no roi on the wallet, no combined roi');
 assert(buried.theirPill.tone === 'fade', buried.theirPill.tone);
 assert(buried.theirPill.lines[0].text === '$33K', buried.theirPill.lines[0].text);
 assert(buried.rows.every((r) => r.thick > 0 && Number.isFinite(r.targetY)), 'ribbon geometry');
@@ -88,7 +89,8 @@ assert(split.panel.sub.includes('1 sized up'), split.panel.sub);
 assert(split.rows.some((r) => r.kind === 'hc' && r.short === 'a91f2c'), 'sized-up row');
 assert(split.rows.some((r) => r.kind === 'opp'), 'opposing sharp');
 assert(split.rows.some((r) => r.kind === 'loser' && r.side === 'ours'), 'loser on our side');
-assert(split.ourPill.lines.some((l) => l.text === '80% of sharp $'), JSON.stringify(split.ourPill.lines));
+assert(split.ourPill.lines.some((l) => l.text === '80%' && l.caption === 'of sharp money'), JSON.stringify(split.ourPill.lines));
+assert(split.panel.roi == null, 'records without roi are not blended');
 assert(split.ourPill.lines[0].text === '$9.8K', split.ourPill.lines[0].text);
 const oursFlow = split.rows.filter((r) => r.side !== 'against');
 for (let i = 1; i < oursFlow.length; i += 1) {
@@ -115,5 +117,31 @@ const incomplete = buildMoneyRiver({
 assert(incomplete.panel.caption === 'Of sharp money', 'missing record blocks the pool');
 assert(!incomplete.panel.stats.some((s) => s.label === 'Record'), 'incomplete books are not pooled');
 assert(incomplete.panel.dots == null, 'an incomplete book draws no dots');
+
+const rated = buildMoneyRiver({
+  pickLabel: 'Lakers ML',
+  side: 'away',
+  away: 'Lakers',
+  home: 'Warriors',
+  mapWallets: [
+    { short: 'aaaaaa', side: 'ours', invested: 2000, whitelist: 'CONFIRMED', proven: true, record: '10-4', roi: 20 },
+    { short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true, record: '8-6', roi: 10 },
+  ],
+});
+assert(rated.panel.roi.label === 'Combined ROI', rated.panel.roi.label);
+assert(rated.panel.roi.text === '+16.7%', rated.panel.roi.text);
+assert(rated.rows.find((r) => r.short === 'aaaaaa').roi === 20, 'row keeps its roi');
+
+const partialRoi = buildMoneyRiver({
+  pickLabel: 'Lakers ML',
+  side: 'away',
+  away: 'Lakers',
+  home: 'Warriors',
+  mapWallets: [
+    { short: 'aaaaaa', side: 'ours', invested: 2000, whitelist: 'CONFIRMED', proven: true, record: '10-4', roi: 20 },
+    { short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true, record: '8-6' },
+  ],
+});
+assert(partialRoi.panel.roi == null, 'a missing roi blocks the blend');
 
 console.log('money river ok');

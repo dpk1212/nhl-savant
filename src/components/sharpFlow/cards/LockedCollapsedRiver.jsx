@@ -2,9 +2,9 @@
  * The locked face under the pick. One proof number, then the river:
  * each wallet drawn into the pile it joined.
  */
-import { useId } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { Star } from 'lucide-react';
-import { buildMoneyRiver, fmtRiverUsd } from './moneyRiver.js';
+import { buildMoneyRiver, fmtRiverUsd, fmtRoi } from './moneyRiver.js';
 import { normalizeWalletShort } from '../../../lib/mySharps.js';
 
 const C = {
@@ -32,19 +32,20 @@ const RIBBON = {
   loser: ['#D15A52', '#FFD0C8'],
 };
 
-const FLOW_W = 108;
-const DOT_X = 14;
+const DOT_X = 8;
 const ROW_H = 32;
+const LABEL_W = 158;
+const PILL_W = 132;
 
-function flowPath(y0, y1) {
-  const x1 = FLOW_W - 1;
+function flowPath(y0, y1, width) {
+  const x1 = Math.max(DOT_X + 28, width - 1);
   const bend = (x1 - DOT_X) * 0.46;
   return `M ${DOT_X} ${y0} C ${DOT_X + bend} ${y0}, ${x1 - bend} ${y1}, ${x1} ${y1}`;
 }
 
-function flowPoint(y0, y1, t) {
+function flowPoint(y0, y1, width, t) {
   const x0 = DOT_X;
-  const x1 = FLOW_W - 1;
+  const x1 = Math.max(x0 + 28, width - 1);
   const bend = (x1 - x0) * 0.46;
   const c1 = x0 + bend;
   const c2 = x1 - bend;
@@ -81,8 +82,8 @@ function rowName(row) {
 
 function rowMeta(row) {
   const stake = fmtRiverUsd(row.invested);
-  if (row.record) return `${row.record} \u00b7 ${stake}`;
-  return stake;
+  const roi = Number.isFinite(row.roi) ? fmtRoi(row.roi) : null;
+  return [row.record, roi, stake].filter(Boolean).join(' \u00b7 ');
 }
 
 function RiverRow({ row, mine }) {
@@ -174,28 +175,38 @@ function Destination({ pill, top, height }) {
           }}
         >
           <span style={{
-            fontSize: line.tone === 'quiet' ? 10.5 : 16,
-            fontWeight: line.tone === 'quiet' ? 600 : 750,
-            letterSpacing: line.tone === 'quiet' ? '0.01em' : '-0.03em',
-            color: line.tone === 'loser' ? CORAL : line.tone === 'quiet' ? C.textSec : C.text,
-            fontFeatureSettings: "'tnum'",
-            lineHeight: 1.05,
-            whiteSpace: 'nowrap',
+            display: 'flex',
+            flexDirection: line.tone === 'quiet' ? 'column' : 'row',
+            alignItems: line.tone === 'quiet' ? 'flex-start' : 'baseline',
+            gap: line.tone === 'quiet' ? 0 : 5,
+            minWidth: 0,
           }}
           >
-            {line.text}
-          </span>
-          {line.caption ? (
             <span style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: line.tone === 'loser' ? 'rgba(240,113,103,0.85)' : C.textMuted,
-              letterSpacing: '0.01em',
+              fontSize: line.tone === 'quiet' ? 12 : 16,
+              fontWeight: line.tone === 'quiet' ? 700 : 750,
+              letterSpacing: line.tone === 'quiet' ? '-0.02em' : '-0.03em',
+              color: line.tone === 'loser' ? CORAL : line.tone === 'quiet' ? C.text : C.text,
+              fontFeatureSettings: "'tnum'",
+              lineHeight: 1.05,
+              whiteSpace: 'nowrap',
             }}
             >
-              {line.caption}
+              {line.text}
             </span>
-          ) : null}
+            {line.caption ? (
+              <span style={{
+                fontSize: 10,
+                fontWeight: 650,
+                color: line.tone === 'loser' ? 'rgba(240,113,103,0.85)' : C.textSec,
+                letterSpacing: '0.01em',
+                lineHeight: 1.15,
+              }}
+              >
+                {line.caption}
+              </span>
+            ) : null}
+          </span>
         </div>
       ))}
     </div>
@@ -232,22 +243,52 @@ function RecordDots({ dots }) {
     ...Array(dots.red).fill('loss'),
   ];
   return (
-    <div aria-hidden style={{ display: 'flex', justifyContent: 'center', marginTop: 13 }}>
+    <div aria-hidden style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
       {cells.map((tone, i) => (
         <span
           key={i}
           style={{
-            width: 8,
-            height: 8,
-            marginLeft: i === 0 ? 0 : (i === dots.green ? 10 : 5),
+            width: 6,
+            height: 6,
+            marginLeft: i === 0 ? 0 : (i === dots.green ? 8 : 3.5),
             borderRadius: '50%',
             background: tone === 'win' ? GREEN : '#E15A52',
             boxShadow: tone === 'win'
-              ? '0 0 0 3px rgba(61,220,151,0.12), 0 0 8px rgba(61,220,151,0.9)'
-              : '0 0 0 3px rgba(225,90,82,0.1), 0 0 6px rgba(225,90,82,0.55)',
+              ? '0 0 6px rgba(61,220,151,0.75)'
+              : '0 0 4px rgba(225,90,82,0.4)',
           }}
         />
       ))}
+    </div>
+  );
+}
+
+function Rate({ text, caption, tone = 'green' }) {
+  const color = tone === 'loss' ? CORAL : '#5EF0B1';
+  return (
+    <div style={{ textAlign: 'center', minWidth: 0 }}>
+      <div style={{
+        fontSize: 30,
+        fontWeight: 740,
+        letterSpacing: '-0.045em',
+        color,
+        lineHeight: 0.9,
+        fontFeatureSettings: "'tnum'",
+      }}
+      >
+        <HeroFigure text={text} />
+      </div>
+      <div style={{
+        marginTop: 5,
+        fontSize: 9,
+        fontWeight: 750,
+        letterSpacing: '0.14em',
+        textTransform: 'uppercase',
+        color: tone === 'loss' ? 'rgba(240,113,103,0.8)' : 'rgba(61,220,151,0.72)',
+      }}
+      >
+        {caption}
+      </div>
     </div>
   );
 }
@@ -257,11 +298,10 @@ function Proof({ panel }) {
   const stats = panel.stats || [];
   return (
     <div data-proof="" style={{
-      padding: '15px 16px 13px',
-      borderRadius: 16,
-      background: 'linear-gradient(180deg, rgba(61,220,151,0.16), rgba(61,220,151,0.05) 34%, rgba(6,12,18,0.42))',
-      border: '1px solid rgba(61,220,151,0.34)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07), 0 16px 36px -28px rgba(61,220,151,0.9)',
+      padding: '10px 12px 9px',
+      borderRadius: 12,
+      background: 'linear-gradient(180deg, rgba(61,220,151,0.12), rgba(61,220,151,0.04) 46%, rgba(6,12,18,0.28))',
+      border: '1px solid rgba(61,220,151,0.28)',
     }}
     >
       <div style={{
@@ -279,8 +319,8 @@ function Proof({ panel }) {
       </div>
       {panel.sub ? (
         <div style={{
-          marginTop: 5,
-          fontSize: 12.5,
+          marginTop: 3,
+          fontSize: 11.5,
           fontWeight: 600,
           color: 'rgba(186,232,210,0.78)',
           letterSpacing: '0.01em',
@@ -289,39 +329,31 @@ function Proof({ panel }) {
           {panel.sub}
         </div>
       ) : null}
-      <div style={{ textAlign: 'center', paddingTop: 14 }}>
-        <div style={{
-          fontSize: 54,
-          fontWeight: 760,
-          letterSpacing: '-0.06em',
-          color: '#5EF0B1',
-          lineHeight: 0.84,
-          fontFeatureSettings: "'tnum'",
-          textShadow: '0 0 28px rgba(61,220,151,0.38)',
-        }}
-        >
-          <HeroFigure text={panel.hero} />
-        </div>
-        <div style={{
-          marginTop: 8,
-          fontSize: 10,
-          fontWeight: 750,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          color: 'rgba(61,220,151,0.72)',
-        }}
-        >
-          {panel.caption}
-        </div>
-        {panel.dots ? <RecordDots dots={panel.dots} /> : null}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        gap: 28,
+        paddingTop: 8,
+      }}
+      >
+        <Rate text={panel.hero} caption={panel.caption} />
+        {panel.roi?.text ? (
+          <Rate
+            text={panel.roi.text}
+            caption={panel.roi.label}
+            tone={String(panel.roi.text).startsWith('-') ? 'loss' : 'green'}
+          />
+        ) : null}
       </div>
+      {panel.dots ? <RecordDots dots={panel.dots} /> : null}
       {stats.length > 0 ? (
         <div style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${stats.length}, 1fr)`,
           borderTop: '1px solid rgba(61,220,151,0.2)',
-          marginTop: panel.dots ? 10 : 12,
-          paddingTop: 11,
+          marginTop: 8,
+          paddingTop: 8,
         }}
         >
           {stats.map((stat, i) => (
@@ -334,7 +366,7 @@ function Proof({ panel }) {
               }}
             >
               <div style={{
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: 730,
                 letterSpacing: '-0.03em',
                 color: C.text,
@@ -366,10 +398,10 @@ function Proof({ panel }) {
 function Legend({ rows }) {
   const kinds = new Set(rows.map((r) => r.kind));
   const items = [
-    kinds.has('hc') ? { kind: 'hc', label: 'sized up' } : null,
-    kinds.has('sharp') ? { kind: 'sharp', label: 'sharp' } : null,
-    kinds.has('opp') ? { kind: 'opp', label: 'other side' } : null,
-    kinds.has('loser') ? { kind: 'loser', label: 'loser' } : null,
+    kinds.has('hc') ? { kind: 'hc', label: 'Sized up' } : null,
+    kinds.has('sharp') ? { kind: 'sharp', label: 'Sharp' } : null,
+    kinds.has('opp') ? { kind: 'opp', label: 'Other side' } : null,
+    kinds.has('loser') ? { kind: 'loser', label: 'Loser' } : null,
   ].filter(Boolean);
   if (!items.length) return null;
   return (
@@ -414,8 +446,29 @@ export default function LockedCollapsedRiver({ f, mine = null }) {
   const model = buildMoneyRiver(f);
   const rawId = useId();
   const gid = `river${rawId.replace(/:/g, '')}`;
+  const flowRef = useRef(null);
+  const [flowW, setFlowW] = useState(120);
+  useLayoutEffect(() => {
+    const el = flowRef.current;
+    if (!el) return undefined;
+    const read = () => {
+      const w = Math.round(el.clientWidth);
+      if (w > 48) setFlowW(w);
+    };
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [model?.height, model?.rows?.length]);
   if (!model) return null;
   const mineIds = new Set((mine || []).map((w) => w.id));
+  const spines = [];
+  model.rows.forEach((row) => {
+    const side = row.side === 'against' ? 'against' : 'ours';
+    const last = spines[spines.length - 1];
+    if (!last || last.side !== side) spines.push({ side, ys: [row.y] });
+    else last.ys.push(row.y);
+  });
 
   return (
     <div data-river="" style={{ marginTop: 16 }}>
@@ -425,21 +478,21 @@ export default function LockedCollapsedRiver({ f, mine = null }) {
         <div style={{ marginTop: model.panel ? 14 : 0 }}>
           <div style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            gap: 12,
-            marginBottom: 4,
+            alignItems: 'baseline',
+            marginBottom: 6,
             fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: '0.12em',
+            fontWeight: 750,
+            letterSpacing: '0.13em',
             textTransform: 'uppercase',
             color: C.textFaint,
           }}
           >
-            <span>Wallet · record · stake</span>
-            <span>Where it went</span>
+            <span style={{ flex: `0 0 ${LABEL_W}px` }}>Wallets</span>
+            <span style={{ flex: '1 1 auto' }} />
+            <span style={{ flex: `0 0 ${PILL_W}px`, textAlign: 'right' }}>Where it went</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-            <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, height: model.height }}>
+            <div style={{ position: 'relative', flex: `0 0 ${LABEL_W}px`, width: LABEL_W, height: model.height }}>
               {model.rows.map((row) => (
                 <div
                   key={row.key}
@@ -457,86 +510,94 @@ export default function LockedCollapsedRiver({ f, mine = null }) {
                 </div>
               ))}
             </div>
+            <div ref={flowRef} style={{ flex: '1 1 auto', minWidth: 72, height: model.height }}>
             <svg
-              width={FLOW_W}
+              width="100%"
               height={model.height}
-              viewBox={`0 0 ${FLOW_W} ${model.height}`}
+              viewBox={`0 0 ${flowW} ${model.height}`}
+              preserveAspectRatio="none"
               aria-hidden
-              style={{ flex: `0 0 ${FLOW_W}px`, display: 'block', overflow: 'visible', marginLeft: -DOT_X }}
+              style={{ display: 'block', overflow: 'visible' }}
             >
               <defs>
-                <filter id={`${gid}-glow`} filterUnits="userSpaceOnUse" x={-24} y={-28} width={FLOW_W + 48} height={model.height + 56}>
-                  <feGaussianBlur stdDeviation="1.8" />
+                <filter id={`${gid}-glow`} filterUnits="userSpaceOnUse" x={-12} y={-20} width={flowW + 24} height={model.height + 40}>
+                  <feGaussianBlur stdDeviation="1.2" />
                 </filter>
                 {model.rows.map((row) => {
                   const [from, to] = RIBBON[row.kind] || RIBBON.sharp;
                   return (
-                    <linearGradient key={row.key} id={`${gid}-${row.key}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={FLOW_W} y2="0">
+                    <linearGradient key={row.key} id={`${gid}-${row.key}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={flowW} y2="0">
                       <stop offset="0" stopColor={from} />
                       <stop offset="1" stopColor={to} />
                     </linearGradient>
                   );
                 })}
               </defs>
-              {model.rows.length > 1 ? (
-                <line
-                  x1={DOT_X}
-                  y1={Math.min(...model.rows.map((r) => r.y))}
-                  x2={DOT_X}
-                  y2={Math.max(...model.rows.map((r) => r.y))}
-                  stroke="rgba(244,247,251,0.16)"
-                  strokeWidth="1"
-                />
-              ) : null}
+              {spines.map((spine) => (
+                spine.ys.length > 1 ? (
+                  <line
+                    key={spine.side}
+                    x1={DOT_X}
+                    y1={Math.min(...spine.ys)}
+                    x2={DOT_X}
+                    y2={Math.max(...spine.ys)}
+                    stroke="rgba(244,247,251,0.16)"
+                    strokeWidth="1"
+                  />
+                ) : null
+              ))}
               {model.rows.map((row) => {
                 const color = INK[row.kind] || GREEN;
                 return (
                   <path
                     key={`glow-${row.key}`}
-                    d={flowPath(row.y, row.targetY)}
+                    d={flowPath(row.y, row.targetY, flowW)}
                     fill="none"
                     stroke={color}
-                    strokeWidth={row.thick + 5}
+                    strokeWidth={row.thick + 2.5}
                     strokeLinecap="round"
-                    opacity="0.28"
+                    opacity="0.22"
                     filter={`url(#${gid}-glow)`}
+                    vectorEffect="non-scaling-stroke"
                   />
                 );
               })}
               {model.rows.map((row) => (
                 <path
                   key={row.key}
-                  d={flowPath(row.y, row.targetY)}
+                  d={flowPath(row.y, row.targetY, flowW)}
                   fill="none"
                   stroke={`url(#${gid}-${row.key})`}
                   strokeWidth={row.thick}
                   strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
                 />
               ))}
               {model.rows.map((row) => (
-                row.thick < 5 ? null : (
+                row.thick < 6 ? null : (
                   <path
                     key={`core-${row.key}`}
-                    d={flowPath(row.y, row.targetY)}
+                    d={flowPath(row.y, row.targetY, flowW)}
                     fill="none"
-                    stroke="rgba(255,255,255,0.55)"
-                    strokeWidth={Math.min(2.2, row.thick * 0.14)}
+                    stroke="rgba(255,255,255,0.5)"
+                    strokeWidth={Math.min(1.6, row.thick * 0.16)}
                     strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
                   />
                 )
               ))}
               {model.rows.map((row) => {
-                if (row.thick < 6) return null;
-                return [0.42, 0.68].map((t) => {
-                  const p = flowPoint(row.y, row.targetY, t);
+                if (row.thick < 7) return null;
+                return [0.45, 0.72].map((t) => {
+                  const p = flowPoint(row.y, row.targetY, flowW, t);
                   return (
                     <circle
                       key={`spark-${row.key}-${t}`}
                       cx={p.x}
                       cy={p.y}
-                      r={row.thick > 12 ? 1.35 : 1.05}
+                      r="1.1"
                       fill="#fff"
-                      opacity="0.8"
+                      opacity="0.75"
                     />
                   );
                 });
@@ -552,7 +613,8 @@ export default function LockedCollapsedRiver({ f, mine = null }) {
                 );
               })}
             </svg>
-            <div style={{ position: 'relative', flex: '0 0 122px', height: model.height, zIndex: 1 }}>
+            </div>
+            <div style={{ position: 'relative', flex: `0 0 ${PILL_W}px`, width: PILL_W, height: model.height, zIndex: 1 }}>
               {model.ourPill && model.ourBox ? (
                 <Destination pill={model.ourPill} top={model.ourBox.top} height={model.ourBox.height} />
               ) : null}
