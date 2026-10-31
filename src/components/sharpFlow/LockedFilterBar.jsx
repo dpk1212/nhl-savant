@@ -124,9 +124,7 @@ export default function LockedFilterBar({ picksByDay, filter, view, onChange }) 
       <div className="sf-locked-mobile" data-testid="locked-filter-mobile">
         <div className="sf-locked-stats">
           <div className="sf-locked-stats-inner">
-            <div className="sf-locked-stats-line" data-testid="locked-stats" style={NUM}>
-              {view.dayLine.text}
-            </div>
+            <DayLine text={view.dayLine.text} testid="locked-stats" />
           </div>
         </div>
         <div className="sf-locked-main">
@@ -140,7 +138,7 @@ export default function LockedFilterBar({ picksByDay, filter, view, onChange }) 
             </div>
             <div className="sf-locked-face sf-locked-face-mini">
               <MiniTitle dayLine={view.dayLine} />
-              <button type="button" className="sf-locked-pill" onClick={openSheet} style={NUM} data-testid="locked-pill">
+              <button type="button" className={view.badge > 0 ? 'sf-locked-pill is-on' : 'sf-locked-pill'} onClick={openSheet} style={NUM} data-testid="locked-pill">
                 {view.pill}
               </button>
             </div>
@@ -164,7 +162,7 @@ export default function LockedFilterBar({ picksByDay, filter, view, onChange }) 
       <div className="sf-locked-wide" data-testid="locked-filter-wide">
         <div className="sf-locked-ident">
           <span className="sf-locked-name">Locked</span>
-          <span className="sf-locked-ident-stats" style={NUM}>{view.dayLine.mini}</span>
+          <DayLine text={view.dayLine.mini} compact />
         </div>
         <StatusSegment
           value={segment}
@@ -203,8 +201,36 @@ function MiniTitle({ dayLine }) {
   return (
     <div className="sf-locked-mini">
       <span className="sf-locked-name">Locked</span>
-      <span className="sf-locked-mini-sub" style={NUM}>{dayLine.mini}</span>
+      <DayLine text={dayLine.mini} compact />
     </div>
+  );
+}
+
+function DayLine({ text, testid, compact }) {
+  const bits = String(text || '').split(' · ');
+  return (
+    <div className={compact ? 'sf-locked-stats-line is-compact' : 'sf-locked-stats-line'} data-testid={testid} style={NUM}>
+      {bits.map((bit, i) => (
+        <span key={`${bit}-${i}`} className="sf-locked-bit">
+          {i > 0 ? <span className="sf-locked-sep">·</span> : null}
+          <StatBit bit={bit} />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StatBit({ bit }) {
+  const m = String(bit).match(/^([+\-−]?[\d–-]+(?:\.\d+)?u?)(?:\s+(.+))?$/);
+  if (!m) return bit;
+  const down = /^[−-]/.test(m[1]);
+  const money = /u$/.test(m[1]) && !/risk/.test(m[2] || '');
+  const tone = money ? (down ? 'is-down' : 'is-money') : '';
+  return (
+    <>
+      <span className={tone ? `sf-locked-num ${tone}` : 'sf-locked-num'}>{m[1]}</span>
+      {m[2] ? <span className="sf-locked-word">{m[2]}</span> : null}
+    </>
   );
 }
 
