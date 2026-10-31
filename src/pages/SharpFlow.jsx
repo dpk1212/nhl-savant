@@ -8734,6 +8734,30 @@ export default function SharpFlow() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+  // Freeze the page under the model record sheet. A fixed overlay alone
+  // still lets the list scroll, and a transparent card reads as a ghost.
+  useEffect(() => {
+    const open = isMobile && viewMode === 'whaleSignals' && sortBy === 'locked' && showAgsuPerf;
+    if (!open) return undefined;
+    const html = document.documentElement;
+    const body = document.body;
+    const y = window.scrollY || 0;
+    html.dataset.locksheet = '1';
+    body.style.position = 'fixed';
+    body.style.top = `-${y}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    return () => {
+      delete html.dataset.locksheet;
+      body.style.position = '';
+      body.style.top = '';
+      body.style.left = '';
+      body.style.right = '';
+      body.style.width = '';
+      window.scrollTo(0, y);
+    };
+  }, [isMobile, viewMode, sortBy, showAgsuPerf]);
   // Locked picks (Firestore) — same cadence as market JSON: load on mount,
   // refresh every 8 min while visible, and again on return to foreground.
   // Home Screen PWAs can't pull-to-refresh; without this, cron lock/tier/
@@ -10189,12 +10213,15 @@ export default function SharpFlow() {
                   {/* ── Body ──────────────────────────────────────── */}
                   {showAgsuPerf && (
                     <div className="sf-glass" style={{
-                      background: 'linear-gradient(180deg, rgba(20,25,38,0.72) 0%, rgba(15,19,29,0.78) 100%)',
+                      background: (lockMobile && showAgsuPerf)
+                        ? '#141822'
+                        : 'linear-gradient(180deg, rgba(20,25,38,0.72) 0%, rgba(15,19,29,0.78) 100%)',
                       border: `1px solid ${B.border}`,
                       borderTop: 'none',
-                      borderRadius: '0 0 14px 14px',
+                      borderRadius: (lockMobile && showAgsuPerf) ? '16px 16px 0 0' : '0 0 14px 14px',
                       padding: isMobile ? '1rem' : '1.25rem 1.25rem 1.1rem',
-                      position: 'relative', overflow: 'hidden',
+                      position: 'relative',
+                      overflow: (lockMobile && showAgsuPerf) ? 'auto' : 'hidden',
                       boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
                     }}>
                       {/* Premium atmosphere ─────────────────────────

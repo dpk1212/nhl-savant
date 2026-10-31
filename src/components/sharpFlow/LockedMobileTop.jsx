@@ -199,8 +199,6 @@ export default function LockedMobileTop({
 }) {
   const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
-  const collapseRef = useRef(null);
-  const chipRef = useRef(null);
   const profit = Number.isFinite(model?.profit) ? model.profit : null;
   const pnl = profit == null ? '' : `${profit > 0 ? '+' : profit < 0 ? '−' : ''}${Math.abs(profit).toFixed(2)}u`;
 
@@ -219,9 +217,12 @@ export default function LockedMobileTop({
       setLockChrome({ mode: 'guest' });
       return () => clearLockChrome();
     }
+    // Fade the nav title with scroll. Do not shrink layout height from
+    // scrollY — that feedback loop jumps the page on the first drag.
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let frame = 0;
     const apply = () => {
+      if (document.documentElement.dataset.locksheet) return;
       const y = window.scrollY || 0;
       const p = reduce ? (y > 64 ? 1 : 0) : Math.max(0, Math.min(1, y / 64));
       document.documentElement.style.setProperty('--sf-lock-p', p.toFixed(3));
@@ -242,38 +243,6 @@ export default function LockedMobileTop({
     };
   }, [guest]);
 
-  useLayoutEffect(() => {
-    const el = collapseRef.current;
-    if (!el) return undefined;
-    const measure = () => {
-      const prev = el.style.maxHeight;
-      el.style.maxHeight = 'none';
-      const h = el.scrollHeight;
-      el.style.maxHeight = prev;
-      el.style.setProperty('--sf-lock-open', `${h}px`);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [guest, statsText, dateLabel, model, sections, section]);
-
-  useLayoutEffect(() => {
-    const el = chipRef.current;
-    if (!el) return undefined;
-    const measure = () => {
-      const prev = el.style.maxHeight;
-      el.style.maxHeight = 'none';
-      const h = el.scrollHeight;
-      el.style.maxHeight = prev;
-      if (h > 0) el.style.setProperty('--sf-lock-chips', `${h}px`);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [guest, filters]);
-
   const unlock = () => {
     if (!user) setAuthOpen(true);
     else navigate('/pricing');
@@ -285,40 +254,42 @@ export default function LockedMobileTop({
         <div className="sf-lock-glow" />
         <div className="sf-lock-noise" />
       </div>
-      <div className="sf-lock-sticky">
-        <div className="sf-lock-collapse" ref={collapseRef}>
-          {guest ? (
-            <header className="sf-lock-guest-hero">
-              <h1>We follow winning bettors&rsquo; money.</h1>
-              <p>Every result posted, losses included.</p>
-            </header>
-          ) : (
-            <header className="sf-lock-hero">
-              <div className="sf-lock-date">{dateLabel}</div>
-              <h1 className="sf-lock-title" data-testid="lock-hero-title">Locked Picks</h1>
-              <HeroStats text={statsText} />
-            </header>
-          )}
-          {guest && (
-            <div className="sf-lock-guest-stats">
-              <div>
-                <strong style={NUM}>{model?.sharps || '0'}</strong>
-                <span>sharp bettors{model?.filtered ? ` · ${model.filtered} filtered` : ''}</span>
-              </div>
-              <div>
-                <strong style={NUM}>{model?.sharpMoney || '$0'}</strong>
-                <span>sharp money today</span>
-              </div>
+      <div className="sf-lock-collapse">
+        {guest ? (
+          <header className="sf-lock-guest-hero">
+            <h1>We follow winning bettors&rsquo; money.</h1>
+            <p>Every result posted, losses included.</p>
+          </header>
+        ) : (
+          <header className="sf-lock-hero">
+            <div className="sf-lock-date">{dateLabel}</div>
+            <h1 className="sf-lock-title" data-testid="lock-hero-title">Locked Picks</h1>
+            <HeroStats text={statsText} />
+          </header>
+        )}
+        {guest && (
+          <div className="sf-lock-guest-stats">
+            <div>
+              <strong style={NUM}>{model?.sharps || '0'}</strong>
+              <span>sharp bettors{model?.filtered ? ` · ${model.filtered} filtered` : ''}</span>
             </div>
-          )}
-          <ModelLine model={model} onOpen={onOpenModel} />
-          {!guest && (
-            <SectionTabs tabs={sections} value={section} onChange={onSection} />
-          )}
-        </div>
-        {!guest && <div id="sf-lock-seg-slot" />}
+            <div>
+              <strong style={NUM}>{model?.sharpMoney || '$0'}</strong>
+              <span>sharp money today</span>
+            </div>
+          </div>
+        )}
+        <ModelLine model={model} onOpen={onOpenModel} />
+        {!guest && (
+          <SectionTabs tabs={sections} value={section} onChange={onSection} />
+        )}
       </div>
-      {!guest && <div id="sf-lock-chip-slot" ref={chipRef} />}
+      {!guest && (
+        <div className="sf-lock-sticky">
+          <div id="sf-lock-seg-slot" />
+        </div>
+      )}
+      {!guest && <div id="sf-lock-chip-slot" />}
       {filters}
       {guest && (
         <button type="button" className="sf-lock-cta" onClick={unlock}>
