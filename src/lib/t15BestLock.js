@@ -602,3 +602,17 @@ export function lockAlertSealSidePatch(plan, sd = {}, now = Date.now()) {
     },
   };
 }
+
+/** True when the seal would take a live book on this number. A dead print is not that book. */
+export function lockShopHasNumber(pinnGame, marketType, side, line) {
+  if (!Number.isFinite(line)) return true;
+  const best = bestAvailableTicket({
+    pinnGame,
+    marketType,
+    side,
+    flagged: { line, odds: 100, book: 'Polymarket', oddsSource: 'poly_avgPrice' },
+  });
+  return best?.source === 't15_best_available'
+    && Number.isFinite(best.line)
+    && Math.abs(best.line - line) <= 0.051;
+}
