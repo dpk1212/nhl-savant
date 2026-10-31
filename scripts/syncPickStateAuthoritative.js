@@ -372,6 +372,16 @@ import {
   top3PickWindowStart,
 } from '../src/lib/top3PickRung.js';
 import {
+  GAP_LEAD_PROMOTED_BY,
+  GAP_LEAD_RESCUED_BY,
+  GAP_LEAD_STAKE_TIER,
+  applyGapLeadRescue,
+  buildGapLeadBooks,
+  gapLeadStamp,
+  isGapLeadLive,
+  setGapLeadBooks,
+} from '../src/lib/gapLeadRescue.js';
+import {
   evaluatePressLadder,
   atpMayStake,
   pressStamp,
@@ -3169,16 +3179,19 @@ async function createMissingLockedPicks({
       const top3Early = applyTop3PickRung({
         units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
       });
+      const gapEarly = applyGapLeadRescue({
+        units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
+      });
       const sideAlready = docAlready && existingSideKeys?.has(`${col}|${docId}|${side}`);
       if (sideAlready) continue;
-      if (docAlready && !top3Early.fires) continue;
+      if (docAlready && !top3Early.fires && !gapEarly.fires) continue;
       const live = computeWalletConsensus(positions, side, sport, walletProfiles);
       // Quick-skip: no Door-2, no HC, and no trusted wallet on this game.
       // Door-2 misses a market-trusted total (Houston 2026-10-30, 2a8409 / a1be00).
       // Trust is read on the whole cluster so the other side can still veto.
       // A top-3 pick wallet is not required to be on the whitelist.
       const trustedOnGame = groupHasTrustedWallet(positions, walletProfiles, sport, marketType);
-      if (!top3Early.fires && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
+      if (!top3Early.fires && !gapEarly.fires && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
 
       // Build walletDetails for AGS-U (sport-local size — Action parity).
       const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType);
@@ -3256,6 +3269,8 @@ async function createMissingLockedPicks({
           console.log(`  UNOPP AGS bypass: ${docId} ${side} (agsv12_no_signal → force create)`);
         } else if (top3Early.fires) {
           console.log(`  TOP3-PICK bypass: ${docId} ${side} (agsv12_no_signal → force create ${top3Early.units}u)`);
+        } else if (gapEarly.fires) {
+          console.log(`  GAP-LEAD bypass: ${docId} ${side} (agsv12_no_signal → force create ${gapEarly.units}u)`);
         } else if (trustedOnGame) {
           // Odds are not known yet. TRUST-S stakes inside an implied window,
           // so the decision waits for the ladder call that has the ticket price.
@@ -3278,6 +3293,8 @@ async function createMissingLockedPicks({
           );
         } else if (top3Early.fires) {
           console.log(`  TOP3-PICK bypass: ${docId} ${side} (agsv12_mute score=${scoreV12} → force create ${top3Early.units}u)`);
+        } else if (gapEarly.fires) {
+          console.log(`  GAP-LEAD bypass: ${docId} ${side} (agsv12_mute score=${scoreV12} → force create ${gapEarly.units}u)`);
         } else if (trustedOnGame) {
           trustProbeCreate = true;
           console.log(`  TRUST probe: ${docId} ${side} (agsv12_mute score=${scoreV12} · trusted wallet on ${marketType})`);
@@ -3292,11 +3309,19 @@ async function createMissingLockedPicks({
         && !q1ForceBypassAgs
         && !unoppForceBypassAgs
         && !(Number.isFinite(scoreV12) && scoreV12 > 0);
+      const gapForceCreate = gapEarly.fires
+        && !top3ForceCreate
+        && !pressMirrorForceCreate
+        && !q1ForceBypassAgs
+        && !unoppForceBypassAgs
+        && !(Number.isFinite(scoreV12) && scoreV12 > 0);
       const promotedBy = top3ForceCreate
         ? TOP3_PICK_PROMOTED_BY
-        : (q1ForceBypassAgs
-          ? 'confirmed-q1-force'
-          : (unoppForceBypassAgs ? 'confirmed-unopp-force' : 'ags-unified-v12'));
+        : (gapForceCreate
+          ? GAP_LEAD_PROMOTED_BY
+          : (q1ForceBypassAgs
+            ? 'confirmed-q1-force'
+            : (unoppForceBypassAgs ? 'confirmed-unopp-force' : 'ags-unified-v12')));
       const finalTier = agsV12Res?.tier || 'FADE';
       const peakStars = starsFromTierV12(finalTier);
       // ── Pinnacle odds + line. ML uses live mlOdds; SPREAD uses the
@@ -4227,6 +4252,7 @@ async function createMissingLockedPicks({
         if (mlDoorKind(mlDoorPolicyCreate.action) === 'rescue') hcStakeTierCreate = ML_DOOR_STAKE_TIER;
       }
       let top3PolicyCreate = null;
+      let gapPolicyCreate = null;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
         top3PolicyCreate = applyTop3PickRung({
           units: peakUnitsApplied,
@@ -4239,6 +4265,19 @@ async function createMissingLockedPicks({
         if (top3PolicyCreate.action === 'floor' || top3PolicyCreate.action === 'rescue') {
           peakUnitsApplied = top3PolicyCreate.units;
           hcStakeTierCreate = TOP3_PICK_STAKE_TIER;
+        }
+        gapPolicyCreate = applyGapLeadRescue({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          sport,
+          market: marketType,
+          side,
+          pickDate: TARGET_DATE,
+          positions,
+        });
+        if (gapPolicyCreate.action === 'rescue' || gapPolicyCreate.action === 'boost') {
+          peakUnitsApplied = gapPolicyCreate.units;
+          hcStakeTierCreate = GAP_LEAD_STAKE_TIER;
         }
       }
       if (isOperatorKilled({ _id: docId }, side, null)) {
@@ -4406,6 +4445,9 @@ async function createMissingLockedPicks({
         }
         if (mlDoorPolicyCreate) Object.assign(v8Stamps, mlDoorSteamStamp(mlDoorPolicyCreate));
         if (top3PolicyCreate?.fires) Object.assign(v8Stamps, top3PickStamp(top3PolicyCreate));
+      }
+      if (gapPolicyCreate?.fires && !isOperatorKilled({ _id: docId }, side, null)) {
+        Object.assign(v8Stamps, gapLeadStamp(gapPolicyCreate));
       }
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
@@ -4626,6 +4668,9 @@ async function createMissingLockedPicks({
       } else if (mlDoorKind(mlDoorPolicyCreate?.action) === 'rescue') {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = mlDoorPolicyCreate.rescuedBy;
+      } else if (gapPolicyCreate?.action === 'rescue' || gapPolicyCreate?.action === 'boost') {
+        delete v8Stamps.mutedBy;
+        v8Stamps.v8_rescuedBy = GAP_LEAD_RESCUED_BY;
       } else if (top3PolicyCreate?.action === 'rescue' || top3PolicyCreate?.action === 'floor') {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = TOP3_PICK_RESCUED_BY;
@@ -6543,6 +6588,28 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  let gapPolicy = null;
+  if (!skipManualFlinch && isGapLeadLive(pickDate)) {
+    gapPolicy = applyGapLeadRescue({
+      units: finalUnitsApplied,
+      odds: sideOdds,
+      sport: pick.sport,
+      market: mkt,
+      side,
+      pickDate,
+      positions: group,
+    });
+    if ((gapPolicy.action === 'rescue' || gapPolicy.action === 'boost') && appliedStatus !== 'ACTIVE') {
+      appliedStatus = 'ACTIVE';
+      appliedReason = 'gap_lead_ags_bypass';
+      mutedByAgs = false;
+    }
+    if (gapPolicy.action === 'rescue' || gapPolicy.action === 'boost') {
+      finalUnitsApplied = gapPolicy.units;
+      hcStakeTier = GAP_LEAD_STAKE_TIER;
+    }
+  }
+
   const operatorKilled = isOperatorKilled(pick, side, sd);
   if (operatorKilled) finalUnitsApplied = 0;
 
@@ -6570,6 +6637,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && (top3Policy?.action === 'rescue' || top3Policy?.action === 'floor' || top3Policy?.fires)
+  ) || (
+    appliedStatus === 'ACTIVE'
+    && finalUnitsApplied > 0
+    && (gapPolicy?.action === 'rescue' || gapPolicy?.action === 'boost')
   ) || trustShip;
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
@@ -6579,8 +6650,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         : (pressMirrorApplied ? PRESS_M_SUPERSEDED_REASON
           : (trustShip
             ? (isTrustMRule(pressEval?.trust?.rule) ? 'trust_m_ags_bypass' : 'trust_rung_ags_bypass')
-            : (top3Policy?.fires ? 'top3_pick_ags_bypass'
-              : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass'))));
+            : ((gapPolicy?.action === 'rescue' || gapPolicy?.action === 'boost') ? 'gap_lead_ags_bypass'
+              : (top3Policy?.fires ? 'top3_pick_ags_bypass'
+                : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass')))));
     } else {
       appliedLockStage = 'LOCKED';
     }
@@ -6781,6 +6853,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   } else if (mlDoorKind(mlDoorPolicy?.action) === 'rescue') {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = mlDoorPolicy.rescuedBy;
+  } else if (gapPolicy?.action === 'rescue' || gapPolicy?.action === 'boost') {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+    patch.v8_rescuedBy = GAP_LEAD_RESCUED_BY;
   } else if (top3Policy?.action === 'rescue' || top3Policy?.action === 'floor') {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = TOP3_PICK_RESCUED_BY;
@@ -6990,6 +7065,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       changes.push(`PRESS${pressApplied ? '' : ' (shadow)'}: ${prevRung || '∅'}/${prevUnits ?? '∅'}u → ${pressRecord.rung || '∅'}/${pressRecord.units}u (${pressRecord.reason})`);
     }
   }
+  if (gapPolicy?.fires && !operatorKilled) Object.assign(patch, gapLeadStamp(gapPolicy));
   if (pressMirror) {
     Object.assign(patch, pressMirrorStamp(pressMirror, pressMirrorShape, now));
     const prevFires = sd.v8_pressMirror?.fires === true;
@@ -8862,7 +8938,7 @@ async function main() {
 
   const groups = buildPositionGroupsFromFirestore(positions);
   console.log(`Loaded ${positions.length} sharp_action_positions in ${groups.size} game-market clusters`);
-  if (isTop3PickLive(TARGET_DATE)) {
+  if (isTop3PickLive(TARGET_DATE) || isGapLeadLive(TARGET_DATE)) {
     const since = top3PickWindowStart(TARGET_DATE);
     const rankSnap = await db.collection('sharp_action_positions')
       .where('date', '>=', since)
@@ -8870,13 +8946,25 @@ async function main() {
       .select('wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'settledPnl', 'result', 'postponed', 'status')
       .get();
     const rankRows = rankSnap.docs.map((d) => d.data());
-    const top3Ranks = buildTop3PickRanks(rankRows, TARGET_DATE);
-    setTop3PickRanks(top3Ranks);
-    let top3Names = 0;
-    for (const info of top3Ranks.values()) if (info.rank <= 3) top3Names += 1;
-    console.log(`TOP3-PICK ranks: ${top3Names} top-3 seats from ${rankRows.length} bets since ${since}`);
+    if (isTop3PickLive(TARGET_DATE)) {
+      const top3Ranks = buildTop3PickRanks(rankRows, TARGET_DATE);
+      setTop3PickRanks(top3Ranks);
+      let top3Names = 0;
+      for (const info of top3Ranks.values()) if (info.rank <= 3) top3Names += 1;
+      console.log(`TOP3-PICK ranks: ${top3Names} top-3 seats from ${rankRows.length} bets since ${since}`);
+    } else {
+      setTop3PickRanks(new Map());
+    }
+    if (isGapLeadLive(TARGET_DATE)) {
+      const gapBooks = buildGapLeadBooks(rankRows, TARGET_DATE);
+      setGapLeadBooks(gapBooks);
+      console.log(`GAP-LEAD books: ${gapBooks.size} wallets with 5+ market bets since ${since}`);
+    } else {
+      setGapLeadBooks(new Map());
+    }
   } else {
     setTop3PickRanks(new Map());
+    setGapLeadBooks(new Map());
   }
   const scanUFCKeys = new Set();
   for (const gk of groups.keys()) {
