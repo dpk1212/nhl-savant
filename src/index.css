@@ -1288,21 +1288,15 @@ p {
   .sf-stagger > *, .sf-tape-track, .sf-action-expand { animation: none; transition: none; }
 }
 
-/* Phone locked-picks list. One column of every card, each holding a
-   price-tape SVG and a wallet board. iOS keeps those layers while a
-   fast scroll is in flight and kills the tab around mid-list. Skip
-   paint for cards outside the viewport, and drop the entrance
-   transform and the drifting backdrop so the compositor can release
-   what has already scrolled past. */
+/* Phone. The drifting backdrop and the entrance transform pin a layer
+   on every card. Off-screen cards are unmounted in MobileViewportSlot;
+   content-visibility stayed on and iOS still built the whole tail when
+   the scroll hit the bottom. */
 @media (max-width: 767px) {
   .sf-aurora { animation: none; }
   .sf-glass {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  .sf-stagger > * {
-    animation: none;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 520px;
-  }
+  .sf-stagger > * { animation: none; }
 }

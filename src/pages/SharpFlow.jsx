@@ -24,6 +24,7 @@ import { redirectToCheckout } from '../utils/stripe';
 import { PAYWALL_PROMO, promoPrice } from '../lib/paywallPromo.js';
 import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
+import MobileViewportSlot from '../components/sharpFlow/cards/MobileViewportSlot';
 import ConfirmedActionDesk, { focusMySharpsDesk } from '../components/sharpFlow/ConfirmedActionDesk';
 import { focusSharpsRoom } from '../components/sharpFlow/MySharpsDesk';
 import MySharpsSlate from '../components/sharpFlow/MySharpsSlate';
@@ -12247,7 +12248,11 @@ export default function SharpFlow() {
                     );
                   })()}
 
-                  {/* Always render SharpPositionCards so health effects stay alive */}
+                  {/* Desktop keeps this mounted (display:none) so health effects
+                      stay alive while Locked Picks is up. On a phone that hidden
+                      board is the whole live slate sitting under the list, and
+                      the tab dies when the no-play tail scrolls in. */}
+                  {isMobile && (sortBy === 'locked' || sortBy === 'hcPositions' || sortBy === 'myPicks') ? null : (
                   <div style={(sortBy === 'locked' || sortBy === 'hcPositions' || sortBy === 'myPicks') ? { display: 'none' } : undefined}>
                     <SharpTape sharpPositions={sharpPositions} />
                     <div className="sf-stagger" style={{
@@ -12403,6 +12408,7 @@ export default function SharpFlow() {
                       return <SharpFlowPaywall isMobile={isMobile} lockedCount={hiddenGames.length} pnlData={allTimePnL} teaserGames={teaserGames} />;
                     })()}
                   </div>
+                  )}
 
                   {sortBy === 'myPicks' ? (
                     <MySharpsSlate
@@ -13454,7 +13460,9 @@ export default function SharpFlow() {
                                   gap: '0.75rem',
                                 }}>
                                   {stakedCards.map(p => (
-                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} mySharps={mySharpCard} />
+                                    <MobileViewportSlot key={p.key} enabled={isMobile}>
+                                      <SharpLockCardV2 pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} mySharps={mySharpCard} />
+                                    </MobileViewportSlot>
                                   ))}
                                 </div>
                               )}
@@ -13480,7 +13488,9 @@ export default function SharpFlow() {
                                     opacity: 0.78,
                                   }}>
                                     {monitoringCards.map(p => (
-                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} mySharps={mySharpCard} />
+                                      <MobileViewportSlot key={p.key} enabled={isMobile}>
+                                        <SharpLockCardV2 pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} rawMlPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} polyData={polyData} kalshiData={kalshiData} unitDisplayScale={unitDisplayScale} mySharps={mySharpCard} />
+                                      </MobileViewportSlot>
                                     ))}
                                   </div>
                                 </div>
