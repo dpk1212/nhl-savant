@@ -1794,7 +1794,8 @@ html[data-locktop] .sf-aurora { display: none; }
     backdrop-filter 180ms cubic-bezier(.2, .8, .2, 1),
     -webkit-backdrop-filter 180ms cubic-bezier(.2, .8, .2, 1);
 }
-html[data-locktop="collapsed"] .sf-nav-lock {
+html[data-locktop="collapsed"] .sf-nav-lock,
+html[data-locktop="shell"] .sf-nav-lock {
   background-color: rgba(11, 14, 28, 0.68);
   border-bottom-color: rgba(255, 255, 255, 0.08);
   -webkit-backdrop-filter: blur(24px) saturate(170%);
@@ -2064,6 +2065,10 @@ html[data-locktop="collapsed"] .sf-lock-sticky {
   scrollbar-width: none;
 }
 .sf-lock-sections::-webkit-scrollbar { display: none; }
+.sf-lock-sections.is-page {
+  margin: 8px -1rem 12px;
+  padding: 0 1rem;
+}
 .sf-lock-section {
   position: relative;
   height: 44px;

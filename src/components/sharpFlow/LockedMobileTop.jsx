@@ -105,7 +105,7 @@ function ModelLine({ model, onOpen }) {
   );
 }
 
-function SectionTabs({ tabs, value, onChange }) {
+export function SectionTabs({ tabs, value, onChange, page = false }) {
   const row = useRef(null);
   const [ink, setInk] = useState({ x: 0, w: 0 });
   useLayoutEffect(() => {
@@ -118,7 +118,7 @@ function SectionTabs({ tabs, value, onChange }) {
     return undefined;
   }, [value, tabs]);
   return (
-    <div className="sf-lock-sections" ref={row} role="tablist" aria-label="Intel" data-testid="lock-section-tabs">
+    <div className={page ? 'sf-lock-sections is-page' : 'sf-lock-sections'} ref={row} role="tablist" aria-label="Intel" data-testid="lock-section-tabs">
       {tabs.map((tab) => {
         const on = tab.id === value;
         return (
@@ -142,7 +142,7 @@ function SectionTabs({ tabs, value, onChange }) {
   );
 }
 
-function BottomTabs({ value, onChange }) {
+export function BottomTabs({ value, onChange }) {
   return (
     <nav className="sf-lock-tabbar" aria-label="Sharp Flow" data-testid="lock-bottom-tabs">
       {VIEWS.map((tab) => {
@@ -163,6 +163,22 @@ function BottomTabs({ value, onChange }) {
       })}
     </nav>
   );
+}
+
+function holdShellChrome(enabled) {
+  if (!enabled) return undefined;
+  document.documentElement.style.setProperty('--sf-lock-p', '0');
+  setLockChrome({ mode: 'shell', pnl: '', rec: '' });
+  return () => clearLockChrome();
+}
+
+/** Header + bottom tabs for every phone Sharp Flow page except Locked, which owns its own chrome. */
+export function SharpFlowMobileNav({ viewMode, onViewMode, enabled }) {
+  // Layout wins the first paint. The effect wins after Locked unmounts and clears chrome.
+  useLayoutEffect(() => holdShellChrome(enabled), [enabled]);
+  useEffect(() => holdShellChrome(enabled), [enabled]);
+  if (!enabled) return null;
+  return <BottomTabs value={viewMode} onChange={onViewMode} />;
 }
 
 export default function LockedMobileTop({
