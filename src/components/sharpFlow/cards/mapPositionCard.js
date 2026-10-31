@@ -58,7 +58,7 @@ import {
 } from '../../../lib/shopTicketLine.js';
 import { SHOP_BOOK_PREFER, sharpConsensusFromBooks } from '../../../lib/sharpConsensus.js';
 import { lookupPinnGame } from '../../../../scripts/lib/ufcFighters.js';
-import { bestAvailableTicket } from '../../../lib/t15BestLock.js';
+import { lockShopHasNumber } from '../../../lib/t15BestLock.js';
 import {
   classifyGoldStack,
   goldStackTip,
@@ -751,23 +751,6 @@ function liveShopLabel({ isTotal, sideKey, pick, line }) {
     : shortTeam(pick.home, pick.away);
   const signed = line > 0 ? `+${line}` : `${line}`;
   return `now ${who} ${signed}`;
-}
-
-/**
- * Same question the T-15 seal asks. A dead print in the history is not a
- * book on this number, and the main's price is not this number.
- */
-function lockShopHasNumber(pinnGame, marketType, side, line) {
-  if (!Number.isFinite(line)) return true;
-  const best = bestAvailableTicket({
-    pinnGame,
-    marketType,
-    side,
-    flagged: { line, odds: 100, book: 'Polymarket', oddsSource: 'poly_avgPrice' },
-  });
-  return best?.source === 't15_best_available'
-    && Number.isFinite(best.line)
-    && Math.abs(best.line - line) <= 0.051;
 }
 
 /**
