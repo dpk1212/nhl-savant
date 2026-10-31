@@ -2,7 +2,7 @@
  * Locked filter bar. One sticky surface: stats, status, chips, and the sheet.
  * Gold is only the active state. Numbers stay tabular so the line does not jitter.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SlidersHorizontal } from 'lucide-react';
 import {
@@ -90,7 +90,7 @@ function useStuck(ref) {
   return { stuck, navH };
 }
 
-export default function LockedFilterBar({ picksByDay, filter, view, onChange }) {
+export default function LockedFilterBar({ picksByDay, filter, view, onChange, flush = false }) {
   const wide = useWide();
   const barRef = useRef(null);
   const mobileBtnRef = useRef(null);
@@ -111,6 +111,63 @@ export default function LockedFilterBar({ picksByDay, filter, view, onChange }) 
     setOpen(false);
     onChange(normalizeLockedFilter({ ...f, ...partial }));
   };
+  const [hosts, setHosts] = useState({ seg: null, chip: null });
+  useLayoutEffect(() => {
+    if (!flush) return undefined;
+    setHosts({
+      seg: document.getElementById('sf-lock-seg-slot'),
+      chip: document.getElementById('sf-lock-chip-slot'),
+    });
+    return undefined;
+  }, [flush]);
+
+  const sheet = open && draft && (
+    <FilterSheet
+      wide={wide && !flush}
+      anchorRef={btnRef}
+      picksByDay={picksByDay}
+      draft={draft}
+      onDraft={setDraft}
+      onClose={closeSheet}
+      onShow={() => {
+        onChange(normalizeLockedFilter(draft));
+        setOpen(false);
+      }}
+    />
+  );
+
+  if (flush) {
+    const seg = (
+      <div className="sf-lock-segrow">
+        <StatusSegment
+          value={segment}
+          counts={view.statusCounts}
+          fadeCounts
+          onChange={(status) => commit({ status })}
+        />
+        <SortButton btnRef={mobileBtnRef} count={view.badge} open={open} onClick={openSheet} />
+      </div>
+    );
+    const chips = (
+      <div className="sf-lock-chips">
+        <ChipRail
+          filter={f}
+          view={view}
+          gold="#e9c25a"
+          onSort={(sort) => commit({ sort })}
+          onSport={(id) => commit({ sport: f.sport === id ? 'all' : id })}
+        />
+      </div>
+    );
+    if (!hosts.seg || !hosts.chip) return sheet || null;
+    return (
+      <>
+        {createPortal(seg, hosts.seg)}
+        {createPortal(chips, hosts.chip)}
+        {sheet}
+      </>
+    );
+  }
 
   return (
     <div
@@ -176,21 +233,7 @@ export default function LockedFilterBar({ picksByDay, filter, view, onChange }) 
         />
         <SortButton btnRef={wideBtnRef} count={view.badge} open={open} onClick={openSheet} />
       </div>
-
-      {open && draft && (
-        <FilterSheet
-          wide={wide}
-          anchorRef={btnRef}
-          picksByDay={picksByDay}
-          draft={draft}
-          onDraft={setDraft}
-          onClose={closeSheet}
-          onShow={() => {
-            onChange(normalizeLockedFilter(draft));
-            setOpen(false);
-          }}
-        />
-      )}
+      {sheet}
     </div>
   );
 }
@@ -232,14 +275,32 @@ function StatBit({ bit }) {
   );
 }
 
-function StatusSegment({ value, counts, onChange }) {
+function StatusSegment({ value, counts, onChange, fadeCounts = false }) {
+  const rootRef = useRef(null);
+  const [ink, setInk] = useState(null);
   const opts = [
     { id: 'pending', label: 'Pending', n: counts.pending },
     { id: 'live', label: 'Live', n: counts.live },
     { id: 'settled', label: 'Settled', n: counts.settled },
   ];
+  useLayoutEffect(() => {
+    if (!fadeCounts) return undefined;
+    const root = rootRef.current;
+    const btn = root?.querySelector('.sf-locked-seg-btn.is-on');
+    if (!root || !btn) return undefined;
+    const rr = root.getBoundingClientRect();
+    const br = btn.getBoundingClientRect();
+    setInk({ x: br.left - rr.left, y: br.top - rr.top, w: br.width, h: br.height });
+    return undefined;
+  }, [value, fadeCounts, counts.pending, counts.live, counts.settled]);
   return (
-    <div className="sf-locked-seg" role="tablist" aria-label="Status" data-testid="locked-status">
+    <div ref={rootRef} className="sf-locked-seg" role="tablist" aria-label="Status" data-testid="locked-status">
+      {fadeCounts && ink ? (
+        <span
+          className="sf-lock-seg-ink"
+          style={{ width: ink.w, height: ink.h, transform: `translate(${ink.x}px, ${ink.y}px)` }}
+        />
+      ) : null}
       {opts.map((opt) => {
         const on = value === opt.id;
         return (
@@ -253,7 +314,7 @@ function StatusSegment({ value, counts, onChange }) {
             style={NUM}
           >
             <span>{opt.label}</span>
-            <span className="sf-locked-seg-n">{opt.n}</span>
+            <span key={fadeCounts ? opt.n : opt.id} className={fadeCounts ? 'sf-locked-seg-n sf-count-fade' : 'sf-locked-seg-n'}>{opt.n}</span>
           </button>
         );
       })}
@@ -280,7 +341,7 @@ function SortButton({ btnRef, count, open, onClick }) {
   );
 }
 
-function ChipRail({ filter, view, onSort, onSport }) {
+function ChipRail({ filter, view, onSort, onSport, gold = GOLD }) {
   const scroller = useRef(null);
   const [fade, setFade] = useState(false);
   const sports = view.sports.filter((s) => s.count > 0);
@@ -316,7 +377,7 @@ function ChipRail({ filter, view, onSort, onSport }) {
             onClick={() => onSport(s.id)}
             testid={`chip-${s.id}`}
           >
-            <span style={{ color: filter.sport === s.id ? GOLD : (SPORT_INK[s.id] || SEC) }}>{s.id}</span>
+            <span style={{ color: filter.sport === s.id ? gold : (SPORT_INK[s.id] || SEC) }}>{s.id}</span>
             <span className="sf-locked-chip-n" style={NUM}>{s.count}</span>
           </Chip>
         ))}
