@@ -87,11 +87,12 @@ const fixture = mapLockedPickToCardFixture({
 
 assert.equal(fixture.polyEntryOdds, -124, `poly entry expected -124, got ${fixture.polyEntryOdds}`);
 assert.equal(fixture.lockOdds, -124, `FLAGGED/lockOdds must follow vault, got ${fixture.lockOdds}`);
-assert.equal(fixture.gotOdds, -124);
-assert.equal(fixture.odds, -124);
+assert.equal(fixture.gotOdds, -121, 'TICKET strip is same-line book NOW, not vault Poly');
+assert.equal(fixture.odds, -121);
+assert.equal(fixture.heroOdds, -121, 'hero juice = book on +1.5');
 assert.equal(fixture.instrumentVariant, 'MAIN');
-assert.ok(Math.abs(fixture.toWin - (1 * 100 / 124)) < 0.01,
-  `toWin must use −124 juice, got ${fixture.toWin}`);
+assert.ok(Math.abs(fixture.toWin - (1 * 100 / 121)) < 0.01,
+  `toWin must use book −121 juice, got ${fixture.toWin}`);
 const pathOdds = (fixture.pinPath || []).map((p) => p.odds);
 assert.ok(!pathOdds.includes(270), `tape must not include stamped +270, got ${JSON.stringify(pathOdds)}`);
 assert.ok(pathOdds.every((o) => o === -143 || o === -135 || o === -121),
