@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   esportFromSlug,
   esportsTeamsMatch,
+  teamsFromBo3Slug,
   extractEsportsTeamsFromTitle,
   makeEsportsGameKey,
   classifyEsportsMarket,
@@ -60,5 +61,10 @@ assert.equal(esportsTeamsMatch('Team Nemesis', 'Nemesis'), true);
 assert.equal(esportsTeamsMatch('Team Nemesis', 'Nemesis Academy'), false);
 assert.equal(esportsTeamsMatch('FaZe', 'GamerLegion'), false);
 assert.equal(makeEsportsGameKey('Inner Circle Esports', 'Astralis'), 'innercircleesports_astralis');
+assert.deepEqual(teamsFromBo3Slug('nuclear-tigeres-vs-private-30-10-2026'), ['nuclear tigeres', 'private']);
+assert.equal(esportsTeamsMatch('Nuclear TigeRES', 'nuclear tigeres'), true);
+assert.equal(esportsTeamsMatch('PRIVATE', 'private'), true);
+assert.deepEqual(teamsFromBo3Slug('basement-boys-vs-teletubisie-30-10-2026-1'), ['basement boys', 'teletubisie']);
+assert.equal(teamsFromBo3Slug('not-a-match'), null);
 
 console.log('testEsportsTeams ok');

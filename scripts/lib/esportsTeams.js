@@ -83,6 +83,21 @@ export function esportsTeamsMatch(rawA, rawB) {
   return !!(a && b && a === b);
 }
 
+/**
+ * bo3 slug when the book snapshot has no team names.
+ * nuclear-tigeres-vs-private-30-10-2026 → the two sides, team1 then team2.
+ * A trailing series index (…-2026-1) is not part of the name.
+ */
+export function teamsFromBo3Slug(slug) {
+  const s = String(slug || '').toLowerCase();
+  const m = s.match(/^(.*?)-vs-(.+)-(\d{2})-(\d{2})-(\d{4})(?:-\d+)?$/);
+  if (!m) return null;
+  const a = m[1].replace(/-/g, ' ').trim();
+  const b = m[2].replace(/-/g, ' ').trim();
+  if (!resolveEsportsTeam(a) || !resolveEsportsTeam(b)) return null;
+  return [a, b];
+}
+
 /** Main match slug → 'CS2' | 'LOL'. Child markets and futures return null. */
 export function esportFromSlug(slug) {
   const s = String(slug || '').toLowerCase();
