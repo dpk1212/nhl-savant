@@ -237,14 +237,13 @@ function toWinUnits(p) {
   return o > 0 ? u * (o / 100) : u * (100 / Math.abs(o));
 }
 
-/** Staked book for the day. Sport chips do not move this line. */
+/** Staked book for the day. The figure beside the record is settled PnL. Sport chips do not move this line. */
 export function lockedDayLine(picks, day, now = Date.now()) {
   const staked = (picks || []).filter((p) => !p?.isMonitoring);
   let won = 0;
   let lost = 0;
   let pending = 0;
   let live = 0;
-  let risk = 0;
   let toWin = 0;
   let realized = 0;
   for (const p of staked) {
@@ -256,18 +255,15 @@ export function lockedDayLine(picks, day, now = Date.now()) {
     if (bucket === 'won' || bucket === 'lost' || bucket === 'resolved') {
       realized += Number(p?.profit) || 0;
     } else {
-      risk += Number.isFinite(p?.units) ? p.units : 0;
       toWin += toWinUnits(p);
     }
   }
   const record = `${won}\u2013${lost}`;
+  const text = `${record} \u00b7 ${fmtSignedU(realized)}`;
   if (day === 'yesterday') {
-    const text = `${record} \u00b7 ${fmtSignedU(realized)}`;
     return { text, mini: text, record, toWin: null, realized };
   }
-  const text = `${record} \u00b7 ${pending} pending \u00b7 ${live} live \u00b7 ${risk.toFixed(1)}u risk \u00b7 ${fmtSignedU(toWin)} to win`;
-  const mini = `${record} \u00b7 ${fmtSignedU(toWin)}`;
-  return { text, mini, record, toWin, realized, pending, live };
+  return { text, mini: text, record, toWin, realized, pending, live };
 }
 
 export function describeLockedSlate(picks, filter, now = Date.now()) {
