@@ -58,7 +58,7 @@ import {
 } from '../../../lib/shopTicketLine.js';
 import { SHOP_BOOK_PREFER, sharpConsensusFromBooks } from '../../../lib/sharpConsensus.js';
 import { lookupPinnGame } from '../../../../scripts/lib/ufcFighters.js';
-import { lockShopHasNumber } from '../../../lib/t15BestLock.js';
+import { lockShopHasNumber, bestAvailableTicket } from '../../../lib/t15BestLock.js';
 import {
   classifyGoldStack,
   goldStackTip,
@@ -1631,6 +1631,36 @@ export function mapLockedPickToCardFixture(pick, {
     }
   }
 
+  // The ticket number has left the window. The hero walks to the live
+  // number, same walk the seal writes. A number still on the board,
+  // and a move inside the window, stays the receipt. Stake stays.
+  let holeWalkOdds = null;
+  const shopSealed = pick.t15Sealed === true
+    || String(pick.oddsSource || pick.fairBook || '').toLowerCase().includes('t15_best');
+  if (!alreadyGraded && !shopSealed && (isSpread || isTotal) && pinnGamePeek
+      && Number.isFinite(ticketLine)) {
+    const walked = bestAvailableTicket({
+      pinnGame: pinnGamePeek,
+      marketType: isSpread ? 'spread' : 'total',
+      side: instSide,
+      flagged: {
+        line: ticketLine,
+        odds: Number.isFinite(ticketOdds) ? ticketOdds : 100,
+        book: pick.book || 'Polymarket',
+        oddsSource: pick.oddsSource || 'poly_avgPrice',
+      },
+    });
+    if (walked?.source === 't15_best_available'
+        && Number.isFinite(walked.line)
+        && !linesClose(walked.line, ticketLine)
+        && Number.isFinite(walked.odds)
+        && walked.odds !== 0) {
+      ticketLine = walked.line;
+      ticketOdds = walked.odds;
+      holeWalkOdds = walked.odds;
+    }
+  }
+
   const units = Number.isFinite(pick.units) ? pick.units : 0;
   // Odds 0 is a missing create stamp — treat as null so cards never show “ML 0”.
   const odds = Number.isFinite(ticketOdds) && ticketOdds !== 0 ? ticketOdds : null;
@@ -2040,7 +2070,9 @@ export function mapLockedPickToCardFixture(pick, {
     ),
   });
   if (Number.isFinite(pay.polyReceipt)) polyEntryOdds = pay.polyReceipt;
-  let payOdds = Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds;
+  let payOdds = Number.isFinite(holeWalkOdds)
+    ? holeWalkOdds
+    : (Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds);
   const polyForLabel = Number.isFinite(pay.polyReceipt) ? pay.polyReceipt
     : (Number.isFinite(polyEntryOdds) ? polyEntryOdds : null);
   // Bookless ML, still before the seal: the number on the card is the

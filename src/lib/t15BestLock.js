@@ -1,8 +1,10 @@
 /**
  * T-15 lock ticket = the pending hero.
- * Spreads and totals keep the hero number (the ticket already on the card).
- * The price is the best American on that number.
- * A book on the fair book's main does not replace a different hero number.
+ * Spreads and totals keep the hero number when a book is on it, or when the
+ * live number is still inside the 2-point window. The price is the best
+ * American on that number.
+ * Outside that window, the hero walks to the live number the books are on.
+ * A book on the fair book's main does not replace a hero number still in the window.
  * Flagged (vault / Poly) stays a separate Firestore snapshot.
  * Moneylines have no second number: best American on the ML.
  */
@@ -81,6 +83,81 @@ function pinOnLine(quotes, line) {
   return quotes.find((q) => /pinn/i.test(String(q.book || ''))
     && Number.isFinite(q.line)
     && Math.abs(q.line - line) <= 0.051) || null;
+}
+
+/** Same 2-point window as the shop. Inside it, a missing exact number stays the receipt. */
+const HOLE_WINDOW_PTS = 2;
+
+function gapTowardSide(ticket, main, marketType, side) {
+  const mt = String(marketType || '').toLowerCase();
+  const s = String(side || '').toLowerCase();
+  if (mt === 'total' || mt === 'tot') {
+    const towardOver = main - ticket;
+    const under = s === 'under' || s === 'away';
+    return under ? -towardOver : towardOver;
+  }
+  if (mt === 'spread' || mt === 'sp') return ticket - main;
+  return null;
+}
+
+function insideLineWindow(ticket, main, marketType, side) {
+  const pts = gapTowardSide(ticket, main, marketType, side);
+  if (!Number.isFinite(pts)) return false;
+  return pts >= -0.001 && pts <= HOLE_WINDOW_PTS + 0.001;
+}
+
+/**
+ * The ticket number is gone and the live number is outside the window.
+ * Walk to the live line the books are actually on. A move inside the window
+ * stays the receipt, and one book is not a board.
+ */
+function walkOutsideWindow(quotes, heroLine, marketType, side, liveLine) {
+  if (!Number.isFinite(heroLine)) return null;
+  const groups = new Map();
+  for (const q of quotes) {
+    if (!Number.isFinite(q.line) || !finiteOdds(q.odds)) continue;
+    if (Math.abs(q.odds) >= 1000) continue;
+    if (Math.abs(q.line - heroLine) <= 0.051) continue;
+    const key = q.line.toFixed(3);
+    const group = groups.get(key) || { line: q.line, books: [] };
+    const name = String(q.book || '').toLowerCase();
+    if (name && group.books.some((b) => String(b.book || '').toLowerCase() === name)) continue;
+    group.books.push(q);
+    groups.set(key, group);
+  }
+  let bestGroup = null;
+  const target = Number(liveLine);
+  for (const group of groups.values()) {
+    if (group.books.length < 2) continue;
+    if (!bestGroup || group.books.length > bestGroup.books.length) {
+      bestGroup = group;
+      continue;
+    }
+    if (group.books.length === bestGroup.books.length && Number.isFinite(target)
+        && Math.abs(group.line - target) < Math.abs(bestGroup.line - target)) {
+      bestGroup = group;
+    }
+  }
+  if (!bestGroup) return null;
+  if (insideLineWindow(heroLine, bestGroup.line, marketType, side)) return null;
+  let best = null;
+  for (const q of bestGroup.books) {
+    if (!best || q.odds > best.odds) best = q;
+  }
+  if (!best) return null;
+  const pin = quotes.find((q) => /pinn/i.test(String(q.book || ''))
+    && Number.isFinite(q.line)
+    && Math.abs(q.line - bestGroup.line) <= 0.051
+    && finiteOdds(q.odds)
+    && Math.abs(q.odds) < 1000);
+  return {
+    line: bestGroup.line,
+    odds: best.odds,
+    book: best.book || null,
+    pinnacleOdds: Number.isFinite(pin?.odds) ? pin.odds : null,
+    oddsSource: 't15_best_available',
+    source: 't15_best_available',
+  };
 }
 
 function snapshotFromFlagged(flagged) {
@@ -162,7 +239,14 @@ export function bestAvailableTicket({
     let best = null;
     if (heroLine != null) {
       best = bestOnHeroLine(quotes, heroLine);
-      if (!best) return fallback;
+      if (!best) {
+        const liveLine = cur && Number.isFinite(Number(s === 'away' ? cur.awayLine : cur.homeLine))
+          ? Number(s === 'away' ? cur.awayLine : cur.homeLine)
+          : null;
+        const walked = walkOutsideWindow(quotes, heroLine, mt, s, liveLine);
+        if (walked) return walked;
+        return fallback;
+      }
     } else {
       const anchor = cur && Number.isFinite(Number(s === 'away' ? cur.awayLine : cur.homeLine))
         ? Number(s === 'away' ? cur.awayLine : cur.homeLine)
@@ -230,7 +314,12 @@ export function bestAvailableTicket({
     let best = null;
     if (heroLine != null) {
       best = bestOnHeroLine(quotes, heroLine);
-      if (!best) return fallback;
+      if (!best) {
+        const liveLine = cur && Number.isFinite(Number(cur.line)) ? Number(cur.line) : null;
+        const walked = walkOutsideWindow(quotes, heroLine, mt, s, liveLine);
+        if (walked) return walked;
+        return fallback;
+      }
     } else {
       const anchor = cur && Number.isFinite(Number(cur.line)) ? Number(cur.line) : null;
       for (const q of quotesOnMainline(quotes, anchor)) best = betterTotal(best, q, wantOver ? 'over' : 'under');
