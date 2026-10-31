@@ -243,7 +243,14 @@ const CARD_CSS = `
   }
 `;
 function CardStyles() {
-  return <style>{CARD_CSS}</style>;
+  useEffect(() => {
+    if (document.getElementById('sf-card-styles')) return;
+    const el = document.createElement('style');
+    el.id = 'sf-card-styles';
+    el.textContent = CARD_CSS;
+    document.head.appendChild(el);
+  }, []);
+  return null;
 }
 
 function useCountUp(target, run, ms = 900) {
