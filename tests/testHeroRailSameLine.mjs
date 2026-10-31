@@ -14,6 +14,7 @@ import {
   bookBeatsPin,
   evPctVsPinPosted,
   resolveHeroShop,
+  liveBoardQuote,
 } from '../src/lib/shopTicketLine.js';
 
 assert.equal(bookOnTicketLine(7.5, 7.5), true);
@@ -147,5 +148,29 @@ const auburn = keepPlayBooks([
   { name: 'Novig', odds: 102, line: 6.5 },
 ], 7.5, { marketType: 'spread', sideNorm: 'away' });
 assert.deepEqual(auburn.map((b) => b.name), ['DraftKings', 'FanDuel', 'BetMGM', 'Novig']);
+
+// Ticket -2.5 is gone. The row is the line with the books, not the ticket.
+const moved = liveBoardQuote([
+  { name: 'FanDuel', odds: -104, line: 2.5 },
+  { name: 'Novig', odds: 115, line: 2.5 },
+  { name: 'Kalshi', odds: 113, line: 2.5 },
+  { name: 'Polymarket', odds: 113, line: 2.5 },
+  { name: 'DraftKings', odds: -110, line: 3 },
+  { name: 'BetMGM', odds: -108, line: 3 },
+  { name: 'Pinnacle', odds: -108, line: 3 },
+  { name: 'BetOnline', odds: -110, line: 3 },
+  { name: 'LowVig', odds: -106, line: 3 },
+], -2.5, 3);
+assert.equal(moved.line, 3);
+assert.equal(moved.books.length, 4);
+assert.equal(liveBoardQuote([{ name: 'FanDuel', odds: -110, line: 1.5 }], 7.5), null);
+assert.equal(liveBoardQuote([
+  { name: 'Pinnacle', odds: 113, line: 51.5 },
+  { name: 'FanDuel', odds: -120, line: 51.5 },
+], 51.5), null);
+assert.equal(liveBoardQuote([
+  { name: 'Polymarket', odds: -9900, line: 73.5 },
+  { name: 'Kalshi', odds: -9900, line: 73.5 },
+], 39.5), null);
 
 console.log('testHeroRailSameLine: ok', gold, gold2, lsu);

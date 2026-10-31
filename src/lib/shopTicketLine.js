@@ -104,6 +104,47 @@ export function keepPlayBooks(books, stakedLine, { marketType, sideNorm } = {}) 
   return best ? best.books : [];
 }
 
+/** A posted price this far from even is a dead market, not a quote. */
+const LIVE_BOARD_DEAD_AMERICAN = 2000;
+
+/**
+ * The number the books are on when the ticket number is not.
+ * The biggest line wins. One book, the ticket line, and a dead price stay off.
+ * Display only. The ticket shop and its gold chip do not read this.
+ */
+export function liveBoardQuote(offers, ticketLine, liveLine = null) {
+  const groups = new Map();
+  const ticket = Number(ticketLine);
+  for (const b of offers || []) {
+    if (!b || shopRailHidden(b.name)) continue;
+    const odds = Number(b.odds);
+    const line = Number(b.line);
+    if (!Number.isFinite(odds) || odds === 0 || Math.abs(odds) >= LIVE_BOARD_DEAD_AMERICAN) continue;
+    if (!Number.isFinite(line)) continue;
+    if (Number.isFinite(ticket) && linesClose(line, ticket)) continue;
+    const key = line.toFixed(3);
+    const group = groups.get(key) || { line, books: [] };
+    const name = String(b.name || '').toLowerCase();
+    if (name && group.books.some((x) => String(x.name).toLowerCase() === name)) continue;
+    group.books.push({ name: b.name, odds, line });
+    groups.set(key, group);
+  }
+  let best = null;
+  const target = Number(liveLine);
+  for (const group of groups.values()) {
+    if (group.books.length < 2) continue;
+    if (!best || group.books.length > best.books.length) {
+      best = group;
+      continue;
+    }
+    if (group.books.length === best.books.length && Number.isFinite(target)
+        && Math.abs(group.line - target) < Math.abs(best.line - target)) {
+      best = group;
+    }
+  }
+  return best ? { line: best.line, books: best.books } : null;
+}
+
 export function shopLineMatchesPlay(bookLine, ticketLine, { marketType, sideNorm } = {}) {
   if (bookOnTicketLine(bookLine, ticketLine)) return true;
   return nearFavorableMain(ticketLine, bookLine, { marketType, sideNorm });

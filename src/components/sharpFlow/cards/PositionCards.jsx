@@ -2560,8 +2560,10 @@ function TierPerfStrip({ tierPerf, compact }) {
 }
 
 function CollapsedSpark({ f, gid, bleed = false, onTab }) {
+  const hasTape = Array.isArray(f.pinPath) && f.pinPath.length >= 2;
   return (
     <LockTapeSwitch f={f} onTab={onTab}>
+    {hasTape ? (
     <OddsLimitSpark
       bleed={bleed}
       pinPath={f.pinPath}
@@ -2587,6 +2589,14 @@ function CollapsedSpark({ f, gid, bleed = false, onTab }) {
       chartLineLabel={f.chartLineLabel}
       ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
     />
+    ) : (f.liveShop?.label ? (
+      <div style={{
+        padding: '6px 22px 2px',
+        fontSize: 12, fontWeight: 650, letterSpacing: '-0.01em', color: C.textSec,
+      }}>
+        {f.liveShop.label}
+      </div>
+    ) : null)}
     </LockTapeSwitch>
   );
 }
@@ -2933,6 +2943,75 @@ function shopBoardLabel(f, books, ticketLine) {
   return base ? `${base.split(' ').slice(0, -1).join(' ')} ${signed}`.trim() : signed;
 }
 
+/** The ticket number is off the board. Chips are the live number, not the bet. */
+function LiveNumberStrip({ shop }) {
+  const books = (Array.isArray(shop?.books) ? shop.books : []).filter((b) => (
+    Number.isFinite(b?.odds) && !shopRailHidden(b.name)
+  ));
+  if (!shop?.label || books.length < 2) return null;
+  const goldOdds = Math.max(...books.map((b) => b.odds));
+  const ranked = books.slice().sort((a, b) => {
+    const ia = SHOP_PREFER.indexOf(shopBookKey(a.name));
+    const ib = SHOP_PREFER.indexOf(shopBookKey(b.name));
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
+  return (
+    <div
+      className="sf-shop-desk"
+      onClick={stop}
+      onKeyDown={(e) => e.stopPropagation()}
+      aria-label={`${shop.label}. Live board.`}
+      style={{
+        marginTop: 12,
+        paddingTop: 11,
+        borderTop: '1px solid rgba(148,163,184,0.08)',
+      }}
+    >
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        gap: 10, marginBottom: 7,
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '-0.01em', color: C.text }}>
+          {shop.label}
+        </span>
+        <span style={{ fontSize: 10.5, fontWeight: 500, color: C.textMuted }}>
+          {ranked.length} books
+        </span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {ranked.map((b) => {
+          const best = b.odds === goldOdds;
+          return (
+            <span
+              key={String(b.name)}
+              title={`${b.name} ${shop.label} ${fmtOdds(b.odds)}${best ? ' · best' : ''}`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 8px 4px 4px', borderRadius: 999,
+                border: best ? `1px solid ${B.gold}` : '1px solid rgba(148,163,184,0.14)',
+                background: best ? 'rgba(212,175,55,0.14)' : 'transparent',
+                fontSize: 12, fontWeight: 650, letterSpacing: '-0.02em',
+                fontVariantNumeric: 'tabular-nums',
+                color: best ? B.goldHi : C.text,
+              }}
+            >
+              <span style={{
+                width: 20, height: 20, borderRadius: 4, overflow: 'hidden',
+                display: 'grid', placeItems: 'center', flexShrink: 0,
+                boxShadow: best ? `0 0 0 1.5px ${B.goldHi}` : 'none',
+              }}>
+                <BookLogo name={b.name} size={20} />
+              </span>
+              {fmtOdds(b.odds)}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /** Chip rail under the tape. Gold = best on that line. Green = beats sharp consensus. */
 function CollapsedShopStrip({ f }) {
   const fair = Number.isFinite(f?.fairLine) ? f.fairLine
@@ -2971,7 +3050,7 @@ function CollapsedShopStrip({ f }) {
     .map((k) => usable.find((b) => shopBookKey(b.name) === k && !seen.has(k)))
     .filter(Boolean);
   const ranked = [...sharp, ...retail, ...exchanges];
-  if (ranked.length < 2) return null;
+  if (ranked.length < 2) return <LiveNumberStrip shop={f?.liveShop} />;
 
   const goldOdds = ranked.length ? Math.max(...ranked.map((b) => b.odds)) : null;
   const isBest = (b) => Number.isFinite(goldOdds) && b.odds === goldOdds;

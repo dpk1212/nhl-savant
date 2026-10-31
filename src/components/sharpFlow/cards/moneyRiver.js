@@ -2,9 +2,10 @@
  * Display model for the locked money river.
  * Counts, records, and dollars come from the wallets already on the card.
  * A pooled win rate is shown only when every sharp on our side has a record.
- * Win, record, and profit come from each sharp's Source B book.
- * L30 ROI is that same book's last-30-day dollar ROI, stake-weighted
- * by this play. A stat is omitted unless every sharp on our side has it.
+ * Win, record, and the Lifetime dollars are that Source B book.
+ * L30 ROI is the last 30 days of the same book, stake-weighted
+ * by this play. The wallet line marks that rate L30. A stat is omitted
+ * unless every sharp on our side has it.
  * The wallet line prints those same three figures. The dots are the
  * graded bets behind that window, oldest first.
  * Coral is a down book. A wallet outside the proven pool whose shown
@@ -197,7 +198,7 @@ function rowLine(w, rec) {
   const stake = w?.invested ? fmtRiverUsd(w.invested) : null;
   return [
     rec?.label ? rec.label.replace('-', '\u2013') : null,
-    Number.isFinite(w?.l30Roi) ? fmtRoi(w.l30Roi) : null,
+    Number.isFinite(w?.l30Roi) ? `L30 ${fmtRoi(w.l30Roi)}` : null,
     profit || stake,
   ].filter(Boolean).join(' \u00b7 ');
 }
@@ -486,7 +487,7 @@ export function buildMoneyRiver(f) {
   const stats = [
     winPct ? { value: `${winPct}%`, label: 'Win', tone: 'plain' } : null,
     l30 ? { value: l30, label: 'L30 ROI', tone: tone(l30) } : null,
-    profit ? { value: profit, label: 'Profit', tone: tone(profit) } : null,
+    profit ? { value: profit, label: 'Lifetime', tone: tone(profit) } : null,
     recordValue ? { value: recordValue, label: 'Record', tone: 'plain' } : null,
   ].filter(Boolean);
   const dots = chronoDots(sharps);

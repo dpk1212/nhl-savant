@@ -131,7 +131,7 @@ const rated = buildMoneyRiver({
 });
 assert(!rated.panel.stats.some((s) => /roi/i.test(s.label)), 'all-time roi is not labeled L30');
 assert(rated.rows.find((r) => r.short === 'aaaaaa').roi === 20, 'row keeps its all-time roi');
-assert(!rated.panel.stats.some((s) => s.label === 'Profit'), 'roi without book profit stays off the strip');
+assert(!rated.panel.stats.some((s) => s.label === 'Lifetime'), 'roi without book profit stays off the strip');
 
 const partialRoi = buildMoneyRiver({
   pickLabel: 'Lakers ML',
@@ -173,13 +173,13 @@ assert(JSON.stringify(tape.panel.dots) === JSON.stringify(['win', 'loss', 'loss'
 assert(tape.panel.eyebrow === 'Combined Proven Sharps', tape.panel.eyebrow);
 assert(tape.panel.dotLabel === 'Last 4', tape.panel.dotLabel);
 assert(
-  tape.panel.stats.map((s) => s.label).join('|') === 'Win|L30 ROI|Profit|Record',
+  tape.panel.stats.map((s) => s.label).join('|') === 'Win|L30 ROI|Lifetime|Record',
   tape.panel.stats.map((s) => s.label).join('|'),
 );
 assert(tape.panel.stats.find((s) => s.label === 'L30 ROI').value === '+16.7%', tape.panel.stats.find((s) => s.label === 'L30 ROI').value);
-assert(tape.rows.find((r) => r.short === 'aaaaaa').meta === '10\u20134 \u00b7 +20% \u00b7 +$4K', tape.rows.find((r) => r.short === 'aaaaaa').meta);
-assert(tape.rows.find((r) => r.short === 'bbbbbb').meta === '8\u20136 \u00b7 +10% \u00b7 -$800', tape.rows.find((r) => r.short === 'bbbbbb').meta);
-assert(tape.panel.stats.find((s) => s.label === 'Profit').value === '+$3.2K', tape.panel.stats.find((s) => s.label === 'Profit').value);
+assert(tape.rows.find((r) => r.short === 'aaaaaa').meta === '10\u20134 \u00b7 L30 +20% \u00b7 +$4K', tape.rows.find((r) => r.short === 'aaaaaa').meta);
+assert(tape.rows.find((r) => r.short === 'bbbbbb').meta === '8\u20136 \u00b7 L30 +10% \u00b7 -$800', tape.rows.find((r) => r.short === 'bbbbbb').meta);
+assert(tape.panel.stats.find((s) => s.label === 'Lifetime').value === '+$3.2K', tape.panel.stats.find((s) => s.label === 'Lifetime').value);
 assert(!tape.panel.stats.some((s) => /sharp/i.test(s.label)));
 
 const oneMissingPnl = buildMoneyRiver({
@@ -192,7 +192,7 @@ const oneMissingPnl = buildMoneyRiver({
     { short: 'bbbbbb', side: 'ours', invested: 1000, whitelist: 'CONFIRMED', proven: true, record: '8-6', roi: 10 },
   ],
 });
-assert(!oneMissingPnl.panel.stats.some((s) => s.label === 'Profit'), 'one missing profit blocks the sum');
+assert(!oneMissingPnl.panel.stats.some((s) => s.label === 'Lifetime'), 'one missing profit blocks the sum');
 
 const oneBook = buildMoneyRiver({
   pickLabel: 'Bulls +15.5',
@@ -206,8 +206,8 @@ const oneBook = buildMoneyRiver({
     record: '14-8',
   }],
 });
-assert(oneBook.panel.stats.map((s) => `${s.label}:${s.value}`).join('|') === 'Win:71.4%|L30 ROI:+44%|Profit:+$1.6K|Record:10\u20134', oneBook.panel.stats.map((s) => s.value).join('|'));
-assert(oneBook.rows[0].meta === '10\u20134 \u00b7 +44% \u00b7 +$1.6K', oneBook.rows[0].meta);
+assert(oneBook.panel.stats.map((s) => `${s.label}:${s.value}`).join('|') === 'Win:71.4%|L30 ROI:+44%|Lifetime:+$1.6K|Record:10\u20134', oneBook.panel.stats.map((s) => s.value).join('|'));
+assert(oneBook.rows[0].meta === '10\u20134 \u00b7 L30 +44% \u00b7 +$1.6K', oneBook.rows[0].meta);
 
 assert(fmtSignedUsd(1006000) === '+$1.01M', fmtSignedUsd(1006000));
 assert(fmtSignedUsd(1000000) === '+$1M', fmtSignedUsd(1000000));
@@ -249,7 +249,7 @@ const books = buildMoneyRiver({
 });
 assert(books.panel.stats.map((s) => s.value).join('|') === '72.4%|+9.8%|+$2.6K|21\u20138', books.panel.stats.map((s) => s.value).join('|'));
 assert(books.rows.find((r) => r.short === 'bf28eb').kind === 'track', 'winning moneyline slice is unproven');
-assert(books.rows.find((r) => r.short === 'bf28eb').meta === '7\u20134 \u00b7 +17.1% \u00b7 +$3.5K', books.rows.find((r) => r.short === 'bf28eb').meta);
+assert(books.rows.find((r) => r.short === 'bf28eb').meta === '7\u20134 \u00b7 L30 +17.1% \u00b7 +$3.5K', books.rows.find((r) => r.short === 'bf28eb').meta);
 assert(books.rows.find((r) => r.short === '2a8409').kind === 'track', 'coin flip with a profit is unproven');
 assert(books.rows.find((r) => r.short === '2a8409').meta.includes('+$361K'), books.rows.find((r) => r.short === '2a8409').meta);
 assert(books.rows.find((r) => r.short === '8996d3').kind === 'loser', 'a down book stays a loser');

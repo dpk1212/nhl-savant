@@ -51,6 +51,7 @@ import { shopBookKey, EXCHANGE_BOOK_KEYS } from './bookLogo.jsx';
 import {
   bookOnTicketLine,
   keepPlayBooks,
+  liveBoardQuote,
   nearFavorableMain,
   markGoldFromTicketBooks,
   shopRailHidden,
@@ -715,6 +716,43 @@ function formatEntryLadderLabel(ladder, { isTotal, isSpread, teamShort }) {
 }
 
 /**
+ * Every book's current number on this side. The ticket filter is not
+ * applied. liveBoardQuote picks the line the row is allowed to show.
+ */
+function sideQuotes(pinnGame, { isTotal, isSpread, sideKey }) {
+  const bag = isTotal ? (pinnGame?.allTotalBooks || {})
+    : isSpread ? (pinnGame?.allSpreadBooks || {})
+      : null;
+  if (!bag) return [];
+  const out = [];
+  for (const [k, b] of Object.entries(bag)) {
+    if (!b) continue;
+    if (isTotal) {
+      out.push({ name: b.name || k, odds: sideKey === 'under' ? b.under : b.over, line: b.line });
+    } else {
+      const away = sideKey === 'away';
+      out.push({
+        name: b.name || k,
+        odds: away ? b.away : b.home,
+        line: away ? b.awayLine : b.homeLine,
+      });
+    }
+  }
+  return out;
+}
+
+function liveShopLabel({ isTotal, sideKey, pick, line }) {
+  if (isTotal) {
+    return `${sideKey === 'under' ? 'now Under' : 'now Over'} ${line}`;
+  }
+  const who = sideKey === 'away'
+    ? shortTeam(pick.away, pick.home)
+    : shortTeam(pick.home, pick.away);
+  const signed = line > 0 ? `+${line}` : `${line}`;
+  return `now ${who} ${signed}`;
+}
+
+/**
  * Live market board for a locked pick from pinnacle_history.json.
  * Returns pinSeries (fair-book overtime), books[], bestOdds/bestBook, dual-side
  * labels for totals/ML. Fail-soft → empty board when history missing.
@@ -803,6 +841,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
   let lineMoved = false;
   let ourLabel = null;
   let liveLabel = null;
+  let liveShop = null;
   let oppLabel = null;
   let oppBestOdds = null;
   let oppBestBook = null;
@@ -1350,11 +1389,34 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     }
   }
 
+  // Ticket shop stayed thin. Show the number the books are actually on.
+  // Those prices stay off the hero, the gold chip, and the stake.
+  if (!sealed && (isTotal || isSpread) && Number.isFinite(stakedLine)) {
+    const visible = books.filter((b) => (
+      Number.isFinite(b?.odds) && b.odds !== 0 && !shopRailHidden(b?.name)
+    ));
+    if (visible.length < 2) {
+      const quote = liveBoardQuote(
+        sideQuotes(pinnGame, { isTotal, isSpread, sideKey }),
+        stakedLine,
+        liveMarketLine,
+      );
+      if (quote) {
+        liveShop = {
+          label: liveShopLabel({ isTotal, sideKey, pick, line: quote.line }),
+          line: quote.line,
+          books: quote.books,
+        };
+      }
+    }
+  }
+
   const consensus = sharpConsensusFromBooks(books);
   return {
     pinSeries,
     pinPath: Array.isArray(pinPath) && pinPath.length >= 2 ? pinPath : null,
     books,
+    liveShop,
     bestOdds: Number.isFinite(bestOdds) ? bestOdds : null,
     bestBook: bestBook || null,
     fairNow: Number.isFinite(fairNow) ? fairNow : null,
@@ -2094,6 +2156,7 @@ export function mapLockedPickToCardFixture(pick, {
     pinSeries,
     pinPath: Array.isArray(market.pinPath) && market.pinPath.length >= 2 ? market.pinPath : null,
     books: market.books,
+    liveShop: market.liveShop || null,
     bestOdds: market.bestOdds,
     bestBook: market.bestBook,
     ourMarketLabel: market.ourLabel,
