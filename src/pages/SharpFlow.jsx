@@ -7528,7 +7528,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // The cron's tier is the authoritative shipped-ness signal: anything
   // non-FADE with finalUnits > 0 was actually promoted.
   const isTotalLocked = isTotalLockedRaw
-    || (!!totalCronTier && totalCronTier !== 'FADE' && totalCronTier !== 'UNKNOWN' && (totalCronUnits ?? 0) > 0);
+    || (!!totalCronTier && totalCronTier !== 'FADE' && totalCronTier !== 'UNKNOWN' && (totalCronUnits ?? 0) > 0)
+    || (!!totalCronStakeTier && totalCronStakeTier !== 'FADE' && totalCronStakeTier !== 'MONITORING' && (totalCronUnits ?? 0) > 0);
   const totalRenderedStars = totalCronStakeTier ? starsFromAgsuTier(totalCronStakeTier)
     : totalCronTier ? starsFromAgsuTier(totalCronTier) : (totalSr?.stars ?? 0);
 
@@ -12509,9 +12510,17 @@ export default function SharpFlow() {
                         // them here as "Locked Picks" with their old V11
                         // tier label ("ELITE 0u +0.00") was the contradiction
                         // the user flagged on sfg_mil / sdp_phi (2026-06-02).
-                        // Skip them entirely; v12=FADE means "do not bet".
+                        // Skip a true fade. A press or trust rung can still ship units
+                        // while the score tier stays FADE (Rockets/Mavericks Over,
+                        // 2026-10-30: PRESS-N 3u, v12 tier FADE). That ticket was
+                        // notified and then missing from this list.
                         const sdGradedEarly = sd.status === 'COMPLETED' && !!sd.result?.outcome;
-                        if (!sdGradedEarly && sd.v8_agsV12Tier === 'FADE') continue;
+                        const stakeTierEarly = typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : '';
+                        const rescuedDespiteFade = Number(sd.finalUnits) > 0
+                          && stakeTierEarly
+                          && stakeTierEarly !== 'FADE'
+                          && stakeTierEarly !== 'MONITORING';
+                        if (!sdGradedEarly && sd.v8_agsV12Tier === 'FADE' && !rescuedDespiteFade) continue;
                         // Also skip un-graded sides that the health monitor
                         // explicitly muted/cancelled AND that lack any v12
                         // stamp — these have no defensible tier label
