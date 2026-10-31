@@ -77,7 +77,7 @@ import {
   readInitialLockedFilter,
 } from '../lib/lockedFilter.js';
 import LockedFilterBar from '../components/sharpFlow/LockedFilterBar';
-import LockedMobileTop from '../components/sharpFlow/LockedMobileTop';
+import LockedMobileTop, { SectionTabs, SharpFlowMobileNav } from '../components/sharpFlow/LockedMobileTop';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
 import { lookupPinnGame, flipUFCGameKey, isUFCFlipAlias } from '../../scripts/lib/ufcFighters.js';
@@ -9554,9 +9554,29 @@ export default function SharpFlow() {
   // unmounting the page here made the sport rail look broken on Action
   // whenever a selected sport had tickets but no prediction-market board.
   if (filteredGames.length === 0 && viewMode !== 'flow' && viewMode !== 'sharpVault') {
+    const emptyIntel = isMobile && viewMode === 'whaleSignals' && !lockMobile;
+    const emptyHcCount = (vaultData?.actionPositions || []).filter((p) => p.vault_hcTier === 'HC_DOMINANT' || p.vault_hcTier === 'HC_STANDARD').length;
     return (
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
-        {!lockMobile && <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} />}
+      <div className={isMobile ? 'sf-locktop-page' : undefined} style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem', paddingBottom: isMobile ? 96 : undefined }}>
+        {!lockMobile && <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} compact={isMobile} />}
+        {emptyIntel && (
+          <SectionTabs
+            page
+            tabs={[
+              { id: 'watchlist', label: 'My Sharps', count: mySharps?.count || 0 },
+              { id: 'locked', label: 'Locked' },
+              { id: 'hc', label: 'HC', count: emptyHcCount },
+              { id: 'positions', label: 'Live' },
+            ]}
+            value={sortBy === 'locked' ? 'locked' : sortBy === 'hcPositions' ? 'hc' : sortBy === 'myPicks' ? 'watchlist' : 'positions'}
+            onChange={(id) => {
+              if (id === 'locked') setSortBy('locked');
+              else if (id === 'hc') setSortBy('hcPositions');
+              else if (id === 'watchlist') setSortBy('myPicks');
+              else if (sortBy === 'locked' || sortBy === 'myPicks' || sortBy === 'hcPositions') setSortBy('stars');
+            }}
+          />
+        )}
         <div style={{
           textAlign: 'center', padding: '3rem', borderRadius: '12px',
           background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -9568,19 +9588,20 @@ export default function SharpFlow() {
             {sportFilter !== 'All' ? `No ${sportFilter} data found. Try All.` : 'Data will populate once trading begins.'}
           </div>
         </div>
+        <SharpFlowMobileNav enabled={isMobile && !lockMobile} viewMode={viewMode} onViewMode={setViewMode} />
       </div>
     );
   }
 
   return (
-    <div className={lockMobile ? 'sf-locktop-page' : undefined} style={{ maxWidth: '1200px', margin: '0 auto', padding: lockMobile ? 0 : (isMobile ? '1rem' : '1.5rem 1rem'), position: 'relative' }}>
+    <div className={isMobile ? 'sf-locktop-page' : undefined} style={{ maxWidth: '1200px', margin: '0 auto', padding: lockMobile ? 0 : (isMobile ? '1rem' : '1.5rem 1rem'), paddingBottom: isMobile && !lockMobile ? 96 : undefined, position: 'relative' }}>
       {/* Ambient aurora — fixed light field behind the glass cards. Two
           slow-drifting radial pools (brand gold + emerald) plus a deep
           blue wash give the backdrop-filter blur something to refract,
           which is what sells the glassmorphism. pointer-events: none and
           z-index below content; honors prefers-reduced-motion via CSS. */}
       <div className="sf-aurora" aria-hidden="true" />
-      {!lockMobile && <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} />}
+      {!lockMobile && <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} compact={isMobile} />}
 
       {/* ─── Orientation strip — free users, dismissible ───
           Layer-1 onboarding: answers "what is this and why trust it" in one
@@ -11270,8 +11291,17 @@ export default function SharpFlow() {
                       else if (id === 'watchlist') setSortBy('myPicks');
                       else if (isLockedView || isWatchView || isHcView) setSortBy('stars');
                     };
+                    const sectionTabs = [
+                      { id: 'watchlist', label: 'My Sharps', count: sharpsCount },
+                      { id: 'locked', label: 'Locked' },
+                      { id: 'hc', label: 'HC', count: hcTabCount },
+                      { id: 'positions', label: 'Live' },
+                    ];
                     return (
                       <>
+                        {isMobile ? (
+                          <SectionTabs page tabs={sectionTabs} value={activeView} onChange={selectView} />
+                        ) : (
                         <div style={{ marginBottom: '0.6rem' }}>
                           <SfSegmented
                             options={views}
@@ -11281,6 +11311,7 @@ export default function SharpFlow() {
                             scrollable={isMobile}
                           />
                         </div>
+                        )}
                         {activeView === 'positions' && (
                           <div style={{
                             display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -13558,6 +13589,7 @@ export default function SharpFlow() {
       </div>
 
       </>}
+      <SharpFlowMobileNav enabled={isMobile && !lockMobile} viewMode={viewMode} onViewMode={setViewMode} />
     </div>
   );
 }
@@ -15130,7 +15162,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           const charge = planOnSale ? plan.chargePromo : plan.chargeFull;
           return (
             <div style={{
-              position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 9999,
+              position: 'fixed', left: 0, right: 0, bottom: isMobile ? 'calc(82px + env(safe-area-inset-bottom, 0px))' : 0, zIndex: 9999,
               padding: '0.6rem 0.85rem calc(0.6rem + env(safe-area-inset-bottom, 0px))',
               background: 'linear-gradient(180deg, rgba(11,17,32,0.92) 0%, rgba(11,17,32,0.99) 100%)',
               backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
@@ -15174,7 +15206,14 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   );
 }
 
-function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobile, climateBySport = null, sportTabs = MAIN_SPORT_TAB_ORDER }) {
+function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobile, climateBySport = null, sportTabs = MAIN_SPORT_TAB_ORDER, compact = false }) {
+  if (compact) {
+    return (
+      <div style={{ marginBottom: '0.75rem' }}>
+        <SportTabs active={sportFilter} onChange={setSportFilter} isMobile={isMobile} climateBySport={climateBySport} sports={sportTabs} />
+      </div>
+    );
+  }
   const pageViews = [
     { id: 'signals', label: 'Signals', icon: BarChart3, color: B.sky },
     { id: 'flow', label: 'Action', icon: Activity, color: B.green },
