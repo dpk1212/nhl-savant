@@ -58,6 +58,7 @@ import {
 } from '../../../lib/shopTicketLine.js';
 import { SHOP_BOOK_PREFER, sharpConsensusFromBooks } from '../../../lib/sharpConsensus.js';
 import { lookupPinnGame } from '../../../../scripts/lib/ufcFighters.js';
+import { bestAvailableTicket } from '../../../lib/t15BestLock.js';
 import {
   classifyGoldStack,
   goldStackTip,
@@ -753,6 +754,23 @@ function liveShopLabel({ isTotal, sideKey, pick, line }) {
 }
 
 /**
+ * Same question the T-15 seal asks. A dead print in the history is not a
+ * book on this number, and the main's price is not this number.
+ */
+function lockShopHasNumber(pinnGame, marketType, side, line) {
+  if (!Number.isFinite(line)) return true;
+  const best = bestAvailableTicket({
+    pinnGame,
+    marketType,
+    side,
+    flagged: { line, odds: 100, book: 'Polymarket', oddsSource: 'poly_avgPrice' },
+  });
+  return best?.source === 't15_best_available'
+    && Number.isFinite(best.line)
+    && Math.abs(best.line - line) <= 0.051;
+}
+
+/**
  * Live market board for a locked pick from pinnacle_history.json.
  * Returns pinSeries (fair-book overtime), books[], bestOdds/bestBook, dual-side
  * labels for totals/ML. Fail-soft → empty board when history missing.
@@ -842,6 +860,15 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
   let ourLabel = null;
   let liveLabel = null;
   let liveShop = null;
+  let liveOnTicket = true;
+  if ((isTotal || isSpread) && Number.isFinite(stakedLine)) {
+    liveOnTicket = lockShopHasNumber(
+      pinnGame,
+      isTotal ? 'total' : 'spread',
+      sideKey,
+      stakedLine,
+    );
+  }
   let oppLabel = null;
   let oppBestOdds = null;
   let oppBestBook = null;
@@ -996,7 +1023,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       ? `Over ${oppLn ?? ''}`.trim()
       : `Under ${oppLn ?? ''}`.trim();
 
-    if (Number.isFinite(fairNow)) {
+    if (Number.isFinite(fairNow) && liveOnTicket) {
       books.push({
         name: (pinnGame.fairTotalBook || 'pinnacle').replace(/^\w/, (c) => c.toUpperCase()),
         odds: fairNow,
@@ -1166,7 +1193,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       liveLabel = `now ${teamShort} ${fmtLn(liveMarketLine)}`.trim();
     }
     oppLabel = `${oppShort} ${fmtLn(opp?.line ?? (lineMoved ? liveMarketLine : marketLine))}`.trim();
-    if (Number.isFinite(fairNow)) {
+    if (Number.isFinite(fairNow) && liveOnTicket) {
       books.push({
         name: pinnGame.fairSpreadBook || 'Pinnacle',
         odds: fairNow,
@@ -1259,7 +1286,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     oppLabel = sideKey === 'draw' ? null
       : (sideKey === 'away' ? shortTeam(pick.home) : shortTeam(pick.away));
 
-    if (Number.isFinite(fairNow)) {
+    if (Number.isFinite(fairNow) && liveOnTicket) {
       books.push({
         name: (pinnGame.fairBook || 'pinnacle').replace(/^\w/, (c) => c.toUpperCase()),
         odds: fairNow,
@@ -1417,6 +1444,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     pinPath: Array.isArray(pinPath) && pinPath.length >= 2 ? pinPath : null,
     books,
     liveShop,
+    liveOnTicket,
     bestOdds: Number.isFinite(bestOdds) ? bestOdds : null,
     bestBook: bestBook || null,
     fairNow: Number.isFinite(fairNow) ? fairNow : null,
@@ -2008,9 +2036,13 @@ export function mapLockedPickToCardFixture(pick, {
   const sameLineBook = Number.isFinite(tapeNow) ? tapeNow : null;
   const storedMainOdds = Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
     : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : null);
-  const bookOnLine = sameLineBook != null
-    ? sameLineBook
-    : (ticketOffMain ? null : storedMainOdds);
+  // A dead print is not the book the seal will write. Other games lock the
+  // best live price on this number. When that price is gone, the receipt stays.
+  const bookOnLine = market.liveOnTicket === false
+    ? null
+    : (sameLineBook != null
+      ? sameLineBook
+      : (ticketOffMain ? null : storedMainOdds));
   const pay = resolvePayOdds({
     stampedOdds: lockOdds,
     bookOnLine,
@@ -2157,6 +2189,7 @@ export function mapLockedPickToCardFixture(pick, {
     pinPath: Array.isArray(market.pinPath) && market.pinPath.length >= 2 ? market.pinPath : null,
     books: market.books,
     liveShop: market.liveShop || null,
+    liveOnTicket: market.liveOnTicket !== false,
     bestOdds: market.bestOdds,
     bestBook: market.bestBook,
     ourMarketLabel: market.ourLabel,
