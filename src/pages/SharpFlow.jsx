@@ -8,8 +8,8 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo, Fragment } from 'react';
 import { createPortal } from 'react-dom';
-import { useLocation } from 'react-router-dom';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, Star, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle, ShieldCheck, Sparkles, Flame, Check, X, Target, CircleHelp } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, Star, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Lock, CheckCircle, Circle, Clock, AlertTriangle, ShieldCheck, Sparkles, Flame, Check, X, Target, CircleHelp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell, Area, AreaChart, ReferenceLine } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
@@ -70,8 +70,13 @@ import {
 import { sportBookForDisplay } from '../lib/walletSportBook.js';
 import { passesSizeSkillLiveGate } from '../lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
-import { compareLockedPicks } from '../lib/lockedPickSort.js';
-import { lockedStatusBucket } from '../lib/lockedStatus.js';
+import {
+  describeLockedSlate,
+  LOCKED_FILTER_STORAGE_KEY,
+  mergeLockedFilterSearch,
+  readInitialLockedFilter,
+} from '../lib/lockedFilter.js';
+import LockedFilterBar from '../components/sharpFlow/LockedFilterBar';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
 import { lookupPinnGame, flipUFCGameKey, isUFCFlipAlias } from '../../scripts/lib/ufcFighters.js';
@@ -8592,6 +8597,7 @@ const SharpTape = memo(function SharpTape({ sharpPositions }) {
 
 export default function SharpFlow() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, rawSharpPositions, rawSpreadPositions, rawTotalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
@@ -8688,13 +8694,15 @@ export default function SharpFlow() {
   // first impression is clean (era pills + filters + 4 KPIs + curve only).
   const [showAgsuLedger, setShowAgsuLedger] = useState(false);
   const [showAgsuTiers, setShowAgsuTiers] = useState(false);
-  const [lockedDay, setLockedDay] = useState('today');
-  // Default Pending — pregame only. In progress is past commence and ungraded.
-  const [lockedStatusFilter, setLockedStatusFilter] = useState('pending');
-  const [lockedSort, setLockedSort] = useState('units');
-  const [lockedSportFilter, setLockedSportFilter] = useState('All');
-  const [lockedMarketFilter, setLockedMarketFilter] = useState('all');
-  const [showCancelled, setShowCancelled] = useState(false);
+  // URL is the source of truth. Storage only fills in when the link has no filter keys.
+  const [lockedFilter, setLockedFilter] = useState(readInitialLockedFilter);
+  useEffect(() => {
+    const next = mergeLockedFilterSearch(location.search, lockedFilter);
+    if ((location.search || '') !== next) {
+      navigate({ pathname: location.pathname, search: next }, { replace: true });
+    }
+    try { localStorage.setItem(LOCKED_FILTER_STORAGE_KEY, JSON.stringify(lockedFilter)); } catch { /* private mode */ }
+  }, [lockedFilter, location.pathname, location.search, navigate]);
   const [picksLoaded, setPicksLoaded] = useState(false);
   const [userPicks, setUserPicks] = useState({});
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
@@ -11195,8 +11203,8 @@ export default function SharpFlow() {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <SectionHead
-                      title={sortBy === 'locked' ? `Locked Picks — ${lockedDay === 'today' ? 'Today' : 'Yesterday'}` : sortBy === 'hcPositions' ? 'HC Positions' : sortBy === 'myPicks' ? 'My Sharps' : `Sharp Positions (${allPosGames.length} games)`}
-                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedDay === 'today' ? 'today' : 'yesterday'} at peak snapshot` : sortBy === 'hcPositions' ? 'Proven HC +1 / HC +2+ sides — CONFIRMED whales sized 1.5×+ on one side' : sortBy === 'myPicks' ? 'Open bets from the wallets you follow' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
+                      title={sortBy === 'locked' ? `Locked Picks — ${lockedFilter.day === 'today' ? 'Today' : 'Yesterday'}` : sortBy === 'hcPositions' ? 'HC Positions' : sortBy === 'myPicks' ? 'My Sharps' : `Sharp Positions (${allPosGames.length} games)`}
+                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedFilter.day === 'today' ? 'today' : 'yesterday'} at peak snapshot` : sortBy === 'hcPositions' ? 'Proven HC +1 / HC +2+ sides — CONFIRMED whales sized 1.5×+ on one side' : sortBy === 'myPicks' ? 'Open bets from the wallets you follow' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
                       icon={sortBy === 'locked' ? Lock : sortBy === 'hcPositions' ? Star : sortBy === 'myPicks' ? Star : Eye}
                     />
                     <SharpFlowInfo isMobile={isMobile} />
@@ -12440,14 +12448,14 @@ export default function SharpFlow() {
                     const today = todayET();
                     const yesterdayD = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
                     const yesterday = yesterdayD.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-                    const targetDate = lockedDay === 'today' ? today : yesterday;
                     const ufcPreferred = new Set([
                       ...Object.keys(sharpPositions?.UFC || {}),
                       ...Object.keys(polyData?.UFC || {}),
                     ]);
                     const allLockedArr = [];
                     for (const [docId, doc] of Object.entries(lockedPicks)) {
-                      if (!docId.startsWith(targetDate)) continue;
+                      const slateDay = docId.startsWith(today) ? 'today' : docId.startsWith(yesterday) ? 'yesterday' : null;
+                      if (!slateDay) continue;
                       if (doc.status === 'EXITED' || doc.lastAction === 'remove_false_doubleheader') continue;
                       const docSport = doc.sport || 'NHL';
                       if (docSport === 'UFC' && isUFCFlipAlias(doc.gameKey, { preferred: ufcPreferred })) continue;
@@ -12905,6 +12913,7 @@ export default function SharpFlow() {
                           ? Math.round(liveSf.conWalletPct) : null;
                         const liveConsensusGrade = liveSf?.consensusTier ?? null;
                         allLockedArr.push({
+                          slateDay,
                           key: `${docId}:${sideKey}`,
                           gameKey: doc.gameKey || null,
                           side: sideKey,
@@ -13209,240 +13218,25 @@ export default function SharpFlow() {
                         });
                       }
                     }
-                    const sportFiltered = lockedSportFilter === 'All' ? allLockedArr : allLockedArr.filter(p => p.sport === lockedSportFilter);
-                    const lockedArr = lockedMarketFilter === 'all' ? sportFiltered : sportFiltered.filter(p => (p.marketType || 'ml') === lockedMarketFilter);
-                    // Pending = ungraded and before commence. In progress = ungraded
-                    // after commence. Won / Lost are graded. All shows every card.
-                    const isResolvedLocked = (p) => {
-                      const bucket = lockedStatusBucket(p);
-                      return bucket === 'won' || bucket === 'lost' || bucket === 'resolved';
+                    const picksByDay = {
+                      today: allLockedArr.filter(p => p.slateDay === 'today'),
+                      yesterday: allLockedArr.filter(p => p.slateDay === 'yesterday'),
                     };
-                    const statusFiltered = lockedStatusFilter === 'all' ? lockedArr
-                      : lockedArr.filter(p => lockedStatusBucket(p) === lockedStatusFilter);
-                    const cancelledCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'CANCELLED' && !isResolvedLocked(p)).length;
-                    const mutedCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'MUTED' && !isResolvedLocked(p)).length;
-                    const filteredLocked = showCancelled ? statusFiltered : statusFiltered.filter(p => (p.health?.status || 'ACTIVE') !== 'CANCELLED' || isResolvedLocked(p));
-                    // Default ORDER is units: stake size is the conviction
-                    // rank on the card (2.5u above 1u). Star rating and TOP
-                    // PICK badges used to lead this sort and put a 1u STRONG
-                    // above a 2.5u LOCKED.
-                    filteredLocked.sort((a, b) => compareLockedPicks(a, b, lockedSort));
-                    // v12.1 — MONITORING picks (0u, non-HC or WEAK-tier HC) are
-                    // shown for volume but never staked: they are excluded from
-                    // the record / units / ROI ledger entirely.
-                    const stakedLockedArr = lockedArr.filter(p => !p.isMonitoring);
-                    const pendingCount = stakedLockedArr.filter(p => lockedStatusBucket(p) === 'pending').length;
-                    const inProgressCount = stakedLockedArr.filter(p => lockedStatusBucket(p) === 'inprogress').length;
-                    const wonCount = stakedLockedArr.filter(p => p.outcome === 'WIN').length;
-                    const lostCount = stakedLockedArr.filter(p => p.outcome === 'LOSS').length;
-                    const sportCounts = {};
-                    allLockedArr.forEach(p => { sportCounts[p.sport] = (sportCounts[p.sport] || 0) + 1; });
-                    const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', WNBA: '#F472B6', CBB: '#FF6B35', CFB: '#BF5700', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B', ATP: '#C8F542', CS2: '#FF6B1A', LOL: '#C8AA6E' };
-                    const activeSports = Object.keys(sportCounts).sort();
-
-                    // ── AGS-U Tier Scorecard (REMOVED 2026-05-22) ─────────
-                    // The inline scorecard that previously lived here was
-                    // a duplicate of the new AGS-U Performance Dashboard
-                    // at the top of the page (see the "AGS-U PERFORMANCE"
-                    // section in the Whale Signals view). Tier numbers
-                    // surfaced here didn't match the dashboard's hero
-                    // because the two used different pick-resolution
-                    // rules. We retired this surface and made the
-                    // top-of-page dashboard the single source of truth.
-
-                    // ─── Today's Ledger — at-a-glance band ────────────
-                    // Record / exposure / payout / realized, computed
-                    // from the sport+market-filtered set so the numbers
-                    // track the filters the user has applied.
-                    const ledgerPending = stakedLockedArr.filter(p => !isResolvedLocked(p));
-                    const ledgerUnitsAtRisk = ledgerPending.reduce((s, p) => s + (Number.isFinite(p.units) ? p.units : 0), 0);
-                    const ledgerToWin = ledgerPending.reduce((s, p) => {
-                      const u = Number.isFinite(p.units) ? p.units : 0;
-                      const o = p.odds;
-                      if (!u || !Number.isFinite(o) || o === 0) return s;
-                      return s + (o > 0 ? u * (o / 100) : u * (100 / Math.abs(o)));
-                    }, 0);
-                    const ledgerRealized = stakedLockedArr.filter(p => isResolvedLocked(p)).reduce((s, p) => s + (p.profit || 0), 0);
-                    const ledgerClvVals = stakedLockedArr.map(p => p.clv).filter(v => Number.isFinite(v));
-                    const ledgerAvgClv = ledgerClvVals.length ? ledgerClvVals.reduce((s, v) => s + v, 0) / ledgerClvVals.length : null;
-                    const ledgerCells = [
-                      { label: 'RECORD', value: `${wonCount}–${lostCount}`, color: wonCount > lostCount ? B.green : wonCount < lostCount ? B.red : B.text },
-                      { label: 'PENDING', value: `${pendingCount}`, color: B.gold },
-                      { label: 'IN PROGRESS', value: `${inProgressCount}`, color: B.sky },
-                      { label: 'UNITS AT RISK', value: `${ledgerUnitsAtRisk.toFixed(1)}u`, color: B.text },
-                      { label: 'TO WIN', value: `+${ledgerToWin.toFixed(1)}u`, color: B.green },
-                      ...(wonCount + lostCount > 0 ? [{ label: 'REALIZED P&L', value: `${ledgerRealized >= 0 ? '+' : ''}${ledgerRealized.toFixed(2)}u`, color: ledgerRealized >= 0 ? B.green : B.red }] : []),
-                      ...(ledgerAvgClv != null ? [{ label: 'AVG CLV', value: `${ledgerAvgClv >= 0 ? '+' : ''}${ledgerAvgClv.toFixed(1)}%`, color: ledgerAvgClv >= 0 ? B.green : B.red }] : []),
-                    ];
-                    const FilterGroup = ({ label, children }) => (
-                      isMobile ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%', minWidth: 0 }}>
-                          <span style={{ ...T.tiny, fontSize: '0.46rem', color: B.textSubtle, letterSpacing: '0.12em' }}>{label}</span>
-                          <div className="sf-chiprail" style={{ display: 'flex', gap: '0.3rem', overflowX: 'auto', flexWrap: 'nowrap', WebkitOverflowScrolling: 'touch', paddingBottom: '0.1rem' }}>
-                            {children}
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
-                          <span style={{ ...T.tiny, fontSize: '0.48rem', color: B.textSubtle, letterSpacing: '0.1em', marginRight: '0.1rem' }}>{label}</span>
-                          {children}
-                        </div>
-                      )
-                    );
-                    const chipStyle = (active, color) => ({
-                      padding: '0.22rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
-                      ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                      border: active ? `1px solid ${color}44` : `1px solid ${B.border}`,
-                      background: active ? `${color}16` : 'transparent',
-                      color: active ? color : B.textMuted,
-                      transition: 'all 0.2s ease',
-                      fontFeatureSettings: "'tnum'",
-                      flexShrink: 0, whiteSpace: 'nowrap',
-                    });
-                    const filterGroups = (
-                      <>
-                        <FilterGroup label="DAY">
-                          {[
-                            { id: 'today', label: 'Today' },
-                            { id: 'yesterday', label: 'Yesterday' },
-                          ].map(opt => (
-                            <button key={opt.id} onClick={() => setLockedDay(opt.id)} style={chipStyle(lockedDay === opt.id, B.green)}>{opt.label}</button>
-                          ))}
-                        </FilterGroup>
-                        <FilterGroup label="STATUS">
-                          {[
-                            { id: 'all', label: `All ${lockedArr.length}`, color: B.gold },
-                            { id: 'pending', label: `Pending ${pendingCount}`, color: B.gold },
-                            { id: 'inprogress', label: `In Progress ${inProgressCount}`, color: B.sky },
-                            { id: 'won', label: `Won ${wonCount}`, color: B.green },
-                            { id: 'lost', label: `Lost ${lostCount}`, color: B.red },
-                          ].map(opt => (
-                            <button key={opt.id} onClick={() => setLockedStatusFilter(opt.id)} style={chipStyle(lockedStatusFilter === opt.id, opt.color)}>{opt.label}</button>
-                          ))}
-                        </FilterGroup>
-                        <FilterGroup label="SPORT">
-                          {[{ id: 'All', label: 'All', color: B.gold }, ...activeSports.map(s => ({ id: s, label: s, color: sportColorMap[s] || B.gold }))].map(opt => (
-                            <button key={opt.id} onClick={() => setLockedSportFilter(opt.id)} style={chipStyle(lockedSportFilter === opt.id, opt.color)}>
-                              {opt.label}{opt.id !== 'All' && sportCounts[opt.id] ? ` ${sportCounts[opt.id]}` : ''}
-                            </button>
-                          ))}
-                        </FilterGroup>
-                        <FilterGroup label="MARKET">
-                          {[
-                            { id: 'all', label: 'All', color: B.gold },
-                            { id: 'ml', label: 'ML', color: B.green },
-                            { id: 'spread', label: 'Spread', color: '#8B5CF6' },
-                            { id: 'total', label: 'Total', color: '#F59E0B' },
-                          ].map(opt => (
-                            <button key={opt.id} onClick={() => setLockedMarketFilter(opt.id)} style={chipStyle(lockedMarketFilter === opt.id, opt.color)}>{opt.label}</button>
-                          ))}
-                        </FilterGroup>
-                        <FilterGroup label="ORDER">
-                          {[
-                            { id: 'units', label: 'Units' },
-                            { id: 'time', label: 'Game Time' },
-                          ].map(opt => (
-                            <button key={opt.id} onClick={() => setLockedSort(opt.id)} style={chipStyle(lockedSort === opt.id, B.gold)}>{opt.label}</button>
-                          ))}
-                        </FilterGroup>
-                        {(cancelledCount > 0 || mutedCount > 0) && (
-                          <FilterGroup label="HEALTH">
-                            {mutedCount > 0 && (
-                              <span style={{ ...T.micro, fontSize: '0.55rem', fontWeight: 600, color: '#F59E0B' }}>
-                                {mutedCount} weakening
-                              </span>
-                            )}
-                            {cancelledCount > 0 && (
-                              <button onClick={() => setShowCancelled(v => !v)} style={chipStyle(showCancelled, '#EF4444')}>
-                                {showCancelled ? 'Hide' : 'Show'} cancelled ({cancelledCount})
-                              </button>
-                            )}
-                          </FilterGroup>
-                        )}
-                      </>
-                    );
-                    // Compact active-selection summary for the collapsed mobile
-                    // drawer — only surfaces non-default picks so the closed bar
-                    // tells the user what's filtered without opening it.
-                    const summaryBits = [
-                      lockedDay === 'yesterday' ? 'Yesterday' : 'Today',
-                      lockedStatusFilter === 'pending' ? 'Pending'
-                        : lockedStatusFilter === 'inprogress' ? 'In progress'
-                        : lockedStatusFilter === 'won' ? 'Won'
-                        : lockedStatusFilter === 'lost' ? 'Lost'
-                        : null,
-                      lockedSportFilter !== 'All' ? lockedSportFilter : null,
-                      lockedMarketFilter !== 'all' ? lockedMarketFilter.toUpperCase() : null,
-                      lockedSort === 'time' ? 'By time' : null,
-                    ].filter(Boolean);
+                    const lockedView = describeLockedSlate(picksByDay[lockedFilter.day] || [], lockedFilter);
+                    const filteredLocked = lockedView.feed;
                     return (
                       <>
-                        {lockedArr.length > 0 && (
-                          <div style={{
-                            display: 'flex', flexWrap: 'wrap',
-                            borderRadius: '12px', overflow: 'hidden',
-                            background: 'linear-gradient(160deg, rgba(26,31,46,0.6) 0%, rgba(17,21,31,0.7) 100%)',
-                            border: `1px solid ${B.borderSubtle}`,
-                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-                            marginBottom: '0.6rem',
-                          }}>
-                            {ledgerCells.map((c, i) => (
-                              <div key={c.label} style={{
-                                flex: '1 1 auto', minWidth: isMobile ? '30%' : '90px',
-                                padding: '0.55rem 0.8rem',
-                                borderRight: i < ledgerCells.length - 1 ? `1px solid ${B.borderSubtle}` : 'none',
-                                display: 'flex', flexDirection: 'column', gap: '0.18rem',
-                              }}>
-                                <span style={{ ...T.tiny, fontSize: '0.48rem', color: B.textSubtle, letterSpacing: '0.1em' }}>{c.label}</span>
-                                <span style={{
-                                  fontSize: '1.05rem', fontWeight: 900, color: c.color,
-                                  fontFeatureSettings: "'tnum'", lineHeight: 1.05, letterSpacing: '-0.01em',
-                                }}>{c.value}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {isMobile ? (
-                          <details className="sf-mfilters" style={{
-                            borderRadius: '10px', marginBottom: '0.6rem', overflow: 'hidden',
-                            background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
-                          }}>
-                            <summary style={{
-                              display: 'flex', alignItems: 'center', gap: '0.5rem',
-                              padding: '0.6rem 0.75rem', cursor: 'pointer',
-                            }}>
-                              <Workflow size={13} color={B.gold} style={{ flexShrink: 0 }} />
-                              <span style={{ ...T.micro, fontWeight: 800, letterSpacing: '0.08em', color: B.text, flexShrink: 0 }}>FILTERS</span>
-                              <span style={{
-                                ...T.micro, fontSize: '0.6rem', color: B.textMuted, fontWeight: 600,
-                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0,
-                              }}>{summaryBits.join(' · ')}</span>
-                              <ChevronDown size={15} color={B.textMuted} className="sf-mfilters-chev" style={{ flexShrink: 0 }} />
-                            </summary>
-                            <div style={{
-                              display: 'flex', flexDirection: 'column', gap: '0.55rem',
-                              padding: '0.2rem 0.75rem 0.75rem',
-                            }}>
-                              {filterGroups}
-                            </div>
-                          </details>
-                        ) : (
-                          <div style={{
-                            display: 'flex', flexWrap: 'wrap', alignItems: 'center',
-                            gap: '0.45rem 1rem',
-                            padding: '0.5rem 0.65rem', borderRadius: '10px',
-                            background: 'rgba(255,255,255,0.02)',
-                            border: `1px solid ${B.borderSubtle}`,
-                            marginBottom: '0.6rem',
-                          }}>
-                            {filterGroups}
-                          </div>
-                        )}
+                        <LockedFilterBar
+                          picksByDay={picksByDay}
+                          filter={lockedFilter}
+                          view={lockedView}
+                          onChange={setLockedFilter}
+                        />
                         {filteredLocked.length === 0 ? (
                           <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
-                            {lockedArr.length === 0
-                              ? `No locked picks for ${lockedDay === 'today' ? 'today' : 'yesterday'}`
-                              : `No ${lockedStatusFilter === 'pending' ? 'pending' : lockedStatusFilter === 'inprogress' ? 'in-progress' : lockedStatusFilter === 'won' ? 'winning' : 'losing'} picks`}
+                            {(picksByDay[lockedFilter.day] || []).length === 0
+                              ? `No locked picks for ${lockedFilter.day === 'today' ? 'today' : 'yesterday'}`
+                              : 'No plays in this view'}
                           </div>
                         ) : (() => {
                           // Split staked tickets (units > 0) from no-ticket

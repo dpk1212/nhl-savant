@@ -46,4 +46,11 @@ const a1 = { units: 2.5, stars: 5 };
 const b1 = { units: 2.5, stars: 3 };
 ok(compareLockedPicks(a1, b1, 'units') < 0, 'equal units: higher stars is the tiebreak');
 
+const gradedWin = { team: 'Win', units: 1, outcome: 'WIN', status: 'COMPLETED', profit: 4 };
+const gradedLoss = { team: 'Loss', units: 3, outcome: 'LOSS', status: 'COMPLETED', profit: -1 };
+const openBig = { team: 'Open', units: 5, outcome: null, status: 'PENDING', profit: 0 };
+const byProfit = [openBig, gradedLoss, gradedWin].sort((a, b) => compareLockedPicks(a, b, 'profit'));
+ok(byProfit.map((p) => p.team).join() === 'Win,Loss,Open', 'profit ranks graded results and leaves a 0 stamp on an open play in unit order');
+ok(compareLockedPicks(openBig, { ...openBig, team: 'Smaller', units: 1 }, 'winpct') < 0, 'win % with no rate stays on units');
+
 console.log(`testLockedPickSort: ${n} assertions passed`);
