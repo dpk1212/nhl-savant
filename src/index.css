@@ -1853,7 +1853,7 @@ html[data-locktop] .sf-nav-brand svg { display: none; }
   color: #8a91a6;
   white-space: nowrap;
 }
-.sf-locktop-page { background: #0b0e1c; min-height: 100vh; }
+.sf-locktop-page { background: #0b0e1c; min-height: 100vh; overflow-anchor: none; }
 .sf-locktop { position: relative; z-index: 1; color: #e8eaf2; font-variant-numeric: tabular-nums; padding-bottom: 96px; }
 .sf-locktop.is-guest { padding-bottom: 28px; }
 .sf-lock-atmos { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
@@ -1875,9 +1875,6 @@ html[data-locktop] .sf-nav-brand svg { display: none; }
   top: 48px;
   z-index: 40;
   background-color: #0b0e1c;
-  background-image:
-    radial-gradient(120% 60% at 15% -10%, rgba(79, 194, 122, 0.10), transparent 62%),
-    radial-gradient(90% 50% at 110% 5%, rgba(233, 194, 90, 0.07), transparent 58%);
   border-bottom: 0.5px solid transparent;
   -webkit-backdrop-filter: blur(0px);
   backdrop-filter: blur(0px);
@@ -1888,27 +1885,15 @@ html[data-locktop] .sf-nav-brand svg { display: none; }
     -webkit-backdrop-filter 180ms cubic-bezier(.2, .8, .2, 1);
 }
 html[data-locktop="collapsed"] .sf-lock-sticky {
-  background-color: rgba(11, 14, 28, 0.68);
-  background-image: none;
+  background-color: rgba(11, 14, 28, 0.92);
   border-bottom-color: rgba(255, 255, 255, 0.08);
   -webkit-backdrop-filter: blur(24px) saturate(170%);
   backdrop-filter: blur(24px) saturate(170%);
 }
-.sf-lock-collapse {
-  overflow: hidden;
-  max-height: calc((1 - var(--sf-lock-p, 0)) * var(--sf-lock-open, 640px));
-}
-.sf-lock-date,
-.sf-lock-stats,
-.sf-lock-model,
-.sf-lock-sections {
-  opacity: calc(1 - var(--sf-lock-p, 0));
-}
+.sf-lock-collapse { overflow: visible; }
 #sf-lock-chip-slot {
   position: relative;
   z-index: 1;
-  overflow: hidden;
-  max-height: max(0px, calc((1 - var(--sf-lock-p, 0) * 2) * var(--sf-lock-chips, 72px)));
 }
 .sf-lock-hero { padding: 16px 24px 0; }
 .sf-lock-date {
@@ -1926,8 +1911,6 @@ html[data-locktop="collapsed"] .sf-lock-sticky {
   letter-spacing: -0.035em;
   line-height: 1.05;
   color: #f2f3f7;
-  transform-origin: 0 50%;
-  transform: translate3d(0, calc(var(--sf-lock-p, 0) * -16px), 0) scale(calc(1 - var(--sf-lock-p, 0) * 0.53));
   opacity: calc(1 - var(--sf-lock-p, 0));
 }
 .sf-lock-stats {
@@ -2244,13 +2227,26 @@ html[data-locktop="guest"] .sf-nav-signin {
   z-index: 1200;
   display: flex;
   align-items: flex-end;
-  background: rgba(5, 7, 14, 0.56);
+  background: rgba(6, 8, 14, 0.97);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  touch-action: none;
+  overscroll-behavior: none;
 }
 .sf-model-sheet > .sf-glass {
   width: 100%;
   max-height: 86vh;
-  overflow: auto;
+  overflow: auto !important;
   border-radius: 16px 16px 0 0 !important;
+  background: #141822 !important;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+html[data-locksheet],
+html[data-locksheet] body {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 .sf-model-close {
   position: absolute;
@@ -2270,10 +2266,11 @@ html[data-locktop] .sf-locktop-retired { display: none !important; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .sf-nav-lock,
   .sf-lock-sticky,
-  .sf-lock-tabbar { background: #0b0e1c; }
+  .sf-lock-tabbar,
+  .sf-model-sheet { background: #0b0e1c; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sf-lock-title { transform: none; opacity: 1; }
+  .sf-lock-title { transform: none; }
   .sf-nav-lock,
   .sf-lock-sticky,
   .sf-nav-collapse { transition: opacity 180ms linear; }
