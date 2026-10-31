@@ -368,6 +368,7 @@ import {
   applyTop3PickRung,
   buildTop3PickRanks,
   isTop3PickLive,
+  oppositeStakeUnits,
   setTop3PickRanks,
   top3PickStamp,
   top3PickWindowStart,
@@ -3060,6 +3061,7 @@ async function createMissingLockedPicks({
   expWinPriors = null,
   skipSides = null, // Set of `${col}|${docId}|${side}` — sides a PRESS-M flip keeps superseded
   existingSideKeys = null, // `${col}|${docId}|${side}` already on a live doc. Reconcile owns those.
+  existingSideUnits = null, // `${col}|${docId}|${side}` → finalUnits of a live pick
 }) {
   const created = []; // { col, docId, side, ags, agsTotal }
   const skipped = []; // { reason, ... }
@@ -3176,9 +3178,17 @@ async function createMissingLockedPicks({
       : sport === 'SOC' ? ['away', 'home', 'draw']
       : ['away', 'home'];
     const newSides = {};
+    const unitsAgainst = (side) => {
+      const opp = { home: 'away', away: 'home', over: 'under', under: 'over' }[side] || '';
+      if (!opp) return 0;
+      const fresh = Number(newSides[opp]?.finalUnits);
+      const stored = Number(existingSideUnits?.get(`${col}|${docId}|${opp}`));
+      return Math.max(fresh > 0 ? fresh : 0, stored > 0 ? stored : 0);
+    };
     for (const side of sides) {
       const top3Early = applyTop3PickRung({
         units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
+        opponentUnits: unitsAgainst(side),
       });
       const gapEarly = applyGapLeadRescue({
         units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
@@ -4255,6 +4265,8 @@ async function createMissingLockedPicks({
       let top3PolicyCreate = null;
       let gapPolicyCreate = null;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
+        const unitsBeforeTop3 = peakUnitsApplied;
+        const tierBeforeTop3 = hcStakeTierCreate;
         top3PolicyCreate = applyTop3PickRung({
           units: peakUnitsApplied,
           sport,
@@ -4262,7 +4274,10 @@ async function createMissingLockedPicks({
           side,
           pickDate: TARGET_DATE,
           positions,
+          opponentUnits: unitsAgainst(side),
         });
+        top3PolicyCreate.unitsBefore = unitsBeforeTop3;
+        top3PolicyCreate.tierBefore = tierBeforeTop3;
         if (top3PolicyCreate.action === 'floor' || top3PolicyCreate.action === 'rescue') {
           peakUnitsApplied = top3PolicyCreate.units;
           hcStakeTierCreate = TOP3_PICK_STAKE_TIER;
@@ -4882,6 +4897,8 @@ async function createMissingLockedPicks({
         maxEVAt: now,
         // Canonical bet size — same source of truth used by grader and dashboard.
         finalUnits: peakUnitsApplied,
+        _unitsBeforeTop3: top3PolicyCreate?.unitsBefore ?? null,
+        _tierBeforeTop3: top3PolicyCreate?.tierBefore ?? null,
         status: 'PENDING',
         result: { outcome: null, profit: null, gradedAt: null },
         // Flag so we know this came from the cron auto-create path.
@@ -4905,6 +4922,44 @@ async function createMissingLockedPicks({
         hcStakeTier: hcStakeTierCreate,
         peakStars, peakUnits: peakUnitsApplied, team,
       });
+    }
+    const beforeTop3 = new Map();
+    for (const [side, me] of Object.entries(newSides)) {
+      beforeTop3.set(side, { units: me._unitsBeforeTop3, tier: me._tierBeforeTop3 });
+      delete me._unitsBeforeTop3;
+      delete me._tierBeforeTop3;
+    }
+    for (const side of Object.keys(newSides)) {
+      const me = newSides[side];
+      const before = beforeTop3.get(side)?.units;
+      const tierBefore = beforeTop3.get(side)?.tier;
+      const raised = me.v8_hcStakeTier === TOP3_PICK_STAKE_TIER
+        && before != null
+        && before + 0.001 < Number(me.finalUnits);
+      if (!raised) continue;
+      const opp = { home: 'away', away: 'home', over: 'under', under: 'over' }[side] || '';
+      const other = opp ? newSides[opp] : null;
+      const otherBefore = beforeTop3.get(opp)?.units;
+      const otherIsRealPick = other && Number(other.finalUnits) > 0 && otherBefore !== 0;
+      const otherUnits = Math.max(
+        otherIsRealPick ? Number(other.finalUnits) : 0,
+        Number(existingSideUnits?.get(`${col}|${docId}|${opp}`)) || 0,
+      );
+      if (!(otherUnits > 0)) continue;
+      if (!(before > 0)) {
+        delete newSides[side];
+        console.log(`  TOP3 mute: ${docId} ${side} (pick on ${opp} ${otherUnits}u)`);
+        continue;
+      }
+      me.finalUnits = before;
+      me.v8_agsV12UnitsApplied = before;
+      if (tierBefore) me.v8_hcStakeTier = tierBefore;
+      if (me.v8_rescuedBy === TOP3_PICK_RESCUED_BY) delete me.v8_rescuedBy;
+      delete me.v8_top3Pick;
+      delete me.v8_top3PickUnits;
+      delete me.v8_top3PickBestSr;
+      delete me.v8_top3PickWallets;
+      console.log(`  TOP3 mute: ${docId} ${side} back to ${before}u (pick on ${opp})`);
     }
     if (Object.keys(newSides).length === 0) continue;
 
@@ -6577,6 +6632,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       side,
       pickDate,
       positions: group,
+      opponentUnits: oppositeStakeUnits(side, pick.sides),
     });
     if (top3Policy.fires && top3Policy.units > 0 && appliedStatus !== 'ACTIVE') {
       appliedStatus = 'ACTIVE';
@@ -7060,6 +7116,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (pressEdgeNetPolicy) Object.assign(patch, pressEdgeNetStamp(pressEdgeNetPolicy));
     if (mlDoorPolicy) Object.assign(patch, mlDoorSteamStamp(mlDoorPolicy));
     if (top3Policy?.fires) Object.assign(patch, top3PickStamp(top3Policy));
+    else if (sd.v8_top3Pick === true && top3Policy && !top3Policy.fires) {
+      patch.v8_top3Pick = admin.firestore.FieldValue.delete();
+      patch.v8_top3PickUnits = admin.firestore.FieldValue.delete();
+      patch.v8_top3PickBestSr = admin.firestore.FieldValue.delete();
+      patch.v8_top3PickWallets = admin.firestore.FieldValue.delete();
+    }
     const prevRung = sd.v8_pressRung ?? null;
     const prevUnits = sd.v8_pressUnits ?? null;
     if (prevRung !== pressRecord.rung || prevUnits !== pressRecord.units) {
@@ -9072,6 +9134,7 @@ async function main() {
   // rebuild them while it adds the mirror side (`${col}|${docId}|${side}`).
   const pressMirrorSkipSides = new Set();
   const existingSideKeys = new Set();
+  const existingSideUnits = new Map();
   for (const { col, pick } of todayPickDocsForClimate) {
       const mkt = col === 'sharpFlowSpreads' ? 'SPREAD' : col === 'sharpFlowTotals' ? 'TOTAL' : 'ML';
       const sides = pick.sides || {};
@@ -9087,7 +9150,11 @@ async function main() {
           || sd.lockStage === 'LEAN'
           || (sd.lockStage === 'SHADOW' && (sd.lock || sd.peak))
         );
-        if (stakeable) existingSideKeys.add(`${col}|${pick._id}|${k}`);
+        if (stakeable) {
+          existingSideKeys.add(`${col}|${pick._id}|${k}`);
+          const u = Number(sd.finalUnits);
+          if (u > 0 && sd.lockStage !== 'SHADOW') existingSideUnits.set(`${col}|${pick._id}|${k}`, u);
+        }
         if (sd && sd.superseded && sd.supersededReason === PRESS_M_SUPERSEDED_REASON) {
           pressMirrorSkipSides.add(`${col}|${pick._id}|${k}`);
         }
@@ -9523,6 +9590,7 @@ async function main() {
     expWinPriors,
     skipSides: pressMirrorSkipSides,
     existingSideKeys,
+    existingSideUnits,
   });
   stats.created_missing = cm.created.length;
   if (cm.created.length === 0) {

@@ -6,6 +6,7 @@
  * wallets, or there is no rank. Stake the top 3 when the price is a pick'em
  * (−100 through +120, or 45¢ up to just under 52¢), the bet is under 1.5×
  * their usual size, and no other top-3 wallet is on the other side.
+ * A stake already on the other side mutes the rung.
  *
  * 1× to 1.5× → 4u. Under 1× → 2u. Never downsizes a larger stake.
  * NHL, NBA, NFL, CFB. Moneyline, spread, total.
@@ -175,7 +176,17 @@ function view(position) {
  * One side of one game. `positions` is every wallet on that game and market,
  * both sides. Uses the ranks last passed to setTop3PickRanks.
  */
-export function evaluateTop3Pick({ sport, market, side, pickDate, positions, ranks = null }) {
+/** Units already staked on the other side. A superseded side is not a pick. */
+export function oppositeStakeUnits(side, sides) {
+  const opp = opposite(normSide(side));
+  if (!opp || !sides || typeof sides !== 'object') return 0;
+  const sd = sides[opp];
+  if (!sd || sd.superseded === true) return 0;
+  const u = num(sd.finalUnits);
+  return u > 0 ? u : 0;
+}
+
+export function evaluateTop3Pick({ sport, market, side, pickDate, positions, ranks = null, opponentUnits = 0 }) {
   const empty = { fires: false, units: 0, wallets: [], bestSr: null, reason: null };
   const index = ranks instanceof Map ? ranks : rankIndex;
   const sp = normTop3Sport(sport);
@@ -184,6 +195,7 @@ export function evaluateTop3Pick({ sport, market, side, pickDate, positions, ran
   if (!isTop3PickLive(pickDate) || !SPORTS.has(sp) || !MARKETS.has(mkt) || !mySide) {
     return { ...empty, reason: 'not_live' };
   }
+  if (num(opponentUnits) > 0) return { ...empty, reason: 'pick_against' };
   const rows = (positions || []).map(view).filter((r) => r.wallet && r.side);
   const opp = opposite(mySide);
   const against = rows.filter((r) => r.side === opp && (lookup(index, sp, mkt, r.wallet)?.rank || 99) <= 3);
@@ -212,8 +224,8 @@ export function evaluateTop3Pick({ sport, market, side, pickDate, positions, ran
 }
 
 /** Raise a side to 4u or 2u. A bigger stake already on the side stays. */
-export function applyTop3PickRung({ units, sport, market, side, pickDate, positions, ranks = null }) {
-  const ev = evaluateTop3Pick({ sport, market, side, pickDate, positions, ranks });
+export function applyTop3PickRung({ units, sport, market, side, pickDate, positions, ranks = null, opponentUnits = 0 }) {
+  const ev = evaluateTop3Pick({ sport, market, side, pickDate, positions, ranks, opponentUnits });
   const current = Number(units);
   const safe = Number.isFinite(current) && current > 0 ? current : 0;
   if (!ev.fires) return { ...ev, action: 'hold', units: safe };

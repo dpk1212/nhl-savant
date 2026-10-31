@@ -109,6 +109,34 @@ test('4u at 1× to 1.5×, 2u under 1×, and a top-3 wallet on the other side blo
   assert.equal(blocked.units, 0);
 });
 
+test('a pick already on the other side mutes the rung', () => {
+  const { ranks } = board();
+  const muted = applyTop3PickRung({
+    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
+    positions: [bet({ betMultiplier: 1.2 })],
+    opponentUnits: 2,
+  });
+  assert.equal(muted.fires, false);
+  assert.equal(muted.reason, 'pick_against');
+  assert.equal(muted.units, 0);
+
+  const kept = applyTop3PickRung({
+    units: 2, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
+    positions: [bet({ betMultiplier: 1.2 })],
+    opponentUnits: 2,
+  });
+  assert.equal(kept.action, 'hold');
+  assert.equal(kept.units, 2);
+
+  const open = applyTop3PickRung({
+    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
+    positions: [bet({ betMultiplier: 1.2 })],
+    opponentUnits: 0,
+  });
+  assert.equal(open.action, 'rescue');
+  assert.equal(open.units, 4);
+});
+
 test('a favorite, a day before the cutover, and another sport do not fire', () => {
   const { ranks } = board();
   const fav = applyTop3PickRung({
