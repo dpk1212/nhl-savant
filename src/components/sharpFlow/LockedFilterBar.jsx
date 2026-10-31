@@ -4,7 +4,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import {
   defaultLockedFilter,
   describeLockedSlate,
@@ -153,9 +153,8 @@ export default function LockedFilterBar({ picksByDay, filter, view, onChange }) 
         <ChipRail
           filter={f}
           view={view}
-          onAll={() => commit({ sport: 'all' })}
-          onSport={(id) => commit({ sport: id })}
-          onWeak={() => commit({ weak: !f.weak })}
+          onSort={(sort) => commit({ sort })}
+          onSport={(id) => commit({ sport: f.sport === id ? 'all' : id })}
         />
       </div>
 
@@ -172,9 +171,8 @@ export default function LockedFilterBar({ picksByDay, filter, view, onChange }) 
         <ChipRail
           filter={f}
           view={view}
-          onAll={() => commit({ sport: 'all' })}
-          onSport={(id) => commit({ sport: id })}
-          onWeak={() => commit({ weak: !f.weak })}
+          onSort={(sort) => commit({ sort })}
+          onSport={(id) => commit({ sport: f.sport === id ? 'all' : id })}
         />
         <SortButton btnRef={wideBtnRef} count={view.badge} open={open} onClick={openSheet} />
       </div>
@@ -282,7 +280,7 @@ function SortButton({ btnRef, count, open, onClick }) {
   );
 }
 
-function ChipRail({ filter, view, onAll, onSport, onWeak }) {
+function ChipRail({ filter, view, onSort, onSport }) {
   const scroller = useRef(null);
   const [fade, setFade] = useState(false);
   const sports = view.sports.filter((s) => s.count > 0);
@@ -299,22 +297,18 @@ function ChipRail({ filter, view, onAll, onSport, onWeak }) {
       el.removeEventListener('scroll', check);
       window.removeEventListener('resize', check);
     };
-  }, [sports.length, view.allCount, view.weakCount, filter.sport, filter.weak]);
+  }, [sports.length, filter.sport, filter.sort]);
 
   return (
     <div className="sf-locked-rail-wrap">
       <div ref={scroller} className="sf-locked-rail" data-testid="locked-chip-rail">
-        <Chip on={filter.sport === 'all'} onClick={onAll} dim={view.allCount === 0} testid="chip-all">
-          <span>All</span>
-          <span className="sf-locked-chip-n" style={NUM}>{view.allCount}</span>
+        <Chip on={filter.sort === 'units'} onClick={() => onSort('units')} testid="chip-units">
+          <span>Units</span>
         </Chip>
-        {(view.weakCount > 0 || filter.weak) && (
-          <Chip on={filter.weak} onClick={onWeak} testid="chip-weak">
-            <AlertTriangle size={12} strokeWidth={2.25} color={filter.weak ? GOLD : '#D4A574'} />
-            <span>Weakening</span>
-            <span className="sf-locked-chip-n" style={NUM}>{view.weakCount}</span>
-          </Chip>
-        )}
+        <Chip on={filter.sort === 'time'} onClick={() => onSort('time')} testid="chip-time">
+          <span>Game time</span>
+        </Chip>
+        <span className="sf-locked-rail-rule" aria-hidden="true" />
         {sports.map((s) => (
           <Chip
             key={s.id}
