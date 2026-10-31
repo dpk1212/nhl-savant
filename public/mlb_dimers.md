@@ -100,7 +100,7 @@ Get Dimers Pro
 
 ## Featured offers
 
-All  Sportsbooks
+All  Sportsbooks  Prediction Markets  DFS
 
 ![Swipe icon](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20)Swipe across to view more offers
 
@@ -116,6 +116,96 @@ T&Cs apply.
 
 How to claim
 
+![logo](https://cdn.cosmicjs.com/d4897680-a873-11f1-b019-0b1f647f397d-Kalshi-Logo_White.svg?auto=format,compress&h=200)
+
+HOTTEST
+
+T&Cs apply.
+
+[Claim Now](https://affiliates.routy.app/route/154967?affId=10159&ts=5008256&src=main-column&promo=true)
+
+[Read review](https://www.dimers.com/prediction-betting/kalshi)
+
+How to claim
+
+![logo](https://cdn.cosmicjs.com/bcdfb080-441e-11f1-9f85-e7af420a77a5-logo-blue.svg?auto=format,compress&h=200)
+
+RECOMMENDED
+
+T&Cs apply.
+
+[Claim Now](https://polymarket-app.onelink.me/S8ac/DIMERS?src=main-column&promo=true)
+
+How to claim
+
+![logo](https://cdn.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
+
+TRENDING
+
+T&Cs apply.
+
+[Claim Now](https://affiliates.routy.app/route/319978?affId=10466&ts=5015351&src=main-column&promo=true)
+
+[Read review](https://www.dimers.com/betting/bet365-sportsbook)
+
+How to claim
+
+![logo](https://cdn.cosmicjs.com/d19c1020-a6ea-11f1-b021-a733f9d0a0a8-PDCT_Linear_Logo_FullColor_OnDark.svg?auto=format,compress&h=200)
+
+LIMITED-TIME
+
+T&Cs apply.
+
+[Claim Now](https://platform.routy.app/route/5000585?affid=10466&ts=5015351&src=main-column&promo=true)
+
+How to claim
+
+![logo](https://cdn.cosmicjs.com/92be3e40-5ea9-11ef-ba22-5b7a9f51630c-HardRockBet-bigg.svg?auto=format,compress&h=200)
+
+NEW PLAYERS
+
+T&Cs apply.
+
+[Claim now](https://affiliates.routy.app/route/319984?affId=10466&ts=5015351&src=main-column&promo=true)
+
+[Read review](https://www.dimers.com/betting/hardrock-sportsbook)
+
+How to claim
+
+![logo](https://imgix.cosmicjs.com/c263f0f0-a7a8-11f1-b05a-3f2735d232a4-UD26_PrimaryMark_OverDark.png?auto=format,compress&h=200)
+
+TRENDING
+
+T&Cs apply.
+
+[Claim Now](https://platform.routy.app/route/503334?affid=10466&ts=5015351&src=main-column)
+
+[Read review](https://www.dimers.com/dfs/underdog-fantasy)
+
+How to claim
+
+![logo](https://imgix.cosmicjs.com/682438f0-bde9-11f1-af12-19c569209b1c-fd-predicts.png?auto=format,compress&h=200)
+
+TRENDING
+
+T&Cs apply.
+
+[Claim Now](https://platform.routy.app/route/5000001?affid=10466&ts=5015351&src=main-column&promo=true)
+
+How to claim
+
+![logo](https://cdn.cosmicjs.com/e9272ff0-877c-11f1-ac64-27ec44a0100e-tsb-color-DSIqtzlf.svg?auto=format,compress&h=200)
+
+HOTTEST
+
+T&Cs apply.
+
+[Claim Now!](https://affiliates.routy.app/route/390629?affId=10159&ts=5008256&src=main-column&promo=true)
+
+[Read review](https://www.dimers.com/betting/espn-bet-sportsbook)
+
+How to claim
+
 ![logo](https://imgix.cosmicjs.com/bcef7040-118f-11f1-bd1a-5344fff0f60b-fanduel.png?auto=format,compress&h=200)
 
 NEW PLAYERS
@@ -125,6 +215,40 @@ T&Cs apply.
 [Claim Now](https://platform.routy.app/route/506509?affid=10466&ts=5015351&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/fanduel-sportsbook)
+
+How to claim
+
+![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
+
+RECOMMENDED
+
+T&Cs apply.
+
+[Claim now](https://affiliates.routy.app/route/319960?affId=10466&ts=5015351&src=main-column&promo=true)
+
+[Read review](https://www.dimers.com/betting/betmgm-sportsbook)
+
+How to claim
+
+![logo](https://cdn.cosmicjs.com/e878d130-26c9-11f1-9754-d7196a81e564-Novig_idUhBcMR4r_1.svg?auto=format,compress&h=200)
+
+FEATURED
+
+T&Cs apply.
+
+[Claim Now](https://affiliates.routy.app/route/275281?affId=10159&ts=5008256&src=main-column&promo=true)
+
+How to claim
+
+![logo](https://imgix.cosmicjs.com/9d7e0a60-ceaa-11ef-ac4c-9fb95c248ff6-HorizontalPrimaryDark-1.png?auto=format,compress&h=200)
+
+DFS & PICKS
+
+T&Cs apply.
+
+[Claim Now](https://engagebetr.onelink.me/auSX/Dimers?src=main-column&promo=true)
+
+[Read review](https://www.dimers.com/dfs/betr)
 
 How to claim
 
