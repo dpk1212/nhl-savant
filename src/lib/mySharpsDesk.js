@@ -644,8 +644,9 @@ function gradedAmerican(raw) {
 
 /**
  * Finished plays from the wallets on this list.
- * One row per game × market × side, newest first.
- * The record counts plays, not each wallet on the same ticket.
+ * One row per game × market × side × line, newest first.
+ * Two numbers on the same side (Kennesaw +10.5 and +8.5) are two plays.
+ * The record still collapses two wallets on the same ticket.
  */
 export function buildGradedPlays(legs, { names = {}, roster = [], limit = 40 } = {}) {
   const fed = rowsForBetsFeed(legs, roster);
@@ -656,7 +657,8 @@ export function buildGradedPlays(legs, { names = {}, roster = [], limit = 40 } =
     const side = String(leg.side || '').toLowerCase();
     const date = leg.date || null;
     const game = leg.gameKey || leg.matchup || leg.label || '';
-    const key = `${leg.sport || ''}|${game}|${market}|${side}|${date || ''}`;
+    const line = Number.isFinite(Number(leg.line ?? leg.entryLine)) ? Number(leg.line ?? leg.entryLine) : '';
+    const key = `${leg.sport || ''}|${game}|${market}|${side}|${line}|${date || ''}`;
     if (!by.has(key)) by.set(key, []);
     by.get(key).push(leg);
   }
@@ -1575,7 +1577,7 @@ function packClosedLeg(leg, todayKey) {
   const pnl = legDollar(leg);
   const dateKey = legDateKey(leg);
   return {
-    id: `${leg.walletShort || ''}|${dateKey || ''}|${leg.gameKey || ''}|${leg.marketType || ''}|${leg.side || ''}|${leg.won}`,
+    id: `${leg.walletShort || ''}|${dateKey || ''}|${leg.gameKey || ''}|${leg.marketType || ''}|${leg.side || ''}|${leg.line ?? leg.entryLine ?? ''}|${leg.won}`,
     bucket: 'closed',
     pick: closedPickLabel(leg),
     matchup: ticketMatchup(leg),
@@ -2078,7 +2080,7 @@ function resultFromLeg(leg, sport) {
   const date = leg?.date || null;
   const won = legWon(leg);
   return {
-    id: [sport, date, leg?.gameKey, leg?.marketType, leg?.side, leg?.team].filter(Boolean).join('|'),
+    id: [sport, date, leg?.gameKey, leg?.marketType, leg?.side, leg?.line ?? leg?.entryLine, leg?.team, Math.round(Number(leg?.invested) || 0)].filter((v) => v !== '' && v != null).join('|'),
     date,
     pick: closedPickLabel({ ...leg, sport: leg?.sport || sport }),
     matchup: ticketMatchup(leg),
