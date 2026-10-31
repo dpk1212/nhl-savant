@@ -34,7 +34,7 @@ import {
   playersMatch,
   isGradableATPMainML,
 } from './lib/atpPlayers.js';
-import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML } from './lib/esportsTeams.js';
+import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML, teamsFromBo3Slug } from './lib/esportsTeams.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { shouldGradeExited } from '../src/lib/actionLockPin.js';
 import {
@@ -921,8 +921,12 @@ async function fetchEsportsFinalMatches(sport, dateStr) {
         if (!dateET) continue;
         if (dateET < dateStr) { older++; continue; }
         if (dateET !== dateStr) continue;
-        const n1 = m.bet_updates?.team_1?.name;
-        const n2 = m.bet_updates?.team_2?.name;
+        let n1 = m.bet_updates?.team_1?.name;
+        let n2 = m.bet_updates?.team_2?.name;
+        if (!n1 || !n2) {
+          const fromSlug = teamsFromBo3Slug(m.slug);
+          if (fromSlug) [n1, n2] = fromSlug;
+        }
         if (!n1 || !n2 || !m.winner_team_id) continue;
         const t1 = m.winner_team_id === m.team1_id;
         const t2 = m.winner_team_id === m.team2_id;

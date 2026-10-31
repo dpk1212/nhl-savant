@@ -1060,6 +1060,16 @@ function esportsTeamsMatch(a, b) {
   return !!(x && y && x === y);
 }
 
+function teamsFromBo3Slug(slug) {
+  const s = String(slug || "").toLowerCase();
+  const m = s.match(/^(.*?)-vs-(.+)-(\d{2})-(\d{2})-(\d{4})(?:-\d+)?$/);
+  if (!m) return null;
+  const a = m[1].replace(/-/g, " ").trim();
+  const b = m[2].replace(/-/g, " ").trim();
+  if (!resolveEsportsTeam(a) || !resolveEsportsTeam(b)) return null;
+  return [a, b];
+}
+
 function isGradableEsportsMainML(pos) {
   if (!pos) return false;
   const sport = String(pos.sport || "").toUpperCase();
@@ -1106,8 +1116,12 @@ async function fetchEsportsFinalMatches(sport, dateStr) {
         if (!dateET) continue;
         if (dateET < dateStr) { older++; continue; }
         if (dateET !== dateStr) continue;
-        const n1 = m.bet_updates?.team_1?.name;
-        const n2 = m.bet_updates?.team_2?.name;
+        let n1 = m.bet_updates?.team_1?.name;
+        let n2 = m.bet_updates?.team_2?.name;
+        if (!n1 || !n2) {
+          const fromSlug = teamsFromBo3Slug(m.slug);
+          if (fromSlug) [n1, n2] = fromSlug;
+        }
         if (!n1 || !n2 || !m.winner_team_id) continue;
         const t1 = m.winner_team_id === m.team1_id;
         const t2 = m.winner_team_id === m.team2_id;
