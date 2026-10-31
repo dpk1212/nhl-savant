@@ -55,6 +55,7 @@ const LockedStoryLab = lazy(() => import('./components/preview/LockedStoryLab'))
 /** Design sandboxes — no auth, no paywall, no splash, no data bootstrap. */
 const MySharpsDeskLab = lazy(() => import('./components/preview/MySharpsDeskLab'));
 const ActionCardLab = lazy(() => import('./components/preview/ActionCardLab'));
+const LockedFilterLab = lazy(() => import('./components/preview/LockedFilterLab'));
 
 const DESIGN_LAB_PATHS = [
   '/card-lab',
@@ -64,6 +65,7 @@ const DESIGN_LAB_PATHS = [
   '/locked-story-lab',
   '/my-sharps-lab',
   '/action-card-lab',
+  '/locked-filter-lab',
 ];
 
 function hashPath() {
@@ -110,6 +112,7 @@ function DesignLabApp() {
             <Route path="/locked-story-lab" element={<LockedStoryLab />} />
             <Route path="/my-sharps-lab" element={<MySharpsDeskLab />} />
             <Route path="/action-card-lab" element={<ActionCardLab />} />
+            <Route path="/locked-filter-lab" element={<LockedFilterLab />} />
           </Routes>
         </Suspense>
       </Router>
