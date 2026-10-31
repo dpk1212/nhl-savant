@@ -692,6 +692,14 @@ export function lockAlertSealSidePatch(plan, sd = {}, now = Date.now()) {
   };
 }
 
+/** A notified receipt may take a better price on that same number. It may not take a different number. */
+export function notifiedLineHolds(best, lock) {
+  const named = Number(lock?.line);
+  const next = Number(best?.line);
+  if (!Number.isFinite(named) || !Number.isFinite(next)) return true;
+  return Math.abs(named - next) <= 0.051;
+}
+
 /** True when the seal would take a live book on this number. A dead print is not that book. */
 export function lockShopHasNumber(pinnGame, marketType, side, line) {
   if (!Number.isFinite(line)) return true;

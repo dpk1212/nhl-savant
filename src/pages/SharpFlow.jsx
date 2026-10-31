@@ -12783,11 +12783,14 @@ export default function SharpFlow() {
                           || null;
                         const stampIsPoly = String(peak.oddsSource || lock.oddsSource || peak.book || lock.book || '')
                           .toLowerCase().includes('poly');
-                        // At T-15 the cron seal can lag a cycle. Paint shop-best
-                        // immediately so the hero does not sit on vault 47.5
-                        // then jump to lock 47 when v8_lockBestAtT15 lands.
-                        const lockAlreadySent = sd.lockAlertSentAt != null || !!sd.lockAlertMessageId;
-                        const t15LiveBest = (!lockAlreadySent && pastT15Odds && !gameStarted && isT15BestLockLive(doc.date))
+                        // The hero walks as soon as the number leaves the window.
+                        // The alert stamp alone is not the lock. Freeze on the
+                        // shop write, so a receipt push cannot snap the hero
+                        // back and a later cycle cannot move it again.
+                        const shopWrote = sd.v8_lockBestAtT15 === true
+                          || (String(lock.oddsSource || '').includes('t15_best')
+                            && !/poly/i.test(`${lock.oddsSource || ''} ${lock.book || ''}`));
+                        const t15LiveBest = (!shopWrote && pastT15Odds && !gameStarted && isT15BestLockLive(doc.date))
                           ? bestAvailableTicket({
                             pinnGame: lookupPinnGame(pinnacleHistory, docSport, doc.gameKey),
                             marketType: marketTypeKey,
@@ -12802,9 +12805,7 @@ export default function SharpFlow() {
                             },
                           })
                           : null;
-                        const t15Sealed = lockAlreadySent
-                          || sd.v8_lockBestAtT15 === true
-                          || String(lock.oddsSource || '').includes('t15_best');
+                        const t15Sealed = shopWrote;
                         const t15Line = t15Sealed && Number.isFinite(Number(lock.line))
                           ? Number(lock.line)
                           : (Number.isFinite(Number(t15LiveBest?.line)) ? Number(t15LiveBest.line) : null);
@@ -13045,7 +13046,9 @@ export default function SharpFlow() {
                           // should reflect that source instead of rendering
                           // "0 · " (empty book).
                           book: (pastT15Odds && (t15Sealed || t15LiveBest?.book))
-                            ? (lock.book || t15LiveBest?.book || peak.book || 'Fair')
+                            ? (t15Sealed
+                              ? (lock.book || peak.book || 'Fair')
+                              : (t15LiveBest?.book || lock.book || peak.book || 'Fair'))
                             : (lockOddsValid
                               ? (lock.book || peak.book || 'Fair')
                               : (peak.book || lock.book || (sd.closingOdds ? (lock.book || peak.book || 'Fair') : ''))),

@@ -217,6 +217,7 @@ import {
   isT15BestLockLive,
   lockIsT15Shop,
   lockTicketTeamLabel,
+  notifiedLineHolds,
 } from '../src/lib/t15BestLock.js';
 import {
   inheritSpreadMarketHints,
@@ -9230,13 +9231,13 @@ async function main() {
               const bestIsBook = !!(best
                 && best.source === 't15_best_available'
                 && !/poly/i.test(best.book || ''));
-              // A notified Poly receipt is not a shop. Take the book when
-              // one exists. A number the alert already shopped stays —
-              // the push and the card named that line.
+              // A notified receipt can still take a book on the same number.
+              // A walk onto a different number after the push stays off —
+              // the hero already moved, and the lock freezes that number.
               const alertShopped = lockIsT15Shop(lock);
               const useBest = wantBestLock && bestIsBook && !alertShopped
                 && (Number.isFinite(best.line) || Number.isFinite(best.odds))
-                && (!alreadySent || lockIsPoly);
+                && (!alreadySent || (lockIsPoly && notifiedLineHolds(best, lock)));
               const sealPatch = (alertShopped || (alreadySent && !useBest))
                 ? {
                   v8_ticketSealedAt: sd.v8_ticketSealedAt || now,

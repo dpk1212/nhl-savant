@@ -4,7 +4,7 @@
  * Usage: node tests/testLockShopNumber.mjs
  */
 import assert from 'node:assert/strict';
-import { bestAvailableTicket, lockShopHasNumber } from '../src/lib/t15BestLock.js';
+import { bestAvailableTicket, lockShopHasNumber, notifiedLineHolds } from '../src/lib/t15BestLock.js';
 
 const receipt = { line: -2.5, odds: 113, book: 'Polymarket', oddsSource: 'poly_avgPrice' };
 
@@ -83,5 +83,8 @@ assert.equal(shop.line, -2.5);
 assert.equal(shop.odds, 118);
 assert.equal(shop.book, 'DraftKings');
 assert.equal(lockShopHasNumber(bookOnTheNumber, 'spread', 'away', -2.5), true);
+
+assert.equal(notifiedLineHolds({ line: 5.5, odds: -110 }, { line: 5.5 }), true);
+assert.equal(notifiedLineHolds({ line: 7, odds: -110 }, { line: 5.5 }), false);
 
 console.log('lock shop number ok');
