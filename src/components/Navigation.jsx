@@ -4,7 +4,7 @@
  * Relocated: Models (NHL/MLB/CBB) · Learn (How it works / FAQ / Data)
  * Removed from primary: Analytics Hub, Data Inspector, Today's Games as peer tabs
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Menu, X, TrendingUp, BarChart3, BookOpen, Target, User, LogOut, CreditCard,
@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import AuthModal from './AuthModal';
+import { useLockChrome } from '../lib/lockTopChrome.js';
 
 const GOLD = '#D4AF37';
 
@@ -108,6 +109,8 @@ const Navigation = () => {
 
   const { user, signOut, loading: authLoading } = useAuth();
   const { tier, isPremium, loading: subscriptionLoading } = useSubscription(user);
+  const lock = useLockChrome();
+  const lockOn = !!lock.mode;
 
   const path = location.pathname;
   const modelsActive = modelLinks.some((m) => path.startsWith(m.path));
@@ -132,23 +135,56 @@ const Navigation = () => {
     setUserMenuOpen(false);
   };
 
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!lockOn || !nav) return undefined;
+    const aside = nav.querySelector('.sf-mobile-auth');
+    if (!aside) return undefined;
+    const apply = () => {
+      const w = aside.getBoundingClientRect().width;
+      nav.style.setProperty('--sf-lock-aside', `${Math.ceil(w)}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(aside);
+    return () => ro.disconnect();
+  }, [lockOn, lock.mode, user]);
+
   return (
     <nav
       ref={navRef}
+      className={lockOn ? 'sf-nav-lock' : undefined}
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        background: 'rgba(17, 24, 39, 0.98)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-        padding: '0.75rem 1rem',
+        ...(lockOn ? {
+          padding: '0 24px',
+          height: 48,
+          boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: 'center',
+        } : {
+          background: 'rgba(17, 24, 39, 0.98)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+          padding: '0.75rem 1rem',
+        }),
       }}
     >
+      {(lock.mode === 'rest' || lock.mode === 'collapsed') && (
+        <div className="sf-nav-collapse" aria-hidden={lock.mode !== 'collapsed'}>
+          <span className="sf-nav-collapse-title">Locked Picks</span>
+          <span className="sf-nav-pulse" />
+          {lock.pnl ? <span className="sf-nav-collapse-pnl">{lock.pnl}</span> : null}
+          {lock.rec ? <span className="sf-nav-collapse-rec">{lock.rec}</span> : null}
+        </div>
+      )}
       <div
         style={{
           maxWidth: '1400px',
+          width: '100%',
           margin: '0 auto',
           display: 'flex',
           justifyContent: 'space-between',
@@ -159,6 +195,7 @@ const Navigation = () => {
         <Link
           to="/"
           onClick={closeMenus}
+          className="sf-nav-brand"
           style={{
             fontSize: '1.125rem',
             fontWeight: 800,
@@ -402,8 +439,19 @@ const Navigation = () => {
           {!authLoading && !user && (
             <button
               type="button"
+              className="sf-nav-signin"
               onClick={() => setAuthModalOpen(true)}
-              style={{
+              style={lock.mode === 'guest' ? {
+                height: 32,
+                padding: '0 12px',
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 600,
+                background: 'transparent',
+                border: '0.5px solid rgba(255,255,255,0.2)',
+                color: '#e8eaf2',
+                cursor: 'pointer',
+              } : {
                 padding: '0.4rem 0.75rem',
                 borderRadius: '8px',
                 fontSize: '0.75rem',
@@ -414,11 +462,11 @@ const Navigation = () => {
                 cursor: 'pointer',
               }}
             >
-              Sign In
+              {lock.mode === 'guest' ? 'Sign in' : 'Sign In'}
             </button>
           )}
           {user && (
-            <Link to="/account" onClick={closeMenus} style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(212,175,55,0.4)', display: 'block' }}>
+            <Link to="/account" onClick={closeMenus} className="sf-nav-avatar" style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: lockOn ? '0.5px solid rgba(255,255,255,0.16)' : '2px solid rgba(212,175,55,0.4)', display: 'block' }}>
               {user.photoURL ? (
                 <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
@@ -438,9 +486,11 @@ const Navigation = () => {
               justifyContent: 'center',
               width: 32,
               height: 32,
-              borderRadius: 8,
-              background: mobileMenuOpen ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.05)',
-              border: mobileMenuOpen ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.1)',
+              borderRadius: lockOn ? 10 : 8,
+              background: lockOn ? 'transparent' : (mobileMenuOpen ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.05)'),
+              border: lockOn
+                ? '0.5px solid rgba(255,255,255,0.12)'
+                : (mobileMenuOpen ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.1)'),
               color: mobileMenuOpen ? GOLD : 'rgba(255,255,255,0.9)',
               cursor: 'pointer',
             }}

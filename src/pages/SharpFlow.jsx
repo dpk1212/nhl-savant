@@ -77,6 +77,7 @@ import {
   readInitialLockedFilter,
 } from '../lib/lockedFilter.js';
 import LockedFilterBar from '../components/sharpFlow/LockedFilterBar';
+import LockedMobileTop from '../components/sharpFlow/LockedMobileTop';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 import { isSportSlateActive } from '../lib/sportSlateActive.js';
 import { lookupPinnGame, flipUFCGameKey, isUFCFlipAlias } from '../../scripts/lib/ufcFighters.js';
@@ -1021,6 +1022,27 @@ function computeV12EraStats(picks) {
     isProfit: profit >= 0, daysLive,
     record: `${w}-${l}${pu > 0 ? `-${pu}` : ''}`,
   };
+}
+
+function v12Sparkline(picks) {
+  if (!Array.isArray(picks) || picks.length === 0) return [];
+  const realized = picks.filter((p) => (
+    p && p.date && !p.cancelled && p.date >= V12_LAUNCH && !p.tracked
+    && p.outcome && p.status === 'COMPLETED' && resolveAgsuTier(p)
+  )).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const days = [];
+  let cum = 0;
+  let last = null;
+  for (const p of realized) {
+    cum += Number(p.profit) || 0;
+    if (p.date !== last) {
+      days.push(+cum.toFixed(2));
+      last = p.date;
+    } else {
+      days[days.length - 1] = +cum.toFixed(2);
+    }
+  }
+  return days;
 }
 
 // Recent-window stats for the paywall FOMO strip — same gates as
@@ -8816,6 +8838,10 @@ export default function SharpFlow() {
     () => computeV12EraStats(allTimePnL?.picks || []),
     [allTimePnL]
   );
+  const modelSpark = useMemo(
+    () => v12Sparkline(allTimePnL?.picks || []),
+    [allTimePnL]
+  );
 
 
   const onPickSynced = useCallback((docId, side, snap, meta, action) => {
@@ -9522,6 +9548,7 @@ export default function SharpFlow() {
   }
 
   const isFreeUser = !isPremium;
+  const lockMobile = isMobile && viewMode === 'whaleSignals' && sortBy === 'locked';
 
   // Signals/Intel read Poly+Kalshi games. Action and Vault do not —
   // unmounting the page here made the sport rail look broken on Action
@@ -9529,7 +9556,7 @@ export default function SharpFlow() {
   if (filteredGames.length === 0 && viewMode !== 'flow' && viewMode !== 'sharpVault') {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
-        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} />
+        {!lockMobile && <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} />}
         <div style={{
           textAlign: 'center', padding: '3rem', borderRadius: '12px',
           background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -9546,20 +9573,20 @@ export default function SharpFlow() {
   }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem', position: 'relative' }}>
+    <div className={lockMobile ? 'sf-locktop-page' : undefined} style={{ maxWidth: '1200px', margin: '0 auto', padding: lockMobile ? 0 : (isMobile ? '1rem' : '1.5rem 1rem'), position: 'relative' }}>
       {/* Ambient aurora — fixed light field behind the glass cards. Two
           slow-drifting radial pools (brand gold + emerald) plus a deep
           blue wash give the backdrop-filter blur something to refract,
           which is what sells the glassmorphism. pointer-events: none and
           z-index below content; honors prefers-reduced-motion via CSS. */}
       <div className="sf-aurora" aria-hidden="true" />
-      <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} />
+      {!lockMobile && <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={headerSportTabs} />}
 
       {/* ─── Orientation strip — free users, dismissible ───
           Layer-1 onboarding: answers "what is this and why trust it" in one
           glance, right where a first-timer's eyes land. The free card below
           is layer 2 (learn by touching one real game); the paywall closes. */}
-      {isFreeUser && !orientationDismissed && (
+      {isFreeUser && !orientationDismissed && !lockMobile && (
         <div style={{
           display: 'flex', flexDirection: 'column',
           background: 'linear-gradient(135deg, rgba(212,175,55,0.07), rgba(15,23,42,0.6))',
@@ -9809,8 +9836,8 @@ export default function SharpFlow() {
       {viewMode === 'whaleSignals' && (() => {
         return (
           <div>
-            {/* Stat cards */}
-            <div className="sf-stagger" style={{
+            {/* Stat cards — the locked mobile top folds these into the model line. */}
+            {!lockMobile && <div className="sf-stagger" style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '0.625rem', marginBottom: '0.75rem',
@@ -9819,13 +9846,13 @@ export default function SharpFlow() {
                 hint={sharpStats.totalExcluded > 0 ? `${sharpStats.totalExcluded} non-sharp bettors filtered` : 'Verified sport bettors tracked'} />
               <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(sharpStats.totalSharpInvested)} rawValue={sharpStats.totalSharpInvested} fmt={fmtVol} accent={B.green}
                 hint="Total verified sharp $ on today's games" />
-            </div>
+            </div>}
 
-            <ClimateStoplightStrip
+            {!lockMobile && <ClimateStoplightStrip
               climateBySport={climateBySportVisible}
               sportFilter={sportFilter}
               isMobile={isMobile}
-            />
+            />}
 
             {/* ─── AGS-U Performance Dashboard (primary, since 2026-05-14 cutover) ─── */}
             {(() => {
@@ -10056,9 +10083,17 @@ export default function SharpFlow() {
               })();
 
               return (
-                <div id="sf-agsu-record" style={{ marginBottom: '1rem' }}>
+                <div
+                  id="sf-agsu-record"
+                  className={lockMobile && showAgsuPerf ? 'sf-model-sheet' : undefined}
+                  style={{ marginBottom: lockMobile ? 0 : '1rem' }}
+                  onClick={lockMobile && showAgsuPerf ? (e) => { if (e.target === e.currentTarget) setShowAgsuPerf(false); } : undefined}
+                >
+                  {lockMobile && showAgsuPerf && (
+                    <button type="button" className="sf-model-close" onClick={() => setShowAgsuPerf(false)}>Close</button>
+                  )}
                   {/* ── Collapsed/expanded header ──────────────────── */}
-                  <button onClick={() => setShowAgsuPerf(p => !p)} className="sf-glass" style={{
+                  <button onClick={() => setShowAgsuPerf(p => !p)} className={lockMobile ? 'sf-glass sf-locktop-retired' : 'sf-glass'} style={{
                     width: '100%',
                     background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(26,31,46,0.62) 35%, rgba(17,21,31,0.7) 100%)',
                     border: `1px solid ${B.goldBorder}`,
@@ -11200,15 +11235,15 @@ export default function SharpFlow() {
               allPosGames.sort(sortFns[sortBy] || sortFns.stars);
 
               return (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div style={{ marginBottom: lockMobile ? 0 : '1.5rem' }}>
+                  {!lockMobile && <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <SectionHead
                       title={sortBy === 'locked' ? `Locked Picks — ${lockedFilter.day === 'today' ? 'Today' : 'Yesterday'}` : sortBy === 'hcPositions' ? 'HC Positions' : sortBy === 'myPicks' ? 'My Sharps' : `Sharp Positions (${allPosGames.length} games)`}
                       subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedFilter.day === 'today' ? 'today' : 'yesterday'} at peak snapshot` : sortBy === 'hcPositions' ? 'Proven HC +1 / HC +2+ sides — CONFIRMED whales sized 1.5×+ on one side' : sortBy === 'myPicks' ? 'Open bets from the wallets you follow' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
                       icon={sortBy === 'locked' ? Lock : sortBy === 'hcPositions' ? Star : sortBy === 'myPicks' ? Star : Eye}
                     />
                     <SharpFlowInfo isMobile={isMobile} />
-                  </div>
+                  </div>}
                   {/* ─── View switcher + sort controls ──────────────────
                       Views (WHERE you are) and sorts (HOW it's ordered)
                       were previously one undifferentiated chip row —
@@ -11216,7 +11251,7 @@ export default function SharpFlow() {
                       place. Now: a segmented control owns the four
                       views (Live / Locked / HC / My Sharps); sort pills
                       only render in the Positions view where they apply. */}
-                  {(() => {
+                  {!lockMobile && (() => {
                     const isLockedView = sortBy === 'locked';
                     const isWatchView = sortBy === 'myPicks';
                     const isHcView = sortBy === 'hcPositions';
@@ -12442,7 +12477,7 @@ export default function SharpFlow() {
                     />
                   ) : null}
 
-                  {sortBy === 'locked' && isFreeUser ? (
+                  {sortBy === 'locked' && isFreeUser && !lockMobile ? (
                     <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
                   ) : sortBy === 'locked' ? (() => {
                     const today = todayET();
@@ -13224,14 +13259,8 @@ export default function SharpFlow() {
                     };
                     const lockedView = describeLockedSlate(picksByDay[lockedFilter.day] || [], lockedFilter);
                     const filteredLocked = lockedView.feed;
-                    return (
+                    const lockFeed = (
                       <>
-                        <LockedFilterBar
-                          picksByDay={picksByDay}
-                          filter={lockedFilter}
-                          view={lockedView}
-                          onChange={setLockedFilter}
-                        />
                         {filteredLocked.length === 0 ? (
                           <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
                             {(picksByDay[lockedFilter.day] || []).length === 0
@@ -13293,6 +13322,77 @@ export default function SharpFlow() {
                           );
                         })()}
                       </>
+                    );
+                    if (!lockMobile) {
+                      return (
+                        <>
+                          <LockedFilterBar
+                            picksByDay={picksByDay}
+                            filter={lockedFilter}
+                            view={lockedView}
+                            onChange={setLockedFilter}
+                          />
+                          {lockFeed}
+                        </>
+                      );
+                    }
+                    const liveN = Object.values(climateBySportVisible || {}).filter((row) => climateZoneMeta(row)?.tier === 'Live').length;
+                    const dots = Object.entries(climateBySportVisible || {}).map(([sp, row]) => {
+                      const meta = climateZoneMeta({ ...row, sport: sp });
+                      return meta ? { sport: sp, hue: meta.hue, tier: meta.tier } : null;
+                    }).filter(Boolean).slice(0, 8);
+                    const when = lockedFilter.day === 'yesterday' ? new Date(Date.now() - 86400000) : new Date();
+                    const dateLabel = when.toLocaleDateString('en-US', {
+                      weekday: 'long', month: 'short', day: 'numeric', timeZone: 'America/New_York',
+                    }).toUpperCase();
+                    const hcCount = (actionPositions || []).filter((p) => p.vault_hcTier === 'HC_DOMINANT' || p.vault_hcTier === 'HC_STANDARD').length;
+                    const proof = orientationProof?.ready ? orientationProof : null;
+                    return (
+                      <LockedMobileTop
+                        guest={isFreeUser}
+                        user={user}
+                        dateLabel={dateLabel}
+                        statsText={lockedView.dayLine.text}
+                        dayMini={lockedView.dayLine.mini}
+                        section="locked"
+                        sections={[
+                          { id: 'watchlist', label: 'My Sharps', count: mySharps?.count || 0 },
+                          { id: 'locked', label: 'Locked' },
+                          { id: 'hc', label: 'HC', count: hcCount },
+                          { id: 'positions', label: 'Live' },
+                        ]}
+                        onSection={(id) => {
+                          if (id === 'locked') setSortBy('locked');
+                          else if (id === 'hc') setSortBy('hcPositions');
+                          else if (id === 'watchlist') setSortBy('myPicks');
+                          else setSortBy('stars');
+                        }}
+                        viewMode={viewMode}
+                        onViewMode={setViewMode}
+                        onOpenModel={() => setShowAgsuPerf(true)}
+                        model={{
+                          profit: proof ? proof.profit : null,
+                          record: proof ? proof.record : '',
+                          winPct: proof ? proof.winPct : null,
+                          series: modelSpark,
+                          liveN,
+                          dots,
+                          sharps: (sharpStats.trackedCount || 0).toLocaleString('en-US'),
+                          filtered: sharpStats.totalExcluded || 0,
+                          sharpMoney: fmtVol(sharpStats.totalSharpInvested || 0),
+                        }}
+                        filters={isFreeUser ? null : (
+                          <LockedFilterBar
+                            flush
+                            picksByDay={picksByDay}
+                            filter={lockedFilter}
+                            view={lockedView}
+                            onChange={setLockedFilter}
+                          />
+                        )}
+                      >
+                        <div className={isFreeUser ? 'sf-lock-guest-feed' : undefined}>{lockFeed}</div>
+                      </LockedMobileTop>
                     );
                   })() : (sortBy === 'hcPositions' || sortBy === 'myPicks') ? null : (
                     <>
