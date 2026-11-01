@@ -9209,6 +9209,9 @@ async function main() {
   const pressMirrorSkipSides = new Set();
   const existingSideKeys = new Set();
   const existingSideUnits = new Map();
+  // Stake as loaded, before this cycle's patches. The write below uses it
+  // to drop a door / gap / top-3 side when the other side is already a play.
+  const loadedPlay = new Map();
   for (const { col, pick } of todayPickDocsForClimate) {
       const mkt = col === 'sharpFlowSpreads' ? 'SPREAD' : col === 'sharpFlowTotals' ? 'TOTAL' : 'ML';
       const sides = pick.sides || {};
@@ -9219,6 +9222,11 @@ async function main() {
       const sideEntries = Object.entries(sides);
       const liveSides = sideEntries.filter(([, sd]) => sd && !sd.superseded);
       for (const [k, sd] of sideEntries) {
+        loadedPlay.set(`${col}|${pick._id}|${k}`, {
+          units: sd && !sd.superseded && Number(sd.finalUnits) > 0 ? Number(sd.finalUnits) : 0,
+          press: Number(sd?.v8_pressUnits) > 0 ? Number(sd.v8_pressUnits) : 0,
+          rescuedBy: typeof sd?.v8_rescuedBy === 'string' ? sd.v8_rescuedBy : null,
+        });
         const stakeable = sd && !sd.superseded && (
           sd.lockStage === 'LOCKED'
           || sd.lockStage === 'LEAN'
@@ -9631,6 +9639,57 @@ async function main() {
         if (w.payload.agsBothSides) cur.agsBothSides = w.payload.agsBothSides;
         if ((w.payload.lastSyncAt || 0) > cur.lastSyncAt) cur.lastSyncAt = w.payload.lastSyncAt;
         merged.set(w.docId, cur);
+      }
+      // A door, gap, or top-3 side does not ship beside a side that already
+      // has a ladder stake. Two ladder stakes are left as they are. Two
+      // rung-only sides opened together are left as they are.
+      const rungRescue = new Set([ML_DOOR_RESCUE_BY, GAP_LEAD_RESCUED_BY, TOP3_PICK_RESCUED_BY]);
+      const oppOf = { home: 'away', away: 'home', over: 'under', under: 'over' };
+      const describe = (docId, side, patch) => {
+        const loaded = loadedPlay.get(`${col}|${docId}|${side}`) || { units: 0, press: 0, rescuedBy: null };
+        const press = patch && Number.isFinite(Number(patch.v8_pressUnits))
+          ? Number(patch.v8_pressUnits)
+          : loaded.press;
+        const rescuedBy = patch && Object.prototype.hasOwnProperty.call(patch, 'v8_rescuedBy')
+          ? (typeof patch.v8_rescuedBy === 'string' ? patch.v8_rescuedBy : null)
+          : loaded.rescuedBy;
+        const units = patch && Number.isFinite(Number(patch.finalUnits))
+          ? Number(patch.finalUnits)
+          : loaded.units;
+        const pure = !(press > 0) && (
+          rungRescue.has(rescuedBy)
+          || patch?.v8_mlDoorAction === 'rescue'
+          || patch?.v8_gapLeadAction === 'rescue'
+          || patch?.v8_gapLeadAction === 'boost'
+          || patch?.v8_top3Pick === true
+        );
+        return { units, pure };
+      };
+      for (const [docId, payload] of merged) {
+        const present = new Set(Object.keys(payload.sides || {}));
+        const prefix = `${col}|${docId}|`;
+        for (const key of loadedPlay.keys()) {
+          if (key.startsWith(prefix)) present.add(key.slice(prefix.length));
+        }
+        const info = new Map([...present].map((side) => [side, describe(docId, side, payload.sides?.[side])]));
+        const shipping = [...info.entries()].filter(([, d]) => d.units > 0);
+        if (shipping.length < 2) continue;
+        const ladder = shipping.filter(([, d]) => !d.pure);
+        const rungs = shipping.filter(([, d]) => d.pure);
+        if (!ladder.length || !rungs.length) continue;
+        if (!payload.sides) payload.sides = {};
+        for (const [side] of rungs) {
+          const patch = payload.sides[side] || (payload.sides[side] = {});
+          patch.finalUnits = 0;
+          patch.v8_agsV12UnitsApplied = 0;
+          patch.v8_agsUnitsApplied = 0;
+          patch.v8_hcStakeTier = 'MONITORING';
+          patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+          patch.v8_mlDoorAction = 'hold';
+          patch.v8_mlDoorReason = 'pick_against';
+          const opp = oppOf[side];
+          console.log(`  OPP hold: ${col}/${docId} ${side} (pick on ${opp})`);
+        }
       }
       const docPayloads = [...merged.entries()].map(([docId, payload]) => ({ docId, payload }));
       const BATCH_SIZE = 400;
