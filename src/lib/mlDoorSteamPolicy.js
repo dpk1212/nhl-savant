@@ -27,6 +27,9 @@
  * The rescue does not override favorite-juice, the press-edge clamp,
  * a fade veto, or an AGS quality veto: the caller passes pressGateMuted
  * only when the mute reason would be press-gate.
+ *
+ * A stake already on the other side mutes the boost and the rescue.
+ * The cut still runs. The caller passes opponentUnits.
  */
 
 export const ML_DOOR_STEAM_FROM = '2026-10-29';
@@ -137,6 +140,7 @@ export function applyMlDoorSteamPolicy({
   liveSnap = null,
   pressGateMuted = false,
   manualStake = false,
+  opponentUnits = 0,
 } = {}) {
   const u = num(units);
   const base = u == null ? 0 : u;
@@ -170,9 +174,22 @@ export function applyMlDoorSteamPolicy({
     };
   }
 
+  const against = num(opponentUnits) > 0;
   if (timing === 'already_gold' && favorite && (margin === 1 || margin === 2) && base > 0) {
     const next = Math.min(ML_DOOR_MAX_UNITS, Math.round((base + 1) * 100) / 100);
     if (next > base + 0.001) {
+      if (against) {
+        return {
+          units: base,
+          action: 'hold',
+          reason: 'pick_against',
+          mutedBy: null,
+          rescuedBy: null,
+          timing,
+          margin,
+          unitsPrePolicy: base,
+        };
+      }
       return {
         units: next,
         action: 'boost',
@@ -187,6 +204,18 @@ export function applyMlDoorSteamPolicy({
   }
 
   if (pressGateMuted && base === 0 && timing === 'never' && favorite && (margin === 0 || margin === 2)) {
+    if (against) {
+      return {
+        units: 0,
+        action: 'hold',
+        reason: 'pick_against',
+        mutedBy: null,
+        rescuedBy: null,
+        timing,
+        margin,
+        unitsPrePolicy: base,
+      };
+    }
     return {
       units: 1,
       action: 'rescue',

@@ -11,6 +11,7 @@
  * negative. A side at zero goes to 3u. A side already under 3u gets +1.
  * A side at 3u or more stays. The odds cap and the -425 favorite mute still
  * apply, and neither one may shrink a stake that is already on the side.
+ * A stake already on the other side mutes the rescue and the +1.
  * NHL, NBA, NFL, CFB. Moneyline, spread, total.
  */
 
@@ -202,10 +203,14 @@ function roundUnits(units) {
 /** Rescue a zero to 3u, or add 1u when the side is already under 3. Never shrinks. */
 export function applyGapLeadRescue({
   units, odds = null, sport, market, side, pickDate, positions, books = null,
+  opponentUnits = 0,
 }) {
   const ev = evaluateGapLead({ sport, market, side, pickDate, positions, books });
   const current = Number(units);
   const safe = Number.isFinite(current) && current > 0 ? current : 0;
+  if (Number(opponentUnits) > 0) {
+    return { ...ev, fires: false, action: 'hold', units: safe, reason: 'pick_against' };
+  }
   if (!ev.fires) return { ...ev, action: 'hold', units: safe };
   if (Number.isFinite(odds) && odds < GAP_LEAD_FAV_JUICE) {
     return { ...ev, action: 'hold', units: safe, reason: 'fav_juice' };

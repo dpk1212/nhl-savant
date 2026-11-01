@@ -184,3 +184,29 @@ test('the weight is tonight invested, and the rule is off before the cutover', (
   assert.equal(before.reason, 'not_live');
   assert.equal(GAP_LEAD_FROM, '2026-10-30');
 });
+
+test('a stake on the other side mutes the rescue and the boost', () => {
+  const books = booksFrom([
+    ...fill('aaaaaa', 80),
+    ...fill('bbbbbb', 40),
+    ...fill('cccccc', -20),
+  ]);
+  const positions = [
+    { walletShort: 'aaaaaa', side: 'home', invested: 100 },
+    { walletShort: 'bbbbbb', side: 'home', invested: 100 },
+    { walletShort: 'cccccc', side: 'away', invested: 100 },
+  ];
+  const base = {
+    sport: 'NBA', market: 'ML', side: 'home', pickDate: DAY, positions, books, odds: -110,
+  };
+  const rescued = applyGapLeadRescue({ ...base, units: 0, opponentUnits: 2 });
+  assert.equal(rescued.fires, false);
+  assert.equal(rescued.reason, 'pick_against');
+  assert.equal(rescued.units, 0);
+  const boosted = applyGapLeadRescue({ ...base, units: 1, opponentUnits: 2 });
+  assert.equal(boosted.action, 'hold');
+  assert.equal(boosted.units, 1);
+  const open = applyGapLeadRescue({ ...base, units: 0, opponentUnits: 0 });
+  assert.equal(open.action, 'rescue');
+  assert.equal(open.units, 3);
+});

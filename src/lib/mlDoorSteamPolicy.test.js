@@ -171,3 +171,31 @@ test('rescue 1u only for a press-gate favorite, never, Door-2 even or +2', () =>
     pressGateMuted: false,
   }).action, 'hold');
 });
+
+test('a stake on the other side mutes the rescue and the boost', () => {
+  const rescue = apply({
+    units: 0,
+    odds: -104,
+    door2For: 2,
+    door2Ag: 0,
+    tapeLog: [FIRST_OFF, LOCK_OFF],
+    pressGateMuted: true,
+    opponentUnits: 2,
+  });
+  assert.equal(rescue.action, 'hold');
+  assert.equal(rescue.units, 0);
+  assert.equal(rescue.reason, 'pick_against');
+  assert.equal(rescue.rescuedBy, null);
+  const boost = apply({ opponentUnits: 1 });
+  assert.equal(boost.action, 'hold');
+  assert.equal(boost.units, 2);
+  assert.equal(boost.reason, 'pick_against');
+  const cut = apply({
+    units: 2.5,
+    odds: 150,
+    tapeLog: [FIRST_OFF, LOCK_OFF],
+    opponentUnits: 2,
+  });
+  assert.equal(cut.action, 'cut');
+  assert.equal(cut.units, 0);
+});
