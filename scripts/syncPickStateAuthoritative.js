@@ -358,6 +358,7 @@ import {
   applyMlDoorSteamPolicy,
   mlDoorKind,
   mlDoorSteamStamp,
+  ML_DOOR_RESCUE_BY,
   ML_DOOR_STAKE_TIER,
   ML_DOOR_UNCOUNTED_REASONS,
 } from '../src/lib/mlDoorSteamPolicy.js';
@@ -3192,6 +3193,7 @@ async function createMissingLockedPicks({
       });
       const gapEarly = applyGapLeadRescue({
         units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
+        opponentUnits: unitsAgainst(side),
       });
       const sideAlready = docAlready && existingSideKeys?.has(`${col}|${docId}|${side}`);
       if (sideAlready) continue;
@@ -4240,9 +4242,12 @@ async function createMissingLockedPicks({
       // keep the units they shipped. Create usually has no tape yet, so
       // this holds; the next reconcile has a first row and applies it.
       let mlDoorPolicyCreate = null;
+      const unitsBeforeDoor = peakUnitsApplied;
+      const tierBeforeDoor = hcStakeTierCreate;
       if (pressAppliedCreate) {
         mlDoorPolicyCreate = applyMlDoorSteamPolicy({
           units: peakUnitsApplied,
+          opponentUnits: unitsAgainst(side),
           sport,
           marketType,
           odds: odds ?? null,
@@ -4264,6 +4269,8 @@ async function createMissingLockedPicks({
       }
       let top3PolicyCreate = null;
       let gapPolicyCreate = null;
+      let unitsBeforeGap = peakUnitsApplied;
+      let tierBeforeGap = hcStakeTierCreate;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
         const unitsBeforeTop3 = peakUnitsApplied;
         const tierBeforeTop3 = hcStakeTierCreate;
@@ -4282,6 +4289,8 @@ async function createMissingLockedPicks({
           peakUnitsApplied = top3PolicyCreate.units;
           hcStakeTierCreate = TOP3_PICK_STAKE_TIER;
         }
+        unitsBeforeGap = peakUnitsApplied;
+        tierBeforeGap = hcStakeTierCreate;
         gapPolicyCreate = applyGapLeadRescue({
           units: peakUnitsApplied,
           odds: odds ?? null,
@@ -4290,7 +4299,10 @@ async function createMissingLockedPicks({
           side,
           pickDate: TARGET_DATE,
           positions,
+          opponentUnits: unitsAgainst(side),
         });
+        gapPolicyCreate.unitsBefore = unitsBeforeGap;
+        gapPolicyCreate.tierBefore = tierBeforeGap;
         if (gapPolicyCreate.action === 'rescue' || gapPolicyCreate.action === 'boost') {
           peakUnitsApplied = gapPolicyCreate.units;
           hcStakeTierCreate = GAP_LEAD_STAKE_TIER;
@@ -4899,6 +4911,10 @@ async function createMissingLockedPicks({
         finalUnits: peakUnitsApplied,
         _unitsBeforeTop3: top3PolicyCreate?.unitsBefore ?? null,
         _tierBeforeTop3: top3PolicyCreate?.tierBefore ?? null,
+        _unitsBeforeDoor: unitsBeforeDoor,
+        _tierBeforeDoor: tierBeforeDoor,
+        _unitsBeforeGap: unitsBeforeGap,
+        _tierBeforeGap: tierBeforeGap,
         status: 'PENDING',
         result: { outcome: null, profit: null, gradedAt: null },
         // Flag so we know this came from the cron auto-create path.
@@ -4924,10 +4940,19 @@ async function createMissingLockedPicks({
       });
     }
     const beforeTop3 = new Map();
+    const beforeRaise = new Map();
     for (const [side, me] of Object.entries(newSides)) {
       beforeTop3.set(side, { units: me._unitsBeforeTop3, tier: me._tierBeforeTop3 });
+      beforeRaise.set(side, {
+        door: me._unitsBeforeDoor,
+        doorTier: me._tierBeforeDoor,
+      });
       delete me._unitsBeforeTop3;
       delete me._tierBeforeTop3;
+      delete me._unitsBeforeDoor;
+      delete me._tierBeforeDoor;
+      delete me._unitsBeforeGap;
+      delete me._tierBeforeGap;
     }
     for (const side of Object.keys(newSides)) {
       const me = newSides[side];
@@ -4960,6 +4985,43 @@ async function createMissingLockedPicks({
       delete me.v8_top3PickBestSr;
       delete me.v8_top3PickWallets;
       console.log(`  TOP3 mute: ${docId} ${side} back to ${before}u (pick on ${opp})`);
+    }
+    for (const side of Object.keys(newSides)) {
+      const me = newSides[side];
+      const prior = beforeRaise.get(side) || {};
+      const doorBefore = Number(prior.door);
+      const finalUnits = Number(me.finalUnits);
+      const opened = !(doorBefore > 0) && finalUnits > 0;
+      const raised = doorBefore > 0 && finalUnits > doorBefore + 0.001;
+      if (!opened && !raised) continue;
+      const opp = { home: 'away', away: 'home', over: 'under', under: 'over' }[side] || '';
+      const otherDoor = Number(beforeRaise.get(opp)?.door);
+      const stored = Number(existingSideUnits?.get(`${col}|${docId}|${opp}`)) || 0;
+      if (!(otherDoor > 0 || stored > 0)) continue;
+      if (opened) {
+        delete newSides[side];
+        console.log(`  OPP mute: ${docId} ${side} (pick on ${opp})`);
+        continue;
+      }
+      me.finalUnits = doorBefore;
+      me.v8_agsV12UnitsApplied = doorBefore;
+      if (prior.doorTier) me.v8_hcStakeTier = prior.doorTier;
+      if (me.v8_rescuedBy === ML_DOOR_RESCUE_BY || me.v8_rescuedBy === GAP_LEAD_RESCUED_BY) {
+        delete me.v8_rescuedBy;
+      }
+      delete me.v8_mlDoorAction;
+      delete me.v8_mlDoorReason;
+      delete me.v8_mlDoorTiming;
+      delete me.v8_mlDoorMargin;
+      delete me.v8_unitsPreMlDoor;
+      delete me.v8_gapLead;
+      delete me.v8_gapLeadAction;
+      delete me.v8_gapLeadUnits;
+      delete me.v8_gapLeadOurs;
+      delete me.v8_gapLeadOther;
+      delete me.v8_gapLeadMargin;
+      delete me.v8_gapLeadWallets;
+      console.log(`  OPP mute: ${docId} ${side} back to ${doorBefore}u (pick on ${opp})`);
     }
     if (Object.keys(newSides).length === 0) continue;
 
@@ -6603,6 +6665,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (pressApplied && !skipManualFlinch) {
     mlDoorPolicy = applyMlDoorSteamPolicy({
       units: finalUnitsApplied,
+      opponentUnits: oppositeStakeUnits(side, pick.sides),
       sport: pick.sport,
       marketType: mkt,
       odds: sideOdds,
@@ -6655,6 +6718,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       side,
       pickDate,
       positions: group,
+      opponentUnits: oppositeStakeUnits(side, pick.sides),
     });
     if ((gapPolicy.action === 'rescue' || gapPolicy.action === 'boost') && appliedStatus !== 'ACTIVE') {
       appliedStatus = 'ACTIVE';
@@ -7129,6 +7193,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
   if (gapPolicy?.fires && !operatorKilled) Object.assign(patch, gapLeadStamp(gapPolicy));
+  else if (sd.v8_gapLead === true && gapPolicy && !gapPolicy.fires) {
+    patch.v8_gapLead = admin.firestore.FieldValue.delete();
+    patch.v8_gapLeadAction = admin.firestore.FieldValue.delete();
+    patch.v8_gapLeadUnits = admin.firestore.FieldValue.delete();
+    patch.v8_gapLeadOurs = admin.firestore.FieldValue.delete();
+    patch.v8_gapLeadOther = admin.firestore.FieldValue.delete();
+    patch.v8_gapLeadMargin = admin.firestore.FieldValue.delete();
+    patch.v8_gapLeadWallets = admin.firestore.FieldValue.delete();
+  }
   if (pressMirror) {
     Object.assign(patch, pressMirrorStamp(pressMirror, pressMirrorShape, now));
     const prevFires = sd.v8_pressMirror?.fires === true;
@@ -8446,6 +8519,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     expectedReason: appliedReason,
     expectedTier: liveTier,
     expectedUnits: liveUnits,
+    stakeUnits: finalUnitsApplied,
     expectedLockStage: appliedLockStage,
     lockStageReason,
     agsuDemoted: stampedLockStage === 'LOCKED' && appliedLockStage === 'SHADOW',
@@ -9263,6 +9337,9 @@ async function main() {
           agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
           gameMeta, sportWinnerBoards, clvLedger, qConvMuteThr, pathBlendPriors, expWinPriors,
         });
+        if (!result.skipped && Number.isFinite(result.stakeUnits)) {
+          sd.finalUnits = result.stakeUnits;
+        }
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean' || result.reason === 'not_locked_or_lean_no_skill_drift') {
             stats.skipped_not_locked++;
