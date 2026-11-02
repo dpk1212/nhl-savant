@@ -19,6 +19,7 @@ import { matchEsportsPositionTitle } from './lib/esportsTeams.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { matchCFBPositionTitle, resolveCFBTeam, CFB_NAME_TO_CODE } from './lib/cfbTeams.js';
+import { cbbPolyGameKey, cbbSideLabel, findCbbTeamInMap } from '../src/lib/cbbGameKey.js';
 import { resolveBinarySide, resolveSpreadSide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 import { parseSpreadTitle } from '../src/lib/spreadLineSign.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
@@ -224,16 +225,7 @@ function resolveNBACode(raw) {
 }
 
 function findCBBTeam(cbbMap, name) {
-  const n = normalize(name);
-  if (cbbMap.has(n)) return cbbMap.get(n);
-  let best = null, bestLen = 0;
-  for (const [key, canon] of cbbMap) {
-    if (n.startsWith(key) && key.length > bestLen) {
-      best = canon;
-      bestLen = key.length;
-    }
-  }
-  return best;
+  return findCbbTeamInMap(cbbMap, name);
 }
 
 // ─── Title parsing (reused from fetchPolymarketData.js) ──────────────────────
@@ -399,14 +391,22 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
     if (todaysGames[`CFB:${rev}`]) return { key: rev, sport: 'CFB', side: 'home', awayName: rawB, homeName: rawA };
   }
 
-  // Try CBB
-  const cbbA = findCBBTeam(cbbMap, rawA);
-  const cbbB = findCBBTeam(cbbMap, rawB);
-  if (cbbA && cbbB) {
-    const key = `${normalize(cbbA)}_${normalize(cbbB)}`;
-    if (todaysGames[`CBB:${key}`]) return { key, sport: 'CBB', side: 'away', awayName: cbbA, homeName: cbbB };
-    const rev = `${normalize(cbbB)}_${normalize(cbbA)}`;
-    if (todaysGames[`CBB:${rev}`]) return { key: rev, sport: 'CBB', side: 'home', awayName: cbbB, homeName: cbbA };
+  // Try CBB. Unknown schools keep the Polymarket title, matching the fetch seed.
+  const cbbKey = cbbPolyGameKey(cbbMap, rawA, rawB);
+  if (cbbKey && todaysGames[`CBB:${cbbKey}`]) {
+    return {
+      key: cbbKey, sport: 'CBB', side: 'away',
+      awayName: cbbSideLabel(findCBBTeam(cbbMap, rawA), rawA),
+      homeName: cbbSideLabel(findCBBTeam(cbbMap, rawB), rawB),
+    };
+  }
+  const cbbRev = cbbPolyGameKey(cbbMap, rawB, rawA);
+  if (cbbRev && todaysGames[`CBB:${cbbRev}`]) {
+    return {
+      key: cbbRev, sport: 'CBB', side: 'home',
+      awayName: cbbSideLabel(findCBBTeam(cbbMap, rawB), rawB),
+      homeName: cbbSideLabel(findCBBTeam(cbbMap, rawA), rawA),
+    };
   }
 
   // Try MLB
@@ -536,13 +536,13 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   }
 
   const cbbTeam = findCBBTeam(cbbMap, teamRaw);
-  if (cbbTeam) {
-    const normTeam = normalize(cbbTeam);
+  const cbbToken = normalize(cbbTeam || teamRaw);
+  if (cbbToken.length >= 4) {
     for (const fullKey of Object.keys(todaysGames)) {
       if (!fullKey.startsWith('CBB:')) continue;
       const gameKey = fullKey.slice(4);
-      if (gameKey.includes(normTeam)) {
-        candidates.push({ key: gameKey, sport: 'CBB', spreadLine, score: 2 });
+      if (gameKey.includes(cbbToken)) {
+        candidates.push({ key: gameKey, sport: 'CBB', spreadLine, score: cbbTeam ? 2 : 1 });
       }
     }
   }

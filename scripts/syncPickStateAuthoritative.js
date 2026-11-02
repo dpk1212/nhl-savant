@@ -384,6 +384,7 @@ import {
   isGapLeadLive,
   setGapLeadBooks,
 } from '../src/lib/gapLeadRescue.js';
+import { cbbV12StakeMuted, CBB_MATURE_MUTED_BY } from '../src/lib/cbbStakeMute.js';
 import {
   evaluatePressLadder,
   atpMayStake,
@@ -4311,6 +4312,11 @@ async function createMissingLockedPicks({
       if (isOperatorKilled({ _id: docId }, side, null)) {
         peakUnitsApplied = 0;
       }
+      // Opening-week hold. The side is still created so it grades.
+      if (cbbV12StakeMuted(sport, TARGET_DATE)) {
+        peakUnitsApplied = 0;
+        hcStakeTierCreate = 'MONITORING';
+      }
 
       // Determine team label for the side.
       //
@@ -4690,6 +4696,9 @@ async function createMissingLockedPicks({
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
+      } else if (cbbV12StakeMuted(sport, TARGET_DATE)) {
+        v8Stamps.mutedBy = CBB_MATURE_MUTED_BY;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (mlDoorKind(mlDoorPolicyCreate?.action) === 'cut') {
         v8Stamps.mutedBy = mlDoorPolicyCreate.mutedBy;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
@@ -6733,6 +6742,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   const operatorKilled = isOperatorKilled(pick, side, sd);
   if (operatorKilled) finalUnitsApplied = 0;
+  // Opening-week hold. Manual stake and operator kill still win.
+  // The side stays on the doc so grading still records the result.
+  const cbbMatureMute = !operatorKilled && !skipManualFlinch
+    && cbbV12StakeMuted(pick.sport, pickDate);
+  if (cbbMatureMute) {
+    finalUnitsApplied = 0;
+    hcStakeTier = 'MONITORING';
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
@@ -6968,6 +6985,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
+  } else if (cbbMatureMute) {
+    patch.mutedBy = CBB_MATURE_MUTED_BY;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (mlDoorKind(mlDoorPolicy?.action) === 'cut') {
     patch.mutedBy = mlDoorPolicy.mutedBy;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
