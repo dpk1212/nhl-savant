@@ -38,6 +38,11 @@ import {
   isMainCFBGameSlug,
 } from './lib/cfbTeams.js';
 import {
+  cbbPolyGameKey,
+  findCbbTeamInMap,
+  isMainCBBGameSlug,
+} from '../src/lib/cbbGameKey.js';
+import {
   makeATPGameKey,
   extractATPPlayersFromTitle,
   isMainATPMatchSlug,
@@ -604,29 +609,14 @@ function extractTeamsFromTitle(title) {
 
 // Find CBB team: Polymarket "Boston College Eagles" -> "Boston College" via longest prefix
 function findCBBTeam(cbbMap, polymarketStr) {
-  const n = normalize(polymarketStr);
-  let best = null;
-  let bestLen = 0;
-  for (const [key, canon] of cbbMap) {
-    if (n.startsWith(key) && key.length > bestLen) {
-      best = canon;
-      bestLen = key.length;
-    }
-    if (n === key) return canon;
-  }
-  return best || cbbMap.get(n);
+  return findCbbTeamInMap(cbbMap, polymarketStr);
 }
 
 // ─── Match event to game key ───────────────────────────────────────────────
 function matchToGameKey(teams, cbbMap, sport) {
   if (!teams || teams.length !== 2) return null;
   const [a, b] = teams;
-  if (sport === 'CBB') {
-    const aCanon = findCBBTeam(cbbMap, a);
-    const bCanon = findCBBTeam(cbbMap, b);
-    if (!aCanon || !bCanon) return null;
-    return `${normalize(aCanon)}_${normalize(bCanon)}`;
-  }
+  if (sport === 'CBB') return cbbPolyGameKey(cbbMap, a, b);
   if (sport === 'NHL') {
     const aCode = resolveNHLTeam(a);
     const bCode = resolveNHLTeam(b);
@@ -701,7 +691,50 @@ async function loadTodaysSchedule(cbbMap) {
       console.warn('Could not load CBB schedule from Odds API:', e.message);
     }
   } else {
-    console.warn('⚠️  No ODDS_API_KEY — CBB schedule will be empty');
+    console.warn('⚠️  No ODDS_API_KEY — CBB Odds API slate will be empty');
+  }
+
+  // CBB Poly seed. Odds API basketball_ncaab is the Division I slate.
+  // Opening week is full of D1 vs non-D1 exhibitions that Polymarket lists
+  // and the Odds API never will. Same window as CFB. A school missing from
+  // basketball_teams.csv keeps its Polymarket title so the key stays stable.
+  const cbbWindowLo = Date.now() - 6 * 3600 * 1000;
+  const cbbWindowHi = Date.now() + 8 * 24 * 3600 * 1000;
+  for (const tagSlug of ['ncaa-basketball', 'cbb']) {
+    try {
+      const list = await listEvents(tagSlug, tagSlug === 'ncaa-basketball' ? 500 : 200);
+      let seeded = 0;
+      for (const ev of list) {
+        if (!isMainCBBGameSlug(ev.slug)) continue;
+        const title = ev.title || ev.question || '';
+        const teams = extractTeamsFromTitle(title);
+        if (!teams) continue;
+        const keyFwd = cbbPolyGameKey(cbbMap, teams[0], teams[1]);
+        const keyRev = cbbPolyGameKey(cbbMap, teams[1], teams[0]);
+        if (!keyFwd) {
+          console.warn(`CBB Poly seed miss: "${title}" (${ev.slug})`);
+          continue;
+        }
+        const slugDate = (ev.slug || '').match(/(\d{4}-\d{2}-\d{2})$/);
+        const startMs = ev.startTime ? Date.parse(ev.startTime) : NaN;
+        const slugMs = slugDate ? Date.parse(`${slugDate[1]}T17:00:00Z`) : NaN;
+        const t = Number.isFinite(startMs) ? startMs : slugMs;
+        if (Number.isFinite(t) && (t < cbbWindowLo || t > cbbWindowHi)) continue;
+        const gk = (keyFwd && validCBB.has(keyFwd)) ? keyFwd
+          : (keyRev && validCBB.has(keyRev)) ? keyRev
+          : keyFwd;
+        if (!validCBB.has(gk)) {
+          seeded++;
+          console.log(`CBB poly-only (no Odds API row): ${gk} — ${title}`);
+        }
+        validCBB.add(gk);
+        const commence = ev.startTime || ev.endDate || (slugDate ? `${slugDate[1]}T22:00:00Z` : null);
+        if (commence && !commenceTimes[`CBB:${gk}`]) commenceTimes[`CBB:${gk}`] = commence;
+      }
+      console.log(`📋 CBB Poly seed (${tagSlug}): +${seeded} → ${validCBB.size} cumulative`);
+    } catch (e) {
+      console.warn(`Could not seed CBB from Polymarket tag ${tagSlug}:`, e.message);
+    }
   }
 
   // NHL: Odds API preseason + regular season. Same 6h-back / 72h-forward
@@ -1185,6 +1218,7 @@ async function run() {
     { slug: 'march-madness', sport: 'CBB' },
     { slug: 'basketball', sport: null },
     { slug: 'cbb', sport: 'CBB' },
+    { slug: 'ncaa-basketball', sport: 'CBB' },
     { slug: 'cfb', sport: 'CFB' },
     { slug: 'ncaaf', sport: 'CFB' },
     { slug: 'ncaa-football', sport: 'CFB' },
@@ -1219,7 +1253,7 @@ async function run() {
         for (const ev of list) events.push({ ...ev, _tag: 'nfl', _sport: 'NFL' });
         continue;
       }
-      const list = await listEvents(slug, 300);
+      const list = await listEvents(slug, slug === 'ncaa-basketball' ? 500 : 300);
       console.log(`  📡 ${slug}: ${list.length} events`);
       for (const ev of list) {
         events.push({ ...ev, _tag: slug, _sport: sport || slug });
@@ -1461,6 +1495,16 @@ async function run() {
         const soft2 = matchToGameKey([teams[1], teams[0]], cbbMap, 'NFL');
         if (!(soft1 && validNFL.has(soft1)) && !(soft2 && validNFL.has(soft2))) continue;
       }
+    }
+
+    // CBB futures share the ncaa tag. A non-game slug stays only when both
+    // schools resolve onto a slate row. Exhibitions are cbb-*-date slugs.
+    if (sport === 'CBB' && !isMainCBBGameSlug(ev.slug)) {
+      const aSchool = findCBBTeam(cbbMap, teams[0]);
+      const bSchool = findCBBTeam(cbbMap, teams[1]);
+      const strict = aSchool && bSchool ? `${normalize(aSchool)}_${normalize(bSchool)}` : null;
+      const strictRev = aSchool && bSchool ? `${normalize(bSchool)}_${normalize(aSchool)}` : null;
+      if (!(strict && validCBB.has(strict)) && !(strictRev && validCBB.has(strictRev))) continue;
     }
 
     const key1 = matchToGameKey(teams, cbbMap, sport);

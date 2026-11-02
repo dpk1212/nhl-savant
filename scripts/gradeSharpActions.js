@@ -55,6 +55,7 @@ const NCAA_API_URL = 'https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1';
 const ESPN_MLB_URL = 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard';
 const STATSAPI_MLB_URL = 'https://statsapi.mlb.com/api/v1/schedule';
 const ESPN_NBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+const ESPN_CBB_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard';
 const ESPN_WNBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard';
 const ESPN_NFL_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
 const ESPN_CFB_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard';
@@ -273,6 +274,35 @@ async function fetchNCAAFinalGames(dateStr) {
       }));
   } catch (e) {
     console.error('NCAA fetch error:', e.message);
+    return [];
+  }
+}
+
+async function fetchESPNCBBFinalGames(dateStr) {
+  try {
+    const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
+    const data = await espnJson(`${ESPN_CBB_URL}${ymd}`);
+    if (!data) return [];
+    return (data.events || [])
+      .filter(e => {
+        const st = e.competitions?.[0]?.status?.type;
+        return st?.state === 'post' || st?.completed || String(st?.name || '').startsWith('STATUS_FINAL');
+      })
+      .map(e => {
+        const comp = e.competitions[0];
+        const comps = comp.competitors || [];
+        const away = comps.find(c => c.homeAway === 'away') || {};
+        const home = comps.find(c => c.homeAway === 'home') || {};
+        return {
+          dateET: espnEventDateET(e),
+          awayTeam: away.team?.displayName || '',
+          homeTeam: home.team?.displayName || '',
+          awayScore: parseInt(away.score) || 0,
+          homeScore: parseInt(home.score) || 0,
+        };
+      });
+  } catch (e) {
+    console.error('ESPN CBB fetch error:', e.message);
     return [];
   }
 }
@@ -1545,9 +1575,10 @@ async function main() {
   let cbbFinals = [];
   if (sports.has('CBB')) {
     for (const d of cbbDates) {
-      const games = await fetchNCAAFinalGames(d);
-      cbbFinals.push(...games);
-      console.log(`NCAA API: ${games.length} final CBB games for ${d}`);
+      const ncaa = await fetchNCAAFinalGames(d);
+      const espn = await fetchESPNCBBFinalGames(d);
+      cbbFinals.push(...ncaa, ...espn);
+      console.log(`CBB finals ${d}: NCAA ${ncaa.length}, ESPN ${espn.length}`);
     }
   }
 

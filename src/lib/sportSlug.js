@@ -9,6 +9,7 @@ export const BOARD_SPORT_SLUG = {
   NHL: 'nhl',
   NFL: 'nfl',
   CFB: 'cfb',
+  CBB: 'cbb',
   NBA: 'nba',
   UFC: 'ufc',
   ATP: 'atp',
