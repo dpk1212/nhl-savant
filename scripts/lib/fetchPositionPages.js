@@ -116,10 +116,11 @@ export async function fetchOpenPositionsV2(user, fetchJson) {
   return mergePositionPages(pages[0], pages[1] || []);
 }
 
-// /v2/positions allows 200 requests / 10s. Four in-flight calls that return
-// quickly blow past that, and each call then retries on its own, which keeps
-// the ban going until the fetch job hits its 100-minute cap.
-export const POSITION_START_GAP_MS = 80;
+// /v2/positions allows 200 requests / 10s. A short pause after a 429 does not
+// clear it: the next wallet fires anyway and the ban runs out the 100-minute
+// job. One request at a time, and a 429 holds every later read.
+export const POSITION_START_GAP_MS = 150;
+const RATE_LIMIT_RETRIES = 12;
 
 export function createPacedJsonFetch(httpFetch, {
   gapMs = POSITION_START_GAP_MS,
@@ -129,50 +130,63 @@ export function createPacedJsonFetch(httpFetch, {
   warn = () => {},
 } = {}) {
   let nextSlot = 0;
+  let coolUntil = 0;
+  let strike = 0;
   let lastWarn = 0;
-  return async function paced(url) {
+  let tail = Promise.resolve();
+
+  async function once(url) {
     let hits = 0;
-    while (hits <= retries) {
+    let otherFails = 0;
+    while (hits <= RATE_LIMIT_RETRIES && otherFails <= retries) {
       const t = now();
-      const slot = Math.max(t, nextSlot);
+      const slot = Math.max(t, nextSlot, coolUntil);
       nextSlot = slot + gapMs;
       if (slot > t) await sleep(slot - t);
       let res;
       try {
         res = await httpFetch(url, { headers: { Accept: 'application/json' } });
       } catch {
-        hits += 1;
-        if (hits > retries) return null;
-        await sleep(400 * hits);
+        otherFails += 1;
+        if (otherFails > retries) return null;
+        await sleep(400 * otherFails);
         continue;
       }
       if (res?.status === 429) {
         hits += 1;
+        strike += 1;
         const ra = Number(res.headers?.get?.('retry-after'));
         const wait = Number.isFinite(ra) && ra > 0
-          ? Math.min(20000, Math.max(1000, ra * 1000))
-          : Math.min(8000, 1000 * 2 ** Math.min(hits, 3));
-        nextSlot = Math.max(nextSlot, now() + wait);
-        if (now() - lastWarn > 8000) {
+          ? Math.min(120000, Math.max(15000, ra * 1000))
+          : Math.min(90000, 30000 * Math.min(strike, 3));
+        coolUntil = Math.max(coolUntil, now() + wait);
+        if (now() - lastWarn >= 15000) {
           lastWarn = now();
           warn(`Rate limited, pausing ${Math.round(wait / 1000)}s`);
         }
-        if (hits > retries) return null;
+        if (hits > RATE_LIMIT_RETRIES) return null;
         continue;
       }
       if (!res?.ok) {
-        hits += 1;
-        if (hits > retries) return null;
-        await sleep(400 * hits);
+        otherFails += 1;
+        if (otherFails > retries) return null;
+        await sleep(400 * otherFails);
         continue;
       }
+      strike = 0;
       try {
         return await res.json();
       } catch {
-        hits += 1;
-        if (hits > retries) return null;
+        otherFails += 1;
+        if (otherFails > retries) return null;
       }
     }
     return null;
+  }
+
+  return function paced(url) {
+    const run = tail.then(() => once(url));
+    tail = run.then(() => {}, () => {});
+    return run;
   };
 }

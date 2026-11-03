@@ -110,24 +110,32 @@ assert.equal(takeSecondPageCount(), 0);
 console.log('fetchOpenPositionsV2 ok');
 
 let clock = 1000;
+let inFlight = 0;
+let maxInFlight = 0;
 const starts = [];
 const paced = createPacedJsonFetch(async () => {
+  inFlight += 1;
+  maxInFlight = Math.max(maxInFlight, inFlight);
   starts.push(clock);
+  inFlight -= 1;
   if (starts.length === 1) {
-    return { status: 429, ok: false, headers: { get: () => '1' } };
+    return { status: 429, ok: false, headers: { get: () => null } };
   }
   return { status: 200, ok: true, headers: { get: () => null }, json: async () => ({ ok: true }) };
 }, {
-  gapMs: 80,
+  gapMs: 150,
   retries: 3,
   now: () => clock,
   sleep: async (ms) => { clock += ms; },
 });
-const first = await paced('https://data-api.polymarket.com/v2/positions?user=a');
-const second = await paced('https://data-api.polymarket.com/v2/positions?user=b');
+const [first, second] = await Promise.all([
+  paced('https://data-api.polymarket.com/v2/positions?user=a'),
+  paced('https://data-api.polymarket.com/v2/positions?user=b'),
+]);
 assert.deepEqual(first, { ok: true });
 assert.deepEqual(second, { ok: true });
+assert.equal(maxInFlight, 1);
 assert.equal(starts.length, 3);
-assert.ok(starts[1] - starts[0] >= 1000);
-assert.ok(starts[2] - starts[1] >= 80);
+assert.ok(starts[1] - starts[0] >= 30000);
+assert.ok(starts[2] - starts[1] >= 150);
 console.log('createPacedJsonFetch ok');

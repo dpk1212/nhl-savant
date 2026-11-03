@@ -46,8 +46,8 @@ const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const DELAY_MS = 800;
 const RETRY_LIMIT = 3;
-// In flight at once. Starts are paced in createPacedJsonFetch so four fast
-// replies cannot cross the 200 /v2/positions requests per 10s limit.
+// In flight at once. Position reads themselves run one at a time inside
+// createPacedJsonFetch, and a 429 holds the whole queue.
 const SCAN_CONCURRENCY = Number(process.env.SCAN_CONCURRENCY) || 4;
 const TIERS_TO_SCAN = ['ELITE', 'PROVEN', 'ACTIVE'];
 
