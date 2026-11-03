@@ -115,3 +115,64 @@ export async function fetchOpenPositionsV2(user, fetchJson) {
   if (pages.length > 1) secondPagesRead += 1;
   return mergePositionPages(pages[0], pages[1] || []);
 }
+
+// /v2/positions allows 200 requests / 10s. Four in-flight calls that return
+// quickly blow past that, and each call then retries on its own, which keeps
+// the ban going until the fetch job hits its 100-minute cap.
+export const POSITION_START_GAP_MS = 80;
+
+export function createPacedJsonFetch(httpFetch, {
+  gapMs = POSITION_START_GAP_MS,
+  retries = 3,
+  sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
+  now = () => Date.now(),
+  warn = () => {},
+} = {}) {
+  let nextSlot = 0;
+  let lastWarn = 0;
+  return async function paced(url) {
+    let hits = 0;
+    while (hits <= retries) {
+      const t = now();
+      const slot = Math.max(t, nextSlot);
+      nextSlot = slot + gapMs;
+      if (slot > t) await sleep(slot - t);
+      let res;
+      try {
+        res = await httpFetch(url, { headers: { Accept: 'application/json' } });
+      } catch {
+        hits += 1;
+        if (hits > retries) return null;
+        await sleep(400 * hits);
+        continue;
+      }
+      if (res?.status === 429) {
+        hits += 1;
+        const ra = Number(res.headers?.get?.('retry-after'));
+        const wait = Number.isFinite(ra) && ra > 0
+          ? Math.min(20000, Math.max(1000, ra * 1000))
+          : Math.min(8000, 1000 * 2 ** Math.min(hits, 3));
+        nextSlot = Math.max(nextSlot, now() + wait);
+        if (now() - lastWarn > 8000) {
+          lastWarn = now();
+          warn(`Rate limited, pausing ${Math.round(wait / 1000)}s`);
+        }
+        if (hits > retries) return null;
+        continue;
+      }
+      if (!res?.ok) {
+        hits += 1;
+        if (hits > retries) return null;
+        await sleep(400 * hits);
+        continue;
+      }
+      try {
+        return await res.json();
+      } catch {
+        hits += 1;
+        if (hits > retries) return null;
+      }
+    }
+    return null;
+  };
+}

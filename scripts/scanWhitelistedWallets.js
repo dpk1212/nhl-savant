@@ -78,7 +78,7 @@ import {
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
-import { fetchOpenPositionsV2, takeSecondPageCount } from './lib/fetchPositionPages.js';
+import { createPacedJsonFetch, fetchOpenPositionsV2, takeSecondPageCount } from './lib/fetchPositionPages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -423,25 +423,15 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   return candidates[0];
 }
 
-async function fetchWithRetry(url, retries = RETRY_LIMIT) {
-  let lastErr = null;
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const res = await httpFetch(url, { headers: { Accept: 'application/json' } });
-      if (res.status === 429) {
-        const wait = Math.pow(2, i + 1) * 1000;
-        await sleep(wait);
-        continue;
-      }
-      if (!res.ok) { lastErr = `${res.status} ${url}`; throw new Error(lastErr); }
-      return { ok: true, data: await res.json() };
-    } catch (e) {
-      lastErr = e.message;
-      if (i === retries) return { ok: false, error: lastErr };
-      await sleep(1000 * (i + 1));
-    }
-  }
-  return { ok: false, error: lastErr || 'unknown' };
+const pacedJson = createPacedJsonFetch(httpFetch, {
+  retries: RETRY_LIMIT,
+  sleep,
+  warn: (msg) => console.warn(`  ${msg}`),
+});
+async function fetchWithRetry(url) {
+  const data = await pacedJson(url);
+  if (data == null) return { ok: false, error: 'fetch failed' };
+  return { ok: true, data };
 }
 
 function loadJSON(filename) {

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  createPacedJsonFetch,
   fetchOpenPositionsV2,
   fetchTwoPositionPages,
   mergePositionPages,
@@ -107,3 +108,26 @@ assert.equal(keptV2.length, 500);
 assert.equal(takeSecondPageCount(), 0);
 
 console.log('fetchOpenPositionsV2 ok');
+
+let clock = 1000;
+const starts = [];
+const paced = createPacedJsonFetch(async () => {
+  starts.push(clock);
+  if (starts.length === 1) {
+    return { status: 429, ok: false, headers: { get: () => '1' } };
+  }
+  return { status: 200, ok: true, headers: { get: () => null }, json: async () => ({ ok: true }) };
+}, {
+  gapMs: 80,
+  retries: 3,
+  now: () => clock,
+  sleep: async (ms) => { clock += ms; },
+});
+const first = await paced('https://data-api.polymarket.com/v2/positions?user=a');
+const second = await paced('https://data-api.polymarket.com/v2/positions?user=b');
+assert.deepEqual(first, { ok: true });
+assert.deepEqual(second, { ok: true });
+assert.equal(starts.length, 3);
+assert.ok(starts[1] - starts[0] >= 1000);
+assert.ok(starts[2] - starts[1] >= 80);
+console.log('createPacedJsonFetch ok');

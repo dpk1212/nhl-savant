@@ -32,7 +32,7 @@ import {
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
-import { fetchOpenPositionsV2, takeSecondPageCount } from './lib/fetchPositionPages.js';
+import { createPacedJsonFetch, fetchOpenPositionsV2, takeSecondPageCount } from './lib/fetchPositionPages.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -46,9 +46,8 @@ const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const DELAY_MS = 800;
 const RETRY_LIMIT = 3;
-// Number of wallet position fetches kept in flight at once. The Polymarket
-// data-api tolerates modest parallelism; fetchWithRetry still backs off per
-// request on 429 so a burst self-throttles. Tune down if 429s appear.
+// In flight at once. Starts are paced in createPacedJsonFetch so four fast
+// replies cannot cross the 200 /v2/positions requests per 10s limit.
 const SCAN_CONCURRENCY = Number(process.env.SCAN_CONCURRENCY) || 4;
 const TIERS_TO_SCAN = ['ELITE', 'PROVEN', 'ACTIVE'];
 
@@ -281,28 +280,11 @@ function classifySport(title) {
 }
 
 // ─── Network ────────────────────────────────────────────────────────────────
-async function fetchWithRetry(url, retries = RETRY_LIMIT) {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const res = await httpFetch(url, { headers: { Accept: 'application/json' } });
-      if (res.status === 429) {
-        const wait = Math.pow(2, i + 1) * 1000;
-        console.warn(`  Rate limited, waiting ${wait / 1000}s...`);
-        await sleep(wait);
-        continue;
-      }
-      if (!res.ok) throw new Error(`${res.status} ${url}`);
-      return await res.json();
-    } catch (e) {
-      if (i === retries) {
-        console.warn(`  Failed after ${retries + 1} attempts: ${e.message}`);
-        return null;
-      }
-      await sleep(1000 * (i + 1));
-    }
-  }
-  return null;
-}
+const fetchWithRetry = createPacedJsonFetch(httpFetch, {
+  retries: RETRY_LIMIT,
+  sleep,
+  warn: (msg) => console.warn(`  ${msg}`),
+});
 
 function loadJSON(filename) {
   const path = join(ROOT, 'public', filename);
