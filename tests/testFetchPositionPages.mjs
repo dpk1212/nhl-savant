@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {
+  fetchOpenPositionsV2,
   fetchTwoPositionPages,
   mergePositionPages,
+  positionFromV2,
   takeSecondPageCount,
 } from '../scripts/lib/fetchPositionPages.js';
 
@@ -46,3 +48,62 @@ assert.equal(deduped.length, 4);
 assert.equal(deduped.filter((p) => p.asset === 'a').length, 1);
 
 console.log('fetchTwoPositionPages ok');
+
+const mapped = positionFromV2({
+  token_id: '99',
+  condition_id: '0xabc',
+  title: 'Hurricanes vs. Maple Leafs',
+  slug: 'nhl-car-tor-2026-11-02-car',
+  event_slug: 'nhl-car-tor-2026-11-02',
+  outcome: 'Hurricanes',
+  outcome_index: 0,
+  current_size: 1200,
+  avg_price: 0.46,
+  current_price: 0.52,
+  unrealized_pnl: 72,
+  event_id: '123',
+});
+assert.equal(mapped.asset, '99');
+assert.equal(mapped.eventSlug, 'nhl-car-tor-2026-11-02');
+assert.equal(mapped.outcomeIndex, 0);
+assert.equal(mapped.size, 1200);
+assert.equal(mapped.curPrice, 0.52);
+assert.equal(mapped.cashPnl, 72);
+assert.equal(positionFromV2({ outcome_index: 999 }).outcomeIndex, null);
+
+const urls = [];
+const pageRows = Array.from({ length: 500 }, (_, i) => ({
+  token_id: `t${i}`, title: 'x', outcome_index: 0, current_size: 1, avg_price: 0.5, current_price: 0.5,
+}));
+const v2 = await fetchOpenPositionsV2('0xabc', async (url) => {
+  urls.push(url);
+  if (urls.length === 1) {
+    return { data: pageRows, pagination: { has_more: true, next_cursor: 'cursor/1' } };
+  }
+  return {
+    data: [{ token_id: 't0', title: 'dup' }, { token_id: 'live', title: 'Leafs', outcome_index: 1, current_size: 10, avg_price: 0.4, current_price: 0.6, unrealized_pnl: 2, event_slug: 'nhl-car-tor-2026-11-02' }],
+    pagination: { has_more: false, next_cursor: null },
+  };
+});
+assert.equal(urls.length, 2);
+assert.match(urls[0], /\/v2\/positions\?/);
+assert.match(urls[0], /status=OPEN/);
+assert.match(urls[1], /cursor=cursor/);
+assert.equal(v2.length, 501);
+assert.equal(v2[500].title, 'Leafs');
+assert.equal(v2[500].eventSlug, 'nhl-car-tor-2026-11-02');
+assert.equal(takeSecondPageCount(), 1);
+
+const empty = await fetchOpenPositionsV2('0xnone', async () => ({ data: [], pagination: { has_more: false, next_cursor: null } }));
+assert.deepEqual(empty, []);
+const retired = await fetchOpenPositionsV2('0xold', async () => ({ error: 'Data API v1 has been retired' }));
+assert.equal(retired, null);
+const keptV2 = await fetchOpenPositionsV2('0xkeep', async (url) => (
+  url.includes('cursor=')
+    ? null
+    : { data: pageRows, pagination: { has_more: true, next_cursor: 'c2' } }
+));
+assert.equal(keptV2.length, 500);
+assert.equal(takeSecondPageCount(), 0);
+
+console.log('fetchOpenPositionsV2 ok');

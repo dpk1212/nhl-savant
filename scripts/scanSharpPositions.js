@@ -32,11 +32,10 @@ import {
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
-import { fetchTwoPositionPages, takeSecondPageCount, POSITION_PAGE_SIZE } from './lib/fetchPositionPages.js';
+import { fetchOpenPositionsV2, takeSecondPageCount } from './lib/fetchPositionPages.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const DATA_API = 'https://data-api.polymarket.com';
 
 const httpFetch = typeof globalThis.fetch === 'function'
   ? globalThis.fetch
@@ -845,9 +844,7 @@ async function run() {
   const fetchedPositions = await mapPool(
     walletsToScan,
     SCAN_CONCURRENCY,
-    (wallet) => fetchTwoPositionPages((offset) => fetchWithRetry(
-      `${DATA_API}/positions?user=${wallet.addr}&limit=${POSITION_PAGE_SIZE}&offset=${offset}`,
-    )),
+    (wallet) => fetchOpenPositionsV2(wallet.addr, fetchWithRetry),
   );
   const secondPages = takeSecondPageCount();
   if (secondPages > 0) console.log(`Position second page: ${secondPages} wallet(s)`);
