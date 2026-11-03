@@ -33,6 +33,7 @@ import {
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
 import { createPacedJsonFetch, fetchOpenPositionsV2, takeSecondPageCount } from './lib/fetchPositionPages.js';
+import { shouldKeepPreviousBoard } from './lib/cycleBudget.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -46,7 +47,7 @@ const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const DELAY_MS = 800;
 const RETRY_LIMIT = 3;
-// In flight at once. Position reads share a 150ms start gap and a browser
+// In flight at once. Position reads share an 80ms start gap and a browser
 // User-Agent; Cloudflare 429s Node's default signature.
 const SCAN_CONCURRENCY = Number(process.env.SCAN_CONCURRENCY) || 4;
 const TIERS_TO_SCAN = ['ELITE', 'PROVEN', 'ACTIVE'];
@@ -1102,6 +1103,11 @@ async function run() {
     } else {
       console.log('no positions on today');
     }
+  }
+
+  if (shouldKeepPreviousBoard(errorCount, walletsToScan.length)) {
+    console.log(`Keeping the previous board — ${errorCount} of ${walletsToScan.length} wallet reads failed`);
+    return;
   }
 
   // ─── Clear-trader filter (post-scan) ────────────────────────────────────────

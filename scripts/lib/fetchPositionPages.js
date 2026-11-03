@@ -118,9 +118,9 @@ export async function fetchOpenPositionsV2(user, fetchJson) {
 
 // Cloudflare answers 429, with no Retry-After, to Node's default fetch
 // signature. The same URL with a browser User-Agent returns 200. Starts stay
-// 150ms apart so a healthy scan remains under the 200 /v2/positions reads
-// per 10s window.
-export const POSITION_START_GAP_MS = 150;
+// 80ms apart (125 per 10s) so a healthy scan remains under the 200
+// /v2/positions reads per 10s window.
+export const POSITION_START_GAP_MS = 80;
 const RATE_LIMIT_RETRIES = 6;
 const POSITION_HEADERS = {
   Accept: 'application/json',
