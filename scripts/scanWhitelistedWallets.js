@@ -78,13 +78,12 @@ import {
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
-import { mergePositionPages, POSITION_PAGE_SIZE } from './lib/fetchPositionPages.js';
+import { fetchOpenPositionsV2, takeSecondPageCount } from './lib/fetchPositionPages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = join(__dirname, '..');
 const PUBLIC = join(ROOT, 'public');
-const DATA_API = 'https://data-api.polymarket.com';
 
 const argv = new Set(process.argv.slice(2));
 const VERBOSE = argv.has('--verbose');
@@ -662,23 +661,18 @@ async function run() {
     return fullAddr && !mainScanned.has(fullAddr);
   });
   console.log(`Supplemental fetch: ${toFetch.length} wallet(s) need a network call (concurrency=${SCAN_CONCURRENCY})...`);
-  let secondPages = 0;
   await mapPool(toFetch, SCAN_CONCURRENCY, async (w) => {
     const fullAddr = addrBySuffix.get(w.walletShort);
-    const res = await fetchWithRetry(
-      `${DATA_API}/positions?user=${fullAddr}&limit=${POSITION_PAGE_SIZE}&offset=0`,
+    const rows = await fetchOpenPositionsV2(fullAddr, async (url) => {
+      const res = await fetchWithRetry(url);
+      return res?.ok ? res.data : null;
+    });
+    fetchedBySuffix.set(
+      w.walletShort,
+      Array.isArray(rows) ? { ok: true, data: rows } : { ok: false, error: 'positions v2 failed' },
     );
-    if (res?.ok && Array.isArray(res.data) && res.data.length >= POSITION_PAGE_SIZE) {
-      const res2 = await fetchWithRetry(
-        `${DATA_API}/positions?user=${fullAddr}&limit=${POSITION_PAGE_SIZE}&offset=${POSITION_PAGE_SIZE}`,
-      );
-      if (res2?.ok && Array.isArray(res2.data)) {
-        res.data = mergePositionPages(res.data, res2.data);
-        secondPages += 1;
-      }
-    }
-    fetchedBySuffix.set(w.walletShort, res);
   });
+  const secondPages = takeSecondPageCount();
   if (secondPages > 0) console.log(`Position second page: ${secondPages} wallet(s)`);
   console.log('Processing supplemental scan results...\n');
 
