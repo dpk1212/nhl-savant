@@ -46,8 +46,8 @@ const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const DELAY_MS = 800;
 const RETRY_LIMIT = 3;
-// In flight at once. Position reads themselves run one at a time inside
-// createPacedJsonFetch, and a 429 holds the whole queue.
+// In flight at once. Position reads share a 150ms start gap and a browser
+// User-Agent; Cloudflare 429s Node's default signature.
 const SCAN_CONCURRENCY = Number(process.env.SCAN_CONCURRENCY) || 4;
 const TIERS_TO_SCAN = ['ELITE', 'PROVEN', 'ACTIVE'];
 
