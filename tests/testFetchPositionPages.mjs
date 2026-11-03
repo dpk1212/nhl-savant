@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   createPacedJsonFetch,
+  POSITION_START_GAP_MS,
   fetchOpenPositionsV2,
   fetchTwoPositionPages,
   mergePositionPages,
@@ -130,4 +131,5 @@ assert.deepEqual(first, { ok: true });
 assert.equal(starts.length, 2);
 assert.ok(starts[1] - starts[0] >= 30000);
 assert.match(seenUa[0], /Mozilla/);
+assert.equal(POSITION_START_GAP_MS, 80);
 console.log('createPacedJsonFetch ok');

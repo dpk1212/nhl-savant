@@ -17,6 +17,7 @@ import { isUFCMarketTitle } from './lib/ufcFighters.js';
 import { isATPMarketTitle } from './lib/atpPlayers.js';
 import { classifyEsportsMarket } from './lib/esportsTeams.js';
 import { isSoccerMarketTitle } from './lib/soccerTeams.js';
+import { supplementIsFresh } from './lib/cycleBudget.js';
 import {
   isNonFullGameTotalMarket,
   pickFullGameMlMarket,
@@ -248,6 +249,11 @@ async function run() {
   const existing = existsSync(OUT_PATH)
     ? JSON.parse(readFileSync(OUT_PATH, 'utf8'))
     : { wallets: {}, rejects: {} };
+  if (supplementIsFresh(existing.updatedAt, now)) {
+    const ageMin = Math.round((now - Date.parse(existing.updatedAt)) / 60000);
+    console.log(`Discover scan supplement skipped — last run ${ageMin} min ago`);
+    return;
+  }
   if (!existing.wallets) existing.wallets = {};
   if (!existing.rejects) existing.rejects = {};
   for (const [k, v] of Object.entries(existing.rejects)) {
