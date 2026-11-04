@@ -38,27 +38,27 @@ Close
 
 # MLB Baseball Predictions
 
-Updated 5 days ago
+Updated 6 days ago
 
 All ConferencesALNL
 
-- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#scroll-completed)
-- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#scroll-season)
-- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#scroll-simulation)
-- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#scroll-related)
+- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-completed)
+- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-season)
+- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-simulation)
+- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-related)
 
-## Upcoming Games for November 3, 2026
+## Upcoming Games for November 4, 2026
 
 There are no games on the schedule today.
 
-Games for Nov 2, 2026
+Games for Nov 3, 2026
 
-Games for Nov 4, 2026
+Games for Nov 5, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Runs | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -85,7 +85,7 @@ Games for Nov 4, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793739078094#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
@@ -101,7 +101,9 @@ Beginning in the 2014 season, we have begun including probable starting pitcher 
 
 ## Related Blog Posts
 
-[**BetOnline vs. SportsBetting.ag: Which Should You Pick?** Oct 29, 2026\\
+[**How to Maximize Your Casino Rewards Program** Nov 4, 2026\\
+\\
+A statistician explains how casinos score players](https://www.dratings.com/how-to-maximize-your-casino-rewards-program/) [**BetOnline vs. SportsBetting.ag: Which Should You Pick?** Oct 29, 2026\\
 \\
 We compare BetOnline and SportsBetting.ag head to head and tell you which one account to open.](https://www.dratings.com/betonline-vs-sportsbetting-ag-which-should-you-pick/) [**Where Should You Bet on Sports in 2026?** Oct 15, 2026\\
 \\
@@ -109,6 +111,4 @@ We weigh the pros and cons of all four ways to bet on sports in 2026.](https://w
 \\
 We put them head to head on odds, limits, payouts, bonuses, mobile and more.](https://www.dratings.com/bovada-vs-betonline-which-sportsbook-wins-in-2026/) [**EROI vs. EV: Why You Should Focus On Both** Oct 5, 2026\\
 \\
-A discussion about Expected Return on Investment versus Expected Value.](https://www.dratings.com/eroi-vs-ev-why-you-should-focus-on-both/) [**2026-2027 Preseason CFB Conference Projections** Aug 3, 2026\\
-\\
-Our preseason 2026-2027 conference projections for every FBS team.](https://www.dratings.com/2026-2027-preseason-cfb-conference-projections/) [All Blog Posts](https://www.dratings.com/blog)
+A discussion about Expected Return on Investment versus Expected Value.](https://www.dratings.com/eroi-vs-ev-why-you-should-focus-on-both/) [All Blog Posts](https://www.dratings.com/blog)
