@@ -1,0 +1,25 @@
+---
+description: Never deploy gh-pages with dummy Firebase .env; skip UI demos unless asked
+alwaysApply: true
+---
+
+# Manual gh-pages deploys
+
+**Never** build + push `gh-pages` using the workspace dummy `.env` (`AIzaSyDummyKeyForLocalDev…`). That ships an invalid Firebase API key and Sharp Flow sticks on “Loading Sharp Flow…”.
+
+## Correct paths (pick one)
+
+1. **Prefer:** wait for the next market-data cycle deploy (CI writes real `VITE_FIREBASE_*` from GitHub secrets into the Pages build), **or**
+2. **Manual:** build only with real production client env:
+   - Use `.env.production.local` (gitignored) or export `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_STRIPE_PUBLISHABLE_KEY` from GitHub Actions secrets / a prior good live bundle.
+   - Then `npm run build` and push `dist` → `gh-pages`.
+3. Or `workflow_dispatch` on `.github/workflows/deploy.yml` (uses secrets).
+
+## Preflight before telling Dale it’s live
+
+- Live `index-*.js` must contain a real `apiKey:"AIza…"` (project `nhl-savant`), **not** `DummyKey`.
+- Hard-refresh may be needed for CDN (`Cache-Control: max-age=600`).
+
+## UI verification
+
+Skip `computerUse` / screen recordings / lab walkthrough videos unless Dale explicitly asks. Terminal checks + live bundle markers are enough for UI ship verification.
