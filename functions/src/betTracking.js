@@ -559,7 +559,7 @@ const isActuallyFinal = (statusType) => {
 
 async function fetchMLBFinalGames() {
   try {
-    const res = await fetch(ESPN_MLB_URL);
+    const res = await fetch(ESPN_MLB_URL, {headers: ESPN_HEADERS});
     if (!res.ok) { logger.warn(`ESPN MLB API ${res.status}`); return []; }
     const data = await res.json();
     let postponedCount = 0;
@@ -605,7 +605,7 @@ async function fetchMLBFinalGames() {
 
 async function fetchNBAFinalGames() {
   try {
-    const res = await fetch(ESPN_NBA_URL);
+    const res = await fetch(ESPN_NBA_URL, {headers: ESPN_HEADERS});
     if (!res.ok) { logger.warn(`ESPN NBA API ${res.status}`); return []; }
     const data = await res.json();
     let postponedCount = 0;
@@ -651,7 +651,7 @@ async function fetchNBAFinalGames() {
 
 async function fetchWNBAFinalGames() {
   try {
-    const res = await fetch(ESPN_WNBA_URL);
+    const res = await fetch(ESPN_WNBA_URL, {headers: ESPN_HEADERS});
     if (!res.ok) { logger.warn(`ESPN WNBA API ${res.status}`); return []; }
     const data = await res.json();
     let postponedCount = 0;
@@ -860,7 +860,7 @@ async function fetchSOCFinalGames(dateStr) {
   const games = [];
   for (const base of ESPN_SOC_URLS) {
     try {
-      const res = await fetch(`${base}${ymd}`);
+      const res = await fetch(`${base}${ymd}`, {headers: ESPN_HEADERS});
       if (!res.ok) { logger.warn(`ESPN SOC API ${res.status} (${base})`); continue; }
       const data = await res.json();
       for (const e of data.events || []) {
@@ -900,7 +900,7 @@ async function fetchSOCFinalGames(dateStr) {
 async function fetchUFCFinalFights(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, "")}` : "";
-    const res = await fetch(`${ESPN_UFC_URL}${ymd}`);
+    const res = await fetch(`${ESPN_UFC_URL}${ymd}`, {headers: ESPN_HEADERS});
     if (!res.ok) { logger.warn(`ESPN UFC API ${res.status}`); return []; }
     const data = await res.json();
     const fights = [];
