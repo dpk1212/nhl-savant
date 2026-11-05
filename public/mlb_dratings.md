@@ -38,27 +38,27 @@ Close
 
 # MLB Baseball Predictions
 
-Updated 6 days ago
+Updated 7 days ago
 
 All ConferencesALNL
 
-- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-completed)
-- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-season)
-- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-simulation)
-- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#scroll-related)
+- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#scroll-completed)
+- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#scroll-season)
+- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#scroll-simulation)
+- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#scroll-related)
 
-## Upcoming Games for November 4, 2026
+## Upcoming Games for November 5, 2026
 
 There are no games on the schedule today.
 
-Games for Nov 3, 2026
+Games for Nov 4, 2026
 
-Games for Nov 5, 2026
+Games for Nov 6, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Runs | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -85,7 +85,7 @@ Games for Nov 5, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793826631486#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1793913889050#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
