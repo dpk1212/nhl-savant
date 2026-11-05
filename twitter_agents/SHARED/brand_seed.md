@@ -102,6 +102,12 @@ strategy/Editor notes only — **never** in hero `text` without a plain-English 
 
 Every tier has a free trial. Intent: **free trial — watch and grade it yourself** (wording flexible). Desire plant in hero; CTA + link in self-reply only.
 
+**Rule of One:** one big idea per hero (understand · believe · unique); subpoints reinforce only — no toss salad.  
+**Hormozi SPCL (influence stack):** Status · Power · Credibility · Likeness.  
+**Qual / Algorithm / Trust:** quality volume · delete→simplify→accelerate→automate last · show-me whole truth.  
+Influence = compliance with a request. Free SPCL in hero → ask in SR.  
+OS: `TWITTER.md` · `hormozi_rule_of_one.md` · `hormozi_spcl.md` · `hormozi_qual_algorithm.md`
+
 ---
 
 ## Voice (what the account actually does)
@@ -114,18 +120,15 @@ Confident, casual. “I” for felt/confession · “we” for system/sharps. Li
 
 ## Agent autonomy
 
-- **Learn** (script): pulse → learning ledger weights before anyone drafts
-- **Coach**: MCP-pull our tweets; write-better autopsy; read learn brief
-- **Researcher**: Ideate queue (8–15) + `angle_candidates`; cite ledger weights
-- **Strategist**: pick 1–2 from queue; convert + distribution
-- **Editor**: craft + brand gate; mute-receipts; Dale spine = override
+- **Hormozi desk** (single): Rule of One → SPCL → Qual + Trust — see `TWITTER.md`
+- Old Coach / Researcher / Strategist / Editor gate chain = **retired**
+- Dale spine = law; never auto-publish
 
 ## Pointers
 
+- OS: `TWITTER.md`
+- Rule of One: `twitter_agents/researcher/knowledge/hormozi_rule_of_one.md`
+- SPCL: `twitter_agents/researcher/knowledge/hormozi_spcl.md`
+- Qual/Algorithm/Trust: `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md`
 - Full kit: `BRAND_MESSAGING.md`
-- Voice data: `MY_VOICE_PROFILE.md`
-- Algo/psych: `ALGO_PSYCH_PLAYBOOK.md`
-- Loop: `TWITTER.md`
-- Org: `twitter_agents/README.md`
-- Learn: `twitter_agents/SHARED/learning_ledger.json` · `learn_brief_latest.md`
-- Ideate: `twitter_drafts/idea_queue.json`
+- Voice data: `MY_VOICE_PROFILE.md` (fossil — Dale likeness > NPC)

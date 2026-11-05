@@ -1,89 +1,98 @@
-# Twitter Loop — 2026-07-12 wipe to ride
-**7/12/2026, 12:32:40 PM ET** · 3 drafts
+# Twitter — 2026-08-29 · night · Brewers ML 2u toe-dip
+**Pathway — FULL (Hormozi OS)**
 
-> wipe-to-ride Dale spine. Single hero (Dale override + Coach single-hero recommendation) — confront 0-5/-18u cold, one named detail (Nats), hard pivot to Brewers continuity receipt, forced sizing/timing take. Full 5-loss ledger lives in a 2-part self-reply thread (plain English, no jargon tiers) since it cannot fit one 280-char tweet without becoming a ✅/❌ table. Outbound (angle_4/iq_wtr06) intentionally skipped this run — no live high-velocity parent post pulled via MCP this cycle; distribution hunt still owed. Never auto-publish.
+### 0 · Spine (Dale — law)
+- dipping my toe back in the water tonight after getting stomped yesterday
+- trusting this A tier sharp
+- some opposition so not a full play just 2u
+- pick the right angle · crush engagement
 
-**Live receipts:** Jul 11: 0-5 · -18.00u · -100% ROI on 18u stake. Losses (self-reply only, no ✅/❌ table): Mets ML 4u -137 · Rangers ML 3u -117 · Nats ML 4u +178 (blew a lead) · Argentina ML 4u -145 · Over 8.5 3u -108. Brewers TODAY LOCKED: ML +106 (stamp-preferred over export +110) · 2.5u · $6,449 · 1.72x this wallet's average · 1 against (honestly omitted from hero rather than faked to zero) · wallet crown same profile ~64% WR / +20% ROI cited only if needed in a short beat (not used in hero — kept single-tension).
+### 0b–0c · Continuity / forward look
+- Ask temp warm-cool · feed needs live board with **S or P** (not philosophy / promo)
+- Hot window: **S+P** same-printer cash-return · **S+C** split · **L+C** when confession carries receipts
+- Soft diary alone = kill → land scarce $ by line 2–3
+- Dale spine overrides soft-open ban *if* pudding is immediate
+- Angle: stomped → 2u toe + **same printer** that pressed Sox 4.2× / Braves 1.7× · contested 3 = why not smash
+- **NOT:** promo · lecture · ✅ scoreboard · brochure all-four SPCL · hard ask
+
+### 1 · WHO
+Bettors who just got stomped and want proof + discipline — not revenge sizing or tipster “lock of the day”
+
+### 2 · PURPOSE
+**Give / buzz** — unfinished watch · sharp-vs-sharp tension · human toe-dip  
+**Ask:** none (desire plant only if anything — profile does the rest)
+
+### 3 · ONE
+Got stomped yesterday → dipping **2u** on Brewers ML behind an A-tier printer who’s **+$545K L30** — contested by 3 sharps so it’s a toe, not a smash
+
+### 4 · SPCL ★
+**L + S** (P rides on same-wallet trail — not a third pillar)
+- **L** — Dale stomped → toe in water · 2u authorship (his words)
+- **S** — scarce control: +$545K L30 · $32.6K lead · A-tier board we track
+- Contested 3 + against −6.3% = whole-truth **C** seasoning for the 2u so-what — not owned as brochure letter
+
+### 5 · STUFF (receipts only)
+- TEX @ MIL · **Brewers ML** · ticket **−164** · **2.0u** · LOCKED+SET
+- Lead wallet …07152f · **$32.6K** · **0.6× usual** (~$59.6K) · best on price 77%
+- Sharp Tier A · 0.5x Lean · **Sharp contested — 3**
+- L30 card: **+$545K** · **+57% ROI** · **12-4 · 75%** · Beat Close **77%**
+- MLB ML slice: **+$520K · 11-3 · 79%**
+- Board: **$33.9K** Brewers (85%) · Proven **79%** · Against **$6.4K** (48% WR · −6.3% ROI)
+- Same-printer trail (history on card): Aug 24 **Sox ML 4.2× $249.1K W** · Aug 28 **Braves ML 1.7× $102K W**
+- Do **not** mix “why we trust” +38% with L30 +57% in the same beat — use L30 card numbers
+
+### 6 · HOOK QA
+```
+GOT STOMPED YESTERDAY.
+
+Dipping a toe back in tonight —
+behind a wallet that's +$545K L30.
+```
+- Screenshot test: scarce $ by line 3 ✓
+- What / how / so what ✓ (stomped → toe · printer · contested = 2u)
+- Not soft diary alone ✓
+- Silhouette: same-printer cash-return (window hero #1) ✓
+- Kill: promo · Upgrade · hide contested · invent units · tipster smash energy
+
+### 7–8 · Algorithm
+Delete until you’d add back · dinner-table Dale · no system-label leak without plain English · no ask
 
 ---
 
-## 1 · HERO — hero a wipe to ride
-**When:** NOW — Jul 12, day after the Jul 11 wipe. Brewers locked pre-game tonight.
-**Attach:** Brewers lock card — $6,449 / +106 / 1.72x sizeRatio readable
-**Bet:** OVER vs hero baseline ~1235.5 impr, target ~1400-2200; >=3 replies to clear the ATG reply-bar floor (2075936032676053436, 3r) — because a real, disclosed -18u carries more trust-testing weight than any confession we've shipped, and this is a Coach-named gap (zero prior 'real loss -> forward trust' example in our timeline); untested high-stakes moments over-index on curiosity and reply currency.
-**Arsenal:** #confront #costly_signal #forced_take #clock
-**Improves on:** Weekend menu death 2076035931661046149 (1201v/0r — confession without a forced take, dual-play menu, triple vibe-ask) + scoreboard QT 2075762415539527896 (1376v/0r — reach without replies, W/L ledger). Budgets the pain to ONE aggregate (0-5/-18u) + ONE named detail (Nats), keeps the full 5-loss ledger to self-reply, and closes on a genuine sizing/timing take instead of a soft statement or a fake fade/ride binary on one-sided proof.
-**Felt:** A real, no-excuses bad day landed the morning before a lock I trust exactly as much as I did before it happened.
-**Spine:** Yesterday wrecked the board and I'm not going to dress it up. Nats blowing a lead is the one that actually stings — at least we weren't the ones on McGregor. Tonight the same process is still running, sizing up like nothing happened. Too much conviction the morning after, or exactly the point?
-**Scroll-stop:** Opens by naming a real wipeout cold — no hedge, no ledger, no softened number — which is a confession this account has never had to post before, so a stranger has to see what's coming next.
-**Job A · Engage:** Forces a take on Brewers' size/timing the morning after a real loss — a sizing/conviction question a stranger can actually argue ('too much conviction, or exactly the point?'), never a fade/ride binary on proof that's already one-sided.
-**Job B · Convert:** Plants the desire (the same process sizing up live, unprompted by yesterday) with zero CTA language in the hero — conversion completes only in the self-reply.
-**Why / context:** The why-sized block: $6,449 at 1.72x this wallet's average is the observable reason tonight's play matters — not just that it's locked, but how much more than usual this wallet is trusting it, the day after it got run over.
-**Convert job:** Desire = watch tonight's process live after a real loss -> soft trial completed in self-reply only
-**Convert plant:** Hero — Brewers continuity receipt ($6,449 at 1.72x this wallet's average) IS the desire beat, zero CTA verbs, no link
-**Convert ask:** Self-reply — first week free + nhlsavant.com/?ref=wipe0711
-**Strategist:** passed
-**Product frame:** We track hundreds of sharp bettors for months and post where their money moves before the games start
-**Editor:** passed
-**Length:** 271/280 · long-band ✓
+## HERO — single tweet
+
+**Attach:** (1) lead-wallet L30 tear card (+$545K curve + contested badge) · (2) Brewers ML lock board (Proven 79% / Against −6.3% visible)
 
 ### Copy this ↓
 
 ```
-Yesterday wrecked the board. 0-5. -18 units.
+GOT STOMPED YESTERDAY.
 
-Nats blew a lead we should've banked. At least we weren't on McGregor.
+Dipping a toe back in tonight —
+trusting this A-tier sharp.
 
-Same process: Brewers +106 · $6,449 at 1.72× this wallet's average.
++$545K the last 30 days.
+12-4 · 75% · +57% ROI.
 
-Too much conviction, morning after. Or exactly the point? We'll know by first pitch.
+TEX @ MIL · Brewers ML · 2.0u.
+
+$32.6K on our side
+(0.6× his usual — even he's light).
+
+Same wallet that pressed the Sox
+at 4.2× ($249K) and cashed.
+Pressed the Braves yesterday too.
+
+Some opposition.
+Three sharps fighting him.
+Their side: $6.4K of −6.3% ROI money.
+
+Not a full smash. Just 2u.
+Toe in the water.
 ```
 
-[Open in X →](https://x.com/intent/tweet?text=Yesterday+wrecked+the+board.+0-5.+-18+units.%0A%0ANats+blew+a+lead+we+should%27ve+banked.+At+least+we+weren%27t+on+McGregor.%0A%0ASame+process%3A+Brewers+%2B106+%C2%B7+%246%2C449+at+1.72%C3%97+this+wallet%27s+average.%0A%0AToo+much+conviction%2C+morning+after.+Or+exactly+the+point%3F+We%27ll+know+by+first+pitch.)
+### Attach note
+Lead with the **+$545K L30 card** (contested-3 badge in frame). Second image = battle-bar board so strangers see Proven vs Against without us lecturing.
 
----
-
-## 2 · SELF-REPLY — self reply a ledger
-**When:** Reply 1 under hero_a_wipe_to_ride — full plain-English Jul 11 ledger, no jargon tiers, no ✅/❌ table.
-**Attach:** none
-**Bet:** Proof-of-work for repliers who want the full board; supports the hero's reply floor rather than competing with it.
-**Arsenal:** #costly_signal #proof
-**Improves on:** Keeps the five-loss body count entirely out of the hero (Coach hard law: recap -> self-reply only, prose, never a checklist) while still giving anyone who scrolls into replies the receipts.
-
-### Copy this ↓
-
-```
-No dressing it up, here's the full board: Mets moneyline lost 4u. Rangers moneyline lost 3u. Nationals moneyline lost 4u — the blown lead is the one that actually stings. Argentina moneyline lost 4u. Over 8.5 lost 3u. Five for five. Minus 18 units.
-```
-
-[Open in X →](https://x.com/intent/tweet?text=No+dressing+it+up%2C+here%27s+the+full+board%3A+Mets+moneyline+lost+4u.+Rangers+moneyline+lost+3u.+Nationals+moneyline+lost+4u+%E2%80%94+the+blown+lead+is+the+one+that+actually+stings.+Argentina+moneyline+lost+4u.+Over+8.5+lost+3u.+Five+for+five.+Minus+18+units.)
-
----
-
-## 3 · SELF-REPLY — self reply b convert
-**When:** Reply 2 under self_reply_a_ledger — Brewers echo (closes the loop for reply-only scrollers) + soft trial ask + link.
-**Attach:** none
-**Bet:** profile -> trial; soft ask carries zero $ / promo-price language
-**Arsenal:** #soft_ask #convert
-**Improves on:** Convert ask stays entirely in self-reply per convert law; echoes the hero's Brewers receipt so a reader who only sees the recap still gets the forward pivot before the ask.
-
-### Copy this ↓
-
-```
-Brewers is the same process, running like nothing happened: +106, $6,449 at 1.72× this wallet's average.
-
-First week's free if you want to watch it grade itself instead of taking my word for it.
-
-nhlsavant.com/?ref=wipe0711
-```
-
-[Open in X →](https://x.com/intent/tweet?text=Brewers+is+the+same+process%2C+running+like+nothing+happened%3A+%2B106%2C+%246%2C449+at+1.72%C3%97+this+wallet%27s+average.%0A%0AFirst+week%27s+free+if+you+want+to+watch+it+grade+itself+instead+of+taking+my+word+for+it.%0A%0Anhlsavant.com%2F%3Fref%3Dwipe0711)
-
----
-
-## Order of operations
-1. **HERO** hero_a_wipe_to_ride — NOW — Jul 12, day after the Jul 11 wipe. Brewers locked pre-game tonight.
-2. **SELF-REPLY** self_reply_a_ledger — Reply 1 under hero_a_wipe_to_ride — full plain-English Jul 11 ledger, no jargon tiers, no ✅/❌ table.
-3. **SELF-REPLY** self_reply_b_convert — Reply 2 under self_reply_a_ledger — Brewers echo (closes the loop for reply-only scrollers) + soft trial ask + link.
-
-**Never auto-publish.** No site link in outbound replies. PRE-LOCK language until T−15.
+### SR
+**None.** PURPOSE = give/buzz. Soft trial lives in profile / later ask after this free SPCL lands.
