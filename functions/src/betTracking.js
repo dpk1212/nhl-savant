@@ -975,7 +975,9 @@ function isGradableATPMainML(pos) {
 async function fetchATPFinalMatches(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, "")}` : "";
-    const res = await fetch(`${ESPN_ATP_URL}${ymd}`);
+    // ESPN 403s Node's default fetch UA; curl/8.x is the same header
+    // the rest of this grader and gradeSharpActions.js already use.
+    const res = await fetch(`${ESPN_ATP_URL}${ymd}`, {headers: ESPN_HEADERS});
     if (!res.ok) { logger.warn(`ESPN ATP API ${res.status}`); return []; }
     const data = await res.json();
     const matches = [];
