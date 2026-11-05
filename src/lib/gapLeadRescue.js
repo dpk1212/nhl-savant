@@ -9,12 +9,17 @@
  * The side ships when two or more qualified wallets are on it, the other
  * side has a score, our score leads by 40 points, and the other score is
  * negative. A side at zero goes to 3u. A side already under 3u gets +1.
- * A side at 3u or more stays. The odds cap and the -425 favorite mute still
- * apply, and neither one may shrink a stake that is already on the side.
+ * A side at 3u or more stays. From 2026-11-05 a stake already in the
+ * 2-unit band, from 2 up to but not including 3, stays there when the
+ * press edge is under 5. That is the gap hold in the edge-under-5 mute.
+ * An edge of 5 or more still takes the extra unit. The odds cap and the
+ * -425 favorite mute still apply, and neither one may shrink a stake
+ * that is already on the side.
  * A stake already on the other side mutes the rescue and the +1.
  * NHL, NBA, NFL, CFB. Moneyline, spread, total.
  */
 
+import { gapBandStays } from './edgeUnder5.js';
 import { oddsCap } from './oddsCap.js';
 
 export const GAP_LEAD_FROM = '2026-10-30';
@@ -204,6 +209,7 @@ function roundUnits(units) {
 export function applyGapLeadRescue({
   units, odds = null, sport, market, side, pickDate, positions, books = null,
   opponentUnits = 0,
+  pressEdge = null,
 }) {
   const ev = evaluateGapLead({ sport, market, side, pickDate, positions, books });
   const current = Number(units);
@@ -214,6 +220,9 @@ export function applyGapLeadRescue({
   if (!ev.fires) return { ...ev, action: 'hold', units: safe };
   if (Number.isFinite(odds) && odds < GAP_LEAD_FAV_JUICE) {
     return { ...ev, action: 'hold', units: safe, reason: 'fav_juice' };
+  }
+  if (gapBandStays({ units: safe, pressEdge, pickDate })) {
+    return { ...ev, action: 'hold', units: safe, reason: 'gap_band_stays' };
   }
   if (safe + 0.001 >= GAP_LEAD_BOOST_UNDER) return { ...ev, action: 'hold', units: safe };
   const raw = safe <= 0 ? GAP_LEAD_RESCUE_UNITS : safe + 1;
