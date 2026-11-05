@@ -84,6 +84,48 @@ test('a side the other book has no score on does not fire', () => {
   assert.equal(out.reason, 'other_side_unscored');
 });
 
+test('from Nov 5 a 2-unit stake with edge under 5 stays, and an edge of 5 still takes the extra unit', () => {
+  const books = booksFrom([
+    ...fill('aaaaaa', 80),
+    ...fill('bbbbbb', 40),
+    ...fill('cccccc', -20),
+  ]);
+  const stay = applyGapLeadRescue({
+    units: 2, odds: -110, sport: 'NBA', market: 'ML', side: 'home',
+    pickDate: '2026-11-05', positions: [
+      { walletShort: 'aaaaaa', side: 'home', invested: 100 },
+      { walletShort: 'bbbbbb', side: 'home', invested: 100 },
+      { walletShort: 'cccccc', side: 'away', invested: 100 },
+    ],
+    books, pressEdge: 1.4,
+  });
+  assert.equal(stay.fires, true);
+  assert.equal(stay.action, 'hold');
+  assert.equal(stay.units, 2);
+  assert.equal(stay.reason, 'gap_band_stays');
+  const half = applyGapLeadRescue({
+    units: 2.5, odds: -110, sport: 'NBA', market: 'ML', side: 'home',
+    pickDate: '2026-11-05', positions: [
+      { walletShort: 'aaaaaa', side: 'home', invested: 100 },
+      { walletShort: 'bbbbbb', side: 'home', invested: 100 },
+      { walletShort: 'cccccc', side: 'away', invested: 100 },
+    ],
+    books, pressEdge: null,
+  });
+  assert.equal(half.units, 2.5);
+  const stillAdds = applyGapLeadRescue({
+    units: 2, odds: -110, sport: 'NBA', market: 'ML', side: 'home',
+    pickDate: '2026-11-05', positions: [
+      { walletShort: 'aaaaaa', side: 'home', invested: 100 },
+      { walletShort: 'bbbbbb', side: 'home', invested: 100 },
+      { walletShort: 'cccccc', side: 'away', invested: 100 },
+    ],
+    books, pressEdge: 6,
+  });
+  assert.equal(stillAdds.action, 'boost');
+  assert.equal(stillAdds.units, 3);
+});
+
 test('a stake under 3 gets one unit and a stake at 3 or 4 stays', () => {
   const books = booksFrom([
     ...fill('aaaaaa', 80),

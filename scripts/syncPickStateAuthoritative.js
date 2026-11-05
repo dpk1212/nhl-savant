@@ -386,6 +386,10 @@ import {
 } from '../src/lib/gapLeadRescue.js';
 import { cbbV12StakeMuted, CBB_MATURE_MUTED_BY } from '../src/lib/cbbStakeMute.js';
 import {
+  applyEdgeUnder5Mute,
+  edgeUnder5Stamp,
+} from '../src/lib/edgeUnder5.js';
+import {
   evaluatePressLadder,
   atpMayStake,
   pressStamp,
@@ -4233,6 +4237,7 @@ async function createMissingLockedPicks({
           pressEdge: pressEvalCreate?.edge ?? null,
           netMeanPrior: netCreate?.netMeanPrior ?? null,
           pickDate: TARGET_DATE,
+          sport,
         });
         if (pressEdgeNetPolicyCreate.action === 'MUTE') {
           peakUnitsApplied = 0;
@@ -4301,12 +4306,31 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE,
           positions,
           opponentUnits: unitsAgainst(side),
+          pressEdge: pressEvalCreate?.edge ?? null,
         });
         gapPolicyCreate.unitsBefore = unitsBeforeGap;
         gapPolicyCreate.tierBefore = tierBeforeGap;
         if (gapPolicyCreate.action === 'rescue' || gapPolicyCreate.action === 'boost') {
           peakUnitsApplied = gapPolicyCreate.units;
           hcStakeTierCreate = GAP_LEAD_STAKE_TIER;
+        }
+      }
+      // Edge under 5. After the gap rung, so a 2-unit gap is still a
+      // 2-unit gap and a gap rescue to 3u can be put back to 0.
+      let edgeUnder5Create = null;
+      if (pressAppliedCreate && !isOperatorKilled({ _id: docId }, side, null)) {
+        edgeUnder5Create = applyEdgeUnder5Mute({
+          units: peakUnitsApplied,
+          pressEdge: pressEvalCreate?.edge ?? null,
+          pickDate: TARGET_DATE,
+          sport,
+          market: marketType,
+          odds: odds ?? null,
+          gapFires: gapPolicyCreate?.fires === true,
+        });
+        if (edgeUnder5Create.action === 'MUTE') {
+          peakUnitsApplied = 0;
+          hcStakeTierCreate = 'MONITORING';
         }
       }
       if (isOperatorKilled({ _id: docId }, side, null)) {
@@ -4483,6 +4507,7 @@ async function createMissingLockedPicks({
       if (gapPolicyCreate?.fires && !isOperatorKilled({ _id: docId }, side, null)) {
         Object.assign(v8Stamps, gapLeadStamp(gapPolicyCreate));
       }
+      if (edgeUnder5Create) Object.assign(v8Stamps, edgeUnder5Stamp(edgeUnder5Create));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -4699,6 +4724,9 @@ async function createMissingLockedPicks({
       } else if (cbbV12StakeMuted(sport, TARGET_DATE)) {
         v8Stamps.mutedBy = CBB_MATURE_MUTED_BY;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
+      } else if (edgeUnder5Create?.action === 'MUTE') {
+        v8Stamps.mutedBy = edgeUnder5Create.mutedBy;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (mlDoorKind(mlDoorPolicyCreate?.action) === 'cut') {
         v8Stamps.mutedBy = mlDoorPolicyCreate.mutedBy;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
@@ -4857,6 +4885,7 @@ async function createMissingLockedPicks({
           ...(unitTierPolicyCreate?.reason ? [unitTierPolicyCreate.reason] : []),
           ...(favJuicePolicyCreate?.reason ? [favJuicePolicyCreate.reason] : []),
           ...(pressEdgeNetPolicyCreate?.reason ? [pressEdgeNetPolicyCreate.reason] : []),
+          ...(edgeUnder5Create?.reason ? [edgeUnder5Create.reason] : []),
           ...(steamTailPolicyCreate?.reason ? [steamTailPolicyCreate.reason] : []),
           ...(evDriftPolicyCreate?.reason ? [evDriftPolicyCreate.reason] : []),
           ...(topCrowdedPolicyCreate?.reason ? [topCrowdedPolicyCreate.reason] : []),
@@ -6660,6 +6689,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pressEdge: pressEval?.edge ?? null,
       netMeanPrior: netLive?.netMeanPrior ?? null,
       pickDate,
+      sport: pick.sport,
     });
     if (pressEdgeNetPolicy.action === 'MUTE') {
       finalUnitsApplied = 0;
@@ -6728,6 +6758,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pickDate,
       positions: group,
       opponentUnits: oppositeStakeUnits(side, pick.sides),
+      pressEdge: pressEval?.edge ?? null,
     });
     if ((gapPolicy.action === 'rescue' || gapPolicy.action === 'boost') && appliedStatus !== 'ACTIVE') {
       appliedStatus = 'ACTIVE';
@@ -6737,6 +6768,26 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (gapPolicy.action === 'rescue' || gapPolicy.action === 'boost') {
       finalUnitsApplied = gapPolicy.units;
       hcStakeTier = GAP_LEAD_STAKE_TIER;
+    }
+  }
+
+  // Edge under 5, after the gap rung. Manual stake never entered the
+  // ladder. Operator kill still wins, below. A stake already at 0 is left
+  // alone, so the favorite-juice mute stays the reason.
+  let edgeUnder5Policy = null;
+  if (pressApplied && !skipManualFlinch) {
+    edgeUnder5Policy = applyEdgeUnder5Mute({
+      units: finalUnitsApplied,
+      pressEdge: pressEval?.edge ?? null,
+      pickDate,
+      sport: pick.sport,
+      market: mkt,
+      odds: sideOdds,
+      gapFires: gapPolicy?.fires === true,
+    });
+    if (edgeUnder5Policy.action === 'MUTE') {
+      finalUnitsApplied = 0;
+      hcStakeTier = 'MONITORING';
     }
   }
 
@@ -6840,6 +6891,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (steamTailPolicy?.reason && !reasons.includes(steamTailPolicy.reason)) reasons.push(steamTailPolicy.reason);
   if (favJuicePolicy?.reason && !reasons.includes(favJuicePolicy.reason)) reasons.push(favJuicePolicy.reason);
   if (pressEdgeNetPolicy?.reason && !reasons.includes(pressEdgeNetPolicy.reason)) reasons.push(pressEdgeNetPolicy.reason);
+  if (edgeUnder5Policy?.reason && !reasons.includes(edgeUnder5Policy.reason)) reasons.push(edgeUnder5Policy.reason);
   if (mlDoorPolicy?.reason && !reasons.includes(mlDoorPolicy.reason)) reasons.push(mlDoorPolicy.reason);
   if (unitTierPolicy?.reason && !reasons.includes(unitTierPolicy.reason)) reasons.push(unitTierPolicy.reason);
   if (boardSharePolicy?.reason && !reasons.includes(boardSharePolicy.reason)) reasons.push(boardSharePolicy.reason);
@@ -6987,6 +7039,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.manualMute = true;
   } else if (cbbMatureMute) {
     patch.mutedBy = CBB_MATURE_MUTED_BY;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  } else if (edgeUnder5Policy?.action === 'MUTE') {
+    patch.mutedBy = edgeUnder5Policy.mutedBy;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (mlDoorKind(mlDoorPolicy?.action) === 'cut') {
     patch.mutedBy = mlDoorPolicy.mutedBy;
@@ -7198,6 +7253,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     Object.assign(patch, pressStamp(pressRecord, now));
     patch.v8_pressApplied = pressApplied;
     if (pressEdgeNetPolicy) Object.assign(patch, pressEdgeNetStamp(pressEdgeNetPolicy));
+    if (edgeUnder5Policy) Object.assign(patch, edgeUnder5Stamp(edgeUnder5Policy));
     if (mlDoorPolicy) Object.assign(patch, mlDoorSteamStamp(mlDoorPolicy));
     if (top3Policy?.fires) Object.assign(patch, top3PickStamp(top3Policy));
     else if (sd.v8_top3Pick === true && top3Policy && !top3Policy.fires) {
@@ -7884,6 +7940,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     changes.push(
       `PRESS-EDGE-NET: ${pressEdgeNetPolicy.reason} ${pressEdgeNetPolicy.unitsPrePolicy}u → 0u`
       + ` (edge=${edgeTxt} net=${netTxt})`,
+    );
+  }
+  if (edgeUnder5Policy?.action === 'MUTE') {
+    const edgeTxt = pressEval?.edge == null ? '—' : Number(pressEval.edge).toFixed(1);
+    changes.push(
+      `EDGE-UNDER-5: ${edgeUnder5Policy.unitsPrePolicy}u → 0u (edge=${edgeTxt})`,
+    );
+  } else if (edgeUnder5Policy?.action === 'HOLD') {
+    changes.push(
+      `EDGE-UNDER-5 HOLD: ${edgeUnder5Policy.clause} ${edgeUnder5Policy.units}u`,
     );
   }
 

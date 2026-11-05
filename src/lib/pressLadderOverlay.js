@@ -228,7 +228,12 @@
  * card stores on v8_pressEdge.
  *
  * Fail-closed: missing walletDetails or profiles → nothing fires (0u).
+ *
+ * From 2026-11-05 the four-sport book leaves this clamp alone. Edge under
+ * 5, with the 2-unit gap hold and the NBA moneyline favorite hold, is
+ * applied after the gap rung. See edgeUnder5.js.
  */
+import { edgeUnder5Owns } from './edgeUnder5.js';
 import { isConfirmedSportRec } from './whitelistTier.js';
 import { stakeSizeRatio } from './sizeRatioBands.js';
 import {
@@ -674,6 +679,7 @@ export function applyPressEdgeNetClamp({
   pressEdge = null,
   netMeanPrior = null,
   pickDate = null,
+  sport = null,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const hold = (action, reason = null) => ({
@@ -684,6 +690,9 @@ export function applyPressEdgeNetClamp({
     unitsPrePolicy: pre,
     clause: null,
   });
+  // Nov 5+: the four-sport mute runs after the gap rung, so this earlier
+  // cut must not zero a 2-unit gap before that rung can see it.
+  if (edgeUnder5Owns(pickDate, sport)) return hold('PASS');
   if (!(pre >= PRESS_EDGE_NET_MIN_UNITS)) return hold('PASS');
   if (!isPressEdgeNetLive(pickDate)) return hold('EXEMPT', 'pre_cutover');
   const edge = stampedPressEdge(pressEdge);
