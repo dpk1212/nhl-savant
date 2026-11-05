@@ -14,9 +14,10 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import admin from 'firebase-admin';
 import { calculateOutcome } from './gradeSharpActions.js';
 import {
+  atpCodesMatch,
   isGradableATPMainML,
   isMainATPMatchSlug,
-  playersMatch,
+  namesLooselyMatch,
   resolveATPPlayer,
 } from './lib/atpPlayers.js';
 
@@ -178,14 +179,14 @@ export function orientMatch(pos, pool, { requireDate = true } = {}) {
     : pool;
   const tryPool = dated.length ? dated : pool;
   for (const g of tryPool) {
-    if (parts.length >= 2 && g.awayCode === parts[0] && g.homeCode === parts[1]) return g;
-    if (parts.length >= 2 && g.awayCode === parts[1] && g.homeCode === parts[0]) {
+    if (parts.length >= 2 && atpCodesMatch(g.awayCode, parts[0]) && atpCodesMatch(g.homeCode, parts[1])) return g;
+    if (parts.length >= 2 && atpCodesMatch(g.awayCode, parts[1]) && atpCodesMatch(g.homeCode, parts[0])) {
       return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
     }
   }
   for (const g of tryPool) {
-    if (playersMatch(pos.away, g.awayTeam) && playersMatch(pos.home, g.homeTeam)) return g;
-    if (playersMatch(pos.away, g.homeTeam) && playersMatch(pos.home, g.awayTeam)) {
+    if (namesLooselyMatch(pos.away, g.awayTeam) && namesLooselyMatch(pos.home, g.homeTeam)) return g;
+    if (namesLooselyMatch(pos.away, g.homeTeam) && namesLooselyMatch(pos.home, g.awayTeam)) {
       return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
     }
   }

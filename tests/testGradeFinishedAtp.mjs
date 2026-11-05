@@ -46,6 +46,24 @@ assert.equal(oriented.homeScore, 1);
 assert.equal(calculateOutcome(oriented, 'ML', 'home', null, 'ATP'), 'WIN');
 assert.equal(calculateOutcome(oriented, 'ML', 'away', null, 'ATP'), 'LOSS');
 
+const hijikata = orientMatch({
+  gameKey: 'rinkyhijikata_tomasetcheverry',
+  date: '2026-11-05',
+  away: 'Rinky Hijikata',
+  home: 'Tomas Etcheverry',
+}, [{
+  dateET: '2026-11-05',
+  awayCode: 'tomasmartinetcheverry',
+  homeCode: 'rinkyhijikata',
+  awayTeam: 'Tomas Martin Etcheverry',
+  homeTeam: 'Rinky Hijikata',
+  awayScore: 0,
+  homeScore: 1,
+}], { requireDate: true });
+assert.equal(hijikata.awayScore, 1);
+assert.equal(hijikata.homeScore, 0);
+assert.equal(calculateOutcome(hijikata, 'ML', 'away', null, 'ATP'), 'WIN');
+
 const walkover = orientMatch({
   gameKey: 'carlosalcaraz_matteoberrettini',
   date: '2026-11-05',
