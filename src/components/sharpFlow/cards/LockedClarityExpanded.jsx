@@ -272,16 +272,17 @@ function WalletMap({ wallets, selected, onSelect, gid, mineShorts = null }) {
   const yLabelEvery = yTicks.length > 8 ? 2 : 1;
 
   const sorted = [...plottable].sort((a, b) => {
-    const r = (p) => (
+    const rank = (p) => (
       p.short === selected ? 7
         : isMarketSpecialistPress(p) ? 6
-          : (p.side === 'ours' && p.topQ) ? 5
-            : p.hardMarket ? 4.5
-              : p.qualify === 'VAULT' ? 4
-                : p.proven ? 3
-                  : p.side === 'ours' ? 2 : 1
+          : p.trusted ? 5.5
+            : (p.side === 'ours' && p.topQ) ? 5
+              : p.hardMarket ? 4.5
+                : p.qualify === 'VAULT' ? 4
+                  : p.proven ? 3
+                    : p.side === 'ours' ? 2 : 1
     );
-    return r(a) - r(b);
+    return rank(a) - rank(b);
   });
 
   return (
@@ -383,7 +384,7 @@ function WalletMap({ wallets, selected, onSelect, gid, mineShorts = null }) {
         // ↑ = sized up (≥1.5×). Gold star = already in My Sharps.
         const pop = sel || mine || specialistPress;
         return (
-          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={pop ? 1 : specialist ? 0.82 : 0.42}>
+          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={pop || p.trusted ? 1 : specialist ? 0.82 : 0.42}>
             <circle cx={cx} cy={cy} r={Math.max(r + 8, 16)} fill="transparent" />
             {sel && (
               <circle cx={cx} cy={cy} r={r + 5.5} fill="none" stroke={GOLD_HI} strokeWidth={1.15} opacity={0.85} />
@@ -407,12 +408,20 @@ function WalletMap({ wallets, selected, onSelect, gid, mineShorts = null }) {
                 opacity={sel || specialistPress ? 0.9 : 0.62}
               />
             )}
+            {p.trusted && (
+              <circle
+                cx={cx} cy={cy} r={r + 4}
+                fill="none"
+                stroke={GREEN}
+                strokeWidth={1.5}
+              />
+            )}
             <circle
               cx={cx} cy={cy} r={r}
               fill={st.fill}
-              stroke={sel ? GOLD_HI : (isBestSharp || specialistPress) ? GOLD : st.stroke}
-              strokeWidth={sel || isBestSharp || specialistPress ? 1.35 : 1.15}
-              strokeDasharray={sel || isBestSharp || specialistPress ? undefined : st.dash}
+              stroke={sel ? GOLD_HI : p.trusted ? GREEN : (isBestSharp || specialistPress) ? GOLD : st.stroke}
+              strokeWidth={sel || isBestSharp || specialistPress || p.trusted ? 1.35 : 1.15}
+              strokeDasharray={sel || isBestSharp || specialistPress || p.trusted ? undefined : st.dash}
             />
             <text x={cx} y={cy + 3.5} textAnchor="middle" fill={st.text}
               fontSize={r >= 12 ? 9 : 7.5} fontFamily={MONO} fontWeight={800}
@@ -1014,6 +1023,7 @@ export default function LockedClarityExpanded({
   const unopposed = againstUsd <= 0;
 
   const provenN = all.filter((w) => w.side === 'ours' && w.proven).length;
+  const trustedN = all.filter((w) => w.trusted).length;
   const secondaryN = all.filter((w) => w.side === 'ours' && !w.proven && w.skillEligible).length;
   const againstN = all.filter((w) => w.side === 'against').length;
   const specialistN = all.filter((w) => w.hardMarket).length;
@@ -1248,6 +1258,15 @@ export default function LockedClarityExpanded({
                 <i style={{ width: 7, height: 7, borderRadius: '50%', background: GREEN, display: 'inline-block' }} />
                 Proven ({provenN})
               </span>
+              {trustedN > 0 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }} title="Tier 4+ form on. Green ring. These stay on the chart even when the whitelist calls them WR50.">
+                  <i style={{
+                    width: 7, height: 7, borderRadius: '50%', display: 'inline-block',
+                    border: `1.5px solid ${GREEN}`, boxSizing: 'border-box',
+                  }} />
+                  Tier 4+ ({trustedN})
+                </span>
+              )}
               {secondaryN > 0 && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <i style={{
@@ -1276,7 +1295,7 @@ export default function LockedClarityExpanded({
               )}
               <span style={{ color: C.textFaint }}>· size = $</span>
               <span style={{ color: C.textFaint, marginLeft: 'auto' }}>
-                champagne ring = best on price · ◆ specialist · ↑ sized up
+                green ring = tier 4+ · champagne ring = best on price · ◆ specialist · ↑ sized up
                 {mineOnCard.length > 0 ? ' · ★ My Sharps' : ''}
               </span>
             </div>
@@ -1320,6 +1339,11 @@ export default function LockedClarityExpanded({
                     {againstSel ? <Pill c={VS}>Against</Pill>
                       : selected.proven ? <Pill c={GREEN} solid>Proven</Pill>
                         : <Pill c={BLUE}>Secondary</Pill>}
+                    {selected.trusted && (
+                      <Pill c={GREEN} title="Tier 4 or 5, form on, on this market's book or the sport book">
+                        Tier 4+
+                      </Pill>
+                    )}
                     {selectedSpecialist && !againstSel && (
                       <Pill c={GOLD} title="Sport × this market HARD+ (n≥4 WR≥62 $ROI≥10)">
                         Specialist
