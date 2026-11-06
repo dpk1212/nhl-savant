@@ -388,6 +388,7 @@ import { cbbV12StakeMuted, CBB_MATURE_MUTED_BY } from '../src/lib/cbbStakeMute.j
 import {
   applyEdgeUnder5Mute,
   blendEdgeForSide,
+  EDGE_UNDER5_MUTED_BY,
   edgeUnder5Stamp,
 } from '../src/lib/edgeUnder5.js';
 import {
@@ -6783,9 +6784,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // Edge under 5, after the gap rung. Manual stake never entered the
   // ladder. Operator kill still wins, below. A stake already at 0 is left
-  // alone. From Nov 6 steam on stays, and a missing blend stays.
+  // alone. From Nov 6 steam on stays, and a missing blend stays. A side
+  // this mute already zeroed stays zero.
   let edgeUnder5Policy = null;
   if (pressApplied && !skipManualFlinch) {
+    const edgeAlreadyOff = (Number(sd.finalUnits) || 0) <= 0
+      && (sd.mutedBy === EDGE_UNDER5_MUTED_BY || sd.v8_edgeUnder5Action === 'MUTE');
     edgeUnder5Policy = applyEdgeUnder5Mute({
       units: finalUnitsApplied,
       pressEdge: pressEval?.edge ?? null,
@@ -6795,6 +6799,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       odds: sideOdds,
       gapFires: gapPolicy?.fires === true,
       steamOn: pressEval?.steamOn === true,
+      alreadyOff: edgeAlreadyOff,
       blendEdge: blendEdgeForSide({
         walletDetails: wd,
         side,

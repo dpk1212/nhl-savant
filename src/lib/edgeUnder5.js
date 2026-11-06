@@ -10,7 +10,8 @@
  * An edge of 5 or more stays. A missing blend stays — one NHL ticket had
  * no blend and stayed on the card. A stake already at 0 stays there.
  * There is no rescue: the gap hold and the NBA-favorite hold do not keep
- * a steam-off play, and nothing already muted is turned back on.
+ * a steam-off play. A side this mute already zeroed stays zero, even
+ * when steam is on. Nothing already muted is turned back on.
  *
  * The blend is each FOR wallet's market win rate pulled toward its other
  * markets in that sport (k = 10), then averaged, minus the price. Spreads
@@ -225,6 +226,7 @@ export function applyEdgeUnder5Mute({
   gapFires = false,
   steamOn = false,
   blendEdge = null,
+  alreadyOff = false,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const out = (action, reason = null, clause = null, next = pre, mutedBy = null, extra = {}) => ({
@@ -239,6 +241,13 @@ export function applyEdgeUnder5Mute({
     rule: null,
     ...extra,
   });
+  if (alreadyOff === true) {
+    return out('MUTE', 'edge_under_5_stay', 'stay', 0, EDGE_UNDER5_MUTED_BY, {
+      blendEdge: stampedEdge(blendEdge),
+      steamOn: steamOn === true,
+      rule: 'blend-steam',
+    });
+  }
   if (!edgeUnder5Owns(pickDate, sport)) return out('EXEMPT');
   if (!(pre > 0)) return out('PASS');
   if (isBlendSteamLive(pickDate)) {
