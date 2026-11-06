@@ -318,8 +318,8 @@ async function runLockAlerts({ forceWindow = false } = {}) {
     source: 'cloud_scheduler',
   };
 
-  // Same daytime window as the Actions safety net (9am–midnight ET).
-  if (!forceWindow && (hour < 9 || hour > 23)) {
+  // Lock pushes start at 6:00 AM ET. Tennis and CS2 freeze before the old 9:00 gate.
+  if (!forceWindow && (hour < 6 || hour > 23)) {
     stats.skipped_hours = true;
     await writeHeartbeat(db, { ...stats, lastRunAt: now, lastRunIso: new Date(now).toISOString() });
     return stats;
