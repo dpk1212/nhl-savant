@@ -4,13 +4,18 @@ import {
   EDGE_UNDER5_FROM,
   EDGE_UNDER5_MUTED_BY,
   applyEdgeUnder5Mute,
+  blendEdgeForSide,
+  blendEdgeFromWrs,
+  blendWalletWr,
   edgeUnder5Owns,
+  edgeUnder5Stamp,
   edgeUnder5Value,
   gapBandStays,
   inEdgeGapBand,
 } from '../src/lib/edgeUnder5.js';
 import { applyPressEdgeNetClamp } from '../src/lib/pressLadderOverlay.js';
 const DAY = '2026-11-05';
+const TODAY = '2026-11-06';
 const BEFORE = '2026-11-04';
 
 test('missing edge counts as 0 and 4.95 stamps as 5', () => {
@@ -154,6 +159,93 @@ test('the earlier press-edge hole still owns Oct 25 and steps aside on Nov 5', (
     units: 4, pressEdge: 1, netMeanPrior: 0, pickDate: DAY, sport: 'ATP',
   });
   assert.equal(otherSport.units, 0);
+});
+
+test('from Nov 6 only a blended edge under 5 with steam off comes off', () => {
+  const off = applyEdgeUnder5Mute({
+    units: 2.5, pressEdge: 8, blendEdge: 2.6, steamOn: false,
+    pickDate: TODAY, sport: 'NHL', market: 'ML', odds: -150,
+    gapFires: true,
+  });
+  assert.equal(off.action, 'MUTE');
+  assert.equal(off.units, 0);
+  assert.equal(off.reason, 'edge_under_5_steam_off');
+  assert.equal(off.mutedBy, EDGE_UNDER5_MUTED_BY);
+
+  const steam = applyEdgeUnder5Mute({
+    units: 2.5, blendEdge: 1.2, steamOn: true,
+    pickDate: TODAY, sport: 'NBA', market: 'ML', odds: -180,
+  });
+  assert.equal(steam.action, 'PASS');
+  assert.equal(steam.units, 2.5);
+  assert.equal(steam.clause, 'steam-on');
+  assert.equal(steam.mutedBy, null);
+
+  const high = applyEdgeUnder5Mute({
+    units: 4, blendEdge: 4.95, steamOn: false,
+    pickDate: TODAY, sport: 'NFL', market: 'SPREAD', odds: -110,
+  });
+  assert.equal(high.action, 'PASS');
+  assert.equal(high.units, 4);
+
+  const missing = applyEdgeUnder5Mute({
+    units: 1.5, blendEdge: null, steamOn: false,
+    pickDate: TODAY, sport: 'NHL', market: 'ML', odds: -130,
+  });
+  assert.equal(missing.action, 'PASS');
+  assert.equal(missing.units, 1.5);
+  assert.equal(missing.clause, 'no-blend');
+
+  const alreadyOff = applyEdgeUnder5Mute({
+    units: 0, blendEdge: 1, steamOn: true,
+    pickDate: TODAY, sport: 'CFB', market: 'TOTAL', odds: -110,
+  });
+  assert.equal(alreadyOff.action, 'PASS');
+  assert.equal(alreadyOff.units, 0);
+
+  const fav = applyEdgeUnder5Mute({
+    units: 3, blendEdge: 2, steamOn: false,
+    pickDate: TODAY, sport: 'NBA', market: 'ML', odds: -150, gapFires: true,
+  });
+  assert.equal(fav.units, 0);
+
+  const stamp = edgeUnder5Stamp(steam);
+  assert.equal(stamp.v8_blendEdge, 1.2);
+  assert.equal(stamp.v8_edgeUnder5SteamOn, true);
+  assert.equal(stamp.v8_edgeUnder5Action, 'PASS');
+});
+
+test('the blend pulls a thin market toward the other markets and subtracts the price', () => {
+  assert.equal(blendWalletWr(9, 6, 4, 3), null);
+  assert.equal(blendWalletWr(20, 12, 0, 0), 60);
+  const pulled = blendWalletWr(20, 12, 4, 3);
+  assert.ok(Math.abs(pulled - ((4 * 75) + (10 * 56.3)) / 14) < 1e-9);
+  assert.equal(blendEdgeFromWrs([60], 'SPREAD', -110), 7.6);
+  assert.equal(blendEdgeFromWrs([55], 'TOTAL', null), 2.6);
+  assert.equal(blendEdgeFromWrs([], 'ML', -110), null);
+  assert.equal(blendEdgeFromWrs([55], 'ML', null), null);
+
+  const profiles = new Map([
+    ['aaaaaa', {
+      bySport: {
+        NHL: {
+          positions: { n: 20, wins: 12 },
+          byMarket: { ML: { positions: { n: 4, wins: 3 } } },
+        },
+      },
+    }],
+  ]);
+  const edge = blendEdgeForSide({
+    walletDetails: [{ wallet: '0xaaaaaa', side: 'away', invested: 100 }],
+    side: 'away',
+    sport: 'NHL',
+    market: 'ML',
+    walletProfiles: profiles,
+    odds: -110,
+  });
+  const implied = (110 / 210) * 100;
+  const expect = Math.round((pulled - implied) * 10) / 10;
+  assert.equal(edge, expect);
 });
 
 test('the 2-unit band stays only when the edge is under 5 and the date is live', () => {

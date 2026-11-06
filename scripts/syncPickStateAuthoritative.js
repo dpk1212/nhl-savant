@@ -387,6 +387,7 @@ import {
 import { cbbV12StakeMuted, CBB_MATURE_MUTED_BY } from '../src/lib/cbbStakeMute.js';
 import {
   applyEdgeUnder5Mute,
+  blendEdgeForSide,
   edgeUnder5Stamp,
 } from '../src/lib/edgeUnder5.js';
 import {
@@ -4315,8 +4316,8 @@ async function createMissingLockedPicks({
           hcStakeTierCreate = GAP_LEAD_STAKE_TIER;
         }
       }
-      // Edge under 5. After the gap rung, so a 2-unit gap is still a
-      // 2-unit gap and a gap rescue to 3u can be put back to 0.
+      // Edge under 5. After the gap rung. From Nov 6 a locked play comes
+      // off only when the blended edge is under 5 and steam is off.
       let edgeUnder5Create = null;
       if (pressAppliedCreate && !isOperatorKilled({ _id: docId }, side, null)) {
         edgeUnder5Create = applyEdgeUnder5Mute({
@@ -4327,6 +4328,15 @@ async function createMissingLockedPicks({
           market: marketType,
           odds: odds ?? null,
           gapFires: gapPolicyCreate?.fires === true,
+          steamOn: pressEvalCreate?.steamOn === true,
+          blendEdge: blendEdgeForSide({
+            walletDetails,
+            side,
+            sport,
+            market: marketType,
+            walletProfiles,
+            odds: odds ?? null,
+          }),
         });
         if (edgeUnder5Create.action === 'MUTE') {
           peakUnitsApplied = 0;
@@ -6773,7 +6783,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // Edge under 5, after the gap rung. Manual stake never entered the
   // ladder. Operator kill still wins, below. A stake already at 0 is left
-  // alone, so the favorite-juice mute stays the reason.
+  // alone. From Nov 6 steam on stays, and a missing blend stays.
   let edgeUnder5Policy = null;
   if (pressApplied && !skipManualFlinch) {
     edgeUnder5Policy = applyEdgeUnder5Mute({
@@ -6784,6 +6794,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       market: mkt,
       odds: sideOdds,
       gapFires: gapPolicy?.fires === true,
+      steamOn: pressEval?.steamOn === true,
+      blendEdge: blendEdgeForSide({
+        walletDetails: wd,
+        side,
+        sport: pick.sport,
+        market: mkt,
+        walletProfiles,
+        odds: sideOdds,
+      }),
     });
     if (edgeUnder5Policy.action === 'MUTE') {
       finalUnitsApplied = 0;
@@ -7943,14 +7962,20 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     );
   }
   if (edgeUnder5Policy?.action === 'MUTE') {
-    const edgeTxt = pressEval?.edge == null ? '—' : Number(pressEval.edge).toFixed(1);
+    const edgeTxt = edgeUnder5Policy.rule === 'blend-steam'
+      ? (edgeUnder5Policy.blendEdge == null ? '—' : Number(edgeUnder5Policy.blendEdge).toFixed(1))
+      : (pressEval?.edge == null ? '—' : Number(pressEval.edge).toFixed(1));
+    const steamTxt = edgeUnder5Policy.steamOn ? ' steam=on' : '';
     changes.push(
-      `EDGE-UNDER-5: ${edgeUnder5Policy.unitsPrePolicy}u → 0u (edge=${edgeTxt})`,
+      `EDGE-UNDER-5: ${edgeUnder5Policy.unitsPrePolicy}u → 0u (edge=${edgeTxt}${steamTxt})`,
     );
   } else if (edgeUnder5Policy?.action === 'HOLD') {
     changes.push(
       `EDGE-UNDER-5 HOLD: ${edgeUnder5Policy.clause} ${edgeUnder5Policy.units}u`,
     );
+  } else if (edgeUnder5Policy?.clause === 'steam-on') {
+    const edgeTxt = edgeUnder5Policy.blendEdge == null ? '—' : Number(edgeUnder5Policy.blendEdge).toFixed(1);
+    changes.push(`EDGE-UNDER-5 STEAM ON: ${edgeUnder5Policy.units}u (edge=${edgeTxt})`);
   }
 
   if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
