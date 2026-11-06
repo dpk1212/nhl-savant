@@ -4,7 +4,10 @@ import {
   EDGE_UNDER5_FROM,
   EDGE_UNDER5_MUTED_BY,
   applyEdgeUnder5Mute,
+  blendEdgeFromWallets,
+  blendWalletWr,
   edgeUnder5Owns,
+  edgeUnder5Stamp,
   edgeUnder5Value,
   gapBandStays,
   inEdgeGapBand,
@@ -37,106 +40,139 @@ test('the rule owns the four sports from Nov 5', () => {
   assert.equal(edgeUnder5Owns(BEFORE, 'NBA'), false);
 });
 
-test('edge under 5 goes to 0 except the two holds', () => {
+test('steam off and a blended edge under 5 goes to 0', () => {
   const mute = applyEdgeUnder5Mute({
-    units: 4, pressEdge: 3.2, pickDate: DAY, sport: 'NFL', market: 'ML', odds: -150,
+    units: 4, blendEdge: 3.2, steamOn: false, pickDate: DAY, sport: 'NFL',
   });
   assert.equal(mute.action, 'MUTE');
   assert.equal(mute.units, 0);
   assert.equal(mute.mutedBy, EDGE_UNDER5_MUTED_BY);
+  assert.equal(mute.clause, 'under5');
   assert.equal(mute.unitsPrePolicy, 4);
 
-  const small = applyEdgeUnder5Mute({
-    units: 1, pressEdge: 1, pickDate: DAY, sport: 'CFB', market: 'SPREAD', odds: -110,
-  });
-  assert.equal(small.units, 0);
-
   const negative = applyEdgeUnder5Mute({
-    units: 2, pressEdge: -2, pickDate: DAY, sport: 'NHL', market: 'ML', odds: -130, gapFires: false,
+    units: 2, blendEdge: -2, steamOn: false, pickDate: DAY, sport: 'NHL',
   });
   assert.equal(negative.units, 0);
 
-  const missing = applyEdgeUnder5Mute({
-    units: 1.5, pressEdge: null, pickDate: DAY, sport: 'NBA', market: 'SPREAD', odds: -110,
-  });
-  assert.equal(missing.units, 0);
-
   const kept = applyEdgeUnder5Mute({
-    units: 4, pressEdge: 4.95, pickDate: DAY, sport: 'NBA', market: 'ML', odds: -150,
+    units: 4, blendEdge: 4.95, steamOn: false, pickDate: DAY, sport: 'NBA',
   });
   assert.equal(kept.action, 'PASS');
   assert.equal(kept.units, 4);
 });
 
-test('a morning gap already in the 2-unit band is held', () => {
-  const held = applyEdgeUnder5Mute({
-    units: 2, pressEdge: 1.2, pickDate: DAY, sport: 'CFB', market: 'SPREAD', odds: -110, gapFires: true,
+test('steam on stays at its size, and a missing blend or steam stays', () => {
+  const steam = applyEdgeUnder5Mute({
+    units: 2.5, blendEdge: 1.2, steamOn: true, pickDate: DAY, sport: 'CFB',
   });
-  assert.equal(held.action, 'HOLD');
-  assert.equal(held.units, 2);
-  assert.equal(held.clause, 'gap2');
-  assert.equal(held.mutedBy, null);
+  assert.equal(steam.action, 'PASS');
+  assert.equal(steam.units, 2.5);
+  assert.equal(steam.mutedBy, null);
 
-  const half = applyEdgeUnder5Mute({
-    units: 2.5, pressEdge: 0, pickDate: DAY, sport: 'NFL', market: 'TOTAL', odds: -105, gapFires: true,
+  const missingBlend = applyEdgeUnder5Mute({
+    units: 1.5, blendEdge: null, steamOn: false, pickDate: DAY, sport: 'NBA',
   });
-  assert.equal(half.units, 2.5);
+  assert.equal(missingBlend.action, 'PASS');
+  assert.equal(missingBlend.units, 1.5);
 
-  const otherSize = applyEdgeUnder5Mute({
-    units: 3, pressEdge: 1, pickDate: DAY, sport: 'CFB', market: 'SPREAD', odds: -110, gapFires: true,
+  const missingSteam = applyEdgeUnder5Mute({
+    units: 3, blendEdge: 1, steamOn: null, pickDate: DAY, sport: 'NFL',
   });
-  assert.equal(otherSize.units, 0);
-
-  const noGap = applyEdgeUnder5Mute({
-    units: 2, pressEdge: 1, pickDate: DAY, sport: 'CFB', market: 'SPREAD', odds: -110, gapFires: false,
-  });
-  assert.equal(noGap.units, 0);
+  assert.equal(missingSteam.action, 'PASS');
+  assert.equal(missingSteam.units, 3);
 });
 
-test('an NBA moneyline juicier than -100 is held at any size', () => {
+test('a gap or an NBA favorite is not a rescue when steam is off', () => {
+  const gap = applyEdgeUnder5Mute({
+    units: 2, blendEdge: 1.2, steamOn: false, pickDate: DAY, sport: 'CFB',
+  });
+  assert.equal(gap.action, 'MUTE');
+  assert.equal(gap.units, 0);
+
   const fav = applyEdgeUnder5Mute({
-    units: 1.5, pressEdge: 2, pickDate: DAY, sport: 'NBA', market: 'ML', odds: -150,
+    units: 1.5, blendEdge: 2, steamOn: false, pickDate: DAY, sport: 'NBA',
   });
-  assert.equal(fav.action, 'HOLD');
-  assert.equal(fav.units, 1.5);
-  assert.equal(fav.clause, 'nba-ml-fav');
-
-  const pick = applyEdgeUnder5Mute({
-    units: 2, pressEdge: 2, pickDate: DAY, sport: 'NBA', market: 'ML', odds: -100,
-  });
-  assert.equal(pick.units, 0);
-
-  const nhl = applyEdgeUnder5Mute({
-    units: 2, pressEdge: 2, pickDate: DAY, sport: 'NHL', market: 'ML', odds: -150,
-  });
-  assert.equal(nhl.units, 0);
-
-  const total = applyEdgeUnder5Mute({
-    units: 2, pressEdge: 2, pickDate: DAY, sport: 'NBA', market: 'TOTAL', odds: -150,
-  });
-  assert.equal(total.units, 0);
+  assert.equal(fav.units, 0);
 });
 
-test('a zero stays a zero so an earlier mute keeps the reason', () => {
+test('a zero stays a zero, and a side already muted by this rule stays off', () => {
   const zero = applyEdgeUnder5Mute({
-    units: 0, pressEdge: 1, pickDate: DAY, sport: 'NBA', market: 'ML', odds: -500,
+    units: 0, blendEdge: 1, steamOn: false, pickDate: DAY, sport: 'NBA',
   });
   assert.equal(zero.action, 'PASS');
   assert.equal(zero.units, 0);
   assert.equal(zero.mutedBy, null);
+
+  const stay = applyEdgeUnder5Mute({
+    units: 2.5, blendEdge: 1, steamOn: true, pickDate: DAY, sport: 'NBA', alreadyOff: true,
+  });
+  assert.equal(stay.action, 'MUTE');
+  assert.equal(stay.units, 0);
+  assert.equal(stay.reason, 'edge_under_5_stay');
+  assert.equal(stay.mutedBy, EDGE_UNDER5_MUTED_BY);
+  assert.equal(edgeUnder5Stamp(stay).v8_blendSteamOn, true);
 });
 
 test('Nov 4 and other sports are outside the mute', () => {
   const yesterday = applyEdgeUnder5Mute({
-    units: 4, pressEdge: 1, pickDate: BEFORE, sport: 'NBA', market: 'ML', odds: -110,
+    units: 4, blendEdge: 1, steamOn: false, pickDate: BEFORE, sport: 'NBA',
   });
   assert.equal(yesterday.action, 'EXEMPT');
   assert.equal(yesterday.units, 4);
   const cbb = applyEdgeUnder5Mute({
-    units: 3, pressEdge: 1, pickDate: DAY, sport: 'CBB', market: 'SPREAD', odds: -110,
+    units: 3, blendEdge: 1, steamOn: false, pickDate: DAY, sport: 'CBB',
   });
   assert.equal(cbb.action, 'EXEMPT');
   assert.equal(cbb.units, 3);
+});
+
+test('the blend pulls the market win rate toward the rest of the sport', () => {
+  const sport = { n: 20, wins: 12 };
+  const market = { n: 8, wins: 6 };
+  const wr = blendWalletWr(sport, market);
+  assert.equal(Number(wr.toFixed(4)), Number((1100 / 18).toFixed(4)));
+  assert.equal(blendWalletWr({ n: 9, wins: 7 }, market), null);
+  assert.equal(blendWalletWr(sport, null), 60);
+
+  const profiles = {
+    aaaaaa: {
+      bySport: {
+        NHL: {
+          positions: sport,
+          byMarket: { ML: { positions: market } },
+        },
+      },
+    },
+    bbbbbb: {
+      bySport: {
+        NHL: {
+          positions: { n: 10, wins: 8 },
+          byMarket: { ML: { positions: { n: 10, wins: 8 } } },
+        },
+      },
+    },
+  };
+  const edge = blendEdgeFromWallets({
+    walletDetails: [
+      { wallet: 'aaaaaa', side: 'home', invested: 100 },
+      { wallet: 'aaaaaa', side: 'away', invested: 40 },
+      { wallet: 'bbbbbb', side: 'away', invested: 80 },
+      { wallet: 'cccccc', side: 'home', invested: 50 },
+    ],
+    side: 'home',
+    sport: 'NHL',
+    market: 'ML',
+    walletProfiles: profiles,
+    odds: -110,
+  });
+  const mean = 1100 / 18;
+  const implied = (110 / 210) * 100;
+  assert.equal(edge, Math.round((mean - implied) * 10) / 10);
+  assert.equal(blendEdgeFromWallets({
+    walletDetails: [{ wallet: 'aaaaaa', side: 'home', invested: 10 }],
+    side: 'home', sport: 'NHL', market: 'ML', walletProfiles: profiles, odds: null,
+  }), null);
 });
 
 test('the earlier press-edge hole still owns Oct 25 and steps aside on Nov 5', () => {

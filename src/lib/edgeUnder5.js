@@ -1,31 +1,33 @@
 /**
  * Edge under 5, from 2026-11-05. NHL, NBA, NFL, CFB.
  *
- * Graded v12+ stakes, Oct 6–Nov 4: edge under 5 was 114-85, −17.7u on
- * 491.5u. Two cells inside it were green in both October halves. The rest
- * was 75-73, −42.4u. An edge of 5 or more stays.
+ * Adjusted 2026-11-06. One mute. A locked play comes off when the blended
+ * edge is under 5 and steam is off. Steam on stays, including under 5.
+ * A blended edge of 5 or higher stays. A missing blend stays. Steam that
+ * was not stamped off stays. There is no rescue: the gap-band hold and the
+ * NBA moneyline-favorite hold are gone.
  *
- *   Hold  a morning gap (two wallets, a 40-point lead, the other side
- *         negative) on a stake already in the 2-unit band, from 2 up to
- *         but not including 3. 10-4, +10.0u. The gap's extra unit stays
- *         off that band, so the ticket ships at the size that won.
- *   Hold  an NBA moneyline juicier than −100, any size. 30-8, +16.2u.
- *         The one ticket in both holds is kept once.
- *   Mute  every other stake whose press edge is under 5, including a
- *         missing edge, which the count scored as 0.
+ * The blend is the market win rate pulled toward the wallet's other
+ * markets in that sport (K = 10), then averaged across the wallets on our
+ * side and compared with the price. Spreads and totals use 52.4. A
+ * moneyline with no American price is not scored. Compared at the tenth.
  *
- * Runs after the gap rung, on the units that would ship. A stake already
- * at 0 stays there, so the −425 favorite mute, a manual stake, and an
- * operator kill are not reopened. Compared at the stamped tenth, the same
- * number the card stores on v8_pressEdge.
+ * A stake already at 0 stays there, so an earlier mute keeps its reason.
+ * A side this mute already zeroed stays zero. The next sync does not
+ * turn it back on.
+ *
+ * The 2-unit gap freeze still reads the press edge. It is a size hold,
+ * not a rescue, so a ticket already in that band does not pick up a unit.
  */
 
 export const EDGE_UNDER5_FROM = '2026-11-05';
 export const EDGE_UNDER5_MAX = 5;
 export const EDGE_UNDER5_GAP_MIN = 2;
 export const EDGE_UNDER5_GAP_MAX = 3;
-export const EDGE_UNDER5_FAV_ODDS = -100;
 export const EDGE_UNDER5_MUTED_BY = 'edge-under-5';
+export const BLEND_EDGE_K = 10;
+export const BLEND_EDGE_MIN_N = 10;
+export const BLEND_ST_IMPLIED_PCT = 52.4;
 
 const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
 
@@ -50,16 +52,15 @@ export function edgeUnder5Owns(pickDate, sport) {
   return isEdgeUnder5Live(pickDate) && SPORTS.has(normEdgeSport(sport));
 }
 
-/** Same tenth the card stores on v8_pressEdge. Missing stays missing. */
+/** Same tenth the card stores. Missing stays missing. */
 export function stampedEdge(edge) {
   if (edge == null || edge === '') return null;
-  const n = Number(edge);
-  if (!Number.isFinite(n)) return null;
-  const rounded = Math.round(n * 10) / 10;
+  if (!Number.isFinite(Number(edge))) return null;
+  const rounded = Math.round(Number(edge) * 10) / 10;
   return rounded === 0 ? 0 : rounded;
 }
 
-/** Missing edge counts as 0, which is under 5. */
+/** Press-edge read for the 2-unit gap freeze. Missing counts as 0. */
 export function edgeUnder5Value(edge) {
   const stamped = stampedEdge(edge);
   return stamped == null ? 0 : stamped;
@@ -71,9 +72,9 @@ export function inEdgeGapBand(units) {
 }
 
 /**
- * The gap rung adds 1u under 3. From this date, a stake already in the
- * 2-unit band whose edge is under 5 stays put. An edge of 5 or more still
- * takes the extra unit.
+ * The gap rung adds 1u under 3. A stake already in the 2-unit band whose
+ * press edge is under 5 stays put. An edge of 5 or more still takes the
+ * extra unit. This does not put a muted play back on.
  */
 export function gapBandStays({ units, pressEdge = null, pickDate = null } = {}) {
   if (!isEdgeUnder5Live(pickDate)) return false;
@@ -81,29 +82,137 @@ export function gapBandStays({ units, pressEdge = null, pickDate = null } = {}) 
   return edgeUnder5Value(pressEdge) < EDGE_UNDER5_MAX;
 }
 
-function nbaMlFavorite(sport, market, odds) {
-  if (normEdgeSport(sport) !== 'NBA') return false;
-  if (normEdgeMarket(market) !== 'ML') return false;
-  const n = Number(odds);
-  return Number.isFinite(n) && n < EDGE_UNDER5_FAV_ODDS;
+function wrPct(book) {
+  const n = Number(book?.n) || 0;
+  if (!(n > 0)) return null;
+  const wins = Number(book?.wins);
+  if (Number.isFinite(wins)) return Number(((100 * wins) / n).toFixed(1));
+  const wr = Number(book?.wr);
+  if (!Number.isFinite(wr)) return null;
+  return Number(wr.toFixed(1));
+}
+
+function winsOf(book) {
+  const wins = Number(book?.wins);
+  if (Number.isFinite(wins)) return wins;
+  const n = Number(book?.n) || 0;
+  const wr = Number(book?.wr);
+  if (!(n > 0) || !Number.isFinite(wr)) return null;
+  return (wr / 100) * n;
+}
+
+/**
+ * Market win rate pulled toward the wallet's other markets in that sport.
+ * Null when the sport book is thinner than 10.
+ */
+export function blendWalletWr(sportBook, marketBook) {
+  if (!sportBook || !(Number(sportBook.n) >= BLEND_EDGE_MIN_N)) return null;
+  const wrS = wrPct(sportBook);
+  if (wrS == null) return null;
+  const mN = Number(marketBook?.n) || 0;
+  const sN = Number(sportBook.n);
+  if (!marketBook || mN < 1 || sN <= mN) return wrS;
+  const otherN = sN - mN;
+  if (!(otherN > 0)) return wrS;
+  const wrM = wrPct(marketBook);
+  const sWins = winsOf(sportBook);
+  const mWins = winsOf(marketBook);
+  if (wrM == null || sWins == null || mWins == null) return wrS;
+  const wrO = Number(((100 * (sWins - mWins)) / otherN).toFixed(1));
+  return (mN * wrM + BLEND_EDGE_K * wrO) / (mN + BLEND_EDGE_K);
+}
+
+function impliedPct(market, odds) {
+  const m = normEdgeMarket(market);
+  if (m !== 'ML') return BLEND_ST_IMPLIED_PCT;
+  const o = Number(odds);
+  if (!Number.isFinite(o) || o === 0) return null;
+  return (o < 0 ? Math.abs(o) / (Math.abs(o) + 100) : 100 / (o + 100)) * 100;
+}
+
+/** Mean blended win rate minus the price, at the tenth. Null when unscored. */
+export function blendEdgeFromWrs(wrs, market, odds) {
+  const nums = (wrs || []).filter((n) => Number.isFinite(Number(n))).map(Number);
+  if (!nums.length) return null;
+  const implied = impliedPct(market, odds);
+  if (implied == null) return null;
+  const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+  return Math.round((mean - implied) * 10) / 10;
+}
+
+function profileNode(walletProfiles, wallet) {
+  if (!walletProfiles || wallet == null || wallet === '') return null;
+  const raw = String(wallet);
+  const short = raw.slice(-6).toLowerCase();
+  if (typeof walletProfiles.get === 'function') {
+    return walletProfiles.get(short)
+      || walletProfiles.get(short.toUpperCase())
+      || walletProfiles.get(raw.toLowerCase())
+      || null;
+  }
+  return walletProfiles[short]
+    || walletProfiles[short.toUpperCase()]
+    || walletProfiles[raw.toLowerCase()]
+    || null;
+}
+
+function sportRecord(profile, sport) {
+  const by = profile?.bySport;
+  if (!by || typeof by !== 'object') return null;
+  const norm = normEdgeSport(sport);
+  return by[norm] || by[sport] || (norm === 'CFB' ? (by.NCAAF || by.NCAAFB) : null) || null;
+}
+
+/**
+ * Blended edge for the wallets whose largest ticket is on this side.
+ * Reads the profile sport book and that sport's market book.
+ */
+export function blendEdgeFromWallets({
+  walletDetails = null,
+  side = null,
+  sport = null,
+  market = null,
+  walletProfiles = null,
+  odds = null,
+} = {}) {
+  const best = new Map();
+  for (const wd of walletDetails || []) {
+    if (!wd || !wd.side || !wd.wallet) continue;
+    const invested = Number(wd.invested) || 0;
+    if (!(invested > 0)) continue;
+    const id = String(wd.wallet).slice(-6).toLowerCase();
+    const prev = best.get(id);
+    if (!prev || invested > prev.invested) best.set(id, { side: wd.side, invested });
+  }
+  const wrs = [];
+  const mkt = normEdgeMarket(market);
+  for (const [id, row] of best) {
+    if (row.side !== side) continue;
+    const rec = sportRecord(profileNode(walletProfiles, id), sport);
+    const wr = blendWalletWr(rec?.positions, rec?.byMarket?.[mkt]?.positions);
+    if (wr != null) wrs.push(wr);
+  }
+  return blendEdgeFromWrs(wrs, mkt, odds);
 }
 
 /**
  * @returns {{
- *   units: number, action: 'MUTE'|'HOLD'|'PASS'|'EXEMPT', reason: string|null,
- *   mutedBy: string|null, unitsPrePolicy: number, clause: 'under5'|'gap2'|'nba-ml-fav'|null,
+ *   units: number, action: 'MUTE'|'PASS'|'EXEMPT', reason: string|null,
+ *   mutedBy: string|null, unitsPrePolicy: number,
+ *   clause: 'under5'|'stay'|null, blendEdge: number|null, steamOn: boolean|null,
  * }}
  */
 export function applyEdgeUnder5Mute({
   units,
-  pressEdge = null,
+  blendEdge = null,
+  steamOn = null,
   pickDate = null,
   sport = null,
-  market = null,
-  odds = null,
-  gapFires = false,
+  alreadyOff = false,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
+  const edge = stampedEdge(blendEdge);
+  const steam = steamOn === true ? true : steamOn === false ? false : null;
   const out = (action, reason = null, clause = null, next = pre, mutedBy = null) => ({
     units: next,
     action,
@@ -111,16 +220,17 @@ export function applyEdgeUnder5Mute({
     mutedBy,
     unitsPrePolicy: pre,
     clause,
+    blendEdge: edge,
+    steamOn: steam,
   });
+  if (alreadyOff === true) {
+    return out('MUTE', 'edge_under_5_stay', 'stay', 0, EDGE_UNDER5_MUTED_BY);
+  }
   if (!edgeUnder5Owns(pickDate, sport)) return out('EXEMPT');
   if (!(pre > 0)) return out('PASS');
-  if (!(edgeUnder5Value(pressEdge) < EDGE_UNDER5_MAX)) return out('PASS');
-  if (gapFires === true && inEdgeGapBand(pre)) {
-    return out('HOLD', 'edge_under_5_gap2', 'gap2');
-  }
-  if (nbaMlFavorite(sport, market, odds)) {
-    return out('HOLD', 'edge_under_5_nba_ml_fav', 'nba-ml-fav');
-  }
+  if (steam !== false) return out('PASS');
+  if (edge == null) return out('PASS');
+  if (!(edge < EDGE_UNDER5_MAX)) return out('PASS');
   return out('MUTE', 'edge_under_5', 'under5', 0, EDGE_UNDER5_MUTED_BY);
 }
 
@@ -131,5 +241,7 @@ export function edgeUnder5Stamp(policy) {
     v8_edgeUnder5Reason: policy.reason ?? null,
     v8_edgeUnder5Clause: policy.clause ?? null,
     v8_unitsPreEdgeUnder5: policy.unitsPrePolicy,
+    v8_blendEdge: policy.blendEdge ?? null,
+    v8_blendSteamOn: policy.steamOn ?? null,
   };
 }

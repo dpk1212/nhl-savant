@@ -387,6 +387,8 @@ import {
 import { cbbV12StakeMuted, CBB_MATURE_MUTED_BY } from '../src/lib/cbbStakeMute.js';
 import {
   applyEdgeUnder5Mute,
+  blendEdgeFromWallets,
+  EDGE_UNDER5_MUTED_BY,
   edgeUnder5Stamp,
 } from '../src/lib/edgeUnder5.js';
 import {
@@ -4315,18 +4317,25 @@ async function createMissingLockedPicks({
           hcStakeTierCreate = GAP_LEAD_STAKE_TIER;
         }
       }
-      // Edge under 5. After the gap rung, so a 2-unit gap is still a
-      // 2-unit gap and a gap rescue to 3u can be put back to 0.
+      // Blended edge under 5 with steam off. After the gap rung, so the
+      // size the ladder would ship is what comes off. Steam on stays.
       let edgeUnder5Create = null;
       if (pressAppliedCreate && !isOperatorKilled({ _id: docId }, side, null)) {
         edgeUnder5Create = applyEdgeUnder5Mute({
           units: peakUnitsApplied,
-          pressEdge: pressEvalCreate?.edge ?? null,
+          blendEdge: blendEdgeFromWallets({
+            walletDetails,
+            side,
+            sport,
+            market: marketType,
+            walletProfiles,
+            odds: odds ?? null,
+          }),
+          steamOn: pressEvalCreate?.steamOn === true
+            ? true
+            : pressEvalCreate?.steamOn === false ? false : null,
           pickDate: TARGET_DATE,
           sport,
-          market: marketType,
-          odds: odds ?? null,
-          gapFires: gapPolicyCreate?.fires === true,
         });
         if (edgeUnder5Create.action === 'MUTE') {
           peakUnitsApplied = 0;
@@ -6771,19 +6780,27 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
-  // Edge under 5, after the gap rung. Manual stake never entered the
-  // ladder. Operator kill still wins, below. A stake already at 0 is left
-  // alone, so the favorite-juice mute stays the reason.
+  // Blended edge under 5 with steam off. Manual stake never entered
+  // the ladder. Operator kill still wins, below. A stake already at 0
+  // is left alone. A side this mute already zeroed stays zero.
   let edgeUnder5Policy = null;
   if (pressApplied && !skipManualFlinch) {
+    const edgeAlreadyOff = (Number(sd.finalUnits) || 0) <= 0
+      && (sd.mutedBy === EDGE_UNDER5_MUTED_BY || sd.v8_edgeUnder5Action === 'MUTE');
     edgeUnder5Policy = applyEdgeUnder5Mute({
       units: finalUnitsApplied,
-      pressEdge: pressEval?.edge ?? null,
+      blendEdge: blendEdgeFromWallets({
+        walletDetails: wd,
+        side,
+        sport: pick.sport,
+        market: mkt,
+        walletProfiles,
+        odds: sideOdds,
+      }),
+      steamOn: pressEval?.steamOn === true ? true : pressEval?.steamOn === false ? false : null,
       pickDate,
       sport: pick.sport,
-      market: mkt,
-      odds: sideOdds,
-      gapFires: gapPolicy?.fires === true,
+      alreadyOff: edgeAlreadyOff,
     });
     if (edgeUnder5Policy.action === 'MUTE') {
       finalUnitsApplied = 0;
@@ -7943,13 +7960,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     );
   }
   if (edgeUnder5Policy?.action === 'MUTE') {
-    const edgeTxt = pressEval?.edge == null ? '—' : Number(pressEval.edge).toFixed(1);
+    const edgeTxt = edgeUnder5Policy.blendEdge == null ? '—' : Number(edgeUnder5Policy.blendEdge).toFixed(1);
+    const steamTxt = edgeUnder5Policy.steamOn == null ? '—' : (edgeUnder5Policy.steamOn ? 'on' : 'off');
     changes.push(
-      `EDGE-UNDER-5: ${edgeUnder5Policy.unitsPrePolicy}u → 0u (edge=${edgeTxt})`,
-    );
-  } else if (edgeUnder5Policy?.action === 'HOLD') {
-    changes.push(
-      `EDGE-UNDER-5 HOLD: ${edgeUnder5Policy.clause} ${edgeUnder5Policy.units}u`,
+      `EDGE-UNDER-5: ${edgeUnder5Policy.unitsPrePolicy}u → 0u (blend=${edgeTxt} steam=${steamTxt} ${edgeUnder5Policy.reason})`,
     );
   }
 
