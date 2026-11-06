@@ -181,6 +181,16 @@ test('from Nov 6 only a blended edge under 5 with steam off comes off', () => {
   assert.equal(steam.clause, 'steam-on');
   assert.equal(steam.mutedBy, null);
 
+  const stay = applyEdgeUnder5Mute({
+    units: 2.5, blendEdge: 1.2, steamOn: true,
+    pickDate: TODAY, sport: 'CFB', market: 'SPREAD', odds: -110,
+    alreadyOff: true,
+  });
+  assert.equal(stay.action, 'MUTE');
+  assert.equal(stay.units, 0);
+  assert.equal(stay.reason, 'edge_under_5_stay');
+  assert.equal(stay.mutedBy, EDGE_UNDER5_MUTED_BY);
+
   const high = applyEdgeUnder5Mute({
     units: 4, blendEdge: 4.95, steamOn: false,
     pickDate: TODAY, sport: 'NFL', market: 'SPREAD', odds: -110,
