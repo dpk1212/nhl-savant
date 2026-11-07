@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>NHL Savant OG Image Generator</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    #og-image {
+      width: 1200px;
+      height: 630px;
+      background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px;
+      box-sizing: border-box;
+    }
+    
+    /* Subtle grid pattern background */
+    #og-image::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      opacity: 0.5;
+    }
+    
+    /* Gradient orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+    }
+    
+    .orb-1 {
+      width: 500px;
+      height: 500px;
+      background: #D4AF37;
+      top: -150px;
+      right: -150px;
+    }
+    
+    .orb-2 {
+      width: 400px;
+      height: 400px;
+      background: #3B82F6;
+      bottom: -100px;
+      left: -100px;
+    }
+    
+    .content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: white;
+    }
+    
+    .logo {
+      font-size: 72px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+      letter-spacing: -2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+    
+    .logo::before {
+      content: '🏒';
+      font-size: 64px;
+      -webkit-text-fill-color: initial;
+    }
+    
+    .tagline {
+      font-size: 36px;
+      font-weight: 600;
+      color: #F1F5F9;
+      margin-bottom: 30px;
+      letter-spacing: -0.5px;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 60px;
+      justify-content: center;
+      margin-top: 40px;
+    }
+    
+    .stat {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 56px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    
+    .stat-label {
+      font-size: 20px;
+      color: rgba(241, 245, 249, 0.7);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .domain {
+      position: absolute;
+      bottom: 40px;
+      right: 60px;
+      font-size: 28px;
+      font-weight: 600;
+      color: rgba(212, 175, 55, 0.8);
+      letter-spacing: 0.5px;
+    }
+    
+    .badge {
+      position: absolute;
+      top: 40px;
+      left: 60px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 2px solid rgba(59, 130, 246, 0.3);
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #60A5FA;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div id="og-image">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    
+    <div class="badge">Data-Driven Analytics</div>
+    
+    <div class="content">
+      <div class="logo">NHL Savant</div>
+      <div class="tagline">Advanced NHL Betting Analytics</div>
+      
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">52.9%</div>
+          <div class="stat-label">Win Rate</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">30.3%</div>
+          <div class="stat-label">ROI</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">87</div>
+          <div class="stat-label">Model Bets</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="domain">nhlsavant.com</div>
+  </div>
+  
+  <div style="margin: 40px; text-align: center;">
+    <h2>Instructions to Generate OG Image:</h2>
+    <ol style="text-align: left; max-width: 600px; margin: 20px auto;">
+      <li>Open this file in a browser</li>
+      <li>Take a screenshot of the 1200x630 box above</li>
+      <li>Save as <code>og-image.png</code> in the <code>public/</code> folder</li>
+      <li>Or use browser DevTools to capture at exact dimensions</li>
+    </ol>
+    <p><strong>Alternative:</strong> Use a tool like <a href="https://www.opengraph.xyz" target="_blank">opengraph.xyz</a> or Figma to create the image</p>
+  </div>
+</body>
+</html>
+
