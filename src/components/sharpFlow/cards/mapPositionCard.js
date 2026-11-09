@@ -1913,7 +1913,9 @@ export function mapLockedPickToCardFixture(pick, {
   const provenForN = mapWallets.filter((w) => w.side === 'ours' && w.proven && isCounted(w)).length;
   const provenAgN = mapWallets.filter((w) => w.side === 'against' && w.proven && isCounted(w)).length;
   const provenMargin = mapWallets.length > 0 ? (provenForN - provenAgN) : null;
-  // GOLD pill = inside the stack. Display-only — EDGE no longer drives it.
+  // GOLD pill = stamped 14-day T5 lead with nobody T5 against, and staked.
+  // The stack classifier still feeds the 4u size cap; it does not paint the pill.
+  const gold = pick.v8_gold === true;
   const goldInfo = classifyGoldStack({
     marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
     sport: pick.sport,
@@ -2173,6 +2175,8 @@ export function mapLockedPickToCardFixture(pick, {
     confMargin: Number.isFinite(confMargin) ? confMargin : null,
     provenMargin: Number.isFinite(provenMargin) ? provenMargin : null,
     edge,
+    gold,
+    goldTip: gold ? '14-day tier-5 lead · nobody tier 5 against' : null,
     goldStack: goldInfo.gold,
     goldStackTip: goldStackTip(goldInfo),
     goldStackReason: goldInfo.reason,

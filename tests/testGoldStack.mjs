@@ -1,6 +1,6 @@
 /**
- * GOLD hero tag = HARD+ FOR only · proven ≥75%.
- * Display-only — EDGE does not grant GOLD.
+ * GOLD stack classifier — HARD+ FOR only · proven ≥75%.
+ * The hero GOLD pill is v8_gold (14-day T5, nobody against), not this stack.
  * Usage: node tests/testGoldStack.mjs
  */
 import assert from 'node:assert/strict';
@@ -182,10 +182,17 @@ function card(pickExtra = {}, edge = 14) {
 
 {
   const f = card();
-  ok(f.goldStack === true, 'mapped stack ticket is GOLD');
+  ok(f.goldStack === true, 'mapped stack ticket still classifies as the stack');
+  ok(f.gold !== true, 'stack without v8_gold is not the GOLD pill');
   ok(f.goldStackReason === 'in_stack', 'mapped reason in_stack');
   ok(typeof f.goldStackTip === 'string' && f.goldStackTip.includes('HARD+ FOR'), 'mapped tip');
   ok(f.edge === 14, 'EDGE is still stamped for the meter');
+}
+
+{
+  const f = card({ v8_gold: true });
+  ok(f.gold === true, 'v8_gold paints the GOLD pill');
+  ok(typeof f.goldTip === 'string' && f.goldTip.includes('14-day'), `gold tip, got ${f.goldTip}`);
 }
 
 {
@@ -197,7 +204,8 @@ function card(pickExtra = {}, edge = 14) {
     winnerAlignEdge: 18,
   }, 18);
   ok(f.edge === 18, 'high EDGE is present');
-  ok(f.goldStack === false, 'high EDGE without the stack is not GOLD');
+  ok(f.gold !== true, 'high EDGE without v8_gold is not the GOLD pill');
+  ok(f.goldStack === false, 'high EDGE without the stack is not the stack');
   ok(f.goldStackReason === 'no_hard_for', 'mapped reason no_hard_for');
 }
 
@@ -223,7 +231,8 @@ function card(pickExtra = {}, edge = 14) {
       { wallet: 'bbbbbb', side: 'home', invested: 49000 },
     ],
   }, { walletProfiles: profiles });
-  ok(f.goldStack === false, '53% proven board is not GOLD even with HARD FOR + high EDGE');
+  ok(f.gold !== true, '53% proven board is not the GOLD pill');
+  ok(f.goldStack === false, '53% proven board is not the stack even with HARD FOR + high EDGE');
   ok(f.goldStackReason === 'proven_lt75', `got ${f.goldStackReason}`);
 }
 

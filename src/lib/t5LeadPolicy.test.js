@@ -6,7 +6,10 @@ import {
   buildT5SeasonLedger,
   seasonStartFromDates,
   setT5SeasonLedger,
+  t5GoldLead,
   t5HoldDays,
+  t5LeadStamp,
+  t5MarginKind,
   t5MorningRead,
   t5OppHasT5,
   t5Seat,
@@ -43,6 +46,14 @@ function winsDate(date, n, price = 0.4) {
 
 function details(id, side, invested = 100) {
   return [{ wallet: id, side, invested }];
+}
+
+function nbaBook(wallets, seasonStart = '2026-10-01') {
+  const packed = {};
+  for (const [id, rows] of Object.entries(wallets)) {
+    packed[id] = rows.map((r) => [r.date, Math.round(r.price * 1000), r.won ? 1 : 0]);
+  }
+  return { sports: { NBA: { seasonStart, wallets: packed } } };
 }
 
 function leadWallets(id) {
@@ -310,10 +321,211 @@ test('odds cap after the band can sit a long dog under its floor', () => {
   const id = 'aaaaaa';
   setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
   const band = applyT5Lead({
-    units: 1, pickDate: '2026-11-08', odds: 220, walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+    units: 1, pickDate: '2026-11-08', odds: 200, walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
   });
   assert.equal(band.units, 3);
-  assert.equal(oddsCap(band.units, 220), 1);
+  assert.equal(oddsCap(band.units, 200), 1);
+});
+
+test('gold is a 14-day T5 with nobody T5 against, not the lead14 seat', () => {
+  const ours = winsDate('2026-10-10', 10);
+  const young = winsDate('2026-10-24', 10);
+  const long = winsDate('2026-10-10', 10);
+  setT5SeasonLedger(nbaBook({ aaaaaa: ours }, '2026-10-10'));
+  const emptyAg = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -169,
+    walletDetails: details('aaaaaa', 'home'), sport: 'NBA', side: 'home',
+  });
+  assert.equal(emptyAg.seat.id, 'lead14');
+  assert.equal(emptyAg.gold, true);
+  assert.equal(t5GoldLead(emptyAg.lead), true);
+  assert.equal(emptyAg.lead.for14, 1);
+  assert.equal(emptyAg.lead.a, 0);
+
+  setT5SeasonLedger(nbaBook({ aaaaaa: ours, bbbbbb: young }, '2026-10-10'));
+  const youngAg = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -110,
+    walletDetails: [...details('aaaaaa', 'home'), ...details('bbbbbb', 'away')],
+    sport: 'NBA', side: 'home',
+  });
+  assert.equal(youngAg.seat.id, 'no_lead');
+  assert.equal(youngAg.gold, false);
+  assert.equal(youngAg.lead.a, 1);
+  assert.equal(youngAg.lead.holdAgainst, 0);
+  assert.equal(t5MarginKind(youngAg.lead), 'lead14');
+
+  setT5SeasonLedger(nbaBook({ aaaaaa: ours, bbbbbb: long }, '2026-10-10'));
+  const longAg = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -114,
+    walletDetails: [...details('aaaaaa', 'home'), ...details('bbbbbb', 'away')],
+    sport: 'NBA', side: 'home',
+  });
+  assert.equal(longAg.gold, false);
+  assert.equal(longAg.lead.ag14, 1);
+  assert.equal(t5GoldLead(longAg.lead), false);
+});
+
+test('a muted side with gold wallets stays v8_gold false and still writes hold counts', () => {
+  setT5SeasonLedger(book('aaaaaa', winsDate('2026-10-10', 10), '2026-10-10'));
+  const out = applyT5Lead({
+    units: 0, pickDate: '2026-11-08', odds: -106,
+    walletDetails: details('aaaaaa', 'home'), sport: 'NBA', side: 'home',
+    blocked: true,
+  });
+  assert.equal(out.units, 0);
+  assert.equal(out.gold, false);
+  const stamp = t5LeadStamp(out);
+  assert.equal(stamp.v8_gold, false);
+  assert.equal(stamp.v8_t5LeadFor14, 1);
+  assert.equal(stamp.v8_t5LeadAg14, 0);
+  assert.equal(stamp.v8_t5LeadFor6, 1);
+  assert.equal(stamp.v8_t5LeadAg6, 0);
+  assert.equal(stamp.v8_edgeBoost, 0);
+  assert.equal(stamp.v8_edgeBoostEdge, null);
+});
+
+test('a 14-day or 6-day margin with winner-align edge 11 or more adds 1 unit', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const four = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -169,
+    walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+    winnerAlignEdge: 11,
+  });
+  assert.equal(four.margin, 'lead14');
+  assert.equal(four.edgeBoost, 1);
+  assert.equal(four.unitsPreEdgeBoost, 4);
+  assert.equal(four.units, 5);
+  assert.equal(four.gold, true);
+  const stamp = t5LeadStamp(four);
+  assert.equal(stamp.v8_gold, true);
+  assert.equal(stamp.v8_edgeBoost, 1);
+  assert.equal(stamp.v8_unitsPreEdgeBoost, 4);
+  assert.equal(stamp.v8_edgeBoostEdge, 11);
+
+  const atCeil = applyT5Lead({
+    units: 6, pickDate: '2026-11-08', odds: -110,
+    walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+    winnerAlignEdge: 12,
+  });
+  assert.equal(atCeil.unitsPreEdgeBoost, 6);
+  assert.equal(atCeil.units, 7);
+
+  const under = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -169,
+    walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+    winnerAlignEdge: 10.9,
+  });
+  assert.equal(under.edgeBoost, 0);
+  assert.equal(under.units, 4);
+  assert.equal(under.gold, true);
+
+  setT5SeasonLedger(book(id, winsDate('2026-10-18', 10), '2026-10-18'));
+  const six = applyT5Lead({
+    units: 5, pickDate: '2026-11-08', odds: -110,
+    walletDetails: leadWallets(id), sport: 'NBA', side: 'home',
+    winnerAlignEdge: 11,
+  });
+  assert.equal(six.margin, 'lead6');
+  assert.equal(six.edgeBoost, 1);
+  assert.equal(six.units, 6);
+  assert.equal(six.gold, false);
+});
+
+test('somebody T5 against does not block the add, and a 14-day margin does not also get the 6-day add', () => {
+  const ours = winsDate('2026-10-10', 10);
+  const young = winsDate('2026-10-24', 10);
+  setT5SeasonLedger(nbaBook({ aaaaaa: ours, cccccc: ours, bbbbbb: young }, '2026-10-10'));
+  const out = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -110,
+    walletDetails: [
+      ...details('aaaaaa', 'home'),
+      ...details('cccccc', 'home'),
+      ...details('bbbbbb', 'away'),
+    ],
+    sport: 'NBA', side: 'home',
+    winnerAlignEdge: 14,
+  });
+  assert.equal(out.seat.id, 'lead14');
+  assert.equal(out.gold, false);
+  assert.equal(out.lead.for14, 2);
+  assert.equal(out.lead.ag14, 0);
+  assert.equal(out.margin, 'lead14');
+  assert.equal(out.edgeBoost, 1);
+  assert.equal(out.units, 5);
+});
+
+test('a young T5 and a side with no T5 do not get the unit even at edge 20', () => {
+  setT5SeasonLedger(book('aaaaaa', winsDate('2026-10-22', 10), '2026-10-22'));
+  const young = applyT5Lead({
+    units: 3, pickDate: '2026-11-08', odds: -365,
+    walletDetails: details('aaaaaa', 'home'), sport: 'NBA', side: 'home',
+    winnerAlignEdge: 20,
+  });
+  assert.equal(young.seat.id, 't5_young');
+  assert.equal(young.margin, null);
+  assert.equal(young.edgeBoost, 0);
+  assert.equal(young.units, 3);
+  assert.equal(young.gold, false);
+
+  setT5SeasonLedger({ sports: { NBA: { seasonStart: '2026-10-18', wallets: {} } } });
+  const none = applyT5Lead({
+    units: 2, pickDate: '2026-11-08', odds: -110,
+    walletDetails: details('cccccc', 'home'), sport: 'NBA', side: 'home',
+    winnerAlignEdge: 20,
+  });
+  assert.equal(none.seat.id, 'no_t5');
+  assert.equal(none.edgeBoost, 0);
+  assert.equal(none.units, 2);
+  assert.equal(none.gold, false);
+});
+
+test('a press-edge rescue stays at 1 and the add does not lift it', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const out = applyT5Lead({
+    units: 0, pickDate: '2026-11-08', odds: -110,
+    walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+    pressEdgeMuted: true, winnerAlignEdge: 14,
+  });
+  assert.equal(out.action, 'RESCUE');
+  assert.equal(out.units, 1);
+  assert.equal(out.edgeBoost, 0);
+  const held = applyT5Lead({
+    units: 1, pickDate: '2026-11-08', odds: -110,
+    walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+    fromRescue: true, winnerAlignEdge: 14,
+  });
+  assert.equal(held.units, 1);
+  assert.equal(held.edgeBoost, 0);
+});
+
+test('odds cap after the add can sit a long dog under its floor', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const band = applyT5Lead({
+    units: 1, pickDate: '2026-11-08', odds: 200,
+    walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+    winnerAlignEdge: 11,
+  });
+  assert.equal(band.unitsPreEdgeBoost, 3);
+  assert.equal(band.units, 4);
+  assert.equal(oddsCap(band.units, 200), 1);
+});
+
+test('a manual stake stays as set and still stamps gold when the wallets qualify', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const out = applyT5Lead({
+    units: 3, pickDate: '2026-11-08', odds: -110,
+    walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+    manual: true, winnerAlignEdge: 14,
+  });
+  assert.equal(out.action, 'PASS');
+  assert.equal(out.units, 3);
+  assert.equal(out.edgeBoost, 0);
+  assert.equal(out.gold, true);
+  assert.equal(out.reason, 'manual');
 });
 
 test('ledger season start matches a 21-day hole and keeps only that season', () => {

@@ -1,8 +1,9 @@
 /**
  * GOLD stack classifier — HARD+ FOR only · proven ≥75%.
  *
- * Used by the hero GOLD tag (display) and the 4u size cap (staking).
- * This file does not change units. The cap overlay does.
+ * Used by the 4u size cap (staking). The hero GOLD pill is the 14-day
+ * empty-other-side T5 lead (`v8_gold`), not this stack. This file does
+ * not change units. The cap overlay does.
  *
  * Stack:
  *   HARD+ FOR only — ≥1 Source B sport×market HARD on our side
