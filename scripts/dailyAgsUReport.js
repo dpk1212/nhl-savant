@@ -130,7 +130,8 @@ const TIER_ORDER = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK', 'FADE'];
 // v12 ABSOLUTE units ladder (not a multiplier — see syncPickStateAuthoritative
 // `unitsFromAgsV12` and ags.js `agsV12SizeMultiplier`). After ladder lookup
 // the value is run through `oddsCap` (which clamps *long* underdogs down to
-// 2.5 / 1.5 / 1.0 at +121 / +151 / +200; +120 or shorter is uncapped by odds),
+// 2.5 / 1.5 / 1.0 at +121 / +151 / +200, and stakes 0 past +200; +120 or
+// shorter is uncapped by odds),
 // so the realised stake can legitimately fall below the ladder target on
 // long +odds — that is NOT a drift bug, it's the cap doing its job.
 const V12_TIER_UNITS = { ELITE: 5.00, PREMIUM: 3.00, LOCK: 1.00, LEAN: 0.50, WEAK: 0.25, FADE: 0.00 };
@@ -139,6 +140,7 @@ const V12_TIER_UNITS = { ELITE: 5.00, PREMIUM: 3.00, LOCK: 1.00, LEAN: 0.50, WEA
 // odds-cap clamping from a real sizing pipeline regression.
 function oddsCapForReport(units, odds) {
   if (!Number.isFinite(odds)) return units;
+  if (odds > 200) return 0;
   if (odds >= 200) return Math.min(units, 1.0);
   if (odds >= 151) return Math.min(units, 1.5);
   if (odds > 120) return Math.min(units, 2.5); // +121 .. +150
