@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { oddsCap } from './oddsCap.js';
 import {
   applyT5Lead,
   buildT5SeasonLedger,
@@ -7,6 +8,8 @@ import {
   setT5SeasonLedger,
   t5HoldDays,
   t5MorningRead,
+  t5OppHasT5,
+  t5Seat,
 } from './t5LeadPolicy.js';
 
 function iso(n) {
@@ -40,6 +43,10 @@ function winsDate(date, n, price = 0.4) {
 
 function details(id, side, invested = 100) {
   return [{ wallet: id, side, invested }];
+}
+
+function leadWallets(id) {
+  return [...details(id, 'home'), { wallet: 'bbbbbb', side: 'away', invested: 50 }];
 }
 
 test('season start is the first date after the last 21-day gap', () => {
@@ -82,42 +89,67 @@ test('a morning that falls off tier 5 breaks the hold', () => {
   assert.equal(restarted.qualifies, false);
 });
 
-test('boost adds 1, the band adds 1, and day 14 adds 1', () => {
-  const id = 'aaaaaa';
-  const sixRows = winsDate('2026-10-18', 10);
-  setT5SeasonLedger(book(id, sixRows, '2026-10-18'));
-  const wallets = [...details(id, 'home'), { wallet: 'bbbbbb', side: 'away', invested: 50 }];
-  const six = applyT5Lead({
-    units: 2, pickDate: '2026-11-08', odds: 150, walletDetails: wallets, sport: 'NBA', side: 'home',
-  });
-  assert.equal(six.action, 'BOOST');
-  assert.equal(six.add, 1);
-  assert.equal(six.units, 3);
-  const band = applyT5Lead({
-    units: 2, pickDate: '2026-11-08', odds: -110, walletDetails: wallets, sport: 'NBA', side: 'home',
-  });
-  assert.equal(band.add, 2);
-  assert.equal(band.units, 4);
-  const longRows = winsDate('2026-10-10', 10);
-  setT5SeasonLedger(book(id, longRows, '2026-10-10'));
-  const long = applyT5Lead({
-    units: 2.5, pickDate: '2026-11-08', odds: -110, walletDetails: wallets, sport: 'NBA', side: 'home',
-  });
-  assert.equal(long.add, 3);
-  assert.equal(long.units, 5.5);
-});
-
-test('a missing price skips only the band unit', () => {
+test('a 6-day lead stays at 2–5 and a 14-day lead stays at 3–6', () => {
   const id = 'aaaaaa';
   setT5SeasonLedger(book(id, winsDate('2026-10-18', 10), '2026-10-18'));
-  const out = applyT5Lead({
-    units: 2, pickDate: '2026-11-08', odds: null, walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+  const wallets = leadWallets(id);
+  const sixLow = applyT5Lead({
+    units: 1, pickDate: '2026-11-08', odds: 150, walletDetails: wallets, sport: 'NBA', side: 'home',
   });
-  assert.equal(out.add, 1);
-  assert.equal(out.units, 3);
+  assert.equal(sixLow.seat.id, 'lead6');
+  assert.equal(sixLow.action, 'BAND');
+  assert.equal(sixLow.units, 2);
+  const sixKeep = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -110, walletDetails: wallets, sport: 'NBA', side: 'home',
+  });
+  assert.equal(sixKeep.action, 'PASS');
+  assert.equal(sixKeep.units, 4);
+  const sixHigh = applyT5Lead({
+    units: 6, pickDate: '2026-11-08', odds: -110, walletDetails: wallets, sport: 'NBA', side: 'home',
+  });
+  assert.equal(sixHigh.units, 5);
+
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const longLow = applyT5Lead({
+    units: 2.5, pickDate: '2026-11-08', odds: -110, walletDetails: wallets, sport: 'NBA', side: 'home',
+  });
+  assert.equal(longLow.seat.id, 'lead14');
+  assert.equal(longLow.action, 'BAND');
+  assert.equal(longLow.units, 3);
+  const longKeep = applyT5Lead({
+    units: 5, pickDate: '2026-11-08', odds: -110, walletDetails: wallets, sport: 'NBA', side: 'home',
+  });
+  assert.equal(longKeep.action, 'PASS');
+  assert.equal(longKeep.units, 5);
+  const longHigh = applyT5Lead({
+    units: 7, pickDate: '2026-11-08', odds: -110, walletDetails: wallets, sport: 'NBA', side: 'home',
+  });
+  assert.equal(longHigh.units, 6);
 });
 
-test('the other side matching or ahead does not lead', () => {
+test('a not-yet-6 lead sits at 2–3', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-22', 10), '2026-10-22'));
+  const out = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -110, walletDetails: leadWallets(id), sport: 'NBA', side: 'home',
+  });
+  assert.equal(out.seat.id, 't5_young');
+  assert.equal(out.units, 3);
+  const low = applyT5Lead({
+    units: 1, pickDate: '2026-11-08', odds: -110, walletDetails: leadWallets(id), sport: 'NBA', side: 'home',
+  });
+  assert.equal(low.units, 2);
+});
+
+test('no tier 5 and a lead the other way both cap at 2', () => {
+  setT5SeasonLedger({ sports: { NBA: { seasonStart: '2026-10-18', wallets: {} } } });
+  const empty = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -110, walletDetails: details('cccccc', 'home'), sport: 'NBA', side: 'home',
+  });
+  assert.equal(empty.seat.id, 'no_t5');
+  assert.equal(empty.units, 2);
+  assert.equal(t5OppHasT5(empty.lead), false);
+
   const rows = winsDate('2026-10-18', 10);
   setT5SeasonLedger({
     sports: {
@@ -131,16 +163,17 @@ test('the other side matching or ahead does not lead', () => {
     },
   });
   const tied = applyT5Lead({
-    units: 2,
+    units: 4,
     pickDate: '2026-11-08',
     odds: -110,
     walletDetails: [...details('aaaaaa', 'home'), ...details('bbbbbb', 'away')],
     sport: 'NBA',
     side: 'home',
   });
-  assert.equal(tied.action, 'PASS');
-  assert.equal(tied.units, 2);
   assert.equal(tied.lead.lead, false);
+  assert.equal(tied.seat.id, 'no_lead');
+  assert.equal(tied.units, 2);
+  assert.equal(t5OppHasT5(tied.lead), true);
 });
 
 test('a wallet on both sides is dropped', () => {
@@ -155,12 +188,12 @@ test('a wallet on both sides is dropped', () => {
     side: 'home',
   });
   assert.equal(out.lead.f, 0);
-  assert.equal(out.action, 'PASS');
+  assert.equal(out.seat.id, 'no_t5');
 });
 
-test('press-edge rescue is 1 unit at T5-LEAD and the boost does not stack', () => {
+test('press-edge rescue is 1 unit at T5-LEAD and the floor does not lift it', () => {
   const id = 'aaaaaa';
-  setT5SeasonLedger(book(id, winsDate('2026-10-18', 10), '2026-10-18'));
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
   const out = applyT5Lead({
     units: 0,
     pickDate: '2026-11-08',
@@ -172,8 +205,40 @@ test('press-edge rescue is 1 unit at T5-LEAD and the boost does not stack', () =
   });
   assert.equal(out.action, 'RESCUE');
   assert.equal(out.units, 1);
-  assert.equal(out.add, 1);
+  assert.equal(out.seat.id, 'lead14');
   assert.equal(out.tier, 'T5-LEAD');
+  const held = applyT5Lead({
+    units: 1,
+    pickDate: '2026-11-08',
+    odds: -110,
+    walletDetails: details(id, 'home'),
+    sport: 'NBA',
+    side: 'home',
+    fromRescue: true,
+  });
+  assert.equal(held.units, 1);
+  assert.equal(held.action, 'PASS');
+});
+
+test('press-edge with no tier 5 comes back at 1 and a young tier 5 stays muted', () => {
+  setT5SeasonLedger({ sports: { NBA: { seasonStart: '2026-10-18', wallets: {} } } });
+  const none = applyT5Lead({
+    units: 0, pickDate: '2026-11-08', odds: -110, walletDetails: details('cccccc', 'home'),
+    sport: 'NBA', side: 'home', pressEdgeMuted: true,
+  });
+  assert.equal(none.action, 'RESCUE');
+  assert.equal(none.reason, 't5_no_t5_rescue');
+  assert.equal(none.units, 1);
+
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-22', 10), '2026-10-22'));
+  const young = applyT5Lead({
+    units: 0, pickDate: '2026-11-08', odds: -110, walletDetails: details(id, 'home'),
+    sport: 'NBA', side: 'home', pressEdgeMuted: true,
+  });
+  assert.equal(young.action, 'PASS');
+  assert.equal(young.units, 0);
+  assert.equal(young.seat.id, 't5_young');
 });
 
 test('a mute that already zeroed the side stays at 0', () => {
@@ -216,6 +281,39 @@ test('the rule does not run before the ship date', () => {
   });
   assert.equal(out.action, 'EXEMPT');
   assert.equal(out.units, 2);
+});
+
+test('a missing ledger is not a no-tier-5 seat', () => {
+  setT5SeasonLedger(null);
+  const out = applyT5Lead({
+    units: 4, pickDate: '2026-11-08', odds: -110, walletDetails: details('aaaaaa', 'home'), sport: 'NBA', side: 'home',
+  });
+  assert.equal(out.action, 'PASS');
+  assert.equal(out.units, 4);
+  assert.equal(out.seat, null);
+  assert.equal(t5OppHasT5(out.lead), null);
+  assert.equal(t5Seat(out.lead), null);
+});
+
+test('spreads and totals use the same seats', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const over = applyT5Lead({
+    units: 1, pickDate: '2026-11-08', odds: -110,
+    walletDetails: details(id, 'over'), sport: 'NBA', side: 'over',
+  });
+  assert.equal(over.seat.id, 'lead14');
+  assert.equal(over.units, 3);
+});
+
+test('odds cap after the band can sit a long dog under its floor', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const band = applyT5Lead({
+    units: 1, pickDate: '2026-11-08', odds: 220, walletDetails: details(id, 'home'), sport: 'NBA', side: 'home',
+  });
+  assert.equal(band.units, 3);
+  assert.equal(oddsCap(band.units, 220), 1);
 });
 
 test('ledger season start matches a 21-day hole and keeps only that season', () => {

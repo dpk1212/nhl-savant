@@ -99,6 +99,18 @@ test('cut to 0u: never, Door-2 margin exactly +1, price under +200', () => {
   assert.equal(cut.units, 0);
   assert.equal(cut.mutedBy, 'ml-door-never');
   assert.equal(apply({
+    units: 2.5,
+    odds: 150,
+    tapeLog: [FIRST_OFF, LOCK_OFF],
+    oppHasT5: false,
+  }).action, 'hold');
+  assert.equal(apply({
+    units: 2.5,
+    odds: 150,
+    tapeLog: [FIRST_OFF, LOCK_OFF],
+    oppHasT5: true,
+  }).action, 'cut');
+  assert.equal(apply({
     units: 3,
     odds: -110,
     door2For: 2,

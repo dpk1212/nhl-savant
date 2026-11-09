@@ -388,11 +388,14 @@ import {
   edgeUnder5Stamp,
 } from '../src/lib/edgeUnder5.js';
 import {
+  T5_LEAD_FROM,
   T5_LEDGER_COLLECTION,
   applyT5Lead,
   hydrateT5SeasonLedger,
   setT5SeasonLedger,
+  t5LeadForSide,
   t5LeadStamp,
+  t5OppHasT5,
 } from '../src/lib/t5LeadPolicy.js';
 import {
   evaluatePressLadder,
@@ -4252,6 +4255,11 @@ async function createMissingLockedPicks({
       // Moneyline door × steam. Dated inside the policy so October tickets
       // keep the units they shipped. Create usually has no tape yet, so
       // this holds; the next reconcile has a first row and applies it.
+      // A never-cut stays when the other side has no season tier 5.
+      const t5LeadCreate = t5LeadForSide({
+        walletDetails, side, sport, asOf: TARGET_DATE,
+      });
+      const oppHasT5Create = t5OppHasT5(t5LeadCreate);
       let mlDoorPolicyCreate = null;
       const unitsBeforeDoor = peakUnitsApplied;
       const tierBeforeDoor = hcStakeTierCreate;
@@ -4268,6 +4276,7 @@ async function createMissingLockedPicks({
           door2Known: !!pressEvalCreate && !ML_DOOR_UNCOUNTED_REASONS.has(pressEvalCreate.reason),
           tapeLog: null,
           liveSnap: liveTapeCreate,
+          oppHasT5: oppHasT5Create,
           pressGateMuted: peakUnitsApplied === 0
             && !favJuicePolicyCreate?.mutedBy
             && pressEdgeNetPolicyCreate?.action !== 'MUTE'
@@ -4333,6 +4342,7 @@ async function createMissingLockedPicks({
           odds: odds ?? null,
           gapFires: gapPolicyCreate?.fires === true,
           steamOn: pressEvalCreate?.steamOn === true,
+          oppHasT5: oppHasT5Create,
           blendEdge: blendEdgeForSide({
             walletDetails,
             side,
@@ -4355,9 +4365,10 @@ async function createMissingLockedPicks({
         peakUnitsApplied = 0;
         hcStakeTierCreate = 'MONITORING';
       }
-      // Season tier-5 lead. Adds on a stake still above 0. A press-edge
-      // zero with a 6-day lead comes back at 1u as T5-LEAD. Mutes that
-      // already zeroed the side, a manual stake, and an operator kill stay.
+      // Season tier-5 seats. After press-edge and the top-3 rung. The
+      // stake stays where the card put it, then the seat floor/ceiling.
+      // Odds cap runs after the band. A press-edge zero comes back at 1u
+      // on a 6/14-day lead or when neither side has a tier 5.
       let t5PolicyCreate = null;
       {
         let edgeWould = false;
@@ -4371,6 +4382,7 @@ async function createMissingLockedPicks({
             odds: odds ?? null,
             gapFires: gapPolicyCreate?.fires === true,
             steamOn: pressEvalCreate?.steamOn === true,
+            oppHasT5: oppHasT5Create,
             blendEdge: blendEdgeForSide({
               walletDetails,
               side,
@@ -4392,6 +4404,9 @@ async function createMissingLockedPicks({
           side,
           manual: false,
           pressEdgeMuted: pressEdgeNetPolicyCreate?.action === 'MUTE',
+          fromRescue: mlDoorKind(mlDoorPolicyCreate?.action) === 'rescue'
+            || top3PolicyCreate?.action === 'rescue'
+            || gapPolicyCreate?.action === 'rescue',
           blocked: operatorCreate
             || cbbV12StakeMuted(sport, TARGET_DATE)
             || !!favJuicePolicyCreate?.mutedBy
@@ -4399,7 +4414,12 @@ async function createMissingLockedPicks({
             || edgeWould
             || mlDoorKind(mlDoorPolicyCreate?.action) === 'cut',
         });
-        if (t5PolicyCreate.action === 'BOOST' || t5PolicyCreate.action === 'RESCUE') {
+        if (t5PolicyCreate.action === 'BAND') {
+          peakUnitsApplied = t5PolicyCreate.units;
+          if (peakUnitsApplied > 0 && Number.isFinite(Number(odds))) {
+            peakUnitsApplied = Math.round(oddsCap(peakUnitsApplied, odds) * 100) / 100;
+          }
+        } else if (t5PolicyCreate.action === 'RESCUE') {
           peakUnitsApplied = t5PolicyCreate.units;
           if (t5PolicyCreate.tier) hcStakeTierCreate = t5PolicyCreate.tier;
         }
@@ -6764,6 +6784,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Moneyline door × steam. Runs on the units that would ship, after the
   // odds cap, favorite-juice mute, and press-edge clamp. Manual stake
   // never entered the ladder. Operator kill still wins, below.
+  // A never-cut stays when the other side has no season tier 5.
+  const t5LeadLive = t5LeadForSide({
+    walletDetails: wd, side, sport: pick.sport, asOf: pickDate,
+  });
+  const oppHasT5Live = t5OppHasT5(t5LeadLive);
   let mlDoorPolicy = null;
   if (pressApplied && !skipManualFlinch) {
     mlDoorPolicy = applyMlDoorSteamPolicy({
@@ -6778,6 +6803,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       door2Known: !!pressEval && !ML_DOOR_UNCOUNTED_REASONS.has(pressEval.reason),
       tapeLog: sd.v8_ticketTapeLog,
       liveSnap: liveTapeSnap,
+      oppHasT5: oppHasT5Live,
       pressGateMuted: finalUnitsApplied === 0
         && !favJuicePolicy?.mutedBy
         && pressEdgeNetPolicy?.action !== 'MUTE'
@@ -6853,6 +6879,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       gapFires: gapPolicy?.fires === true,
       steamOn: pressEval?.steamOn === true,
       alreadyOff: edgeAlreadyOff,
+      oppHasT5: oppHasT5Live,
       blendEdge: blendEdgeForSide({
         walletDetails: wd,
         side,
@@ -6879,9 +6906,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     hcStakeTier = 'MONITORING';
   }
 
-  // Season tier-5 lead, after every mute that can zero the side. The
-  // boost adds to a stake still above 0. The rescue is only a press-edge
-  // zero, and it does not stack on the 1 unit.
+  // Season tier-5 seats, after press-edge and the top-3 rung. The stake
+  // stays where the card put it, then the seat floor/ceiling. Odds cap
+  // runs after the band. Rescues stay at 1u.
   let t5Policy = null;
   if (!skipManualFlinch) {
     let edgeWould = false;
@@ -6895,6 +6922,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         odds: sideOdds,
         gapFires: gapPolicy?.fires === true,
         steamOn: pressEval?.steamOn === true,
+        oppHasT5: oppHasT5Live,
         blendEdge: blendEdgeForSide({
           walletDetails: wd,
           side,
@@ -6919,6 +6947,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       side,
       manual: false,
       pressEdgeMuted: pressEdgeNetPolicy?.action === 'MUTE',
+      fromRescue: mlDoorKind(mlDoorPolicy?.action) === 'rescue'
+        || top3Policy?.action === 'rescue'
+        || gapPolicy?.action === 'rescue',
       blocked: operatorKilled
         || cbbMatureMute
         || !!favJuicePolicy?.mutedBy
@@ -6928,10 +6959,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || fadeZero
         || agsZero,
     });
-    if (t5Policy.action === 'BOOST' || t5Policy.action === 'RESCUE') {
+    if (t5Policy.action === 'BAND') {
+      finalUnitsApplied = t5Policy.units;
+      if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
+        finalUnitsApplied = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
+      }
+    } else if (t5Policy.action === 'RESCUE') {
       finalUnitsApplied = t5Policy.units;
       if (t5Policy.tier) hcStakeTier = t5Policy.tier;
-      if (t5Policy.action === 'RESCUE' && appliedStatus !== 'ACTIVE') {
+      if (appliedStatus !== 'ACTIVE') {
         appliedStatus = 'ACTIVE';
         appliedReason = 't5_lead_rescue';
       }
@@ -8099,6 +8135,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   } else if (edgeUnder5Policy?.clause === 'steam-on') {
     const edgeTxt = edgeUnder5Policy.blendEdge == null ? '—' : Number(edgeUnder5Policy.blendEdge).toFixed(1);
     changes.push(`EDGE-UNDER-5 STEAM ON: ${edgeUnder5Policy.units}u (edge=${edgeTxt})`);
+  } else if (edgeUnder5Policy?.reason === 'no_t5_against') {
+    changes.push(`EDGE-UNDER-5 KEEP: no T5 against ${edgeUnder5Policy.units}u`);
+  }
+  if (t5Policy?.action === 'BAND') {
+    changes.push(
+      `T5 SEAT ${t5Policy.seat?.id || ''}: ${t5Policy.lead?.hold ?? '—'}d ${t5Policy.add >= 0 ? '+' : ''}${t5Policy.add}u → ${t5Policy.units}u`,
+    );
+  } else if (t5Policy?.action === 'RESCUE') {
+    changes.push(`T5-LEAD RESCUE: ${t5Policy.reason} → ${t5Policy.units}u`);
   }
 
   if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
@@ -8847,7 +8892,7 @@ async function main() {
   }
 
   // Season tier-5 books. Rebuilt by exportWalletProfiles with the grade.
-  // Missing ledger fail-closes the boost and the rescue.
+  // Missing ledger fail-closes the seat band and the rescue.
   try {
     const t5Snap = await db.collection(T5_LEDGER_COLLECTION).get();
     const t5Docs = t5Snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -8859,7 +8904,7 @@ async function main() {
     console.log(`T5 season ledger: ${t5Docs.length} docs${starts ? ` · ${starts}` : ''}`);
   } catch (err) {
     setT5SeasonLedger(null);
-    console.warn(`[t5] season ledger unavailable (boost and rescue stay off): ${err.message}`);
+    console.warn(`[t5] season ledger unavailable (seat band and rescue stay off): ${err.message}`);
   }
 
   // qConv Q1 mute thr — expanding bottom quintile of prior staked A/B/C.
@@ -9080,6 +9125,16 @@ async function main() {
       );
     } else {
       console.log(`PRESS-EDGE-NET: not live before ${PRESS_EDGE_NET_FROM} (TARGET_DATE=${TARGET_DATE})`);
+    }
+    if (typeof TARGET_DATE === 'string' && TARGET_DATE >= T5_LEAD_FROM) {
+      console.log(
+        `T5 SEAT BAND LIVE: after press-edge and top-3 · 14-day lead 3–6 · 6-day lead 2–5 · not-yet-6 2–3 · no T5 or no lead 1–2`
+        + ` · odds cap after the band · press-edge zeros come back at 1u on a 6/14-day lead or with no T5 either side`
+        + ` · a T5 that has not held 6 days stays muted · edge-under-5 and ml-door-never stay on when the other side has no T5`
+        + ` · from ${T5_LEAD_FROM} · manual / fav-juice / operator kill / T-15 still win`,
+      );
+    } else {
+      console.log(`T5 SEAT BAND: not live before ${T5_LEAD_FROM} (TARGET_DATE=${TARGET_DATE})`);
     }
     if (isSteamSLive(TARGET_DATE)) {
       console.log(

@@ -8,11 +8,15 @@
  * back one morning at a time with no gap. Held 6 and held 14 are that many
  * days or more.
  *
- * Boost adds 1, plus 1 inside 0.45–0.55, plus 1 at a 14-day hold, on a
- * stake the rest of the chain already left above 0. Rescue sets a
- * press-edge-net zero to 1 unit under T5-LEAD and does not take the boost.
- * From 2026-11-08. A frozen, graded, manual, or killed side is not rewritten
- * here — the caller keeps those gates.
+ * The stake stays where the card put it. Each seat has a floor and a
+ * ceiling. A 14-day lead under 3 goes to 3 and over 6 comes back to 6.
+ * A 6-day lead (not yet 14) sits one unit under that band. Odds cap runs
+ * after the band, so a long dog can still sit under its floor. Rescues
+ * stay at 1 unit — the floor does not lift them. Press-edge-net zeros
+ * come back at 1u (T5-LEAD) on a 6/14-day lead or when neither side has
+ * a tier 5; a tier 5 that has not held 6 days stays muted. From 2026-11-08.
+ * A frozen, graded, manual, or killed side is not rewritten here — the
+ * caller keeps those gates.
  */
 
 import { buildTrustState } from './walletTrustStatus.js';
@@ -25,12 +29,15 @@ export const T5_TIER = 5;
 export const T5_MIN_AGE_DAYS = 15;
 export const T5_HOLD_BOOST = 6;
 export const T5_HOLD_LONG = 14;
-export const T5_PRICE_LO = 0.45;
-export const T5_PRICE_HI = 0.55;
 export const T5_RESCUE_UNITS = 1;
 export const T5_LEAD_STAKE_TIER = 'T5-LEAD';
 export const T5_LEDGER_COLLECTION = 't5SeasonLedger';
 export const T5_ON = new Set(['STABLE_ON', 'REGAINED_ON']);
+export const T5_SEAT_LEAD14 = { id: 'lead14', floor: 3, ceiling: 6 };
+export const T5_SEAT_LEAD6 = { id: 'lead6', floor: 2, ceiling: 5 };
+export const T5_SEAT_YOUNG = { id: 't5_young', floor: 2, ceiling: 3 };
+export const T5_SEAT_NO_T5 = { id: 'no_t5', floor: null, ceiling: 2 };
+export const T5_SEAT_NO_LEAD = { id: 'no_lead', floor: null, ceiling: 2 };
 const SIDES = new Set(['home', 'away', 'over', 'under']);
 
 let ledger = null;
@@ -194,6 +201,12 @@ export function t5LeadForSide({ walletDetails, side, sport, asOf } = {}) {
     for (const id of bySide[s] || []) if (!both.has(id)) theirs.add(id);
   }
   const book = sportBook(sport);
+  if (!book) {
+    return {
+      f: 0, a: 0, lead: false, hold: null, holdAgainst: null, holdWallet: null,
+      wallets: [], seasonStart: null, ledger: false,
+    };
+  }
   const qualify = (id) => {
     const packed = rowsFor(sport, id, day);
     const held = t5HoldDays(packed.rows, day, packed.seasonStart);
@@ -206,11 +219,11 @@ export function t5LeadForSide({ walletDetails, side, sport, asOf } = {}) {
     const held = holdCache.has(cacheKey) ? holdCache.get(cacheKey) : qualify(id);
     if (held.qualifies) ourQ.push({ id, held: held.held });
   }
-  let against = 0;
+  const theirQ = [];
   for (const id of theirs) {
     const cacheKey = `hold|${sport}|${id}|${day}`;
     const held = holdCache.has(cacheKey) ? holdCache.get(cacheKey) : qualify(id);
-    if (held.qualifies) against += 1;
+    if (held.qualifies) theirQ.push({ id, held: held.held });
   }
   let hold = null;
   let holdWallet = null;
@@ -220,26 +233,57 @@ export function t5LeadForSide({ walletDetails, side, sport, asOf } = {}) {
       holdWallet = w.id;
     }
   }
+  let holdAgainst = null;
+  for (const w of theirQ) {
+    if (holdAgainst == null || w.held > holdAgainst) holdAgainst = w.held;
+  }
   const f = ourQ.length;
+  const against = theirQ.length;
   return {
     f,
     a: against,
     lead: f - against >= 1,
     hold,
+    holdAgainst,
     holdWallet,
     wallets: ourQ.map((w) => w.id).sort(),
-    seasonStart: book?.seasonStart || null,
+    seasonStart: book.seasonStart || null,
+    ledger: true,
   };
 }
 
-function inBand(price) {
-  return price != null && price >= T5_PRICE_LO && price < T5_PRICE_HI;
+/** Seat for the side. A missing ledger is not a seat. */
+export function t5Seat(lead) {
+  if (!lead || lead.ledger === false) return null;
+  const hold = lead.hold;
+  const f = lead.f || 0;
+  const a = lead.a || 0;
+  const weLead = lead.lead === true;
+  if (weLead && hold != null && hold >= T5_HOLD_LONG) return T5_SEAT_LEAD14;
+  if (weLead && hold != null && hold >= T5_HOLD_BOOST) return T5_SEAT_LEAD6;
+  if (weLead && f > 0) return T5_SEAT_YOUNG;
+  if (f === 0 && a === 0) return T5_SEAT_NO_T5;
+  return T5_SEAT_NO_LEAD;
+}
+
+/** False when the season book is loaded and the other side has no tier 5. */
+export function t5OppHasT5(lead) {
+  if (!lead || lead.ledger !== true) return null;
+  return (lead.a || 0) > 0;
+}
+
+function clampSeat(units, seat, { floor = true } = {}) {
+  let next = units;
+  if (floor && seat.floor != null && next > 0 && next < seat.floor) next = seat.floor;
+  if (seat.ceiling != null && next > seat.ceiling) next = seat.ceiling;
+  return Math.round(next * 100) / 100;
 }
 
 /**
  * @returns {{
- *   units: number, action: 'BOOST'|'RESCUE'|'PASS'|'EXEMPT', add: number,
+ *   units: number, action: 'BAND'|'RESCUE'|'PASS'|'EXEMPT', add: number,
  *   tier: string|null, reason: string|null, lead: object|null, price: number|null,
+ *   seat: object|null,
  * }}
  */
 export function applyT5Lead({
@@ -252,40 +296,47 @@ export function applyT5Lead({
   manual = false,
   pressEdgeMuted = false,
   blocked = false,
+  fromRescue = false,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   if (typeof pickDate !== 'string' || pickDate < T5_LEAD_FROM) {
-    return { units: pre, action: 'EXEMPT', add: 0, tier: null, reason: 'pre_cutover', lead: null, price: null };
+    return {
+      units: pre, action: 'EXEMPT', add: 0, tier: null, reason: 'pre_cutover',
+      lead: null, price: null, seat: null,
+    };
   }
   const lead = t5LeadForSide({ walletDetails, side, sport, asOf: pickDate });
   const price = impliedFromAmerican(odds);
-  const base = { lead, price };
+  const seat = t5Seat(lead);
+  const base = { lead, price, seat };
   if (manual) {
     return { ...base, units: pre, action: 'PASS', add: 0, tier: null, reason: 'manual' };
   }
   const held = lead.hold;
-  const armed = lead.lead === true && held != null && held >= T5_HOLD_BOOST;
-  if (pre > 0 && armed) {
-    let add = 1;
-    if (inBand(price)) add += 1;
-    if (held >= T5_HOLD_LONG) add += 1;
-    return {
-      ...base,
-      units: Math.round((pre + add) * 100) / 100,
-      action: 'BOOST',
-      add,
-      tier: null,
-      reason: 't5_lead_boost',
-    };
+  const armed = lead.ledger === true && lead.lead === true && held != null && held >= T5_HOLD_BOOST;
+  const noT5 = lead.ledger === true && (lead.f || 0) === 0 && (lead.a || 0) === 0;
+  if (pre > 0 && seat) {
+    const next = clampSeat(pre, seat, { floor: fromRescue !== true });
+    if (next !== pre) {
+      return {
+        ...base,
+        units: next,
+        action: 'BAND',
+        add: Math.round((next - pre) * 100) / 100,
+        tier: null,
+        reason: fromRescue ? 't5_seat_ceil' : 't5_seat_band',
+      };
+    }
+    return { ...base, units: pre, action: 'PASS', add: 0, tier: null, reason: null };
   }
-  if (!(pre > 0) && pressEdgeMuted && armed && !blocked) {
+  if (!(pre > 0) && pressEdgeMuted && !blocked && (armed || noT5)) {
     return {
       ...base,
       units: T5_RESCUE_UNITS,
       action: 'RESCUE',
       add: T5_RESCUE_UNITS,
       tier: T5_LEAD_STAKE_TIER,
-      reason: 't5_lead_rescue',
+      reason: armed ? 't5_lead_rescue' : 't5_no_t5_rescue',
     };
   }
   return {
@@ -301,16 +352,21 @@ export function applyT5Lead({
 export function t5LeadStamp(policy) {
   if (!policy || policy.action === 'EXEMPT') return {};
   const lead = policy.lead || {};
+  const seat = policy.seat || null;
   return {
     v8_t5LeadAction: policy.action,
     v8_t5LeadAdd: policy.add || 0,
     v8_t5LeadFor: lead.f ?? 0,
     v8_t5LeadAg: lead.a ?? 0,
     v8_t5LeadHold: lead.hold ?? null,
+    v8_t5LeadHoldAg: lead.holdAgainst ?? null,
     v8_t5LeadHoldWallet: lead.holdWallet ?? null,
     v8_t5LeadWallets: Array.isArray(lead.wallets) ? lead.wallets : [],
     v8_t5LeadUnits: policy.units,
     v8_t5LeadReason: policy.reason ?? null,
+    v8_t5LeadSeat: seat?.id ?? null,
+    v8_t5LeadFloor: seat?.floor ?? null,
+    v8_t5LeadCeiling: seat?.ceiling ?? null,
   };
 }
 

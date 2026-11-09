@@ -141,6 +141,7 @@ export function applyMlDoorSteamPolicy({
   pressGateMuted = false,
   manualStake = false,
   opponentUnits = 0,
+  oppHasT5 = null,
 } = {}) {
   const u = num(units);
   const base = u == null ? 0 : u;
@@ -161,7 +162,7 @@ export function applyMlDoorSteamPolicy({
   const favorite = price != null && price < 0;
   const normal = price != null && price < 200;
 
-  if (timing === 'never' && margin === 1 && normal && base > 0) {
+  if (timing === 'never' && margin === 1 && normal && base > 0 && oppHasT5 !== false) {
     return {
       units: 0,
       action: 'cut',

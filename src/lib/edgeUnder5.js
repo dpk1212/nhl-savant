@@ -227,6 +227,7 @@ export function applyEdgeUnder5Mute({
   steamOn = false,
   blendEdge = null,
   alreadyOff = false,
+  oppHasT5 = null,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const out = (action, reason = null, clause = null, next = pre, mutedBy = null, extra = {}) => ({
@@ -241,6 +242,9 @@ export function applyEdgeUnder5Mute({
     rule: null,
     ...extra,
   });
+  if (oppHasT5 === false) {
+    return out('PASS', 'no_t5_against', 'no-t5-ag');
+  }
   if (alreadyOff === true) {
     return out('MUTE', 'edge_under_5_stay', 'stay', 0, EDGE_UNDER5_MUTED_BY, {
       blendEdge: stampedEdge(blendEdge),
