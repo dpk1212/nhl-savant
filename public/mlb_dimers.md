@@ -2,7 +2,7 @@
 
 MLB predictions for Friday, October 23, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
-[![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Hoops season sale: $30 off Dimers Pro passes. Limited time only. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
+[![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Take your betting further. Explore Dimers Pro plans. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
 Date: Oct 28 2026Oct 28
 
@@ -224,19 +224,9 @@ RECOMMENDED
 
 T&Cs apply.
 
-[Claim now](https://affiliates.routy.app/route/319960?affId=10466&ts=5015351&src=main-column&promo=true)
+[Claim now](https://platform.routy.app/route/5010857?affid=10466&ts=5015351&src=main-column&promo=true)
 
 [Read review](https://www.dimers.com/betting/betmgm-sportsbook)
-
-How to claim
-
-![logo](https://cdn.cosmicjs.com/e878d130-26c9-11f1-9754-d7196a81e564-Novig_idUhBcMR4r_1.svg?auto=format,compress&h=200)
-
-FEATURED
-
-T&Cs apply.
-
-[Claim Now](https://affiliates.routy.app/route/275281?affId=10159&ts=5008256&src=main-column&promo=true)
 
 How to claim
 
