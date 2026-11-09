@@ -231,6 +231,26 @@ export function applyGapLeadRescue({
   return { ...ev, action: safe > 0 ? 'boost' : 'rescue', units: capped };
 }
 
+/** Morning dollar-ROI books from the same read as the top-3 seats. */
+export function serializeGapLeadBooks(index, asOf) {
+  const rows = [];
+  for (const [key, info] of index?.entries?.() || []) {
+    const [sport, market, wallet] = String(key).split("|");
+    rows.push({ sport, market, wallet, n: info.n, dol: info.dol });
+  }
+  rows.sort((a, b) => a.sport.localeCompare(b.sport) || a.market.localeCompare(b.market) || a.wallet.localeCompare(b.wallet));
+  return { asOf, rows };
+}
+
+export function hydrateGapLeadBooks(payload) {
+  const index = new Map();
+  for (const row of payload?.rows || []) {
+    if (!row?.sport || !row?.market || !row?.wallet) continue;
+    index.set(`${row.sport}|${row.market}|${row.wallet}`, { n: row.n, dol: row.dol });
+  }
+  return index;
+}
+
 export function gapLeadStamp(policy) {
   if (!policy?.fires) return {};
   return {

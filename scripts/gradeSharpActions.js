@@ -36,6 +36,7 @@ import {
 } from './lib/atpPlayers.js';
 import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML, teamsFromBo3Slug } from './lib/esportsTeams.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
+import { rebuildMorningRanks } from './lib/morningRankCache.js';
 import { shouldGradeExited } from '../src/lib/actionLockPin.js';
 import {
   customerTailPnl,
@@ -1833,6 +1834,14 @@ async function main() {
     nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
     ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals, knownFinals,
   });
+
+  try {
+    const asOf = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const morning = await rebuildMorningRanks(db, asOf);
+    console.log(`Morning rank cache: ${morning.seats} top-3 seats, ${morning.gapWallets} gap-lead wallets, ${morning.bets} bets since ${morning.since}`);
+  } catch (err) {
+    console.warn(`Morning rank cache rebuild failed: ${err.message}`);
+  }
 
   console.log('\nDone.');
 }

@@ -242,3 +242,23 @@ export function top3PickStamp(policy) {
     v8_top3PickWallets: (policy.wallets || []).map((w) => `${w.wallet}#${w.rank}`),
   };
 }
+
+
+export function serializeTop3PickRanks(index, asOf) {
+  const rows = [];
+  for (const [key, info] of index?.entries?.() || []) {
+    const [sport, market, wallet] = String(key).split("|");
+    rows.push({ sport, market, wallet, rank: info.rank, n: info.n, wins: info.wins, losses: info.losses, dol: info.dol });
+  }
+  rows.sort((a, b) => a.sport.localeCompare(b.sport) || a.market.localeCompare(b.market) || a.rank - b.rank || a.wallet.localeCompare(b.wallet));
+  return { asOf, rows };
+}
+
+export function hydrateTop3PickRanks(payload) {
+  const index = new Map();
+  for (const row of payload?.rows || []) {
+    if (!row?.sport || !row?.market || !row?.wallet) continue;
+    index.set(row.sport + "|" + row.market + "|" + row.wallet, { rank: row.rank, n: row.n, wins: row.wins, losses: row.losses, dol: row.dol });
+  }
+  return index;
+}

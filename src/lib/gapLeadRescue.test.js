@@ -4,6 +4,8 @@ import {
   applyGapLeadRescue,
   buildGapLeadBooks,
   GAP_LEAD_FROM,
+  hydrateGapLeadBooks,
+  serializeGapLeadBooks,
 } from './gapLeadRescue.js';
 
 const DAY = '2026-10-30';
@@ -251,4 +253,14 @@ test('a stake on the other side mutes the rescue and the boost', () => {
   const open = applyGapLeadRescue({ ...base, units: 0, opponentUnits: 0 });
   assert.equal(open.action, 'rescue');
   assert.equal(open.units, 3);
+});
+
+test('gap-lead books survive a cache round-trip', () => {
+  const rows = [];
+  for (let i = 0; i < 5; i++) rows.push(leg('aaaaaa', `2026-10-${String(10 + i).padStart(2, '0')}`, 20));
+  const books = buildGapLeadBooks(rows, DAY);
+  const again = hydrateGapLeadBooks(serializeGapLeadBooks(books, DAY));
+  assert.equal(again.size, books.size);
+  assert.ok(again.size > 0);
+  for (const [key, info] of books) assert.deepEqual(again.get(key), info);
 });

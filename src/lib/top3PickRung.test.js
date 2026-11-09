@@ -3,7 +3,9 @@ import test from 'node:test';
 import {
   applyTop3PickRung,
   buildTop3PickRanks,
+  hydrateTop3PickRanks,
   isTop3PickPrice,
+  serializeTop3PickRanks,
   top3PickWindowStart,
 } from './top3PickRung.js';
 
@@ -154,4 +156,15 @@ test('a favorite, a day before the cutover, and another sport do not fire', () =
     positions: [bet()], ranks,
   });
   assert.equal(soccer.fires, false);
+});
+
+test('the morning seats survive a cache round-trip', () => {
+  const { ranks } = board();
+  const again = hydrateTop3PickRanks(serializeTop3PickRanks(ranks, DAY));
+  assert.equal(again.size, ranks.size);
+  for (const [key, info] of ranks) {
+    assert.deepEqual(again.get(key), {
+      rank: info.rank, n: info.n, wins: info.wins, losses: info.losses, dol: info.dol,
+    });
+  }
 });
