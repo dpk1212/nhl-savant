@@ -4421,7 +4421,10 @@ async function createMissingLockedPicks({
           }
         } else if (t5PolicyCreate.action === 'RESCUE') {
           peakUnitsApplied = t5PolicyCreate.units;
-          if (t5PolicyCreate.tier) hcStakeTierCreate = t5PolicyCreate.tier;
+          if (peakUnitsApplied > 0 && Number.isFinite(Number(odds))) {
+            peakUnitsApplied = Math.round(oddsCap(peakUnitsApplied, odds) * 100) / 100;
+          }
+          if (peakUnitsApplied > 0 && t5PolicyCreate.tier) hcStakeTierCreate = t5PolicyCreate.tier;
         }
       }
 
@@ -6966,10 +6969,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     } else if (t5Policy.action === 'RESCUE') {
       finalUnitsApplied = t5Policy.units;
-      if (t5Policy.tier) hcStakeTier = t5Policy.tier;
-      if (appliedStatus !== 'ACTIVE') {
-        appliedStatus = 'ACTIVE';
-        appliedReason = 't5_lead_rescue';
+      if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
+        finalUnitsApplied = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
+      }
+      if (finalUnitsApplied > 0) {
+        if (t5Policy.tier) hcStakeTier = t5Policy.tier;
+        if (appliedStatus !== 'ACTIVE') {
+          appliedStatus = 'ACTIVE';
+          appliedReason = 't5_lead_rescue';
+        }
       }
     }
   }
