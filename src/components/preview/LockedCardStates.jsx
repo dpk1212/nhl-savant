@@ -177,12 +177,12 @@ const base = {
 
 const FIXTURES = [
   {
-    title: 'Showcase — GOLD stack (HARD+ FOR · proven ≥75%)',
+    title: 'Showcase — GOLD 14-day T5 lead, nobody against',
     f: {
       ...base,
       commenceMs: now + 12 * H,
-      goldStack: true,
-      goldStackTip: 'Inside stack — HARD+ FOR only · proven 86%',
+      gold: true,
+      goldTip: '14-day tier-5 lead · nobody tier 5 against',
     },
   },
   {
@@ -285,8 +285,8 @@ const FIXTURES = [
         },
       }],
       commenceMs: now + 9 * H,
-      goldStack: true,
-      goldStackTip: 'Inside stack — HARD+ FOR only · proven 91%',
+      gold: true,
+      goldTip: '14-day tier-5 lead · nobody tier 5 against',
       pinPath: pinPath(-118, -124, -120, 1900),
       sharpEntryOdds: -118,
       currentFairOdds: -120,

@@ -10,13 +10,18 @@
  *
  * The stake stays where the card put it. Each seat has a floor and a
  * ceiling. A 14-day lead under 3 goes to 3 and over 6 comes back to 6.
- * A 6-day lead (not yet 14) sits one unit under that band. Odds cap runs
- * after the band, so a long dog can still sit under its floor. Rescues
- * stay at 1 unit — the floor does not lift them. Press-edge-net zeros
- * come back at 1u (T5-LEAD) on a 6/14-day lead or when neither side has
- * a tier 5; a tier 5 that has not held 6 days stays muted. From 2026-11-08.
- * A frozen, graded, manual, or killed side is not rewritten here — the
- * caller keeps those gates.
+ * A 6-day lead (not yet 14) sits one unit under that band. Gold is
+ * stricter than the 14-day seat: at least one wallet held 14 or more
+ * on our side, and the other side has zero qualifying tier 5s of any
+ * hold. A 14-day or 6-day margin (held-14/held-6 counts, ours minus
+ * theirs ≥ 1) plus winner-align edge of 11 or more adds 1 unit. The
+ * seat ceiling does not eat that add. Odds cap runs after the add, so
+ * a long dog can still sit under its floor. Rescues stay at 1 unit —
+ * the floor does not lift them, and the add does not either.
+ * Press-edge-net zeros come back at 1u (T5-LEAD) on a 6/14-day lead
+ * or when neither side has a tier 5; a tier 5 that has not held 6
+ * days stays muted. From 2026-11-08. A frozen, graded, manual, or
+ * killed side is not rewritten here — the caller keeps those gates.
  */
 
 import { buildTrustState } from './walletTrustStatus.js';
@@ -30,7 +35,10 @@ export const T5_MIN_AGE_DAYS = 15;
 export const T5_HOLD_BOOST = 6;
 export const T5_HOLD_LONG = 14;
 export const T5_RESCUE_UNITS = 1;
+export const T5_EDGE_BOOST_MIN = 11;
+export const T5_EDGE_BOOST_UNITS = 1;
 export const T5_LEAD_STAKE_TIER = 'T5-LEAD';
+export const T5_GOLD_TIP = '14-day tier-5 lead · nobody tier 5 against';
 export const T5_LEDGER_COLLECTION = 't5SeasonLedger';
 export const T5_ON = new Set(['STABLE_ON', 'REGAINED_ON']);
 export const T5_SEAT_LEAD14 = { id: 'lead14', floor: 3, ceiling: 6 };
@@ -205,6 +213,7 @@ export function t5LeadForSide({ walletDetails, side, sport, asOf } = {}) {
     return {
       f: 0, a: 0, lead: false, hold: null, holdAgainst: null, holdWallet: null,
       wallets: [], seasonStart: null, ledger: false,
+      for14: 0, ag14: 0, for6: 0, ag6: 0,
     };
   }
   const qualify = (id) => {
@@ -239,6 +248,7 @@ export function t5LeadForSide({ walletDetails, side, sport, asOf } = {}) {
   }
   const f = ourQ.length;
   const against = theirQ.length;
+  const heldN = (arr, min) => arr.filter((w) => w.held != null && w.held >= min).length;
   return {
     f,
     a: against,
@@ -249,7 +259,29 @@ export function t5LeadForSide({ walletDetails, side, sport, asOf } = {}) {
     wallets: ourQ.map((w) => w.id).sort(),
     seasonStart: book.seasonStart || null,
     ledger: true,
+    for14: heldN(ourQ, T5_HOLD_LONG),
+    ag14: heldN(theirQ, T5_HOLD_LONG),
+    for6: heldN(ourQ, T5_HOLD_BOOST),
+    ag6: heldN(theirQ, T5_HOLD_BOOST),
   };
+}
+
+/** 14-day T5 on our side, nobody T5 on the other side. Stricter than lead14. */
+export function t5GoldLead(lead) {
+  if (!lead || lead.ledger !== true) return false;
+  return (lead.for14 || 0) >= 1 && (lead.a || 0) === 0;
+}
+
+/**
+ * 14-day margin: held-14 wallets on our side exceed the other side by ≥ 1.
+ * 6-day margin: held-6 wallets do, and it is not already a 14-day margin.
+ * Somebody T5 on the other side does not block a margin.
+ */
+export function t5MarginKind(lead) {
+  if (!lead || lead.ledger !== true) return null;
+  if ((lead.for14 || 0) - (lead.ag14 || 0) >= 1) return 'lead14';
+  if ((lead.for6 || 0) - (lead.ag6 || 0) >= 1) return 'lead6';
+  return null;
 }
 
 /** Seat for the side. A missing ledger is not a seat. */
@@ -279,11 +311,39 @@ function clampSeat(units, seat, { floor = true } = {}) {
   return Math.round(next * 100) / 100;
 }
 
+function withGoldAndBoost(core, { winnerAlignEdge, fromRescue, manual } = {}) {
+  const lead = core.lead;
+  const edge = Number(winnerAlignEdge);
+  const hasEdge = winnerAlignEdge != null && Number.isFinite(edge);
+  const unitsPreEdgeBoost = core.units;
+  let edgeBoost = 0;
+  let units = core.units;
+  const skipBoost = manual === true
+    || core.action === 'RESCUE'
+    || core.action === 'EXEMPT'
+    || fromRescue === true;
+  const margin = t5MarginKind(lead);
+  if (!skipBoost && units > 0 && margin && hasEdge && edge >= T5_EDGE_BOOST_MIN) {
+    edgeBoost = T5_EDGE_BOOST_UNITS;
+    units = Math.round((units + edgeBoost) * 100) / 100;
+  }
+  return {
+    ...core,
+    units,
+    gold: units > 0 && t5GoldLead(lead),
+    margin,
+    edgeBoost,
+    unitsPreEdgeBoost,
+    edgeBoostEdge: hasEdge ? edge : null,
+  };
+}
+
 /**
  * @returns {{
  *   units: number, action: 'BAND'|'RESCUE'|'PASS'|'EXEMPT', add: number,
  *   tier: string|null, reason: string|null, lead: object|null, price: number|null,
- *   seat: object|null,
+ *   seat: object|null, gold: boolean, margin: string|null, edgeBoost: number,
+ *   unitsPreEdgeBoost: number, edgeBoostEdge: number|null,
  * }}
  */
 export function applyT5Lead({
@@ -297,20 +357,23 @@ export function applyT5Lead({
   pressEdgeMuted = false,
   blocked = false,
   fromRescue = false,
+  winnerAlignEdge = null,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   if (typeof pickDate !== 'string' || pickDate < T5_LEAD_FROM) {
     return {
       units: pre, action: 'EXEMPT', add: 0, tier: null, reason: 'pre_cutover',
-      lead: null, price: null, seat: null,
+      lead: null, price: null, seat: null, gold: false, margin: null,
+      edgeBoost: 0, unitsPreEdgeBoost: pre, edgeBoostEdge: null,
     };
   }
   const lead = t5LeadForSide({ walletDetails, side, sport, asOf: pickDate });
   const price = impliedFromAmerican(odds);
   const seat = t5Seat(lead);
   const base = { lead, price, seat };
+  const finish = (core) => withGoldAndBoost(core, { winnerAlignEdge, fromRescue, manual });
   if (manual) {
-    return { ...base, units: pre, action: 'PASS', add: 0, tier: null, reason: 'manual' };
+    return finish({ ...base, units: pre, action: 'PASS', add: 0, tier: null, reason: 'manual' });
   }
   const held = lead.hold;
   const armed = lead.ledger === true && lead.lead === true && held != null && held >= T5_HOLD_BOOST;
@@ -318,35 +381,35 @@ export function applyT5Lead({
   if (pre > 0 && seat) {
     const next = clampSeat(pre, seat, { floor: fromRescue !== true });
     if (next !== pre) {
-      return {
+      return finish({
         ...base,
         units: next,
         action: 'BAND',
         add: Math.round((next - pre) * 100) / 100,
         tier: null,
         reason: fromRescue ? 't5_seat_ceil' : 't5_seat_band',
-      };
+      });
     }
-    return { ...base, units: pre, action: 'PASS', add: 0, tier: null, reason: null };
+    return finish({ ...base, units: pre, action: 'PASS', add: 0, tier: null, reason: null });
   }
   if (!(pre > 0) && pressEdgeMuted && !blocked && (armed || noT5)) {
-    return {
+    return finish({
       ...base,
       units: T5_RESCUE_UNITS,
       action: 'RESCUE',
       add: T5_RESCUE_UNITS,
       tier: T5_LEAD_STAKE_TIER,
       reason: armed ? 't5_lead_rescue' : 't5_no_t5_rescue',
-    };
+    });
   }
-  return {
+  return finish({
     ...base,
     units: blocked && !(pre > 0) ? 0 : pre,
     action: 'PASS',
     add: 0,
     tier: null,
     reason: blocked && !(pre > 0) ? 'muted' : null,
-  };
+  });
 }
 
 export function t5LeadStamp(policy) {
@@ -367,6 +430,14 @@ export function t5LeadStamp(policy) {
     v8_t5LeadSeat: seat?.id ?? null,
     v8_t5LeadFloor: seat?.floor ?? null,
     v8_t5LeadCeiling: seat?.ceiling ?? null,
+    v8_t5LeadFor14: lead.for14 ?? 0,
+    v8_t5LeadAg14: lead.ag14 ?? 0,
+    v8_t5LeadFor6: lead.for6 ?? 0,
+    v8_t5LeadAg6: lead.ag6 ?? 0,
+    v8_gold: policy.gold === true,
+    v8_edgeBoost: policy.edgeBoost || 0,
+    v8_unitsPreEdgeBoost: Number.isFinite(policy.unitsPreEdgeBoost) ? policy.unitsPreEdgeBoost : null,
+    v8_edgeBoostEdge: Number.isFinite(policy.edgeBoostEdge) ? policy.edgeBoostEdge : null,
   };
 }
 

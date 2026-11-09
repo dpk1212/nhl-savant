@@ -2603,8 +2603,9 @@ function CollapsedSpark({ f, gid, bleed = false, onTab }) {
 
 /**
  * Premium frame. One flat surface, one hairline, one soft shadow with a real
- * offset. Inside-stack tickets get a slightly warmer hairline — not an
- * animated glow stack. Restraint is the brand (DESIGN.md: flat at rest, gold ≤10%).
+ * offset. Gold 14-day empty-other-side T5 leads get a slightly warmer
+ * hairline — not an animated glow stack. Restraint is the brand
+ * (DESIGN.md: flat at rest, gold ≤10%).
  */
 function CollapsedCardFrame({ live, children, extraClass }) {
   const { f, edgeAura, setExpanded, tracked, graded } = live;
@@ -2625,7 +2626,7 @@ function CollapsedCardFrame({ live, children, extraClass }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true); }}
-      title={edgeAura ? (f.goldStackTip || 'Inside stack — HARD+ FOR only · proven ≥75%') : undefined}
+      title={edgeAura ? (f.goldTip || '14-day tier-5 lead · nobody tier 5 against') : undefined}
       style={{
         borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
         // One barely-there vertical light, not a flat slab — depth without glow.
@@ -2758,13 +2759,13 @@ function CollapsedHeader({ live, inClassName }) {
                 SET
               </span>
             ) : (
-              // Gold tier says its name. The aura border alone was invisible
-              // to most eyes — inside-stack tickets trade the IN label for
-              // GOLD in the same metal pill (zero extra header width).
+              // Gold says its name. The aura border alone was invisible
+              // to most eyes — a 14-day empty-other-side T5 lead trades
+              // the IN label for GOLD in the same metal pill.
               <span
                 className={inClassName}
                 title={edgeAura
-                  ? `${f.goldStackTip || 'Inside stack — HARD+ FOR only · proven ≥75%'} · locks at T-15`
+                  ? `${f.goldTip || '14-day tier-5 lead · nobody tier 5 against'} · locks at T-15`
                   : 'Flagged — locks at T-15'}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -3223,9 +3224,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
   // Tracked (0u) cards keep the gold frame; the pill reads NO PLAY so they
   // are not mistaken for locks. Graded tickets tint the accent to the result.
   const accent = graded && resultColor ? resultColor : B.gold;
-  // Gold aura: staked live tickets inside the stack
-  // (HARD+ FOR only · proven ≥75%). EDGE no longer drives this tag.
-  const edgeAura = !tracked && !graded && !!f.goldStack;
+  // Gold aura: staked live tickets with a 14-day T5 lead and nobody
+  // T5 on the other side. EDGE and the HARD+ stack do not drive this tag.
+  const edgeAura = !tracked && !graded && !!f.gold;
   const cardBorder = tracked
     ? 'rgba(139,150,171,0.22)'
     : graded

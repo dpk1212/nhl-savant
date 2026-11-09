@@ -1082,7 +1082,7 @@ export default function LockedClarityExpanded({
   return (
     <div
       className={edgeAura ? 'sf-edge-aura' : undefined}
-      title={edgeAura ? (f.goldStackTip || 'Inside stack — HARD+ FOR only · proven ≥75%') : undefined}
+      title={edgeAura ? (f.goldTip || '14-day tier-5 lead · nobody tier 5 against') : undefined}
       style={{
       borderRadius: 16, overflow: 'hidden',
       background: edgeAura

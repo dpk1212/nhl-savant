@@ -13271,6 +13271,7 @@ export default function SharpFlow() {
                           agsQuintileV12: Number.isFinite(sd.v8_agsV12Quintile) ? sd.v8_agsV12Quintile : null,
                           // Winner-align EDGE margin (mean FOR−AG sport WR pp).
                           winnerAlignEdge: Number.isFinite(sd.v8_winnerAlignEdge) ? sd.v8_winnerAlignEdge : null,
+                          v8_gold: sd.v8_gold === true,
                           winnerAlignMeanFor: Number.isFinite(sd.v8_winnerAlignMeanFor) ? sd.v8_winnerAlignMeanFor : null,
                           winnerAlignMeanAg: Number.isFinite(sd.v8_winnerAlignMeanAg) ? sd.v8_winnerAlignMeanAg : null,
                           winnerAlignHasBoth: sd.v8_winnerAlignHasBoth === true,

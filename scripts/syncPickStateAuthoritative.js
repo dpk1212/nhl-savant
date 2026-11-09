@@ -4367,8 +4367,10 @@ async function createMissingLockedPicks({
       }
       // Season tier-5 seats. After press-edge and the top-3 rung. The
       // stake stays where the card put it, then the seat floor/ceiling.
-      // Odds cap runs after the band. A press-edge zero comes back at 1u
-      // on a 6/14-day lead or when neither side has a tier 5.
+      // A 6/14-day margin with winner-align edge ≥ 11 adds 1u after the
+      // band; the ceiling does not eat it. Odds cap runs after the add.
+      // A press-edge zero comes back at 1u on a 6/14-day lead or when
+      // neither side has a tier 5. Gold is empty-other-side 14-day, staked.
       let t5PolicyCreate = null;
       {
         let edgeWould = false;
@@ -4413,18 +4415,16 @@ async function createMissingLockedPicks({
             || edgeUnder5Create?.action === 'MUTE'
             || edgeWould
             || mlDoorKind(mlDoorPolicyCreate?.action) === 'cut',
+          winnerAlignEdge: waCreateEdge?.edge ?? null,
         });
-        if (t5PolicyCreate.action === 'BAND') {
+        if (t5PolicyCreate.action !== 'EXEMPT') {
           peakUnitsApplied = t5PolicyCreate.units;
           if (peakUnitsApplied > 0 && Number.isFinite(Number(odds))) {
             peakUnitsApplied = Math.round(oddsCap(peakUnitsApplied, odds) * 100) / 100;
           }
-        } else if (t5PolicyCreate.action === 'RESCUE') {
-          peakUnitsApplied = t5PolicyCreate.units;
-          if (peakUnitsApplied > 0 && Number.isFinite(Number(odds))) {
-            peakUnitsApplied = Math.round(oddsCap(peakUnitsApplied, odds) * 100) / 100;
+          if (t5PolicyCreate.action === 'RESCUE' && peakUnitsApplied > 0 && t5PolicyCreate.tier) {
+            hcStakeTierCreate = t5PolicyCreate.tier;
           }
-          if (peakUnitsApplied > 0 && t5PolicyCreate.tier) hcStakeTierCreate = t5PolicyCreate.tier;
         }
       }
 
@@ -6910,8 +6910,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // Season tier-5 seats, after press-edge and the top-3 rung. The stake
-  // stays where the card put it, then the seat floor/ceiling. Odds cap
-  // runs after the band. Rescues stay at 1u.
+  // stays where the card put it, then the seat floor/ceiling. A 6/14-day
+  // margin with winner-align edge ≥ 11 adds 1u after the band. Odds cap
+  // runs after the add. Rescues stay at 1u — the add does not lift them.
   let t5Policy = null;
   if (!skipManualFlinch) {
     let edgeWould = false;
@@ -6961,18 +6962,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || mlDoorKind(mlDoorPolicy?.action) === 'cut'
         || fadeZero
         || agsZero,
+      winnerAlignEdge: winnerAlign?.edge ?? null,
     });
-    if (t5Policy.action === 'BAND') {
+    if (t5Policy.action !== 'EXEMPT') {
       finalUnitsApplied = t5Policy.units;
       if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
         finalUnitsApplied = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
       }
-    } else if (t5Policy.action === 'RESCUE') {
-      finalUnitsApplied = t5Policy.units;
-      if (finalUnitsApplied > 0 && Number.isFinite(Number(sideOdds))) {
-        finalUnitsApplied = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
-      }
-      if (finalUnitsApplied > 0) {
+      if (t5Policy.action === 'RESCUE' && finalUnitsApplied > 0) {
         if (t5Policy.tier) hcStakeTier = t5Policy.tier;
         if (appliedStatus !== 'ACTIVE') {
           appliedStatus = 'ACTIVE';
@@ -8153,6 +8150,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   } else if (t5Policy?.action === 'RESCUE') {
     changes.push(`T5-LEAD RESCUE: ${t5Policy.reason} → ${t5Policy.units}u`);
   }
+  if (t5Policy && t5Policy.action !== 'EXEMPT') {
+    if ((t5Policy.edgeBoost || 0) > 0) {
+      const edgeTxt = t5Policy.edgeBoostEdge == null ? '—' : Number(t5Policy.edgeBoostEdge).toFixed(1);
+      changes.push(
+        `T5 EDGE BOOST: ${t5Policy.unitsPreEdgeBoost}u +1 (E=${edgeTxt} ${t5Policy.margin || 'margin'}) → ${t5Policy.units}u`,
+      );
+    }
+    const prevGold = sd.v8_gold === true;
+    if (prevGold !== (t5Policy.gold === true)) {
+      changes.push(`T5 GOLD: ${prevGold ? 'on' : 'off'} → ${t5Policy.gold ? 'on' : 'off'}`);
+    } else if (sd.v8_t5LeadFor14 == null) {
+      changes.push(
+        `T5 HOLD COUNTS: for14=${t5Policy.lead?.for14 ?? 0} ag14=${t5Policy.lead?.ag14 ?? 0}`
+        + ` for6=${t5Policy.lead?.for6 ?? 0} ag6=${t5Policy.lead?.ag6 ?? 0}`,
+      );
+    }
+  }
 
   if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
     changes.push(`finalUnits: ${sd.finalUnits}u → ${finalUnitsApplied}u`);
@@ -9137,7 +9151,9 @@ async function main() {
     if (typeof TARGET_DATE === 'string' && TARGET_DATE >= T5_LEAD_FROM) {
       console.log(
         `T5 SEAT BAND LIVE: after press-edge and top-3 · 14-day lead 3–6 · 6-day lead 2–5 · not-yet-6 2–3 · no T5 or no lead 1–2`
-        + ` · odds cap after the band · press-edge zeros come back at 1u on a 6/14-day lead or with no T5 either side`
+        + ` · GOLD = 14-day T5 and nobody T5 against, staked only`
+        + ` · +1u on a 6/14-day held-count margin when winnerAlignEdge ≥ 11 · ceiling does not eat the add`
+        + ` · odds cap after the add · press-edge zeros come back at 1u on a 6/14-day lead or with no T5 either side`
         + ` · a T5 that has not held 6 days stays muted · edge-under-5 and ml-door-never stay on when the other side has no T5`
         + ` · from ${T5_LEAD_FROM} · manual / fav-juice / operator kill / T-15 still win`,
       );
