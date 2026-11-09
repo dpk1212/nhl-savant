@@ -392,6 +392,13 @@ import {
   edgeUnder5Stamp,
 } from '../src/lib/edgeUnder5.js';
 import {
+  T5_LEDGER_COLLECTION,
+  applyT5Lead,
+  hydrateT5SeasonLedger,
+  setT5SeasonLedger,
+  t5LeadStamp,
+} from '../src/lib/t5LeadPolicy.js';
+import {
   evaluatePressLadder,
   atpMayStake,
   pressStamp,
@@ -4352,6 +4359,55 @@ async function createMissingLockedPicks({
         peakUnitsApplied = 0;
         hcStakeTierCreate = 'MONITORING';
       }
+      // Season tier-5 lead. Adds on a stake still above 0. A press-edge
+      // zero with a 6-day lead comes back at 1u as T5-LEAD. Mutes that
+      // already zeroed the side, a manual stake, and an operator kill stay.
+      let t5PolicyCreate = null;
+      {
+        let edgeWould = false;
+        if (pressEdgeNetPolicyCreate?.action === 'MUTE') {
+          const would = applyEdgeUnder5Mute({
+            units: pressEdgeNetPolicyCreate.unitsPrePolicy,
+            pressEdge: pressEvalCreate?.edge ?? null,
+            pickDate: TARGET_DATE,
+            sport,
+            market: marketType,
+            odds: odds ?? null,
+            gapFires: gapPolicyCreate?.fires === true,
+            steamOn: pressEvalCreate?.steamOn === true,
+            blendEdge: blendEdgeForSide({
+              walletDetails,
+              side,
+              sport,
+              market: marketType,
+              walletProfiles,
+              odds: odds ?? null,
+            }),
+          });
+          edgeWould = would.action === 'MUTE';
+        }
+        const operatorCreate = isOperatorKilled({ _id: docId }, side, null);
+        t5PolicyCreate = applyT5Lead({
+          units: peakUnitsApplied,
+          pickDate: TARGET_DATE,
+          odds: odds ?? null,
+          walletDetails,
+          sport,
+          side,
+          manual: false,
+          pressEdgeMuted: pressEdgeNetPolicyCreate?.action === 'MUTE',
+          blocked: operatorCreate
+            || cbbV12StakeMuted(sport, TARGET_DATE)
+            || !!favJuicePolicyCreate?.mutedBy
+            || edgeUnder5Create?.action === 'MUTE'
+            || edgeWould
+            || mlDoorKind(mlDoorPolicyCreate?.action) === 'cut',
+        });
+        if (t5PolicyCreate.action === 'BOOST' || t5PolicyCreate.action === 'RESCUE') {
+          peakUnitsApplied = t5PolicyCreate.units;
+          if (t5PolicyCreate.tier) hcStakeTierCreate = t5PolicyCreate.tier;
+        }
+      }
 
       // Determine team label for the side.
       //
@@ -4519,6 +4575,7 @@ async function createMissingLockedPicks({
         Object.assign(v8Stamps, gapLeadStamp(gapPolicyCreate));
       }
       if (edgeUnder5Create) Object.assign(v8Stamps, edgeUnder5Stamp(edgeUnder5Create));
+      if (t5PolicyCreate) Object.assign(v8Stamps, t5LeadStamp(t5PolicyCreate));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -6826,6 +6883,65 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     hcStakeTier = 'MONITORING';
   }
 
+  // Season tier-5 lead, after every mute that can zero the side. The
+  // boost adds to a stake still above 0. The rescue is only a press-edge
+  // zero, and it does not stack on the 1 unit.
+  let t5Policy = null;
+  if (!skipManualFlinch) {
+    let edgeWould = false;
+    if (pressEdgeNetPolicy?.action === 'MUTE') {
+      const would = applyEdgeUnder5Mute({
+        units: pressEdgeNetPolicy.unitsPrePolicy,
+        pressEdge: pressEval?.edge ?? null,
+        pickDate,
+        sport: pick.sport,
+        market: mkt,
+        odds: sideOdds,
+        gapFires: gapPolicy?.fires === true,
+        steamOn: pressEval?.steamOn === true,
+        blendEdge: blendEdgeForSide({
+          walletDetails: wd,
+          side,
+          sport: pick.sport,
+          market: mkt,
+          walletProfiles,
+          odds: sideOdds,
+        }),
+      });
+      edgeWould = would.action === 'MUTE';
+    }
+    const fadeZero = pressEval?.floorFade?.status === 'VETO'
+      && isFadeFLive(pickDate)
+      && pressEdgeNetPolicy?.action !== 'MUTE';
+    const agsZero = mutedByAgs === true && pressEdgeNetPolicy?.action !== 'MUTE';
+    t5Policy = applyT5Lead({
+      units: finalUnitsApplied,
+      pickDate,
+      odds: sideOdds ?? sd.odds ?? null,
+      walletDetails: wd,
+      sport: pick.sport,
+      side,
+      manual: false,
+      pressEdgeMuted: pressEdgeNetPolicy?.action === 'MUTE',
+      blocked: operatorKilled
+        || cbbMatureMute
+        || !!favJuicePolicy?.mutedBy
+        || edgeUnder5Policy?.action === 'MUTE'
+        || edgeWould
+        || mlDoorKind(mlDoorPolicy?.action) === 'cut'
+        || fadeZero
+        || agsZero,
+    });
+    if (t5Policy.action === 'BOOST' || t5Policy.action === 'RESCUE') {
+      finalUnitsApplied = t5Policy.units;
+      if (t5Policy.tier) hcStakeTier = t5Policy.tier;
+      if (t5Policy.action === 'RESCUE' && appliedStatus !== 'ACTIVE') {
+        appliedStatus = 'ACTIVE';
+        appliedReason = 't5_lead_rescue';
+      }
+    }
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP / TRUST rescue that forced through an AGS mute.
@@ -6854,6 +6970,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && (gapPolicy?.action === 'rescue' || gapPolicy?.action === 'boost')
+  ) || (
+    appliedStatus === 'ACTIVE'
+    && finalUnitsApplied > 0
+    && t5Policy?.action === 'RESCUE'
   ) || trustShip;
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
@@ -6916,6 +7036,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (favJuicePolicy?.reason && !reasons.includes(favJuicePolicy.reason)) reasons.push(favJuicePolicy.reason);
   if (pressEdgeNetPolicy?.reason && !reasons.includes(pressEdgeNetPolicy.reason)) reasons.push(pressEdgeNetPolicy.reason);
   if (edgeUnder5Policy?.reason && !reasons.includes(edgeUnder5Policy.reason)) reasons.push(edgeUnder5Policy.reason);
+  if (t5Policy?.reason && !reasons.includes(t5Policy.reason)) reasons.push(t5Policy.reason);
   if (mlDoorPolicy?.reason && !reasons.includes(mlDoorPolicy.reason)) reasons.push(mlDoorPolicy.reason);
   if (unitTierPolicy?.reason && !reasons.includes(unitTierPolicy.reason)) reasons.push(unitTierPolicy.reason);
   if (boardSharePolicy?.reason && !reasons.includes(boardSharePolicy.reason)) reasons.push(boardSharePolicy.reason);
@@ -7278,6 +7399,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_pressApplied = pressApplied;
     if (pressEdgeNetPolicy) Object.assign(patch, pressEdgeNetStamp(pressEdgeNetPolicy));
     if (edgeUnder5Policy) Object.assign(patch, edgeUnder5Stamp(edgeUnder5Policy));
+    if (t5Policy) Object.assign(patch, t5LeadStamp(t5Policy));
     if (mlDoorPolicy) Object.assign(patch, mlDoorSteamStamp(mlDoorPolicy));
     if (top3Policy?.fires) Object.assign(patch, top3PickStamp(top3Policy));
     else if (sd.v8_top3Pick === true && top3Policy && !top3Policy.fires) {
@@ -8726,6 +8848,22 @@ async function main() {
     }
   } catch (err) {
     console.warn(`[clv] failed to load cached ledger (fail-open): ${err.message}`);
+  }
+
+  // Season tier-5 books. Rebuilt by exportWalletProfiles with the grade.
+  // Missing ledger fail-closes the boost and the rescue.
+  try {
+    const t5Snap = await db.collection(T5_LEDGER_COLLECTION).get();
+    const t5Docs = t5Snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    setT5SeasonLedger(hydrateT5SeasonLedger(t5Docs));
+    const starts = t5Docs
+      .filter((d) => d.part == null || d.part === 0)
+      .map((d) => `${d.sport || d.id} ${d.seasonStart || '?'}`)
+      .join(', ');
+    console.log(`T5 season ledger: ${t5Docs.length} docs${starts ? ` · ${starts}` : ''}`);
+  } catch (err) {
+    setT5SeasonLedger(null);
+    console.warn(`[t5] season ledger unavailable (boost and rescue stay off): ${err.message}`);
   }
 
   // qConv Q1 mute thr — expanding bottom quintile of prior staked A/B/C.

@@ -83,6 +83,11 @@ import {
 } from './lib/loadWalletProfiles.js';
 import { buildSizeRatioBands, meanDecidedStake } from '../src/lib/sizeRatioBands.js';
 import { buildTrustState, trustSummary } from '../src/lib/walletTrustStatus.js';
+import {
+  T5_LEDGER_COLLECTION,
+  buildT5SeasonLedger,
+  t5LedgerDocs,
+} from '../src/lib/t5LeadPolicy.js';
 import { buildCalendarWindow, L90_DAYS } from '../src/lib/calendarWindow.js';
 import { isPreLockExit, mergeFeaturedIntoAction, minutesBeforeLock } from '../src/lib/actionLockPin.js';
 import {
@@ -1515,6 +1520,32 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     console.log(`✓ CLV skill ledger cached (${ledgerPayload.eventCount} events → 1 doc for syncPickState)`);
+  }
+
+  // Season tier-5 books for the lead boost. One doc per sport.
+  const t5Built = buildT5SeasonLedger(positions);
+  const t5Docs = t5LedgerDocs(t5Built);
+  const t5Path = join(dataDir, 't5-season-ledger.json');
+  writeFileSync(t5Path, JSON.stringify({
+    generatedAt: t5Built.generatedAt,
+    sports: t5Docs.map((d) => ({
+      sport: d.sport,
+      seasonStart: d.seasonStart,
+      walletCount: d.walletCount,
+      betCount: d.betCount,
+      part: d.part,
+      parts: d.parts,
+    })),
+  }));
+  console.log(`Wrote ${t5Path} (${t5Docs.map((d) => `${d.sport} ${d.seasonStart} ${d.betCount}`).join(', ')})`);
+  if (WRITE_FB || WRITE_CLV_LEDGER) {
+    for (const doc of t5Docs) {
+      await db.collection(T5_LEDGER_COLLECTION).doc(doc.id).set({
+        ...doc,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    console.log(`✓ T5 season ledger cached (${t5Docs.length} docs)`);
   }
 
   // ── Optional Firebase sync ───────────────────────────────────────
