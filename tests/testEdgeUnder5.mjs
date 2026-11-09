@@ -258,6 +258,32 @@ test('the blend pulls a thin market toward the other markets and subtracts the p
   assert.equal(edge, expect);
 });
 
+test('no tier 5 on the other side stays on, even when already off', () => {
+  const keep = applyEdgeUnder5Mute({
+    units: 3, blendEdge: 1.2, steamOn: false,
+    pickDate: TODAY, sport: 'NBA', market: 'ML', odds: -150,
+    oppHasT5: false,
+  });
+  assert.equal(keep.action, 'PASS');
+  assert.equal(keep.units, 3);
+  assert.equal(keep.reason, 'no_t5_against');
+
+  const stay = applyEdgeUnder5Mute({
+    units: 3, blendEdge: 1.2, steamOn: true,
+    pickDate: TODAY, sport: 'CFB', market: 'SPREAD', odds: -110,
+    alreadyOff: true, oppHasT5: false,
+  });
+  assert.equal(stay.action, 'PASS');
+  assert.equal(stay.units, 3);
+
+  const mute = applyEdgeUnder5Mute({
+    units: 3, blendEdge: 1.2, steamOn: false,
+    pickDate: TODAY, sport: 'NHL', market: 'ML', odds: -150,
+    oppHasT5: true,
+  });
+  assert.equal(mute.action, 'MUTE');
+});
+
 test('the 2-unit band stays only when the edge is under 5 and the date is live', () => {
   assert.equal(gapBandStays({ units: 2, pressEdge: 1, pickDate: DAY }), true);
   assert.equal(gapBandStays({ units: 2, pressEdge: null, pickDate: DAY }), true);
