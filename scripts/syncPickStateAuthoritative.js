@@ -367,23 +367,19 @@ import {
   TOP3_PICK_RESCUED_BY,
   TOP3_PICK_STAKE_TIER,
   applyTop3PickRung,
-  buildTop3PickRanks,
   isTop3PickLive,
   oppositeStakeUnits,
-  setTop3PickRanks,
   top3PickStamp,
-  top3PickWindowStart,
 } from '../src/lib/top3PickRung.js';
 import {
   GAP_LEAD_PROMOTED_BY,
   GAP_LEAD_RESCUED_BY,
   GAP_LEAD_STAKE_TIER,
   applyGapLeadRescue,
-  buildGapLeadBooks,
   gapLeadStamp,
   isGapLeadLive,
-  setGapLeadBooks,
 } from '../src/lib/gapLeadRescue.js';
+import { loadMorningRanks } from './lib/morningRankCache.js';
 import { cbbV12StakeMuted, CBB_MATURE_MUTED_BY } from '../src/lib/cbbStakeMute.js';
 import {
   applyEdgeUnder5Mute,
@@ -9329,33 +9325,11 @@ async function main() {
 
   const groups = buildPositionGroupsFromFirestore(positions);
   console.log(`Loaded ${positions.length} sharp_action_positions in ${groups.size} game-market clusters`);
-  if (isTop3PickLive(TARGET_DATE) || isGapLeadLive(TARGET_DATE)) {
-    const since = top3PickWindowStart(TARGET_DATE);
-    const rankSnap = await db.collection('sharp_action_positions')
-      .where('date', '>=', since)
-      .where('date', '<', TARGET_DATE)
-      .select('wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'settledPnl', 'result', 'postponed', 'status')
-      .get();
-    const rankRows = rankSnap.docs.map((d) => d.data());
-    if (isTop3PickLive(TARGET_DATE)) {
-      const top3Ranks = buildTop3PickRanks(rankRows, TARGET_DATE);
-      setTop3PickRanks(top3Ranks);
-      let top3Names = 0;
-      for (const info of top3Ranks.values()) if (info.rank <= 3) top3Names += 1;
-      console.log(`TOP3-PICK ranks: ${top3Names} top-3 seats from ${rankRows.length} bets since ${since}`);
-    } else {
-      setTop3PickRanks(new Map());
-    }
-    if (isGapLeadLive(TARGET_DATE)) {
-      const gapBooks = buildGapLeadBooks(rankRows, TARGET_DATE);
-      setGapLeadBooks(gapBooks);
-      console.log(`GAP-LEAD books: ${gapBooks.size} wallets with 5+ market bets since ${since}`);
-    } else {
-      setGapLeadBooks(new Map());
-    }
-  } else {
-    setTop3PickRanks(new Map());
-    setGapLeadBooks(new Map());
+  const morning = await loadMorningRanks(db, TARGET_DATE, { write: !DRY_RUN });
+  if (morning.source !== 'not_live') {
+    const bets = morning.bets == null ? '?' : morning.bets;
+    console.log(`TOP3-PICK ranks: ${morning.source}, ${morning.seats} top-3 seats from ${bets} bets since ${morning.since}`);
+    console.log(`GAP-LEAD books: ${morning.source}, ${morning.gapWallets} wallets with 5+ market bets since ${morning.since}`);
   }
   const scanUFCKeys = new Set();
   for (const gk of groups.keys()) {
