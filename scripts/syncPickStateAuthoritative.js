@@ -400,6 +400,10 @@ import {
   t5StSteamOn,
 } from '../src/lib/t5LeadPolicy.js';
 import {
+  applyPressUnder5Cap,
+  pressUnder5CapStamp,
+} from '../src/lib/pressUnder5Cap.js';
+import {
   evaluatePressLadder,
   atpMayStake,
   pressStamp,
@@ -4408,6 +4412,7 @@ async function createMissingLockedPicks({
           side,
           market: marketType,
           steamOn: t5StSteamOn(liveTapeCreate),
+          pressEdge: pressEvalCreate?.edge ?? null,
           manual: false,
           pressEdgeMuted: pressEdgeNetPolicyCreate?.action === 'MUTE',
           fromRescue: mlDoorKind(mlDoorPolicyCreate?.action) === 'rescue'
@@ -4432,6 +4437,20 @@ async function createMissingLockedPicks({
           if (t5PolicyCreate.action === 'MUTE') {
             hcStakeTierCreate = 'MONITORING';
           }
+        }
+      }
+      // Press-edge under-5 cap. After the seat, the 1-unit rescue, and
+      // the odds cap. Under 5 → min(units, 1). 5+ and a missing edge stay.
+      let pressUnder5CapCreate = null;
+      if (!isOperatorKilled({ _id: docId }, side, null)
+          && !cbbV12StakeMuted(sport, TARGET_DATE)) {
+        pressUnder5CapCreate = applyPressUnder5Cap({
+          units: peakUnitsApplied,
+          pressEdge: pressEvalCreate?.edge ?? null,
+          pickDate: TARGET_DATE,
+        });
+        if (pressUnder5CapCreate.action !== 'EXEMPT') {
+          peakUnitsApplied = pressUnder5CapCreate.units;
         }
       }
 
@@ -4602,6 +4621,7 @@ async function createMissingLockedPicks({
       }
       if (edgeUnder5Create) Object.assign(v8Stamps, edgeUnder5Stamp(edgeUnder5Create));
       if (t5PolicyCreate) Object.assign(v8Stamps, t5LeadStamp(t5PolicyCreate));
+      if (pressUnder5CapCreate) Object.assign(v8Stamps, pressUnder5CapStamp(pressUnder5CapCreate));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -6961,6 +6981,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       side,
       market: mkt,
       steamOn: t5StSteamOn(liveTapeSnap),
+      pressEdge: pressEval?.edge ?? null,
       manual: false,
       pressEdgeMuted: pressEdgeNetPolicy?.action === 'MUTE',
       fromRescue: mlDoorKind(mlDoorPolicy?.action) === 'rescue'
@@ -6991,6 +7012,21 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (t5Policy.action === 'MUTE') {
         hcStakeTier = 'MONITORING';
       }
+    }
+  }
+
+  // Press-edge under-5 cap. After the seat, the 1-unit rescue, and the
+  // odds cap. Manual stake never entered the ladder. Operator kill and
+  // the opening-week hold already zeroed the side.
+  let pressUnder5CapPolicy = null;
+  if (!skipManualFlinch && !operatorKilled && !cbbMatureMute) {
+    pressUnder5CapPolicy = applyPressUnder5Cap({
+      units: finalUnitsApplied,
+      pressEdge: pressEval?.edge ?? null,
+      pickDate,
+    });
+    if (pressUnder5CapPolicy.action !== 'EXEMPT') {
+      finalUnitsApplied = pressUnder5CapPolicy.units;
     }
   }
 
@@ -7457,6 +7493,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (pressEdgeNetPolicy) Object.assign(patch, pressEdgeNetStamp(pressEdgeNetPolicy));
     if (edgeUnder5Policy) Object.assign(patch, edgeUnder5Stamp(edgeUnder5Policy));
     if (t5Policy) Object.assign(patch, t5LeadStamp(t5Policy));
+    if (pressUnder5CapPolicy) Object.assign(patch, pressUnder5CapStamp(pressUnder5CapPolicy));
     if (mlDoorPolicy) Object.assign(patch, mlDoorSteamStamp(mlDoorPolicy));
     if (top3Policy?.fires) Object.assign(patch, top3PickStamp(top3Policy));
     else if (sd.v8_top3Pick === true && top3Policy && !top3Policy.fires) {
@@ -8188,6 +8225,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + ` for6=${t5Policy.lead?.for6 ?? 0} ag6=${t5Policy.lead?.ag6 ?? 0}`,
       );
     }
+  }
+  if (pressUnder5CapPolicy?.capped) {
+    const edgeTxt = pressUnder5CapPolicy.edge == null
+      ? '—'
+      : Number(pressUnder5CapPolicy.edge).toFixed(1);
+    changes.push(
+      `PRESS-UNDER-5 CAP: ${pressUnder5CapPolicy.unitsPrePolicy}u → ${pressUnder5CapPolicy.units}u (edge=${edgeTxt})`,
+    );
   }
 
   if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
