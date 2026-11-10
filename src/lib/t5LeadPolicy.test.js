@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { oddsCap } from './oddsCap.js';
 import {
+  T5_NO_T5_ST_FROM,
+  T5_NO_T5_ST_MUTED_BY,
   applyT5Lead,
   buildT5SeasonLedger,
   seasonStartFromDates,
@@ -13,6 +15,8 @@ import {
   t5MorningRead,
   t5OppHasT5,
   t5Seat,
+  t5StMarket,
+  t5StSteamOn,
 } from './t5LeadPolicy.js';
 
 function iso(n) {
@@ -526,6 +530,155 @@ test('a manual stake stays as set and still stamps gold when the wallets qualify
   assert.equal(out.edgeBoost, 0);
   assert.equal(out.gold, true);
   assert.equal(out.reason, 'manual');
+});
+
+test('a no-tier-5 spread or total mutes when steam is off and keeps when juice steam is on', () => {
+  setT5SeasonLedger({ sports: { NBA: { seasonStart: '2026-10-18', wallets: {} } } });
+  const empty = details('cccccc', 'home');
+  const off = applyT5Lead({
+    units: 2, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: empty,
+    sport: 'NBA', side: 'home', market: 'SPREAD', steamOn: false,
+  });
+  assert.equal(off.seat.id, 'no_t5');
+  assert.equal(off.action, 'MUTE');
+  assert.equal(off.units, 0);
+  assert.equal(off.mutedBy, T5_NO_T5_ST_MUTED_BY);
+  assert.equal(off.gold, false);
+  const totalOff = applyT5Lead({
+    units: 4, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: empty,
+    sport: 'NBA', side: 'over', market: 'TOTAL', steamOn: false,
+  });
+  assert.equal(totalOff.units, 0);
+  assert.equal(totalOff.action, 'MUTE');
+  const on = applyT5Lead({
+    units: 4, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: empty,
+    sport: 'NBA', side: 'home', market: 'SPREAD', steamOn: true,
+  });
+  assert.equal(on.action, 'BAND');
+  assert.equal(on.units, 2);
+  assert.equal(on.mutedBy, null);
+  assert.equal(on.steamOn, true);
+  const goldSteam = applyT5Lead({
+    units: 2, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: empty,
+    sport: 'NBA', side: 'under', market: 'TOTAL', steamOn: true,
+  });
+  assert.equal(goldSteam.units, 2);
+  assert.equal(goldSteam.action, 'PASS');
+  const stamp = t5LeadStamp(off);
+  assert.equal(stamp.v8_t5LeadAction, 'MUTE');
+  assert.equal(stamp.v8_t5StSteamOn, false);
+  assert.equal(stamp.v8_t5LeadUnits, 0);
+});
+
+test('a no-tier-5 moneyline is not cut by the S/T steam gate', () => {
+  setT5SeasonLedger({ sports: { NBA: { seasonStart: '2026-10-18', wallets: {} } } });
+  const ml = applyT5Lead({
+    units: 4, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: details('cccccc', 'home'),
+    sport: 'NBA', side: 'home', market: 'ML', steamOn: false,
+  });
+  assert.equal(ml.seat.id, 'no_t5');
+  assert.equal(ml.units, 2);
+  assert.equal(ml.action, 'BAND');
+  assert.equal(ml.mutedBy, null);
+});
+
+test('T5 seats keep a spread or total even when steam is off', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const long = applyT5Lead({
+    units: 4, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: details(id, 'home'),
+    sport: 'NBA', side: 'home', market: 'SPREAD', steamOn: false,
+  });
+  assert.equal(long.seat.id, 'lead14');
+  assert.equal(long.units, 4);
+  assert.equal(long.mutedBy, null);
+
+  setT5SeasonLedger(book(id, winsDate('2026-10-22', 10), '2026-10-22'));
+  const young = applyT5Lead({
+    units: 3, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: details(id, 'home'),
+    sport: 'NBA', side: 'home', market: 'TOTAL', steamOn: false,
+  });
+  assert.equal(young.seat.id, 't5_young');
+  assert.equal(young.units, 3);
+  assert.equal(young.mutedBy, null);
+
+  const rows = winsDate('2026-10-18', 10);
+  setT5SeasonLedger({
+    sports: {
+      NBA: {
+        seasonStart: '2026-10-18',
+        wallets: {
+          aaaaaa: book('aaaaaa', rows, '2026-10-18').sports.NBA.wallets.aaaaaa,
+          bbbbbb: book('bbbbbb', rows, '2026-10-18').sports.NBA.wallets.bbbbbb,
+        },
+      },
+    },
+  });
+  const tied = applyT5Lead({
+    units: 4, pickDate: T5_NO_T5_ST_FROM, odds: -110,
+    walletDetails: [...details('aaaaaa', 'home'), ...details('bbbbbb', 'away')],
+    sport: 'NBA', side: 'home', market: 'SPREAD', steamOn: false,
+  });
+  assert.equal(tied.seat.id, 'no_lead');
+  assert.equal(tied.units, 2);
+  assert.equal(tied.mutedBy, null);
+});
+
+test('the S/T steam mute does not run before Nov 10 and a 2 percent watch is off', () => {
+  setT5SeasonLedger({ sports: { NBA: { seasonStart: '2026-10-18', wallets: {} } } });
+  const empty = details('cccccc', 'home');
+  const before = applyT5Lead({
+    units: 4, pickDate: '2026-11-09', odds: -110, walletDetails: empty,
+    sport: 'NBA', side: 'home', market: 'SPREAD', steamOn: false,
+  });
+  assert.equal(before.units, 2);
+  assert.equal(before.action, 'BAND');
+  assert.equal(before.mutedBy, null);
+  assert.equal(t5StMarket('spread'), true);
+  assert.equal(t5StMarket('ML'), false);
+  assert.equal(t5StSteamOn({ juiceSteam: true, tier: 'steam', lastHourPct: 3.2 }), true);
+  assert.equal(t5StSteamOn({ juiceSteam: true, tier: 'gold', lastHourPct: 5.1, goldConfirmed: true }), true);
+  assert.equal(t5StSteamOn({ juiceSteam: false, tier: 'watch', lastHourPct: 2.1 }), false);
+  assert.equal(t5StSteamOn({ juiceSteam: false, tier: 'steam', lastHourPct: -0.5 }), false);
+  assert.equal(t5StSteamOn({ steam: { juiceSteam: true, tier: 'steam', sinceOpenPct: 3.4 } }), true);
+  assert.equal(t5StSteamOn(null), false);
+});
+
+test('a no-tier-5 S/T press-edge zero stays off when steam is off and comes back at 1 when steam is on', () => {
+  setT5SeasonLedger({ sports: { NBA: { seasonStart: '2026-10-18', wallets: {} } } });
+  const empty = details('cccccc', 'home');
+  const off = applyT5Lead({
+    units: 0, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: empty,
+    sport: 'NBA', side: 'home', market: 'SPREAD', steamOn: false, pressEdgeMuted: true,
+  });
+  assert.equal(off.action, 'PASS');
+  assert.equal(off.units, 0);
+  assert.equal(off.reason, null);
+  const on = applyT5Lead({
+    units: 0, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: empty,
+    sport: 'NBA', side: 'home', market: 'SPREAD', steamOn: true, pressEdgeMuted: true,
+  });
+  assert.equal(on.action, 'RESCUE');
+  assert.equal(on.reason, 't5_no_t5_rescue');
+  assert.equal(on.units, 1);
+  const ml = applyT5Lead({
+    units: 0, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: empty,
+    sport: 'NBA', side: 'home', market: 'ML', steamOn: false, pressEdgeMuted: true,
+  });
+  assert.equal(ml.action, 'RESCUE');
+  assert.equal(ml.units, 1);
+});
+
+test('a manual no-tier-5 spread stays as set when steam is off', () => {
+  setT5SeasonLedger({ sports: { NBA: { seasonStart: '2026-10-18', wallets: {} } } });
+  const out = applyT5Lead({
+    units: 2, pickDate: T5_NO_T5_ST_FROM, odds: -110, walletDetails: details('cccccc', 'home'),
+    sport: 'NBA', side: 'home', market: 'TOTAL', steamOn: false, manual: true,
+  });
+  assert.equal(out.action, 'PASS');
+  assert.equal(out.units, 2);
+  assert.equal(out.reason, 'manual');
+  assert.equal(out.mutedBy, null);
 });
 
 test('ledger season start matches a 21-day hole and keeps only that season', () => {

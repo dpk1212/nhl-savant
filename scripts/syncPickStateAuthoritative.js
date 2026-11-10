@@ -390,12 +390,14 @@ import {
 import {
   T5_LEAD_FROM,
   T5_LEDGER_COLLECTION,
+  T5_NO_T5_ST_MUTED_BY,
   applyT5Lead,
   hydrateT5SeasonLedger,
   setT5SeasonLedger,
   t5LeadForSide,
   t5LeadStamp,
   t5OppHasT5,
+  t5StSteamOn,
 } from '../src/lib/t5LeadPolicy.js';
 import {
   evaluatePressLadder,
@@ -4404,6 +4406,8 @@ async function createMissingLockedPicks({
           walletDetails,
           sport,
           side,
+          market: marketType,
+          steamOn: t5StSteamOn(liveTapeCreate),
           manual: false,
           pressEdgeMuted: pressEdgeNetPolicyCreate?.action === 'MUTE',
           fromRescue: mlDoorKind(mlDoorPolicyCreate?.action) === 'rescue'
@@ -4424,6 +4428,9 @@ async function createMissingLockedPicks({
           }
           if (t5PolicyCreate.action === 'RESCUE' && peakUnitsApplied > 0 && t5PolicyCreate.tier) {
             hcStakeTierCreate = t5PolicyCreate.tier;
+          }
+          if (t5PolicyCreate.action === 'MUTE') {
+            hcStakeTierCreate = 'MONITORING';
           }
         }
       }
@@ -4813,6 +4820,9 @@ async function createMissingLockedPicks({
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (edgeUnder5Create?.action === 'MUTE') {
         v8Stamps.mutedBy = edgeUnder5Create.mutedBy;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
+      } else if (t5PolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = t5PolicyCreate.mutedBy;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (mlDoorKind(mlDoorPolicyCreate?.action) === 'cut') {
         v8Stamps.mutedBy = mlDoorPolicyCreate.mutedBy;
@@ -6949,6 +6959,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       walletDetails: wd,
       sport: pick.sport,
       side,
+      market: mkt,
+      steamOn: t5StSteamOn(liveTapeSnap),
       manual: false,
       pressEdgeMuted: pressEdgeNetPolicy?.action === 'MUTE',
       fromRescue: mlDoorKind(mlDoorPolicy?.action) === 'rescue'
@@ -6975,6 +6987,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
           appliedStatus = 'ACTIVE';
           appliedReason = 't5_lead_rescue';
         }
+      }
+      if (t5Policy.action === 'MUTE') {
+        hcStakeTier = 'MONITORING';
       }
     }
   }
@@ -7216,6 +7231,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   ]);
   const HARD_AG_MUTE_VALUES = new Set([HARD_AG_MUTED_BY]);
   const HARD_ST_FOR_MUTE_VALUES = new Set([HARD_ST_FOR_MUTED_BY]);
+  const T5_ST_STEAM_MUTE_VALUES = new Set([T5_NO_T5_ST_MUTED_BY]);
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
@@ -7224,6 +7240,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (edgeUnder5Policy?.action === 'MUTE') {
     patch.mutedBy = edgeUnder5Policy.mutedBy;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  } else if (t5Policy?.mutedBy) {
+    patch.mutedBy = t5Policy.mutedBy;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (mlDoorKind(mlDoorPolicy?.action) === 'cut') {
     patch.mutedBy = mlDoorPolicy.mutedBy;
@@ -7333,6 +7352,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || MARKET_SKILL_MUTE_VALUES.has(sd.mutedBy)
       || HARD_AG_MUTE_VALUES.has(sd.mutedBy)
       || HARD_ST_FOR_MUTE_VALUES.has(sd.mutedBy)
+      || T5_ST_STEAM_MUTE_VALUES.has(sd.mutedBy)
       || isFormMuteStamp(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
@@ -8149,6 +8169,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     );
   } else if (t5Policy?.action === 'RESCUE') {
     changes.push(`T5-LEAD RESCUE: ${t5Policy.reason} → ${t5Policy.units}u`);
+  } else if (t5Policy?.action === 'MUTE') {
+    changes.push(`T5 NO-T5 S/T STEAM OFF: ${t5Policy.unitsPreEdgeBoost ?? 0}u → 0u`);
   }
   if (t5Policy && t5Policy.action !== 'EXEMPT') {
     if ((t5Policy.edgeBoost || 0) > 0) {
