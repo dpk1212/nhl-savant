@@ -4440,7 +4440,9 @@ async function createMissingLockedPicks({
         }
       }
       // Press-edge under-5 cap. After the seat, the 1-unit rescue, and
-      // the odds cap. Under 5 → min(units, 1). 5+ and a missing edge stay.
+      // the odds cap. Under 5 stops at 1, except two moneylines at 2:
+      // a 14-day lead with nobody tier 5 against, and a fresh tier 5.
+      // 5+ and a missing edge stay.
       let pressUnder5CapCreate = null;
       if (!isOperatorKilled({ _id: docId }, side, null)
           && !cbbV12StakeMuted(sport, TARGET_DATE)) {
@@ -4448,6 +4450,11 @@ async function createMissingLockedPicks({
           units: peakUnitsApplied,
           pressEdge: pressEvalCreate?.edge ?? null,
           pickDate: TARGET_DATE,
+          market: marketType,
+          seatId: t5PolicyCreate?.seat?.id ?? null,
+          for14: t5PolicyCreate?.lead?.for14 ?? 0,
+          against: t5PolicyCreate?.lead?.a ?? 0,
+          ledger: t5PolicyCreate?.lead?.ledger === true,
         });
         if (pressUnder5CapCreate.action !== 'EXEMPT') {
           peakUnitsApplied = pressUnder5CapCreate.units;
@@ -7016,14 +7023,20 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // Press-edge under-5 cap. After the seat, the 1-unit rescue, and the
-  // odds cap. Manual stake never entered the ladder. Operator kill and
-  // the opening-week hold already zeroed the side.
+  // odds cap. Under 5 stops at 1, except two moneylines at 2. Manual
+  // stake never entered the ladder. Operator kill and the opening-week
+  // hold already zeroed the side.
   let pressUnder5CapPolicy = null;
   if (!skipManualFlinch && !operatorKilled && !cbbMatureMute) {
     pressUnder5CapPolicy = applyPressUnder5Cap({
       units: finalUnitsApplied,
       pressEdge: pressEval?.edge ?? null,
       pickDate,
+      market: mkt,
+      seatId: t5Policy?.seat?.id ?? null,
+      for14: t5Policy?.lead?.for14 ?? 0,
+      against: t5Policy?.lead?.a ?? 0,
+      ledger: t5Policy?.lead?.ledger === true,
     });
     if (pressUnder5CapPolicy.action !== 'EXEMPT') {
       finalUnitsApplied = pressUnder5CapPolicy.units;
@@ -8230,8 +8243,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const edgeTxt = pressUnder5CapPolicy.edge == null
       ? '—'
       : Number(pressUnder5CapPolicy.edge).toFixed(1);
+    const ceilTxt = pressUnder5CapPolicy.capUnits === 2 ? ', ml ceiling 2' : '';
     changes.push(
-      `PRESS-UNDER-5 CAP: ${pressUnder5CapPolicy.unitsPrePolicy}u → ${pressUnder5CapPolicy.units}u (edge=${edgeTxt})`,
+      `PRESS-UNDER-5 CAP: ${pressUnder5CapPolicy.unitsPrePolicy}u → ${pressUnder5CapPolicy.units}u (edge=${edgeTxt}${ceilTxt})`,
     );
   }
 

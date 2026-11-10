@@ -86,6 +86,70 @@ test('the tenth is the stamp, every market, and the floor does not lift', () => 
   }
 });
 
+test('two moneylines stop at 2 and every other press edge under 5 stays at 1', () => {
+  const fourteen = applyPressUnder5Cap({
+    units: 6, pressEdge: -1.6, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'ML', for14: 1, against: 0, ledger: true, seatId: 'lead14',
+  });
+  assert.equal(fourteen.action, 'CAP');
+  assert.equal(fourteen.units, 2);
+  assert.equal(fourteen.capUnits, 2);
+  assert.equal(pressUnder5CapStamp(fourteen).v8_pressUnder5CapUnits, 2);
+
+  const fourteenAtTwo = applyPressUnder5Cap({
+    units: 2, pressEdge: 3.1, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'ML', for14: 1, against: 0, ledger: true,
+  });
+  assert.equal(fourteenAtTwo.action, 'HOLD');
+  assert.equal(fourteenAtTwo.units, 2);
+  assert.equal(fourteenAtTwo.capped, false);
+
+  const fourteenUnder = applyPressUnder5Cap({
+    units: 1, pressEdge: -1.6, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'ML', for14: 1, against: 0, ledger: true,
+  });
+  assert.equal(fourteenUnder.units, 1);
+  assert.equal(fourteenUnder.capped, false);
+
+  const fresh = applyPressUnder5Cap({
+    units: 3, pressEdge: -18.5, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'ML', seatId: 't5_young',
+  });
+  assert.equal(fresh.units, 2);
+  assert.equal(fresh.capped, true);
+
+  const freshSpread = applyPressUnder5Cap({
+    units: 3, pressEdge: 3.2, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'SPREAD', seatId: 't5_young',
+  });
+  assert.equal(freshSpread.units, 1);
+
+  const fourteenSpread = applyPressUnder5Cap({
+    units: 4, pressEdge: 1, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'TOTAL', for14: 1, against: 0, ledger: true,
+  });
+  assert.equal(fourteenSpread.units, 1);
+
+  const fourteenAgainst = applyPressUnder5Cap({
+    units: 4, pressEdge: 2, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'ML', for14: 1, against: 1, ledger: true, seatId: 'lead14',
+  });
+  assert.equal(fourteenAgainst.units, 1);
+
+  const heldSix = applyPressUnder5Cap({
+    units: 3, pressEdge: 4.3, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'ML', seatId: 'lead6', for14: 0, against: 0, ledger: true,
+  });
+  assert.equal(heldSix.units, 1);
+
+  const kept = applyPressUnder5Cap({
+    units: 3, pressEdge: 5, pickDate: PRESS_UNDER5_CAP_FROM,
+    market: 'ML', seatId: 't5_young',
+  });
+  assert.equal(kept.units, 3);
+  assert.equal(kept.capped, false);
+});
+
 test('the cap does not run before Nov 10 and a manual stake stays', () => {
   const before = applyPressUnder5Cap({
     units: 4, pressEdge: 1, pickDate: '2026-11-09',
