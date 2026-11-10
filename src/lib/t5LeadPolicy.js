@@ -22,12 +22,21 @@
  * or when neither side has a tier 5; a tier 5 that has not held 6
  * days stays muted. From 2026-11-08. A frozen, graded, manual, or
  * killed side is not rewritten here — the caller keeps those gates.
+ *
+ * From 2026-11-10 a no-tier-5 spread or total ships only when steam
+ * is on: Pinnacle shortened this side ≥ 3% on the ticket line (gold
+ * 4.5% counts as on; a 2% watch does not). Same switch as the Steam
+ * With Entry pill. A walk with no juice, or a shorten that faded
+ * before lock, is off. Moneyline no-T5 and every T5 seat stay.
  */
 
 import { buildTrustState } from './walletTrustStatus.js';
 import { impliedFromAmerican } from './oddsEv.js';
+import { policySteamOn } from './steamMove.js';
 
 export const T5_LEAD_FROM = '2026-11-08';
+export const T5_NO_T5_ST_FROM = '2026-11-10';
+export const T5_NO_T5_ST_MUTED_BY = 'no-t5-st-steam';
 export const T5_SEASON_GAP_DAYS = 21;
 export const T5_MIN_N = 10;
 export const T5_TIER = 5;
@@ -304,6 +313,45 @@ export function t5OppHasT5(lead) {
   return (lead.a || 0) > 0;
 }
 
+export function isNoT5StSteamLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= T5_NO_T5_ST_FROM;
+}
+
+export function t5StMarket(market) {
+  const u = String(market || '').toUpperCase();
+  return u === 'SPREAD' || u === 'SPREADS' || u === 'TOTAL' || u === 'TOTALS';
+}
+
+/** Juice steam on the live tape snap, or a compact steam row. Walk paint is off. */
+export function t5StSteamOn(steamOrSnap) {
+  if (!steamOrSnap || typeof steamOrSnap !== 'object') return false;
+  if (steamOrSnap.steam && typeof steamOrSnap.steam === 'object') {
+    return policySteamOn(steamOrSnap.steam);
+  }
+  return policySteamOn(steamOrSnap);
+}
+
+function applyNoT5StSteamGate(out, { pickDate, market, steamOn, manual } = {}) {
+  const on = steamOn === true;
+  const hold = { ...out, steamOn: on, mutedBy: out.mutedBy ?? null };
+  if (manual === true) return hold;
+  if (!isNoT5StSteamLive(pickDate)) return hold;
+  if (!t5StMarket(market)) return hold;
+  if (out.seat?.id !== 'no_t5') return hold;
+  if (on) return hold;
+  if (!(out.units > 0)) return hold;
+  return {
+    ...out,
+    units: 0,
+    action: 'MUTE',
+    add: 0,
+    gold: false,
+    reason: 'no_t5_st_steam',
+    mutedBy: T5_NO_T5_ST_MUTED_BY,
+    steamOn: false,
+  };
+}
+
 function clampSeat(units, seat, { floor = true } = {}) {
   let next = units;
   if (floor && seat.floor != null && next > 0 && next < seat.floor) next = seat.floor;
@@ -340,10 +388,11 @@ function withGoldAndBoost(core, { winnerAlignEdge, fromRescue, manual } = {}) {
 
 /**
  * @returns {{
- *   units: number, action: 'BAND'|'RESCUE'|'PASS'|'EXEMPT', add: number,
+ *   units: number, action: 'BAND'|'RESCUE'|'PASS'|'EXEMPT'|'MUTE', add: number,
  *   tier: string|null, reason: string|null, lead: object|null, price: number|null,
  *   seat: object|null, gold: boolean, margin: string|null, edgeBoost: number,
  *   unitsPreEdgeBoost: number, edgeBoostEdge: number|null,
+ *   steamOn: boolean, mutedBy: string|null,
  * }}
  */
 export function applyT5Lead({
@@ -353,6 +402,8 @@ export function applyT5Lead({
   walletDetails = null,
   sport = null,
   side = null,
+  market = null,
+  steamOn = false,
   manual = false,
   pressEdgeMuted = false,
   blocked = false,
@@ -365,19 +416,24 @@ export function applyT5Lead({
       units: pre, action: 'EXEMPT', add: 0, tier: null, reason: 'pre_cutover',
       lead: null, price: null, seat: null, gold: false, margin: null,
       edgeBoost: 0, unitsPreEdgeBoost: pre, edgeBoostEdge: null,
+      steamOn: steamOn === true, mutedBy: null,
     };
   }
   const lead = t5LeadForSide({ walletDetails, side, sport, asOf: pickDate });
   const price = impliedFromAmerican(odds);
   const seat = t5Seat(lead);
   const base = { lead, price, seat };
-  const finish = (core) => withGoldAndBoost(core, { winnerAlignEdge, fromRescue, manual });
+  const finish = (core) => applyNoT5StSteamGate(
+    withGoldAndBoost(core, { winnerAlignEdge, fromRescue, manual }),
+    { pickDate, market, steamOn, manual },
+  );
   if (manual) {
     return finish({ ...base, units: pre, action: 'PASS', add: 0, tier: null, reason: 'manual' });
   }
   const held = lead.hold;
   const armed = lead.ledger === true && lead.lead === true && held != null && held >= T5_HOLD_BOOST;
   const noT5 = lead.ledger === true && (lead.f || 0) === 0 && (lead.a || 0) === 0;
+  const stSteamMute = isNoT5StSteamLive(pickDate) && t5StMarket(market) && steamOn !== true;
   if (pre > 0 && seat) {
     const next = clampSeat(pre, seat, { floor: fromRescue !== true });
     if (next !== pre) {
@@ -392,7 +448,7 @@ export function applyT5Lead({
     }
     return finish({ ...base, units: pre, action: 'PASS', add: 0, tier: null, reason: null });
   }
-  if (!(pre > 0) && pressEdgeMuted && !blocked && (armed || noT5)) {
+  if (!(pre > 0) && pressEdgeMuted && !blocked && (armed || (noT5 && !stSteamMute))) {
     return finish({
       ...base,
       units: T5_RESCUE_UNITS,
@@ -438,6 +494,7 @@ export function t5LeadStamp(policy) {
     v8_edgeBoost: policy.edgeBoost || 0,
     v8_unitsPreEdgeBoost: Number.isFinite(policy.unitsPreEdgeBoost) ? policy.unitsPreEdgeBoost : null,
     v8_edgeBoostEdge: Number.isFinite(policy.edgeBoostEdge) ? policy.edgeBoostEdge : null,
+    v8_t5StSteamOn: policy.steamOn === true,
   };
 }
 
