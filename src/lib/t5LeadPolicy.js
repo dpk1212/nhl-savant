@@ -28,11 +28,18 @@
  * 4.5% counts as on; a 2% watch does not). Same switch as the Steam
  * With Entry pill. A walk with no juice, or a shorten that faded
  * before lock, is off. Moneyline no-T5 and every T5 seat stay.
+ *
+ * Gold does not change the stake. A spread or total is gold only when
+ * it is a staked 14-day lead with nobody tier 5 against and the stamped
+ * press edge is 5 or more. Under 5 is a 1-unit play, not gold.
+ * Moneylines keep the gold test they have now.
  */
 
 import { buildTrustState } from './walletTrustStatus.js';
 import { impliedFromAmerican } from './oddsEv.js';
 import { policySteamOn } from './steamMove.js';
+import { stampedPressEdge } from './pressLadderOverlay.js';
+import { PRESS_UNDER5_CAP_FROM, PRESS_UNDER5_CAP_MAX } from './pressUnder5Cap.js';
 
 export const T5_LEAD_FROM = '2026-11-08';
 export const T5_NO_T5_ST_FROM = '2026-11-10';
@@ -282,6 +289,24 @@ export function t5GoldLead(lead) {
 }
 
 /**
+ * Gold stamp. Spreads and totals also need a stamped press edge of 5 or
+ * more from PRESS_UNDER5_CAP_FROM. Moneylines keep the wallet test.
+ */
+export function t5GoldNow(lead, {
+  units = 0,
+  market = null,
+  pressEdge = null,
+  pickDate = null,
+} = {}) {
+  if (!(units > 0) || !t5GoldLead(lead)) return false;
+  if (typeof pickDate === 'string' && pickDate >= PRESS_UNDER5_CAP_FROM && t5StMarket(market)) {
+    const edge = stampedPressEdge(pressEdge);
+    return edge != null && edge >= PRESS_UNDER5_CAP_MAX;
+  }
+  return true;
+}
+
+/**
  * 14-day margin: held-14 wallets on our side exceed the other side by ≥ 1.
  * 6-day margin: held-6 wallets do, and it is not already a 14-day margin.
  * Somebody T5 on the other side does not block a margin.
@@ -359,7 +384,9 @@ function clampSeat(units, seat, { floor = true } = {}) {
   return Math.round(next * 100) / 100;
 }
 
-function withGoldAndBoost(core, { winnerAlignEdge, fromRescue, manual } = {}) {
+function withGoldAndBoost(core, {
+  winnerAlignEdge, fromRescue, manual, market, pressEdge, pickDate,
+} = {}) {
   const lead = core.lead;
   const edge = Number(winnerAlignEdge);
   const hasEdge = winnerAlignEdge != null && Number.isFinite(edge);
@@ -378,7 +405,7 @@ function withGoldAndBoost(core, { winnerAlignEdge, fromRescue, manual } = {}) {
   return {
     ...core,
     units,
-    gold: units > 0 && t5GoldLead(lead),
+    gold: t5GoldNow(lead, { units, market, pressEdge, pickDate }),
     margin,
     edgeBoost,
     unitsPreEdgeBoost,
@@ -404,6 +431,7 @@ export function applyT5Lead({
   side = null,
   market = null,
   steamOn = false,
+  pressEdge = null,
   manual = false,
   pressEdgeMuted = false,
   blocked = false,
@@ -424,7 +452,9 @@ export function applyT5Lead({
   const seat = t5Seat(lead);
   const base = { lead, price, seat };
   const finish = (core) => applyNoT5StSteamGate(
-    withGoldAndBoost(core, { winnerAlignEdge, fromRescue, manual }),
+    withGoldAndBoost(core, {
+      winnerAlignEdge, fromRescue, manual, market, pressEdge, pickDate,
+    }),
     { pickDate, market, steamOn, manual },
   );
   if (manual) {

@@ -5,6 +5,7 @@ import {
   T5_NO_T5_ST_FROM,
   T5_NO_T5_ST_MUTED_BY,
   applyT5Lead,
+  t5GoldNow,
   buildT5SeasonLedger,
   seasonStartFromDates,
   setT5SeasonLedger,
@@ -530,6 +531,47 @@ test('a manual stake stays as set and still stamps gold when the wallets qualify
   assert.equal(out.edgeBoost, 0);
   assert.equal(out.gold, true);
   assert.equal(out.reason, 'manual');
+});
+
+test('a spread or total is gold only when the press edge is 5 or more; moneylines keep the old test', () => {
+  const id = 'aaaaaa';
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
+  const wallets = details(id, 'home');
+  const stUnder = applyT5Lead({
+    units: 4, pickDate: '2026-11-10', odds: -110, walletDetails: wallets,
+    sport: 'NBA', side: 'home', market: 'SPREAD', pressEdge: 4.9,
+  });
+  assert.equal(stUnder.gold, false);
+  assert.equal(stUnder.units, 4);
+  assert.equal(t5GoldNow(stUnder.lead, {
+    units: 4, market: 'SPREAD', pressEdge: 4.9, pickDate: '2026-11-10',
+  }), false);
+
+  const stOn = applyT5Lead({
+    units: 4, pickDate: '2026-11-10', odds: -110, walletDetails: wallets,
+    sport: 'NBA', side: 'home', market: 'TOTAL', pressEdge: 5,
+  });
+  assert.equal(stOn.gold, true);
+  assert.equal(stOn.units, 4);
+
+  const stMissing = applyT5Lead({
+    units: 4, pickDate: '2026-11-10', odds: -110, walletDetails: wallets,
+    sport: 'NBA', side: 'home', market: 'SPREAD',
+  });
+  assert.equal(stMissing.gold, false);
+
+  const mlUnder = applyT5Lead({
+    units: 4, pickDate: '2026-11-10', odds: -110, walletDetails: wallets,
+    sport: 'NBA', side: 'home', market: 'ML', pressEdge: 2.2,
+  });
+  assert.equal(mlUnder.gold, true);
+  assert.equal(mlUnder.units, 4);
+
+  const before = applyT5Lead({
+    units: 4, pickDate: '2026-11-09', odds: -110, walletDetails: wallets,
+    sport: 'NBA', side: 'home', market: 'SPREAD', pressEdge: 1,
+  });
+  assert.equal(before.gold, true);
 });
 
 test('a no-tier-5 spread or total mutes when steam is off and keeps when juice steam is on', () => {
