@@ -29,6 +29,7 @@ import {
 import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
 import { resolveCFBTeam, cfbTeamsMatch } from './lib/cfbTeams.js';
+import { cbbTeamsMatch } from './lib/cbbTeams.js';
 import {
   resolveATPPlayer,
   playersMatch,
@@ -267,12 +268,17 @@ async function fetchNCAAFinalGames(dateStr) {
     const data = await res.json();
     return (data.games || [])
       .filter(g => g.game?.gameState === 'final')
-      .map(g => ({
-        awayTeam: g.game.away?.names?.short || '',
-        homeTeam: g.game.home?.names?.short || '',
-        awayScore: parseInt(g.game.away?.score) || 0,
-        homeScore: parseInt(g.game.home?.score) || 0,
-      }));
+      .map(g => {
+        const clock = etClock(g.game.startTimeEpoch ? g.game.startTimeEpoch * 1000 : null);
+        return {
+          dateET: clock?.dateET || dateStr,
+          startHourET: clock?.startHourET ?? null,
+          awayTeam: g.game.away?.names?.short || '',
+          homeTeam: g.game.home?.names?.short || '',
+          awayScore: parseInt(g.game.away?.score) || 0,
+          homeScore: parseInt(g.game.home?.score) || 0,
+        };
+      });
   } catch (e) {
     console.error('NCAA fetch error:', e.message);
     return [];
@@ -281,7 +287,9 @@ async function fetchNCAAFinalGames(dateStr) {
 
 async function fetchESPNCBBFinalGames(dateStr) {
   try {
-    const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
+    const ymd = dateStr
+      ? `?dates=${String(dateStr).replace(/-/g, '')}&groups=50&limit=400`
+      : '?groups=50&limit=400';
     const data = await espnJson(`${ESPN_CBB_URL}${ymd}`);
     if (!data) return [];
     return (data.events || [])
@@ -294,8 +302,10 @@ async function fetchESPNCBBFinalGames(dateStr) {
         const comps = comp.competitors || [];
         const away = comps.find(c => c.homeAway === 'away') || {};
         const home = comps.find(c => c.homeAway === 'home') || {};
+        const clock = etClock(e.date);
         return {
-          dateET: espnEventDateET(e),
+          dateET: clock?.dateET || espnEventDateET(e),
+          startHourET: clock?.startHourET ?? null,
           awayTeam: away.team?.displayName || '',
           homeTeam: home.team?.displayName || '',
           awayScore: parseInt(away.score) || 0,
@@ -316,6 +326,43 @@ function espnEventDateET(e) {
   const d = new Date(e.date);
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function etClock(value) {
+  if (value == null || value === '') return null;
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(d).map(p => [p.type, p.value]));
+  let hour = Number(parts.hour);
+  if (hour === 24) hour = 0;
+  return {
+    dateET: `${parts.year}-${parts.month}-${parts.day}`,
+    startHourET: hour,
+  };
+}
+
+function shiftEtDate(dateStr, days) {
+  const [y, m, d] = String(dateStr || '').split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+// Same ET date, or a tip in the first hours of the next date. Seattle at
+// Hawaii was on the Nov 2 card and final at 12:00 AM ET on the Nov 3 board.
+function cbbDateOk(g, pos) {
+  if (!pos.date) return true;
+  if (!g.dateET) return false;
+  if (g.dateET === pos.date) return true;
+  return g.dateET === shiftEtDate(pos.date, 1)
+    && Number.isFinite(g.startHourET)
+    && g.startHourET < 6;
 }
 
 async function fetchMLBFinalsFromStatsApi(dateStr) {
@@ -1076,13 +1123,19 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
   }
 
   if (pos.sport === 'CBB') {
-    for (const g of cbbFinals) {
-      const normalMatch = teamNamesMatch(pos.away, g.awayTeam) && teamNamesMatch(pos.home, g.homeTeam);
-      const reversedMatch = teamNamesMatch(pos.away, g.homeTeam) && teamNamesMatch(pos.home, g.awayTeam);
-      if (normalMatch) return { awayScore: g.awayScore, homeScore: g.homeScore };
-      if (reversedMatch) return { awayScore: g.homeScore, homeScore: g.awayScore };
+    const dated = cbbFinals.filter(g => cbbDateOk(g, pos));
+    const hits = [];
+    for (const g of dated) {
+      const normalMatch = cbbTeamsMatch(pos.away, g.awayTeam) && cbbTeamsMatch(pos.home, g.homeTeam);
+      const reversedMatch = cbbTeamsMatch(pos.away, g.homeTeam) && cbbTeamsMatch(pos.home, g.awayTeam);
+      if (normalMatch) hits.push({ g, flip: false });
+      else if (reversedMatch) hits.push({ g, flip: true });
     }
-    return null;
+    const exact = hits.filter(h => !pos.date || h.g.dateET === pos.date);
+    const pick = exact.length === 1 ? exact[0] : (exact.length === 0 && hits.length === 1 ? hits[0] : null);
+    if (!pick) return null;
+    if (pick.flip) return { awayScore: pick.g.homeScore, homeScore: pick.g.awayScore };
+    return { awayScore: pick.g.awayScore, homeScore: pick.g.homeScore };
   }
 
   if (pos.sport === 'SOC') {
@@ -1575,7 +1628,12 @@ async function main() {
 
   let cbbFinals = [];
   if (sports.has('CBB')) {
+    const cbbFetchDates = new Set(cbbDates);
     for (const d of cbbDates) {
+      const next = shiftEtDate(d, 1);
+      if (next) cbbFetchDates.add(next);
+    }
+    for (const d of [...cbbFetchDates].sort()) {
       const ncaa = await fetchNCAAFinalGames(d);
       const espn = await fetchESPNCBBFinalGames(d);
       cbbFinals.push(...ncaa, ...espn);
