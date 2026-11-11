@@ -171,11 +171,12 @@ test('one wallet keeps one letter tonight, and the ticket keeps its price', () =
     },
   ]);
   const profiles = new Map([
-    ['111111', { bySport: { NBA: { whitelistTier: 'CONFIRMED', positions: { n: 14, wins: 8, losses: 6, invested: 1000, settledPnl: 225 } } } }],
-    ['222222', { bySport: { NHL: { whitelistTier: 'CONFIRMED', positions: { n: 109, wins: 60, losses: 49, invested: 5000, settledPnl: 360 } } } }],
+    ['111111', { bySport: { NBA: { whitelistTier: 'CONFIRMED', positions: { n: 14, wins: 8, losses: 6, invested: 1000, settledPnl: 225 }, form: { actionL10: { w: 7, l: 3 } }, byMarket: { ML: { positions: { n: 10, wins: 6, losses: 4, dollarRoi: 12.5 } } } } } }],
+    ['222222', { bySport: { NHL: { whitelistTier: 'CONFIRMED', positions: { n: 10, wins: 6, losses: 4, invested: 5000, settledPnl: 360 }, recentActionWindow: { n: 4, wins: 3, losses: 1, settledPnl: 80, dollarRoi: 4 }, byMarket: { TOTAL: { positions: { n: 20, wins: 12, losses: 8, dollarRoi: 7.2 }, recentActionWindow: { n: 6, wins: 4, losses: 2, dollarRoi: 9 } } } } } }],
   ]);
   const pubs = publishBoard(feeds.games, profiles, {
-    NHL: { phi_edm: { commence: '2026-11-12T02:10:00Z' } },
+    NHL: { phi_edm: { commence: '2026-11-12T02:10:00Z', movement: { direction: 'away' } } },
+    NBA: { okc_por: { movement: { direction: 'away' } } },
   }, '2026-11-11');
   const thunder = pubs.find((g) => g.away === 'Thunder').markets[0].sides[0];
   const rockets = pubs.find((g) => g.home === 'Rockets').markets[0].sides[0];
@@ -187,6 +188,13 @@ test('one wallet keeps one letter tonight, and the ticket keeps its price', () =
   assert.equal(under.pick, 'Under 6.5');
   assert.equal(under.tickets[0].price, '-120');
   assert.equal(under.tickets[0].line, 6.5);
+  assert.equal(under.tickets[0].sharp.size, 'press');
+  assert.equal(under.tickets[0].sharp.vsUsual, 6);
+  assert.equal(under.tickets[0].sharp.market.record, '12-8');
+  assert.equal(under.tickets[0].sharp.l30.record, '3-1');
+  assert.equal(under.opposed, 'unopposed');
+  assert.equal(thunder.tickets[0].sharp.form, 'L10 7-3');
+  assert.equal(thunder.tickets[0].lineMove, 'with');
   assert.equal(flyersGame.kickoffEt.includes('9:10'), true);
   const text = JSON.stringify(pubs);
   assert.equal(text.includes('111111'), false);

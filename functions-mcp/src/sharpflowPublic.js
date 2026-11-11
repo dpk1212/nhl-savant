@@ -18,6 +18,7 @@ const INSTRUCTIONS = [
   'Call today or locked_card once. The payload is the whole day.',
   'Locks with confirmed money on the same side come first. That order is agreement, then dollars. It is not an edge ranking.',
   'A record is that sport, all markets. When confirmed is 1, it is one wallet. When confirmed is more than 1, it is those wallets pooled.',
+  'sharp on a ticket is the Action tab for that wallet: size versus their usual, last-10 form, last-30 dollars, and the record in this market. opposed is unopposed or contested.',
   'sameNight letters match the same wallet across games tonight only. The letter is not a name and it changes tomorrow.',
   'Each ticket has the price paid and the line. kickoffEt is the game time.',
   'Do not name a wallet. Do not explain how a stake was chosen.',
@@ -304,6 +305,67 @@ function ticketOf(pos, market) {
   return { price: fmtOdds(american), line };
 }
 
+function returnPctOf(agg) {
+  const roi = Number(agg?.dollarRoi);
+  if (Number.isFinite(roi)) return Math.round(roi * 10) / 10;
+  const invested = Number(agg?.invested);
+  const pnl = Number(agg?.settledPnl);
+  if (invested > 0 && Number.isFinite(pnl)) return Math.round((1000 * pnl) / invested) / 10;
+  return null;
+}
+
+function recordSnap(agg) {
+  if (!agg || !(Number(agg.n) > 0)) return null;
+  const wins = Number(agg.wins) || 0;
+  const losses = Number.isFinite(Number(agg.losses)) ? Number(agg.losses) : Math.max(0, Number(agg.n) - wins);
+  const snap = { record: `${wins}-${losses}` };
+  const ret = returnPctOf(agg);
+  if (ret != null) snap.returnPct = ret;
+  if (Number.isFinite(Number(agg.settledPnl))) snap.dollars = Math.round(Number(agg.settledPnl));
+  return snap;
+}
+
+function sharpOf(profile, sport, market, invested) {
+  const rec = profile?.bySport?.[sport];
+  const sharp = {};
+  const n = Number(rec?.positions?.n) || 0;
+  const bookInvested = Number(rec?.positions?.invested);
+  if (invested > 0 && n > 0 && bookInvested > 0) {
+    const ratio = invested / (bookInvested / n);
+    sharp.vsUsual = Math.round(ratio * 10) / 10;
+    if (ratio >= 1.5) sharp.size = 'press';
+    else if (ratio >= 1) sharp.size = 'usual';
+    else if (ratio >= 0.5) sharp.size = 'lean';
+    else sharp.size = 'light';
+  }
+  const form = rec?.form;
+  const l10 = form?.actionL10 || form?.l10;
+  const l5 = form?.actionL5 || form?.l5;
+  if (l10 && (Number(l10.w) + Number(l10.l)) > 0) sharp.form = `L10 ${l10.w}-${l10.l}`;
+  else if (l5 && (Number(l5.w) + Number(l5.l)) > 0) sharp.form = `L5 ${l5.w}-${l5.l}`;
+  const l30 = recordSnap(rec?.recentActionWindow);
+  if (l30) sharp.l30 = l30;
+  const mkt = rec?.byMarket?.[market];
+  const marketBook = recordSnap(mkt?.positions);
+  const marketL30 = recordSnap(mkt?.recentActionWindow);
+  if (marketBook || marketL30) {
+    sharp.market = {};
+    if (marketBook) sharp.market.record = marketBook.record;
+    if (marketBook?.returnPct != null) sharp.market.returnPct = marketBook.returnPct;
+    if (marketL30) sharp.market.l30 = marketL30;
+  }
+  return Object.keys(sharp).length ? sharp : null;
+}
+
+function lineMove(prices, sport, gameKey, side, market) {
+  if (market !== 'ML') return null;
+  const dir = prices?.[sport]?.[gameKey]?.movement?.direction;
+  if (!dir || side === 'over' || side === 'under') return null;
+  if (dir === side) return 'with';
+  if (dir === 'away' || dir === 'home') return 'against';
+  return null;
+}
+
 function rollupPositions(positions, sport, profiles, market) {
   const bySide = new Map();
   for (const pos of positions || []) {
@@ -329,7 +391,13 @@ function rollupPositions(positions, sport, profiles, market) {
     const ticket = ticketOf(pos, market);
     const held = row.byWallet.get(short);
     if (!held) {
-      row.byWallet.set(short, { short, dollars: invested, price: ticket.price, line: ticket.line });
+      row.byWallet.set(short, {
+        short,
+        dollars: invested,
+        price: ticket.price,
+        line: ticket.line,
+        sharp: sharpOf(profile, sport, market, invested),
+      });
     } else {
       held.dollars += invested;
       if (held.price !== ticket.price) held.price = null;
@@ -415,7 +483,7 @@ function nightKey(date, short) {
   return crypto.createHash('sha256').update(`${date}|${short}`).digest('hex');
 }
 
-function sealNight(games, date) {
+function sealNight(games, date, prices) {
   const shorts = new Set();
   for (const game of games || []) {
     for (const market of game.markets || []) {
@@ -436,10 +504,17 @@ function sealNight(games, date) {
         side.recordOf = n === 1
           ? `one wallet, ${sport}, all markets`
           : `${n} wallets pooled, ${sport}, all markets`;
+        const other = { away: 'home', home: 'away', over: 'under', under: 'over' }[side.side];
+        const foe = (market.sides || []).find((row) => row.side === other);
+        side.opposedBy = foe?.confirmed || 0;
+        side.opposed = side.opposedBy > 0 ? 'contested' : 'unopposed';
         side.tickets = (side.tickets || []).map((ticket) => {
           const out = { sameNight: letters.get(ticket.short) || null, dollars: ticket.dollars };
           if (ticket.price) out.price = ticket.price;
           if (ticket.line != null) out.line = ticket.line;
+          if (ticket.sharp) out.sharp = ticket.sharp;
+          const move = lineMove(prices, game.sport, game.gameKey, side.side, market.market);
+          if (move) out.lineMove = move;
           return out;
         });
       }
@@ -454,7 +529,7 @@ function publishBoard(games, profiles, prices, date) {
     const pub = publicGame(game, profiles, prices);
     if (pub.markets.length) pubs.push(pub);
   }
-  return sealNight(pubs, date || etDate());
+  return sealNight(pubs, date || etDate(), prices);
 }
 
 function shortsInGames(games) {
@@ -500,8 +575,36 @@ function moneyLine(market) {
     returnPct: lead.book?.returnPct ?? null,
     last30: lead.last30?.record || null,
     recordOf: lead.recordOf || null,
+    opposed: lead.opposed || null,
     sameNight: (lead.tickets || []).map((t) => t.sameNight).filter(Boolean),
   };
+}
+
+const ACTION_CAP = 40;
+
+function actionRows(pubs) {
+  const rows = [];
+  for (const pub of pubs || []) {
+    for (const market of pub.markets || []) {
+      for (const side of market.sides || []) {
+        for (const ticket of side.tickets || []) {
+          rows.push({
+            sport: pub.sport,
+            matchup: pub.matchup,
+            kickoffEt: pub.kickoffEt || null,
+            market: market.market,
+            pick: side.pick,
+            opposed: side.opposed,
+            opposedBy: side.opposedBy,
+            recordOf: side.recordOf,
+            ...ticket,
+          });
+        }
+      }
+    }
+  }
+  rows.sort((a, b) => b.dollars - a.dollars);
+  return rows;
 }
 
 function alignmentOf(play) {
@@ -773,14 +876,18 @@ async function dayPayload(args, ctx) {
     }, prices);
   }));
   const board = boardRows(pubs);
+  const tape = actionRows(pubs);
   return textBlock({
-    source: 'Sharp Flow day. plays are staked locks, same-side money first. That order is agreement then dollars, not an edge rank. board is confirmed money of $500 and up. A record is that sport, all markets. confirmed 1 is one wallet. sameNight letters match a wallet across tonight only. tickets show the price paid and the line. No names. End with site.',
+    source: 'Sharp Flow day. plays are staked locks, same-side money first. That order is agreement then dollars, not an edge rank. actionTab is the Action tab: each confirmed ticket, largest dollars first, with size versus usual, last-10 form, last-30 dollars, this market\'s record, and opposed or contested. A record on the side is that sport, all markets. confirmed 1 is one wallet. sameNight letters match a wallet across tonight only. No names. End with site.',
     site: SITE,
     date,
     sport,
     scannedAt: action.scannedAt,
     record,
     plays: playsOut,
+    actionTab: tape.slice(0, ACTION_CAP),
+    actionTabCount: tape.length,
+    actionTabShown: Math.min(tape.length, ACTION_CAP),
     board: board.slice(0, BOARD_CAP),
     boardCount: board.length,
     boardShown: Math.min(board.length, BOARD_CAP),
