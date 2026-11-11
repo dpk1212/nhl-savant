@@ -9,6 +9,11 @@ const {
   gameMatches,
   TOOLS,
   handleMcpMessage,
+  quotePrice,
+  sortPlays,
+  finishRecord,
+  emptyRecord,
+  accumulate,
   redirectAllowed,
   issueCode,
   verifyCode,
@@ -173,7 +178,12 @@ test('today attaches the money and keeps the locked side', async () => {
   const body = JSON.parse(reply.result.content[0].text);
   assert.equal(body.plays.length, 1);
   assert.equal(body.plays[0].pick, 'Ducks');
+  assert.equal(body.plays[0].alignment, 'against');
+  assert.equal(body.plays[0].money.side, 'away');
   assert.equal(body.plays[0].action[0].moneyOn, 'away');
+  assert.equal(body.site.includes('utm_source=mcp'), true);
+  assert.equal(body.board.length, 1);
+  assert.equal(body.board[0].lead.dollars, 900);
   const text = JSON.stringify(body);
   assert.equal(text.includes('Whale'), false);
   assert.equal(text.includes('0x'), false);
@@ -202,6 +212,34 @@ test('today attaches the money and keeps the locked side', async () => {
   });
   const cardBody = JSON.parse(card.result.content[0].text);
   assert.equal(cardBody.plays[0].action[0].moneyOn, 'away');
+});
+
+test('best price carries the hit edge, and the agreeing lock sorts first', () => {
+  const price = quotePrice({
+    current: { home: -136, away: 120 },
+    bestHome: -127,
+    bestHomeBook: 'FanDuel',
+  }, 'ML', 'home', 1, 'Ducks');
+  assert.equal(price.best, '-127');
+  assert.equal(price.bestBook, 'FanDuel');
+  assert.equal(price.actualWin, 55.6);
+  assert.equal(price.actualWinN, 36);
+  assert.equal(price.bestImplied, 55.9);
+  assert.equal(price.hitEdge, -0.3);
+
+  const sorted = sortPlays([
+    { pick: 'A', alignment: 'against', money: { dollars: 900 }, kickoffEt: 'a' },
+    { pick: 'B', alignment: 'with', money: { dollars: 100 }, kickoffEt: 'b' },
+  ]);
+  assert.equal(sorted[0].pick, 'B');
+
+  const record = emptyRecord();
+  accumulate(record, { sport: 'NHL', market: 'ML', status: 'win', units: 1, profit: 0.78 });
+  accumulate(record, { sport: 'NHL', market: 'ML', status: 'loss', units: 1, profit: -1 });
+  const done = finishRecord(record, '2026-06-01', '2026-11-10');
+  assert.equal(done.all.record, '1-1');
+  assert.equal(done.bySport[0].sport, 'NHL');
+  assert.equal(done.bySportMarket[0].market, 'ML');
 });
 
 test('oauth code checks the challenge and rejects other sites', () => {

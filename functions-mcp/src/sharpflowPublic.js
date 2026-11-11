@@ -5,20 +5,22 @@
  */
 
 const crypto = require('crypto');
+const { unitMarketHit } = require('./sharpflowHit');
 
 const SERVER_NAME = 'NHL Savant - Sharpflow';
 const SERVER_VERSION = '1.0.0';
 const MIN_DOLLARS = 500;
 const PROTOCOL = '2025-03-26';
 
+const SITE = 'https://nhlsavant.com/?utm_source=mcp&utm_medium=sharpflow';
+
 const INSTRUCTIONS = [
-  'When someone asks what to know today, call today once and answer from that payload.',
-  'Lead with the locked plays in start order, then where the confirmed money is on those same games.',
-  'The locked play and the money side can differ. Say so in one line when they do.',
-  'If every stake is the same size, say that once.',
-  'Do not name wallets. Do not explain how a stake was chosen. Do not invent a rank.',
-  'Do not add a section listing what this feed does not contain.',
-  'Do not ask for another tool call to finish the same day.',
+  'Call today or locked_card once. The payload is the whole day.',
+  'Lead with the locks whose confirmed money is on the same side, then the locks where it is not.',
+  'Then the board: confirmed money of $500 and up across games, largest first, not only the locks.',
+  'Quote the graded record as given. Quote fair, best, and hit edge only when those fields are present.',
+  'Do not name a wallet. Do not explain how a stake was chosen. Do not invent a rank or a tier.',
+  'End with the site link in the payload.',
 ].join(' ');
 
 const READ = {
@@ -376,9 +378,252 @@ function buildToday(plays, games, profiles) {
     const pub = game ? publicGame(game, profiles || new Map()) : null;
     return {
       ...play,
+      gameKey: game?.gameKey || null,
       action: pub && pub.markets.length ? pub.markets : null,
     };
   });
+}
+
+function moneyLine(market) {
+  if (!market || !market.moneyOn) return null;
+  const lead = (market.sides || []).find((s) => s.side === market.moneyOn) || market.sides?.[0];
+  if (!lead) return { side: market.moneyOn };
+  return {
+    side: market.moneyOn,
+    dollars: lead.dollars,
+    confirmed: lead.confirmed,
+    record: lead.book?.record || null,
+    returnPct: lead.book?.returnPct ?? null,
+    last30: lead.last30?.record || null,
+  };
+}
+
+function alignmentOf(play) {
+  const market = (play.action || []).find((m) => m.market === play.market);
+  const money = moneyLine(market);
+  if (!money) return { alignment: 'none', money: null };
+  if (money.side === 'split') return { alignment: 'split', money };
+  if (money.side === play.side) return { alignment: 'with', money };
+  return { alignment: 'against', money };
+}
+
+const ALIGN_RANK = { with: 0, against: 1, split: 2, none: 3 };
+
+function impliedPct(american) {
+  const n = Number(american);
+  if (!Number.isFinite(n) || n === 0) return null;
+  const p = n < 0 ? Math.abs(n) / (Math.abs(n) + 100) : 100 / (n + 100);
+  return Math.round(p * 1000) / 10;
+}
+
+function americanFromProb(p) {
+  if (p == null || !Number.isFinite(p) || p <= 0 || p >= 1) return null;
+  if (p >= 0.5) return Math.round((-100 * p) / (1 - p));
+  return Math.round((100 * (1 - p)) / p);
+}
+
+function noVig(oddsList) {
+  const raw = (oddsList || []).map((o) => {
+    const n = Number(o);
+    if (!Number.isFinite(n) || n === 0) return null;
+    return n < 0 ? Math.abs(n) / (Math.abs(n) + 100) : 100 / (n + 100);
+  });
+  if (!raw.length || raw.some((p) => p == null)) return null;
+  const sum = raw.reduce((s, p) => s + p, 0);
+  if (!(sum > 0)) return null;
+  return americanFromProb(raw[0] / sum);
+}
+
+function num(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function quotePrice(game, market, side, units, pick) {
+  if (!game) return null;
+  let fair = null;
+  let best = null;
+  let bestBook = null;
+  let line = null;
+  let bestLine = null;
+  if (market === 'ML') {
+    const cur = game.current || {};
+    const home = num(cur.home);
+    const away = num(cur.away);
+    const draw = num(cur.draw);
+    const hasDraw = draw != null;
+    if (side === 'away') {
+      best = num(game.bestAway);
+      bestBook = game.bestAwayBook || null;
+      fair = hasDraw ? noVig([away, home, draw]) : noVig([away, home]);
+    } else if (side === 'home') {
+      best = num(game.bestHome);
+      bestBook = game.bestHomeBook || null;
+      fair = hasDraw ? noVig([home, away, draw]) : noVig([home, away]);
+    } else if (side === 'draw') {
+      best = num(game.bestDraw);
+      bestBook = game.bestDrawBook || null;
+      fair = hasDraw ? noVig([draw, away, home]) : null;
+    }
+  } else if (market === 'SPREAD') {
+    const cur = game.spreadCurrent || {};
+    line = side === 'away' ? num(cur.awayLine) : num(cur.homeLine);
+    const ours = side === 'away' ? num(cur.awayOdds) : num(cur.homeOdds);
+    const opp = side === 'away' ? num(cur.homeOdds) : num(cur.awayOdds);
+    fair = noVig([ours, opp]);
+    const chip = side === 'away' ? game.bestAwaySpread : game.bestHomeSpread;
+    best = num(chip?.odds);
+    bestBook = chip?.book || null;
+    bestLine = num(chip?.line);
+  } else if (market === 'TOTAL') {
+    const cur = game.totalCurrent || {};
+    line = num(cur.line);
+    const ours = side === 'over' ? num(cur.overOdds) : num(cur.underOdds);
+    const opp = side === 'over' ? num(cur.underOdds) : num(cur.overOdds);
+    fair = noVig([ours, opp]);
+    const chip = side === 'over' ? game.bestOver : game.bestUnder;
+    best = num(chip?.odds);
+    bestBook = chip?.book || null;
+    bestLine = num(chip?.line);
+  }
+  const hit = unitMarketHit(units, market, pick, best);
+  const bestImplied = impliedPct(best);
+  const hitEdge = hit && bestImplied != null ? Math.round((hit.wr - bestImplied) * 10) / 10 : null;
+  const price = {};
+  if (fair != null) price.fair = fmtOdds(fair);
+  if (best != null) price.best = fmtOdds(best);
+  if (bestBook) price.bestBook = bestBook;
+  if (line != null) price.line = line;
+  if (bestLine != null && line != null && bestLine !== line) price.bestLine = bestLine;
+  if (hit) {
+    price.actualWin = hit.wr;
+    price.actualWinN = hit.n;
+    price.actualWinLabel = hit.label;
+  }
+  if (bestImplied != null) price.bestImplied = bestImplied;
+  if (hitEdge != null) price.hitEdge = hitEdge;
+  return Object.keys(price).length ? price : null;
+}
+
+function presentPlay(play, prices) {
+  const { alignment, money } = alignmentOf(play);
+  const pinn = play.gameKey && prices ? prices[play.sport]?.[play.gameKey] : null;
+  const price = quotePrice(pinn, play.market, play.side, play.units, play.pick);
+  const { gameKey, ...rest } = play;
+  return { ...rest, alignment, money, price };
+}
+
+function sortPlays(plays) {
+  return [...plays].sort((a, b) => (
+    (ALIGN_RANK[a.alignment] ?? 9) - (ALIGN_RANK[b.alignment] ?? 9)
+    || (b.money?.dollars || 0) - (a.money?.dollars || 0)
+    || String(a.kickoffEt || '').localeCompare(String(b.kickoffEt || ''))
+  ));
+}
+
+function boardRows(games, profiles) {
+  const rows = [];
+  for (const game of games || []) {
+    const pub = publicGame(game, profiles || new Map());
+    if (!pub.markets.length) continue;
+    let lead = null;
+    for (const market of pub.markets) {
+      const money = moneyLine(market);
+      if (!money || !Number.isFinite(money.dollars)) continue;
+      if (!lead || money.dollars > lead.dollars) lead = { market: market.market, ...money };
+    }
+    rows.push({
+      sport: pub.sport,
+      matchup: pub.matchup,
+      away: pub.away,
+      home: pub.home,
+      lead,
+      markets: pub.markets,
+    });
+  }
+  rows.sort((a, b) => (
+    (b.lead?.dollars || 0) - (a.lead?.dollars || 0)
+    || (b.lead?.returnPct || 0) - (a.lead?.returnPct || 0)
+  ));
+  return rows;
+}
+
+const BOARD_CAP = 25;
+
+function emptyBucket() {
+  return { wins: 0, losses: 0, pushes: 0, units: 0, profit: 0 };
+}
+
+function addGraded(bucket, row) {
+  if (!bucket || !row) return;
+  if (row.status === 'win') bucket.wins += 1;
+  else if (row.status === 'loss') bucket.losses += 1;
+  else if (row.status === 'push') bucket.pushes += 1;
+  else return;
+  bucket.units += Number(row.units) || 0;
+  if (Number.isFinite(row.profit)) bucket.profit += row.profit;
+}
+
+function finishBucket(bucket) {
+  const decided = bucket.wins + bucket.losses;
+  return {
+    record: `${bucket.wins}-${bucket.losses}`,
+    pushes: bucket.pushes,
+    units: Math.round(bucket.units * 100) / 100,
+    profit: Math.round(bucket.profit * 100) / 100,
+    winPct: decided ? Math.round((1000 * bucket.wins) / decided) / 10 : null,
+  };
+}
+
+function gradedStake(pick, sideKey, market) {
+  const row = publicLockedSide(pick, sideKey, market);
+  if (!row || row.status === 'locked') return null;
+  const sd = pick?.sides?.[sideKey];
+  if (sd?.result?.tracked === true) return null;
+  const profit = Number(sd?.result?.profit);
+  return {
+    sport: row.sport || 'NA',
+    market,
+    status: row.status,
+    units: row.units,
+    profit: Number.isFinite(profit) ? profit : null,
+  };
+}
+
+function emptyRecord() {
+  return { all: emptyBucket(), sports: {}, cells: {} };
+}
+
+function accumulate(record, row) {
+  if (!row) return record;
+  addGraded(record.all, row);
+  const sport = row.sport || 'NA';
+  if (!record.sports[sport]) record.sports[sport] = emptyBucket();
+  addGraded(record.sports[sport], row);
+  const cell = `${sport}|${row.market}`;
+  if (!record.cells[cell]) record.cells[cell] = emptyBucket();
+  addGraded(record.cells[cell], row);
+  return record;
+}
+
+function finishRecord(record, from, through) {
+  const sports = Object.entries(record.sports || {})
+    .map(([sport, bucket]) => ({ sport, ...finishBucket(bucket) }))
+    .sort((a, b) => b.profit - a.profit);
+  const cells = Object.entries(record.cells || {})
+    .map(([key, bucket]) => {
+      const [sport, market] = key.split('|');
+      return { sport, market, ...finishBucket(bucket) };
+    })
+    .sort((a, b) => b.profit - a.profit);
+  return {
+    from,
+    through,
+    note: 'Graded staked locks. A stand-down is not in this record.',
+    all: finishBucket(record.all || emptyBucket()),
+    bySport: sports,
+    bySportMarket: cells,
+  };
 }
 
 function textBlock(value) {
@@ -405,12 +650,23 @@ async function dayPayload(args, ctx) {
     ctx.loadAction(),
   ]);
   const games = sport ? action.games.filter((g) => g.sport === sport) : action.games;
+  const [record, prices] = await Promise.all([
+    ctx.loadRecord ? ctx.loadRecord() : null,
+    ctx.loadPrices ? ctx.loadPrices() : null,
+  ]);
+  const playsOut = sortPlays(buildToday(plays, games, action.profiles).map((play) => presentPlay(play, prices)));
+  const board = boardRows(games, action.profiles);
   return textBlock({
-    source: 'Sharp Flow day. Each play is a staked lock. action on that play is the confirmed money of $500 and up on the same game: dollars, how many confirmed wallets, and their combined record. No individual names.',
+    source: 'Sharp Flow day. plays are staked locks, money on the same side first. board is confirmed money of $500 and up, largest first, not only the locks. record is the graded card. price.fair is no-vig, price.best is the best listed number, price.hitEdge is actual win minus the implied of that best number. No names. End with site.',
+    site: SITE,
     date,
     sport,
     scannedAt: action.scannedAt,
-    plays: buildToday(plays, games, action.profiles),
+    record,
+    plays: playsOut,
+    board: board.slice(0, BOARD_CAP),
+    boardCount: board.length,
+    boardShown: Math.min(board.length, BOARD_CAP),
   });
 }
 
@@ -532,8 +788,17 @@ module.exports = {
   publicLockedSide,
   indexFeeds,
   gameMatches,
+  SITE,
   publicGame,
   buildToday,
+  presentPlay,
+  sortPlays,
+  boardRows,
+  gradedStake,
+  emptyRecord,
+  accumulate,
+  finishRecord,
+  quotePrice,
   shortsInGames,
   handleMcpMessage,
   redirectAllowed,

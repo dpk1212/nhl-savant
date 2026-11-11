@@ -13,6 +13,10 @@ const {
   TOOLS,
   etDate,
   publicLockedSide,
+  gradedStake,
+  emptyRecord,
+  accumulate,
+  finishRecord,
   indexFeeds,
   shortsInGames,
   handleMcpMessage,
@@ -34,6 +38,8 @@ const COLLECTIONS = [
 const CACHE_MS = 90 * 1000;
 
 let feedCache = { at: 0, games: [], scannedAt: null };
+let priceCache = { at: 0, data: null };
+let recordCache = { at: 0, public: null };
 
 function baseUrl(req) {
   const proto = req.get('x-forwarded-proto') || 'https';
@@ -84,6 +90,97 @@ async function loadProfiles(shorts) {
     }
   }
   return map;
+}
+
+async function loadPrices() {
+  const now = Date.now();
+  if (priceCache.data && now - priceCache.at < CACHE_MS) return priceCache.data;
+  const res = await fetch('https://nhlsavant.com/pinnacle_history.json', {
+    headers: {
+      'User-Agent': 'Mozilla/5.0',
+      Referer: 'https://nhlsavant.com/',
+    },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  priceCache = { at: now, data };
+  return data;
+}
+
+async function tallyRange(from, through) {
+  const db = admin.firestore();
+  const record = emptyRecord();
+  for (const [col, market] of COLLECTIONS) {
+    const snap = await db.collection(col)
+      .where('date', '>=', from)
+      .where('date', '<=', through)
+      .select('sport', 'date', 'sides')
+      .get();
+    for (const doc of snap.docs) {
+      const pick = doc.data() || {};
+      for (const sideKey of Object.keys(pick.sides || {})) {
+        accumulate(record, gradedStake(pick, sideKey, market));
+      }
+    }
+  }
+  return record;
+}
+
+function addDays(iso, days) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+async function loadRecord() {
+  const now = Date.now();
+  if (recordCache.public && now - recordCache.at < CACHE_MS) return recordCache.public;
+  const db = admin.firestore();
+  const snap = await db.collection('sharpflowMcpCache').doc('cardRecord').get();
+  if (!snap.exists) return null;
+  const base = snap.data() || {};
+  const today = etDate();
+  const from = base.through ? addDays(base.through, 1) : null;
+  const record = base.buckets ? JSON.parse(JSON.stringify(base.buckets)) : emptyRecord();
+  if (from && from <= today) {
+    accumulateBuckets(record, await tallyRange(from, today));
+  }
+  const pub = finishRecord(record, '2026-06-01', today);
+  recordCache = { at: now, public: pub };
+  return pub;
+}
+
+function accumulateBuckets(into, extra) {
+  if (!into.all) into.all = { wins: 0, losses: 0, pushes: 0, units: 0, profit: 0 };
+  if (!into.sports) into.sports = {};
+  if (!into.cells) into.cells = {};
+  const pull = (bucket) => {
+    if (!bucket) return;
+    into.all.wins += bucket.wins || 0;
+    into.all.losses += bucket.losses || 0;
+    into.all.pushes += bucket.pushes || 0;
+    into.all.units += bucket.units || 0;
+    into.all.profit += bucket.profit || 0;
+  };
+  pull(extra.all);
+  for (const [sport, bucket] of Object.entries(extra.sports || {})) {
+    if (!into.sports[sport]) into.sports[sport] = { wins: 0, losses: 0, pushes: 0, units: 0, profit: 0 };
+    const dest = into.sports[sport];
+    dest.wins += bucket.wins || 0;
+    dest.losses += bucket.losses || 0;
+    dest.pushes += bucket.pushes || 0;
+    dest.units += bucket.units || 0;
+    dest.profit += bucket.profit || 0;
+  }
+  for (const [cell, bucket] of Object.entries(extra.cells || {})) {
+    if (!into.cells[cell]) into.cells[cell] = { wins: 0, losses: 0, pushes: 0, units: 0, profit: 0 };
+    const dest = into.cells[cell];
+    dest.wins += bucket.wins || 0;
+    dest.losses += bucket.losses || 0;
+    dest.pushes += bucket.pushes || 0;
+    dest.units += bucket.units || 0;
+    dest.profit += bucket.profit || 0;
+  }
 }
 
 async function loadAction() {
@@ -151,7 +248,7 @@ async function onMcp(req, res) {
     sendRpc(req, res, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid request' } }, 400);
     return;
   }
-  const ctx = { loadLocked, loadAction };
+  const ctx = { loadLocked, loadAction, loadRecord, loadPrices };
   if (Array.isArray(body)) {
     const replies = [];
     for (const msg of body) {
