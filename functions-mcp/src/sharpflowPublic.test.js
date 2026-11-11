@@ -6,6 +6,7 @@ const {
   publicLockedSide,
   indexFeeds,
   publicGame,
+  publishBoard,
   gameMatches,
   TOOLS,
   handleMcpMessage,
@@ -118,8 +119,10 @@ test('action rollup keeps dollars and drops the wallet', () => {
   const game = feeds.games[0];
   assert.equal(gameMatches(game, 'Ducks'), true);
   assert.equal(gameMatches(game, 'Knicks'), false);
-  const pub = publicGame(game, profiles);
+  const pub = publishBoard([game], profiles, null, '2026-11-11')[0];
   const text = JSON.stringify(pub);
+  assert.equal(text.includes('456789'), false);
+  assert.equal(text.includes('456780'), false);
   assert.equal(text.includes('Whale'), false);
   assert.equal(text.includes('leaderboard'), false);
   assert.equal(text.includes('0x'), false);
@@ -131,6 +134,64 @@ test('action rollup keeps dollars and drops the wallet', () => {
   assert.equal(home.confirmed, 1);
   assert.equal(home.book.record, '6-4');
   assert.equal(home.last30.record, '3-1');
+  assert.equal(home.recordOf, 'one wallet, NHL, all markets');
+  assert.equal(typeof home.tickets[0].sameNight, 'string');
+});
+
+test('one wallet keeps one letter tonight, and the ticket keeps its price', () => {
+  const feeds = indexFeeds([
+    {
+      market: 'ML',
+      data: {
+        NBA: {
+          okc_por: {
+            away: 'Thunder',
+            home: 'Trail Blazers',
+            positions: [{ wallet: '0xaaa111111111', side: 'away', invested: 510, avgPrice: 0.52 }],
+          },
+          gsw_hou: {
+            away: 'Warriors',
+            home: 'Rockets',
+            positions: [{ wallet: '0xaaa111111111', side: 'home', invested: 650, avgPrice: 0.65 }],
+          },
+        },
+      },
+    },
+    {
+      market: 'TOTAL',
+      data: {
+        NHL: {
+          phi_edm: {
+            away: 'Flyers',
+            home: 'Oilers',
+            positions: [{ wallet: '0xbbb222222222', side: 'under', invested: 2999, avgPrice: 0.546, entryLine: 6.5 }],
+          },
+        },
+      },
+    },
+  ]);
+  const profiles = new Map([
+    ['111111', { bySport: { NBA: { whitelistTier: 'CONFIRMED', positions: { n: 14, wins: 8, losses: 6, invested: 1000, settledPnl: 225 } } } }],
+    ['222222', { bySport: { NHL: { whitelistTier: 'CONFIRMED', positions: { n: 109, wins: 60, losses: 49, invested: 5000, settledPnl: 360 } } } }],
+  ]);
+  const pubs = publishBoard(feeds.games, profiles, {
+    NHL: { phi_edm: { commence: '2026-11-12T02:10:00Z' } },
+  }, '2026-11-11');
+  const thunder = pubs.find((g) => g.away === 'Thunder').markets[0].sides[0];
+  const rockets = pubs.find((g) => g.home === 'Rockets').markets[0].sides[0];
+  const flyersGame = pubs.find((g) => g.away === 'Flyers');
+  const under = flyersGame.markets[0].sides[0];
+  assert.equal(thunder.tickets[0].sameNight, rockets.tickets[0].sameNight);
+  assert.notEqual(thunder.tickets[0].sameNight, under.tickets[0].sameNight);
+  assert.equal(thunder.recordOf, 'one wallet, NBA, all markets');
+  assert.equal(under.pick, 'Under 6.5');
+  assert.equal(under.tickets[0].price, '-120');
+  assert.equal(under.tickets[0].line, 6.5);
+  assert.equal(flyersGame.kickoffEt.includes('9:10'), true);
+  const text = JSON.stringify(pubs);
+  assert.equal(text.includes('111111'), false);
+  assert.equal(text.includes('222222'), false);
+  assert.equal(text.includes('0x'), false);
 });
 
 test('today attaches the money and keeps the locked side', async () => {

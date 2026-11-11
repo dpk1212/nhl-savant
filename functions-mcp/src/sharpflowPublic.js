@@ -16,11 +16,12 @@ const SITE = 'https://nhlsavant.com/?utm_source=mcp&utm_medium=sharpflow';
 
 const INSTRUCTIONS = [
   'Call today or locked_card once. The payload is the whole day.',
-  'Lead with the locks whose confirmed money is on the same side, then the locks where it is not.',
-  'Then the board: confirmed money of $500 and up across games, largest first, not only the locks.',
-  'Quote the graded record as given. Quote fair, best, and hit edge only when those fields are present.',
-  'Do not name a wallet. Do not explain how a stake was chosen. Do not invent a rank or a tier.',
-  'End with the site link in the payload.',
+  'Locks with confirmed money on the same side come first. That order is agreement, then dollars. It is not an edge ranking.',
+  'A record is that sport, all markets. When confirmed is 1, it is one wallet. When confirmed is more than 1, it is those wallets pooled.',
+  'sameNight letters match the same wallet across games tonight only. The letter is not a name and it changes tomorrow.',
+  'Each ticket has the price paid and the line. kickoffEt is the game time.',
+  'Do not name a wallet. Do not explain how a stake was chosen.',
+  'End with the site link.',
 ].join(' ');
 
 const READ = {
@@ -286,7 +287,24 @@ function gameMatches(game, query) {
   return tokens.every((t) => names.some((n) => n.includes(t)));
 }
 
-function rollupPositions(positions, sport, profiles) {
+function ticketOf(pos, market) {
+  const raw = Number(pos?.entryAvgPrice ?? pos?.avgPrice ?? pos?.price);
+  let prob = null;
+  if (Number.isFinite(raw) && raw > 0) {
+    if (raw <= 1) prob = raw;
+    else if (raw <= 100) prob = raw / 100;
+  }
+  const odds = Number(pos?.odds);
+  const american = Number.isFinite(odds) && odds !== 0 ? Math.round(odds) : americanFromProb(prob);
+  let line = null;
+  if (market === 'TOTAL' || market === 'SPREAD') {
+    const n = Number(pos?.entryLine ?? pos?.totalLine ?? pos?.spreadLine);
+    if (Number.isFinite(n)) line = n;
+  }
+  return { price: fmtOdds(american), line };
+}
+
+function rollupPositions(positions, sport, profiles, market) {
   const bySide = new Map();
   for (const pos of positions || []) {
     const invested = Number(pos?.invested || pos?.size || 0) || 0;
@@ -301,12 +319,22 @@ function rollupPositions(positions, sport, profiles) {
         side,
         dollars: 0,
         wallets: new Set(),
+        byWallet: new Map(),
         career: emptyPool(),
         last30: emptyPool(),
       });
     }
     const row = bySide.get(side);
     row.dollars += invested;
+    const ticket = ticketOf(pos, market);
+    const held = row.byWallet.get(short);
+    if (!held) {
+      row.byWallet.set(short, { short, dollars: invested, price: ticket.price, line: ticket.line });
+    } else {
+      held.dollars += invested;
+      if (held.price !== ticket.price) held.price = null;
+      if (held.line !== ticket.line) held.line = null;
+    }
     if (!row.wallets.has(short)) {
       row.wallets.add(short);
       const rec = profile.bySport[sport];
@@ -321,6 +349,10 @@ function rollupPositions(positions, sport, profiles) {
     confirmed: row.wallets.size,
     book: finishPool(row.career),
     last30: finishPool(row.last30),
+    tickets: [...row.byWallet.values()].map((t) => ({
+      ...t,
+      dollars: Math.round(t.dollars),
+    })),
   })).sort((a, b) => b.dollars - a.dollars);
 
   let moneyOn = null;
@@ -331,26 +363,98 @@ function rollupPositions(positions, sport, profiles) {
   return { moneyOn, sides };
 }
 
-function publicGame(game, profiles) {
+function sharedLine(tickets) {
+  const lines = (tickets || []).map((t) => t.line).filter((v) => v != null);
+  if (!lines.length || lines.some((v) => v !== lines[0])) return null;
+  return lines[0];
+}
+
+function kickoffOf(prices, sport, gameKey) {
+  const c = prices?.[sport]?.[gameKey]?.commence;
+  if (c == null || c === '') return null;
+  if (typeof c === 'number') return etStamp(c > 1e12 ? c : c * 1000);
+  const ms = Date.parse(c);
+  return Number.isFinite(ms) ? etStamp(ms) : null;
+}
+
+function publicGame(game, profiles, prices) {
   const markets = Object.entries(game.markets).map(([market, positions]) => {
-    const roll = rollupPositions(positions, game.sport, profiles);
+    const roll = rollupPositions(positions, game.sport, profiles, market);
     return {
       market,
       moneyOn: roll.moneyOn,
       sides: roll.sides.map((side) => ({
         ...side,
-        pick: pickLabel(side.side, game.away, game.home, null),
+        pick: pickLabel(side.side, game.away, game.home, market === 'ML' ? null : sharedLine(side.tickets)),
       })),
     };
   }).filter((m) => m.sides.length > 0);
 
   return {
     sport: game.sport,
+    gameKey: game.gameKey,
     matchup: game.away && game.home ? `${game.away} at ${game.home}` : game.gameKey,
     away: game.away,
     home: game.home,
+    kickoffEt: kickoffOf(prices, game.sport, game.gameKey),
     markets,
   };
+}
+
+function nightLetter(index) {
+  let n = index;
+  let s = '';
+  while (n >= 0) {
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  return s;
+}
+
+function nightKey(date, short) {
+  return crypto.createHash('sha256').update(`${date}|${short}`).digest('hex');
+}
+
+function sealNight(games, date) {
+  const shorts = new Set();
+  for (const game of games || []) {
+    for (const market of game.markets || []) {
+      for (const side of market.sides || []) {
+        for (const ticket of side.tickets || []) {
+          if (ticket.short) shorts.add(ticket.short);
+        }
+      }
+    }
+  }
+  const ordered = [...shorts].sort((a, b) => nightKey(date, a).localeCompare(nightKey(date, b)));
+  const letters = new Map(ordered.map((short, i) => [short, nightLetter(i)]));
+  for (const game of games || []) {
+    const sport = game.sport || 'this sport';
+    for (const market of game.markets || []) {
+      for (const side of market.sides || []) {
+        const n = side.confirmed || 0;
+        side.recordOf = n === 1
+          ? `one wallet, ${sport}, all markets`
+          : `${n} wallets pooled, ${sport}, all markets`;
+        side.tickets = (side.tickets || []).map((ticket) => {
+          const out = { sameNight: letters.get(ticket.short) || null, dollars: ticket.dollars };
+          if (ticket.price) out.price = ticket.price;
+          if (ticket.line != null) out.line = ticket.line;
+          return out;
+        });
+      }
+    }
+  }
+  return games;
+}
+
+function publishBoard(games, profiles, prices, date) {
+  const pubs = [];
+  for (const game of games || []) {
+    const pub = publicGame(game, profiles, prices);
+    if (pub.markets.length) pubs.push(pub);
+  }
+  return sealNight(pubs, date || etDate());
 }
 
 function shortsInGames(games) {
@@ -395,6 +499,8 @@ function moneyLine(market) {
     record: lead.book?.record || null,
     returnPct: lead.book?.returnPct ?? null,
     last30: lead.last30?.record || null,
+    recordOf: lead.recordOf || null,
+    sameNight: (lead.tickets || []).map((t) => t.sameNight).filter(Boolean),
   };
 }
 
@@ -521,13 +627,11 @@ function sortPlays(plays) {
   ));
 }
 
-function boardRows(games, profiles) {
+function boardRows(pubs) {
   const rows = [];
-  for (const game of games || []) {
-    const pub = publicGame(game, profiles || new Map());
-    if (!pub.markets.length) continue;
+  for (const pub of pubs || []) {
     let lead = null;
-    for (const market of pub.markets) {
+    for (const market of pub.markets || []) {
       const money = moneyLine(market);
       if (!money || !Number.isFinite(money.dollars)) continue;
       if (!lead || money.dollars > lead.dollars) lead = { market: market.market, ...money };
@@ -537,6 +641,7 @@ function boardRows(games, profiles) {
       matchup: pub.matchup,
       away: pub.away,
       home: pub.home,
+      kickoffEt: pub.kickoffEt || null,
       lead,
       markets: pub.markets,
     });
@@ -654,10 +759,22 @@ async function dayPayload(args, ctx) {
     ctx.loadRecord ? ctx.loadRecord() : null,
     ctx.loadPrices ? ctx.loadPrices() : null,
   ]);
-  const playsOut = sortPlays(buildToday(plays, games, action.profiles).map((play) => presentPlay(play, prices)));
-  const board = boardRows(games, action.profiles);
+  const pubs = publishBoard(games, action.profiles, prices, date);
+  const playsOut = sortPlays(plays.map((play) => {
+    const playSport = String(play.sport || '').toUpperCase();
+    const pub = pubs.find((g) => (
+      String(g.sport || '').toUpperCase() === playSport
+      && gameMatches(g, `${play.away || ''} ${play.home || ''}`)
+    ));
+    return presentPlay({
+      ...play,
+      gameKey: pub?.gameKey || null,
+      action: pub?.markets?.length ? pub.markets : null,
+    }, prices);
+  }));
+  const board = boardRows(pubs);
   return textBlock({
-    source: 'Sharp Flow day. plays are staked locks, money on the same side first. board is confirmed money of $500 and up, largest first, not only the locks. record is the graded card. price.fair is no-vig, price.best is the best listed number, price.hitEdge is actual win minus the implied of that best number. No names. End with site.',
+    source: 'Sharp Flow day. plays are staked locks, same-side money first. That order is agreement then dollars, not an edge rank. board is confirmed money of $500 and up. A record is that sport, all markets. confirmed 1 is one wallet. sameNight letters match a wallet across tonight only. tickets show the price paid and the line. No names. End with site.',
     site: SITE,
     date,
     sport,
@@ -678,8 +795,9 @@ async function callTool(name, args, ctx) {
     if (!query) return toolError('query is required');
     const sport = a.sport ? String(a.sport).toUpperCase() : null;
     const { games, scannedAt, profiles } = await ctx.loadAction();
+    const prices = ctx.loadPrices ? await ctx.loadPrices() : null;
     const hits = games.filter((g) => (!sport || g.sport === sport) && gameMatches(g, query));
-    const shown = hits.slice(0, 5).map((g) => publicGame(g, profiles)).filter((g) => g.markets.length);
+    const shown = publishBoard(hits, profiles, prices, etDate()).slice(0, 5).map(({ gameKey, ...pub }) => pub);
     return textBlock({
       source: 'Confirmed action, $500 and up, rolled up',
       scannedAt,
@@ -691,13 +809,14 @@ async function callTool(name, args, ctx) {
   if (name === 'sport_action') {
     const sport = a.sport ? String(a.sport).toUpperCase() : null;
     const { games, scannedAt, profiles } = await ctx.loadAction();
+    const prices = ctx.loadPrices ? await ctx.loadPrices() : null;
     const wanted = sport ? games.filter((g) => g.sport === sport) : games;
+    const pubs = publishBoard(wanted, profiles, prices, etDate());
     const bySport = new Map();
-    for (const game of wanted) {
-      const pub = publicGame(game, profiles);
-      if (!pub.markets.length) continue;
-      if (!bySport.has(game.sport)) bySport.set(game.sport, []);
-      bySport.get(game.sport).push(pub);
+    for (const pub of pubs) {
+      const { gameKey, ...rest } = pub;
+      if (!bySport.has(pub.sport)) bySport.set(pub.sport, []);
+      bySport.get(pub.sport).push(rest);
     }
     const sports = [...bySport.entries()].map(([code, list]) => ({ sport: code, games: list }));
     return textBlock({
@@ -790,6 +909,7 @@ module.exports = {
   gameMatches,
   SITE,
   publicGame,
+  publishBoard,
   buildToday,
   presentPlay,
   sortPlays,
