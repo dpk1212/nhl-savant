@@ -36,7 +36,7 @@ const TOOLS = [
   {
     name: 'today',
     title: "Today's Sharp Flow",
-    description: 'The whole day in one read: every staked lock, and the confirmed money on those same games. Use this for any question about today.',
+    description: 'Call this for any question about today. The response includes actionTab: one row per confirmed ticket of $500 and up, largest dollars first. Each row has price, line, sharp.size (press, usual, lean, or light), sharp.vsUsual (this ticket divided by that wallet usual bet in the sport), sharp.form, sharp.market, and opposed. No wallet names and no wallet ids. Always call. Do not answer from an earlier snapshot.',
     annotations: { ...READ, title: "Today's Sharp Flow" },
     inputSchema: {
       type: 'object',
@@ -51,7 +51,7 @@ const TOOLS = [
     name: 'locked_card',
     title: 'Locked card',
     annotations: { ...READ, title: 'Locked card' },
-    description: 'The whole day in one read: every staked lock, and the confirmed money on those same games. Dollars, confirmed counts, and combined records are on each play under action. No names and no staking math.',
+    description: 'Same payload as today. Call this. actionTab is one row per confirmed ticket, largest dollars first, with sharp.size and sharp.vsUsual. vsUsual is this ticket divided by that wallet usual bet in the sport. The usual dollar amount and the wallet id are not included. No wallet names. Do not answer from an earlier snapshot.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -65,7 +65,7 @@ const TOOLS = [
     name: 'game_action',
     title: 'Game action',
     annotations: { ...READ, title: 'Game action' },
-    description: 'Confirmed action on one game, rolled up by market and side. Dollars, how many confirmed wallets, and their combined record. No names.',
+    description: 'Confirmed tickets on one game. Each side lists tickets with price, line, sharp.size, sharp.vsUsual, form, and the record in that market. No wallet names.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -80,7 +80,7 @@ const TOOLS = [
     name: 'sport_action',
     title: 'Sport action',
     annotations: { ...READ, title: 'Sport action' },
-    description: 'Tonight’s confirmed action for one sport, one rollup per game. Dollars and combined records only.',
+    description: 'Tonight’s confirmed tickets for one sport. Each game lists tickets with price, line, sharp.size, and sharp.vsUsual. No wallet names.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -906,7 +906,7 @@ async function callTool(name, args, ctx) {
     const hits = games.filter((g) => (!sport || g.sport === sport) && gameMatches(g, query));
     const shown = publishBoard(hits, profiles, prices, etDate()).slice(0, 5).map(({ gameKey, ...pub }) => pub);
     return textBlock({
-      source: 'Confirmed action, $500 and up, rolled up',
+      source: 'Confirmed tickets, $500 and up. Each ticket has sharp.size and sharp.vsUsual. No wallet names.',
       scannedAt,
       query,
       matches: shown,
@@ -927,7 +927,7 @@ async function callTool(name, args, ctx) {
     }
     const sports = [...bySport.entries()].map(([code, list]) => ({ sport: code, games: list }));
     return textBlock({
-      source: 'Confirmed action, $500 and up, rolled up',
+      source: 'Confirmed tickets, $500 and up. Each ticket has sharp.size and sharp.vsUsual. No wallet names.',
       scannedAt,
       sports,
     });

@@ -39,6 +39,12 @@ test('today is the first tool and every tool is a read', async () => {
   assert.equal(tools.every((t) => t.annotations.readOnlyHint === true), true);
   assert.equal(tools.every((t) => t.annotations.openWorldHint === false), true);
   assert.equal(TOOLS[0].name, 'today');
+  for (const name of ['today', 'locked_card']) {
+    const tool = tools.find((t) => t.name === name);
+    assert.match(tool.description, /actionTab/);
+    assert.match(tool.description, /vsUsual/);
+    assert.doesNotMatch(tool.description, /staking math/);
+  }
 });
 
 test('a staked lock is public and a zero is not', () => {
