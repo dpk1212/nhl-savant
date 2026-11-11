@@ -12,15 +12,41 @@ const MIN_DOLLARS = 500;
 const PROTOCOL = '2025-03-26';
 
 const INSTRUCTIONS = [
-  'NHL Savant Sharp Flow publishes two things: the locked card, and confirmed action rolled up by game.',
-  'Report those figures as given.',
-  'Do not name wallets. Do not explain how a stake was chosen. Do not invent a model, a rank, or a reason.',
-  'A ticket under $500 is not in the action rollup. A locked play is included only when it is actually staked.',
+  'When someone asks what to know today, call today once and answer from that payload.',
+  'Lead with the locked plays in start order, then where the confirmed money is on those same games.',
+  'The locked play and the money side can differ. Say so in one line when they do.',
+  'If every stake is the same size, say that once.',
+  'Do not name wallets. Do not explain how a stake was chosen. Do not invent a rank.',
+  'Do not add a section listing what this feed does not contain.',
+  'Do not ask for another tool call to finish the same day.',
 ].join(' ');
+
+const READ = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+};
 
 const TOOLS = [
   {
+    name: 'today',
+    title: "Today's Sharp Flow",
+    description: 'The whole day in one read: every staked lock, and the confirmed money on those same games. Use this for any question about today.',
+    annotations: { ...READ, title: "Today's Sharp Flow" },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        date: { type: 'string', description: 'Game date YYYY-MM-DD in US Eastern. Defaults to today.' },
+        sport: { type: 'string', description: 'Optional sport, such as NHL, NBA, NFL, CFB, CBB.' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'locked_card',
+    title: 'Locked card',
+    annotations: { ...READ, title: 'Locked card' },
     description: 'Staked Sharp Flow locks for a date. Each row is the play, the price, the units, and the result if the game is graded. No staking math.',
     inputSchema: {
       type: 'object',
@@ -33,6 +59,8 @@ const TOOLS = [
   },
   {
     name: 'game_action',
+    title: 'Game action',
+    annotations: { ...READ, title: 'Game action' },
     description: 'Confirmed action on one game, rolled up by market and side. Dollars, how many confirmed wallets, and their combined record. No names.',
     inputSchema: {
       type: 'object',
@@ -46,6 +74,8 @@ const TOOLS = [
   },
   {
     name: 'sport_action',
+    title: 'Sport action',
+    annotations: { ...READ, title: 'Sport action' },
     description: 'Tonight’s confirmed action for one sport, one rollup per game. Dollars and combined records only.',
     inputSchema: {
       type: 'object',
@@ -336,6 +366,21 @@ function shortsInGames(games) {
   return [...shorts];
 }
 
+function buildToday(plays, games, profiles) {
+  return (plays || []).map((play) => {
+    const sport = String(play.sport || '').toUpperCase();
+    const game = (games || []).find((g) => (
+      String(g.sport || '').toUpperCase() === sport
+      && gameMatches(g, `${play.away || ''} ${play.home || ''}`)
+    ));
+    const pub = game ? publicGame(game, profiles || new Map()) : null;
+    return {
+      ...play,
+      action: pub && pub.markets.length ? pub.markets : null,
+    };
+  });
+}
+
 function textBlock(value) {
   return {
     content: [{ type: 'text', text: JSON.stringify(value, null, 2) }],
@@ -352,6 +397,23 @@ function toolError(message) {
 
 async function callTool(name, args, ctx) {
   const a = args || {};
+  if (name === 'today') {
+    const date = a.date || etDate();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toolError('date must be YYYY-MM-DD');
+    const sport = a.sport ? String(a.sport).toUpperCase() : null;
+    const [plays, action] = await Promise.all([
+      ctx.loadLocked({ date, sport }),
+      ctx.loadAction(),
+    ]);
+    const games = sport ? action.games.filter((g) => g.sport === sport) : action.games;
+    return textBlock({
+      source: 'Sharp Flow day. Locked card, with confirmed action of $500 and up on those games.',
+      date,
+      sport,
+      scannedAt: action.scannedAt,
+      plays: buildToday(plays, games, action.profiles),
+    });
+  }
   if (name === 'locked_card') {
     const date = a.date || etDate();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toolError('date must be YYYY-MM-DD');
@@ -480,6 +542,7 @@ module.exports = {
   indexFeeds,
   gameMatches,
   publicGame,
+  buildToday,
   shortsInGames,
   handleMcpMessage,
   redirectAllowed,

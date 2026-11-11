@@ -7,6 +7,7 @@ const {
   indexFeeds,
   publicGame,
   gameMatches,
+  TOOLS,
   handleMcpMessage,
   redirectAllowed,
   issueCode,
@@ -25,9 +26,13 @@ test('initialize names the connector', async () => {
   assert.equal(reply.result.capabilities.tools.listChanged, false);
 });
 
-test('tools are the locked card and the two rollups', async () => {
+test('today is the first tool and every tool is a read', async () => {
   const reply = await handleMcpMessage({ jsonrpc: '2.0', id: 2, method: 'tools/list' }, {});
-  assert.deepEqual(reply.result.tools.map((t) => t.name), ['locked_card', 'game_action', 'sport_action']);
+  const tools = reply.result.tools;
+  assert.deepEqual(tools.map((t) => t.name), ['today', 'locked_card', 'game_action', 'sport_action']);
+  assert.equal(tools.every((t) => t.annotations.readOnlyHint === true), true);
+  assert.equal(tools.every((t) => t.annotations.openWorldHint === false), true);
+  assert.equal(TOOLS[0].name, 'today');
 });
 
 test('a staked lock is public and a zero is not', () => {
@@ -121,6 +126,57 @@ test('action rollup keeps dollars and drops the wallet', () => {
   assert.equal(home.confirmed, 1);
   assert.equal(home.book.record, '6-4');
   assert.equal(home.last30.record, '3-1');
+});
+
+test('today attaches the money and keeps the locked side', async () => {
+  const feeds = indexFeeds([{
+    market: 'ML',
+    data: {
+      NHL: {
+        nsh_ana: {
+          away: 'Predators',
+          home: 'Ducks',
+          positions: [
+            { wallet: '0xabc123456789', name: 'Whale', side: 'home', invested: 800 },
+            { wallet: '0xdef123456780', side: 'away', invested: 900 },
+          ],
+        },
+      },
+    },
+  }]);
+  const profiles = new Map([
+    ['456789', { bySport: { NHL: { whitelistTier: 'CONFIRMED', positions: { n: 10, wins: 6, losses: 4, invested: 1000, settledPnl: 100 } } } }],
+    ['456780', { bySport: { NHL: { whitelistTier: 'CONFIRMED', positions: { n: 8, wins: 3, losses: 5, invested: 800, settledPnl: -40 } } } }],
+  ]);
+  const reply = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 9,
+    method: 'tools/call',
+    params: { name: 'today', arguments: { date: '2026-11-11' } },
+  }, {
+    loadLocked: async () => [{
+      sport: 'NHL',
+      away: 'Predators',
+      home: 'Ducks',
+      pick: 'Ducks',
+      market: 'ML',
+      side: 'home',
+      units: 1,
+      status: 'locked',
+    }],
+    loadAction: async () => ({
+      scannedAt: '2026-11-11T15:00:00Z',
+      profiles,
+      games: feeds.games,
+    }),
+  });
+  const body = JSON.parse(reply.result.content[0].text);
+  assert.equal(body.plays.length, 1);
+  assert.equal(body.plays[0].pick, 'Ducks');
+  assert.equal(body.plays[0].action[0].moneyOn, 'away');
+  const text = JSON.stringify(body);
+  assert.equal(text.includes('Whale'), false);
+  assert.equal(text.includes('0x'), false);
 });
 
 test('oauth code checks the challenge and rejects other sites', () => {

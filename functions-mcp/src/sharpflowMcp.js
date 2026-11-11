@@ -10,6 +10,7 @@ const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
 const {
   SERVER_NAME,
+  TOOLS,
   etDate,
   publicLockedSide,
   indexFeeds,
@@ -246,7 +247,7 @@ const sharpflowMcp = onRequest({
         name: SERVER_NAME,
         transport: 'streamable-http',
         authentication: 'none, or the optional OAuth handshake on this same URL',
-        tools: ['locked_card', 'game_action', 'sport_action'],
+        tools: TOOLS.map((tool) => tool.name),
       });
       return;
     }
