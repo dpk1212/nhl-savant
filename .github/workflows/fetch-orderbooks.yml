@@ -22,7 +22,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: fetch-orderbooks
+  # fetch-orderbooks is held by a run GitHub will not cancel (2026-11-11).
+  group: fetch-orderbooks-2
   cancel-in-progress: false
 
 jobs:
@@ -156,16 +157,19 @@ jobs:
             exit 0
           fi
 
-          inprog=$(gh run list \
+          cutoff=$(date -u -d '20 minutes ago' +%Y-%m-%dT%H:%M:%SZ)
+          fresh=0
+          while IFS= read -r ts; do
+            [ -n "$ts" ] && [[ "$ts" > "$cutoff" ]] && fresh=$((fresh + 1))
+          done < <(gh run list \
             --workflow fetch-orderbooks.yml \
             --repo "$GH_REPO" \
             --status in_progress \
             --limit 10 \
-            --json databaseId \
-            --jq 'length' 2>/dev/null || echo 0)
-          inprog=$((10#${inprog:-0}))
-          if [ "$inprog" -gt 1 ]; then
-            echo "### Chain skipped — ${inprog} in_progress runs (sibling still working)"
+            --json updatedAt \
+            --jq '.[].updatedAt' 2>/dev/null || true)
+          if [ "$fresh" -gt 1 ]; then
+            echo "### Chain skipped — ${fresh} recently active runs (sibling still working)"
             exit 0
           fi
 

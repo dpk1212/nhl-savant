@@ -47,16 +47,17 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: fetch-polymarket
+  # fetch-polymarket is held by a run GitHub will not cancel (2026-11-11).
+  group: fetch-polymarket-2
   cancel-in-progress: false
 
 jobs:
   fetch-market-data:
     runs-on: ubuntu-latest
-    # 100m clears 12× ~7m daytime cycles + setup. 58m timed out mid-loop on
-    # 2026-07-29. Chain step is always() so a timeout/cancel still dispatches
-    # (queued/in_progress guards prevent a double chain).
-    timeout-minutes: 100
+    # 140m: 100m killed the loop on 2026-11-11 during cycle 11, after cycle 10
+    # had already published (~9.5m per cycle). 58m did the same on 2026-07-29.
+    # Chain step is always() so a timeout still dispatches.
+    timeout-minutes: 140
     permissions:
       contents: write
       actions: write   # required for end-of-run self-dispatch (gh workflow run)
@@ -486,19 +487,21 @@ jobs:
             exit 0
           fi
 
-          # Also skip if an in-progress sibling already exists beyond ourselves
-          # (race: two finishers both try to chain). Prefer queued check above;
-          # in_progress>1 means concurrency will serialize the next starter.
-          inprog=$(gh run list \
+          # Count only runs that are still logging. A finished run GitHub left
+          # in_progress (2026-11-11) must not block the chain.
+          cutoff=$(date -u -d '20 minutes ago' +%Y-%m-%dT%H:%M:%SZ)
+          fresh=0
+          while IFS= read -r ts; do
+            [ -n "$ts" ] && [[ "$ts" > "$cutoff" ]] && fresh=$((fresh + 1))
+          done < <(gh run list \
             --workflow fetch-polymarket.yml \
             --repo "$GH_REPO" \
             --status in_progress \
             --limit 10 \
-            --json databaseId \
-            --jq 'length' 2>/dev/null || echo 0)
-          inprog=$((10#${inprog:-0}))
-          if [ "$inprog" -gt 1 ]; then
-            echo "### Chain skipped — ${inprog} in_progress runs (sibling still working)"
+            --json updatedAt \
+            --jq '.[].updatedAt' 2>/dev/null || true)
+          if [ "$fresh" -gt 1 ]; then
+            echo "### Chain skipped — ${fresh} recently active runs (sibling still working)"
             exit 0
           fi
 

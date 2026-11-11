@@ -23,6 +23,7 @@ import {
   MY_SHARP_ALERT_COLLECTION,
   MY_SHARP_ALERT_ROSTER_ID,
   emptyAlertPrefs,
+  oneSignalNoDevice,
   planMySharpAlerts,
   readAlertMember,
 } from '../src/lib/mySharpAlerts.js';
@@ -280,6 +281,7 @@ async function sendPush({ uid, alert }) {
     }),
   });
   const json = await res.json().catch(() => ({}));
+  if (res.ok && oneSignalNoDevice(json)) return { skipped: 'no-device' };
   if (!res.ok || (json.errors && !json.id)) {
     const msg = json?.errors ? JSON.stringify(json.errors) : res.statusText;
     throw new Error(`OneSignal ${res.status}: ${msg}`);
@@ -323,6 +325,7 @@ async function main() {
 
   let sent = 0;
   let skipped = 0;
+  let noDevice = 0;
   for (const user of targets) {
     const mine = rowsForUser(boardRows, user.sharps);
     const mineShorts = new Set(Object.keys(user.sharps?.members || {}));
@@ -349,13 +352,18 @@ async function main() {
       }
       console.log(`→ ${user.uid.slice(0, 6)} [${alert.reason}] ${alert.body}`);
       if (DRY_RUN) continue;
-      const id = await sendPush({ uid: user.uid, alert });
+      const pushed = await sendPush({ uid: user.uid, alert });
+      if (pushed && pushed.skipped === 'no-device') {
+        noDevice += 1;
+        console.log(`no push device ${user.uid.slice(0, 6)} — skipping the rest of this seat`);
+        break;
+      }
       await markSent(db, user.uid, alert);
       sent += 1;
-      console.log(`sent ${id || '(no id)'} ${alert.stamp}`);
+      console.log(`sent ${pushed || '(no id)'} ${alert.stamp}`);
     }
   }
-  console.log(`Done. sent=${sent} already-sent=${skipped}${DRY_RUN ? ' (dry run, nothing sent)' : ''}`);
+  console.log(`Done. sent=${sent} already-sent=${skipped} no-device=${noDevice}${DRY_RUN ? ' (dry run, nothing sent)' : ''}`);
 }
 
 main().catch((err) => {
