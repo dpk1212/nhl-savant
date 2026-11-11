@@ -3,7 +3,7 @@
  * Hit edge on the tape = that WR minus implied of this ticket’s gold chip.
  *
  * Juice bands are American, capped at the chalk end so −225 is not mixed
- * with −400. V12 AGS-U · Firestore · 2026-06-01 → 2026-09-17.
+ * with −400. V12 AGS-U · Firestore · 2026-06-01 → 2026-11-10.
  * Historical juice is max(flagged, Pinnacle) — retail gold was never stamped.
  *
  * 3-way cells with n<20 fall back to market × juice. Never fall back to
@@ -12,37 +12,50 @@
 
 /** unit|market|band — only n≥20. */
 const CELLS = {
-  '≤1u|ml|plus': { wr: 50.0, n: 66 },
-  '≤1u|ml|pick': { wr: 47.8, n: 46 },
-  '≤1u|ml|n130': { wr: 54.8, n: 31 },
-  '≤1u|total|plus': { wr: 36.1, n: 36 },
-  '≤1u|total|pick': { wr: 52.1, n: 48 },
-  '1.5–2.5u|ml|plus': { wr: 41.6, n: 89 },
-  '1.5–2.5u|total|pick': { wr: 42.3, n: 26 },
-  '3u|ml|pick': { wr: 54.5, n: 22 },
-  '3u|ml|n130': { wr: 65.8, n: 38 },
-  '3u|ml|n175': { wr: 60.0, n: 20 },
-  '3u|total|plus': { wr: 50.0, n: 28 },
-  '3u|total|pick': { wr: 55.2, n: 67 },
-  '4–5u|ml|pick': { wr: 68.2, n: 22 },
-  '4–5u|ml|n130': { wr: 63.3, n: 30 },
-  '4–5u|ml|n175': { wr: 56.5, n: 23 },
-  '4–5u|total|pick': { wr: 50.5, n: 95 },
+  '≤1u|ml|plus': { wr: 47.1, n: 119 },
+  '≤1u|ml|pick': { wr: 50.8, n: 59 },
+  '≤1u|ml|n130': { wr: 55.6, n: 36 },
+  '≤1u|ml|n175': { wr: 43.5, n: 23 },
+  '≤1u|spread|plus': { wr: 42.3, n: 26 },
+  '≤1u|total|plus': { wr: 43.8, n: 48 },
+  '≤1u|total|pick': { wr: 52.8, n: 72 },
+  '1.5–2.5u|ml|plus': { wr: 42.5, n: 146 },
+  '1.5–2.5u|spread|plus': { wr: 48.1, n: 52 },
+  '1.5–2.5u|spread|pick': { wr: 58.7, n: 63 },
+  '1.5–2.5u|total|plus': { wr: 59.3, n: 27 },
+  '1.5–2.5u|total|pick': { wr: 42.4, n: 59 },
+  '3u|ml|plus': { wr: 61.3, n: 31 },
+  '3u|ml|pick': { wr: 52.8, n: 36 },
+  '3u|ml|n130': { wr: 62.3, n: 53 },
+  '3u|ml|n175': { wr: 69.2, n: 39 },
+  '3u|ml|n225': { wr: 48.0, n: 25 },
+  '3u|spread|plus': { wr: 28.6, n: 21 },
+  '3u|spread|pick': { wr: 56.8, n: 37 },
+  '3u|total|plus': { wr: 47.5, n: 40 },
+  '3u|total|pick': { wr: 56.7, n: 90 },
+  '4–5u|ml|plus': { wr: 52.0, n: 25 },
+  '4–5u|ml|pick': { wr: 70.7, n: 41 },
+  '4–5u|ml|n130': { wr: 61.1, n: 54 },
+  '4–5u|ml|n175': { wr: 52.5, n: 40 },
+  '4–5u|total|pick': { wr: 50.5, n: 107 },
 };
 
 /** market|band — fallback when the 3-way cell is thin. */
 const MARKET_BAND = {
-  'ml|plus': { wr: 48.1, n: 185 },
-  'ml|pick': { wr: 53.8, n: 106 },
-  'ml|n130': { wr: 64.1, n: 117 },
-  'ml|n175': { wr: 56.9, n: 72 },
-  'ml|n225': { wr: 60.0, n: 35 },
-  'ml|n300': { wr: 75.0, n: 20 },
-  'ml|n400': { wr: 88.6, n: 35 },
-  'spread|plus': { wr: 46.0, n: 50 },
-  'spread|pick': { wr: 48.8, n: 41 },
-  'total|plus': { wr: 46.3, n: 95 },
-  'total|pick': { wr: 51.8, n: 251 },
+  'ml|plus': { wr: 46.6, n: 324 },
+  'ml|pick': { wr: 57.5, n: 160 },
+  'ml|n130': { wr: 61.4, n: 171 },
+  'ml|n175': { wr: 59.7, n: 129 },
+  'ml|n225': { wr: 62.7, n: 67 },
+  'ml|n300': { wr: 81.6, n: 49 },
+  'ml|n400': { wr: 89.8, n: 59 },
+  'spread|plus': { wr: 42.2, n: 109 },
+  'spread|pick': { wr: 56.5, n: 138 },
+  'spread|n130': { wr: 61.5, n: 26 },
+  'spread|n175': { wr: 54.5, n: 22 },
+  'total|plus': { wr: 48.6, n: 138 },
+  'total|pick': { wr: 51.6, n: 343 },
+  'total|n130': { wr: 63.0, n: 27 },
 };
 
 const MKT_LABEL = { ml: 'ML', spread: 'Spread', total: 'Total' };
