@@ -100,7 +100,7 @@ Get Dimers Pro
 
 ## Featured offers
 
-All  Sportsbooks  Prediction Markets  DFS
+All  Sportsbooks  Prediction Markets
 
 ![Swipe icon](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20)Swipe across to view more offers
 
@@ -172,18 +172,6 @@ T&Cs apply.
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/c263f0f0-a7a8-11f1-b05a-3f2735d232a4-UD26_PrimaryMark_OverDark.png?auto=format,compress&h=200)
-
-TRENDING
-
-T&Cs apply.
-
-[Claim Now](https://platform.routy.app/route/503334?affid=10466&ts=5015351&src=main-column)
-
-[Read review](https://www.dimers.com/dfs/underdog-fantasy)
-
-How to claim
-
 ![logo](https://imgix.cosmicjs.com/682438f0-bde9-11f1-af12-19c569209b1c-fd-predicts.png?auto=format,compress&h=200)
 
 TRENDING
@@ -220,7 +208,7 @@ How to claim
 
 ![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
 
-RECOMMENDED
+LIMITED-TIME
 
 T&Cs apply.
 
@@ -230,15 +218,15 @@ T&Cs apply.
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/9d7e0a60-ceaa-11ef-ac4c-9fb95c248ff6-HorizontalPrimaryDark-1.png?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/1092c8d0-116c-11ef-911e-9f1d49670742-BetRivers-Big.png?auto=format,compress&h=200)
 
-DFS & PICKS
+NEW PLAYERS
 
 T&Cs apply.
 
-[Claim Now](https://engagebetr.onelink.me/auSX/Dimers?src=main-column&promo=true)
+[Claim now](https://affiliates.routy.app/route/319953?affId=10466&ts=5015351&src=main-column&promo=true)
 
-[Read review](https://www.dimers.com/dfs/betr)
+[Read review](https://www.dimers.com/betting/betrivers-sportsbook)
 
 How to claim
 
