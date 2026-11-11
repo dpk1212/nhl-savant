@@ -29,7 +29,7 @@ import {
 import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
 import { resolveCFBTeam, cfbTeamsMatch } from './lib/cfbTeams.js';
-import { cbbTeamsMatch } from './lib/cbbTeams.js';
+import { cbbTeamsMatch, collapseSameCbbFinals } from './lib/cbbTeams.js';
 import {
   resolveATPPlayer,
   playersMatch,
@@ -1132,7 +1132,17 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
       else if (reversedMatch) hits.push({ g, flip: true });
     }
     const exact = hits.filter(h => !pos.date || h.g.dateET === pos.date);
-    const pick = exact.length === 1 ? exact[0] : (exact.length === 0 && hits.length === 1 ? hits[0] : null);
+    const sameScore = (a, b) => {
+      const sa = a.flip ? [a.g.homeScore, a.g.awayScore] : [a.g.awayScore, a.g.homeScore];
+      const sb = b.flip ? [b.g.homeScore, b.g.awayScore] : [b.g.awayScore, b.g.homeScore];
+      return sa[0] === sb[0] && sa[1] === sb[1];
+    };
+    // Two boards naming the same final used to look like two games and the
+    // bet stayed pending. Agreeing scores are one game. A split score stays off.
+    let pick = null;
+    if (exact.length === 1) pick = exact[0];
+    else if (exact.length > 1 && exact.every((h) => sameScore(h, exact[0]))) pick = exact[0];
+    else if (exact.length === 0 && hits.length === 1) pick = hits[0];
     if (!pick) return null;
     if (pick.flip) return { awayScore: pick.g.homeScore, homeScore: pick.g.awayScore };
     return { awayScore: pick.g.awayScore, homeScore: pick.g.homeScore };
@@ -1638,6 +1648,11 @@ async function main() {
       const espn = await fetchESPNCBBFinalGames(d);
       cbbFinals.push(...ncaa, ...espn);
       console.log(`CBB finals ${d}: NCAA ${ncaa.length}, ESPN ${espn.length}`);
+    }
+    const beforeCollapse = cbbFinals.length;
+    cbbFinals = collapseSameCbbFinals(cbbFinals);
+    if (beforeCollapse !== cbbFinals.length) {
+      console.log(`CBB finals collapsed ${beforeCollapse} → ${cbbFinals.length} (same game on both boards)`);
     }
   }
 

@@ -1,7 +1,7 @@
 /**
  * CBB name resolution. Run: node scripts/lib/_test_cbbTeams.mjs
  */
-import { cbbTeamsMatch, resolveCBBTeam } from './cbbTeams.js';
+import { cbbTeamsMatch, collapseSameCbbFinals, resolveCBBTeam } from './cbbTeams.js';
 
 let failed = 0;
 function assert(cond, msg) {
@@ -47,6 +47,12 @@ const same = [
   ['Southern Jaguars', 'Southern U.'],
   ['Ball State Cardinals', 'Ball St.'],
   ['Miami Hurricanes', 'Miami (FL)'],
+  ['Detroit Titans', 'Detroit Mercy Titans'],
+  ['Detroit Titans', 'Detroit Mercy'],
+  ['Army Black Knights', 'Army West Point'],
+  ['Army Black Knights', 'Army'],
+  ['Alcorn State Braves', 'Alcorn'],
+  ['Alcorn State Braves', 'Alcorn St.'],
 ];
 for (const [ours, board] of same) {
   assert(cbbTeamsMatch(ours, board), `${ours} = ${board}`);
@@ -91,6 +97,18 @@ for (const [a, b] of different) {
 }
 
 assert(resolveCBBTeam('Paine Lions') === null, 'Paine is not a D1 catalog school');
+assert(!cbbTeamsMatch('Detroit Titans', 'Cal State Fullerton Titans'), 'Detroit Titans ≠ Fullerton');
+
+console.log('\nBoth boards, one game');
+const doubled = collapseSameCbbFinals([
+  { dateET: '2026-11-10', awayTeam: 'Belmont', homeTeam: 'Lipscomb', awayScore: 75, homeScore: 88 },
+  { dateET: '2026-11-10', awayTeam: 'Belmont Bruins', homeTeam: 'Lipscomb Bisons', awayScore: 75, homeScore: 88 },
+  { dateET: '2026-11-10', awayTeam: 'Detroit Titans', homeTeam: 'Xavier Musketeers', awayScore: 70, homeScore: 80 },
+  { dateET: '2026-11-10', awayTeam: 'Detroit Mercy', homeTeam: 'Xavier', awayScore: 70, homeScore: 80 },
+  { dateET: '2026-11-10', awayTeam: 'Kansas', homeTeam: 'Kentucky', awayScore: 89, homeScore: 69 },
+  { dateET: '2026-11-10', awayTeam: 'Kansas Jayhawks', homeTeam: 'Kentucky Wildcats', awayScore: 80, homeScore: 90 },
+]);
+assert(doubled.length === 4, `agreeing copies collapse, a split score stays (${doubled.length})`);
 
 if (failed) {
   console.error(`\n${failed} failed`);

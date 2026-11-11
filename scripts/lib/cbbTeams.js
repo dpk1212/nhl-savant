@@ -111,6 +111,10 @@ const TOKEN_EXPAND = {
 function schoolKey(raw) {
   let s = fold(raw);
   if (!s) return '';
+  // Old Polymarket name. The school is Detroit Mercy; the mascot is still Titans.
+  if (s === 'detroit titans') s = 'detroit mercy titans';
+  // NCAA short for Army. "West Point" is not a second school.
+  if (s === 'army west point') s = 'army black knights';
   for (const m of MASCOTS) {
     if (s === m) return '';
     if (s.endsWith(' ' + m)) {
@@ -132,6 +136,8 @@ function schoolKey(raw) {
   if (!(tokens[0] === 'boston' && tokens[1] === 'college')) {
     tokens = tokens.filter(w => w !== 'college');
   }
+  // NCAA prints "Alcorn". The only Division I school is Alcorn State.
+  if (tokens.length === 1 && tokens[0] === 'alcorn') tokens = ['alcorn', 'st'];
   return tokens.join(' ');
 }
 
@@ -163,4 +169,29 @@ export function cbbTeamsMatch(a, b) {
   const left = resolveCBBTeam(a);
   const right = resolveCBBTeam(b);
   return !!(left && right && left === right);
+}
+
+/**
+ * NCAA and ESPN both publish the same final. Same schools, same date, same
+ * score is one game. A second copy with a different score stays, so the
+ * matcher can still refuse a real disagreement.
+ */
+export function collapseSameCbbFinals(games) {
+  const kept = [];
+  for (const g of games || []) {
+    const twin = kept.find((k) => sameCbbFinal(k, g));
+    if (twin) continue;
+    kept.push(g);
+  }
+  return kept;
+}
+
+function sameCbbFinal(a, b) {
+  if (!a || !b) return false;
+  if ((a.dateET || null) !== (b.dateET || null)) return false;
+  const sameOrder = cbbTeamsMatch(a.awayTeam, b.awayTeam) && cbbTeamsMatch(a.homeTeam, b.homeTeam);
+  if (sameOrder) return a.awayScore === b.awayScore && a.homeScore === b.homeScore;
+  const flipped = cbbTeamsMatch(a.awayTeam, b.homeTeam) && cbbTeamsMatch(a.homeTeam, b.awayTeam);
+  if (flipped) return a.awayScore === b.homeScore && a.homeScore === b.awayScore;
+  return false;
 }
