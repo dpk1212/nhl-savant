@@ -213,3 +213,23 @@ export function planMySharpAlerts({ prefs, rows = [], exits = [] } = {}) {
 
   return alerts;
 }
+
+/**
+ * OneSignal answers 200 with no notification id when the Firebase uid
+ * has no push device. That seat is skipped. Any other error is a real failure.
+ */
+export function oneSignalNoDevice(json) {
+  if (!json || json.id) return false;
+  const errors = json.errors;
+  if (!errors) return false;
+  if (Array.isArray(errors)) {
+    if (!errors.length) return false;
+    return errors.every((item) => {
+      const text = String(item).toLowerCase();
+      return text.includes('not subscribed') || text.includes('invalid alias');
+    });
+  }
+  if (typeof errors !== 'object') return false;
+  const keys = Object.keys(errors);
+  return keys.length === 1 && keys[0] === 'invalid_aliases';
+}
