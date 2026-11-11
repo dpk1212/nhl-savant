@@ -47,7 +47,7 @@ const TOOLS = [
     name: 'locked_card',
     title: 'Locked card',
     annotations: { ...READ, title: 'Locked card' },
-    description: 'Staked Sharp Flow locks for a date. Each row is the play, the price, the units, and the result if the game is graded. No staking math.',
+    description: 'The whole day in one read: every staked lock, and the confirmed money on those same games. Dollars, confirmed counts, and combined records are on each play under action. No names and no staking math.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -395,37 +395,28 @@ function toolError(message) {
   };
 }
 
+async function dayPayload(args, ctx) {
+  const a = args || {};
+  const date = a.date || etDate();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toolError('date must be YYYY-MM-DD');
+  const sport = a.sport ? String(a.sport).toUpperCase() : null;
+  const [plays, action] = await Promise.all([
+    ctx.loadLocked({ date, sport }),
+    ctx.loadAction(),
+  ]);
+  const games = sport ? action.games.filter((g) => g.sport === sport) : action.games;
+  return textBlock({
+    source: 'Sharp Flow day. Each play is a staked lock. action on that play is the confirmed money of $500 and up on the same game: dollars, how many confirmed wallets, and their combined record. No individual names.',
+    date,
+    sport,
+    scannedAt: action.scannedAt,
+    plays: buildToday(plays, games, action.profiles),
+  });
+}
+
 async function callTool(name, args, ctx) {
   const a = args || {};
-  if (name === 'today') {
-    const date = a.date || etDate();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toolError('date must be YYYY-MM-DD');
-    const sport = a.sport ? String(a.sport).toUpperCase() : null;
-    const [plays, action] = await Promise.all([
-      ctx.loadLocked({ date, sport }),
-      ctx.loadAction(),
-    ]);
-    const games = sport ? action.games.filter((g) => g.sport === sport) : action.games;
-    return textBlock({
-      source: 'Sharp Flow day. Locked card, with confirmed action of $500 and up on those games.',
-      date,
-      sport,
-      scannedAt: action.scannedAt,
-      plays: buildToday(plays, games, action.profiles),
-    });
-  }
-  if (name === 'locked_card') {
-    const date = a.date || etDate();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toolError('date must be YYYY-MM-DD');
-    const sport = a.sport ? String(a.sport).toUpperCase() : null;
-    const plays = await ctx.loadLocked({ date, sport });
-    return textBlock({
-      source: 'Sharp Flow locked card',
-      date,
-      sport,
-      plays,
-    });
-  }
+  if (name === 'today' || name === 'locked_card') return dayPayload(a, ctx);
   if (name === 'game_action') {
     const query = String(a.query || '').trim();
     if (!query) return toolError('query is required');

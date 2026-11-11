@@ -177,6 +177,31 @@ test('today attaches the money and keeps the locked side', async () => {
   const text = JSON.stringify(body);
   assert.equal(text.includes('Whale'), false);
   assert.equal(text.includes('0x'), false);
+
+  const card = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 10,
+    method: 'tools/call',
+    params: { name: 'locked_card', arguments: { date: '2026-11-11' } },
+  }, {
+    loadLocked: async () => [{
+      sport: 'NHL',
+      away: 'Predators',
+      home: 'Ducks',
+      pick: 'Ducks',
+      market: 'ML',
+      side: 'home',
+      units: 1,
+      status: 'locked',
+    }],
+    loadAction: async () => ({
+      scannedAt: '2026-11-11T15:00:00Z',
+      profiles,
+      games: feeds.games,
+    }),
+  });
+  const cardBody = JSON.parse(card.result.content[0].text);
+  assert.equal(cardBody.plays[0].action[0].moneyOn, 'away');
 });
 
 test('oauth code checks the challenge and rejects other sites', () => {
