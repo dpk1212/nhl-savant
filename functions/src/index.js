@@ -14,7 +14,6 @@ const { updateBetResults, triggerBetUpdate } = require('./betTracking');
 const { ncaaProxy } = require('./ncaaProxy');
 const { updateBasketballBetResults, triggerBasketballBetGrading } = require('./basketballBetGrading');
 const { sendLockAlerts, triggerLockAlerts } = require('./sendLockAlerts');
-const { sharpflowMcp } = require('./sharpflowMcp');
 
 exports.stripeWebhook = handleStripeWebhook;
 exports.createUserDocument = onUserCreated;
@@ -30,5 +29,4 @@ exports.updateBasketballBetResults = updateBasketballBetResults;
 exports.triggerBasketballBetGrading = triggerBasketballBetGrading;
 exports.sendLockAlerts = sendLockAlerts;
 exports.triggerLockAlerts = triggerLockAlerts;
-exports.sharpflowMcp = sharpflowMcp;
 

@@ -205,7 +205,7 @@ function publicLockedSide(pick, sideKey, market) {
     odds: fmtOdds(odds),
     toWin: toWin(odds, units),
     status: graded ? outcome.toLowerCase() : 'locked',
-    score: Number.isFinite(awayScore) && Number.isFinite(homeScore)
+    score: graded && Number.isFinite(awayScore) && Number.isFinite(homeScore)
       ? { away: awayScore, home: homeScore }
       : null,
   };

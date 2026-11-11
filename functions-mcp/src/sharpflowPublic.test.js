@@ -37,7 +37,7 @@ test('a staked lock is public and a zero is not', () => {
     away: 'Predators',
     home: 'Ducks',
     commenceTime: 1794438600000,
-    result: { awayScore: null, homeScore: null },
+    result: { awayScore: 0, homeScore: 0 },
     sides: {
       home: {
         lockStage: 'LOCKED',
@@ -62,6 +62,7 @@ test('a staked lock is public and a zero is not', () => {
   assert.equal(home.odds, '-129');
   assert.equal(home.units, 1);
   assert.equal(home.status, 'locked');
+  assert.equal(home.score, null);
   assert.equal(JSON.stringify(home).includes('v8_'), false);
   assert.equal(JSON.stringify(home).includes('secret'), false);
 });
