@@ -272,8 +272,8 @@ function MetricStrip({
         color: C.text,
         keepLabel: true,
         title: hit.scope === 'unit-market-odds'
-          ? `Our ${hit.label} book hits ${wr}% (n=${hit.n}, Jun 1–Sep 17). Same unit, market, and juice band as this ticket.`
-          : `Our ${hit.label} book hits ${wr}% (n=${hit.n}, Jun 1–Sep 17). Same market and juice band — this unit×juice cell is too thin (n<20).`,
+          ? `Our ${hit.label} book hits ${wr}% (n=${hit.n}, Jun 1–Nov 10). Same unit, market, and juice band as this ticket.`
+          : `Our ${hit.label} book hits ${wr}% (n=${hit.n}, Jun 1–Nov 10). Same market and juice band — this unit×juice cell is too thin (n<20).`,
       });
       if (Number.isFinite(bestImplied)) {
         cells.push({
