@@ -9,8 +9,12 @@
  * A stake already on the other side mutes the rung.
  *
  * 1× to 1.5× → 4u. Under 1× → 2u. Never downsizes a larger stake.
- * Every sport. Moneyline, spread, total.
+ * A favorite juicier than −425 stays where the card already put it.
+ * The rung does not punch back through that mute. Every sport.
+ * Moneyline, spread, total.
  */
+
+export const TOP3_FAV_JUICE = -425;
 
 export const TOP3_PICK_FROM = '2026-10-29';
 export const TOP3_PICK_STAKE_TIER = 'TOP3-PICK';
@@ -223,10 +227,16 @@ export function evaluateTop3Pick({ sport, market, side, pickDate, positions, ran
 }
 
 /** Raise a side to 4u or 2u. A bigger stake already on the side stays. */
-export function applyTop3PickRung({ units, sport, market, side, pickDate, positions, ranks = null, opponentUnits = 0 }) {
+export function applyTop3PickRung({
+  units, sport, market, side, pickDate, positions, ranks = null, opponentUnits = 0, odds = null,
+}) {
   const ev = evaluateTop3Pick({ sport, market, side, pickDate, positions, ranks, opponentUnits });
   const current = Number(units);
   const safe = Number.isFinite(current) && current > 0 ? current : 0;
+  const price = Number(odds);
+  if (Number.isFinite(price) && price < TOP3_FAV_JUICE) {
+    return { ...ev, fires: false, action: 'hold', units: safe, reason: 'fav_juice' };
+  }
   if (!ev.fires) return { ...ev, action: 'hold', units: safe };
   if (safe + 0.001 >= ev.units) return { ...ev, action: 'hold', units: safe };
   return { ...ev, action: safe > 0 ? 'floor' : 'rescue', units: ev.units };
