@@ -139,6 +139,25 @@ test('a pick already on the other side mutes the rung', () => {
   assert.equal(open.units, 4);
 });
 
+test('a side juicier than −425 does not get the rung back', () => {
+  const { ranks } = board();
+  const juicy = applyTop3PickRung({
+    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
+    odds: -1147,
+    positions: [bet({ betMultiplier: 0.8 })],
+  });
+  assert.equal(juicy.fires, false);
+  assert.equal(juicy.units, 0);
+  assert.equal(juicy.reason, 'fav_juice');
+  const atLine = applyTop3PickRung({
+    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
+    odds: -425,
+    positions: [bet({ betMultiplier: 0.8 })],
+  });
+  assert.equal(atLine.action, 'rescue');
+  assert.equal(atLine.units, 2);
+});
+
 test('a favorite, a day before the cutover, and another sport do not fire', () => {
   const { ranks } = board();
   const fav = applyTop3PickRung({

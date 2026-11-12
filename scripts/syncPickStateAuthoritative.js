@@ -4302,6 +4302,7 @@ async function createMissingLockedPicks({
         const tierBeforeTop3 = hcStakeTierCreate;
         top3PolicyCreate = applyTop3PickRung({
           units: peakUnitsApplied,
+          odds: odds ?? null,
           sport,
           market: marketType,
           side,
@@ -4458,6 +4459,22 @@ async function createMissingLockedPicks({
         });
         if (pressUnder5CapCreate.action !== 'EXEMPT') {
           peakUnitsApplied = pressUnder5CapCreate.units;
+        }
+      }
+      // Favorite juice again, after every rung that can put units back.
+      // Top 3, the gap, the door, and the under-5 cap all sit past the
+      // first mute. A price juicier than -425 ends at 0 on every sport.
+      if (peakUnitsApplied > 0 && !isOperatorKilled({ _id: docId }, side, null)) {
+        const favJuiceAfterCreate = applyFavJuiceLastPublish({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          pickDate: TARGET_DATE,
+          priorPolicy: favJuicePolicyCreate,
+        });
+        if (favJuiceAfterCreate.muted) {
+          peakUnitsApplied = 0;
+          favJuicePolicyCreate = favJuiceAfterCreate.policy;
+          hcStakeTierCreate = 'MONITORING';
         }
       }
 
@@ -4844,6 +4861,9 @@ async function createMissingLockedPicks({
         v8Stamps.manualMute = true;
       } else if (cbbV12StakeMuted(sport, TARGET_DATE)) {
         v8Stamps.mutedBy = CBB_MATURE_MUTED_BY;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
+      } else if (favJuicePolicyCreate?.mutedBy && !(peakUnitsApplied > 0)) {
+        v8Stamps.mutedBy = favJuicePolicyCreate.mutedBy;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (edgeUnder5Create?.action === 'MUTE') {
         v8Stamps.mutedBy = edgeUnder5Create.mutedBy;
@@ -6859,6 +6879,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (!skipManualFlinch && isTop3PickLive(pickDate)) {
     top3Policy = applyTop3PickRung({
       units: finalUnitsApplied,
+      odds: sideOdds,
       sport: pick.sport,
       market: mkt,
       side,
@@ -7040,6 +7061,22 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     });
     if (pressUnder5CapPolicy.action !== 'EXEMPT') {
       finalUnitsApplied = pressUnder5CapPolicy.units;
+    }
+  }
+  // Favorite juice again, after every rung that can put units back.
+  // Manual stake never entered the ladder. A price juicier than -425
+  // ends at 0 on every sport, including one the under-5 cap left at 1u.
+  if (!skipManualFlinch && !operatorKilled && finalUnitsApplied > 0) {
+    const favJuiceAfter = applyFavJuiceLastPublish({
+      units: finalUnitsApplied,
+      odds: sideOdds,
+      pickDate,
+      priorPolicy: favJuicePolicy,
+    });
+    if (favJuiceAfter.muted) {
+      finalUnitsApplied = 0;
+      favJuicePolicy = favJuiceAfter.policy;
+      hcStakeTier = 'MONITORING';
     }
   }
 
@@ -7286,6 +7323,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.manualMute = true;
   } else if (cbbMatureMute) {
     patch.mutedBy = CBB_MATURE_MUTED_BY;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  } else if (favJuicePolicy?.mutedBy && !(finalUnitsApplied > 0)) {
+    patch.mutedBy = favJuicePolicy.mutedBy;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (edgeUnder5Policy?.action === 'MUTE') {
     patch.mutedBy = edgeUnder5Policy.mutedBy;
