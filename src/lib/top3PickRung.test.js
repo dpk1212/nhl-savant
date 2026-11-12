@@ -149,13 +149,42 @@ test('a side juicier than −425 does not get the rung back', () => {
   assert.equal(juicy.fires, false);
   assert.equal(juicy.units, 0);
   assert.equal(juicy.reason, 'fav_juice');
+  const held = applyTop3PickRung({
+    units: 1, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
+    odds: -3233,
+    positions: [bet({ betMultiplier: 0.8 })],
+  });
+  assert.equal(held.fires, false);
+  assert.equal(held.units, 1);
+  assert.equal(held.reason, 'fav_juice');
   const atLine = applyTop3PickRung({
     units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
     odds: -425,
     positions: [bet({ betMultiplier: 0.8 })],
   });
-  assert.equal(atLine.action, 'rescue');
-  assert.equal(atLine.units, 2);
+  assert.equal(atLine.fires, false);
+  assert.equal(atLine.action, 'hold');
+  assert.equal(atLine.units, 0);
+  assert.equal(atLine.reason, 'not_pickem');
+});
+
+test('the book on the card is the pick’em, not the −100 receipt', () => {
+  const { ranks } = board();
+  const favorite = applyTop3PickRung({
+    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
+    odds: -257,
+    positions: [bet({ betMultiplier: 0.4, avgPrice: 0.5 })],
+  });
+  assert.equal(favorite.fires, false);
+  assert.equal(favorite.reason, 'not_pickem');
+  assert.equal(favorite.units, 0);
+  const pickem = applyTop3PickRung({
+    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
+    odds: -100,
+    positions: [bet({ betMultiplier: 0.8 })],
+  });
+  assert.equal(pickem.action, 'rescue');
+  assert.equal(pickem.units, 2);
 });
 
 test('a favorite, a day before the cutover, and another sport do not fire', () => {

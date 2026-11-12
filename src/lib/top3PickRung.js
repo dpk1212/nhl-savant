@@ -9,9 +9,11 @@
  * A stake already on the other side mutes the rung.
  *
  * 1× to 1.5× → 4u. Under 1× → 2u. Never downsizes a larger stake.
- * A favorite juicier than −425 stays where the card already put it.
- * The rung does not punch back through that mute. Every sport.
- * Moneyline, spread, total.
+ * `odds` is the book on the card. When it is present it is the pick'em
+ * price: −100 through +120. A −100 Polymarket receipt does not make a
+ * −257 favorite a pick'em. A favorite juicier than −425 stays where the
+ * card already put it. The rung does not punch back through that mute.
+ * Every sport. Moneyline, spread, total.
  */
 
 export const TOP3_FAV_JUICE = -425;
@@ -234,8 +236,12 @@ export function applyTop3PickRung({
   const current = Number(units);
   const safe = Number.isFinite(current) && current > 0 ? current : 0;
   const price = Number(odds);
-  if (Number.isFinite(price) && price < TOP3_FAV_JUICE) {
+  if (Number.isFinite(price) && price !== 0 && price < TOP3_FAV_JUICE) {
     return { ...ev, fires: false, action: 'hold', units: safe, reason: 'fav_juice' };
+  }
+  // The book is the price. A receipt at −100 does not qualify a favorite.
+  if (Number.isFinite(price) && price !== 0 && !isTop3PickPrice(price)) {
+    return { ...ev, fires: false, action: 'hold', units: safe, reason: 'not_pickem' };
   }
   if (!ev.fires) return { ...ev, action: 'hold', units: safe };
   if (safe + 0.001 >= ev.units) return { ...ev, action: 'hold', units: safe };
