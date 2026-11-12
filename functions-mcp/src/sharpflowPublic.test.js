@@ -395,9 +395,54 @@ test('a specialist post contrasts the sport with the overall record', async () =
   profiles.set('cccccc', {
     positions: { n: 40, wins: 22, losses: 18, invested: 20000, settledPnl: 100, dollarRoi: 1 },
     bySport: {
+      NHL: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 80, wins: 50, losses: 30, invested: 40000, settledPnl: 1000, dollarRoi: 2 },
+      },
       NBA: {
         whitelistTier: 'CONFIRMED',
         positions: { n: 20, wins: 12, losses: 8, invested: 10000, settledPnl: 500, dollarRoi: 5 },
+      },
+      CBB: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 10, wins: 6, losses: 4, invested: 5000, settledPnl: 100, dollarRoi: 2 },
+      },
+    },
+  });
+  feeds.games.push({
+    sport: 'CBB',
+    gameKey: 'aggies_lions',
+    away: 'Texas A&M Aggies',
+    home: 'Lions',
+    markets: {
+      ML: [{ wallet: '0x000000cccccc', side: 'away', invested: 800, odds: -335 }],
+    },
+  });
+  feeds.games.push({
+    sport: 'CFB',
+    gameKey: 'mem_usf',
+    away: 'Memphis',
+    home: 'South Florida',
+    markets: {
+      ML: [{ wallet: '0x000000dddddd', side: 'away', invested: 9000, odds: -163 }],
+      SPREAD: [{ wallet: '0x000000eeeeee', side: 'away', invested: 4000, odds: -156, spreadLine: -2.5 }],
+    },
+  });
+  profiles.set('dddddd', {
+    positions: { n: 32, wins: 19, losses: 13, invested: 20000, settledPnl: 400, dollarRoi: 2 },
+    bySport: {
+      CFB: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 32, wins: 19, losses: 13, invested: 20000, settledPnl: 400, dollarRoi: 2 },
+      },
+    },
+  });
+  profiles.set('eeeeee', {
+    positions: { n: 53, wins: 36, losses: 17, invested: 30000, settledPnl: 800, dollarRoi: 3 },
+    bySport: {
+      CFB: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 53, wins: 36, losses: 17, invested: 30000, settledPnl: 800, dollarRoi: 3 },
       },
     },
   });
@@ -439,6 +484,26 @@ test('a specialist post contrasts the sport with the overall record', async () =
     params: { name: 'wallet_profile', arguments: { query: 'Memphis', pick: 'Suns', date: '2026-11-12' } },
   }, ctx);
   assert.match(missing.result.content[0].text, /No confirmed ticket/);
+
+  const memphis = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 15,
+    method: 'tools/call',
+    params: { name: 'wallet_profile', arguments: { query: 'Memphis', pick: 'Memphis', date: '2026-11-12' } },
+  }, ctx);
+  const memphisBody = JSON.parse(memphis.result.content[0].text);
+  assert.equal(memphisBody.overall.record, '19-13');
+  assert.equal(memphisBody.matched.pick, 'Memphis');
+
+  const spread = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 16,
+    method: 'tools/call',
+    params: { name: 'wallet_profile', arguments: { query: 'Memphis at South Florida', pick: 'Memphis -2.5', date: '2026-11-12' } },
+  }, ctx);
+  const spreadBody = JSON.parse(spread.result.content[0].text);
+  assert.equal(spreadBody.overall.record, '36-17');
+  assert.equal(spreadBody.matched.pick, 'Memphis -2.5');
 });
 
 test('oauth code checks the challenge and rejects other sites', () => {

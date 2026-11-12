@@ -361,13 +361,17 @@ function walletsOnTicket(games, { query, pick, sport, market, price } = {}) {
             dollars: Number(ticket.dollars) || 0,
             price: ticket.price || null,
             pick: side.pick,
+            sport: game.sport || null,
           });
         }
       }
     }
   }
+  const needle = fold(pick || query);
+  const exact = hits.filter((hit) => fold(hit.pick) === needle);
+  const chosen = exact.length ? exact : hits;
   const byShort = new Map();
-  for (const hit of hits) {
+  for (const hit of chosen) {
     const prev = byShort.get(hit.short);
     if (!prev || hit.dollars > prev.dollars) byShort.set(hit.short, hit);
   }
@@ -1038,7 +1042,9 @@ async function callTool(name, args, ctx) {
       const seen = hits.map((hit) => `${hit.pick} ${hit.price || ''}`.trim()).join(', ');
       return toolError(`More than one wallet is on that pick. Pass price. Saw ${seen}.`);
     }
-    const focus = a.sport ? String(a.sport).toUpperCase() : null;
+    const focus = a.sport
+      ? String(a.sport).toUpperCase()
+      : (hits[0].sport ? String(hits[0].sport).toUpperCase() : null);
     const read = profileRead(profiles.get(hits[0].short), ticketsFor(open.games, hits[0].short), { sport: focus });
     return textBlock({
       source: 'One confirmed wallet, found by the game and the pick. Records are graded bets. Bet size is versus that wallet\'s usual in the sport. The size split on a sport is the last 30 days. No names.',
