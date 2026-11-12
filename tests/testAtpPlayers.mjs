@@ -6,6 +6,7 @@ import {
   isATPMarketTitle,
   isGradableATPMainML,
   matchATPPositionTitle,
+  playersMatch,
 } from '../scripts/lib/atpPlayers.js';
 
 const slug = 'atp-passaro-torre-2026-10-12';
@@ -38,5 +39,16 @@ assert.equal(bySlug?.key, 'francescopassaro_tiagotorres');
 assert.equal(bySlug?.sport, 'ATP');
 assert.equal(matchATPPositionTitle('Passaro vs Torres: Total Sets O/U 2.5', games, `${slug}-set-totals-2pt5`), null);
 assert.equal(matchATPPositionTitle('Maia: Francesco Passaro vs Tiago Torres', games, `${slug}-first-set-winner-Passaro-vs-Torres`), null);
+
+assert.equal(playersMatch('Tomas Etcheverry', 'Tomas Martin Etcheverry'), true);
+assert.equal(playersMatch('Adolfo Vallejo', 'Adolfo Daniel Vallejo'), true);
+assert.equal(playersMatch('Joel Schwaerzler', 'Joel Josef Schwaerzler'), true);
+assert.equal(playersMatch('Facundo Acosta', 'Facundo Diaz Acosta'), true);
+assert.equal(playersMatch('Alexander Shevchenko', 'Aleksandr Shevchenko'), true);
+assert.equal(playersMatch('Alexander Shevchenko', 'Casper Ruud'), false);
+assert.equal(playersMatch('Martin Etcheverry', 'Tomas Martin Etcheverry'), false);
+assert.equal(playersMatch('Diaz Acosta', 'Facundo Diaz Acosta'), false);
+assert.equal(playersMatch('Casper Ruud', 'Christian Ruud'), false);
+assert.equal(makeATPGameKey('Tomas Etcheverry', 'Max Dahlin'), 'tomasetcheverry_maxdahlin');
 
 console.log('testAtpPlayers ok');

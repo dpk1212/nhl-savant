@@ -51,7 +51,7 @@ export function makeEsportsGameKey(a, b) {
   return `${aa}_${bb}`;
 }
 
-const GRADE_FILLER = new Set(['esports', 'gaming', 'team', 'club']);
+const GRADE_FILLER = new Set(['esports', 'esport', 'gaming', 'team', 'club']);
 
 /**
  * Grading key. bo3.gg drops the org word our cards keep:
