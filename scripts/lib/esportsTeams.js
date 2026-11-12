@@ -52,35 +52,65 @@ export function makeEsportsGameKey(a, b) {
 }
 
 const GRADE_FILLER = new Set(['esports', 'esport', 'gaming', 'team', 'club']);
+// bo3 slugs hang these on the end. They are not a second team.
+const GRADE_TAIL = new Set([
+  'cs', 'cs2', 'csgo', 'gg', 'go',
+  'br', 'ukr', 'ru', 'fr', 'mk', 'spain', 'es', 'sa', 'na', 'eu', 'us', 'usa',
+  'tr', 'pl', 'dk', 'se', 'de', 'cn', 'kr', 'jp', 'au', 'uk', 'gb', 'pt',
+]);
+// The board shortens the org. Academy and prospect stay, so they cannot grade as the main team.
+const ORG_TAIL = new Set(['apogee', 'sector']);
+const GRADE_ALIAS = { nip: 'ninjasinpyjamas' };
+
+function gradeWords(raw) {
+  const cleaned = String(raw || '')
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned || PROP_TITLE.test(cleaned)) return null;
+  let words = cleaned
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .map((w) => (w.length > 4 && w.endsWith('gg') ? w.slice(0, -2) : w));
+  const kept = words.filter((w) => !GRADE_FILLER.has(w));
+  words = kept.length ? kept : words;
+  while (words.length > 1 && GRADE_TAIL.has(words[words.length - 1])) words.pop();
+  return words;
+}
+
+function aliasKey(words) {
+  if (!words || !words.length) return null;
+  const n = words.join('');
+  if (!n || n.length < 2) return null;
+  return GRADE_ALIAS[n] || n;
+}
 
 /**
  * Grading key. bo3.gg drops the org word our cards keep:
  * Inner Circle Esports / Aurora Gaming / BetBoom Team / FUT Esports /
  * Team Nemesis. Prospect and academy stay in the key so they cannot
  * grade as the main team. Game keys still use resolveEsportsTeam.
+ * NIP is Ninjas in Pyjamas. A trailing cs / region tag is the same team.
  */
 export function esportsGradeKey(raw) {
-  const cleaned = String(raw || '')
-    .replace(/\s*\([^)]*\)\s*/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!cleaned || PROP_TITLE.test(cleaned)) return null;
-  const words = cleaned
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean);
-  const kept = words.filter((w) => !GRADE_FILLER.has(w));
-  const n = (kept.length ? kept : words).join('');
-  if (!n || n.length < 2) return null;
-  return n;
+  return aliasKey(gradeWords(raw));
 }
 
 export function esportsTeamsMatch(rawA, rawB) {
-  const a = esportsGradeKey(rawA);
-  const b = esportsGradeKey(rawB);
-  return !!(a && b && a === b);
+  const left = gradeWords(rawA);
+  const right = gradeWords(rawB);
+  const a = aliasKey(left);
+  const b = aliasKey(right);
+  if (!a || !b || !left || !right) return false;
+  if (a === b) return true;
+  const short = left.length <= right.length ? left : right;
+  const long = left.length <= right.length ? right : left;
+  if (long.slice(0, short.length).join('') !== short.join('')) return false;
+  const extra = long.slice(short.length);
+  return extra.length > 0 && extra.every((w) => ORG_TAIL.has(w));
 }
 
 /**

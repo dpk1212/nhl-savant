@@ -34,8 +34,10 @@ import {
   resolveATPPlayer,
   playersMatch,
   isGradableATPMainML,
+  isMainATPMatchSlug,
 } from './lib/atpPlayers.js';
-import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML, teamsFromBo3Slug } from './lib/esportsTeams.js';
+import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML, isMainEsportsMatchSlug, teamsFromBo3Slug } from './lib/esportsTeams.js';
+import { settledMoneyline } from './lib/settledMoneyline.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { rebuildMorningRanks } from './lib/morningRankCache.js';
 import { shouldGradeExited } from '../src/lib/actionLockPin.js';
@@ -1049,6 +1051,57 @@ async function fetchEsportsFinalMatches(sport, dateSet) {
   }
 }
 
+const settledWinnerCache = new Map();
+const settledLogged = new Set();
+
+function settledSlug(pos) {
+  const slug = String(pos?.slug || pos?.eventSlug || '').toLowerCase();
+  if (!slug) return '';
+  if (pos.sport === 'ATP') return isMainATPMatchSlug(slug) ? slug : '';
+  if (pos.sport === 'CS2' || pos.sport === 'LOL') return isMainEsportsMatchSlug(slug) ? slug : '';
+  return '';
+}
+
+async function fetchSettledWinner(slug) {
+  try {
+    const res = await fetch(`https://gamma-api.polymarket.com/events?slug=${encodeURIComponent(slug)}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'nhl-savant' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const event = Array.isArray(data) ? data[0] : data;
+    return settledMoneyline(event);
+  } catch (e) {
+    console.warn(`Polymarket settled ${slug}: ${e.message}`);
+    return null;
+  }
+}
+
+// The tour board and BO3 never list some of these. A closed match
+// moneyline at 1/0 is the settlement of the bet.
+async function polymarketSettledGame(pos) {
+  const slug = settledSlug(pos);
+  if (!slug) return null;
+  const tip = Number(pos.commenceTime);
+  if (Number.isFinite(tip) && tip > Date.now()) return null;
+  if (!settledWinnerCache.has(slug)) settledWinnerCache.set(slug, fetchSettledWinner(slug));
+  const settlement = await settledWinnerCache.get(slug);
+  if (!settlement) return null;
+  let game = null;
+  if (settlement.voided) {
+    game = { awayScore: 0, homeScore: 0, dateET: pos.date || null, settledPrice: 0.5 };
+  } else if (settlement.winner) {
+    const match = pos.sport === 'ATP' ? playersMatch : esportsTeamsMatch;
+    if (match(settlement.winner, pos.away) && !match(settlement.winner, pos.home)) game = { awayScore: 1, homeScore: 0, dateET: pos.date || null };
+    else if (match(settlement.winner, pos.home) && !match(settlement.winner, pos.away)) game = { awayScore: 0, homeScore: 1, dateET: pos.date || null };
+  }
+  if (game && !settledLogged.has(slug)) {
+    settledLogged.add(slug);
+    console.log(settlement.voided ? `Polymarket voided ${slug}` : `Polymarket settled ${slug} → ${settlement.winner}`);
+  }
+  return game;
+}
+
 function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = [], wnbaFinals = [], nflFinals = [], cfbFinals = [], atpFinals = [], cs2Finals = [], lolFinals = []) {
   const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB|ATP|CS2|LOL):/, '');
   const parts = rawKey.split('_');
@@ -1358,7 +1411,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
         skipped++;
         continue;
       }
-      const game = findMatchingGame(
+      let game = findMatchingGame(
         {
           sport: pick.sport,
           date: pick.date,
@@ -1366,6 +1419,8 @@ async function gradePendingSharpFlowPicks(db, finals) {
           away: pick.away,
           home: pick.home,
           marketType,
+          slug: pick.slug || pick.eventSlug,
+          commenceTime: pick.commenceTime,
         },
         finals.nhlFinals,
         finals.cbbFinals,
@@ -1380,6 +1435,16 @@ async function gradePendingSharpFlowPicks(db, finals) {
         finals.cs2Finals,
         finals.lolFinals,
       );
+      if (!game) {
+        game = await polymarketSettledGame({
+          sport: pick.sport,
+          away: pick.away,
+          home: pick.home,
+          date: pick.date,
+          slug: pick.slug || pick.eventSlug,
+          commenceTime: pick.commenceTime,
+        });
+      }
       if (!game) {
         skipped++;
         continue;
@@ -1800,6 +1865,7 @@ async function main() {
       if (!game) {
         game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals);
       }
+      if (!game) game = await polymarketSettledGame(pos);
       if (!game) {
         noGame++;
         continue;
@@ -1865,7 +1931,9 @@ async function main() {
 
       // Polymarket P&L calc (entry price vs outcome)
       const entryPrice = pos.avgPrice || 0;
-      const settledPrice = outcome === 'WIN' ? 1.0 : outcome === 'LOSS' ? 0.0 : entryPrice;
+      const settledPrice = Number.isFinite(game.settledPrice)
+        ? game.settledPrice
+        : (outcome === 'WIN' ? 1.0 : outcome === 'LOSS' ? 0.0 : entryPrice);
       const settledPnl = Math.round((settledPrice - entryPrice) * (pos.size || 0));
 
       const pnlEmoji = outcome === 'WIN' ? '✅' : outcome === 'LOSS' ? '❌' : '⏸️';
