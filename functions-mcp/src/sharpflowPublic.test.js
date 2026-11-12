@@ -127,8 +127,7 @@ test('action rollup keeps dollars and drops the wallet', () => {
   assert.equal(gameMatches(game, 'Knicks'), false);
   const pub = publishBoard([game], profiles, null, '2026-11-11')[0];
   const text = JSON.stringify(pub);
-  assert.equal(text.includes('456789'), false);
-  assert.equal(text.includes('456780'), false);
+  assert.equal(text.includes('0xabc'), false);
   assert.equal(text.includes('Whale'), false);
   assert.equal(text.includes('leaderboard'), false);
   assert.equal(text.includes('0x'), false);
@@ -139,8 +138,11 @@ test('action rollup keeps dollars and drops the wallet', () => {
   assert.equal(home.dollars, 800);
   assert.equal(home.confirmed, 1);
   assert.equal(home.book.record, '6-4');
+  assert.equal(home.book.window, 'all time');
   assert.equal(home.last30.record, '3-1');
+  assert.equal(home.last30.window, 'last 30 days');
   assert.equal(home.recordOf, 'one wallet, NHL, all markets');
+  assert.equal(home.tickets[0].id, '456789');
   assert.equal(typeof home.tickets[0].sameNight, 'string');
 });
 
@@ -189,23 +191,29 @@ test('one wallet keeps one letter tonight, and the ticket keeps its price', () =
   const flyersGame = pubs.find((g) => g.away === 'Flyers');
   const under = flyersGame.markets[0].sides[0];
   assert.equal(thunder.tickets[0].sameNight, rockets.tickets[0].sameNight);
+  assert.equal(thunder.tickets[0].id, '111111');
+  assert.equal(rockets.tickets[0].id, thunder.tickets[0].id);
   assert.notEqual(thunder.tickets[0].sameNight, under.tickets[0].sameNight);
+  assert.equal(under.tickets[0].id, '222222');
   assert.equal(thunder.recordOf, 'one wallet, NBA, all markets');
   assert.equal(under.pick, 'Under 6.5');
   assert.equal(under.tickets[0].price, '-120');
   assert.equal(under.tickets[0].line, 6.5);
-  assert.equal(under.tickets[0].sharp.size, 'press');
+  assert.equal(under.tickets[0].sharp.size, '1.5x and up');
   assert.equal(under.tickets[0].sharp.vsUsual, 6);
+  assert.equal(under.tickets[0].sharp.usualSport, 500);
   assert.equal(under.tickets[0].sharp.market.record, '12-8');
+  assert.equal(under.tickets[0].sharp.market.window, 'all time');
   assert.equal(under.tickets[0].sharp.l30.record, '3-1');
+  assert.equal(under.tickets[0].sharp.l30.window, 'last 30 days');
   assert.equal(under.opposed, 'unopposed');
   assert.equal(thunder.tickets[0].sharp.form, 'L10 7-3');
   assert.equal(thunder.tickets[0].lineMove, 'with');
   assert.equal(flyersGame.kickoffEt.includes('9:10'), true);
   const text = JSON.stringify(pubs);
-  assert.equal(text.includes('111111'), false);
-  assert.equal(text.includes('222222'), false);
   assert.equal(text.includes('0x'), false);
+  assert.equal(text.includes('111111'), true);
+  assert.equal(text.includes('222222'), true);
 });
 
 test('today attaches the money and keeps the locked side', async () => {
@@ -326,10 +334,24 @@ test('a specialist post contrasts the sport with the overall record', async () =
   }));
   const specialist = {
     positions: { n: 98, wins: 50, losses: 48, invested: 50000, settledPnl: 1000, dollarRoi: 2 },
+    firstBetDate: '2026-08-21',
+    sizeRatioBands: {
+      usual: 400,
+      positions: { bands: { press: { n: 148, wins: 79, losses: 69 } } },
+    },
     bySport: {
       CFB: {
         whitelistTier: 'CONFIRMED',
         positions: { n: 23, wins: 17, losses: 6, invested: 23000, settledPnl: 112000, dollarRoi: 66 },
+        sizeRatioBands: {
+          usual: 1000,
+          positions: {
+            bands: {
+              press: { n: 16, wins: 12, losses: 4 },
+              full: { n: 4, wins: 3, losses: 1 },
+            },
+          },
+        },
         byMarket: {
           SPREAD: { positions: { n: 15, wins: 12, losses: 3, settledPnl: 112000, dollarRoi: 80 } },
         },
@@ -367,6 +389,14 @@ test('a specialist post contrasts the sport with the overall record', async () =
   ]);
   const ctx = {
     loadAction: async () => ({ scannedAt: '2026-11-12T18:00:00Z', profiles, games: feeds.games }),
+    loadWalletBets: async (id) => {
+      if (id !== 'cccccc') return [];
+      const bets = [];
+      for (let i = 0; i < 8; i += 1) bets.push({ sport: 'NBA', invested: 2000, won: 1 });
+      bets.push({ sport: 'NBA', invested: 2000, won: 0 });
+      bets.push({ sport: 'NBA', invested: 2000, won: 0 });
+      return bets;
+    },
   };
   const found = await handleMcpMessage({
     jsonrpc: '2.0',
@@ -379,8 +409,11 @@ test('a specialist post contrasts the sport with the overall record', async () =
   assert.equal(board.specialists[0].overall, '50-48');
   assert.equal(board.specialists[0].bettingBig, true);
   assert.match(board.specialists[0].post, /college football specialist/);
-  assert.match(board.specialists[0].post, /Presses \(1\.5x\+\): 7-0/);
-  assert.match(board.specialists[0].post, /Last 10: 10-0/);
+  assert.match(board.specialists[0].post, /1\.5x and up, all time in college football.*12-4/);
+  assert.match(board.specialists[0].post, /1\.5x and up, all time across all sports.*79-69/);
+  assert.match(board.specialists[0].post, /1\.5x and up, last 30 days in college football.*7-0/);
+  assert.match(board.specialists[0].post, /Last 10 bets: 10-0/);
+  assert.equal(board.specialists[0].id, 'aaaaaa');
   assert.ok(board.specialists[0].gap > board.specialists[1].gap);
 
   feeds.games.push({
@@ -455,14 +488,24 @@ test('a specialist post contrasts the sport with the overall record', async () =
   }, ctx);
   const body = JSON.parse(one.result.content[0].text);
   assert.equal(body.overall.record, '50-48');
+  assert.equal(body.overall.window, 'all time');
+  assert.equal(body.id, 'aaaaaa');
   assert.equal(body.focus, 'CFB');
   assert.equal(body.markets.SPREAD.record, '12-3');
+  assert.equal(body.markets.SPREAD.window, 'all time');
+  assert.equal(body.usual.sport, 1000);
+  assert.equal(body.usual.allSports, 400);
+  assert.equal(body.bySize.sport.buckets.find((row) => row.id === 'press').record, '12-4');
+  assert.equal(body.bySize.allSports.buckets[0].record, '79-69');
+  assert.equal(body.bySize.last30.buckets.find((row) => row.id === 'press').record, '7-0');
+  assert.match(body.post, /1\.5x and up, all time in college football/);
+  assert.match(body.post, /last 30 days in college football/);
   assert.equal(body.biggestYet, true);
   assert.match(body.post, /Baylor \+7\.5/);
   assert.match(body.tonight[0].price, /-113/);
   assert.equal(body.tonight[0].vsUsual, 2);
   const text = JSON.stringify(body);
-  assert.equal(text.includes('aaaaaa'), false);
+  assert.equal(text.includes('aaaaaa'), true);
   assert.equal(text.includes('0x'), false);
   assert.equal(text.includes('bbbbbb'), false);
   assert.equal(text.includes('Suns'), false);
@@ -476,6 +519,26 @@ test('a specialist post contrasts the sport with the overall record', async () =
   const sunsBody = JSON.parse(suns.result.content[0].text);
   assert.equal(sunsBody.overall.record, '22-18');
   assert.equal(sunsBody.focus, 'NBA');
+  assert.equal(sunsBody.bySize.sport.window, 'all time');
+  assert.equal(sunsBody.bySize.sport.buckets.find((row) => row.id === 'press').record, '8-2');
+
+  const byId = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 17,
+    method: 'tools/call',
+    params: { name: 'wallet_profile', arguments: { id: '..aaaaaa', date: '2026-11-12' } },
+  }, ctx);
+  const byIdBody = JSON.parse(byId.result.content[0].text);
+  assert.equal(byIdBody.id, 'aaaaaa');
+  assert.equal(byIdBody.overall.record, '50-48');
+
+  const letter = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 18,
+    method: 'tools/call',
+    params: { name: 'wallet_profile', arguments: { id: 'P', date: '2026-11-12' } },
+  }, ctx);
+  assert.match(letter.result.content[0].text, /letter changes/);
 
   const missing = await handleMcpMessage({
     jsonrpc: '2.0',
