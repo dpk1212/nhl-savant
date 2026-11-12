@@ -16,7 +16,7 @@
  * -425 favorite mute still apply, and neither one may shrink a stake
  * that is already on the side.
  * A stake already on the other side mutes the rescue and the +1.
- * NHL, NBA, NFL, CFB. Moneyline, spread, total.
+ * Every sport. Moneyline, spread, total.
  */
 
 import { gapBandStays } from './edgeUnder5.js';
@@ -33,7 +33,6 @@ export const GAP_LEAD_RESCUED_BY = 'gap-lead';
 export const GAP_LEAD_PROMOTED_BY = 'gap-lead';
 export const GAP_LEAD_FAV_JUICE = -425;
 
-const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
 const MARKETS = new Set(['ML', 'SPREAD', 'TOTAL']);
 
 let bookIndex = new Map();
@@ -93,7 +92,7 @@ function isBookLeg(row) {
   if (!(invested > 0) || !Number.isFinite(settled) || settled === 0) return false;
   const sport = normGapSport(row.sport);
   const market = normGapMarket(row.marketType);
-  if (!SPORTS.has(sport) || !MARKETS.has(market)) return false;
+  if (!sport || !MARKETS.has(market)) return false;
   const date = String(row.date || '').slice(0, 10);
   const wallet = walletId(row);
   if (date.length < 10 || !wallet) return false;
@@ -175,7 +174,7 @@ export function evaluateGapLead({ sport, market, side, pickDate, positions, book
   const sp = normGapSport(sport);
   const mkt = normGapMarket(market);
   const mySide = normSide(side);
-  if (!isGapLeadLive(pickDate) || !SPORTS.has(sp) || !MARKETS.has(mkt) || !mySide) {
+  if (!isGapLeadLive(pickDate) || !sp || !MARKETS.has(mkt) || !mySide) {
     return { ...empty, reason: 'not_live' };
   }
   const rows = (positions || []).map(view);

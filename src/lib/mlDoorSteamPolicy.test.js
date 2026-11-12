@@ -81,7 +81,8 @@ test('boost does not fire on dogs, margin +3, 3% steam, fades, or other markets'
   assert.equal(apply({ tapeLog: [FIRST_OFF, LOCK_GOLD] }).action, 'hold');
   assert.equal(apply({ tapeLog: [FIRST_ON, LOCK_OFF] }).action, 'hold');
   assert.equal(apply({ marketType: 'SPREAD' }).action, 'skip');
-  assert.equal(apply({ sport: 'MLB' }).action, 'skip');
+  assert.equal(apply({ sport: 'MLB' }).action, 'boost');
+  assert.equal(apply({ sport: '' }).action, 'skip');
   assert.equal(apply({ pickDate: '2026-10-28' }).action, 'skip');
   assert.equal(apply({ door2Known: false }).action, 'skip');
   assert.equal(apply({ manualStake: true }).action, 'skip');

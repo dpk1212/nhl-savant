@@ -857,6 +857,9 @@ export function sportBook(profile, sport, marketType = null, asOf = null) {
   const wr = Number(pos.wr);
   const l10 = rec?.form?.actionL10;
   const mkt = marketType ? String(marketType).toUpperCase() : null;
+  const mktPos = mkt ? rec?.byMarket?.[mkt]?.positions : null;
+  const mktN = Number(mktPos?.n) || 0;
+  const mktWr = Number(mktPos?.wr);
   const trust = trustPick(rec?.trust, asOf);
   const trustMkt = mkt ? trustPick(rec?.byMarket?.[mkt]?.trust, asOf) : null;
   // The age floor reads the sport book's age on the market record too: the
@@ -866,6 +869,8 @@ export function sportBook(profile, sport, marketType = null, asOf = null) {
   return {
     n,
     wr: Number.isFinite(wr) ? wr : null,
+    mktN,
+    mktWr: Number.isFinite(mktWr) ? mktWr : null,
     door2: isConfirmedSportRec(rec),
     l10: l10 && typeof l10 === 'object' ? { w: Number(l10.w) || 0, l: Number(l10.l) || 0 } : null,
     trust,
@@ -906,6 +911,8 @@ export function pressWalletRows(walletDetails, side, sport, walletProfiles, mark
       ratio: Number.isFinite(sr) && sr > 0 ? sr : null,
       n: book?.n ?? 0,
       wr: book?.wr ?? null,
+      mktN: book?.mktN ?? 0,
+      mktWr: book?.mktWr ?? null,
       door2: book?.door2 === true,
       l10: book?.l10 ?? null,
       streak: careerLossStreak(profile),
@@ -1026,14 +1033,24 @@ export function isPressDog(implied) {
   return implied != null && implied < PRESS_DOG_IMPLIED_MAX;
 }
 
+function isSpreadOrTotal(marketType) {
+  const u = String(marketType || '').toUpperCase();
+  return u === 'SPREAD' || u === 'SPREADS' || u === 'TOTAL' || u === 'TOTALS';
+}
+
 /**
- * Mean sport WR of FOR wallets with n ≥ 10 minus the implied win % of the
- * price. Null when no FOR wallet is deep enough.
+ * Mean win rate of FOR wallets with n ≥ 10, minus the price.
+ * A moneyline uses the sport book. A spread or a total uses that market's
+ * book (bySport[sport].byMarket[market].positions). Null when no FOR wallet
+ * is deep enough in the book that market reads.
  */
 export function pressEdge(rows, marketType, sideOdds) {
-  const deep = rows.filter((r) => r.dir === 'FOR' && r.n >= PRESS_EDGE_MIN_N && Number.isFinite(r.wr));
+  const marketBook = isSpreadOrTotal(marketType);
+  const deep = rows.filter((r) => r.dir === 'FOR'
+    && (marketBook ? r.mktN : r.n) >= PRESS_EDGE_MIN_N
+    && Number.isFinite(marketBook ? r.mktWr : r.wr));
   if (deep.length === 0) return null;
-  const meanWr = deep.reduce((t, r) => t + r.wr, 0) / deep.length;
+  const meanWr = deep.reduce((t, r) => t + (marketBook ? r.mktWr : r.wr), 0) / deep.length;
   let impliedPct = PRESS_ST_IMPLIED_PCT;
   if (String(marketType).toUpperCase() === 'ML') {
     const p = impliedFromAmerican(sideOdds);
@@ -1114,46 +1131,17 @@ export function evaluatePressLadder(args = {}) {
   return clampAtpToTrustedMargin(applyTrustLayer(out, args), args);
 }
 
-/** ATP, CS2, and LoL stake only a match moneyline with trusted margin ≥ 2. */
-const ML_ONLY_TRUST_SPORTS = new Set(['ATP', 'CS2', 'LOL']);
-
-function mlOnlyTrustTag(sport) {
-  const sp = String(sport || '').toUpperCase();
-  return ML_ONLY_TRUST_SPORTS.has(sp) ? sp.toLowerCase() : null;
-}
-
 /**
- * ATP, CS2, and LoL are moneyline only, and the only stake is a tier-4+
- * form-ON margin of at least 2 on this match's book. Every other rung
- * (v12, press mirror input, margin +1, spreads, totals, map markets) is
- * zeroed. Margin ≥ 2 keeps the trust-layer size.
+ * Tennis and esports take the same stake path as every other sport.
+ * Kept so older callers still resolve.
  */
-export function clampAtpToTrustedMargin(result, { sport, marketType } = {}) {
-  const tag = mlOnlyTrustTag(sport);
-  if (!tag) return result;
-  const isML = String(marketType || '').toUpperCase() === 'ML';
-  const strong = isML && result?.trust
-    && trustMarginRead(result.trust.mktFor, result.trust.mktAg).strong === true;
-  if (strong && result.units > 0) {
-    const reason = String(result.reason || '');
-    return reason.includes(`${tag}_t4_m2`) ? result : { ...result, reason: `${reason}+${tag}_t4_m2` };
-  }
-  if (!(result?.units > 0) && !result?.rung) return result;
-  return {
-    ...result,
-    rung: null,
-    units: 0,
-    reason: `${tag}_ml_t4_m2_only:${result?.reason || 'none'}`,
-  };
+export function clampAtpToTrustedMargin(result) {
+  return result;
 }
 
-/** False only for ATP / CS2 / LoL sides that are not an ML with a live T4+ margin ≥ 2. */
-export function atpMayStake(sport, marketType, pressEval) {
-  const tag = mlOnlyTrustTag(sport);
-  if (!tag) return true;
-  if (String(marketType || '').toUpperCase() !== 'ML') return false;
-  return !!pressEval && pressEval.units > 0
-    && !String(pressEval.reason || '').startsWith(`${tag}_ml_t4_m2_only`);
+/** Every sport may stake. The ladder and the later policies decide the units. */
+export function atpMayStake() {
+  return true;
 }
 
 /**

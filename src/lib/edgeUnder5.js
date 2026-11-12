@@ -1,5 +1,5 @@
 /**
- * Edge under 5. NHL, NBA, NFL, CFB.
+ * Edge under 5. Every sport.
  *
  * Nov 5 used the press edge. Two holds stayed on: a morning gap already in
  * the 2-unit band, and an NBA moneyline juicier than −100. A missing press
@@ -34,8 +34,6 @@ export const EDGE_UNDER5_GAP_MAX = 3;
 export const EDGE_UNDER5_FAV_ODDS = -100;
 export const EDGE_UNDER5_MUTED_BY = 'edge-under-5';
 
-const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
-
 export function isEdgeUnder5Live(pickDate) {
   return typeof pickDate === 'string' && pickDate >= EDGE_UNDER5_FROM;
 }
@@ -58,7 +56,7 @@ export function normEdgeMarket(market) {
 }
 
 export function edgeUnder5Owns(pickDate, sport) {
-  return isEdgeUnder5Live(pickDate) && SPORTS.has(normEdgeSport(sport));
+  return isEdgeUnder5Live(pickDate) && normEdgeSport(sport).length > 0;
 }
 
 /** Same tenth the card stores on v8_pressEdge. Missing stays missing. */

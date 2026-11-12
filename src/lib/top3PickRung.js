@@ -9,7 +9,7 @@
  * A stake already on the other side mutes the rung.
  *
  * 1× to 1.5× → 4u. Under 1× → 2u. Never downsizes a larger stake.
- * NHL, NBA, NFL, CFB. Moneyline, spread, total.
+ * Every sport. Moneyline, spread, total.
  */
 
 export const TOP3_PICK_FROM = '2026-10-29';
@@ -17,7 +17,6 @@ export const TOP3_PICK_STAKE_TIER = 'TOP3-PICK';
 export const TOP3_PICK_RESCUED_BY = 'top3-pick';
 export const TOP3_PICK_PROMOTED_BY = 'top3-pick';
 
-const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
 const MARKETS = new Set(['ML', 'SPREAD', 'TOTAL']);
 
 let rankIndex = new Map();
@@ -99,7 +98,7 @@ function isRankLeg(row) {
   if (!(invested > 0) || !Number.isFinite(settled) || settled === 0) return false;
   const sport = normTop3Sport(row.sport);
   const market = normTop3Market(row.marketType);
-  if (!SPORTS.has(sport) || !MARKETS.has(market)) return false;
+  if (!sport || !MARKETS.has(market)) return false;
   const date = String(row.date || '').slice(0, 10);
   const wallet = walletId(row);
   if (date.length < 10 || !wallet) return false;
@@ -192,7 +191,7 @@ export function evaluateTop3Pick({ sport, market, side, pickDate, positions, ran
   const sp = normTop3Sport(sport);
   const mkt = normTop3Market(market);
   const mySide = normSide(side);
-  if (!isTop3PickLive(pickDate) || !SPORTS.has(sp) || !MARKETS.has(mkt) || !mySide) {
+  if (!isTop3PickLive(pickDate) || !sp || !MARKETS.has(mkt) || !mySide) {
     return { ...empty, reason: 'not_live' };
   }
   if (num(opponentUnits) > 0) return { ...empty, reason: 'pick_against' };

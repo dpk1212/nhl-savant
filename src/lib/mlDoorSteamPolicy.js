@@ -1,7 +1,7 @@
 /**
- * Moneyline door × steam timing. NHL, NBA, NFL, CFB only.
- * Live from ML_DOOR_STEAM_FROM. Spreads, totals, and every other sport
- * are untouched. Three rules, measured on the graded v12+ book
+ * Moneyline door × steam timing. Every sport.
+ * Live from ML_DOOR_STEAM_FROM. Spreads and totals are untouched.
+ * Three rules, measured on the graded v12+ book
  * (2026-10-06 through 2026-10-28), prices under +200:
  *
  *   BOOST +1u  favorite, Door-2 margin exactly +1 or +2, timing already_gold.
@@ -43,7 +43,6 @@ export function mlDoorKind(action) {
   return String(action || '').toLowerCase();
 }
 
-const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
 const UNCOUNTED = new Set(['no_wallet_details', 'no_wallet_profiles', 'no_wallet_rows']);
 const STEAM_PCT = 3;
 const GOLD_PCT = 4.5;
@@ -147,7 +146,7 @@ export function applyMlDoorSteamPolicy({
   const base = u == null ? 0 : u;
   if (manualStake) return hold(base);
   if (typeof pickDate !== 'string' || pickDate < ML_DOOR_STEAM_FROM) return hold(base);
-  if (!SPORTS.has(String(sport || '').toUpperCase())) return hold(base);
+  if (!String(sport || '').trim()) return hold(base);
   if (String(marketType || '').toUpperCase() !== 'ML') return hold(base);
   if (!door2Known) return hold(base);
 
