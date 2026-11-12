@@ -8,6 +8,10 @@
  * not capped. Does not add units to the 5+ side, and does not lift a
  * stake already under the ceiling.
  *
+ * A spread or a total whose market edge is under 0 goes to 0. The cap
+ * would have left that bet at 1, and that unit loses. A moneyline under
+ * 0 still takes the cap. A missing edge is not zeroed and not capped.
+ *
  * Runs after the seat, the press-edge clamp, the 1-unit rescue, and the
  * odds cap. A zero stays zero. Manual stake, operator kill, T-15 freeze,
  * and graded tickets win at the call site. From 2026-11-10.
@@ -23,6 +27,11 @@ export const PRESS_UNDER5_CAP_ML_UNITS = 2;
 function isMoneyline(market) {
   const u = String(market || '').toUpperCase();
   return u === 'ML' || u === 'MONEYLINE';
+}
+
+function isSpreadOrTotal(market) {
+  const u = String(market || '').toUpperCase();
+  return u === 'SPREAD' || u === 'SPREADS' || u === 'TOTAL' || u === 'TOTALS';
 }
 
 /** Ceiling for a press edge under 5. The two moneyline cells stop at 2. */
@@ -46,7 +55,7 @@ export function isPressUnder5CapLive(pickDate) {
 
 /**
  * @returns {{
- *   units: number, action: 'CAP'|'HOLD'|'PASS'|'EXEMPT',
+ *   units: number, action: 'CAP'|'ZERO'|'HOLD'|'PASS'|'EXEMPT',
  *   capped: boolean, edge: number|null, unitsPrePolicy: number,
  *   capUnits: number|null,
  * }}
@@ -76,6 +85,10 @@ export function applyPressUnder5Cap({
   if (manual === true) return out('EXEMPT');
   if (!isPressUnder5CapLive(pickDate)) return out('EXEMPT');
   if (edge == null) return out('PASS');
+  if (isSpreadOrTotal(market) && edge < 0) {
+    if (!(pre > 0)) return out('HOLD', 0, false, 0);
+    return out('ZERO', 0, true, 0);
+  }
   if (!(edge < PRESS_UNDER5_CAP_MAX)) return out('HOLD');
   if (!(pre > ceiling)) return out('HOLD', pre, false, ceiling);
   return out('CAP', ceiling, true, ceiling);

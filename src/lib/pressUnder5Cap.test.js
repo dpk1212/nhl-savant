@@ -150,6 +150,41 @@ test('two moneylines stop at 2 and every other press edge under 5 stays at 1', (
   assert.equal(kept.capped, false);
 });
 
+test('a spread or total under 0 goes to 0, and a moneyline under 0 stays on the cap', () => {
+  const spread = applyPressUnder5Cap({
+    units: 4, pressEdge: -0.4, pickDate: PRESS_UNDER5_CAP_FROM, market: 'SPREAD',
+  });
+  assert.equal(spread.action, 'ZERO');
+  assert.equal(spread.units, 0);
+  assert.equal(spread.capped, true);
+  assert.equal(spread.edge, -0.4);
+  assert.equal(pressUnder5CapStamp(spread).v8_pressUnder5CapUnits, 0);
+
+  const total = applyPressUnder5Cap({
+    units: 1, pressEdge: -2.1, pickDate: PRESS_UNDER5_CAP_FROM, market: 'TOTAL',
+  });
+  assert.equal(total.action, 'ZERO');
+  assert.equal(total.units, 0);
+
+  const atZero = applyPressUnder5Cap({
+    units: 3, pressEdge: 0, pickDate: PRESS_UNDER5_CAP_FROM, market: 'SPREAD',
+  });
+  assert.equal(atZero.action, 'CAP');
+  assert.equal(atZero.units, 1);
+
+  const missing = applyPressUnder5Cap({
+    units: 3, pressEdge: null, pickDate: PRESS_UNDER5_CAP_FROM, market: 'TOTAL',
+  });
+  assert.equal(missing.action, 'PASS');
+  assert.equal(missing.units, 3);
+
+  const ml = applyPressUnder5Cap({
+    units: 4, pressEdge: -0.4, pickDate: PRESS_UNDER5_CAP_FROM, market: 'ML',
+  });
+  assert.equal(ml.action, 'CAP');
+  assert.equal(ml.units, 1);
+});
+
 test('the cap does not run before Nov 10 and a manual stake stays', () => {
   const before = applyPressUnder5Cap({
     units: 4, pressEdge: 1, pickDate: '2026-11-09',
