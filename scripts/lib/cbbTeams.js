@@ -115,6 +115,8 @@ function schoolKey(raw) {
   if (s === 'detroit titans') s = 'detroit mercy titans';
   // NCAA short for Army. "West Point" is not a second school.
   if (s === 'army west point') s = 'army black knights';
+  // Polymarket still says Antelopes. The mascot is Lopes.
+  if (s === 'grand canyon antelopes') s = 'grand canyon lopes';
   for (const m of MASCOTS) {
     if (s === m) return '';
     if (s.endsWith(' ' + m)) {

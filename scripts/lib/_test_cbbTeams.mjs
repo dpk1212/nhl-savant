@@ -53,6 +53,8 @@ const same = [
   ['Army Black Knights', 'Army'],
   ['Alcorn State Braves', 'Alcorn'],
   ['Alcorn State Braves', 'Alcorn St.'],
+  ['Grand Canyon Antelopes', 'Grand Canyon'],
+  ['Grand Canyon Antelopes', 'Grand Canyon Lopes'],
 ];
 for (const [ours, board] of same) {
   assert(cbbTeamsMatch(ours, board), `${ours} = ${board}`);

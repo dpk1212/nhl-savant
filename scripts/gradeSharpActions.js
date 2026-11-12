@@ -51,6 +51,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
 const COLLECTION = 'sharp_action_positions';
 const TAILS_ONLY = process.argv.includes('--tails-only');
+const PREVIEW = process.argv.includes('--preview');
+const ONLY_SPORTS = (() => {
+  const arg = process.argv.find((a) => a.startsWith('--only='));
+  if (!arg) return null;
+  const set = new Set(arg.slice('--only='.length).split(',').map((s) => s.trim().toUpperCase()).filter(Boolean));
+  return set.size ? set : null;
+})();
 
 const NHL_SCHEDULE_URL = 'https://api-web.nhle.com/v1/schedule';
 const NCAA_API_URL = 'https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1';
@@ -973,12 +980,20 @@ function bo3DateET(iso) {
  * no names stays unmatched so the position remains PENDING.
  * BO3's date filters are ignored by the API, so pages are walked client-side.
  */
-async function fetchEsportsFinalMatches(sport, dateStr) {
+async function fetchEsportsFinalMatches(sport, dateSet) {
   const disc = BO3_DISC[sport];
-  if (!disc || !dateStr) return [];
+  const wanted = new Set(
+    (dateSet instanceof Set ? [...dateSet] : [dateSet]).map((d) => String(d || '')).filter(Boolean),
+  );
+  const earliest = [...wanted].sort()[0];
+  if (!disc || !earliest) return [];
   const matches = [];
+  // Twelve pages only reached late October, so a series that missed its
+  // morning stayed pending after the two-day board moved on.
+  const BO3_PAGE_CAP = 40;
   try {
-    for (let page = 0; page < 12; page++) {
+    let oldestSeen = null;
+    for (let page = 0; page < BO3_PAGE_CAP; page++) {
       const params = new URLSearchParams({
         'filter[matches.discipline_id][eq]': String(disc),
         'filter[matches.status][eq]': 'finished',
@@ -993,12 +1008,11 @@ async function fetchEsportsFinalMatches(sport, dateStr) {
       const data = await res.json();
       const rows = data.results || [];
       if (!rows.length) break;
-      let older = 0;
       for (const m of rows) {
         const dateET = bo3DateET(m.start_date);
         if (!dateET) continue;
-        if (dateET < dateStr) { older++; continue; }
-        if (dateET !== dateStr) continue;
+        if (!oldestSeen || dateET < oldestSeen) oldestSeen = dateET;
+        if (!wanted.has(dateET)) continue;
         let n1 = m.bet_updates?.team_1?.name;
         let n2 = m.bet_updates?.team_2?.name;
         if (!n1 || !n2) {
@@ -1023,7 +1037,10 @@ async function fetchEsportsFinalMatches(sport, dateStr) {
         });
       }
       const oldest = bo3DateET(rows[rows.length - 1].start_date);
-      if ((oldest && oldest < dateStr) || older === rows.length) break;
+      if (oldest && oldest < earliest) break;
+    }
+    if (oldestSeen && oldestSeen > earliest) {
+      console.warn(`BO3 ${sport} walk stopped at ${oldestSeen}; pending goes back to ${earliest}`);
     }
     return matches;
   } catch (e) {
@@ -1333,6 +1350,10 @@ async function gradePendingSharpFlowPicks(db, finals) {
     const snap = await db.collection(col).where('status', '==', 'PENDING').get();
     for (const doc of snap.docs) {
       const pick = doc.data() || {};
+      if (ONLY_SPORTS && !ONLY_SPORTS.has(pick.sport)) {
+        skipped++;
+        continue;
+      }
       if (pick.commenceTime && Number(pick.commenceTime) > now) {
         skipped++;
         continue;
@@ -1419,7 +1440,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
         }
       }
       if (allSidesGraded) updates.status = 'COMPLETED';
-      await doc.ref.update(updates);
+      if (!PREVIEW) await doc.ref.update(updates);
     }
   }
   console.log(`Featured picks graded: ${graded} sides (${skipped} still waiting)`);
@@ -1549,6 +1570,11 @@ async function main() {
   const snapshot = TAILS_ONLY
     ? { docs: [], pending: 0, exitedHeld: 0, exitedSkipped: 0 }
     : await loadGradeCandidates(db);
+  if (ONLY_SPORTS && snapshot.docs.length) {
+    snapshot.docs = snapshot.docs.filter((doc) => ONLY_SPORTS.has(doc.data()?.sport));
+    console.log(`Only ${[...ONLY_SPORTS].join(', ')}: ${snapshot.docs.length} open positions`);
+  }
+  if (PREVIEW) console.log('Preview: no writes');
   if (!snapshot.docs.length) {
     console.log('No pending or held-through-exit positions to grade.');
   } else {
@@ -1593,7 +1619,7 @@ async function main() {
     if (d.sport === 'LOL' && d.date) lolDates.add(d.date);
   }
 
-  const openTails = await collectOpenTails(db);
+  const openTails = (await collectOpenTails(db)).filter((t) => !ONLY_SPORTS || ONLY_SPORTS.has(t.sport));
   console.log(`Open tails: ${openTails.length}`);
   for (const t of openTails) {
     sports.add(t.sport);
@@ -1608,19 +1634,15 @@ async function main() {
   const pendingPicks = TAILS_ONLY
     ? { sports: new Set(), bySport: { CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(), WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set(), ATP: new Set(), CS2: new Set(), LOL: new Set() } }
     : await collectPendingPickDates(db);
-  for (const s of pendingPicks.sports) sports.add(s);
-  for (const d of pendingPicks.bySport.CBB) cbbDates.add(d);
-  for (const d of pendingPicks.bySport.NHL) nhlDates.add(d);
-  for (const d of pendingPicks.bySport.MLB) mlbDates.add(d);
-  for (const d of pendingPicks.bySport.NBA) nbaDates.add(d);
-  for (const d of pendingPicks.bySport.WNBA) wnbaDates.add(d);
-  for (const d of pendingPicks.bySport.NFL) nflDates.add(d);
-  for (const d of pendingPicks.bySport.CFB) cfbDates.add(d);
-  for (const d of pendingPicks.bySport.SOC) socDates.add(d);
-  for (const d of pendingPicks.bySport.UFC) ufcDates.add(d);
-  for (const d of pendingPicks.bySport.ATP) atpDates.add(d);
-  for (const d of pendingPicks.bySport.CS2 || []) cs2Dates.add(d);
-  for (const d of pendingPicks.bySport.LOL || []) lolDates.add(d);
+  const pickDates = {
+    CBB: cbbDates, NHL: nhlDates, MLB: mlbDates, NBA: nbaDates, WNBA: wnbaDates, NFL: nflDates,
+    CFB: cfbDates, SOC: socDates, UFC: ufcDates, ATP: atpDates, CS2: cs2Dates, LOL: lolDates,
+  };
+  for (const s of pendingPicks.sports) {
+    if (ONLY_SPORTS && !ONLY_SPORTS.has(s)) continue;
+    sports.add(s);
+    for (const d of pendingPicks.bySport[s] || []) pickDates[s]?.add(d);
+  }
 
   const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...cfbDates, ...socDates, ...ufcDates, ...atpDates, ...cs2Dates, ...lolDates]);
   const knownFinals = await loadKnownFinalsFromPicks(db, allDates);
@@ -1721,29 +1743,33 @@ async function main() {
 
   let atpFinals = [];
   if (sports.has('ATP')) {
-    for (const d of recentScoreboardDates(atpDates)) {
+    // A middle-name miss used to sit pending until the two-day board moved
+    // on. Keep every pending date so the corrected name still gets a score.
+    const atpSeen = new Set();
+    for (const d of [...atpDates].filter(Boolean).sort()) {
       const matches = await fetchATPFinalMatches(d);
-      atpFinals.push(...matches);
-      console.log(`ESPN ATP API: ${matches.length} final singles matches for ${d}`);
+      let added = 0;
+      for (const m of matches) {
+        const k = `${m.dateET}|${m.awayCode}|${m.homeCode}|${m.awayScore}|${m.homeScore}`;
+        if (atpSeen.has(k)) continue;
+        atpSeen.add(k);
+        atpFinals.push(m);
+        added++;
+      }
+      console.log(`ESPN ATP API: ${matches.length} final singles matches for ${d} (${added} new)`);
     }
   }
 
   let cs2Finals = [];
   if (sports.has('CS2')) {
-    for (const d of recentScoreboardDates(cs2Dates)) {
-      const matches = await fetchEsportsFinalMatches('CS2', d);
-      cs2Finals.push(...matches);
-      console.log(`BO3 CS2: ${matches.length} final matches for ${d}`);
-    }
+    cs2Finals = await fetchEsportsFinalMatches('CS2', cs2Dates);
+    console.log(`BO3 CS2: ${cs2Finals.length} finals across ${cs2Dates.size} pending dates`);
   }
 
   let lolFinals = [];
   if (sports.has('LOL')) {
-    for (const d of recentScoreboardDates(lolDates)) {
-      const matches = await fetchEsportsFinalMatches('LOL', d);
-      lolFinals.push(...matches);
-      console.log(`BO3 LoL: ${matches.length} final matches for ${d}`);
-    }
+    lolFinals = await fetchEsportsFinalMatches('LOL', lolDates);
+    console.log(`BO3 LoL: ${lolFinals.length} finals across ${lolDates.size} pending dates`);
   }
 
   if (!TAILS_ONLY) {
@@ -1869,7 +1895,7 @@ async function main() {
         isGrade: true,
       });
 
-      batch.update(doc.ref, {
+      if (!PREVIEW) batch.update(doc.ref, {
         status: 'GRADED',
         result: outcome,
         'score.away': game.awayScore,
@@ -1885,7 +1911,7 @@ async function main() {
         steam: gradeTape.steam,
         gradedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-      batchOps++;
+      if (!PREVIEW) batchOps++;
       graded++;
     }
 
@@ -1903,17 +1929,21 @@ async function main() {
   // Skip that — exportWalletProfiles already rebuilds the CLV ledger + profiles
   // from the same collection on this workflow. Per-run graded count above is enough.
 
-  await gradeOpenTails(db, openTails, {
-    nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
-    ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals, knownFinals,
-  });
+  if (!PREVIEW) {
+    await gradeOpenTails(db, openTails, {
+      nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals,
+      ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals, knownFinals,
+    });
+  }
 
-  try {
-    const asOf = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    const morning = await rebuildMorningRanks(db, asOf);
-    console.log(`Morning rank cache: ${morning.seats} top-3 seats, ${morning.gapWallets} gap-lead wallets, ${morning.bets} bets since ${morning.since}`);
-  } catch (err) {
-    console.warn(`Morning rank cache rebuild failed: ${err.message}`);
+  if (!PREVIEW && !ONLY_SPORTS) {
+    try {
+      const asOf = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+      const morning = await rebuildMorningRanks(db, asOf);
+      console.log(`Morning rank cache: ${morning.seats} top-3 seats, ${morning.gapWallets} gap-lead wallets, ${morning.bets} bets since ${morning.since}`);
+    } catch (err) {
+      console.warn(`Morning rank cache rebuild failed: ${err.message}`);
+    }
   }
 
   console.log('\nDone.');

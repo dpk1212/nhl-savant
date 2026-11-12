@@ -32,7 +32,7 @@ export function normalizePlayerName(s) {
     .replace(/[^a-z0-9]/g, '');
 }
 
-/** "G. Perricard" and "Giovanni Perricard" share a last-name key when the first is an initial. */
+/** Folded full name. Grading comparison lives in playersMatch. */
 export function resolveATPPlayer(raw) {
   if (!raw) return null;
   let cleaned = String(raw)
@@ -53,10 +53,42 @@ export function makeATPGameKey(a, b) {
   return `${aa}_${bb}`;
 }
 
+// Polymarket drops middle names and writes Alexander for Aleksandr.
+// "Tomas Etcheverry" is "Tomas Martin Etcheverry". First and last still have to match.
+const FIRST_NAME_SAME = { alexander: 'aleksandr' };
+
+function playerTokens(raw) {
+  const cleaned = String(raw || '')
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s+,?\s*(jr\.?|sr\.?|ii|iii|iv)\s*$/i, '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  return cleaned.split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+}
+
+function canonToken(tok, index) {
+  if (index === 0 && FIRST_NAME_SAME[tok]) return FIRST_NAME_SAME[tok];
+  return tok;
+}
+
 export function playersMatch(rawA, rawB) {
   const a = resolveATPPlayer(rawA);
   const b = resolveATPPlayer(rawB);
-  return !!(a && b && a === b);
+  if (a && b && a === b) return true;
+  const left = playerTokens(rawA).map(canonToken);
+  const right = playerTokens(rawB).map(canonToken);
+  if (left.length < 2 || right.length < 2) return false;
+  if (left[0] !== right[0] || left[left.length - 1] !== right[right.length - 1]) return false;
+  const short = left.length <= right.length ? left : right;
+  const long = left.length <= right.length ? right : left;
+  let i = 0;
+  for (const tok of short) {
+    while (i < long.length && long[i] !== tok) i++;
+    if (i === long.length) return false;
+    i++;
+  }
+  return true;
 }
 
 /**

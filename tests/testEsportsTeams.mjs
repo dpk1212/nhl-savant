@@ -57,6 +57,7 @@ assert.equal(esportsTeamsMatch('Aurora Gaming', 'Aurora'), true);
 assert.equal(esportsTeamsMatch('Aurora Gaming', 'Aurora Young Blud'), false);
 assert.equal(esportsTeamsMatch('BetBoom Team', 'BetBoom'), true);
 assert.equal(esportsTeamsMatch('FUT Esports', 'FUT'), true);
+assert.equal(esportsTeamsMatch('XI Esport', 'XI'), true);
 assert.equal(esportsTeamsMatch('Team Nemesis', 'Nemesis'), true);
 assert.equal(esportsTeamsMatch('Team Nemesis', 'Nemesis Academy'), false);
 assert.equal(esportsTeamsMatch('FaZe', 'GamerLegion'), false);
