@@ -21,7 +21,7 @@ const INSTRUCTIONS = [
   'A record is that sport, all markets. When confirmed is 1, it is one wallet. When confirmed is more than 1, it is those wallets pooled.',
   'sharp on a ticket is the Action tab for that wallet: size versus their usual, last-10 form, last-30 dollars, and the record in this market. opposed is unopposed or contested.',
   'sameNight letters match the same wallet across games tonight only. The letter is not a name and it changes tomorrow.',
-  'wallet_profile takes one sameNight letter and returns that wallet: overall record, the sport and market records, the record by bet size, last 10, streak, and tonight\'s tickets with price and size versus usual.',
+  'wallet_profile looks up one ticket by the game and the pick, then returns that wallet: overall record, the sport and market records, the record by bet size, last 10, streak, and tonight\'s tickets with price and size versus usual. Do not pass a sameNight letter. The letter changes when the board changes.',
   'find_specialists takes a sport and ranks tonight\'s wallets by how far that sport\'s record beats the overall record. It flags a wallet betting 1.5x or more tonight.',
   'Each ticket has the price paid and the line. kickoffEt is the game time.',
   'Do not name a wallet. Do not explain how a stake was chosen. A post uses the summary and ends with the site link.',
@@ -96,15 +96,17 @@ const TOOLS = [
     name: 'wallet_profile',
     title: 'Wallet profile',
     annotations: { ...READ, title: 'Wallet profile' },
-    description: 'One wallet from tonight\'s board, by its sameNight letter. Returns the overall record, the record by sport and market, the record by bet size, the last 10, the streak, the biggest recent bet against tonight\'s, and tonight\'s tickets with price and size versus usual. Includes a short post. No wallet name and no wallet id.',
+    description: 'One wallet from a confirmed ticket. Pass the game and the pick, such as query Memphis and pick Memphis, or query Baylor at TCU and pick Baylor +7.5. Returns the overall record, the record by sport and market, the record by bet size, the last 10, the streak, and tonight\'s tickets with price and size versus usual. Includes a short post. Do not pass a sameNight letter. No wallet name and no wallet id.',
     inputSchema: {
       type: 'object',
       properties: {
-        sameNight: { type: 'string', description: 'The letter on tonight\'s tickets. Example: A.' },
-        sport: { type: 'string', description: 'Optional sport to lead the post, such as CFB or ATP.' },
+        query: { type: 'string', description: 'Game, team, or matchup. Example: Memphis, or Baylor at TCU.' },
+        pick: { type: 'string', description: 'The ticket. Example: Memphis, Baylor +7.5, Under 49.5.' },
+        price: { type: 'string', description: 'Optional American odds when more than one wallet is on that pick. Example: -113.' },
+        sport: { type: 'string', description: 'Optional sport, such as CFB or ATP.' },
+        market: { type: 'string', description: 'Optional market: ML, SPREAD, or TOTAL.' },
         date: { type: 'string', description: 'Game date YYYY-MM-DD in US Eastern. Defaults to today.' },
       },
-      required: ['sameNight'],
       additionalProperties: false,
     },
   },
@@ -320,6 +322,56 @@ function gameMatches(game, query) {
   const tokens = q.split(' ').filter((t) => t.length >= 2 && t !== 'at' && t !== 'vs');
   if (!tokens.length) return false;
   return tokens.every((t) => names.some((n) => n.includes(t)));
+}
+
+function pickHits(sidePick, asked) {
+  const b = fold(sidePick);
+  const a = fold(asked);
+  if (!a || !b) return false;
+  if (b.includes(a) || a.includes(b)) return true;
+  const tokens = a.split(' ').filter((t) => t.length >= 1 && t !== 'at' && t !== 'vs');
+  return tokens.length > 0 && tokens.every((t) => b.includes(t));
+}
+
+function priceHits(ticketPrice, asked) {
+  if (asked == null || asked === '') return true;
+  const got = String(ticketPrice || '').trim();
+  if (!got) return false;
+  const norm = (s) => String(s).trim().replace(/^\+/, '');
+  return norm(asked) === norm(got);
+}
+
+/** Wallets on one ticket. The game and the pick stay put when the board changes. */
+function walletsOnTicket(games, { query, pick, sport, market, price } = {}) {
+  const hits = [];
+  const wantSport = sport ? String(sport).toUpperCase() : null;
+  const wantMarket = market ? String(market).toUpperCase() : null;
+  for (const game of games || []) {
+    if (wantSport && String(game.sport || '').toUpperCase() !== wantSport) continue;
+    if (query && !gameMatches(game, query)) continue;
+    for (const mkt of game.markets || []) {
+      if (wantMarket && String(mkt.market || '').toUpperCase() !== wantMarket) continue;
+      for (const side of mkt.sides || []) {
+        const needle = pick || query;
+        if (!needle || !pickHits(side.pick, needle)) continue;
+        for (const ticket of side.tickets || []) {
+          if (!ticket.short || !priceHits(ticket.price, price)) continue;
+          hits.push({
+            short: ticket.short,
+            dollars: Number(ticket.dollars) || 0,
+            price: ticket.price || null,
+            pick: side.pick,
+          });
+        }
+      }
+    }
+  }
+  const byShort = new Map();
+  for (const hit of hits) {
+    const prev = byShort.get(hit.short);
+    if (!prev || hit.dollars > prev.dollars) byShort.set(hit.short, hit);
+  }
+  return [...byShort.values()];
 }
 
 function ticketOf(pos, market) {
@@ -966,21 +1018,33 @@ async function callTool(name, args, ctx) {
     });
   }
   if (name === 'wallet_profile') {
-    const letter = String(a.sameNight || '').trim().toUpperCase();
-    if (!letter) return toolError('sameNight is required');
+    const query = String(a.query || '').trim();
+    const pick = String(a.pick || '').trim();
+    if (!query && !pick) return toolError('Pass the game and the pick. A letter changes when the board changes.');
     const date = a.date || etDate();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toolError('date must be YYYY-MM-DD');
     const { games, profiles } = await ctx.loadAction();
     const prices = ctx.loadPrices ? await ctx.loadPrices() : null;
     const open = openBoard(games, profiles, prices, date);
-    const short = [...open.letters.entries()].find(([, mark]) => mark === letter)?.[0];
-    if (!short) return toolError('That letter is not on tonight\'s board.');
+    const hits = walletsOnTicket(open.games, {
+      query,
+      pick,
+      sport: a.sport,
+      market: a.market,
+      price: a.price,
+    });
+    if (!hits.length) return toolError('No confirmed ticket matches that game and pick.');
+    if (hits.length > 1) {
+      const seen = hits.map((hit) => `${hit.pick} ${hit.price || ''}`.trim()).join(', ');
+      return toolError(`More than one wallet is on that pick. Pass price. Saw ${seen}.`);
+    }
     const focus = a.sport ? String(a.sport).toUpperCase() : null;
-    const read = profileRead(profiles.get(short), ticketsFor(open.games, short), { letter, sport: focus });
+    const read = profileRead(profiles.get(hits[0].short), ticketsFor(open.games, hits[0].short), { sport: focus });
     return textBlock({
-      source: 'One confirmed wallet from tonight\'s board. The letter is not a name. Records are graded bets. Bet size is versus that wallet\'s usual in the sport. The size split on a sport is the last 30 days. No names.',
+      source: 'One confirmed wallet, found by the game and the pick. Records are graded bets. Bet size is versus that wallet\'s usual in the sport. The size split on a sport is the last 30 days. No names.',
       site: SITE,
       date,
+      matched: { pick: hits[0].pick, price: hits[0].price },
       ...read,
     });
   }

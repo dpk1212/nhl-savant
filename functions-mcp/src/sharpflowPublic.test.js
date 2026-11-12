@@ -383,14 +383,33 @@ test('a specialist post contrasts the sport with the overall record', async () =
   assert.match(board.specialists[0].post, /Last 10: 10-0/);
   assert.ok(board.specialists[0].gap > board.specialists[1].gap);
 
-  const letter = board.specialists[0].sameNight;
+  feeds.games.push({
+    sport: 'NBA',
+    gameKey: 'phx_den',
+    away: 'Suns',
+    home: 'Nuggets',
+    markets: {
+      ML: [{ wallet: '0x000000cccccc', side: 'away', invested: 5000, odds: -150 }],
+    },
+  });
+  profiles.set('cccccc', {
+    positions: { n: 40, wins: 22, losses: 18, invested: 20000, settledPnl: 100, dollarRoi: 1 },
+    bySport: {
+      NBA: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 20, wins: 12, losses: 8, invested: 10000, settledPnl: 500, dollarRoi: 5 },
+      },
+    },
+  });
+
   const one = await handleMcpMessage({
     jsonrpc: '2.0',
     id: 12,
     method: 'tools/call',
-    params: { name: 'wallet_profile', arguments: { sameNight: letter, sport: 'CFB', date: '2026-11-12' } },
+    params: { name: 'wallet_profile', arguments: { query: 'Baylor at TCU', pick: 'Baylor +7.5', sport: 'CFB', date: '2026-11-12' } },
   }, ctx);
   const body = JSON.parse(one.result.content[0].text);
+  assert.equal(body.overall.record, '50-48');
   assert.equal(body.focus, 'CFB');
   assert.equal(body.markets.SPREAD.record, '12-3');
   assert.equal(body.biggestYet, true);
@@ -401,14 +420,25 @@ test('a specialist post contrasts the sport with the overall record', async () =
   assert.equal(text.includes('aaaaaa'), false);
   assert.equal(text.includes('0x'), false);
   assert.equal(text.includes('bbbbbb'), false);
+  assert.equal(text.includes('Suns'), false);
+
+  const suns = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 14,
+    method: 'tools/call',
+    params: { name: 'wallet_profile', arguments: { query: 'Suns', pick: 'Suns', date: '2026-11-12' } },
+  }, ctx);
+  const sunsBody = JSON.parse(suns.result.content[0].text);
+  assert.equal(sunsBody.overall.record, '22-18');
+  assert.equal(sunsBody.focus, 'NBA');
 
   const missing = await handleMcpMessage({
     jsonrpc: '2.0',
     id: 13,
     method: 'tools/call',
-    params: { name: 'wallet_profile', arguments: { sameNight: 'ZZ', date: '2026-11-12' } },
+    params: { name: 'wallet_profile', arguments: { query: 'Memphis', pick: 'Suns', date: '2026-11-12' } },
   }, ctx);
-  assert.match(missing.result.content[0].text, /not on tonight/);
+  assert.match(missing.result.content[0].text, /No confirmed ticket/);
 });
 
 test('oauth code checks the challenge and rejects other sites', () => {
