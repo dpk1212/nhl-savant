@@ -47,3 +47,29 @@ export function resolvePayOdds({
   if (bookPx != null) return { payOdds: bookPx, polyReceipt: poly, demotedPoly: false };
   return { payOdds: null, polyReceipt: poly, demotedPoly: false };
 }
+
+/**
+ * Price the stake rules read. Same hero the card paints: when the stored
+ * stamp is a Polymarket receipt, the sportsbook quote is the price.
+ * A missing book leaves the stamp. Never invents a number.
+ */
+export function stakePriceOdds({
+  stampedOdds = null,
+  bookOnLine = null,
+  oddsSource = null,
+  bookLabel = null,
+  fairBook = null,
+} = {}) {
+  const src = `${oddsSource || ''}`;
+  const { payOdds } = resolvePayOdds({
+    stampedOdds,
+    bookOnLine,
+    polyReceipt: src.toLowerCase().includes('poly') ? stampedOdds : null,
+    oddsSource,
+    bookLabel,
+    fairBook,
+  });
+  if (Number.isFinite(payOdds) && payOdds !== 0) return payOdds;
+  const stamp = Number(stampedOdds);
+  return Number.isFinite(stamp) && stamp !== 0 ? stamp : null;
+}

@@ -354,6 +354,7 @@ import {
   isRankEligibleOnSourceB,
 } from '../src/lib/actionLockPin.js';
 import { oddsCap } from '../src/lib/oddsCap.js';
+import { stakePriceOdds } from '../src/lib/payOdds.js';
 import {
   applyMlDoorSteamPolicy,
   mlDoorKind,
@@ -3422,6 +3423,31 @@ async function createMissingLockedPicks({
         skipped.push({ docId, side, reason: 'missing_ticket_odds', marketType });
         continue;
       }
+      // Stake price is the book on the card. `odds` stays the Polymarket
+      // receipt on peak. A receipt at -100 does not price the juice mute
+      // or the top-3 pick'em.
+      const stakeOdds = stakePriceOdds({
+        stampedOdds: odds,
+        bookOnLine: tapeOdds,
+        oddsSource: Number.isFinite(ticketPolyPrice) ? 'poly_avgPrice' : (meta?.fairBook || null),
+        bookLabel: Number.isFinite(ticketPolyPrice) ? 'Polymarket' : null,
+      });
+      if (top3ForceCreate && !gapForceCreate && !trustProbeCreate) {
+        const pricedTop3 = applyTop3PickRung({
+          units: 0,
+          odds: stakeOdds,
+          sport,
+          market: marketType,
+          side,
+          pickDate: TARGET_DATE,
+          positions,
+          opponentUnits: unitsAgainst(side),
+        });
+        if (!pricedTop3.fires) {
+          skipped.push({ docId, side, reason: 'top3_book_price', odds: stakeOdds });
+          continue;
+        }
+      }
 
       // v12 ladder is the authoritative bet size. unitsFromAgsV12 applies
       // the mute-on-≤0 rule + the absolute ladder (0.25/0.50/1/3/5) +
@@ -3910,7 +3936,7 @@ async function createMissingLockedPicks({
       if (createV121Eligible && peakUnitsApplied > 0) {
         favJuicePolicyCreate = applyFavJuiceMuteOverlay({
           units: peakUnitsApplied,
-          odds: odds ?? null,
+          odds: stakeOdds,
           pickDate: TARGET_DATE,
         });
         peakUnitsApplied = favJuicePolicyCreate.units;
@@ -4232,7 +4258,7 @@ async function createMissingLockedPicks({
       if (pressAppliedCreate && peakUnitsApplied > 0) {
         const favJuiceLastCreate = applyFavJuiceLastPublish({
           units: peakUnitsApplied,
-          odds: odds ?? null,
+          odds: stakeOdds,
           pickDate: TARGET_DATE,
           priorPolicy: favJuicePolicyCreate,
         });
@@ -4302,7 +4328,7 @@ async function createMissingLockedPicks({
         const tierBeforeTop3 = hcStakeTierCreate;
         top3PolicyCreate = applyTop3PickRung({
           units: peakUnitsApplied,
-          odds: odds ?? null,
+          odds: stakeOdds,
           sport,
           market: marketType,
           side,
@@ -4320,7 +4346,7 @@ async function createMissingLockedPicks({
         tierBeforeGap = hcStakeTierCreate;
         gapPolicyCreate = applyGapLeadRescue({
           units: peakUnitsApplied,
-          odds: odds ?? null,
+          odds: stakeOdds,
           sport,
           market: marketType,
           side,
@@ -4467,7 +4493,7 @@ async function createMissingLockedPicks({
       if (peakUnitsApplied > 0 && !isOperatorKilled({ _id: docId }, side, null)) {
         const favJuiceAfterCreate = applyFavJuiceLastPublish({
           units: peakUnitsApplied,
-          odds: odds ?? null,
+          odds: stakeOdds,
           pickDate: TARGET_DATE,
           priorPolicy: favJuicePolicyCreate,
         });
@@ -5651,6 +5677,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const liveTier = agsV12Result ? agsV12Result.tier : 'FADE';
   const liveStars = starsFromTierV12(liveTier);
   const sideOdds = sd.peak?.odds ?? sd.lock?.odds ?? null;
+  // Book on the card. sideOdds stays the receipt for the rest of the ladder.
+  const stakeOdds = stakePriceOdds({
+    stampedOdds: sideOdds,
+    bookOnLine: sd.peak?.pinnacleOdds ?? sd.lock?.pinnacleOdds ?? sd.pinnacleOdds ?? null,
+    oddsSource: sd.peak?.oddsSource ?? sd.lock?.oddsSource ?? null,
+    bookLabel: sd.peak?.book ?? sd.lock?.book ?? null,
+  });
   const liveUnits = appliedStatus === 'ACTIVE'
     ? unitsFromAgsV12(scoreV12Live, sideOdds, agsCalibration)
     : 0;
@@ -6457,7 +6490,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
     favJuicePolicy = applyFavJuiceMuteOverlay({
       units: finalUnitsApplied,
-      odds: sideOdds,
+      odds: stakeOdds,
       pickDate,
     });
     finalUnitsApplied = favJuicePolicy.units;
@@ -6812,7 +6845,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (pressApplied && finalUnitsApplied > 0 && !skipManualFlinch) {
     const favJuiceLast = applyFavJuiceLastPublish({
       units: finalUnitsApplied,
-      odds: sideOdds,
+      odds: stakeOdds,
       pickDate,
       priorPolicy: favJuicePolicy,
     });
@@ -6879,7 +6912,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (!skipManualFlinch && isTop3PickLive(pickDate)) {
     top3Policy = applyTop3PickRung({
       units: finalUnitsApplied,
-      odds: sideOdds,
+      odds: stakeOdds,
       sport: pick.sport,
       market: mkt,
       side,
@@ -6902,7 +6935,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (!skipManualFlinch && isGapLeadLive(pickDate)) {
     gapPolicy = applyGapLeadRescue({
       units: finalUnitsApplied,
-      odds: sideOdds,
+      odds: stakeOdds,
       sport: pick.sport,
       market: mkt,
       side,
@@ -7069,7 +7102,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (!skipManualFlinch && !operatorKilled && finalUnitsApplied > 0) {
     const favJuiceAfter = applyFavJuiceLastPublish({
       units: finalUnitsApplied,
-      odds: sideOdds,
+      odds: stakeOdds,
       pickDate,
       priorPolicy: favJuicePolicy,
     });
