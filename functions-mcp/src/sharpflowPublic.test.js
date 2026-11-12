@@ -35,7 +35,7 @@ test('initialize names the connector', async () => {
 test('today is the first tool and every tool is a read', async () => {
   const reply = await handleMcpMessage({ jsonrpc: '2.0', id: 2, method: 'tools/list' }, {});
   const tools = reply.result.tools;
-  assert.deepEqual(tools.map((t) => t.name), ['today', 'locked_card', 'game_action', 'sport_action']);
+  assert.deepEqual(tools.map((t) => t.name), ['today', 'locked_card', 'game_action', 'sport_action', 'wallet_profile', 'find_specialists']);
   assert.equal(tools.every((t) => t.annotations.readOnlyHint === true), true);
   assert.equal(tools.every((t) => t.annotations.openWorldHint === false), true);
   assert.equal(TOOLS[0].name, 'today');
@@ -315,6 +315,100 @@ test('best price carries the hit edge, and the agreeing lock sorts first', () =>
   assert.equal(done.all.record, '1-1');
   assert.equal(done.bySport[0].sport, 'NHL');
   assert.equal(done.bySportMarket[0].market, 'ML');
+});
+
+test('a specialist post contrasts the sport with the overall record', async () => {
+  const presses = Array.from({ length: 7 }, (_, i) => ({
+    date: `2026-11-0${i + 1}`,
+    won: 1,
+    sizeBand: 'press',
+    invested: 400,
+  }));
+  const specialist = {
+    positions: { n: 98, wins: 50, losses: 48, invested: 50000, settledPnl: 1000, dollarRoi: 2 },
+    bySport: {
+      CFB: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 23, wins: 17, losses: 6, invested: 23000, settledPnl: 112000, dollarRoi: 66 },
+        byMarket: {
+          SPREAD: { positions: { n: 15, wins: 12, losses: 3, settledPnl: 112000, dollarRoi: 80 } },
+        },
+        form: { actionL10: { w: 10, l: 0 }, recentAction: presses },
+      },
+    },
+  };
+  const ordinary = {
+    positions: { n: 40, wins: 30, losses: 10, invested: 20000, settledPnl: 4000, dollarRoi: 20 },
+    bySport: {
+      CFB: {
+        whitelistTier: 'CONFIRMED',
+        positions: { n: 16, wins: 8, losses: 8, invested: 16000, settledPnl: -500, dollarRoi: -3 },
+      },
+    },
+  };
+  const feeds = indexFeeds([{
+    market: 'SPREAD',
+    data: {
+      CFB: {
+        baylor_tcu: {
+          away: 'Baylor',
+          home: 'TCU',
+          positions: [
+            { wallet: '0x000000aaaaaa', side: 'away', invested: 2000, odds: -113, entryLine: 7.5 },
+            { wallet: '0x000000bbbbbb', side: 'home', invested: 800, odds: -110, entryLine: -7.5 },
+          ],
+        },
+      },
+    },
+  }]);
+  const profiles = new Map([
+    ['aaaaaa', specialist],
+    ['bbbbbb', ordinary],
+  ]);
+  const ctx = {
+    loadAction: async () => ({ scannedAt: '2026-11-12T18:00:00Z', profiles, games: feeds.games }),
+  };
+  const found = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 11,
+    method: 'tools/call',
+    params: { name: 'find_specialists', arguments: { sport: 'CFB', date: '2026-11-12' } },
+  }, ctx);
+  const board = JSON.parse(found.result.content[0].text);
+  assert.equal(board.specialists[0].sport, '17-6');
+  assert.equal(board.specialists[0].overall, '50-48');
+  assert.equal(board.specialists[0].bettingBig, true);
+  assert.match(board.specialists[0].post, /college football specialist/);
+  assert.match(board.specialists[0].post, /Presses \(1\.5x\+\): 7-0/);
+  assert.match(board.specialists[0].post, /Last 10: 10-0/);
+  assert.ok(board.specialists[0].gap > board.specialists[1].gap);
+
+  const letter = board.specialists[0].sameNight;
+  const one = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 12,
+    method: 'tools/call',
+    params: { name: 'wallet_profile', arguments: { sameNight: letter, sport: 'CFB', date: '2026-11-12' } },
+  }, ctx);
+  const body = JSON.parse(one.result.content[0].text);
+  assert.equal(body.focus, 'CFB');
+  assert.equal(body.markets.SPREAD.record, '12-3');
+  assert.equal(body.biggestYet, true);
+  assert.match(body.post, /Baylor \+7\.5/);
+  assert.match(body.tonight[0].price, /-113/);
+  assert.equal(body.tonight[0].vsUsual, 2);
+  const text = JSON.stringify(body);
+  assert.equal(text.includes('aaaaaa'), false);
+  assert.equal(text.includes('0x'), false);
+  assert.equal(text.includes('bbbbbb'), false);
+
+  const missing = await handleMcpMessage({
+    jsonrpc: '2.0',
+    id: 13,
+    method: 'tools/call',
+    params: { name: 'wallet_profile', arguments: { sameNight: 'ZZ', date: '2026-11-12' } },
+  }, ctx);
+  assert.match(missing.result.content[0].text, /not on tonight/);
 });
 
 test('oauth code checks the challenge and rejects other sites', () => {
