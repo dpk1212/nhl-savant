@@ -34,6 +34,7 @@ import {
   resolveATPPlayer,
   playersMatch,
   isGradableATPMainML,
+  atpCodesMatch,
 } from './lib/atpPlayers.js';
 import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML, teamsFromBo3Slug } from './lib/esportsTeams.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
@@ -1186,8 +1187,8 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
     if (parts.length < 2) return null;
     const dated = atpFinals.filter(g => finalDateMatches(g, pos));
     for (const g of dated) {
-      if (g.awayCode === parts[0] && g.homeCode === parts[1]) return g;
-      if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+      if (atpCodesMatch(g.awayCode, parts[0]) && atpCodesMatch(g.homeCode, parts[1])) return g;
+      if (atpCodesMatch(g.awayCode, parts[1]) && atpCodesMatch(g.homeCode, parts[0])) {
         return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
       }
     }

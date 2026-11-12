@@ -53,10 +53,45 @@ export function makeATPGameKey(a, b) {
   return `${aa}_${bb}`;
 }
 
-export function playersMatch(rawA, rawB) {
+/**
+ * ESPN often inserts a middle name ("Tomas Martin Etcheverry") that our
+ * board drops ("Tomas Etcheverry"). Same last name + same first-name
+ * prefix is a match; last-name-only collisions are rejected.
+ */
+export function namesLooselyMatch(rawA, rawB) {
   const a = resolveATPPlayer(rawA);
   const b = resolveATPPlayer(rawB);
-  return !!(a && b && a === b);
+  if (a && b && a === b) return true;
+  const toks = (s) => String(s || '').trim().split(/\s+/).filter(Boolean);
+  const aa = toks(rawA);
+  const bb = toks(rawB);
+  if (aa.length < 2 || bb.length < 2) return false;
+  const lastA = normalizePlayerName(aa[aa.length - 1]);
+  const lastB = normalizePlayerName(bb[bb.length - 1]);
+  if (!lastA || lastA !== lastB || lastA.length < 4) return false;
+  const firstA = normalizePlayerName(aa[0]);
+  const firstB = normalizePlayerName(bb[0]);
+  if (!firstA || !firstB || firstA.length < 3 || firstB.length < 3) return false;
+  return firstA === firstB || firstA.startsWith(firstB) || firstB.startsWith(firstA);
+}
+
+/** Game-key codes: tomasetcheverry ↔ tomasmartinetcheverry. */
+export function atpCodesMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  if (short.length < 8 || long.length - short.length < 3) return false;
+  for (let n = Math.min(short.length - 4, 14); n >= 5; n--) {
+    const last = short.slice(-n);
+    const first = short.slice(0, short.length - n);
+    if (first.length < 3) continue;
+    if (long.endsWith(last) && long.startsWith(first)) return true;
+  }
+  return false;
+}
+
+export function playersMatch(rawA, rawB) {
+  return namesLooselyMatch(rawA, rawB);
 }
 
 /**

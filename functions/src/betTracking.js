@@ -957,10 +957,35 @@ function resolveATPPlayer(raw) {
   return n;
 }
 
+function atpCodesMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  if (short.length < 8 || long.length - short.length < 3) return false;
+  for (let n = Math.min(short.length - 4, 14); n >= 5; n--) {
+    const last = short.slice(-n);
+    const first = short.slice(0, short.length - n);
+    if (first.length < 3) continue;
+    if (long.endsWith(last) && long.startsWith(first)) return true;
+  }
+  return false;
+}
+
 function playersMatchATP(rawA, rawB) {
   const a = resolveATPPlayer(rawA);
   const b = resolveATPPlayer(rawB);
-  return !!(a && b && a === b);
+  if (a && b && a === b) return true;
+  const toks = (s) => String(s || "").trim().split(/\s+/).filter(Boolean);
+  const aa = toks(rawA);
+  const bb = toks(rawB);
+  if (aa.length < 2 || bb.length < 2) return false;
+  const lastA = normalizeATPPlayer(aa[aa.length - 1]);
+  const lastB = normalizeATPPlayer(bb[bb.length - 1]);
+  if (!lastA || lastA !== lastB || lastA.length < 4) return false;
+  const firstA = normalizeATPPlayer(aa[0]);
+  const firstB = normalizeATPPlayer(bb[0]);
+  if (!firstA || !firstB || firstA.length < 3 || firstB.length < 3) return false;
+  return firstA === firstB || firstA.startsWith(firstB) || firstB.startsWith(firstA);
 }
 
 function isGradableATPMainML(pos) {
@@ -975,7 +1000,9 @@ function isGradableATPMainML(pos) {
 async function fetchATPFinalMatches(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, "")}` : "";
-    const res = await fetch(`${ESPN_ATP_URL}${ymd}`);
+    // ESPN 403s Node's default fetch UA; curl/8.x is the same header
+    // the rest of this grader and gradeSharpActions.js already use.
+    const res = await fetch(`${ESPN_ATP_URL}${ymd}`, {headers: ESPN_HEADERS});
     if (!res.ok) { logger.warn(`ESPN ATP API ${res.status}`); return []; }
     const data = await res.json();
     const matches = [];
@@ -1539,11 +1566,11 @@ exports.updateBetResults = onSchedule({
               !pick.date || (g.dateET != null && g.dateET === pick.date),
             );
             for (const g of dated) {
-              if (g.awayCode === parts[0] && g.homeCode === parts[1]) {
+              if (atpCodesMatch(g.awayCode, parts[0]) && atpCodesMatch(g.homeCode, parts[1])) {
                 matchingGame = g;
                 break;
               }
-              if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+              if (atpCodesMatch(g.awayCode, parts[1]) && atpCodesMatch(g.homeCode, parts[0])) {
                 matchingGame = { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
                 break;
               }

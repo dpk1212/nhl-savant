@@ -1,0 +1,25 @@
+# One-shot: grade finished ATP moneylines still sitting live.
+name: grade-finished-atp
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/grade-atp-live-24aa
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Grade finished ATP tickets
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/_grade_finished_atp.mjs
