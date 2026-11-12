@@ -659,6 +659,48 @@ function matchToGameKey(teams, cbbMap, sport) {
   return null;
 }
 
+function asJsonList(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string' || !value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Match-winner prices already on the event. Trade history can time out
+ * and leave the card with no line. These percents are the line until
+ * that history lands. Away percent is what the spark draws.
+ */
+function listedMoneylinePcts(ev, sport, awayName, homeName) {
+  if (sport !== 'ATP' && sport !== 'CS2' && sport !== 'LOL') return null;
+  const eventSlug = String(ev?.slug || '').toLowerCase();
+  let market = null;
+  for (const m of ev?.markets || []) {
+    const kind = String(m?.sportsMarketType || '').toLowerCase();
+    if (kind && kind !== 'moneyline') continue;
+    const slug = String(m?.slug || '').toLowerCase();
+    if (sport === 'ATP' && !isMainATPMatchSlug(slug) && slug !== eventSlug) continue;
+    if ((sport === 'CS2' || sport === 'LOL') && esportFromSlug(slug) !== sport && slug !== eventSlug) continue;
+    market = m;
+    break;
+  }
+  if (!market) return null;
+  const prices = asJsonList(market.outcomePrices).map(Number);
+  const names = asJsonList(market.outcomes).map((name) => String(name || ''));
+  if (prices.length < 2 || names.length < 2 || prices.some((p) => !(p > 0 && p < 1))) return null;
+  const away = normalize(awayName);
+  const first = normalize(names[0]);
+  const firstIsAway = first && away && (first.includes(away) || away.includes(first));
+  const awayPct = Number(((firstIsAway ? prices[0] : prices[1]) * 100).toFixed(1));
+  const homePct = Number(((firstIsAway ? prices[1] : prices[0]) * 100).toFixed(1));
+  if (!(awayPct > 0 && awayPct < 100) || !(homePct > 0 && homePct < 100)) return null;
+  return { awayPct, homePct };
+}
+
 // ─── Load today's schedule ──────────────────────────────────────────────────
 async function loadTodaysSchedule(cbbMap) {
   const validCBB = new Set();
@@ -1596,6 +1638,7 @@ async function run() {
     // a game exists today; the enrichment fields (whales, priceHistory,
     // marketProbs) are all optional and may be filled in by later cycles.
     const [_awayRawSkeleton, _homeRawSkeleton] = teams;
+    const listed = listedMoneylinePcts(ev, sport, _awayRawSkeleton, _homeRawSkeleton);
     bucket[key] = {
       volume24h: Number(ev.volume_24hr ?? ev.volume ?? 0),
       liveVolume: null,
@@ -1606,10 +1649,15 @@ async function run() {
       tradeCount: 0,
       sampleCash: 0,
       priceMove1h: null,
-      priceHistory: null,
+      priceHistory: listed ? {
+        points: [listed.awayPct],
+        open: listed.awayPct,
+        current: listed.awayPct,
+        change: 0,
+      } : null,
       whales: null,
-      awayProb: null,
-      homeProb: null,
+      awayProb: listed ? listed.awayPct : null,
+      homeProb: listed ? listed.homePct : null,
       drawProb: null,
       polySpread: null,
       polyTotal: null,

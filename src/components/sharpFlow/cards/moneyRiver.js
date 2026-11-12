@@ -9,7 +9,8 @@
  * The wallet line prints those same three figures. The dots are the
  * graded bets behind that window, oldest first.
  * Coral is a down book. A wallet outside the proven pool whose shown
- * book is flat or up is unproven, so a winning line is not called a loser.
+ * book is flat or up is unproven. A winning record is not a loser
+ * either: dollars can be red on a plus win rate.
  */
 import { HC_RATIO } from '../../../lib/ags.js';
 import { ourSideLabel, theirSideLabel } from './boardFaceLine.js';
@@ -144,7 +145,11 @@ function poolOf(f) {
 }
 
 function kindOf(w) {
-  if (isLoser(w)) return bookIsDown(w) ? 'loser' : 'track';
+  if (isLoser(w)) {
+    const rec = proofRecord(w);
+    if (rec && rec.wins > rec.losses) return 'track';
+    return bookIsDown(w) ? 'loser' : 'track';
+  }
   if (!isSharp(w)) return null;
   if (w.side !== 'against' && Number.isFinite(w.sizeRatio) && w.sizeRatio >= HC_RATIO) return 'hc';
   if (w.side === 'against') return 'opp';

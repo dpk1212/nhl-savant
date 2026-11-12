@@ -479,6 +479,63 @@ function buildPolyMoneylineBoard(pick, sideKey, polyGame) {
   };
 }
 
+/** The price already on the ticket, when Polymarket history has not landed. */
+function ticketAmerican(pick) {
+  for (const key of ['odds', 'pinnacleOdds', 'lockPinnOdds', 'lockOdds']) {
+    const n = Number(pick?.[key]);
+    if (Number.isFinite(n) && n !== 0) return Math.round(n);
+  }
+  const price = Number(pick?.avgPrice);
+  if (price > 0.01 && price < 0.99) {
+    const odds = americanFromProb(price);
+    if (Number.isFinite(odds) && odds !== 0) return Math.round(odds);
+  }
+  return null;
+}
+
+/**
+ * Tennis and esports have no sportsbook tape. A missing Polymarket
+ * history used to leave the limit panel blank. The ticket price is
+ * the line until that history arrives.
+ */
+function buildBooklessTicketBoard(pick, sideKey) {
+  const odds = ticketAmerican(pick);
+  if (!Number.isFinite(odds)) return null;
+  const pinPath = [
+    { odds, max: null, t: null, mark: 'open' },
+    { odds, max: null, t: null, mark: 'now' },
+  ];
+  const ourLabel = sideKey === 'draw' ? 'Draw'
+    : (sideKey === 'away' ? shortTeam(pick.away, pick.home) : shortTeam(pick.home, pick.away));
+  const oppLabel = sideKey === 'draw' ? null
+    : (sideKey === 'away' ? shortTeam(pick.home, pick.away) : shortTeam(pick.away, pick.home));
+  return {
+    pinSeries: [odds, odds],
+    pinPath,
+    books: [{ name: 'Polymarket', odds, sharp: true }],
+    bestOdds: odds,
+    bestBook: 'Polymarket',
+    fairNow: odds,
+    fairNoVig: odds,
+    fairProb: null,
+    fairIsNoVig: false,
+    fairDisplay: odds,
+    marketLine: null,
+    liveMarketLine: null,
+    lineMoved: false,
+    ourLabel,
+    liveLabel: null,
+    oppLabel,
+    oppBestOdds: null,
+    oppBestBook: null,
+    liveBestOdds: null,
+    liveBestBook: null,
+    liveFair: null,
+    liveFairIsNoVig: false,
+    updatedAgoSec: null,
+  };
+}
+
 /** Novig / Polymarket / Kalshi onto the shop rail. Snapshot first; live ML feeds as backup. */
 function appendExchangeQuotes(books, {
   pinnGame,
@@ -823,6 +880,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     const polyGame = opts.polyData?.[sport]?.[gk] || null;
     const polyBoard = buildPolyMoneylineBoard(pick, sideKey, polyGame);
     if (polyBoard) return polyBoard;
+    const ticketBoard = buildBooklessTicketBoard(pick, sideKey);
+    if (ticketBoard) return ticketBoard;
   }
   if (!pinnacleHistory) return empty;
   const pinnGame = sport && gk ? lookupPinnGame(pinnacleHistory, sport, gk) : null;
