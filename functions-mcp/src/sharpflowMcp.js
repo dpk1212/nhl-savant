@@ -79,6 +79,37 @@ async function fetchFeeds() {
   return feedCache;
 }
 
+const betCache = new Map();
+
+async function loadWalletBets(short) {
+  const id = String(short || '').toLowerCase();
+  if (!/^[0-9a-f]{6}$/.test(id)) return [];
+  const now = Date.now();
+  const cached = betCache.get(id);
+  if (cached && now - cached.at < CACHE_MS) return cached.bets;
+  const db = admin.firestore();
+  const snap = await db.collection('sharp_action_positions')
+    .where('walletShort', '==', id)
+    .select('sport', 'invested', 'size', 'settledPnl', 'positionPnl', 'result', 'postponed', 'status')
+    .get();
+  const bets = [];
+  snap.forEach((doc) => {
+    const row = doc.data() || {};
+    if (row.status && row.status !== 'GRADED') return;
+    if (row.result === 'PUSH' || row.postponed === true) return;
+    const invested = Number(row.invested ?? row.size ?? 0);
+    const settled = Number(row.settledPnl ?? row.positionPnl ?? 0);
+    if (!(invested > 0) || Math.abs(settled) <= 1e-9) return;
+    bets.push({
+      sport: row.sport ? String(row.sport).toUpperCase() : null,
+      invested,
+      won: settled > 0 ? 1 : 0,
+    });
+  });
+  betCache.set(id, { at: now, bets });
+  return bets;
+}
+
 async function loadProfiles(shorts) {
   const db = admin.firestore();
   const map = new Map();
@@ -248,7 +279,7 @@ async function onMcp(req, res) {
     sendRpc(req, res, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid request' } }, 400);
     return;
   }
-  const ctx = { loadLocked, loadAction, loadRecord, loadPrices };
+  const ctx = { loadLocked, loadAction, loadRecord, loadPrices, loadWalletBets };
   if (Array.isArray(body)) {
     const replies = [];
     for (const msg of body) {

@@ -6,6 +6,7 @@
 
 const crypto = require('crypto');
 const { unitMarketHit } = require('./sharpflowHit');
+const { profileRead, specialistRank, ticketsFor, sizeLabel } = require('./sharpflowWallet');
 
 const SERVER_NAME = 'NHL Savant - Sharpflow';
 const SERVER_VERSION = '1.0.0';
@@ -18,10 +19,12 @@ const INSTRUCTIONS = [
   'Call today or locked_card once. The payload is the whole day.',
   'Locks with confirmed money on the same side come first. That order is agreement, then dollars. It is not an edge ranking.',
   'A record is that sport, all markets. When confirmed is 1, it is one wallet. When confirmed is more than 1, it is those wallets pooled.',
-  'sharp on a ticket is the Action tab for that wallet: size versus their usual, last-10 form, last-30 dollars, and the record in this market. opposed is unopposed or contested.',
-  'sameNight letters match the same wallet across games tonight only. The letter is not a name and it changes tomorrow.',
+  'sharp on a ticket is the Action tab for that wallet: size versus their usual in this sport and across all sports, both in dollars, last-10 bets, last-30 dollars, and the record in this market. Every record names its window. opposed is unopposed or contested.',
+  'Each ticket has id, the same six characters the site shows after the dots. wallet_profile looks that id up. sameNight is a letter for tonight only. The letter changes when the board changes, so it is not a lookup key.',
+  'wallet_profile returns the overall record, the sport and market records, and three size splits when they exist: all time in the sport, all time across all sports, and the last 30 days in the sport. Buckets are under 0.5x, 0.5x, 1x, and 1.5x and up. The press record next to a sport record is all time in that sport. Usual bet is shown in dollars for the sport and for all sports.',
+  'find_specialists takes a sport and ranks tonight\'s wallets by how far that sport\'s record beats the overall record. It flags a wallet betting 1.5x or more tonight.',
   'Each ticket has the price paid and the line. kickoffEt is the game time.',
-  'Do not name a wallet. Do not explain how a stake was chosen.',
+  'Do not name a wallet. Do not explain how a stake was chosen. A post uses the summary and ends with the site link.',
   'End with the site link.',
 ].join(' ');
 
@@ -36,7 +39,7 @@ const TOOLS = [
   {
     name: 'today',
     title: "Today's Sharp Flow",
-    description: 'Call this for any question about today. The response includes actionTab: one row per confirmed ticket of $500 and up, largest dollars first. Each row has price, line, sharp.size (press, usual, lean, or light), sharp.vsUsual (this ticket divided by that wallet usual bet in the sport), sharp.form, sharp.market, and opposed. No wallet names and no wallet ids. Always call. Do not answer from an earlier snapshot.',
+    description: 'Call this for any question about today. The response includes actionTab: one row per confirmed ticket of $500 and up, largest dollars first. Each row has id, price, line, sharp.size (under 0.5x, 0.5x, 1x, or 1.5x and up), sharp.vsUsual against the sport usual, sharp.usualSport and sharp.usualAll in dollars, sharp.form, sharp.market, and opposed. id is the six characters the site shows. sameNight is tonight only. No wallet names and no full addresses. Always call. Do not answer from an earlier snapshot.',
     annotations: { ...READ, title: "Today's Sharp Flow" },
     inputSchema: {
       type: 'object',
@@ -51,7 +54,7 @@ const TOOLS = [
     name: 'locked_card',
     title: 'Locked card',
     annotations: { ...READ, title: 'Locked card' },
-    description: 'Same payload as today. Call this. actionTab is one row per confirmed ticket, largest dollars first, with sharp.size and sharp.vsUsual. vsUsual is this ticket divided by that wallet usual bet in the sport. The usual dollar amount and the wallet id are not included. No wallet names. Do not answer from an earlier snapshot.',
+    description: 'Same payload as today. Call this. actionTab is one row per confirmed ticket, largest dollars first, with id, sharp.size, sharp.vsUsual, and the usual bet in dollars for the sport and for all sports. id is the six characters the site shows. sameNight is tonight only. No wallet names and no full addresses. Do not answer from an earlier snapshot.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -80,12 +83,46 @@ const TOOLS = [
     name: 'sport_action',
     title: 'Sport action',
     annotations: { ...READ, title: 'Sport action' },
-    description: 'Tonight’s confirmed tickets for one sport. Each game lists tickets with price, line, sharp.size, and sharp.vsUsual. No wallet names.',
+    description: 'Tonight’s confirmed tickets for one sport. Each game lists tickets with price, line, sharp.size, and sharp.vsUsual. No wallet names. For a writeup of one wallet, call wallet_profile. To find who is sharp in this sport and ordinary overall, call find_specialists.',
     inputSchema: {
       type: 'object',
       properties: {
         sport: { type: 'string', description: 'Sport code. Example: NHL. Omit to list every sport that has action.' },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'wallet_profile',
+    title: 'Wallet profile',
+    annotations: { ...READ, title: 'Wallet profile' },
+    description: 'One wallet. Pass id, the six characters the site shows, such as 487b8b. Or pass the game and the pick, such as query Memphis and pick Memphis. Returns records labeled all time or last 30 days, size splits for the sport and for all sports, the usual bet in dollars both ways, and tonight\'s tickets. A sameNight letter is not an id.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Six characters the site shows after the dots, such as 487b8b. This is the lookup key. A sameNight letter is not an id.' },
+        query: { type: 'string', description: 'Game, team, or matchup, when id is not known. Example: Memphis, or Baylor at TCU.' },
+        pick: { type: 'string', description: 'The ticket. Example: Memphis, Baylor +7.5, Under 49.5.' },
+        price: { type: 'string', description: 'Optional American odds when more than one wallet is on that pick. Example: -113.' },
+        sport: { type: 'string', description: 'Optional sport, such as CFB or ATP.' },
+        market: { type: 'string', description: 'Optional market: ML, SPREAD, or TOTAL.' },
+        date: { type: 'string', description: 'Game date YYYY-MM-DD in US Eastern. Defaults to today.' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'find_specialists',
+    title: 'Find specialists',
+    annotations: { ...READ, title: 'Find specialists' },
+    description: 'Rank tonight\'s confirmed wallets in one sport by how far that sport\'s win rate beats their overall win rate. Flags wallets betting 1.5x or more tonight. Each row has id and a short post. id is the six characters the site shows. sameNight is tonight only. No wallet names.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sport: { type: 'string', description: 'Sport code. Example: CFB, ATP, NHL.' },
+        date: { type: 'string', description: 'Game date YYYY-MM-DD in US Eastern. Defaults to today.' },
+      },
+      required: ['sport'],
       additionalProperties: false,
     },
   },
@@ -288,6 +325,60 @@ function gameMatches(game, query) {
   return tokens.every((t) => names.some((n) => n.includes(t)));
 }
 
+function pickHits(sidePick, asked) {
+  const b = fold(sidePick);
+  const a = fold(asked);
+  if (!a || !b) return false;
+  if (b.includes(a) || a.includes(b)) return true;
+  const tokens = a.split(' ').filter((t) => t.length >= 1 && t !== 'at' && t !== 'vs');
+  return tokens.length > 0 && tokens.every((t) => b.includes(t));
+}
+
+function priceHits(ticketPrice, asked) {
+  if (asked == null || asked === '') return true;
+  const got = String(ticketPrice || '').trim();
+  if (!got) return false;
+  const norm = (s) => String(s).trim().replace(/^\+/, '');
+  return norm(asked) === norm(got);
+}
+
+/** Wallets on one ticket. The game and the pick stay put when the board changes. */
+function walletsOnTicket(games, { query, pick, sport, market, price } = {}) {
+  const hits = [];
+  const wantSport = sport ? String(sport).toUpperCase() : null;
+  const wantMarket = market ? String(market).toUpperCase() : null;
+  for (const game of games || []) {
+    if (wantSport && String(game.sport || '').toUpperCase() !== wantSport) continue;
+    if (query && !gameMatches(game, query)) continue;
+    for (const mkt of game.markets || []) {
+      if (wantMarket && String(mkt.market || '').toUpperCase() !== wantMarket) continue;
+      for (const side of mkt.sides || []) {
+        const needle = pick || query;
+        if (!needle || !pickHits(side.pick, needle)) continue;
+        for (const ticket of side.tickets || []) {
+          if (!ticket.short || !priceHits(ticket.price, price)) continue;
+          hits.push({
+            short: ticket.short,
+            dollars: Number(ticket.dollars) || 0,
+            price: ticket.price || null,
+            pick: side.pick,
+            sport: game.sport || null,
+          });
+        }
+      }
+    }
+  }
+  const needle = fold(pick || query);
+  const exact = hits.filter((hit) => fold(hit.pick) === needle);
+  const chosen = exact.length ? exact : hits;
+  const byShort = new Map();
+  for (const hit of chosen) {
+    const prev = byShort.get(hit.short);
+    if (!prev || hit.dollars > prev.dollars) byShort.set(hit.short, hit);
+  }
+  return [...byShort.values()];
+}
+
 function ticketOf(pos, market) {
   const raw = Number(pos?.entryAvgPrice ?? pos?.avgPrice ?? pos?.price);
   let prob = null;
@@ -330,13 +421,17 @@ function sharpOf(profile, sport, market, invested) {
   const sharp = {};
   const n = Number(rec?.positions?.n) || 0;
   const bookInvested = Number(rec?.positions?.invested);
-  if (invested > 0 && n > 0 && bookInvested > 0) {
-    const ratio = invested / (bookInvested / n);
+  const sportUsual = n > 0 && bookInvested > 0 ? bookInvested / n : null;
+  if (invested > 0 && sportUsual) {
+    const ratio = invested / sportUsual;
     sharp.vsUsual = Math.round(ratio * 10) / 10;
-    if (ratio >= 1.5) sharp.size = 'press';
-    else if (ratio >= 1) sharp.size = 'usual';
-    else if (ratio >= 0.5) sharp.size = 'lean';
-    else sharp.size = 'light';
+    sharp.usualSport = Math.round(sportUsual);
+    sharp.size = sizeLabel(ratio);
+  }
+  const allUsual = Number(profile?.sizeRatioBands?.usual);
+  if (invested > 0 && Number.isFinite(allUsual) && allUsual > 0) {
+    sharp.usualAll = Math.round(allUsual);
+    sharp.vsUsualAll = Math.round((invested / allUsual) * 10) / 10;
   }
   const form = rec?.form;
   const l10 = form?.actionL10 || form?.l10;
@@ -344,15 +439,18 @@ function sharpOf(profile, sport, market, invested) {
   if (l10 && (Number(l10.w) + Number(l10.l)) > 0) sharp.form = `L10 ${l10.w}-${l10.l}`;
   else if (l5 && (Number(l5.w) + Number(l5.l)) > 0) sharp.form = `L5 ${l5.w}-${l5.l}`;
   const l30 = recordSnap(rec?.recentActionWindow);
-  if (l30) sharp.l30 = l30;
+  if (l30) sharp.l30 = { ...l30, window: 'last 30 days' };
   const mkt = rec?.byMarket?.[market];
   const marketBook = recordSnap(mkt?.positions);
   const marketL30 = recordSnap(mkt?.recentActionWindow);
   if (marketBook || marketL30) {
     sharp.market = {};
-    if (marketBook) sharp.market.record = marketBook.record;
+    if (marketBook) {
+      sharp.market.record = marketBook.record;
+      sharp.market.window = 'all time';
+    }
     if (marketBook?.returnPct != null) sharp.market.returnPct = marketBook.returnPct;
-    if (marketL30) sharp.market.l30 = marketL30;
+    if (marketL30) sharp.market.l30 = { ...marketL30, window: 'last 30 days' };
   }
   return Object.keys(sharp).length ? sharp : null;
 }
@@ -415,8 +513,8 @@ function rollupPositions(positions, sport, profiles, market) {
     side: row.side,
     dollars: Math.round(row.dollars),
     confirmed: row.wallets.size,
-    book: finishPool(row.career),
-    last30: finishPool(row.last30),
+    book: { ...finishPool(row.career), window: 'all time' },
+    last30: { ...finishPool(row.last30), window: 'last 30 days' },
     tickets: [...row.byWallet.values()].map((t) => ({
       ...t,
       dollars: Math.round(t.dollars),
@@ -483,7 +581,7 @@ function nightKey(date, short) {
   return crypto.createHash('sha256').update(`${date}|${short}`).digest('hex');
 }
 
-function sealNight(games, date, prices) {
+function shortsOnBoard(games) {
   const shorts = new Set();
   for (const game of games || []) {
     for (const market of game.markets || []) {
@@ -494,8 +592,26 @@ function sealNight(games, date, prices) {
       }
     }
   }
+  return shorts;
+}
+
+function letterMap(shorts, date) {
   const ordered = [...shorts].sort((a, b) => nightKey(date, a).localeCompare(nightKey(date, b)));
-  const letters = new Map(ordered.map((short, i) => [short, nightLetter(i)]));
+  return new Map(ordered.map((short, i) => [short, nightLetter(i)]));
+}
+
+function openBoard(games, profiles, prices, date) {
+  const pubs = [];
+  for (const game of games || []) {
+    const pub = publicGame(game, profiles, prices);
+    if (pub.markets.length) pubs.push(pub);
+  }
+  const day = date || etDate();
+  return { games: pubs, letters: letterMap(shortsOnBoard(pubs), day), date: day };
+}
+
+function sealNight(games, date, prices) {
+  const letters = letterMap(shortsOnBoard(games), date);
   for (const game of games || []) {
     const sport = game.sport || 'this sport';
     for (const market of game.markets || []) {
@@ -509,7 +625,7 @@ function sealNight(games, date, prices) {
         side.opposedBy = foe?.confirmed || 0;
         side.opposed = side.opposedBy > 0 ? 'contested' : 'unopposed';
         side.tickets = (side.tickets || []).map((ticket) => {
-          const out = { sameNight: letters.get(ticket.short) || null, dollars: ticket.dollars };
+          const out = { id: ticket.short, sameNight: letters.get(ticket.short) || null, dollars: ticket.dollars };
           if (ticket.price) out.price = ticket.price;
           if (ticket.line != null) out.line = ticket.line;
           if (ticket.sharp) out.sharp = ticket.sharp;
@@ -894,6 +1010,21 @@ async function dayPayload(args, ctx) {
   });
 }
 
+function normalizeWalletId(raw) {
+  const s = String(raw || '').trim().toLowerCase().replace(/^\.+/, '');
+  return /^[0-9a-f]{6}$/.test(s) ? s : null;
+}
+
+async function betsFor(ctx, short) {
+  if (!ctx.loadWalletBets) return null;
+  try {
+    const bets = await ctx.loadWalletBets(short);
+    return Array.isArray(bets) ? bets : null;
+  } catch {
+    return null;
+  }
+}
+
 async function callTool(name, args, ctx) {
   const a = args || {};
   if (name === 'today' || name === 'locked_card') return dayPayload(a, ctx);
@@ -911,6 +1042,99 @@ async function callTool(name, args, ctx) {
       query,
       matches: shown,
       truncated: hits.length > shown.length,
+    });
+  }
+  if (name === 'wallet_profile') {
+    const query = String(a.query || '').trim();
+    const pick = String(a.pick || '').trim();
+    const date = a.date || etDate();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toolError('date must be YYYY-MM-DD');
+    const { games, profiles } = await ctx.loadAction();
+    const prices = ctx.loadPrices ? await ctx.loadPrices() : null;
+    const open = openBoard(games, profiles, prices, date);
+    const askedId = a.id != null && String(a.id).trim() !== '';
+    let short = null;
+    let matched = null;
+    let ticketSport = null;
+    if (askedId) {
+      short = normalizeWalletId(a.id);
+      if (!short) return toolError('Pass the six-character id the site shows, or the game and the pick. A letter changes when the board changes.');
+      if (!profiles.get(short) || !ticketsFor(open.games, short).length) {
+        return toolError('No confirmed wallet with that id is on tonight\'s board.');
+      }
+    } else if (!query && !pick) {
+      return toolError('Pass the wallet id, or the game and the pick. A letter changes when the board changes.');
+    } else {
+      const hits = walletsOnTicket(open.games, {
+        query,
+        pick,
+        sport: a.sport,
+        market: a.market,
+        price: a.price,
+      });
+      if (!hits.length) return toolError('No confirmed ticket matches that game and pick.');
+      if (hits.length > 1) {
+        const seen = hits.map((hit) => `${hit.pick} ${hit.price || ''} ..${hit.short}`.trim()).join(', ');
+        return toolError(`More than one wallet is on that pick. Pass id. Saw ${seen}.`);
+      }
+      short = hits[0].short;
+      ticketSport = hits[0].sport || null;
+      matched = { pick: hits[0].pick, price: hits[0].price };
+    }
+    const focus = a.sport
+      ? String(a.sport).toUpperCase()
+      : (ticketSport ? String(ticketSport).toUpperCase() : null);
+    const bets = await betsFor(ctx, short);
+    const read = profileRead(profiles.get(short), ticketsFor(open.games, short), {
+      sport: focus,
+      id: short,
+      letter: open.letters.get(short) || null,
+      bets,
+    });
+    return textBlock({
+      source: 'One confirmed wallet. id is the six characters the site shows. Records say all time or last 30 days. Size splits are all time in the sport, all time across all sports, and the last 30 days in the sport. Buckets are under 0.5x, 0.5x, 1x, and 1.5x and up. Usual bet is in dollars for the sport and for all sports. sameNight is tonight only. No names and no full address.',
+      site: SITE,
+      date,
+      ...(matched ? { matched } : {}),
+      ...read,
+    });
+  }
+  if (name === 'find_specialists') {
+    const sport = a.sport ? String(a.sport).toUpperCase() : '';
+    if (!sport) return toolError('sport is required');
+    const date = a.date || etDate();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toolError('date must be YYYY-MM-DD');
+    const { games, profiles, scannedAt } = await ctx.loadAction();
+    const prices = ctx.loadPrices ? await ctx.loadPrices() : null;
+    const open = openBoard(games, profiles, prices, date);
+    const rows = [];
+    for (const [short, mark] of open.letters) {
+      const tickets = ticketsFor(open.games, short).filter((t) => t.sport === sport);
+      if (!tickets.length) continue;
+      rows.push({ letter: mark, id: short, profile: profiles.get(short), tickets });
+    }
+    let ranked = specialistRank(rows, sport);
+    if (ctx.loadWalletBets) {
+      ranked = await Promise.all(ranked.map(async (row) => {
+        const src = rows.find((item) => item.id === row.id);
+        const bets = await betsFor(ctx, row.id);
+        if (!src || !bets?.length) return row;
+        const read = profileRead(src.profile, src.tickets, {
+          letter: row.sameNight,
+          sport,
+          id: row.id,
+          bets,
+        });
+        return { ...row, post: read.post };
+      }));
+    }
+    return textBlock({
+      source: 'Tonight\'s confirmed wallets, ranked by how far this sport\'s win rate beats the overall win rate. A wallet needs 8 decided bets overall and 8 in the sport. id is the six characters the site shows. bettingBig means 1.5x the sport usual or more tonight. Size lines name their window. No names.',
+      site: SITE,
+      date,
+      sport,
+      scannedAt: scannedAt || null,
+      specialists: ranked,
     });
   }
   if (name === 'sport_action') {
