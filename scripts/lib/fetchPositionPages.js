@@ -4,20 +4,39 @@
  * `GET /v2/positions` with `{ data, pagination.next_cursor }`. Rows are mapped
  * back to the v1 field names the scan already matches on.
  *
- * A full page means later rows exist. Read one more page. A failed second
- * page keeps the first page so a timeout cannot drop a wallet the scan
- * already had.
+ * A full page means later rows exist. Read two more pages, 1,500 rows.
+ * A failed later page keeps the pages already read so a timeout cannot
+ * drop rows the scan already had.
  */
 
 export const POSITION_PAGE_SIZE = 500;
+export const MAX_POSITION_PAGES = 3;
 const POSITIONS_V2 = 'https://data-api.polymarket.com/v2/positions';
 
 let secondPagesRead = 0;
+let thirdPagesRead = 0;
 
 export function takeSecondPageCount() {
   const n = secondPagesRead;
   secondPagesRead = 0;
   return n;
+}
+
+export function takeThirdPageCount() {
+  const n = thirdPagesRead;
+  thirdPagesRead = 0;
+  return n;
+}
+
+function notePagesRead(n) {
+  if (n > 1) secondPagesRead += 1;
+  if (n > 2) thirdPagesRead += 1;
+}
+
+function mergeAllPages(pages) {
+  let rows = [];
+  for (const page of pages) rows = mergePositionPages(rows, page);
+  return rows;
 }
 
 /** Drop a later page's duplicate asset so a shifting sort cannot double-count. */
@@ -92,7 +111,7 @@ export async function fetchOpenPositionsV2(user, fetchJson) {
   if (!user || typeof fetchJson !== 'function') return null;
   const pages = [];
   let cursor = '';
-  for (let page = 0; page < 2; page++) {
+  for (let page = 0; page < MAX_POSITION_PAGES; page++) {
     const params = new URLSearchParams({
       user: String(user),
       limit: String(POSITION_PAGE_SIZE),
@@ -106,14 +125,17 @@ export async function fetchOpenPositionsV2(user, fetchJson) {
       body = null;
     }
     const data = body && Array.isArray(body.data) ? body.data : null;
-    if (!data) return pages.length ? mergePositionPages(pages[0], []) : null;
+    if (!data) {
+      notePagesRead(pages.length);
+      return pages.length ? mergeAllPages(pages) : null;
+    }
     pages.push(data.map(positionFromV2).filter(Boolean));
     const next = body.pagination?.next_cursor;
     if (!body.pagination?.has_more || !next || data.length < POSITION_PAGE_SIZE) break;
     cursor = String(next);
   }
-  if (pages.length > 1) secondPagesRead += 1;
-  return mergePositionPages(pages[0], pages[1] || []);
+  notePagesRead(pages.length);
+  return mergeAllPages(pages);
 }
 
 // Cloudflare answers 429, with no Retry-After, to Node's default fetch

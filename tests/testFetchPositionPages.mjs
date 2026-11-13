@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import {
   createPacedJsonFetch,
   POSITION_START_GAP_MS,
+  MAX_POSITION_PAGES,
   fetchOpenPositionsV2,
   fetchTwoPositionPages,
   mergePositionPages,
   positionFromV2,
   takeSecondPageCount,
+  takeThirdPageCount,
 } from '../scripts/lib/fetchPositionPages.js';
 
 takeSecondPageCount();
@@ -107,6 +109,36 @@ const keptV2 = await fetchOpenPositionsV2('0xkeep', async (url) => (
 ));
 assert.equal(keptV2.length, 500);
 assert.equal(takeSecondPageCount(), 0);
+assert.equal(takeThirdPageCount(), 0);
+
+const urls3 = [];
+const page2 = Array.from({ length: 500 }, (_, i) => ({
+  token_id: `u${i}`, title: 'y', outcome_index: 0, current_size: 1, avg_price: 0.5, current_price: 0.5,
+}));
+const three = await fetchOpenPositionsV2('0xthree', async () => {
+  urls3.push('p');
+  if (urls3.length === 1) return { data: pageRows, pagination: { has_more: true, next_cursor: 'c2' } };
+  if (urls3.length === 2) return { data: page2, pagination: { has_more: true, next_cursor: 'c3' } };
+  return {
+    data: [{ token_id: 'tail', title: 'Islanders', outcome_index: 1, current_size: 10, avg_price: 0.4, current_price: 0.5 }],
+    pagination: { has_more: true, next_cursor: 'c4' },
+  };
+});
+assert.equal(MAX_POSITION_PAGES, 3);
+assert.equal(urls3.length, 3);
+assert.equal(three.length, 1001);
+assert.equal(three[1000].title, 'Islanders');
+assert.equal(takeSecondPageCount(), 1);
+assert.equal(takeThirdPageCount(), 1);
+
+const keptThird = await fetchOpenPositionsV2('0xkeep3', async (url) => {
+  if (url.includes('cursor=c3')) return null;
+  if (url.includes('cursor=c2')) return { data: page2, pagination: { has_more: true, next_cursor: 'c3' } };
+  return { data: pageRows, pagination: { has_more: true, next_cursor: 'c2' } };
+});
+assert.equal(keptThird.length, 1000);
+assert.equal(takeSecondPageCount(), 1);
+assert.equal(takeThirdPageCount(), 0);
 
 console.log('fetchOpenPositionsV2 ok');
 
