@@ -132,23 +132,191 @@ function loginPage({ issuer, params, clientName, config }) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign in to NHL Savant</title>
+  <meta name="theme-color" content="#0B0F1F">
+  <title>Sign in · SharpFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; font-family: Georgia, "Iowan Old Style", serif; background: #0A0E27; color: #F1F5F9; }
-    main { max-width: 28rem; margin: 8vh auto; padding: 2rem 1.25rem; }
-    h1 { font-size: 1.6rem; margin: 0 0 0.75rem; }
-    p { line-height: 1.5; color: rgba(241,245,249,0.82); }
-    button { margin-top: 1.25rem; background: #D4AF37; color: #0A0E27; border: 0; border-radius: 10px; padding: 0.9rem 1.2rem; font-weight: 700; font-size: 1rem; cursor: pointer; }
-    a { color: #F5D76E; }
-    .err { color: #FCA5A5; }
+    :root {
+      --bg: #0B0F1F;
+      --card: #151923;
+      --line: #252B3B;
+      --gold: #D4AF37;
+      --gold-2: #E5C158;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --faint: #64748B;
+      --danger: #FCA5A5;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      background:
+        radial-gradient(900px 420px at 50% -10%, rgba(212, 175, 55, 0.16), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    main {
+      max-width: 26.5rem;
+      margin: 0 auto;
+      padding: 8vh 1.25rem 3rem;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 28%), var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 24px 48px -24px rgba(0,0,0,0.75);
+      padding: 1.75rem 1.5rem 1.35rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--gold);
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+    }
+    .brand svg { flex: none; }
+    .kicker {
+      margin: 1.35rem 0 0.35rem;
+      color: var(--gold-2);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.65rem;
+      line-height: 1.15;
+      letter-spacing: -0.035em;
+      font-weight: 800;
+    }
+    .lead {
+      margin: 0.75rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    ul {
+      margin: 1.1rem 0 0;
+      padding: 0;
+      list-style: none;
+      border-top: 1px solid var(--line);
+    }
+    li {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+      padding: 0.72rem 0;
+      border-bottom: 1px solid var(--line);
+      color: #CBD5E1;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    li:before {
+      content: "";
+      width: 0.45rem;
+      height: 0.45rem;
+      margin-top: 0.4rem;
+      border-radius: 99px;
+      background: var(--gold);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+      flex: none;
+    }
+    button {
+      width: 100%;
+      margin-top: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      background: #fff;
+      color: #1F2937;
+      border: 0;
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 8px 18px -12px rgba(0,0,0,0.8);
+    }
+    button:hover { background: #F8FAFC; }
+    button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    button:disabled { cursor: wait; opacity: 0.72; }
+    .err {
+      min-height: 0;
+      margin: 0.85rem 0 0;
+      color: var(--danger);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+    .err:empty { display: none; }
+    a.plans {
+      display: inline-flex;
+      margin-top: 0.85rem;
+      color: #0B0F1F;
+      background: linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+    }
+    .foot {
+      margin: 0.95rem 0 0;
+      text-align: center;
+      color: var(--faint);
+      font-size: 0.75rem;
+    }
+    .foot a { color: var(--muted); }
   </style>
 </head>
 <body>
   <main>
-    <h1>NHL Savant</h1>
-    <p id="lead"></p>
-    <p class="err" id="err"></p>
-    <button id="go" type="button">Sign in with Google</button>
+    <section class="card">
+      <div class="brand">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 17l6-6 4 4 8-8" stroke="#D4AF37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 7h7v7" stroke="#D4AF37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>SharpFlow</span>
+      </div>
+      <p class="kicker">NHL Savant</p>
+      <h1 id="title">Sign in</h1>
+      <p class="lead" id="lead"></p>
+      <ul>
+        <li>Reads your SharpFlow card</li>
+        <li>Uses the Google account on your plan or free trial</li>
+        <li>Turn it off anytime from your account page</li>
+      </ul>
+      <button id="go" type="button">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+        </svg>
+        <span id="label">Sign in with Google</span>
+      </button>
+      <p class="err" id="err"></p>
+      <div id="extra"></div>
+      <p class="foot">You return to the app after sign-in. <a href="https://nhlsavant.com">nhlsavant.com</a></p>
+    </section>
   </main>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -157,12 +325,17 @@ function loginPage({ issuer, params, clientName, config }) {
     const boot = JSON.parse(document.getElementById('sf-oauth').textContent);
     const lead = document.getElementById('lead');
     const err = document.getElementById('err');
-    lead.textContent = 'Allow ' + boot.clientName + ' to read your SharpFlow card while your plan or free trial is active.';
+    const label = document.getElementById('label');
+    const title = document.getElementById('title');
+    const name = boot.clientName || 'This app';
+    title.textContent = 'Connect ' + name;
+    lead.textContent = 'Sign in with the Google account on your NHL Savant plan or free trial. ' + name + ' can then read your SharpFlow card.';
     firebase.initializeApp(boot.config);
     const auth = firebase.auth();
     sessionStorage.removeItem('sf_oauth');
     const params = boot.params;
     async function finish(user) {
+      label.textContent = 'Sending you back…';
       const idToken = await user.getIdToken();
       const res = await fetch(boot.issuer + '/oauth/complete', {
         method: 'POST',
@@ -179,26 +352,29 @@ function loginPage({ issuer, params, clientName, config }) {
       err.textContent = data.message || 'This account needs an active plan or a free trial.';
       if (data.planUrl) {
         const link = document.createElement('a');
+        link.className = 'plans';
         link.href = data.planUrl;
         link.textContent = 'View plans';
-        err.appendChild(document.createElement('br'));
-        err.appendChild(link);
+        document.getElementById('extra').appendChild(link);
       }
     }
     document.getElementById('go').onclick = async () => {
       const button = document.getElementById('go');
       button.disabled = true;
       err.textContent = '';
+      label.textContent = 'Opening Google…';
       const provider = new firebase.auth.GoogleAuthProvider();
       try {
         const result = await auth.signInWithPopup(provider);
         if (result && result.user) await finish(result.user);
       } catch (e) {
+        label.textContent = 'Sign in with Google';
         err.textContent = e && e.code === 'auth/popup-blocked'
           ? 'Allow the sign-in window, then click the button again.'
           : ((e && e.message) || 'Sign-in failed.');
       } finally {
         button.disabled = false;
+        if (label.textContent === 'Opening Google…') label.textContent = 'Sign in with Google';
       }
     };
   </script>
@@ -271,7 +447,17 @@ function createOauthHandlers({ db, auth, issuer, now = () => Date.now() }) {
     const q = req.query || {};
     const client = await loadClient(db, q.client_id);
     if (!client || !redirectAllowed(q.redirect_uri) || !client.redirectUris.includes(q.redirect_uri)) {
-      res.status(400).type('html').send('<!doctype html><title>NHL Savant</title><p>This connection could not be started.</p>');
+      res.status(400).type('html').send(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SharpFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:#0B0F1F; color:#F8FAFC; font-family:Inter,system-ui,sans-serif; }
+  main { max-width:24rem; padding:2rem 1.25rem; text-align:center; }
+  strong { color:#D4AF37; font-size:1.15rem; letter-spacing:-0.03em; }
+  p { color:#94A3B8; line-height:1.5; }
+</style></head>
+<body><main><strong>SharpFlow</strong><p>This connection could not be started. Go back to the app and try again.</p></main></body></html>`);
       return;
     }
     if (q.response_type !== 'code' || q.code_challenge_method !== 'S256' || !q.code_challenge) {
