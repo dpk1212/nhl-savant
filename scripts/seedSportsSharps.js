@@ -21,6 +21,7 @@ import { isNFLMarketTitle } from './lib/nflTeams.js';
 import { isCFBMarketTitle } from './lib/cfbTeams.js';
 import { isATPMarketTitle } from './lib/atpPlayers.js';
 import { classifyEsportsMarket } from './lib/esportsTeams.js';
+import { closedRowsFromPage, leaderboardRows, sportFromBoardSlug } from './lib/discoverApi.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -72,6 +73,8 @@ function classifySport(title, slug = '') {
   const es = classifyEsportsMarket(title, slug);
   if (es) return es;
   if (isATPMarketTitle(title, slug)) return 'ATP';
+  const fromSlug = sportFromBoardSlug(slug);
+  if (fromSlug) return fromSlug;
   const t = title.toLowerCase();
   // WNBA before NBA keyword loop — shared nicknames (Liberty, Sun, Sparks, …).
   if (isWNBAMarketTitle(title)) return 'WNBA';
@@ -118,27 +121,37 @@ async function fetchWithRetry(url, retries = RETRY_LIMIT) {
 async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH, category = 'SPORTS') {
   console.log(`Fetching ${category} leaderboard (${timePeriod}, top ${depth})...`);
   const all = [];
-  for (let offset = 0; offset < depth; offset += 50) {
-    const url = `${DATA_API}/v1/leaderboard?timePeriod=${timePeriod}&category=${category}&orderBy=PNL&limit=50&offset=${offset}`;
-    const data = await fetchWithRetry(url);
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      console.log(`  Leaderboard exhausted at offset ${offset} (${all.length} entries)`);
+  let cursor = '';
+  while (all.length < depth) {
+    const params = new URLSearchParams({
+      category,
+      timePeriod,
+      orderBy: 'PNL',
+      limit: '50',
+    });
+    if (cursor) params.set('cursor', cursor);
+    const data = await fetchWithRetry(`${DATA_API}/v2/leaderboard?${params}`);
+    const page = leaderboardRows(data);
+    if (!page || page.rows.length === 0) {
+      console.log(`  Leaderboard exhausted at ${all.length} entries`);
       break;
     }
-    all.push(...data);
-    if (offset % 200 === 0 && offset > 0) {
-      console.log(`  ...fetched ${all.length} entries so far`);
+    all.push(...page.rows);
+    if (all.length % 200 < 50 && all.length >= 200) {
+      console.log(`  ...fetched ${Math.min(all.length, depth)} entries so far`);
     }
-    await sleep(500);
+    if (!page.hasMore) break;
+    cursor = page.nextCursor;
+    await sleep(200);
   }
-  console.log(`  Total ${timePeriod} entries: ${all.length}`);
-  return all.map(t => ({
-    wallet: (t.proxyWallet || '').toLowerCase(),
+  console.log(`  Total ${timePeriod} entries: ${Math.min(all.length, depth)}`);
+  return all.slice(0, depth).map(t => ({
+    wallet: t.proxyWallet,
     name: t.userName || null,
     pnl: t.pnl || 0,
     vol: t.vol || 0,
-    rank: parseInt(t.rank, 10) || null,
-  })).filter(w => w.wallet.length > 0);
+    rank: Number.isFinite(t.rank) ? t.rank : null,
+  }));
 }
 
 /** Parse curPrice without coercing 0 → 0.5 (0 is a real settled loss). */
@@ -158,33 +171,50 @@ function parseCurPrice(raw) {
  */
 async function buildProfile(wallet) {
   let currentPositions = [];
-  for (let offset = 0; offset < 10000; offset += 500) {
-    const page = await fetchWithRetry(
-      `${DATA_API}/positions?user=${wallet}&sortBy=CASHPNL&limit=500&offset=${offset}`
-    );
-    await sleep(PAGE_DELAY_MS);
-    if (!page || !Array.isArray(page) || page.length === 0) break;
-    currentPositions.push(...page);
-    if (page.length < 500) break;
+  {
+    let cursor = '';
+    for (let pageNo = 0; pageNo < 3 && currentPositions.length < 1500; pageNo++) {
+      const params = new URLSearchParams({ user: wallet, limit: '500', status: 'OPEN' });
+      if (cursor) params.set('cursor', cursor);
+      const raw = await fetchWithRetry(`${DATA_API}/v2/positions?${params}`);
+      await sleep(PAGE_DELAY_MS);
+      const page = closedRowsFromPage(raw);
+      if (!page.rows.length) break;
+      currentPositions.push(...page.rows);
+      if (!page.hasMore) break;
+      cursor = page.nextCursor;
+    }
   }
 
   // TIMESTAMP DESC — chronological, not winner-highlight reel.
   let closedPositions = [];
-  for (let offset = 0; offset < MAX_CLOSED_POSITIONS; offset += 50) {
-    const page = await fetchWithRetry(
-      `${DATA_API}/closed-positions?user=${wallet}&limit=50&offset=${offset}&sortBy=TIMESTAMP&sortDirection=DESC`
-    );
-    await sleep(PAGE_DELAY_MS);
-    if (!page || !Array.isArray(page) || page.length === 0) break;
-    closedPositions.push(...page);
-    if (page.length < 50) break;
+  {
+    let cursor = '';
+    while (closedPositions.length < MAX_CLOSED_POSITIONS) {
+      const params = new URLSearchParams({
+        user: wallet,
+        limit: '50',
+        status: 'CLOSED',
+        sortBy: 'TIMESTAMP',
+        sortDirection: 'DESC',
+      });
+      if (cursor) params.set('cursor', cursor);
+      const raw = await fetchWithRetry(`${DATA_API}/v2/positions?${params}`);
+      await sleep(PAGE_DELAY_MS);
+      const page = closedRowsFromPage(raw);
+      if (!page.rows.length) break;
+      closedPositions.push(...page.rows);
+      if (!page.hasMore) break;
+      cursor = page.nextCursor;
+    }
+  }
+  if (closedPositions.length > MAX_CLOSED_POSITIONS) {
+    closedPositions = closedPositions.slice(0, MAX_CLOSED_POSITIONS);
   }
   const closedCapped = closedPositions.length >= MAX_CLOSED_POSITIONS;
 
-  const traded = await fetchWithRetry(
-    `${DATA_API}/traded?user=${wallet}`
-  );
-  await sleep(PAGE_DELAY_MS);
+  // /traded was retired with v1. Fall back to the books we just read.
+  const traded = null;
 
   const sportMarkets = {};
   const perSport = {};
@@ -354,6 +384,20 @@ async function run() {
       const lbVol = lb.vol || 0;
       const lbSportROI = lbVol > 0 ? +((lb.pnl / lbVol) * 100).toFixed(1) : 0;
       const sportMarketCount = Object.values(profile.sportMarkets || {}).reduce((s, v) => s + v, 0);
+      const prevSportCount = Object.values(prev?.sportMarkets || {}).reduce((s, v) => s + v, 0);
+      // A failed or empty closed-book read must not erase a profile that already has sports.
+      if (sportMarketCount === 0 && prevSportCount > 0) {
+        profiled--;
+        console.log('kept previous sport book — this read was empty');
+        if (lb.rank != null) {
+          prev.leaderboardRank = lb.rank;
+          prev.sportPnlTotal = Math.round(lb.pnl || prev.sportPnlTotal || 0);
+          prev.totalPnl = prev.sportPnlTotal;
+          prev.vol = lb.vol || prev.vol || 0;
+        }
+        skipped++;
+        continue;
+      }
       const posAvgBet = profile.sportPositionCount > 0
         ? Math.round(profile.sportInvested / profile.sportPositionCount)
         : (sportMarketCount > 0 ? Math.round(lbVol / sportMarketCount) : 0);

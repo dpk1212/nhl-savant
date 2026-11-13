@@ -5,6 +5,8 @@
  * and never display wallet-profiles latest.lifetimePnl (frozen snapshot).
  */
 
+import { lbRow } from './discoverApi.js';
+
 const DATA_API = 'https://data-api.polymarket.com';
 const LB_API = 'https://lb-api.polymarket.com';
 const HEADERS = {
@@ -28,13 +30,21 @@ export function parseSportsLeaderboardPnl(rows, wallet) {
   };
 }
 
+function pnlFromLeaderboardBody(body, wallet) {
+  const list = Array.isArray(body) ? body : (Array.isArray(body?.data) ? body.data : null);
+  const fromList = parseSportsLeaderboardPnl(list, wallet);
+  if (fromList) return fromList;
+  const row = lbRow(body);
+  if (!row) return null;
+  return { pnl: Math.round(row.pnl), vol: row.vol, roi: row.roi ?? 0 };
+}
+
 export async function fetchSportsAllTimePnl(wallet, fetchFn = globalThis.fetch) {
   if (!wallet) return null;
-  const url = `${DATA_API}/v1/leaderboard?timePeriod=all&category=sports&orderBy=PNL&user=${encodeURIComponent(wallet)}&limit=1`;
+  const url = `${DATA_API}/v2/leaderboard?timePeriod=ALL&category=SPORTS&orderBy=PNL&user=${encodeURIComponent(wallet)}&limit=1`;
   const res = await fetchFn(url, { headers: HEADERS });
   if (!res?.ok) return null;
-  const rows = await res.json();
-  return parseSportsLeaderboardPnl(rows, wallet);
+  return pnlFromLeaderboardBody(await res.json(), wallet);
 }
 
 /** lb-api /profit and /volume both return [{ proxyWallet, amount }]. */
@@ -70,12 +80,12 @@ export async function fetchLiveWalletPnl(wallet, fetchFn = globalThis.fetch) {
     const [pRes, vRes, monthRes] = await Promise.all([
       fetchFn(`${LB_API}/profit?window=all&address=${q}`, { headers: HEADERS }),
       fetchFn(`${LB_API}/volume?window=all&address=${q}`, { headers: HEADERS }),
-      fetchFn(`${DATA_API}/v1/leaderboard?timePeriod=month&category=sports&orderBy=PNL&user=${q}&limit=1`, { headers: HEADERS }),
+      fetchFn(`${DATA_API}/v2/leaderboard?timePeriod=month&category=SPORTS&orderBy=PNL&user=${q}&limit=1`, { headers: HEADERS }),
     ]);
     const profitAmt = pRes?.ok ? parseLbAmount(await pRes.json(), wallet) : null;
     const volAmt = vRes?.ok ? parseLbAmount(await vRes.json(), wallet) : null;
     fromProfit = liveFromProfitAndVolume(profitAmt, volAmt);
-    monthly = monthRes?.ok ? parseSportsLeaderboardPnl(await monthRes.json(), wallet) : null;
+    monthly = monthRes?.ok ? pnlFromLeaderboardBody(await monthRes.json(), wallet) : null;
   } catch {
     // fall through
   }

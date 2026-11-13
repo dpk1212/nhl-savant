@@ -21,6 +21,7 @@ import { closedRowsFromPage, holderGroups, lbRow, sportFromBoardSlug } from './l
 import { supplementIsFresh } from './lib/cycleBudget.js';
 import {
   isNonFullGameTotalMarket,
+  isPeriodOrSegmentMarket,
   pickFullGameMlMarket,
   pickFullGameSpreadMarket,
 } from './lib/totalMarketFilter.js';
@@ -106,6 +107,21 @@ async function fetchJson(url) {
   return null;
 }
 
+/** Soccer is three moneylines. The event slug matches none of them, so the first candidate used to hide the other two sides. */
+function soccerSideMarkets(markets, eventSlug) {
+  const ev = String(eventSlug || '').toLowerCase();
+  if (!/^(epl|lal|fifwc|ucl|unl|conl)-/.test(ev)) return [];
+  const out = [];
+  for (const m of markets || []) {
+    const slug = String(m?.slug || '').toLowerCase();
+    if (!slug.startsWith(`${ev}-`)) continue;
+    if (/spread|total|btts|corner|card|score/.test(slug)) continue;
+    if (isPeriodOrSegmentMarket(`${m?.groupItemTitle || ''} ${m?.question || ''}`, slug)) continue;
+    out.push(m);
+  }
+  return out;
+}
+
 function pickFgMarkets(ev) {
   const markets = ev?.markets || [];
   const ml = pickFullGameMlMarket(markets, ev?.slug);
@@ -132,7 +148,14 @@ function pickFgMarkets(ev) {
     fgTotals.sort((a, b) => score(b) - score(a));
     total = fgTotals[0];
   }
-  return [ml, spread, total].filter(Boolean);
+  const picked = [ml, spread, total].filter(Boolean);
+  const seen = new Set(picked.map((m) => m.conditionId).filter(Boolean));
+  for (const m of soccerSideMarkets(markets, ev?.slug)) {
+    if (!m?.conditionId || seen.has(m.conditionId)) continue;
+    picked.push(m);
+    seen.add(m.conditionId);
+  }
+  return picked;
 }
 
 function analyzeClosedSports(closed) {
@@ -245,10 +268,21 @@ async function run() {
   const existing = existsSync(OUT_PATH)
     ? JSON.parse(readFileSync(OUT_PATH, 'utf8'))
     : { wallets: {}, rejects: {} };
-  if (supplementIsFresh(existing.updatedAt, now)) {
+  let newestAdd = '';
+  for (const row of Object.values(existing.wallets || {})) {
+    const added = row?.addedAt || '';
+    if (added > newestAdd) newestAdd = added;
+  }
+  // The holder feed was dead from 2026-11-02. A fresh timestamp on a file
+  // that has not added a wallet since then is not a successful run.
+  const blindSinceCutover = !newestAdd || newestAdd < '2026-11-03T00:00:00.000Z';
+  if (supplementIsFresh(existing.updatedAt, now) && !blindSinceCutover) {
     const ageMin = Math.round((now - Date.parse(existing.updatedAt)) / 60000);
     console.log(`Discover scan supplement skipped — last run ${ageMin} min ago`);
     return;
+  }
+  if (blindSinceCutover) {
+    console.log('Discover file has no wallet added since the v1 retirement — running');
   }
   if (!existing.wallets) existing.wallets = {};
   if (!existing.rejects) existing.rejects = {};

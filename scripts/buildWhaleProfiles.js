@@ -19,6 +19,7 @@ import { isNFLMarketTitle } from './lib/nflTeams.js';
 import { isCFBMarketTitle } from './lib/cfbTeams.js';
 import { isATPMarketTitle } from './lib/atpPlayers.js';
 import { classifyEsportsMarket } from './lib/esportsTeams.js';
+import { leaderboardRows } from './lib/discoverApi.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -241,12 +242,22 @@ async function fetchLeaderboard() {
   const LB_DEPTH = 1000;
   console.log(`🏆 Fetching sports leaderboard (top ${LB_DEPTH})...`);
   const all = [];
-  for (let offset = 0; offset < LB_DEPTH; offset += 50) {
-    const url = `${DATA_API}/v1/leaderboard?timePeriod=ALL&category=SPORTS&orderBy=PNL&limit=50&offset=${offset}`;
-    const data = await fetchWithRetry(url);
-    if (!data || !Array.isArray(data) || data.length === 0) break;
-    all.push(...data);
-    await sleep(500);
+  let cursor = '';
+  while (all.length < LB_DEPTH) {
+    const params = new URLSearchParams({
+      category: 'SPORTS',
+      timePeriod: 'ALL',
+      orderBy: 'PNL',
+      limit: '50',
+    });
+    if (cursor) params.set('cursor', cursor);
+    const data = await fetchWithRetry(`${DATA_API}/v2/leaderboard?${params}`);
+    const page = leaderboardRows(data);
+    if (!page || page.rows.length === 0) break;
+    all.push(...page.rows);
+    if (!page.hasMore) break;
+    cursor = page.nextCursor;
+    await sleep(200);
   }
   const profitable = all.filter(t => (t.pnl || 0) > 2000);
   console.log(`  Found ${profitable.length} profitable sports traders on leaderboard`);
