@@ -17,6 +17,7 @@ import { isUFCMarketTitle } from './lib/ufcFighters.js';
 import { isATPMarketTitle } from './lib/atpPlayers.js';
 import { classifyEsportsMarket } from './lib/esportsTeams.js';
 import { isSoccerMarketTitle } from './lib/soccerTeams.js';
+import { closedRowsFromPage, holderGroups, lbRow, sportFromBoardSlug } from './lib/discoverApi.js';
 import { supplementIsFresh } from './lib/cycleBudget.js';
 import {
   isNonFullGameTotalMarket,
@@ -71,6 +72,9 @@ function classifySport(title, slug = '') {
   const es = classifyEsportsMarket(title, slug);
   if (es) return es;
   if (isATPMarketTitle(title, slug)) return 'ATP';
+  // "Nuggets vs. Pacers" never says NBA. The slug does. Same for nations-league slugs.
+  const fromSlug = sportFromBoardSlug(slug);
+  if (fromSlug) return fromSlug;
   const t = (title || '').toLowerCase();
   if (isWNBAMarketTitle(title)) return 'WNBA';
   if (isCFBMarketTitle(title)) return 'CFB';
@@ -100,21 +104,6 @@ async function fetchJson(url) {
     }
   }
   return null;
-}
-
-function lbRow(raw) {
-  const row = Array.isArray(raw) ? raw[0] : raw;
-  if (!row || row.pnl == null) return null;
-  const pnl = Number(row.pnl);
-  const vol = Number(row.vol) || 0;
-  if (!Number.isFinite(pnl)) return null;
-  return {
-    name: row.userName || null,
-    pnl,
-    vol,
-    rank: row.rank != null ? Number(row.rank) : null,
-    roi: vol > 0 ? +((pnl / vol) * 100).toFixed(1) : null,
-  };
 }
 
 function pickFgMarkets(ev) {
@@ -215,16 +204,23 @@ function directionalVerdict(stats) {
 
 async function fetchClosed(addr) {
   const closed = [];
-  for (let offset = 0; offset < CLOSED_CAP; offset += 50) {
-    const page = await fetchJson(
-      `${DATA}/closed-positions?user=${addr}&limit=50&offset=${offset}&sortBy=TIMESTAMP&sortDirection=DESC`,
-    );
+  let cursor = '';
+  for (let page = 0; page < 8 && closed.length < CLOSED_CAP; page++) {
+    const params = new URLSearchParams({
+      user: addr,
+      limit: '50',
+      status: 'CLOSED',
+    });
+    if (cursor) params.set('cursor', cursor);
+    const raw = await fetchJson(`${DATA}/v2/positions?${params}`);
     await sleep(PAGE_DELAY_MS);
-    if (!page || !Array.isArray(page) || page.length === 0) break;
-    closed.push(...page);
-    if (page.length < 50) break;
+    const parsed = closedRowsFromPage(raw);
+    if (!parsed.rows.length) break;
+    closed.push(...parsed.rows);
+    if (!parsed.hasMore) break;
+    cursor = parsed.nextCursor;
   }
-  return closed;
+  return closed.slice(0, CLOSED_CAP);
 }
 
 function addrSetFromSharps(doc) {
@@ -299,12 +295,13 @@ async function run() {
       const cid = m.conditionId;
       if (!cid) continue;
       const prices = parseJsonField(m.outcomePrices).map(Number);
-      const holdersDoc = await fetchJson(`${DATA}/holders?market=${cid}&limit=${HOLDERS_LIMIT}`);
+      const holdersDoc = await fetchJson(`${DATA}/v2/holders?condition=${cid}&limit=${HOLDERS_LIMIT}`);
       await sleep(PAGE_DELAY_MS);
-      if (!Array.isArray(holdersDoc)) continue;
+      const holderSides = holderGroups(holdersDoc);
+      if (!holderSides) continue;
 
       const usdByWallet = new Map();
-      for (const side of holdersDoc) {
+      for (const side of holderSides) {
         const idx = side.holders?.[0]?.outcomeIndex;
         const price = Number.isFinite(prices[idx]) ? prices[idx] : null;
         for (const h of side.holders || []) {
@@ -380,9 +377,9 @@ async function run() {
       continue;
     }
 
-    const allRaw = await fetchJson(`${DATA}/v1/leaderboard?category=SPORTS&timePeriod=ALL&user=${addr}&limit=1`);
+    const allRaw = await fetchJson(`${DATA}/v2/leaderboard?category=SPORTS&timePeriod=ALL&user=${addr}&limit=1`);
     await sleep(PAGE_DELAY_MS);
-    const monthRaw = await fetchJson(`${DATA}/v1/leaderboard?category=SPORTS&timePeriod=MONTH&user=${addr}&limit=1`);
+    const monthRaw = await fetchJson(`${DATA}/v2/leaderboard?category=SPORTS&timePeriod=MONTH&user=${addr}&limit=1`);
     await sleep(PAGE_DELAY_MS);
     const all = lbRow(allRaw);
     const month = lbRow(monthRaw);
