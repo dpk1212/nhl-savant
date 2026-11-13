@@ -405,12 +405,20 @@ import {
   pressUnder5CapStamp,
 } from '../src/lib/pressUnder5Cap.js';
 import {
+  T5_EDGE_BAND_RESCUED_BY,
+  T5_EDGE_BAND_STAKE_TIER,
+  applyT5EdgeBandRescue,
+  t5EdgeBandLabel,
+  t5EdgeBandStamp,
+} from '../src/lib/t5EdgeBandRescue.js';
+import {
   evaluatePressLadder,
   atpMayStake,
   pressStamp,
   isPressLadderLive,
   isPressStampLive,
   isPressEdgeNetLive,
+  trustMarginRead,
   applyPressEdgeNetClamp,
   pressEdgeNetStamp,
   PRESS_EDGE_NET_FROM,
@@ -4321,6 +4329,7 @@ async function createMissingLockedPicks({
       }
       let top3PolicyCreate = null;
       let gapPolicyCreate = null;
+      let t5EdgeBandCreate = null;
       let unitsBeforeGap = peakUnitsApplied;
       let tierBeforeGap = hcStakeTierCreate;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -4503,6 +4512,36 @@ async function createMissingLockedPicks({
           hcStakeTierCreate = 'MONITORING';
         }
       }
+      // Tier-5 market-edge rescue. The under-5 cap and the juice have
+      // already run, so a 3u stays 3u and a price juicier than -425 stays 0.
+      t5EdgeBandCreate = applyT5EdgeBandRescue({
+        units: peakUnitsApplied,
+        pickDate: TARGET_DATE,
+        sport,
+        market: marketType,
+        odds: stakeOdds,
+        opponentUnits: unitsAgainst(side),
+        t4: { for: trustMarginRead(pressEvalCreate?.trust?.mktFor, pressEvalCreate?.trust?.mktAg).tFor },
+        label: t5EdgeBandLabel({
+          units: peakUnitsApplied,
+          killed: isOperatorKilled({ _id: docId }, side, null),
+          cbb: cbbV12StakeMuted(sport, TARGET_DATE),
+          pressApplied: pressAppliedCreate,
+          favJuice: !!favJuicePolicyCreate?.mutedBy,
+          edgeUnder5: edgeUnder5Create?.action === 'MUTE',
+          t5Mute: !!t5PolicyCreate?.mutedBy,
+          doorCut: mlDoorKind(mlDoorPolicyCreate?.action) === 'cut',
+          hole: pressEdgeNetPolicyCreate?.clause === 'hole',
+          pressEdgeNet: !!pressEdgeNetPolicyCreate?.mutedBy,
+          quality: pressAppliedCreate && !(Number(scoreV12) > 0),
+          market: marketType,
+        }),
+      });
+      if (t5EdgeBandCreate.action === 'RESCUE') {
+        peakUnitsApplied = t5EdgeBandCreate.units;
+        hcStakeTierCreate = T5_EDGE_BAND_STAKE_TIER;
+        console.log(`  T5-EDGE-BAND: ${docId} ${side} ${t5EdgeBandCreate.label} edge=${t5EdgeBandCreate.edge} → 3u`);
+      }
 
       // Determine team label for the side.
       //
@@ -4672,6 +4711,7 @@ async function createMissingLockedPicks({
       if (edgeUnder5Create) Object.assign(v8Stamps, edgeUnder5Stamp(edgeUnder5Create));
       if (t5PolicyCreate) Object.assign(v8Stamps, t5LeadStamp(t5PolicyCreate));
       if (pressUnder5CapCreate) Object.assign(v8Stamps, pressUnder5CapStamp(pressUnder5CapCreate));
+      if (t5EdgeBandCreate?.action === 'RESCUE') Object.assign(v8Stamps, t5EdgeBandStamp(t5EdgeBandCreate));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -4906,6 +4946,9 @@ async function createMissingLockedPicks({
       } else if (gapPolicyCreate?.action === 'rescue' || gapPolicyCreate?.action === 'boost') {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = GAP_LEAD_RESCUED_BY;
+      } else if (t5EdgeBandCreate?.action === 'RESCUE') {
+        delete v8Stamps.mutedBy;
+        v8Stamps.v8_rescuedBy = T5_EDGE_BAND_RESCUED_BY;
       } else if (top3PolicyCreate?.action === 'rescue' || top3PolicyCreate?.action === 'floor') {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = TOP3_PICK_RESCUED_BY;
@@ -7115,6 +7158,42 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hcStakeTier = 'MONITORING';
     }
   }
+  // Tier-5 market-edge rescue. The under-5 cap and the juice have
+  // already run, so a 3u stays 3u and a price juicier than -425 stays 0.
+  // The next cycle scores it again until the freeze.
+  let t5EdgeBandPolicy = null;
+  if (!skipManualFlinch && !operatorKilled) {
+    t5EdgeBandPolicy = applyT5EdgeBandRescue({
+      units: finalUnitsApplied,
+      pickDate,
+      sport: pick.sport,
+      market: mkt,
+      odds: stakeOdds,
+      opponentUnits: oppositeStakeUnits(side, pick.sides),
+      t4: { for: trustMarginRead(pressEval?.trust?.mktFor, pressEval?.trust?.mktAg).tFor },
+      manual: skipManualFlinch,
+      killed: operatorKilled,
+      label: t5EdgeBandLabel({
+        units: finalUnitsApplied,
+        killed: operatorKilled,
+        cbb: cbbMatureMute,
+        pressApplied,
+        favJuice: !!favJuicePolicy?.mutedBy,
+        edgeUnder5: edgeUnder5Policy?.action === 'MUTE',
+        t5Mute: !!t5Policy?.mutedBy,
+        doorCut: mlDoorKind(mlDoorPolicy?.action) === 'cut',
+        hole: pressEdgeNetPolicy?.clause === 'hole',
+        pressEdgeNet: !!pressEdgeNetPolicy?.mutedBy,
+        quality: mutedByAgs,
+        market: mkt,
+      }),
+    });
+    if (t5EdgeBandPolicy.action === 'RESCUE') {
+      finalUnitsApplied = t5EdgeBandPolicy.units;
+      appliedStatus = 'ACTIVE';
+      hcStakeTier = T5_EDGE_BAND_STAKE_TIER;
+    }
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
@@ -7147,6 +7226,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   ) || (
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
+    && t5EdgeBandPolicy?.action === 'RESCUE'
+  ) || (
+    appliedStatus === 'ACTIVE'
+    && finalUnitsApplied > 0
     && t5Policy?.action === 'RESCUE'
   ) || trustShip;
   if (passesShipFloor) {
@@ -7158,6 +7241,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
           : (trustShip
             ? (isTrustMRule(pressEval?.trust?.rule) ? 'trust_m_ags_bypass' : 'trust_rung_ags_bypass')
             : ((gapPolicy?.action === 'rescue' || gapPolicy?.action === 'boost') ? 'gap_lead_ags_bypass'
+              : (t5EdgeBandPolicy?.action === 'RESCUE' ? 't5_edge_band_rescue'
               : (top3Policy?.fires ? 'top3_pick_ags_bypass'
                 : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass')))));
     } else {
@@ -7378,6 +7462,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   } else if (gapPolicy?.action === 'rescue' || gapPolicy?.action === 'boost') {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = GAP_LEAD_RESCUED_BY;
+  } else if (t5EdgeBandPolicy?.action === 'RESCUE') {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+    patch.v8_rescuedBy = T5_EDGE_BAND_RESCUED_BY;
   } else if (top3Policy?.action === 'rescue' || top3Policy?.action === 'floor') {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = TOP3_PICK_RESCUED_BY;
@@ -7598,6 +7685,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
   if (gapPolicy?.fires && !operatorKilled) Object.assign(patch, gapLeadStamp(gapPolicy));
+  if (t5EdgeBandPolicy?.action === 'RESCUE') {
+    Object.assign(patch, t5EdgeBandStamp(t5EdgeBandPolicy));
+  } else if (sd.v8_t5EdgeBand) {
+    patch.v8_t5EdgeBand = admin.firestore.FieldValue.delete();
+    patch.v8_t5EdgeBandEdge = admin.firestore.FieldValue.delete();
+    patch.v8_t5EdgeBandLabel = admin.firestore.FieldValue.delete();
+  }
   else if (sd.v8_gapLead === true && gapPolicy && !gapPolicy.fires) {
     patch.v8_gapLead = admin.firestore.FieldValue.delete();
     patch.v8_gapLeadAction = admin.firestore.FieldValue.delete();
@@ -7683,19 +7777,26 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     // T-15 rescue stamp above.
     patch.v8_agsTier = 'FADE';
     patch.v8_agsV12Tier = 'FADE';
-    patch.v8_agsV12UnitsApplied = 0;
-    patch.finalUnits = 0;
-    // v12.1 — no signal → FADE stake tier (going-forward), else clear stale.
-    if (v121Eligible) {
-      patch.v8_hcStakeTier = 'FADE';
-    } else if (sd.v8_hcStakeTier != null) {
-      patch.v8_hcStakeTier = admin.firestore.FieldValue.delete();
+    // A tier-5 band rescue can fire on a side with no v12 score. The
+    // stake still ships. Every other no-signal side stays at 0.
+    if (t5EdgeBandPolicy?.action === 'RESCUE') {
+      patch.v8_agsV12UnitsApplied = finalUnitsApplied;
+      patch.finalUnits = finalUnitsApplied;
+      if (v121Eligible) patch.v8_hcStakeTier = hcStakeTier;
+    } else {
+      patch.v8_agsV12UnitsApplied = 0;
+      patch.finalUnits = 0;
+      if (v121Eligible) {
+        patch.v8_hcStakeTier = 'FADE';
+      } else if (sd.v8_hcStakeTier != null) {
+        patch.v8_hcStakeTier = admin.firestore.FieldValue.delete();
+      }
     }
     if (sd.v8_agsV12 != null) {
       patch.v8_agsV12 = admin.firestore.FieldValue.delete();
       patch.v8_agsV12Quintile = admin.firestore.FieldValue.delete();
-      changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal — muted)`);
-    } else if (sd.v8_agsTier == null) {
+      changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal${t5EdgeBandPolicy?.action === 'RESCUE' ? `, band rescue ${finalUnitsApplied}u` : ' — muted'})`);
+    } else if (sd.v8_agsTier == null && t5EdgeBandPolicy?.action !== 'RESCUE') {
       changes.push(`AGS-v12: ∅ → ∅ (no signal — defensively muted to FADE/0u)`);
     }
   }
@@ -8314,6 +8415,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + ` for6=${t5Policy.lead?.for6 ?? 0} ag6=${t5Policy.lead?.ag6 ?? 0}`,
       );
     }
+  }
+  if (t5EdgeBandPolicy?.action === 'RESCUE') {
+    changes.push(
+      `T5-EDGE-BAND: ${t5EdgeBandPolicy.label} edge=${Number(t5EdgeBandPolicy.edge).toFixed(1)} → 3u`,
+    );
+  } else if (sd.v8_t5EdgeBand && finalUnitsApplied === 0) {
+    changes.push('T5-EDGE-BAND OFF: back to 0u');
   }
   if (pressUnder5CapPolicy?.capped) {
     const edgeTxt = pressUnder5CapPolicy.edge == null
@@ -10113,7 +10221,7 @@ async function main() {
       // A door, gap, or top-3 side does not ship beside a side that already
       // has a ladder stake. Two ladder stakes are left as they are. Two
       // rung-only sides opened together are left as they are.
-      const rungRescue = new Set([ML_DOOR_RESCUE_BY, GAP_LEAD_RESCUED_BY, TOP3_PICK_RESCUED_BY]);
+      const rungRescue = new Set([ML_DOOR_RESCUE_BY, GAP_LEAD_RESCUED_BY, TOP3_PICK_RESCUED_BY, T5_EDGE_BAND_RESCUED_BY]);
       const oppOf = { home: 'away', away: 'home', over: 'under', under: 'over' };
       const describe = (docId, side, patch) => {
         const loaded = loadedPlay.get(`${col}|${docId}|${side}`) || { units: 0, press: 0, rescuedBy: null };
@@ -10126,13 +10234,13 @@ async function main() {
         const units = patch && Number.isFinite(Number(patch.finalUnits))
           ? Number(patch.finalUnits)
           : loaded.units;
-        const pure = !(press > 0) && (
+        const pure = patch?.v8_t5EdgeBand === true || (!(press > 0) && (
           rungRescue.has(rescuedBy)
           || patch?.v8_mlDoorAction === 'rescue'
           || patch?.v8_gapLeadAction === 'rescue'
           || patch?.v8_gapLeadAction === 'boost'
           || patch?.v8_top3Pick === true
-        );
+        ));
         return { units, pure };
       };
       for (const [docId, payload] of merged) {
