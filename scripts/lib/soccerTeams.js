@@ -1,5 +1,6 @@
 /**
- * Soccer team resolution — World Cup nations + EPL / La Liga / UCL clubs.
+ * Soccer team resolution — World Cup nations, EPL / La Liga / UCL clubs,
+ * and the UEFA and CONCACAF Nations Leagues.
  * Shared by fetchPolymarketData, snapshotPinnacle, scanSharpPositions,
  * scanWhitelistedWallets, seedSportsSharps, buildWhaleProfiles, gradeSharpActions.
  *
@@ -73,6 +74,73 @@ const SOC_TEAMS = [
   { code: 'URU', names: ['Uruguay'] },
   { code: 'USA', names: ['USA', 'United States', 'United States of America'] },
   { code: 'UZB', names: ['Uzbekistan'] },
+  // UEFA Nations League + CONCACAF Nations League. Codes are FIFA where
+  // one exists. Slovenia is SVN (SLO is Slovan), Romania is ROU (ROM is
+  // Roma), North Macedonia is MKD (MAC is Manchester City). Curaçao stays
+  // CUW — the conl slug token `kor` is not Korea.
+  { code: 'ALB', names: ['Albania'] },
+  { code: 'AND', names: ['Andorra'] },
+  { code: 'ARM', names: ['Armenia'] },
+  { code: 'ARU', names: ['Aruba'] },
+  { code: 'ATG', names: ['Antigua and Barbuda', 'Antigua & Barbuda'] },
+  { code: 'AZE', names: ['Azerbaijan'] },
+  { code: 'BER', names: ['Bermuda'] },
+  { code: 'BLR', names: ['Belarus'] },
+  { code: 'BLZ', names: ['Belize'] },
+  { code: 'BON', names: ['Bonaire'] },
+  { code: 'BRB', names: ['Barbados'] },
+  { code: 'BUL', names: ['Bulgaria'] },
+  { code: 'CAY', names: ['Cayman Islands'] },
+  { code: 'CUB', names: ['Cuba'] },
+  { code: 'CYP', names: ['Cyprus'] },
+  { code: 'DEN', names: ['Denmark'] },
+  { code: 'DMA', names: ['Dominica'] },
+  { code: 'EST', names: ['Estonia'] },
+  { code: 'FIN', names: ['Finland'] },
+  { code: 'FRO', names: ['Faroe Islands'] },
+  { code: 'GEO', names: ['Georgia'] },
+  { code: 'GIB', names: ['Gibraltar'] },
+  { code: 'GLP', names: ['Guadeloupe'] },
+  { code: 'GRE', names: ['Greece'] },
+  { code: 'GRN', names: ['Grenada'] },
+  { code: 'GUA', names: ['Guatemala'] },
+  { code: 'GUF', names: ['French Guiana'] },
+  { code: 'GUY', names: ['Guyana'] },
+  { code: 'HUN', names: ['Hungary'] },
+  { code: 'IRL', names: ['Republic of Ireland', 'Ireland'] },
+  { code: 'ISL', names: ['Iceland'] },
+  { code: 'ISR', names: ['Israel'] },
+  { code: 'JAM', names: ['Jamaica'] },
+  { code: 'KAZ', names: ['Kazakhstan'] },
+  { code: 'KVX', names: ['Kosovo'] },
+  { code: 'LCA', names: ['St. Lucia', 'Saint Lucia', 'St Lucia'] },
+  { code: 'LIE', names: ['Liechtenstein'] },
+  { code: 'LTU', names: ['Lithuania'] },
+  { code: 'LUX', names: ['Luxembourg'] },
+  { code: 'LVA', names: ['Latvia'] },
+  { code: 'MAF', names: ['Saint-Martin', 'Saint Martin', 'St. Martin'] },
+  { code: 'MLT', names: ['Malta'] },
+  { code: 'MDA', names: ['Moldova'] },
+  { code: 'MKD', names: ['North Macedonia'] },
+  { code: 'MNE', names: ['Montenegro'] },
+  { code: 'MSR', names: ['Montserrat'] },
+  { code: 'MTQ', names: ['Martinique'] },
+  { code: 'NCA', names: ['Nicaragua'] },
+  { code: 'NIR', names: ['Northern Ireland'] },
+  { code: 'POL', names: ['Poland'] },
+  { code: 'PUR', names: ['Puerto Rico'] },
+  { code: 'ROU', names: ['Romania'] },
+  { code: 'SKN', names: ['St. Kitts and Nevis', 'Saint Kitts and Nevis'] },
+  { code: 'SLV', names: ['El Salvador'] },
+  { code: 'SMR', names: ['San Marino'] },
+  { code: 'SRB', names: ['Serbia'] },
+  { code: 'SVK', names: ['Slovakia'] },
+  { code: 'SVN', names: ['Slovenia'] },
+  { code: 'SXM', names: ['Sint Maarten'] },
+  { code: 'TRI', names: ['Trinidad and Tobago', 'Trinidad & Tobago'] },
+  { code: 'UKR', names: ['Ukraine'] },
+  { code: 'VIN', names: ['St. Vincent and the Grenadines', 'Saint Vincent and the Grenadines'] },
+  { code: 'WAL', names: ['Wales'] },
 ];
 
 // Premier League + La Liga clubs. Codes follow Polymarket slug tokens when
@@ -279,7 +347,7 @@ export function remapSoccerPinnSides(game) {
  */
 export function isSoccerMarketTitle(title) {
   const t = (title || '').toLowerCase();
-  if (/world cup|\bfifa\b|\bepl\b|premier league|la ?liga|laliga|champions league|\bucl\b/.test(t)) return true;
+  if (/world cup|\bfifa\b|\bepl\b|premier league|la ?liga|laliga|champions league|\bucl\b|nations league|concacaf/.test(t)) return true;
   let m = t.match(/^will\s+(?:the\s+)?(.+?)\s+win(?:\s+on\s+\d{4}-\d{2}-\d{2})?\s*\?*$/);
   if (m && resolveSOCTeam(m[1])) return true;
   m = t.match(/^will\s+(.+?)\s+vs\.?\s+(.+?)\s+end\s+in\s+a\s+draw/);
@@ -289,9 +357,9 @@ export function isSoccerMarketTitle(title) {
   return false;
 }
 
-const MAIN_SOC_SLUG = /^(fifwc|epl|lal|ucl)-[a-z0-9]+-[a-z0-9]+-\d{4}-\d{2}-\d{2}$/;
+const MAIN_SOC_SLUG = /^(fifwc|epl|lal|ucl|unl|conl)-[a-z0-9]+-[a-z0-9]+-\d{4}-\d{2}-\d{2}$/;
 
-/** MAIN match event — EPL, La Liga, UCL, leftover World Cup. Drops HT / corners / props / futures. */
+/** MAIN match event — EPL, La Liga, UCL, UEFA Nations League, CONCACAF Nations League, leftover World Cup. Drops HT / corners / props / futures. */
 export function isMainSoccerMatchSlug(slug) {
   return MAIN_SOC_SLUG.test(String(slug || '').toLowerCase());
 }
