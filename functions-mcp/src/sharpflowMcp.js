@@ -399,4 +399,4 @@ const sharpflowMcp = onRequest({
   }
 });
 
-module.exports = { sharpflowMcp };
+module.exports = { sharpflowMcp, postMcp: onMcp, sendRpc };
