@@ -1,6 +1,6 @@
 # MLB Predictions
 
-MLB predictions for Friday, October 23, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
+MLB predictions for Friday, November 13, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Take your betting further. Explore Dimers Pro plans. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
@@ -241,12 +241,6 @@ T&Cs apply.
 [Read review](https://www.dimers.com/dfs/betr)
 
 How to claim
-
-## MLB predictions for Friday
-
-Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
-
-On Friday, the Brewers have a 60.8% chance of beating the Rays at American Family Field.
 
 ## MLB predictions today: Data-driven outcomes for every game
 
