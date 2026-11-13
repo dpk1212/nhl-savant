@@ -1,0 +1,25 @@
+# Read-only: confirm ··12f826 has both 2026-10-22 Kennesaw losses on the book.
+name: verify-kennesaw-12f826
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/spread-line-ticket-id-24aa
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Confirm both Kennesaw LOSSES on 12f826
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/_verify_kennesaw_12f826.mjs
