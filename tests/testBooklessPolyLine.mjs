@@ -8,6 +8,7 @@ import {
   mapLockedPickToCardFixture,
   parseCommenceMs,
 } from '../src/components/sharpFlow/cards/mapPositionCard.js';
+import { lockedCardToWin } from '../src/lib/cardPayout.js';
 
 assert.equal(isBooklessLineSport('CS2'), true);
 assert.equal(isBooklessLineSport('ATP'), true);
@@ -128,5 +129,16 @@ const shangSealed = mapLockedPickToCardFixture({
 });
 assert.equal(shangSealed.heroOdds, -174, 'real freeze stamp stays when board walks');
 assert.ok(Math.abs(shangSealed.toWin - (2 * 100 / 174)) < 0.01);
+
+const face = lockedCardToWin({
+  sport: 'ATP',
+  units: 2,
+  toWin: 2,
+  paintedOdds: -174,
+});
+assert.ok(
+  Math.abs(face - (2 * 100 / 174)) < 1e-9,
+  `card face pays painted −174, not even money, got ${face}`,
+);
 
 console.log('testBooklessPolyLine: ok');
