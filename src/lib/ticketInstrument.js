@@ -67,6 +67,32 @@ export function americanFromPolyPrice(px) {
     : Math.round(100 * (1 - p) / p);
 }
 
+const BOOKLESS_ML_SPORTS = new Set(['ATP', 'CS2', 'LOL']);
+
+/**
+ * Polymarket complete-set mint / missing fill: API reports 50¢ while the
+ * tennis/esports board is a real favorite or dog. Shang ML 2026-11-12
+ * stamped avgPrice 0.5 (even money) against curPrice 0.635 (−174).
+ */
+export function isBooklessMintFill(avgPrice, curPrice, sport, family = 'ML') {
+  if (!BOOKLESS_ML_SPORTS.has(String(sport || '').toUpperCase())) return false;
+  if (String(family || 'ML').toUpperCase() !== 'ML') return false;
+  const avg = Number(avgPrice);
+  const cur = Number(curPrice);
+  if (!(avg > 0 && avg < 1)) return false;
+  if (Math.abs(avg - 0.5) > 0.011) return false;
+  if (!(cur > 0.01 && cur < 0.99)) return false;
+  return Math.abs(cur - 0.5) >= 0.05;
+}
+
+/** Even-money stamp (−100 / +100) that is not the live board. */
+export function isEvenMoneyPlaceholder(stampAmerican, boardAmerican) {
+  if (!Number.isFinite(stampAmerican) || stampAmerican === 0) return false;
+  if (!Number.isFinite(boardAmerican) || boardAmerican === 0) return false;
+  if (Math.abs(Math.abs(stampAmerican) - 100) > 2) return false;
+  return Math.abs(Math.round(stampAmerican) - Math.round(boardAmerican)) >= 20;
+}
+
 export function classifyFamily(marketType) {
   const m = String(marketType || '').toUpperCase();
   if (m === 'SPREAD' || m === 'SP') return 'SPREAD';
@@ -137,6 +163,7 @@ export function vaultTicket(positions, { side, line = null, family = 'ML', sport
   const scoped = majorityMarketPositions(rows, side, family, sport);
   let sumInv = 0;
   let sumPx = 0;
+  let mintSkipped = false;
   for (const p of scoped) {
     if (!sameSide(p, side)) continue;
     if (family !== 'ML' && Number.isFinite(line)) {
@@ -146,8 +173,34 @@ export function vaultTicket(positions, { side, line = null, family = 'ML', sport
     const inv = Number(p.invested) || 0;
     const px = Number(p.avgPrice);
     if (!(inv > 0) || !(px > 0 && px < 1)) continue;
+    if (isBooklessMintFill(px, p.curPrice, sport, family)) {
+      mintSkipped = true;
+      continue;
+    }
     sumInv += inv;
     sumPx += px * inv;
+  }
+  if (!(sumInv > 0) && mintSkipped) {
+    let curInv = 0;
+    let curSum = 0;
+    for (const p of scoped) {
+      if (!sameSide(p, side)) continue;
+      const inv = Number(p.invested) || 0;
+      const cur = Number(p.curPrice);
+      if (!(inv > 0) || !(cur > 0.01 && cur < 0.99)) continue;
+      curInv += inv;
+      curSum += cur * inv;
+    }
+    if (curInv > 0) {
+      const polyPrice = curSum / curInv;
+      const american = americanFromPolyPrice(polyPrice);
+      return {
+        polyPrice,
+        american,
+        invested: +curInv.toFixed(2),
+        cents: Math.round(polyPrice * 100),
+      };
+    }
   }
   if (!(sumInv > 0)) {
     return { polyPrice: null, american: null, invested: 0, cents: null };

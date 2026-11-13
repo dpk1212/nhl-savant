@@ -18,6 +18,8 @@ import {
   coherentTicket,
   stampJuice,
   stampTape,
+  isBooklessMintFill,
+  isEvenMoneyPlaceholder,
 } from '../src/lib/ticketInstrument.js';
 
 assert.equal(americanFromPolyPrice(0.554), -124);
@@ -396,5 +398,24 @@ const oneAlt = resolveInstrument({
   stampedLine: -6.5,
 });
 assert.equal(oneAlt.line, -3.5, 'one wallet keeps their alt');
+
+assert.equal(isBooklessMintFill(0.5, 0.635, 'ATP', 'ML'), true);
+assert.equal(isBooklessMintFill(0.5, 0.51, 'ATP', 'ML'), false);
+assert.equal(isBooklessMintFill(0.5, 0.635, 'NFL', 'ML'), false);
+assert.equal(isEvenMoneyPlaceholder(-100, -174), true);
+assert.equal(isEvenMoneyPlaceholder(-174, -174), false);
+assert.equal(isEvenMoneyPlaceholder(-110, -124), false);
+
+// Shang ML 2026-11-12: 50¢ mint vs 63.5¢ board must not price even money.
+const shangMint = vaultTicket([
+  { side: 'home', avgPrice: 0.5, curPrice: 0.635, invested: 135 },
+  { side: 'home', avgPrice: 0.64, curPrice: 0.635, invested: 11 },
+], { side: 'home', family: 'ML', sport: 'ATP' });
+assert.equal(shangMint.american, -178, `mint skipped, real 64¢ fill, got ${shangMint.american}`);
+
+const shangMintOnly = vaultTicket([
+  { side: 'home', avgPrice: 0.5, curPrice: 0.635, invested: 135 },
+], { side: 'home', family: 'ML', sport: 'ATP' });
+assert.equal(shangMintOnly.american, -174, `mint-only falls through to board, got ${shangMintOnly.american}`);
 
 console.log('testTicketInstrument: ok');
