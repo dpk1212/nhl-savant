@@ -33,6 +33,7 @@ import {
   mapLiveGameToCardFixture,
   enrichWallets,
   isSkillEligibleProfile,
+  parseCommenceMs,
   EDGE_PRIOR_AG_WR,
   NET_CLV_PRIOR_AG,
 } from '../components/sharpFlow/cards/mapPositionCard';
@@ -12755,15 +12756,7 @@ export default function SharpFlow() {
                           && lockOddsRaw && Math.abs(lockOddsRaw) <= 400;
                         // Post T-15: ticket = sealed lock (best available at
                         // T-15 from 2026-09-19). Peak / flagged stay the vault.
-                        const commenceForOdds = (() => {
-                          const raw = doc.commenceTime;
-                          if (raw == null) return null;
-                          if (typeof raw === 'number') return raw;
-                          if (raw?.toMillis) return raw.toMillis();
-                          if (typeof raw?._seconds === 'number') return raw._seconds * 1000;
-                          const t = new Date(raw).getTime();
-                          return Number.isFinite(t) ? t : null;
-                        })();
+                        const commenceForOdds = parseCommenceMs(doc.commenceTime);
                         const pastT15Odds = commenceForOdds != null
                           && Date.now() >= commenceForOdds - (15 * 60 * 1000);
                         // After first pitch/puck, live tape is in-play. Do not

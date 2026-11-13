@@ -5409,8 +5409,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Metric-only sides (opposite / never-locked) also freeze — last stamp sticks.
   let ct = null;
   if (pick.commenceTime != null) {
-    if (typeof pick.commenceTime === 'number') ct = pick.commenceTime;
-    else if (pick.commenceTime?.toMillis) ct = pick.commenceTime.toMillis();
+    if (typeof pick.commenceTime === 'number' && Number.isFinite(pick.commenceTime)) {
+      ct = pick.commenceTime > 0 && pick.commenceTime < 1e12
+        ? pick.commenceTime * 1000
+        : pick.commenceTime;
+    } else if (pick.commenceTime?.toMillis) ct = pick.commenceTime.toMillis();
     else if (pick.commenceTime?._seconds) ct = pick.commenceTime._seconds * 1000;
     else if (pick.commenceTime instanceof Date) ct = pick.commenceTime.getTime();
     else if (typeof pick.commenceTime === 'string') ct = new Date(pick.commenceTime).getTime();

@@ -30,6 +30,7 @@ import {
 import {
   americanFromPolyPrice,
   coherentTicket,
+  isEvenMoneyPlaceholder,
   resolveInstrument,
 } from '../../../lib/ticketInstrument.js';
 import { resolvePayOdds } from '../../../lib/payOdds.js';
@@ -204,8 +205,8 @@ function resolvePickSide(pick, {
 const fmtEt = (ts) => {
   if (!ts) return '';
   if (typeof ts === 'string' && /AM|PM/i.test(ts) && !ts.includes('T')) return ts;
-  const e = typeof ts === 'number' ? ts : Date.parse(ts);
-  if (Number.isNaN(e)) return typeof ts === 'string' ? ts : '';
+  const e = typeof ts === 'number' ? parseCommenceMs(ts) : Date.parse(ts);
+  if (e == null || Number.isNaN(e)) return typeof ts === 'string' ? ts : '';
   return new Date(e).toLocaleTimeString('en-US', {
     timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true,
   });
@@ -604,10 +605,13 @@ function appendExchangeQuotes(books, {
   ));
 }
 
-/** Commence / freeze timestamps from Firestore, ISO, or epoch ms. */
+/** Commence / freeze timestamps from Firestore, ISO, epoch ms, or unix seconds. */
 export function parseCommenceMs(raw) {
-  if (raw == null) return null;
-  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    if (raw <= 0) return null;
+    return raw < 1e12 ? raw * 1000 : raw;
+  }
   if (typeof raw?.toMillis === 'function') return raw.toMillis();
   if (typeof raw?._seconds === 'number') return raw._seconds * 1000;
   if (raw instanceof Date) {
@@ -2136,19 +2140,28 @@ export function mapLockedPickToCardFixture(pick, {
     : (Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds);
   const polyForLabel = Number.isFinite(pay.polyReceipt) ? pay.polyReceipt
     : (Number.isFinite(polyEntryOdds) ? polyEntryOdds : null);
-  // Bookless ML, still before the seal: the number on the card is the
-  // live Polymarket price. The receipt stays underneath as "flagged at".
-  if (!isTotal && !isSpread && isBooklessLineSport(pick.sport) && !ticketFrozen
-      && Number.isFinite(market.fairNow) && market.fairNow !== 0) {
-    payOdds = market.fairNow;
-    const receipt = Number.isFinite(polyForLabel) ? polyForLabel : lockOdds;
-    if (Number.isFinite(receipt) && Math.round(receipt) !== Math.round(payOdds)) {
-      const lbl = fmtFlaggedAtLabel(receipt);
-      if (lbl) mainNowLabel = lbl;
+  // Bookless ML: Polymarket is the line. A 50¢ complete-set mint stamps
+  // even money (−100 / 2u to win +2u) while the board is −174. Pay and
+  // hero share the board American. A real freeze stamp stays.
+  const booklessMl = !isTotal && !isSpread && isBooklessLineSport(pick.sport);
+  if (booklessMl && Number.isFinite(market.fairNow) && market.fairNow !== 0) {
+    const boardPx = market.fairNow;
+    if (!ticketFrozen
+        || !Number.isFinite(payOdds)
+        || isEvenMoneyPlaceholder(payOdds, boardPx)) {
+      payOdds = boardPx;
+      const receipt = Number.isFinite(polyForLabel) ? polyForLabel : lockOdds;
+      if (Number.isFinite(receipt)
+          && Math.round(receipt) !== Math.round(payOdds)
+          && !isEvenMoneyPlaceholder(receipt, payOdds)) {
+        const lbl = fmtFlaggedAtLabel(receipt);
+        if (lbl) mainNowLabel = lbl;
+      }
     }
   }
   if (!flaggedAtLabel && Number.isFinite(polyForLabel) && Number.isFinite(payOdds)
-      && Math.round(polyForLabel) !== Math.round(payOdds)) {
+      && Math.round(polyForLabel) !== Math.round(payOdds)
+      && !(booklessMl && isEvenMoneyPlaceholder(polyForLabel, payOdds))) {
     const lbl = fmtFlaggedAtLabel(polyForLabel);
     if (lbl) mainNowLabel = lbl;
   }
@@ -2268,7 +2281,7 @@ export function mapLockedPickToCardFixture(pick, {
     books: market.books,
     liveShop: market.liveShop || null,
     liveOnTicket: market.liveOnTicket !== false,
-    bestOdds: market.bestOdds,
+    bestOdds: (booklessMl && Number.isFinite(payOdds)) ? payOdds : market.bestOdds,
     bestBook: market.bestBook,
     ourMarketLabel: market.ourLabel,
     liveMarketLabel: market.liveLabel,
