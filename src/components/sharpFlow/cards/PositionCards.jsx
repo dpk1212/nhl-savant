@@ -19,7 +19,9 @@ import {
   shopLineMatchesPlay,
   sharpConsensusFromBooks,
   bookBeatsConsensus,
+  resolveHeroShop,
 } from '../../../lib/shopTicketLine.js';
+import { lockedCardToWin } from '../../../lib/cardPayout.js';
 import { unitMarketHit } from '../../../lib/unitMarketHit.js';
 import { portfolioWalletsOnCard } from '../../../lib/mySharps.js';
 import { FAV_JUICE_MUTE_THR } from '../../../lib/walletClvSkill.js';
@@ -2795,6 +2797,20 @@ function CollapsedHeader({ live, inClassName }) {
  */
 function CollapsedHero({ live, pickClass }) {
   const { f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor, muteTip } = live;
+  const shop = resolveHeroShop({
+    bestOdds: f.bestOdds,
+    bestBook: f.bestBook,
+    books: f.books,
+    fallbackOdds: heroPx,
+  });
+  const facePayout = tracked || graded
+    ? payoutLabel
+    : `+${lockedCardToWin({
+      sport: f.sport,
+      units: f.units,
+      toWin: f.toWin,
+      paintedOdds: shop.odds,
+    }).toFixed(2)}u`;
   return (
     <div
       data-hero="bet"
@@ -2852,13 +2868,13 @@ function CollapsedHero({ live, pickClass }) {
         >
           {stakeLabel}
         </span>
-        {!tracked && payoutLabel && (
+        {!tracked && facePayout && (
           <span style={{
             fontSize: '0.84rem', fontWeight: 650, fontFeatureSettings: "'tnum'",
             color: payoutColor, letterSpacing: '-0.01em', lineHeight: 1,
           }}
           >
-            {graded ? payoutLabel : `to win ${payoutLabel}`}
+            {graded ? facePayout : `to win ${facePayout}`}
           </span>
         )}
       </div>
@@ -3260,6 +3276,18 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
   const heroPx = Number.isFinite(f.heroOdds)
     ? f.heroOdds
     : (f.ticketOffMain ? null : (f.lockOdds ?? f.odds));
+  const shopPx = resolveHeroShop({
+    bestOdds: f.bestOdds,
+    bestBook: f.bestBook,
+    books: f.books,
+    fallbackOdds: heroPx,
+  }).odds;
+  const cardToWin = lockedCardToWin({
+    sport: f.sport,
+    units: f.units,
+    toWin: f.toWin,
+    paintedOdds: shopPx,
+  });
 
   if (!expanded) {
     const stakeLabel = tracked
@@ -3269,7 +3297,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false, mySharps = 
       ? null
       : graded
         ? `${resultPnl >= 0 ? '+' : ''}${Number(resultPnl).toFixed(2)}u`
-        : `+${Number(f.toWin).toFixed(2)}u`;
+        : `+${Number(cardToWin).toFixed(2)}u`;
     const payoutColor = graded ? resultColor : B.profit;
     const liveFace = {
       f, tracked, graded, heroPx, stakeLabel, payoutLabel, payoutColor,
