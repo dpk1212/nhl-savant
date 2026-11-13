@@ -42,3 +42,34 @@ export function settledMoneyline(event) {
 export function settledMoneylineWinner(event) {
   return settledMoneyline(event)?.winner || null;
 }
+
+function closedMoneylineNames(event) {
+  const markets = Array.isArray(event?.markets) ? event.markets : [];
+  const ml = markets.find((m) => String(m?.sportsMarketType || '').toLowerCase() === 'moneyline' && (m.closed === true || m.closed === 'true'));
+  if (!ml) return [];
+  return asList(ml.outcomes).map((name) => String(name || '').trim()).filter(Boolean);
+}
+
+/**
+ * One closed match whose slug is that date and whose moneyline names both
+ * sides. Two such events stay ungraded. A set or map market cannot win.
+ */
+export function chooseSettledEvent(events, { date, away, home, acceptSlug, namesMatch } = {}) {
+  if (typeof acceptSlug !== 'function' || typeof namesMatch !== 'function') return null;
+  const hits = [];
+  for (const event of events || []) {
+    const slug = String(event?.slug || '').toLowerCase();
+    if (!acceptSlug(slug)) continue;
+    if (date && !slug.endsWith(String(date))) continue;
+    const settlement = settledMoneyline(event);
+    if (!settlement) continue;
+    const outcomes = closedMoneylineNames(event);
+    if (outcomes.length < 2) continue;
+    if (!outcomes.some((name) => namesMatch(name, away))) continue;
+    if (!outcomes.some((name) => namesMatch(name, home))) continue;
+    hits.push({ slug, settlement });
+  }
+  const slugs = [...new Set(hits.map((hit) => hit.slug))];
+  if (slugs.length !== 1) return null;
+  return hits.find((hit) => hit.slug === slugs[0]) || null;
+}

@@ -36,8 +36,8 @@ import {
   isGradableATPMainML,
   isMainATPMatchSlug,
 } from './lib/atpPlayers.js';
-import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML, isMainEsportsMatchSlug, teamsFromBo3Slug } from './lib/esportsTeams.js';
-import { settledMoneyline } from './lib/settledMoneyline.js';
+import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML, isMainEsportsMatchSlug, teamsFromBo3Slug, esportFromSlug } from './lib/esportsTeams.js';
+import { chooseSettledEvent, settledMoneyline } from './lib/settledMoneyline.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { rebuildMorningRanks } from './lib/morningRankCache.js';
 import { shouldGradeExited } from '../src/lib/actionLockPin.js';
@@ -1052,6 +1052,7 @@ async function fetchEsportsFinalMatches(sport, dateSet) {
 }
 
 const settledWinnerCache = new Map();
+const namedSettlementCache = new Map();
 const settledLogged = new Set();
 
 function settledSlug(pos) {
@@ -1077,27 +1078,76 @@ async function fetchSettledWinner(slug) {
   }
 }
 
+function namesMatchFor(sport) {
+  return sport === 'ATP' ? playersMatch : esportsTeamsMatch;
+}
+
+function acceptMatchSlug(sport) {
+  if (sport === 'ATP') return isMainATPMatchSlug;
+  return (slug) => esportFromSlug(slug) === sport;
+}
+
+// Locked picks store the players and the date. They do not store the
+// event slug, and the tour board never lists the challenger.
+async function fetchNamedSettlement(pos) {
+  const key = `${pos.sport}|${pos.date}|${pos.away}|${pos.home}`;
+  if (!namedSettlementCache.has(key)) {
+    namedSettlementCache.set(key, (async () => {
+      const res = await fetch(
+        `https://gamma-api.polymarket.com/public-search?q=${encodeURIComponent(`${pos.away} ${pos.home}`)}`,
+        { headers: { Accept: 'application/json', 'User-Agent': 'nhl-savant' } },
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      return chooseSettledEvent(data?.events, {
+        date: pos.date,
+        away: pos.away,
+        home: pos.home,
+        acceptSlug: acceptMatchSlug(pos.sport),
+        namesMatch: namesMatchFor(pos.sport),
+      });
+    })().catch((e) => {
+      console.warn(`Polymarket search ${pos.away} vs ${pos.home}: ${e.message}`);
+      return null;
+    }));
+  }
+  return namedSettlementCache.get(key);
+}
+
 // The tour board and BO3 never list some of these. A closed match
 // moneyline at 1/0 is the settlement of the bet.
 async function polymarketSettledGame(pos) {
-  const slug = settledSlug(pos);
-  if (!slug) return null;
   const tip = Number(pos.commenceTime);
   if (Number.isFinite(tip) && tip > Date.now()) return null;
-  if (!settledWinnerCache.has(slug)) settledWinnerCache.set(slug, fetchSettledWinner(slug));
-  const settlement = await settledWinnerCache.get(slug);
+  let slug = settledSlug(pos);
+  let settlement = null;
+  if (slug) {
+    if (!settledWinnerCache.has(slug)) settledWinnerCache.set(slug, fetchSettledWinner(slug));
+    settlement = await settledWinnerCache.get(slug);
+  } else if (pos.sport === 'ATP' || pos.sport === 'CS2' || pos.sport === 'LOL') {
+    const found = await fetchNamedSettlement(pos);
+    if (!found) return null;
+    slug = found.slug;
+    settlement = found.settlement;
+  } else {
+    return null;
+  }
   if (!settlement) return null;
   let game = null;
   if (settlement.voided) {
     game = { awayScore: 0, homeScore: 0, dateET: pos.date || null, settledPrice: 0.5 };
   } else if (settlement.winner) {
-    const match = pos.sport === 'ATP' ? playersMatch : esportsTeamsMatch;
+    const match = namesMatchFor(pos.sport);
     if (match(settlement.winner, pos.away) && !match(settlement.winner, pos.home)) game = { awayScore: 1, homeScore: 0, dateET: pos.date || null };
     else if (match(settlement.winner, pos.home) && !match(settlement.winner, pos.away)) game = { awayScore: 0, homeScore: 1, dateET: pos.date || null };
   }
   if (game && !settledLogged.has(slug)) {
     settledLogged.add(slug);
     console.log(settlement.voided ? `Polymarket voided ${slug}` : `Polymarket settled ${slug} → ${settlement.winner}`);
+  }
+  if (game) {
+    game.source = 'POLYMARKET';
+    game.slug = slug;
   }
   return game;
 }
@@ -1452,7 +1502,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
       const winner = game.wentBeyond90 ? 'draw'
         : game.awayScore > game.homeScore ? 'away'
           : game.homeScore > game.awayScore ? 'home' : 'draw';
-      const source = pick.sport === 'NHL' ? 'NHL_API'
+      const source = game.source || (pick.sport === 'NHL' ? 'NHL_API'
         : pick.sport === 'CBB' ? 'NCAA_API'
           : pick.sport === 'NBA' ? 'ESPN_NBA_API'
             : pick.sport === 'WNBA' ? 'ESPN_WNBA_API'
@@ -1462,13 +1512,14 @@ async function gradePendingSharpFlowPicks(db, finals) {
                   : pick.sport === 'UFC' ? 'ESPN_UFC_API'
                     : pick.sport === 'ATP' ? 'ESPN_ATP_API'
                       : pick.sport === 'CS2' ? 'BO3_CS2'
-                        : pick.sport === 'LOL' ? 'BO3_LOL' : 'ESPN_MLB_API';
+                        : pick.sport === 'LOL' ? 'BO3_LOL' : 'ESPN_MLB_API');
       const updates = {
         'result.awayScore': game.awayScore,
         'result.homeScore': game.homeScore,
         'result.winner': winner,
         'result.source': source,
       };
+      if (game.slug && !(pick.slug || pick.eventSlug)) updates.slug = game.slug;
       let allSidesGraded = true;
       const sides = pick.sides && typeof pick.sides === 'object' ? pick.sides : null;
       if (!sides) {
