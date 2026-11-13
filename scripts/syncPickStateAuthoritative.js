@@ -59,6 +59,7 @@ import admin from 'firebase-admin';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { pruneCandidatePath, writePruneCandidates } from './lib/pruneHeldConfirm.js';
 
 import {
   AGS_FALLBACK_CALIBRATION,
@@ -9618,6 +9619,7 @@ async function main() {
   let prunedStale = 0;
   let keptByScanBoard = 0;
   let keptByTrust = 0;
+  const pruneCandidates = [];
   const positionsFresh = maxUpdatedMs > 0
     ? rawAfterExclusion.filter(p => {
         const t = tsMs(p);
@@ -9637,6 +9639,15 @@ async function main() {
           return true;
         }
         prunedStale++;
+        pruneCandidates.push({
+          id: p._id || null,
+          wallet: p.wallet || null,
+          asset: p.asset != null && p.asset !== '' ? String(p.asset) : '',
+          sport: p.sport || null,
+          marketType: p.marketType || null,
+          gameKey: p.gameKey || null,
+          side: p.side || null,
+        });
         return false;
       })
     : rawAfterExclusion;
@@ -9648,6 +9659,17 @@ async function main() {
   }
   if (keptByScanBoard > 0) {
     console.log(`  ↳ kept ${keptByScanBoard} stale-but-on-scan-board position(s) (Action/v12 feed parity)`);
+  }
+  // The live bag above is unchanged. The list is only for the post-sync
+  // held check, which refreshes updatedAt when Polymarket still shows it.
+  try {
+    const n = writePruneCandidates(pruneCandidatePath(join(__dirname, '..')), {
+      date: TARGET_DATE,
+      candidates: pruneCandidates,
+    });
+    console.log(`  ↳ saved ${n} prune candidate(s) for the held check`);
+  } catch (err) {
+    console.warn('WARNING: prune candidate list was not saved:', err.message);
   }
 
   // ── Rehydrate missing Action-board proven tickets into the live bag ───
