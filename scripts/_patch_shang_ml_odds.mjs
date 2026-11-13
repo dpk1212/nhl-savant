@@ -1,6 +1,7 @@
 /**
  * One-shot: Shang ML ticket juice is the Polymarket board (−174), not a
- * 50¢ mint (−100 / 2u to win +2.00u). Writes lock + peak on the live doc.
+ * 50¢ mint (−100 / 2u to win +2.00u). Writes lock.odds + peak.odds on
+ * sharpFlowPicks/2026-11-12_ATP_danesweeny_junchengshang.
  *
  * Usage: node scripts/_patch_shang_ml_odds.mjs [--dry]
  */

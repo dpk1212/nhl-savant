@@ -3,6 +3,11 @@ name: patch-shang-ml-odds
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/_patch_shang_ml_odds.mjs'
+      - '.github/workflows/patch-shang-ml-odds.yml'
 
 jobs:
   patch:
