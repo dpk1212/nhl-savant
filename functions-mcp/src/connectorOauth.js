@@ -160,8 +160,8 @@ function loginPage({ issuer, params, clientName, config }) {
     lead.textContent = 'Allow ' + boot.clientName + ' to read your SharpFlow card while your plan or free trial is active.';
     firebase.initializeApp(boot.config);
     const auth = firebase.auth();
-    const stored = sessionStorage.getItem('sf_oauth');
-    const params = stored ? JSON.parse(stored) : boot.params;
+    sessionStorage.removeItem('sf_oauth');
+    const params = boot.params;
     async function finish(user) {
       const idToken = await user.getIdToken();
       const res = await fetch(boot.issuer + '/oauth/complete', {
@@ -170,6 +170,7 @@ function loginPage({ issuer, params, clientName, config }) {
         body: JSON.stringify(Object.assign({ idToken: idToken }, params)),
       });
       const data = await res.json();
+      sessionStorage.removeItem('sf_oauth');
       if (data.redirect) {
         window.location = data.redirect;
         return;
@@ -184,13 +185,21 @@ function loginPage({ issuer, params, clientName, config }) {
         err.appendChild(link);
       }
     }
-    auth.getRedirectResult().then((result) => {
-      if (result && result.user) return finish(result.user);
-    }).catch((e) => { err.textContent = e.message || 'Sign-in failed.'; });
-    document.getElementById('go').onclick = () => {
-      sessionStorage.setItem('sf_oauth', JSON.stringify(boot.params));
+    document.getElementById('go').onclick = async () => {
+      const button = document.getElementById('go');
+      button.disabled = true;
+      err.textContent = '';
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithRedirect(provider);
+      try {
+        const result = await auth.signInWithPopup(provider);
+        if (result && result.user) await finish(result.user);
+      } catch (e) {
+        err.textContent = e && e.code === 'auth/popup-blocked'
+          ? 'Allow the sign-in window, then click the button again.'
+          : ((e && e.message) || 'Sign-in failed.');
+      } finally {
+        button.disabled = false;
+      }
     };
   </script>
 </body>
@@ -269,6 +278,7 @@ function createOauthHandlers({ db, auth, issuer, now = () => Date.now() }) {
       res.status(400).json({ error: 'invalid_request' });
       return;
     }
+    res.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     res.type('html').send(loginPage({
       issuer,
       clientName: client.clientName,
