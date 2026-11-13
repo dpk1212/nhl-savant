@@ -159,10 +159,17 @@ async function listMainAtpMatchEvents() {
   return mains;
 }
 
-/** UEFA Champions League series 10204. Tag `ucl` leads with futures; series has the matches. */
-const UCL_SERIES_ID = '10204';
+/**
+ * Club and national-team match series. The league tags lead with futures.
+ * UCL 10204, UEFA Nations League 11446, CONCACAF Nations League 10673.
+ */
+const SOCCER_MATCH_SERIES = [
+  ['10204', 'ucl'],
+  ['11446', 'unl'],
+  ['10673', 'conl'],
+];
 
-async function listMainUclMatchEvents() {
+async function listMainSoccerSeriesEvents(seriesId, label) {
   const mains = [];
   let pages = 0;
   let raw = 0;
@@ -172,7 +179,7 @@ async function listMainUclMatchEvents() {
       closed: 'false',
       limit: String(ATP_SERIES_PAGE),
       offset: String(offset),
-      series_id: UCL_SERIES_ID,
+      series_id: seriesId,
     });
     let arr = [];
     try {
@@ -188,8 +195,21 @@ async function listMainUclMatchEvents() {
     }
     if (arr.length < ATP_SERIES_PAGE) break;
   }
-  console.log(`  📡 ucl main matches: ${mains.length} from ${raw} series events (${pages} pages)`);
+  console.log(`  📡 ${label} main matches: ${mains.length} from ${raw} series events (${pages} pages)`);
   return mains;
+}
+
+async function listMainSoccerMatchEvents() {
+  const all = [];
+  for (const [seriesId, label] of SOCCER_MATCH_SERIES) {
+    try {
+      const list = await listMainSoccerSeriesEvents(seriesId, label);
+      all.push(...list);
+    } catch (e) {
+      console.warn(`Could not list ${label} series:`, e.message);
+    }
+  }
+  return all;
 }
 
 async function listMainEsportsMatchEvents(seriesId, label) {
@@ -951,14 +971,16 @@ async function loadTodaysSchedule(cbbMap) {
     console.warn('Could not seed NBA from Polymarket tag nba:', e.message);
   }
 
-  // SOC: EPL + La Liga + UCL. World Cup Odds API key is gone.
+  // SOC: EPL + La Liga + UCL + UEFA Nations League. CONCACAF Nations
+  // League has no Odds API feed; the series seed below is its schedule.
+  // World Cup Odds API key is gone.
   // Season endpoints return the remaining slate, so keep a weekend window
   // (now−8h → +5d) like NFL — otherwise futures soft-gate through.
   const validSOC = new Set();
   const socWindowLo = Date.now() - 8 * 3600 * 1000;
   const socWindowHi = Date.now() + 5 * 24 * 3600 * 1000;
   if (ODDS_API_KEY) {
-    for (const oddsKey of ['soccer_epl', 'soccer_spain_la_liga', 'soccer_uefa_champs_league']) {
+    for (const oddsKey of ['soccer_epl', 'soccer_spain_la_liga', 'soccer_uefa_champs_league', 'soccer_uefa_nations_league']) {
       try {
         const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
         const res = await fetch(url);
@@ -988,7 +1010,7 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
   try {
-    const list = await listMainUclMatchEvents();
+    const list = await listMainSoccerMatchEvents();
     let seeded = 0;
     for (const ev of list) {
       const title = ev.title || '';
@@ -998,16 +1020,16 @@ async function loadTodaysSchedule(cbbMap) {
       if (!Number.isFinite(t) || t < socWindowLo || t > socWindowHi) continue;
       const gk = makeSOCGameKey(pair[0], pair[1]);
       if (!gk) {
-        console.warn(`UCL team resolution miss: "${pair[0]}" / "${pair[1]}" (${ev.slug})`);
+        console.warn(`SOC team resolution miss: "${pair[0]}" / "${pair[1]}" (${ev.slug})`);
         continue;
       }
       if (!validSOC.has(gk)) seeded++;
       validSOC.add(gk);
       if (ev.startTime && !commenceTimes[`SOC:${gk}`]) commenceTimes[`SOC:${gk}`] = ev.startTime;
     }
-    console.log(`📋 UCL Poly seed: +${seeded} → ${validSOC.size} cumulative`);
+    console.log(`📋 Soccer series seed: +${seeded} → ${validSOC.size} cumulative`);
   } catch (e) {
-    console.warn('Could not seed UCL from Polymarket series:', e.message);
+    console.warn('Could not seed soccer from Polymarket series:', e.message);
   }
 
   // UFC: Odds API key is mma_mixed_martial_arts (includes non-UFC orgs).
@@ -1324,13 +1346,14 @@ async function run() {
   }
   try {
     const have = new Set(events.map((ev) => ev.slug).filter(Boolean));
-    const list = await listMainUclMatchEvents();
+    const list = await listMainSoccerMatchEvents();
     for (const ev of list) {
       if (ev.slug && have.has(ev.slug)) continue;
-      events.push({ ...ev, _tag: 'ucl', _sport: 'SOC' });
+      const league = String(ev.slug || '').split('-')[0] || 'soc';
+      events.push({ ...ev, _tag: league, _sport: 'SOC' });
     }
   } catch (e) {
-    console.warn('Failed to fetch UCL series:', e.message);
+    console.warn('Failed to fetch soccer match series:', e.message);
   }
   for (const [sport, seriesId] of Object.entries(ESPORTS_SERIES)) {
     try {
@@ -1448,7 +1471,7 @@ async function run() {
     // CS2 / LoL slugs beat nickname collisions (Falcons, magic).
     const esSlugSport = esportFromSlug(ev.slug);
     if (esSlugSport) sport = esSlugSport;
-    // EPL / La Liga / UCL / World Cup match slugs are the soccer board.
+    // EPL / La Liga / UCL / Nations League / World Cup match slugs are the soccer board.
     if (!esSlugSport && isMainSoccerMatchSlug(ev.slug)) sport = 'SOC';
 
     let teams = sport === 'UFC'
@@ -1506,7 +1529,7 @@ async function run() {
     }
     if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL', 'CFB', 'ATP', 'CS2', 'LOL'].includes(sport)) continue;
 
-    // SOC: only MAIN EPL / La Liga / UCL / leftover WC match events (drops HT,
+    // SOC: only MAIN EPL / La Liga / UCL / Nations League / leftover WC match events (drops HT,
     // exact-score, corners, player props, champion futures, other leagues).
     if (sport === 'SOC' && !isMainSoccerMatchSlug(ev.slug)) continue;
 

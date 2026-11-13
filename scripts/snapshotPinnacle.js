@@ -64,6 +64,7 @@ const SPORTS = [
   // UCL is the same 3-way board. Title order often flips vs away@home;
   // lookupPinnGame swaps sides when the board key is the reverse.
   { key: 'soccer_uefa_champs_league', label: 'SOC', markets: 'h2h,spreads,totals' },
+  { key: 'soccer_uefa_nations_league', label: 'SOC', markets: 'h2h,spreads,totals' },
   { key: 'basketball_wnba', label: 'WNBA', markets: 'h2h,spreads,totals' },
   // NFL — preseason + regular season (ML + spreads + totals).
   { key: 'americanfootball_nfl_preseason', label: 'NFL', markets: 'h2h,spreads,totals' },
