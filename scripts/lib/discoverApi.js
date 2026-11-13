@@ -61,6 +61,34 @@ export function holderGroups(raw) {
   }));
 }
 
+/**
+ * One leaderboard page. v2 is cursor-only: `{ data: [{ user_id, pnl, volume, rank, user_name }] }`.
+ * v1 was a top-level array of `{ proxyWallet, pnl, vol, userName, rank }`.
+ */
+export function leaderboardRows(raw) {
+  const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : null);
+  if (!rows) return null;
+  const mapped = [];
+  for (const t of rows) {
+    const wallet = String(t.proxyWallet || t.user_id || '').toLowerCase();
+    if (!wallet.startsWith('0x')) continue;
+    const rankRaw = t.rank != null ? t.rank : t.rank_pnl;
+    mapped.push({
+      proxyWallet: wallet,
+      userName: t.userName || t.user_name || null,
+      pnl: Number(t.pnl) || 0,
+      vol: Number(t.volume ?? t.vol) || 0,
+      rank: rankRaw != null && rankRaw !== '' ? Number(rankRaw) : null,
+    });
+  }
+  const pag = raw?.pagination || {};
+  return {
+    rows: mapped,
+    nextCursor: pag.next_cursor || '',
+    hasMore: !!pag.has_more && !!pag.next_cursor,
+  };
+}
+
 /** One closed-positions page. v2 is `{ data, pagination.next_cursor }`. */
 export function closedRowsFromPage(raw) {
   const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : null);
@@ -72,6 +100,9 @@ export function closedRowsFromPage(raw) {
     curPrice: p.curPrice != null ? p.curPrice : p.current_price,
     conditionId: p.conditionId || p.condition_id || '',
     outcomeIndex: p.outcomeIndex != null ? p.outcomeIndex : p.outcome_index,
+    totalBought: Number(p.totalBought ?? p.total_size ?? 0) || 0,
+    avgPrice: Number(p.avgPrice ?? p.avg_price ?? 0) || 0,
+    realizedPnl: Number(p.realizedPnl ?? p.realized_pnl ?? 0) || 0,
   }));
   const pag = raw?.pagination || {};
   return {
