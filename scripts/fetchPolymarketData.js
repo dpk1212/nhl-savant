@@ -267,8 +267,15 @@ function nflEventGameKey(ev) {
 }
 
 async function getLiveVolume(eventId) {
-  const data = await get(`/live-volume?id=${eventId}`, DATA);
-  return Array.isArray(data) ? data[0] : data;
+  // Data API v1 answers 410. That call sits in front of the price history,
+  // and a throw there used to keep the one-point skeleton. Tennis and
+  // esports have no book tape, so the card line stayed flat.
+  try {
+    const data = await get(`/live-volume?id=${eventId}`, DATA);
+    return Array.isArray(data) ? data[0] : data;
+  } catch {
+    return null;
+  }
 }
 
 async function getAllTrades(eventId) {
@@ -302,9 +309,13 @@ async function getWhaleTrades(eventId, minCash = 500, limit = 50) {
 }
 
 async function getPriceHistory(tokenId, interval = '1h') {
-  const params = new URLSearchParams({ market: tokenId, interval });
-  const data = await get(`/prices-history?${params}`, CLOB);
-  return data?.history || [];
+  try {
+    const params = new URLSearchParams({ market: tokenId, interval });
+    const data = await get(`/prices-history?${params}`, CLOB);
+    return data?.history || [];
+  } catch {
+    return [];
+  }
 }
 
 function aggregateTrades(trades, awayRaw, homeRaw) {
@@ -2013,7 +2024,7 @@ async function run() {
         tradeCount: agg.ticketCount,
         sampleCash: agg.totalCash,
         priceMove1h,
-        priceHistory,
+        priceHistory: priceHistory || bucket[key]?.priceHistory || null,
         whales: whaleData,
         awayProb: awayProb != null ? Number((awayProb * 100).toFixed(1)) : null,
         homeProb: homeProb != null ? Number((homeProb * 100).toFixed(1)) : null,
