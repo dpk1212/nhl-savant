@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { httpsCallable } from 'firebase/functions';
 import { Plug, Copy, Check } from 'lucide-react';
 import { functions } from '../firebase/config';
+
+const CONNECTOR_URL = 'https://sharpflowmcpmember-lviwud3q2q-uc.a.run.app';
+const CONNECTOR_NAME = 'NHL Savant - Sharpflow';
 
 const cardShell = {
   background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
@@ -28,65 +31,81 @@ const goldButton = {
   textDecoration: 'none',
 };
 
-function Field({ label, value }) {
-  return (
-    <div style={{ marginBottom: '0.75rem' }}>
-      <div style={{ fontSize: '0.75rem', color: 'rgba(241, 245, 249, 0.55)', marginBottom: 4 }}>{label}</div>
-      <div style={{
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-        fontSize: '0.875rem',
-        color: '#F1F5F9',
-        wordBreak: 'break-all',
-        padding: '0.75rem 0.875rem',
-        borderRadius: '8px',
-        background: 'rgba(15, 23, 42, 0.7)',
-        border: '1px solid rgba(148, 163, 184, 0.2)',
-      }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
+const APPS = [
+  {
+    id: 'chatgpt',
+    title: 'ChatGPT',
+    steps: [
+      'Open ChatGPT on the web. Go to Settings, then Apps, and turn on Developer mode if it asks.',
+      'Open Plugins, click +, then Add custom MCP server.',
+      `Name: ${CONNECTOR_NAME}. Server URL: ${CONNECTOR_URL}. Authentication: OAuth.`,
+      'Scan the tools. An NHL Savant sign-in window opens. Sign in with Google and click through.',
+      'Create the plugin and install it if asked.',
+      'In a new chat, type @, pick NHL Savant - Sharpflow, and ask: “What should I know tonight?”',
+    ],
+  },
+  {
+    id: 'claude',
+    title: 'Claude',
+    steps: [
+      'Open Settings, then Connectors, then Add custom connector.',
+      `Enter the name ${CONNECTOR_NAME} and the URL ${CONNECTOR_URL}, then click Add.`,
+      'Click Connect. Sign in to NHL Savant and allow the card.',
+      'In a chat, turn the connector on from the tools menu and ask: “What should I know tonight?”',
+    ],
+  },
+  {
+    id: 'grok',
+    title: 'Grok',
+    steps: [
+      'Go to grok.com/connectors.',
+      'Click New Connector, then Custom.',
+      `Enter ${CONNECTOR_URL} and continue. Grok opens NHL Savant sign-in.`,
+      'Sign in with Google and allow the card.',
+      'In a new chat, ask: “What should I know tonight?”',
+    ],
+  },
+];
 
-function Steps({ connection }) {
+function Steps({ items }) {
   return (
     <ol style={{
-      margin: '1rem 0 0',
-      paddingLeft: '1.25rem',
+      margin: '0.75rem 0 0',
+      paddingLeft: '1.2rem',
       color: 'rgba(241, 245, 249, 0.85)',
       fontSize: '0.938rem',
-      lineHeight: 1.6,
+      lineHeight: 1.55,
     }}
     >
-      <li>Open the connectors, plugins, or tools settings in the AI app you use.</li>
-      <li>Add a custom MCP server.</li>
-      <li style={{ marginTop: '0.75rem' }}>
-        Fill it in.
-        <div style={{ marginTop: '0.75rem' }}>
-          <Field label="Name" value={connection.name} />
-          <Field label="URL" value={connection.url} />
-          <Field label="Authentication" value="Paste the key. The field may say API key, Bearer token, or Access token." />
-        </div>
-      </li>
-      <li>Save it and start a new chat. Ask: “What should I know tonight?”</li>
-      <li>When the app asks to use {connection.name}, allow it. Some apps ask again in each new chat.</li>
+      {items.map((step) => <li key={step} style={{ marginBottom: '0.4rem' }}>{step}</li>)}
     </ol>
   );
 }
 
 export default function SharpFlowConnectCard({ isPremium }) {
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [connection, setConnection] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [lockedNote, setLockedNote] = useState(false);
+  const [apps, setApps] = useState([]);
+
+  const loadApps = async () => {
+    if (!isPremium) return;
+    try {
+      const list = httpsCallable(functions, 'listSharpflowConnectorApps');
+      const result = await list();
+      setApps(result.data?.apps || []);
+    } catch {
+      setApps([]);
+    }
+  };
+
+  useEffect(() => {
+    if (isPremium && open) loadApps();
+  }, [isPremium, open]);
 
   const createKey = async () => {
-    if (!isPremium) {
-      setLockedNote(true);
-      return;
-    }
     setBusy(true);
     setError('');
     setCopied(false);
@@ -96,15 +115,22 @@ export default function SharpFlowConnectCard({ isPremium }) {
       setConnection(result.data);
     } catch (err) {
       const code = err?.code || '';
-      if (code.includes('permission-denied')) {
-        setError('An active plan or a free trial is required.');
-      } else if (code.includes('unauthenticated')) {
-        setError('Sign in first.');
-      } else {
-        setError('Could not create a key. Try again.');
-      }
+      if (code.includes('permission-denied')) setError('An active plan or a free trial is required.');
+      else if (code.includes('unauthenticated')) setError('Sign in first.');
+      else setError('Could not create a key. Try again.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const disconnect = async (family) => {
+    setError('');
+    try {
+      const revoke = httpsCallable(functions, 'revokeSharpflowConnectorApp');
+      await revoke({ family });
+      setApps((prev) => prev.filter((app) => app.family !== family));
+    } catch {
+      setError('Could not disconnect that app. Try again.');
     }
   };
 
@@ -127,17 +153,16 @@ export default function SharpFlowConnectCard({ isPremium }) {
         </h3>
       </div>
       <p style={{ fontSize: '0.938rem', color: 'rgba(241, 245, 249, 0.8)', lineHeight: 1.6, marginTop: 0 }}>
-        Add tonight’s card to ChatGPT, Claude, Perplexity, or any app that takes a custom server.
-        The app asks for a name, an address, and a key. The key works while your plan is active or your free trial is running.
+        Connect ChatGPT, Claude, or Grok. You sign in with NHL Savant. The card answers while your plan or free trial is active.
       </p>
 
-      {!connection && (
-        <button type="button" onClick={createKey} disabled={busy} style={{ ...goldButton, opacity: busy ? 0.7 : 1 }}>
-          {busy ? 'Checking your plan…' : 'Show connection'}
+      {!open && (
+        <button type="button" onClick={() => setOpen(true)} style={goldButton}>
+          Show connection
         </button>
       )}
 
-      {lockedNote && !isPremium && (
+      {open && !isPremium && (
         <div style={{ marginTop: '1rem' }}>
           <p style={{ fontSize: '0.938rem', color: 'rgba(241, 245, 249, 0.8)', lineHeight: 1.6 }}>
             A free trial or a paid plan is required to open the connection.
@@ -146,58 +171,78 @@ export default function SharpFlowConnectCard({ isPremium }) {
         </div>
       )}
 
-      {error && (
-        <p style={{ color: '#FCA5A5', fontSize: '0.875rem', marginTop: '0.75rem' }}>{error}</p>
-      )}
-
-      {connection && (
+      {open && isPremium && (
         <div style={{ marginTop: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', color: 'rgba(241, 245, 249, 0.55)', marginBottom: 4 }}>Your key</div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-            <div style={{
-              flex: 1,
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-              fontSize: '0.8125rem',
-              color: '#F1F5F9',
-              wordBreak: 'break-all',
-              padding: '0.75rem 0.875rem',
-              borderRadius: '8px',
-              background: 'rgba(15, 23, 42, 0.7)',
-              border: '1px solid rgba(212, 175, 55, 0.45)',
-            }}
-            >
-              {connection.key}
-            </div>
-            <button type="button" onClick={copyKey} style={{ ...goldButton, padding: '0.75rem 0.9rem' }}>
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-              {copied ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-          <p style={{ fontSize: '0.8125rem', color: 'rgba(241, 245, 249, 0.6)', lineHeight: 1.5 }}>
-            {connection.trial
-              ? 'This key works during your free trial. When the trial ends, the connector stops until a plan is active.'
-              : 'This key works while your plan is active. If the plan ends, the connector stops.'}
-            {' '}Creating another key turns this one off. Copy it now. It is shown once.
+          {APPS.map((app) => (
+            <section key={app.id} style={{ marginBottom: '1.25rem' }}>
+              <h4 style={{ margin: '0 0 0.25rem', color: '#F1F5F9', fontSize: '1rem' }}>{app.title}</h4>
+              <Steps items={app.steps} />
+            </section>
+          ))}
+
+          <section style={{ marginBottom: '1.25rem' }}>
+            <h4 style={{ margin: '0 0 0.25rem', color: '#F1F5F9', fontSize: '1rem' }}>Apps that ask for a key</h4>
+            <p style={{ margin: '0.25rem 0 0.75rem', color: 'rgba(241, 245, 249, 0.75)', fontSize: '0.938rem', lineHeight: 1.55 }}>
+              Perplexity, Cursor, and other apps take a key instead of a sign-in window. The name and URL are the same. Paste the key in the field labeled API key, Bearer token, or Access token.
+            </p>
+            {!connection && (
+              <button type="button" onClick={createKey} disabled={busy} style={{ ...goldButton, opacity: busy ? 0.7 : 1 }}>
+                {busy ? 'Checking your plan…' : 'Create key'}
+              </button>
+            )}
+            {connection && (
+              <div>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                  <div style={{
+                    flex: 1,
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                    fontSize: '0.8125rem',
+                    color: '#F1F5F9',
+                    wordBreak: 'break-all',
+                    padding: '0.75rem 0.875rem',
+                    borderRadius: '8px',
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(212, 175, 55, 0.45)',
+                  }}
+                  >
+                    {connection.key}
+                  </div>
+                  <button type="button" onClick={copyKey} style={{ ...goldButton, padding: '0.75rem 0.9rem' }}>
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(241, 245, 249, 0.6)', lineHeight: 1.5 }}>
+                  Shown once. Creating another key turns this one off. It works while your plan or free trial is active.
+                </p>
+                <p style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '0.8125rem', color: '#F1F5F9' }}>
+                  {CONNECTOR_URL}
+                </p>
+              </div>
+            )}
+          </section>
+
+          {apps.length > 0 && (
+            <section>
+              <h4 style={{ margin: '0 0 0.5rem', color: '#F1F5F9', fontSize: '1rem' }}>Connected apps</h4>
+              {apps.map((app) => (
+                <div key={app.family} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <span style={{ color: 'rgba(241, 245, 249, 0.85)' }}>{app.name}</span>
+                  <button type="button" onClick={() => disconnect(app.family)} style={{ background: 'transparent', border: 'none', color: '#FCA5A5', cursor: 'pointer' }}>
+                    Disconnect
+                  </button>
+                </div>
+              ))}
+            </section>
+          )}
+
+          <p style={{ fontSize: '0.8125rem', color: 'rgba(241, 245, 249, 0.55)', lineHeight: 1.5 }}>
+            Some apps ask permission again in each new chat. Allow it. Disconnecting an app, or creating a new key, turns that access off.
           </p>
-          <Steps connection={connection} />
-          <button
-            type="button"
-            onClick={createKey}
-            disabled={busy}
-            style={{
-              marginTop: '1rem',
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(241, 245, 249, 0.55)',
-              fontSize: '0.8125rem',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            {busy ? 'Creating a new key…' : 'Create a new key'}
-          </button>
         </div>
       )}
+
+      {error && <p style={{ color: '#FCA5A5', fontSize: '0.875rem' }}>{error}</p>}
     </div>
   );
 }

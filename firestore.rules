@@ -151,12 +151,36 @@ service cloud.firestore {
       allow update: if request.auth != null && docId == 'roster' && mySharpRosterUpdate();
     }
 
-    // User accounts - users can manage their own account
+    function userFieldSame(field) {
+      return request.resource.data.get(field, null) == resource.data.get(field, null);
+    }
+    function entitlementUnchanged() {
+      return userFieldSame('tier')
+        && userFieldSame('status')
+        && userFieldSame('isActive')
+        && userFieldSame('isTrial')
+        && userFieldSame('trialEndsAt')
+        && userFieldSame('currentPeriodEnd')
+        && userFieldSame('stripeCustomerId')
+        && userFieldSame('subscriptionId')
+        && userFieldSame('cancelAtPeriodEnd')
+        && userFieldSame('sharpflowConnectorKeyHash');
+    }
+
+    // User accounts. The owner can update profile fields. Plan fields stay
+    // with the Stripe webhook and the Admin SDK.
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false; // Users cannot delete their own account documents
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.get('tier', 'free') == 'free'
+        && request.resource.data.get('status', 'active') == 'active'
+        && request.resource.data.get('isActive', false) == false
+        && request.resource.data.get('sharpflowConnectorKeyHash', null) == null;
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && entitlementUnchanged();
+      allow delete: if false;
     }
     
     // User usage tracking - users can manage their own usage data
