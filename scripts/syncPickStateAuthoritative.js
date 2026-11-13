@@ -209,7 +209,7 @@ import {
   positionSoftKey,
 } from './lib/hydrateLivePositionsFromScan.js';
 import { buildIsProvenFn, buildWalletPriorStatsFn } from '../src/lib/marketProvenCarve.js';
-import { resolveInstrument, ticketAmerican, coherentTicket, walletsOnSide } from '../src/lib/ticketInstrument.js';
+import { resolveInstrument, ticketAmerican, coherentTicket, walletsOnSide, isBooklessMlSport } from '../src/lib/ticketInstrument.js';
 import {
   bestAvailableTicket,
   snapshotBookRail,
@@ -8546,7 +8546,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       stampedLine: stampedLn,
       stampedOdds: lockOddsNow,
     }).odds ?? ticketAmerican(inst, lockOddsNow);
-    if (Number.isFinite(ticket) && ticket !== 0) {
+    // ATP / CS2 / LoL: a locked American is the stake. Do not restamp it
+    // from the live Polymarket fill. A missing stamp can still be filled once.
+    const booklessStakeSealed = mkt === 'ML'
+      && isBooklessMlSport(sport)
+      && Number.isFinite(lockOddsNow)
+      && lockOddsNow !== 0;
+    if (!booklessStakeSealed && Number.isFinite(ticket) && ticket !== 0) {
       const lineChanged = Number.isFinite(inst.line)
         && (stampedLn == null || Math.abs(stampedLn - inst.line) > 0.051);
       const oddsChanged = lockOddsNow !== ticket;

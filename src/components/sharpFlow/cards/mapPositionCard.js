@@ -29,8 +29,9 @@ import {
 } from '../../../lib/pinnacleMain.js';
 import {
   americanFromPolyPrice,
+  booklessLockedStakeOdds,
   coherentTicket,
-  isEvenMoneyPlaceholder,
+  isBooklessMlSport,
   resolveInstrument,
 } from '../../../lib/ticketInstrument.js';
 import { resolvePayOdds } from '../../../lib/payOdds.js';
@@ -397,11 +398,9 @@ function pctToAmerican(pct) {
   return americanFromProb(p);
 }
 
-/** No sportsbook tape. Polymarket is the line, and it has to move. */
-const BOOKLESS_LINE_SPORTS = new Set(['ATP', 'CS2', 'LOL']);
-
+/** No sportsbook tape. Polymarket history is the chart. The stake stays put. */
 export function isBooklessLineSport(sport) {
-  return BOOKLESS_LINE_SPORTS.has(String(sport || '').toUpperCase());
+  return isBooklessMlSport(sport);
 }
 
 function polySidePct(polyGame, sideKey) {
@@ -878,8 +877,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     homeShort: shortTeam(pick.home, pick.away),
     teamShort: shortTeam(pick.team, pick.away === pick.team ? pick.home : pick.away),
   });
-  // Esports and tennis have no book. Polymarket history is the moving line,
-  // so the card does not sit on an earlier American stamp.
+  // Esports and tennis have no book. Polymarket history is the chart.
+  // The locked American stays the stake; this board must not replace it.
   if (!isTotal && !isSpread && isBooklessLineSport(sport)) {
     const polyGame = opts.polyData?.[sport]?.[gk] || null;
     const polyBoard = buildPolyMoneylineBoard(pick, sideKey, polyGame);
@@ -2116,7 +2115,10 @@ export function mapLockedPickToCardFixture(pick, {
     : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : null);
   // A dead print is not the book the seal will write. Other games lock the
   // best live price on this number. When that price is gone, the receipt stays.
-  const bookOnLine = market.liveOnTicket === false
+  // Bookless ML has no sportsbook. The live Polymarket print is not a book
+  // quote, and resolvePayOdds must not demote the locked stamp onto it.
+  const booklessMl = !isTotal && !isSpread && isBooklessLineSport(pick.sport);
+  const bookOnLine = (booklessMl || market.liveOnTicket === false)
     ? null
     : (sameLineBook != null
       ? sameLineBook
@@ -2140,28 +2142,16 @@ export function mapLockedPickToCardFixture(pick, {
     : (Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds);
   const polyForLabel = Number.isFinite(pay.polyReceipt) ? pay.polyReceipt
     : (Number.isFinite(polyEntryOdds) ? polyEntryOdds : null);
-  // Bookless ML: Polymarket is the line. A 50¢ complete-set mint stamps
-  // even money (−100 / 2u to win +2u) while the board is −174. Pay and
-  // hero share the board American. A real freeze stamp stays.
-  const booklessMl = !isTotal && !isSpread && isBooklessLineSport(pick.sport);
-  if (booklessMl && Number.isFinite(market.fairNow) && market.fairNow !== 0) {
-    const boardPx = market.fairNow;
-    if (!ticketFrozen
-        || !Number.isFinite(payOdds)
-        || isEvenMoneyPlaceholder(payOdds, boardPx)) {
-      payOdds = boardPx;
-      const receipt = Number.isFinite(polyForLabel) ? polyForLabel : lockOdds;
-      if (Number.isFinite(receipt)
-          && Math.round(receipt) !== Math.round(payOdds)
-          && !isEvenMoneyPlaceholder(receipt, payOdds)) {
-        const lbl = fmtFlaggedAtLabel(receipt);
-        if (lbl) mainNowLabel = lbl;
-      }
-    }
+  // Bookless ML: the locked stamp is the stake. Live Polymarket stays on
+  // the chart. BakS ML 2026-11-13 was sealed at −101 and the card painted
+  // the live −700 because even-money and the moving board both won.
+  if (booklessMl) {
+    const kept = booklessLockedStakeOdds(lockOdds, market.fairNow);
+    if (Number.isFinite(kept)) payOdds = kept;
   }
   if (!flaggedAtLabel && Number.isFinite(polyForLabel) && Number.isFinite(payOdds)
       && Math.round(polyForLabel) !== Math.round(payOdds)
-      && !(booklessMl && isEvenMoneyPlaceholder(polyForLabel, payOdds))) {
+      && !booklessMl) {
     const lbl = fmtFlaggedAtLabel(polyForLabel);
     if (lbl) mainNowLabel = lbl;
   }

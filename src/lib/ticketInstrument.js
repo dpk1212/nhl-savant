@@ -85,6 +85,22 @@ export function isBooklessMintFill(avgPrice, curPrice, sport, family = 'ML') {
   return Math.abs(cur - 0.5) >= 0.05;
 }
 
+export function isBooklessMlSport(sport) {
+  return BOOKLESS_ML_SPORTS.has(String(sport || '').toUpperCase());
+}
+
+/**
+ * Locked esports / tennis stake. A finite stamp is the price the ticket
+ * was staked at. The live Polymarket board is the chart, and it must not
+ * replace that number. A missing stamp can still show the board so the
+ * card is not blank.
+ */
+export function booklessLockedStakeOdds(stampedOdds, boardOdds) {
+  if (Number.isFinite(stampedOdds) && stampedOdds !== 0) return stampedOdds;
+  if (Number.isFinite(boardOdds) && boardOdds !== 0) return boardOdds;
+  return null;
+}
+
 /** Even-money stamp (−100 / +100) that is not the live board. */
 export function isEvenMoneyPlaceholder(stampAmerican, boardAmerican) {
   if (!Number.isFinite(stampAmerican) || stampAmerican === 0) return false;

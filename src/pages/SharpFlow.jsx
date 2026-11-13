@@ -32,6 +32,7 @@ import {
   mapLockedPickToCardFixture,
   mapLiveGameToCardFixture,
   enrichWallets,
+  isBooklessLineSport,
   isSkillEligibleProfile,
   parseCommenceMs,
   EDGE_PRIOR_AG_WR,
@@ -12818,9 +12819,12 @@ export default function SharpFlow() {
                             || pickFiniteOdds(lockOddsRaw)
                             || pickFiniteOdds(sd.closingOdds)
                             || null);
-                        // Pre-T-15: live vault Poly is fine as a working number;
-                        // past T-15 cardOddsRaw already demoted Poly→book above.
+                        // Pre-T-15: live vault Poly is a working number on a book.
+                        // ATP / CS2 / LoL have no book. The locked American is
+                        // the stake and does not follow the live fill.
+                        const booklessStake = marketTypeKey === 'ml' && isBooklessLineSport(docSport);
                         const cardOdds = (!pastT15Odds
+                          && !booklessStake
                           && (marketTypeKey === 'spread' || marketTypeKey === 'total' || marketTypeKey === 'ml')
                           && Number.isFinite(vaultPolyOdds))
                           ? vaultPolyOdds
