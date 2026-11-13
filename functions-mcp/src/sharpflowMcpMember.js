@@ -14,8 +14,14 @@ const {
   hashKey,
   newKey,
   bearerKey,
-  asksForCard,
+  requiresCredential,
 } = require('./membership');
+const {
+  protectedResourceMetadata,
+  authorizationServerMetadata,
+  wwwAuthenticate,
+  createOauthHandlers,
+} = require('./connectorOauth');
 
 const KEYS = 'sharpflowConnectorKeys';
 const MEMBER_URL = 'https://sharpflowmcpmember-lviwud3q2q-uc.a.run.app';
@@ -28,7 +34,7 @@ function readBody(req) {
 
 function denyMessage(reason) {
   if (reason === 'inactive') {
-    return 'This key belongs to an account that is not on an active plan or a free trial.';
+    return 'This account is not on an active plan or a free trial.';
   }
   if (reason === 'bad-key') {
     return 'That key is not valid. Create a new one on your NHL Savant account page.';
@@ -43,6 +49,7 @@ function sendDeny(req, res, body, reason) {
     id,
     error: { code: -32001, message: denyMessage(reason) },
   };
+  res.set('WWW-Authenticate', wwwAuthenticate(MEMBER_URL));
   const accept = String(req.headers.accept || '');
   if (accept.includes('text/event-stream')) {
     res.status(401);
@@ -54,17 +61,40 @@ function sendDeny(req, res, body, reason) {
   res.status(401).json(payload);
 }
 
+function routePath(req) {
+  const raw = String(req.path || req.originalUrl || req.url || '/').split('?')[0];
+  const trimmed = raw.replace(/\/sharpflowMcpMember(?=\/|$)/, '') || '/';
+  if (trimmed.length > 1 && trimmed.endsWith('/')) return trimmed.slice(0, -1);
+  return trimmed;
+}
+
+function oauthApi() {
+  return createOauthHandlers({
+    db: admin.firestore(),
+    auth: admin.auth(),
+    issuer: MEMBER_URL,
+  });
+}
+
 async function resolveMember(req) {
   const key = bearerKey(req.headers);
   if (!key) return { ok: false, reason: 'no-key' };
-  const snap = await admin.firestore().collection(KEYS).doc(hashKey(key)).get();
-  if (!snap.exists || snap.get('revoked') === true || !snap.get('uid')) {
-    return { ok: false, reason: 'bad-key' };
+  let uid = '';
+  if (key.startsWith('sfa_')) {
+    const access = await oauthApi().resolveAccessToken(key);
+    if (!access.ok) return access;
+    uid = access.uid;
+  } else {
+    const snap = await admin.firestore().collection(KEYS).doc(hashKey(key)).get();
+    if (!snap.exists || snap.get('revoked') === true || !snap.get('uid')) {
+      return { ok: false, reason: 'bad-key' };
+    }
+    uid = snap.get('uid');
   }
-  const user = await admin.firestore().collection('users').doc(snap.get('uid')).get();
+  const user = await admin.firestore().collection('users').doc(uid).get();
   const member = membershipFromUser(user.data());
   if (!member) return { ok: false, reason: 'inactive' };
-  return { ok: true, uid: snap.get('uid'), ...member };
+  return { ok: true, uid, ...member };
 }
 
 const sharpflowMcpMember = onRequest({
@@ -75,11 +105,37 @@ const sharpflowMcpMember = onRequest({
   invoker: 'public',
 }, async (req, res) => {
   try {
+    const path = routePath(req);
+    const oauth = oauthApi();
+    if (path === '/.well-known/oauth-protected-resource' || path.startsWith('/.well-known/oauth-protected-resource/')) {
+      res.json(protectedResourceMetadata(MEMBER_URL));
+      return;
+    }
+    if (path === '/.well-known/oauth-authorization-server' || path === '/.well-known/openid-configuration') {
+      res.json(authorizationServerMetadata(MEMBER_URL));
+      return;
+    }
+    if ((path === '/oauth/register' || path === '/register') && req.method === 'POST') {
+      await oauth.register(req, res);
+      return;
+    }
+    if ((path === '/oauth/token' || path === '/token') && req.method === 'POST') {
+      await oauth.token(req, res);
+      return;
+    }
+    if ((path === '/oauth/authorize' || path === '/authorize') && req.method === 'GET') {
+      await oauth.authorize(req, res);
+      return;
+    }
+    if (path === '/oauth/complete' && req.method === 'POST') {
+      await oauth.complete(req, res);
+      return;
+    }
     if (req.method === 'GET') {
       res.json({
         name: SERVER_NAME,
         transport: 'streamable-http',
-        authentication: 'Bearer key from the NHL Savant account page. An active plan or a free trial is checked on every question.',
+        authentication: 'Sign in with NHL Savant, or send a bearer key from the account page. An active plan or a free trial is checked on every question.',
         tools: TOOLS.map((tool) => tool.name),
       });
       return;
@@ -94,7 +150,7 @@ const sharpflowMcpMember = onRequest({
     } catch {
       body = null;
     }
-    if (asksForCard(body)) {
+    if (requiresCredential(body)) {
       const member = await resolveMember(req);
       if (!member.ok) {
         sendDeny(req, res, body, member.reason);
@@ -155,4 +211,51 @@ const createSharpflowConnectorKey = onCall({
   };
 });
 
-module.exports = { sharpflowMcpMember, createSharpflowConnectorKey, MEMBER_URL };
+const listSharpflowConnectorApps = onCall({
+  region: 'us-central1',
+  cors: true,
+  invoker: 'public',
+  timeoutSeconds: 30,
+}, async (request) => {
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in first.');
+  const snap = await admin.firestore().collection('connectorOauthFamilies')
+    .where('uid', '==', request.auth.uid)
+    .get();
+  const apps = [];
+  snap.forEach((doc) => {
+    const row = doc.data() || {};
+    if (row.revoked) return;
+    apps.push({
+      family: doc.id,
+      name: row.clientName || 'This app',
+      connectedAt: row.createdAt || null,
+    });
+  });
+  return { apps };
+});
+
+const revokeSharpflowConnectorApp = onCall({
+  region: 'us-central1',
+  cors: true,
+  invoker: 'public',
+  timeoutSeconds: 30,
+}, async (request) => {
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in first.');
+  const family = String(request.data?.family || '');
+  if (!family) throw new HttpsError('invalid-argument', 'Missing the app.');
+  const ref = admin.firestore().collection('connectorOauthFamilies').doc(family);
+  const snap = await ref.get();
+  if (!snap.exists || snap.get('uid') !== request.auth.uid) {
+    throw new HttpsError('permission-denied', 'That app is not on this account.');
+  }
+  await ref.set({ revoked: true }, { merge: true });
+  return { ok: true };
+});
+
+module.exports = {
+  sharpflowMcpMember,
+  createSharpflowConnectorKey,
+  listSharpflowConnectorApps,
+  revokeSharpflowConnectorApp,
+  MEMBER_URL,
+};
