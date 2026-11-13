@@ -78,7 +78,7 @@ import {
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
-import { createPacedJsonFetch, fetchOpenPositionsV2, takeSecondPageCount } from './lib/fetchPositionPages.js';
+import { createPacedJsonFetch, fetchOpenPositionsV2, takeSecondPageCount, takeThirdPageCount } from './lib/fetchPositionPages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -663,7 +663,9 @@ async function run() {
     );
   });
   const secondPages = takeSecondPageCount();
+  const thirdPages = takeThirdPageCount();
   if (secondPages > 0) console.log(`Position second page: ${secondPages} wallet(s)`);
+  if (thirdPages > 0) console.log(`Position third page: ${thirdPages} wallet(s)`);
   console.log('Processing supplemental scan results...\n');
 
   for (const w of whitelist) {
