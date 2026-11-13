@@ -220,6 +220,12 @@ jobs:
               echo "::warning::syncPickStateAuthoritative failed inline (cycle $i) — will retry via sync-pick-state-on-deploy workflow after gh-pages push"
             fi
 
+            # Tickets the freshness prune just dropped. One Polymarket read
+            # per wallet. A still-held PENDING ticket gets updatedAt refreshed
+            # for the next cycle. Failure leaves it dropped.
+            echo "--- confirmPruneHeld ---"
+            node scripts/confirmPruneHeld.js || echo "confirmPruneHeld failed (cycle $i — dropped tickets stay dropped)"
+
             echo "--- updateClosingOdds ---"
             node scripts/updateClosingOdds.js || echo "closingOdds failed (cycle $i)"
 
