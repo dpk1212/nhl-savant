@@ -7,6 +7,7 @@ import { functions, db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import LockAlertsCard from '../components/LockAlertsCard';
+import SharpFlowConnectCard from '../components/SharpFlowConnectCard';
 import MySharpAlertsCard from '../components/MySharpAlertsCard';
 import UnitTiersCard from '../components/UnitTiersCard';
 
@@ -662,6 +663,8 @@ const Account = () => {
         <UnitTiersCard user={user} />
 
         <MySharpAlertsCard user={user} isPremium={isPremium} />
+
+        <SharpFlowConnectCard isPremium={isPremium} />
 
         {/* Lock Alerts (OneSignal) — paid opt-in + mobile directions */}
         <LockAlertsCard
