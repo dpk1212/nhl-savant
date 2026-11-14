@@ -15,6 +15,12 @@
  * the half unit. The seat ceiling and the odds cap stop the increase.
  * They do not take units off a stake already inside them.
  *
+ * Middle band. 4.5 ≤ M < 10 and the stake is already above 0. The stamped
+ * press edge under 5 takes one extra unit. The edge at 5 or more gives one
+ * unit back, and the stake stops at 0. A missing edge stays. The seat
+ * ceiling and the odds cap can stop the extra unit. They do not take the
+ * unit off a stake the cut already left in place.
+ *
  * Manual stake, an operator kill, and the T-15 freeze win. Four sports,
  * moneyline, spread, and total, from the deploy date forward.
  */
@@ -26,7 +32,11 @@ export const STEAM_BOOK_FROM = '2026-11-14';
 export const SHORT_MOVE_MAX = 4.5;
 export const SHORT_MOVE_EDGE_MAX = 5;
 export const STEAM_TEN_MIN = 10;
+export const MID_BAND_MIN = 4.5;
+export const MID_BAND_MAX = 10;
+export const MID_BAND_EDGE = 5;
 export const SHORT_MOVE_MUTED_BY = 'short-move';
+export const MID_BAND_MUTED_BY = 'mid-band';
 
 const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
 const MARKETS = new Set(['ML', 'SPREAD', 'TOTAL']);
@@ -164,6 +174,62 @@ export function applySteamTenResize({
   return { ...base, units: next, action: 'BOOST', reason: 'ten_pct' };
 }
 
+/**
+ * One unit on, or one unit off, inside 4.5% up to 10%.
+ * @returns {{
+ *   units: number, action: 'ADD'|'CUT'|'PASS'|'EXEMPT', reason: string|null,
+ *   mutedBy: string|null, unitsPrePolicy: number,
+ *   m: number|null, edge: number|null,
+ * }}
+ */
+export function applyMidBand({
+  units,
+  pickDate = null,
+  sport = null,
+  market = null,
+  m = null,
+  edge = null,
+  ceiling = null,
+  odds = null,
+  manual = false,
+  killed = false,
+} = {}) {
+  const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
+  const base = {
+    units: pre,
+    unitsPrePolicy: pre,
+    m: finiteOrNull(m),
+    edge: finiteOrNull(edge),
+    mutedBy: null,
+    reason: null,
+  };
+  if (manual || killed) return { ...base, action: 'EXEMPT' };
+  if (!isSteamBookLive(pickDate, sport, market)) return { ...base, action: 'EXEMPT' };
+  const move = base.m;
+  if (move == null || move < MID_BAND_MIN || move >= MID_BAND_MAX || !(pre > 0)) {
+    return { ...base, action: 'PASS' };
+  }
+  if (base.edge == null) return { ...base, action: 'PASS' };
+  if (base.edge >= MID_BAND_EDGE) {
+    const next = halfUp(Math.max(0, pre - 1));
+    return {
+      ...base,
+      units: next,
+      action: 'CUT',
+      reason: 'edge_5',
+      mutedBy: next > 0 ? null : MID_BAND_MUTED_BY,
+    };
+  }
+  let next = halfUp(pre + 1);
+  const cap = finiteOrNull(ceiling);
+  if (cap != null) next = Math.min(Math.max(next, pre), Math.max(cap, pre));
+  const priced = finiteOrNull(odds);
+  if (priced != null) next = Math.max(oddsCap(next, priced), Math.min(pre, next));
+  next = halfUp(next);
+  if (!(next > pre)) return { ...base, action: 'PASS', reason: 'capped' };
+  return { ...base, units: next, action: 'ADD', reason: 'edge_under_5' };
+}
+
 export function applySteamBook({
   units,
   pickDate = null,
@@ -191,7 +257,19 @@ export function applySteamBook({
     manual,
     killed,
   });
-  return { mute, resize, units: resize.units };
+  const mid = applyMidBand({
+    units: resize.units,
+    pickDate,
+    sport,
+    market,
+    m,
+    edge,
+    ceiling,
+    odds,
+    manual,
+    killed,
+  });
+  return { mute, resize, mid, units: mid.units };
 }
 
 export function shortMoveStamp(policy) {
@@ -216,10 +294,23 @@ export function steamTenStamp(policy) {
   };
 }
 
+export function midBandStamp(policy) {
+  if (!policy || policy.action === 'EXEMPT') return {};
+  return {
+    v8_midBandAction: policy.action,
+    v8_midBandReason: policy.reason ?? null,
+    v8_midBandM: policy.m ?? null,
+    v8_midBandEdge: policy.edge ?? null,
+    v8_unitsPreMidBand: policy.unitsPrePolicy,
+    v8_midBandUnits: policy.units,
+  };
+}
+
 export function steamBookStamp(result) {
   if (!result) return {};
   return {
     ...shortMoveStamp(result.mute),
     ...steamTenStamp(result.resize),
+    ...midBandStamp(result.mid),
   };
 }

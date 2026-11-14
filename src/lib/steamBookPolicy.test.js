@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  MID_BAND_MUTED_BY,
   SHORT_MOVE_MUTED_BY,
+  applyMidBand,
   applyShortMoveMute,
   applySteamBook,
   applySteamTenResize,
@@ -79,6 +81,41 @@ test('the mute and the resize do not both fire', () => {
   const sized = applySteamBook({ ...base, units: 2, m: 11, edge: 1, lead: false });
   assert.equal(sized.mute.action, 'PASS');
   assert.equal(sized.units, 3);
+});
+
+test('4.5% up to 10% adds one unit under edge 5 and cuts one unit at 5 or more', () => {
+  const add = applyMidBand({ ...base, units: 2, m: 4.5, edge: 4.9 });
+  assert.equal(add.action, 'ADD');
+  assert.equal(add.units, 3);
+  const cut = applyMidBand({ ...base, units: 2.5, m: 9.9, edge: 5 });
+  assert.equal(cut.action, 'CUT');
+  assert.equal(cut.units, 1.5);
+  assert.equal(cut.mutedBy, null);
+});
+
+test('the cut stops at zero and a missing edge stays', () => {
+  const zero = applyMidBand({ ...base, units: 1, m: 6, edge: 8 });
+  assert.equal(zero.units, 0);
+  assert.equal(zero.mutedBy, MID_BAND_MUTED_BY);
+  const half = applyMidBand({ ...base, units: 0.5, m: 6, edge: 8 });
+  assert.equal(half.units, 0);
+  assert.equal(applyMidBand({ ...base, units: 2, m: 6, edge: null }).action, 'PASS');
+  assert.equal(applyMidBand({ ...base, units: 0, m: 6, edge: 1 }).action, 'PASS');
+});
+
+test('the ceiling and the odds cap can stop the extra unit', () => {
+  assert.equal(applyMidBand({ ...base, units: 2, m: 6, edge: 1, ceiling: 2 }).action, 'PASS');
+  assert.equal(applyMidBand({ ...base, units: 2, m: 6, edge: 1, odds: 160 }).units, 2);
+  assert.equal(applyMidBand({ ...base, units: 2, m: 6, edge: 1, odds: 130 }).units, 2.5);
+});
+
+test('10% and a move under 4.5 are outside the middle band', () => {
+  assert.equal(applyMidBand({ ...base, units: 2, m: 10, edge: 1 }).action, 'PASS');
+  assert.equal(applyMidBand({ ...base, units: 2, m: 4.4, edge: 1 }).action, 'PASS');
+  const book = applySteamBook({ ...base, units: 2, m: 7, edge: 1, lead: false });
+  assert.equal(book.mute.action, 'PASS');
+  assert.equal(book.resize.action, 'PASS');
+  assert.equal(book.units, 3);
 });
 
 test('a tier-5 lead is for minus against, and a fallen wallet does not count', () => {

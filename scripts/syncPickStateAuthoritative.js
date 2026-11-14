@@ -423,6 +423,7 @@ import {
   steamPctsFromPinn,
 } from '../src/lib/movedAgainstEdge.js';
 import {
+  MID_BAND_MUTED_BY,
   SHORT_MOVE_MUTED_BY,
   STEAM_BOOK_FROM,
   applySteamBook,
@@ -4679,6 +4680,15 @@ async function createMissingLockedPicks({
             `  STEAM-10: ${docId} ${side} M=${steamBookCreate.resize.m}`
             + ` ${steamBookCreate.resize.unitsPrePolicy}u → ${steamBookCreate.units}u`,
           );
+        } else if (steamBookCreate.mid.action === 'ADD' || steamBookCreate.mid.action === 'CUT') {
+          peakUnitsApplied = steamBookCreate.units;
+          if (!(peakUnitsApplied > 0)) hcStakeTierCreate = 'MONITORING';
+          const verb = steamBookCreate.mid.action === 'ADD' ? '+1u' : '−1u';
+          console.log(
+            `  MID-BAND: ${docId} ${side} M=${steamBookCreate.mid.m}`
+            + ` edge=${steamBookCreate.mid.edge} ${steamBookCreate.mid.unitsPrePolicy}u ${verb}`
+            + ` → ${steamBookCreate.units}u`,
+          );
         }
       }
 
@@ -5073,6 +5083,9 @@ async function createMissingLockedPicks({
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (steamBookCreate?.mute?.action === 'MUTE') {
         v8Stamps.mutedBy = SHORT_MOVE_MUTED_BY;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
+      } else if (steamBookCreate?.mid?.mutedBy) {
+        v8Stamps.mutedBy = MID_BAND_MUTED_BY;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (cbbV12StakeMuted(sport, TARGET_DATE)) {
         v8Stamps.mutedBy = CBB_MATURE_MUTED_BY;
@@ -7401,6 +7414,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hcStakeTier = 'MONITORING';
     } else if (steamBookPolicy.resize.action === 'BOOST') {
       finalUnitsApplied = steamBookPolicy.units;
+    } else if (steamBookPolicy.mid.action === 'ADD' || steamBookPolicy.mid.action === 'CUT') {
+      finalUnitsApplied = steamBookPolicy.units;
+      if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
     }
   }
 
@@ -7653,6 +7669,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (steamBookPolicy?.mute?.action !== 'MUTE' && sd.mutedBy === SHORT_MOVE_MUTED_BY) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
+  if (!steamBookPolicy?.mid?.mutedBy && sd.mutedBy === MID_BAND_MUTED_BY) {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+  }
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
@@ -7661,6 +7680,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (steamBookPolicy?.mute?.action === 'MUTE') {
     patch.mutedBy = SHORT_MOVE_MUTED_BY;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  } else if (steamBookPolicy?.mid?.mutedBy) {
+    patch.mutedBy = MID_BAND_MUTED_BY;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (cbbMatureMute) {
     patch.mutedBy = CBB_MATURE_MUTED_BY;
@@ -8670,8 +8692,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       changes.push(
         `STEAM-10: M=${steamBookPolicy.resize.m} ${steamBookPolicy.resize.unitsPrePolicy}u → ${steamBookPolicy.units}u`,
       );
+    } else if (steamBookPolicy.mid.action === 'ADD' || steamBookPolicy.mid.action === 'CUT') {
+      const verb = steamBookPolicy.mid.action === 'ADD' ? '+1u' : '−1u';
+      changes.push(
+        `MID-BAND: M=${steamBookPolicy.mid.m} edge=${steamBookPolicy.mid.edge}`
+        + ` ${steamBookPolicy.mid.unitsPrePolicy}u ${verb} → ${steamBookPolicy.units}u`,
+      );
     }
-  } else if (sd.v8_shortMoveAction != null || sd.v8_steamTenAction != null) {
+  } else if (sd.v8_shortMoveAction != null || sd.v8_steamTenAction != null || sd.v8_midBandAction != null) {
     patch.v8_shortMoveAction = admin.firestore.FieldValue.delete();
     patch.v8_shortMoveReason = admin.firestore.FieldValue.delete();
     patch.v8_shortMoveM = admin.firestore.FieldValue.delete();
@@ -8682,6 +8710,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_steamTenM = admin.firestore.FieldValue.delete();
     patch.v8_unitsPreSteamTen = admin.firestore.FieldValue.delete();
     patch.v8_steamTenUnits = admin.firestore.FieldValue.delete();
+    patch.v8_midBandAction = admin.firestore.FieldValue.delete();
+    patch.v8_midBandReason = admin.firestore.FieldValue.delete();
+    patch.v8_midBandM = admin.firestore.FieldValue.delete();
+    patch.v8_midBandEdge = admin.firestore.FieldValue.delete();
+    patch.v8_unitsPreMidBand = admin.firestore.FieldValue.delete();
+    patch.v8_midBandUnits = admin.firestore.FieldValue.delete();
   }
   if (pressUnder5CapPolicy?.capped) {
     const edgeTxt = pressUnder5CapPolicy.edge == null
@@ -9460,7 +9494,7 @@ async function main() {
   }
   console.log(
     `Steam book: from ${STEAM_BOOK_FROM} · mute 0≤M<4.5 when press edge < 5 and no tier-5 lead`
-    + ` · 1.5× when M≥10`,
+    + ` · +1u / −1u when 4.5≤M<10 · 1.5× when M≥10`,
   );
 
   // Season tier-5 books. Rebuilt by exportWalletProfiles with the grade.
