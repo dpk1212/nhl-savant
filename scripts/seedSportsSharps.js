@@ -294,9 +294,14 @@ async function run() {
   console.log('=== Seed Sports Sharps ===\n');
 
   const outPath = join(ROOT, 'public', 'sports_sharps.json');
-  const existing = existsSync(outPath)
-    ? JSON.parse(readFileSync(outPath, 'utf-8'))
-    : {};
+  let existing = {};
+  if (existsSync(outPath)) {
+    try {
+      existing = JSON.parse(readFileSync(outPath, 'utf-8'));
+    } catch (e) {
+      console.log(`sports_sharps.json did not parse — rebuilding without the previous file: ${e.message}`);
+    }
+  }
 
   const { _meta: prevMeta, ...prevWallets } = existing;
   const now = Date.now();

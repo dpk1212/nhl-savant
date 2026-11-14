@@ -193,7 +193,13 @@ async function run() {
   if (!existsSync(ssPath)) { console.log('No sports_sharps.json — nothing to do'); return; }
 
   const whaleProfiles = JSON.parse(readFileSync(wpPath, 'utf-8'));
-  const sportsSharps = JSON.parse(readFileSync(ssPath, 'utf-8'));
+  let sportsSharps;
+  try {
+    sportsSharps = JSON.parse(readFileSync(ssPath, 'utf-8'));
+  } catch (e) {
+    console.log(`sports_sharps.json did not parse — leaving it for the seed to rebuild: ${e.message}`);
+    return;
+  }
   const { _meta, ...existingWallets } = sportsSharps;
   const existingSet = new Set(Object.keys(existingWallets).map(k => k.toLowerCase()));
 
