@@ -7244,7 +7244,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
             : ((gapPolicy?.action === 'rescue' || gapPolicy?.action === 'boost') ? 'gap_lead_ags_bypass'
               : (t5EdgeBandPolicy?.action === 'RESCUE' ? 't5_edge_band_rescue'
               : (top3Policy?.fires ? 'top3_pick_ags_bypass'
-                : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass')))));
+                : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass'))))));
     } else {
       appliedLockStage = 'LOCKED';
     }
