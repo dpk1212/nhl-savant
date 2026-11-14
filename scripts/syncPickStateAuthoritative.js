@@ -413,6 +413,15 @@ import {
   t5EdgeBandStamp,
 } from '../src/lib/t5EdgeBandRescue.js';
 import {
+  MOVED_AGAINST_FROM,
+  MOVED_AGAINST_MUTED_BY,
+  decideMovedAgainst,
+  emptyMovedAgainstLedger,
+  loadMovedAgainstLedger,
+  movedAgainstStamp,
+  steamPctsFromPinn,
+} from '../src/lib/movedAgainstEdge.js';
+import {
   evaluatePressLadder,
   atpMayStake,
   pressStamp,
@@ -852,6 +861,7 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
 let FLAT_DOLLAR_Q_BY_SPORT = new Map();
 /** NFL/CFB Confirmed-n by sport — sport unlock CAP preload (Idea 1). */
 let SPORT_CONFIRMED_N_BY_SPORT = new Map();
+let movedAgainstLedger = emptyMovedAgainstLedger();
 /** sport → { color, activeA, activeAB, pctABRoster, … } for TARGET_DATE */
 let CLIMATE_BY_SPORT = new Map();
 
@@ -1766,6 +1776,34 @@ function applySkillFeatureStamps(target, bundle, now, {
   });
   target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
   target.v8_skillEvaluatedAt = now;
+}
+
+function movedAgainstOnSide({
+  units, pickDate, sport, market, odds, walletDetails, side, profiles = null,
+  manual = false, killed = false,
+  pinnGame = null, line = null, commenceMs = null, storedSteam = null, nowMs = Date.now(),
+}) {
+  const live = steamPctsFromPinn(pinnGame, {
+    marketType: market,
+    sideNorm: side,
+    line,
+    nowSec: Math.floor(Number(nowMs) / 1000),
+    freezeAtMs: commenceMs,
+  });
+  return decideMovedAgainst({
+    units,
+    pickDate,
+    sport,
+    market,
+    odds,
+    walletDetails,
+    side,
+    walletProfiles: profiles,
+    ledger: movedAgainstLedger,
+    steam: live || storedSteam || null,
+    manual,
+    killed,
+  });
 }
 
 function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
@@ -4331,6 +4369,7 @@ async function createMissingLockedPicks({
       let top3PolicyCreate = null;
       let gapPolicyCreate = null;
       let t5EdgeBandCreate = null;
+      let movedAgainstCreate = null;
       let unitsBeforeGap = peakUnitsApplied;
       let tierBeforeGap = hcStakeTierCreate;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -4543,6 +4582,37 @@ async function createMissingLockedPicks({
         hcStakeTierCreate = T5_EDGE_BAND_STAKE_TIER;
         console.log(`  T5-EDGE-BAND: ${docId} ${side} ${t5EdgeBandCreate.label} edge=${t5EdgeBandCreate.edge} → 3u`);
       }
+      // Price moved against and the wallet edge is under 3.5. After every
+      // rung that can put units back, including the 3u rescue. Manual stake
+      // does not exist on a new doc. Operator kill and the T-15 freeze win.
+      {
+        const tapeMoved = pinnTapeFromMeta(
+          gameMeta, { sport, gameKey }, marketType, side, { peak: { line } }, { meta },
+        );
+        movedAgainstCreate = movedAgainstOnSide({
+          units: peakUnitsApplied,
+          pickDate: TARGET_DATE,
+          sport,
+          market: marketType,
+          odds: stakeOdds,
+          walletDetails,
+          side,
+          profiles: walletProfiles,
+          killed: isOperatorKilled({ _id: docId }, side, null),
+          pinnGame: tapeMoved.pinnGame,
+          line: tapeMoved.ticketLine,
+          commenceMs: tapeMoved.commenceMs,
+          nowMs: now,
+        });
+        if (movedAgainstCreate.action === 'MUTE') {
+          peakUnitsApplied = 0;
+          hcStakeTierCreate = 'MONITORING';
+          console.log(
+            `  MOVED-AGAINST: ${docId} ${side} M=${movedAgainstCreate.m}`
+            + ` edge=${movedAgainstCreate.edge ?? '∅'} → 0u`,
+          );
+        }
+      }
 
       // Determine team label for the side.
       //
@@ -4712,7 +4782,10 @@ async function createMissingLockedPicks({
       if (edgeUnder5Create) Object.assign(v8Stamps, edgeUnder5Stamp(edgeUnder5Create));
       if (t5PolicyCreate) Object.assign(v8Stamps, t5LeadStamp(t5PolicyCreate));
       if (pressUnder5CapCreate) Object.assign(v8Stamps, pressUnder5CapStamp(pressUnder5CapCreate));
-      if (t5EdgeBandCreate?.action === 'RESCUE') Object.assign(v8Stamps, t5EdgeBandStamp(t5EdgeBandCreate));
+      if (t5EdgeBandCreate?.action === 'RESCUE' && movedAgainstCreate?.action !== 'MUTE') {
+        Object.assign(v8Stamps, t5EdgeBandStamp(t5EdgeBandCreate));
+      }
+      if (movedAgainstCreate) Object.assign(v8Stamps, movedAgainstStamp(movedAgainstCreate));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -4926,6 +4999,9 @@ async function createMissingLockedPicks({
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
+      } else if (movedAgainstCreate?.action === 'MUTE') {
+        v8Stamps.mutedBy = MOVED_AGAINST_MUTED_BY;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (cbbV12StakeMuted(sport, TARGET_DATE)) {
         v8Stamps.mutedBy = CBB_MATURE_MUTED_BY;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
@@ -7195,6 +7271,34 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hcStakeTier = T5_EDGE_BAND_STAKE_TIER;
     }
   }
+  // Price moved against and the wallet edge is under 3.5. After every
+  // rung that can put units back, including the 3u rescue. Manual stake
+  // and an operator kill stay. The T-15 freeze already returned.
+  let movedAgainstPolicy = null;
+  {
+    const tapeMoved = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    movedAgainstPolicy = movedAgainstOnSide({
+      units: finalUnitsApplied,
+      pickDate,
+      sport: pick.sport,
+      market: mkt,
+      odds: stakeOdds,
+      walletDetails: wd,
+      side,
+      profiles: walletProfiles,
+      manual: skipManualFlinch,
+      killed: operatorKilled,
+      pinnGame: tapeMoved.pinnGame,
+      line: tapeMoved.ticketLine,
+      commenceMs: tapeMoved.commenceMs,
+      storedSteam: sd?.v8_steam || null,
+      nowMs: now,
+    });
+    if (movedAgainstPolicy.action === 'MUTE') {
+      finalUnitsApplied = 0;
+      hcStakeTier = 'MONITORING';
+    }
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
@@ -7439,9 +7543,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const HARD_AG_MUTE_VALUES = new Set([HARD_AG_MUTED_BY]);
   const HARD_ST_FOR_MUTE_VALUES = new Set([HARD_ST_FOR_MUTED_BY]);
   const T5_ST_STEAM_MUTE_VALUES = new Set([T5_NO_T5_ST_MUTED_BY]);
+  if (movedAgainstPolicy?.action === 'PASS' && sd.mutedBy === MOVED_AGAINST_MUTED_BY) {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+  }
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
+  } else if (movedAgainstPolicy?.action === 'MUTE') {
+    patch.mutedBy = MOVED_AGAINST_MUTED_BY;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (cbbMatureMute) {
     patch.mutedBy = CBB_MATURE_MUTED_BY;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
@@ -7686,7 +7796,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
   if (gapPolicy?.fires && !operatorKilled) Object.assign(patch, gapLeadStamp(gapPolicy));
-  if (t5EdgeBandPolicy?.action === 'RESCUE') {
+  if (t5EdgeBandPolicy?.action === 'RESCUE' && movedAgainstPolicy?.action !== 'MUTE') {
     Object.assign(patch, t5EdgeBandStamp(t5EdgeBandPolicy));
   } else if (sd.v8_t5EdgeBand) {
     patch.v8_t5EdgeBand = admin.firestore.FieldValue.delete();
@@ -7780,7 +7890,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_agsV12Tier = 'FADE';
     // A tier-5 band rescue can fire on a side with no v12 score. The
     // stake still ships. Every other no-signal side stays at 0.
-    if (t5EdgeBandPolicy?.action === 'RESCUE') {
+    if (t5EdgeBandPolicy?.action === 'RESCUE' && movedAgainstPolicy?.action !== 'MUTE') {
       patch.v8_agsV12UnitsApplied = finalUnitsApplied;
       patch.finalUnits = finalUnitsApplied;
       if (v121Eligible) patch.v8_hcStakeTier = hcStakeTier;
@@ -7796,7 +7906,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (sd.v8_agsV12 != null) {
       patch.v8_agsV12 = admin.firestore.FieldValue.delete();
       patch.v8_agsV12Quintile = admin.firestore.FieldValue.delete();
-      changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal${t5EdgeBandPolicy?.action === 'RESCUE' ? `, band rescue ${finalUnitsApplied}u` : ' — muted'})`);
+      changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal${t5EdgeBandPolicy?.action === 'RESCUE' && movedAgainstPolicy?.action !== 'MUTE' ? `, band rescue ${finalUnitsApplied}u` : ' — muted'})`);
     } else if (sd.v8_agsTier == null && t5EdgeBandPolicy?.action !== 'RESCUE') {
       changes.push(`AGS-v12: ∅ → ∅ (no signal — defensively muted to FADE/0u)`);
     }
@@ -8417,12 +8527,28 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       );
     }
   }
-  if (t5EdgeBandPolicy?.action === 'RESCUE') {
+  if (t5EdgeBandPolicy?.action === 'RESCUE' && movedAgainstPolicy?.action !== 'MUTE') {
     changes.push(
       `T5-EDGE-BAND: ${t5EdgeBandPolicy.label} edge=${Number(t5EdgeBandPolicy.edge).toFixed(1)} → 3u`,
     );
   } else if (sd.v8_t5EdgeBand && finalUnitsApplied === 0) {
     changes.push('T5-EDGE-BAND OFF: back to 0u');
+  }
+  if (movedAgainstPolicy && movedAgainstPolicy.action !== 'EXEMPT') {
+    Object.assign(patch, movedAgainstStamp(movedAgainstPolicy));
+    if (movedAgainstPolicy.action === 'MUTE') {
+      const edgeTxt = movedAgainstPolicy.edge == null ? '∅' : String(movedAgainstPolicy.edge);
+      changes.push(
+        `MOVED-AGAINST: M=${movedAgainstPolicy.m} edge=${edgeTxt} n=${movedAgainstPolicy.n} → 0u`,
+      );
+    }
+  } else if (sd.v8_movedAgainstAction != null) {
+    patch.v8_movedAgainstAction = admin.firestore.FieldValue.delete();
+    patch.v8_movedAgainstReason = admin.firestore.FieldValue.delete();
+    patch.v8_movedAgainstM = admin.firestore.FieldValue.delete();
+    patch.v8_movedAgainstEdge = admin.firestore.FieldValue.delete();
+    patch.v8_movedAgainstN = admin.firestore.FieldValue.delete();
+    patch.v8_unitsPreMovedAgainst = admin.firestore.FieldValue.delete();
   }
   if (pressUnder5CapPolicy?.capped) {
     const edgeTxt = pressUnder5CapPolicy.edge == null
@@ -9183,6 +9309,21 @@ async function main() {
     }
   } catch (err) {
     console.warn(`[clv] failed to load cached ledger (fail-open): ${err.message}`);
+  }
+
+  // Moved-against edge. Graded Source B bets, rebuilt with wallet profiles.
+  // A missing file leaves the edge missing, so a price that moved against
+  // goes to 0. Flat and a shorten never read it.
+  try {
+    movedAgainstLedger = loadMovedAgainstLedger(join(__dirname, '../data/moved-against-ledger.json'));
+    console.log(
+      `Moved-against ledger: ${movedAgainstLedger.bets.size} wallets · ${movedAgainstLedger.betCount} bets`
+      + ` · from ${MOVED_AGAINST_FROM} · mute when M<0 and edge < 3.5`
+      + (movedAgainstLedger.generatedAt ? ` · ${movedAgainstLedger.generatedAt}` : ''),
+    );
+  } catch (err) {
+    movedAgainstLedger = emptyMovedAgainstLedger();
+    console.warn(`[moved-against] ledger failed to load (edge missing): ${err.message}`);
   }
 
   // Season tier-5 books. Rebuilt by exportWalletProfiles with the grade.
