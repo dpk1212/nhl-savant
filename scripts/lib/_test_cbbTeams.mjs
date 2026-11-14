@@ -1,7 +1,7 @@
 /**
  * CBB name resolution. Run: node scripts/lib/_test_cbbTeams.mjs
  */
-import { cbbTeamsMatch, collapseSameCbbFinals, resolveCBBTeam } from './cbbTeams.js';
+import { cbbTeamsMatch, collapseSameCbbFinals, resolveCBBTeam, cbbOutcomeFitsGame, cbbFavoriteFromSlug } from './cbbTeams.js';
 
 let failed = 0;
 function assert(cond, msg) {
@@ -55,6 +55,12 @@ const same = [
   ['Alcorn State Braves', 'Alcorn St.'],
   ['Grand Canyon Antelopes', 'Grand Canyon'],
   ['Grand Canyon Antelopes', 'Grand Canyon Lopes'],
+  ['California-San Diego Tritons', 'UC San Diego'],
+  ['California-San Diego Tritons', 'UC San Diego Tritons'],
+  ['Florida International Golden Panthers', 'FIU'],
+  ['Florida International Golden Panthers', 'Florida International Panthers'],
+  ["UNLV Runnin' Rebels", 'UNLV'],
+  ['UNLV Runnin Rebels', 'UNLV Rebels'],
 ];
 for (const [ours, board] of same) {
   assert(cbbTeamsMatch(ours, board), `${ours} = ${board}`);
@@ -92,6 +98,9 @@ const different = [
   ['Arkansas Razorbacks', 'Arkansas-Pine Bluff Golden Lions'],
   ['Miami Hurricanes', 'Miami (OH) RedHawks'],
   ['Cal State Bakersfield Roadrunners', 'Cal State Fullerton Titans'],
+  ['California-San Diego Tritons', 'San Diego Toreros'],
+  ['California-San Diego Tritons', 'California Golden Bears'],
+  ['Florida International Golden Panthers', 'Florida Gators'],
 ];
 for (const [a, b] of different) {
   assert(!cbbTeamsMatch(a, b), `${a} ≠ ${b}`);
@@ -99,6 +108,20 @@ for (const [a, b] of different) {
 }
 
 assert(resolveCBBTeam('Paine Lions') === null, 'Paine is not a D1 catalog school');
+assert(cbbFavoriteFromSlug('cbb-chist-sd-2026-11-13-spread-home-16pt5')?.line === -16.5, 'home 16.5 is minus 16.5');
+assert(cbbFavoriteFromSlug('cbb-xav-mspst-2026-11-13-spread-away-3pt5')?.side === 'away', 'away slug side');
+assert(cbbOutcomeFitsGame({
+  marketType: 'SPREAD', outcome: 'San Diego Toreros',
+  away: 'California-San Diego Tritons', home: 'Utah State Aggies',
+}) === false, 'San Diego token does not belong on the UC San Diego game');
+assert(cbbOutcomeFitsGame({
+  marketType: 'ML', outcome: 'Utah State Aggies',
+  away: 'California-San Diego Tritons', home: 'Utah State Aggies',
+}) === true, 'Utah State belongs on its own game');
+assert(cbbOutcomeFitsGame({
+  marketType: 'TOTAL', outcome: 'Over',
+  away: 'Stanford Cardinal', home: "UNLV Runnin' Rebels",
+}) === true, 'a total has no school outcome');
 assert(!cbbTeamsMatch('Detroit Titans', 'Cal State Fullerton Titans'), 'Detroit Titans ≠ Fullerton');
 
 console.log('\nBoth boards, one game');

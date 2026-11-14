@@ -60,7 +60,7 @@ const GRADE_TAIL = new Set([
 ]);
 // The board shortens the org. Academy and prospect stay, so they cannot grade as the main team.
 const ORG_TAIL = new Set(['apogee', 'sector']);
-const GRADE_ALIAS = { nip: 'ninjasinpyjamas' };
+const GRADE_ALIAS = { nip: 'ninjasinpyjamas', underw0rld: 'underworld' };
 
 function gradeWords(raw) {
   const cleaned = String(raw || '')

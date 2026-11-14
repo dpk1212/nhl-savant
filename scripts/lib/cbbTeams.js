@@ -117,6 +117,12 @@ function schoolKey(raw) {
   if (s === 'army west point') s = 'army black knights';
   // Polymarket still says Antelopes. The mascot is Lopes.
   if (s === 'grand canyon antelopes') s = 'grand canyon lopes';
+  // Polymarket says California-San Diego. The school is UC San Diego, not San Diego or Cal.
+  if (s === 'california san diego tritons' || s === 'california san diego') s = 'uc san diego tritons';
+  // FIU's old mascot. The catalog name is Panthers.
+  if (s === 'florida international golden panthers') s = 'florida international panthers';
+  // Polymarket keeps the old "Runnin' Rebels". The catalog mascot is Rebels.
+  if (s === 'unlv runnin rebels') s = 'unlv rebels';
   for (const m of MASCOTS) {
     if (s === m) return '';
     if (s.endsWith(' ' + m)) {
@@ -171,6 +177,28 @@ export function cbbTeamsMatch(a, b) {
   const left = resolveCBBTeam(a);
   const right = resolveCBBTeam(b);
   return !!(left && right && left === right);
+}
+
+/**
+ * A moneyline or spread outcome has to be one of the two stored schools.
+ * A token from a different game (San Diego on a UC San Diego ticket) must
+ * not be graded with that ticket's score.
+ */
+export function cbbOutcomeFitsGame(pos) {
+  const mt = String(pos?.marketType || '').toUpperCase();
+  if (mt !== 'ML' && mt !== 'SPREAD') return true;
+  const outcomeId = resolveCBBTeam(pos?.outcome);
+  if (!outcomeId) return true;
+  return outcomeId === resolveCBBTeam(pos?.away) || outcomeId === resolveCBBTeam(pos?.home);
+}
+
+/** cbb-…-spread-home-16pt5 → the favorite side of that market, at a minus line. */
+export function cbbFavoriteFromSlug(slug) {
+  const m = String(slug || '').toLowerCase().match(/-spread-(home|away)-(\d+)pt(\d+)$/);
+  if (!m) return null;
+  const line = -Number(`${m[2]}.${m[3]}`);
+  if (!Number.isFinite(line)) return null;
+  return { side: m[1], line };
 }
 
 /**

@@ -29,7 +29,7 @@ import {
 import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
 import { resolveCFBTeam, cfbTeamsMatch } from './lib/cfbTeams.js';
-import { cbbTeamsMatch, collapseSameCbbFinals } from './lib/cbbTeams.js';
+import { cbbTeamsMatch, collapseSameCbbFinals, resolveCBBTeam, cbbOutcomeFitsGame, cbbFavoriteFromSlug } from './lib/cbbTeams.js';
 import {
   resolveATPPlayer,
   playersMatch,
@@ -74,6 +74,8 @@ const ESPN_SOC_URLS = [
   'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
   'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',
   'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard',
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/concacaf.nations.league/scoreboard',
 ];
 const ESPN_UFC_URL = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
 const ESPN_ATP_URL = 'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard';
@@ -741,9 +743,11 @@ async function fetchCFBFinalGames(dateStr) {
 }
 
 async function fetchSOCFinalGames(dateStr) {
-  // EPL (eng.1) + La Liga (esp.1) + UCL (uefa.champions). Polymarket 3-way markets resolve on
-  // the 90-minute result. League games are almost always STATUS_FULL_TIME;
-  // cup extra-time still flags wentBeyond90 so we grade a DRAW.
+  // EPL, La Liga, UCL, UEFA Nations League, CONCACAF Nations League.
+  // Polymarket 3-way markets resolve on the 90-minute result. League games
+  // are almost always STATUS_FULL_TIME; cup extra-time still flags
+  // wentBeyond90 so we grade a DRAW. dateET is required: Canada play
+  // Guatemala on the 13th and again on the 16th.
   const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
   const out = [];
   for (const base of ESPN_SOC_URLS) {
@@ -759,11 +763,18 @@ async function fetchSOCFinalGames(dateStr) {
         const home = comps.find(c => c.homeAway === 'home') || {};
         const awayName = away.team?.displayName || away.team?.name || '';
         const homeName = home.team?.displayName || home.team?.name || '';
+        const awayCode = (resolveSOCTeam(awayName) || '').toLowerCase();
+        const homeCode = (resolveSOCTeam(homeName) || '').toLowerCase();
+        if (!awayCode || !homeCode) {
+          console.warn(`SOC name miss: "${awayName}" / "${homeName}"`);
+          continue;
+        }
         const stName = comp.status?.type?.name || '';
         const wentBeyond90 = stName === 'STATUS_FINAL_AET' || stName === 'STATUS_FINAL_PEN';
         out.push({
-          awayCode: (resolveSOCTeam(awayName) || '').toLowerCase(),
-          homeCode: (resolveSOCTeam(homeName) || '').toLowerCase(),
+          dateET: espnEventDateET(e),
+          awayCode,
+          homeCode,
           awayTeam: awayName,
           homeTeam: homeName,
           awayScore: parseInt(away.score) || 0,
@@ -1220,13 +1231,14 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
 
   if (pos.sport === 'SOC') {
     if (parts.length < 2) return null;
-    for (const g of socFinals) {
+    const dated = socFinals.filter(g => finalDateMatches(g, pos));
+    for (const g of dated) {
       if (!g.awayCode || !g.homeCode) continue;
       if (g.awayCode === parts[0] && g.homeCode === parts[1]) return g;
       // ESPN home/away designation may not match our key order — flip scores
       // (carry wentBeyond90 through so the 90-min draw rule still applies).
       if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
-        return { awayScore: g.homeScore, homeScore: g.awayScore, wentBeyond90: g.wentBeyond90 };
+        return { awayScore: g.homeScore, homeScore: g.awayScore, wentBeyond90: g.wentBeyond90, dateET: g.dateET };
       }
     }
     return null;
@@ -1621,6 +1633,69 @@ async function gradeOpenTails(db, openTails, finals) {
   console.log(`Tails graded: ${graded} · still open: ${waiting}`);
 }
 
+const cbbEventTeams = new Map();
+
+function cbbEventSlug(slug) {
+  const m = String(slug || '').toLowerCase().match(/^(cbb-.+?-\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : '';
+}
+
+async function cbbEventSides(eventSlug) {
+  if (!eventSlug) return null;
+  if (!cbbEventTeams.has(eventSlug)) {
+    cbbEventTeams.set(eventSlug, (async () => {
+      try {
+        const res = await fetch(`https://gamma-api.polymarket.com/events?slug=${encodeURIComponent(eventSlug)}`, {
+          headers: { Accept: 'application/json', 'User-Agent': 'nhl-savant' },
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const ev = Array.isArray(data) ? data[0] : data;
+        const title = String(ev?.title || '');
+        const m = title.match(/^(.+?)\s+vs\.?\s+(.+?)\s*$/i);
+        if (!m) return null;
+        const away = m[1].trim();
+        const home = m[2].trim();
+        if (!resolveCBBTeam(away) || !resolveCBBTeam(home)) return null;
+        return { away, home };
+      } catch {
+        return null;
+      }
+    })());
+  }
+  return cbbEventTeams.get(eventSlug);
+}
+
+/**
+ * A spread or moneyline whose outcome is a different school than the
+ * stored game was attached to the wrong card. Read the event the slug
+ * actually belongs to and grade that game. Return null to leave it
+ * pending rather than score it on the wrong teams.
+ */
+async function alignMiskeyedCbb(pos) {
+  if (pos?.sport !== 'CBB' || cbbOutcomeFitsGame(pos)) return pos;
+  const teams = await cbbEventSides(cbbEventSlug(pos.slug));
+  if (!teams) return null;
+  const outcomeId = resolveCBBTeam(pos.outcome);
+  const awayId = resolveCBBTeam(teams.away);
+  const homeId = resolveCBBTeam(teams.home);
+  if (!outcomeId || (outcomeId !== awayId && outcomeId !== homeId)) return null;
+  const next = { ...pos, away: teams.away, home: teams.home };
+  const mt = String(pos.marketType || '').toUpperCase();
+  if (mt === 'SPREAD') {
+    const fav = cbbFavoriteFromSlug(pos.slug);
+    if (!fav) return null;
+    const holdsFavorite = (fav.side === 'home' && outcomeId === homeId)
+      || (fav.side === 'away' && outcomeId === awayId);
+    next.side = holdsFavorite ? fav.side : (fav.side === 'home' ? 'away' : 'home');
+    next.spreadLine = holdsFavorite ? fav.line : -fav.line;
+  } else if (mt === 'ML') {
+    next.side = outcomeId === homeId ? 'home' : 'away';
+  }
+  console.log(`CBB realign ${pos.gameKey} → ${next.away} vs ${next.home} ${next.side} ${next.spreadLine ?? ''}`);
+  return next;
+}
+
 async function main() {
   const db = initFirebase();
   console.log('\n=== gradeSharpActions ===\n');
@@ -1793,7 +1868,7 @@ async function main() {
     for (const d of recentScoreboardDates(socDates)) {
       const games = await fetchSOCFinalGames(d);
       socFinals.push(...games);
-      console.log(`ESPN SOC API: ${games.length} final EPL/La Liga games for ${d}`);
+      console.log(`ESPN SOC API: ${games.length} finals for ${d}`);
     }
   }
 
@@ -1861,18 +1936,25 @@ async function main() {
         continue;
       }
 
-      let game = knownFinals.get(knownFinalKey(pos.sport, pos.date, pos.gameKey)) || null;
-      if (!game) {
-        game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals);
+      const gradePos = pos.sport === 'CBB' ? await alignMiskeyedCbb(pos) : pos;
+      if (!gradePos) {
+        noGame++;
+        continue;
       }
-      if (!game) game = await polymarketSettledGame(pos);
+      const realigned = gradePos !== pos;
+
+      let game = realigned ? null : (knownFinals.get(knownFinalKey(pos.sport, pos.date, pos.gameKey)) || null);
+      if (!game) {
+        game = findMatchingGame(gradePos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals, atpFinals, cs2Finals, lolFinals);
+      }
+      if (!game) game = await polymarketSettledGame(gradePos);
       if (!game) {
         noGame++;
         continue;
       }
 
-      let line = pos.marketType === 'SPREAD' ? (pos.spreadLine ?? pos.entryLine ?? null)
-        : pos.marketType === 'TOTAL' ? (pos.totalLine ?? pos.entryLine ?? null)
+      let line = gradePos.marketType === 'SPREAD' ? (gradePos.spreadLine ?? gradePos.entryLine ?? null)
+        : gradePos.marketType === 'TOTAL' ? (gradePos.totalLine ?? gradePos.entryLine ?? null)
         : null;
 
       // Fallback: look up line from pinnacle_history when stored line is null
@@ -1881,8 +1963,8 @@ async function main() {
         if (pinnFallback) {
           if (pos.marketType === 'SPREAD') {
             const sc = pinnFallback.spreadCurrent || pinnFallback.spreadOpener;
-            line = pos.side === 'away' ? sc?.awayLine : sc?.homeLine;
-            if (line == null) line = pos.side === 'away' ? pinnFallback.awaySpread : pinnFallback.homeSpread;
+            line = gradePos.side === 'away' ? sc?.awayLine : sc?.homeLine;
+            if (line == null) line = gradePos.side === 'away' ? pinnFallback.awaySpread : pinnFallback.homeSpread;
           } else {
             const tc = pinnFallback.totalCurrent || pinnFallback.totalOpener;
             line = tc?.line ?? pinnFallback.totalLine ?? null;
@@ -1893,7 +1975,7 @@ async function main() {
         }
       }
 
-      const outcome = calculateOutcome(game, pos.marketType, pos.side, line, pos.sport);
+      const outcome = calculateOutcome(game, gradePos.marketType, gradePos.side, line, gradePos.sport);
       if (!outcome) {
         errors++;
         console.warn(`  Could not calculate outcome for ${doc.id} (line=${line})`);
@@ -1902,15 +1984,15 @@ async function main() {
 
       // CLV: compare entry odds to closing pinnacle
       let clv = null, closingPinnacleOdds = null;
-      const pinnGame = lookupPinnGame(pinnacleHistory, pos.sport, pos.gameKey);
+      const pinnGame = realigned ? null : lookupPinnGame(pinnacleHistory, pos.sport, pos.gameKey);
       if (pinnGame) {
-        if (pos.marketType === 'ML') {
-          closingPinnacleOdds = pos.side === 'away'
+        if (gradePos.marketType === 'ML') {
+          closingPinnacleOdds = gradePos.side === 'away'
             ? (pinnGame.current?.away ?? pinnGame.awayOdds)
             : (pinnGame.current?.home ?? pinnGame.homeOdds);
-        } else if (pos.marketType === 'SPREAD') {
+        } else if (gradePos.marketType === 'SPREAD') {
           const sc = pinnGame.spreadCurrent;
-          closingPinnacleOdds = pos.side === 'away'
+          closingPinnacleOdds = gradePos.side === 'away'
             ? (sc?.awayOdds ?? pinnGame.awaySpreadOdds)
             : (sc?.homeOdds ?? pinnGame.homeSpreadOdds);
         } else {
@@ -1937,8 +2019,8 @@ async function main() {
       const settledPnl = Math.round((settledPrice - entryPrice) * (pos.size || 0));
 
       const pnlEmoji = outcome === 'WIN' ? '✅' : outcome === 'LOSS' ? '❌' : '⏸️';
-      console.log(`  ${pnlEmoji} ${pos.sport} ${pos.teamName} ${pos.marketType} — ${outcome} | ` +
-        `${pos.away} ${game.awayScore}-${game.homeScore} ${pos.home} | ` +
+      console.log(`  ${pnlEmoji} ${gradePos.sport} ${pos.teamName} ${gradePos.marketType} — ${outcome} | ` +
+        `${gradePos.away} ${game.awayScore}-${game.homeScore} ${gradePos.home} | ` +
         `Invested: $${pos.invested} | P&L: $${settledPnl}` +
         (clv != null ? ` | CLV: ${clv > 0 ? '+' : ''}${clv}%` : ''));
 
@@ -1953,7 +2035,7 @@ async function main() {
       const gradeTape = applyActionTicketTape({}, captureTicketTape({
         pinnGame: pinnGame || null,
         marketType: tapeMkt,
-        sideNorm: pos.side,
+        sideNorm: gradePos.side,
         line: tapeLine,
         offerOdds: tapeOffer,
         commenceMs: pos.commenceTime,
@@ -1966,6 +2048,12 @@ async function main() {
       if (!PREVIEW) batch.update(doc.ref, {
         status: 'GRADED',
         result: outcome,
+        ...(realigned ? {
+          away: gradePos.away,
+          home: gradePos.home,
+          side: gradePos.side,
+          ...(gradePos.marketType === 'SPREAD' ? { spreadLine: gradePos.spreadLine, entryLine: gradePos.spreadLine } : {}),
+        } : {}),
         'score.away': game.awayScore,
         'score.home': game.homeScore,
         settledPnl,
@@ -2018,7 +2106,7 @@ async function main() {
 }
 
 // Exported for tests (tests/testGradeDateGuard.mjs) — pure helpers, no I/O.
-export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone };
+export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone, alignMiskeyedCbb };
 
 // Only run when executed directly (node scripts/gradeSharpActions.js), so
 // tests can import the helpers without triggering a live grading pass.
