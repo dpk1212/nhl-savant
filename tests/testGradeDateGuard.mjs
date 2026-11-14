@@ -78,6 +78,24 @@ check('NHL: March Islanders final does not grade the September game',
   findMatchingGame(sepPos, [marchIslanders]) === null);
 check('NHL: same-date final is chosen when both are loaded',
   findMatchingGame(sepPos, [marchIslanders, sepIslanders]) === sepIslanders);
+
+// Canada and Guatemala play Nov 13 and again Nov 16. A date-blind soccer
+// match would grade the second leg with the first score.
+const socFirstLeg = {
+  dateET: '2026-11-13', awayCode: 'can', homeCode: 'gua',
+  awayScore: 1, homeScore: 0, wentBeyond90: false,
+};
+const socSecondLeg = {
+  dateET: '2026-11-16', awayCode: 'can', homeCode: 'gua',
+  awayScore: 2, homeScore: 2, wentBeyond90: false,
+};
+const secondLegPos = { sport: 'SOC', gameKey: 'gua_can', date: '2026-11-16' };
+check('soccer second leg does not take the first leg',
+  findMatchingGame(secondLegPos, [], [], [], [], [socFirstLeg]) === null);
+check('soccer same-date final is used, including a flipped key',
+  findMatchingGame({ ...secondLegPos, date: '2026-11-13' }, [], [], [], [], [socFirstLeg, socSecondLeg])?.homeScore === 1);
+check('soccer final with no date is rejected',
+  findMatchingGame(secondLegPos, [], [], [], [], [{ ...socSecondLeg, dateET: null }]) === null);
 check('NHL: a final with no date is rejected',
   findMatchingGame(sepPos, [{ awayTeam: 'NYI', homeTeam: 'TOR', awayScore: 3, homeScore: 1 }]) === null);
 
