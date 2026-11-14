@@ -30,16 +30,25 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
+          # A rebase line-merges this pretty-printed file with main and can
+          # splice one wallet into another. Keep the bytes this run wrote.
+          cp public/sports_sharps.json /tmp/sports_sharps.ours.json
           git add public/sports_sharps.json
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Auto-seed: Sports sharps [$(date +'%Y-%m-%d %H:%M')]" &&
             git stash --include-untracked &&
             git pull --rebase -X theirs &&
             git stash pop || true &&
+            cp /tmp/sports_sharps.ours.json public/sports_sharps.json &&
+            git add public/sports_sharps.json &&
+            git diff --cached --quiet || git commit -m "Keep the sports sharps file this run wrote." &&
             for i in 1 2 3; do
               git push && break
               echo "Push attempt $i failed, retrying..."
               sleep 2
               git pull --rebase -X theirs
+              cp /tmp/sports_sharps.ours.json public/sports_sharps.json
+              git add public/sports_sharps.json
+              git diff --cached --quiet || git commit -m "Keep the sports sharps file this run wrote."
             done
           )
