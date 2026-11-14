@@ -419,12 +419,21 @@ import {
   emptyMovedAgainstLedger,
   loadMovedAgainstLedger,
   movedAgainstStamp,
+  steamMoveM,
   steamPctsFromPinn,
 } from '../src/lib/movedAgainstEdge.js';
+import {
+  SHORT_MOVE_MUTED_BY,
+  STEAM_BOOK_FROM,
+  applySteamBook,
+  steamBookStamp,
+  t5MarketLead,
+} from '../src/lib/steamBookPolicy.js';
 import {
   evaluatePressLadder,
   atpMayStake,
   pressStamp,
+  stampedPressEdge,
   isPressLadderLive,
   isPressStampLive,
   isPressEdgeNetLive,
@@ -1801,6 +1810,33 @@ function movedAgainstOnSide({
     walletProfiles: profiles,
     ledger: movedAgainstLedger,
     steam: live || storedSteam || null,
+    manual,
+    killed,
+  });
+}
+
+function steamBookOnSide({
+  units, pickDate, sport, market, odds, side, pressEdge, mktFor, mktAg, ceiling,
+  manual = false, killed = false,
+  pinnGame = null, line = null, commenceMs = null, storedSteam = null, nowMs = Date.now(),
+}) {
+  const live = steamPctsFromPinn(pinnGame, {
+    marketType: market,
+    sideNorm: side,
+    line,
+    nowSec: Math.floor(Number(nowMs) / 1000),
+    freezeAtMs: commenceMs,
+  });
+  return applySteamBook({
+    units,
+    pickDate,
+    sport,
+    market,
+    odds,
+    ceiling,
+    m: steamMoveM(live || storedSteam || null),
+    edge: stampedPressEdge(pressEdge),
+    lead: t5MarketLead(mktFor, mktAg),
     manual,
     killed,
   });
@@ -4370,6 +4406,7 @@ async function createMissingLockedPicks({
       let gapPolicyCreate = null;
       let t5EdgeBandCreate = null;
       let movedAgainstCreate = null;
+      let steamBookCreate = null;
       let unitsBeforeGap = peakUnitsApplied;
       let tierBeforeGap = hcStakeTierCreate;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -4612,6 +4649,37 @@ async function createMissingLockedPicks({
             + ` edge=${movedAgainstCreate.edge ?? '∅'} → 0u`,
           );
         }
+        steamBookCreate = steamBookOnSide({
+          units: peakUnitsApplied,
+          pickDate: TARGET_DATE,
+          sport,
+          market: marketType,
+          odds: stakeOdds,
+          side,
+          pressEdge: pressEvalCreate?.edge,
+          mktFor: pressEvalCreate?.trust?.mktFor,
+          mktAg: pressEvalCreate?.trust?.mktAg,
+          ceiling: t5PolicyCreate?.seat?.ceiling,
+          killed: isOperatorKilled({ _id: docId }, side, null),
+          pinnGame: tapeMoved.pinnGame,
+          line: tapeMoved.ticketLine,
+          commenceMs: tapeMoved.commenceMs,
+          nowMs: now,
+        });
+        if (steamBookCreate.mute.action === 'MUTE') {
+          peakUnitsApplied = 0;
+          hcStakeTierCreate = 'MONITORING';
+          console.log(
+            `  SHORT-MOVE: ${docId} ${side} M=${steamBookCreate.mute.m}`
+            + ` edge=${steamBookCreate.mute.edge} → 0u`,
+          );
+        } else if (steamBookCreate.resize.action === 'BOOST') {
+          peakUnitsApplied = steamBookCreate.units;
+          console.log(
+            `  STEAM-10: ${docId} ${side} M=${steamBookCreate.resize.m}`
+            + ` ${steamBookCreate.resize.unitsPrePolicy}u → ${steamBookCreate.units}u`,
+          );
+        }
       }
 
       // Determine team label for the side.
@@ -4786,6 +4854,7 @@ async function createMissingLockedPicks({
         Object.assign(v8Stamps, t5EdgeBandStamp(t5EdgeBandCreate));
       }
       if (movedAgainstCreate) Object.assign(v8Stamps, movedAgainstStamp(movedAgainstCreate));
+      if (steamBookCreate) Object.assign(v8Stamps, steamBookStamp(steamBookCreate));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -5001,6 +5070,9 @@ async function createMissingLockedPicks({
         v8Stamps.manualMute = true;
       } else if (movedAgainstCreate?.action === 'MUTE') {
         v8Stamps.mutedBy = MOVED_AGAINST_MUTED_BY;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
+      } else if (steamBookCreate?.mute?.action === 'MUTE') {
+        v8Stamps.mutedBy = SHORT_MOVE_MUTED_BY;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (cbbV12StakeMuted(sport, TARGET_DATE)) {
         v8Stamps.mutedBy = CBB_MATURE_MUTED_BY;
@@ -7299,6 +7371,38 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hcStakeTier = 'MONITORING';
     }
   }
+  // Short move under the market edge, then the 10% resize. After the
+  // wallet-edge against mute, on the stake about to ship. The two bands
+  // do not overlap. Manual stake and an operator kill stay.
+  let steamBookPolicy = null;
+  {
+    const tapeSteam = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    steamBookPolicy = steamBookOnSide({
+      units: finalUnitsApplied,
+      pickDate,
+      sport: pick.sport,
+      market: mkt,
+      odds: stakeOdds,
+      side,
+      pressEdge: pressEval?.edge,
+      mktFor: pressEval?.trust?.mktFor,
+      mktAg: pressEval?.trust?.mktAg,
+      ceiling: t5Policy?.seat?.ceiling,
+      manual: skipManualFlinch,
+      killed: operatorKilled,
+      pinnGame: tapeSteam.pinnGame,
+      line: tapeSteam.ticketLine,
+      commenceMs: tapeSteam.commenceMs,
+      storedSteam: sd?.v8_steam || null,
+      nowMs: now,
+    });
+    if (steamBookPolicy.mute.action === 'MUTE') {
+      finalUnitsApplied = 0;
+      hcStakeTier = 'MONITORING';
+    } else if (steamBookPolicy.resize.action === 'BOOST') {
+      finalUnitsApplied = steamBookPolicy.units;
+    }
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
@@ -7546,11 +7650,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (movedAgainstPolicy?.action === 'PASS' && sd.mutedBy === MOVED_AGAINST_MUTED_BY) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
+  if (steamBookPolicy?.mute?.action !== 'MUTE' && sd.mutedBy === SHORT_MOVE_MUTED_BY) {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+  }
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
   } else if (movedAgainstPolicy?.action === 'MUTE') {
     patch.mutedBy = MOVED_AGAINST_MUTED_BY;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  } else if (steamBookPolicy?.mute?.action === 'MUTE') {
+    patch.mutedBy = SHORT_MOVE_MUTED_BY;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (cbbMatureMute) {
     patch.mutedBy = CBB_MATURE_MUTED_BY;
@@ -8550,6 +8660,29 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_movedAgainstN = admin.firestore.FieldValue.delete();
     patch.v8_unitsPreMovedAgainst = admin.firestore.FieldValue.delete();
   }
+  if (steamBookPolicy && (steamBookPolicy.mute.action !== 'EXEMPT' || steamBookPolicy.resize.action !== 'EXEMPT')) {
+    Object.assign(patch, steamBookStamp(steamBookPolicy));
+    if (steamBookPolicy.mute.action === 'MUTE') {
+      changes.push(
+        `SHORT-MOVE: M=${steamBookPolicy.mute.m} edge=${steamBookPolicy.mute.edge} → 0u`,
+      );
+    } else if (steamBookPolicy.resize.action === 'BOOST') {
+      changes.push(
+        `STEAM-10: M=${steamBookPolicy.resize.m} ${steamBookPolicy.resize.unitsPrePolicy}u → ${steamBookPolicy.units}u`,
+      );
+    }
+  } else if (sd.v8_shortMoveAction != null || sd.v8_steamTenAction != null) {
+    patch.v8_shortMoveAction = admin.firestore.FieldValue.delete();
+    patch.v8_shortMoveReason = admin.firestore.FieldValue.delete();
+    patch.v8_shortMoveM = admin.firestore.FieldValue.delete();
+    patch.v8_shortMoveEdge = admin.firestore.FieldValue.delete();
+    patch.v8_shortMoveLead = admin.firestore.FieldValue.delete();
+    patch.v8_unitsPreShortMove = admin.firestore.FieldValue.delete();
+    patch.v8_steamTenAction = admin.firestore.FieldValue.delete();
+    patch.v8_steamTenM = admin.firestore.FieldValue.delete();
+    patch.v8_unitsPreSteamTen = admin.firestore.FieldValue.delete();
+    patch.v8_steamTenUnits = admin.firestore.FieldValue.delete();
+  }
   if (pressUnder5CapPolicy?.capped) {
     const edgeTxt = pressUnder5CapPolicy.edge == null
       ? '—'
@@ -9325,6 +9458,10 @@ async function main() {
     movedAgainstLedger = emptyMovedAgainstLedger();
     console.warn(`[moved-against] ledger failed to load (edge missing): ${err.message}`);
   }
+  console.log(
+    `Steam book: from ${STEAM_BOOK_FROM} · mute 0≤M<4.5 when press edge < 5 and no tier-5 lead`
+    + ` · 1.5× when M≥10`,
+  );
 
   // Season tier-5 books. Rebuilt by exportWalletProfiles with the grade.
   // Missing ledger fail-closes the seat band and the rescue.
