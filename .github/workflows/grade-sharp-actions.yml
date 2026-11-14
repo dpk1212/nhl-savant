@@ -60,7 +60,7 @@ jobs:
         run: |
           git config --local user.name  "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/wallet-profiles.json data/sharp-tier-cell-stats.json public/sharp-tier-cell-stats.json WALLET_ROSTER.md WALLET_PROFILES_SUMMARY.md
+          git add data/wallet-profiles.json data/moved-against-ledger.json data/sharp-tier-cell-stats.json public/sharp-tier-cell-stats.json WALLET_ROSTER.md WALLET_PROFILES_SUMMARY.md
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Auto-update: Sharp wallet profiles + tier cell stats [$(TZ='America/New_York' date +'%Y-%m-%d %H:%M')] [skip ci]" &&
             git stash --include-untracked &&

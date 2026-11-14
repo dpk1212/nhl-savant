@@ -88,6 +88,10 @@ import {
   buildT5SeasonLedger,
   t5LedgerDocs,
 } from '../src/lib/t5LeadPolicy.js';
+import {
+  buildMovedAgainstLedger,
+  serializeMovedAgainstLedger,
+} from '../src/lib/movedAgainstEdge.js';
 import { buildCalendarWindow, L90_DAYS } from '../src/lib/calendarWindow.js';
 import { isPreLockExit, mergeFeaturedIntoAction, minutesBeforeLock } from '../src/lib/actionLockPin.js';
 import {
@@ -332,6 +336,8 @@ async function loadPositions() {
       // Aggregate WR still treats non-profit as loss (legacy). Size-band builder
       // excludes ~0 settledPnl pushes via settledPnl when present.
       won: settledPnl > 0 ? 1 : 0,
+      result: d.result || null,
+      postponed: d.postponed === true,
       sportROI: d.sportROI,
       sportPnlTotal: d.sportPnlTotal,
       sportVol: d.sportVol,
@@ -1538,6 +1544,15 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     })),
   }));
   console.log(`Wrote ${t5Path} (${t5Docs.map((d) => `${d.sport} ${d.seasonStart} ${d.betCount}`).join(', ')})`);
+
+  const movedAgainst = serializeMovedAgainstLedger(buildMovedAgainstLedger(positions), {
+    generatedAt: new Date().toISOString(),
+  });
+  const movedAgainstPath = join(dataDir, 'moved-against-ledger.json');
+  writeFileSync(movedAgainstPath, JSON.stringify(movedAgainst));
+  console.log(
+    `Wrote ${movedAgainstPath} (${movedAgainst.walletCount} wallets, ${movedAgainst.betCount} bets)`,
+  );
   if (WRITE_FB || WRITE_CLV_LEDGER) {
     for (const doc of t5Docs) {
       await db.collection(T5_LEDGER_COLLECTION).doc(doc.id).set({
