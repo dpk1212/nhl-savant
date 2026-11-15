@@ -2,6 +2,7 @@
  * CBB name resolution. Run: node scripts/lib/_test_cbbTeams.mjs
  */
 import { cbbTeamsMatch, collapseSameCbbFinals, resolveCBBTeam, cbbOutcomeFitsGame, cbbFavoriteFromSlug } from './cbbTeams.js';
+import { calculateOutcome, findMatchingGame } from '../gradeSharpActions.js';
 
 let failed = 0;
 function assert(cond, msg) {
@@ -32,6 +33,10 @@ const same = [
   ['Central Connecticut State Blue Devils', 'Central Conn. St.'],
   ['Appalachian State Mountaineers', 'App State'],
   ['Louisiana-Monroe Warhawks', 'ULM'],
+  ["Louisiana-Lafayette Ragin' Cajuns", "Louisiana Ragin' Cajuns"],
+  ["Louisiana-Lafayette Ragin' Cajuns", 'Louisiana'],
+  ["UL Lafayette Ragin' Cajuns", 'Louisiana'],
+  ['UNCW Seahawks', 'UNC Wilmington Seahawks'],
   ['Seattle Redhawks', 'Seattle U'],
   ['Hawaii Rainbow Warriors', 'Hawai\'i'],
   ['Boston Terriers', 'Boston U.'],
@@ -81,6 +86,9 @@ const different = [
   ['LSU Tigers', 'LSU New Orleans Privateers'],
   ['LSU Tigers', 'Louisiana Tech Bulldogs'],
   ['LSU Tigers', 'Louisiana Ragin\' Cajuns'],
+  ["Louisiana-Lafayette Ragin' Cajuns", 'Lafayette Leopards'],
+  ["Louisiana-Lafayette Ragin' Cajuns", 'Louisiana Tech Bulldogs'],
+  ["Louisiana-Lafayette Ragin' Cajuns", 'UL Monroe Warhawks'],
   ['Florida Gators', 'Florida State Seminoles'],
   ['Florida Gators', 'Florida Gulf Coast Eagles'],
   ['Florida Gators', 'South Florida Bulls'],
@@ -123,6 +131,9 @@ assert(cbbOutcomeFitsGame({
   away: 'Stanford Cardinal', home: "UNLV Runnin' Rebels",
 }) === true, 'a total has no school outcome');
 assert(!cbbTeamsMatch('Detroit Titans', 'Cal State Fullerton Titans'), 'Detroit Titans ≠ Fullerton');
+assert(resolveCBBTeam("Louisiana-Lafayette Ragin' Cajuns") === '309', 'Louisiana-Lafayette is the Ragin\' Cajuns');
+assert(resolveCBBTeam('Lafayette') === '322', 'Lafayette alone is the Leopards');
+assert(resolveCBBTeam('UNCW Seahawks') === '350', 'UNCW is UNC Wilmington');
 
 console.log('\nBoth boards, one game');
 const doubled = collapseSameCbbFinals([
@@ -134,6 +145,21 @@ const doubled = collapseSameCbbFinals([
   { dateET: '2026-11-10', awayTeam: 'Kansas Jayhawks', homeTeam: 'Kentucky Wildcats', awayScore: 80, homeScore: 90 },
 ]);
 assert(doubled.length === 4, `agreeing copies collapse, a split score stays (${doubled.length})`);
+
+const postponed = findMatchingGame({
+  sport: 'CBB',
+  date: '2026-11-14',
+  gameKey: 'louisiana_ncwilmington',
+  away: "Louisiana-Lafayette Ragin' Cajuns",
+  home: 'UNCW Seahawks',
+  marketType: 'ML',
+}, [], [
+  { dateET: '2026-11-14', awayTeam: "Louisiana Ragin' Cajuns", homeTeam: 'UNC Wilmington Seahawks', awayScore: 0, homeScore: 0, postponed: true },
+  { dateET: '2026-11-14', awayTeam: 'Montreat Cavaliers', homeTeam: 'UNC Wilmington Seahawks', awayScore: 41, homeScore: 100 },
+], [], [], [], [], [], [], []);
+assert(postponed?.postponed === true && postponed.awayScore === 0 && postponed.homeScore === 0, 'postponed Louisiana is not the Montreat final');
+assert(calculateOutcome(postponed, 'ML', 'away', null, 'CBB') === 'PUSH', 'postponed moneyline pushes');
+assert(calculateOutcome(postponed, 'SPREAD', 'away', -3.5, 'CBB') === 'PUSH', 'postponed spread pushes');
 
 if (failed) {
   console.error(`\n${failed} failed`);

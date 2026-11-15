@@ -39,6 +39,10 @@ const PHRASES = [
   [/\bul monroe\b/g, 'ul monroe'],
   [/\blouisiana monroe\b/g, 'ul monroe'],
   [/\blouisiana tech\b/g, 'la tech'],
+  // Polymarket still says Louisiana-Lafayette. The school is the Ragin' Cajuns.
+  // "Lafayette" alone stays the Leopards. Tech and Monroe stay the phrases above.
+  [/\blouisiana lafayette\b/g, 'louisiana'],
+  [/\bul lafayette\b/g, 'louisiana'],
   [/\but rio grande valley\b/g, 'utrgv'],
   [/\btexas rio grande valley\b/g, 'utrgv'],
   [/\but rio grande\b/g, 'utrgv'],
@@ -210,7 +214,10 @@ export function collapseSameCbbFinals(games) {
   const kept = [];
   for (const g of games || []) {
     const twin = kept.find((k) => sameCbbFinal(k, g));
-    if (twin) continue;
+    if (twin) {
+      if (g.postponed) twin.postponed = true;
+      continue;
+    }
     kept.push(g);
   }
   return kept;

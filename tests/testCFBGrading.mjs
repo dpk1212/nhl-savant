@@ -3,7 +3,7 @@
  *
  * Run: node tests/testCFBGrading.mjs
  */
-import { findMatchingGame } from '../scripts/gradeSharpActions.js';
+import { findMatchingGame, cfbBoardUrls } from '../scripts/gradeSharpActions.js';
 import {
   resolveCFBTeam,
   makeCFBGameKey,
@@ -126,6 +126,9 @@ const nflPos = {
 };
 const nflHit = findMatchingGame(nflPos, [], [], [], [], [], [], [], [nflFinal], [cfbFinal]);
 check('NFL matching unchanged with CFB finals present', nflHit && nflHit.awayScore === 10);
+const boards = cfbBoardUrls('2026-11-14');
+check('FCS board is requested with the FBS board',
+  boards.length === 2 && boards.some((url) => url.includes('groups=81')) && boards.some((url) => !url.includes('groups=81')));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);
