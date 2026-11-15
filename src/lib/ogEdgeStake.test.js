@@ -21,9 +21,20 @@ test('a 1u stake at 10 or more is muted', () => {
   assert.equal(applyOgEdgeStake({ ...live, units: 1, edge: 30.9 }).units, 0);
 });
 
-test('under 10 mutes a stake under 3 and keeps 3 or more', () => {
+test('5 up to 10 keeps the stake and caps it at 2.5', () => {
+  assert.equal(applyOgEdgeStake({ ...live, units: 1, edge: 5 }).units, 1);
+  assert.equal(applyOgEdgeStake({ ...live, units: 1, edge: 5 }).action, 'HOLD');
+  assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: 7 }).units, 2);
+  assert.equal(applyOgEdgeStake({ ...live, units: 2.5, edge: 9.9 }).units, 2.5);
+  const cap = applyOgEdgeStake({ ...live, units: 3, edge: 5 });
+  assert.equal(cap.action, 'CAP');
+  assert.equal(cap.units, 2.5);
+  assert.equal(applyOgEdgeStake({ ...live, units: 4, edge: 9 }).units, 2.5);
+});
+
+test('under 5 mutes a stake under 3 and keeps 3 or more', () => {
   for (const units of [1, 1.5, 2, 2.5]) {
-    const out = applyOgEdgeStake({ ...live, units, edge: 9.9 });
+    const out = applyOgEdgeStake({ ...live, units, edge: 4.9 });
     assert.equal(out.action, 'MUTE');
     assert.equal(out.units, 0);
   }
@@ -42,10 +53,12 @@ test('a missing edge stays put, and every sport is in', () => {
   assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: 4, killed: true }).units, 2);
 });
 
-test('EDGE of 10 or more is the last size', () => {
+test('EDGE of 5 or more is the last size', () => {
   assert.equal(ogEdgeLastWins(10), true);
   assert.equal(ogEdgeLastWins(19.4), true);
-  assert.equal(ogEdgeLastWins(9.9), false);
+  assert.equal(ogEdgeLastWins(5), true);
+  assert.equal(ogEdgeLastWins(9.9), true);
+  assert.equal(ogEdgeLastWins(4.9), false);
   assert.equal(ogEdgeLastWins(null), false);
   const bills = applyOgEdgeStake({ ...live, units: 3, edge: 19.4, odds: -473 });
   assert.equal(bills.action, 'HOLD');
@@ -60,8 +73,14 @@ test('EDGE of 10 or more is the last size', () => {
   const held = applyOgEdgeStake({ ...live, units: afterJuice, edge: 19.4, odds: -473 });
   assert.equal(held.action, 'HOLD');
   assert.equal(held.units, 3);
-  const under = applyFavJuiceMuteOverlay({ units: 3, odds: -473, pickDate: '2026-11-15' });
-  const afterUnder = ogEdgeLastWins(9.9) ? 3 : under.units;
+  const mid = applyFavJuiceMuteOverlay({ units: 3, odds: -473, pickDate: '2026-11-15' });
+  const afterMid = ogEdgeLastWins(9.9) ? 3 : mid.units;
+  assert.equal(afterMid, 3);
+  const capped = applyOgEdgeStake({ ...live, units: afterMid, edge: 9.9, odds: -473 });
+  assert.equal(capped.action, 'CAP');
+  assert.equal(capped.units, 2.5);
+  const under = applyFavJuiceMuteOverlay({ units: 2, odds: -473, pickDate: '2026-11-15' });
+  const afterUnder = ogEdgeLastWins(4.9) ? 2 : under.units;
   assert.equal(afterUnder, 0);
 });
 

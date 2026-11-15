@@ -7,20 +7,23 @@
  *
  * 10 or more, and the stake is over 1 and under 3: double it. The odds
  * cap still binds, so a dog longer than +120 cannot leave at the raw
- * double. A 1u stake at 10 or more is muted. Under 10, a stake under 3
- * is muted and a stake of 3 or more stays. A missing edge does not move
- * the stake. Manual stake, operator kill, the T-15 freeze, and a graded
- * ticket stay at the caller.
+ * double. A 1u stake at 10 or more is muted. 5 up to 10 keeps the ladder
+ * stake and caps it at 2.5. Under 5, a stake under 3 is muted and a
+ * stake of 3 or more stays. A missing edge does not move the stake.
+ * Manual stake, operator kill, the T-15 freeze, and a graded ticket
+ * stay at the caller.
  *
- * EDGE of 10 or more is the last size. The −425 juice mute does not
- * zero that stake; this overlay still mutes 1u and doubles 1–3.
+ * EDGE of 5 or more is the last size. The −425 juice mute does not
+ * zero that stake; this overlay still mutes 1u at 10+ and doubles 1–3.
  */
 
 import { oddsCap } from './oddsCap.js';
 
 export const OG_EDGE_STAKE_FROM = '2026-11-15';
 export const OG_EDGE_MIN = 10;
+export const OG_EDGE_KEEP_MIN = 5;
 export const OG_EDGE_KEEP_UNITS = 3;
+export const OG_EDGE_MID_CAP = 2.5;
 
 function round2(n) {
   return Math.round(n * 100) / 100;
@@ -33,12 +36,12 @@ export function isOgEdgeStakeLive(pickDate) {
 /** Juice yields. OG-EDGE sizes the ladder stake last. */
 export function ogEdgeLastWins(edge) {
   const e = Number(edge);
-  return edge != null && Number.isFinite(e) && e >= OG_EDGE_MIN;
+  return edge != null && Number.isFinite(e) && e >= OG_EDGE_KEEP_MIN;
 }
 
 /**
  * @returns {{
- *   units: number, action: 'DOUBLE'|'MUTE'|'HOLD'|'PASS'|'EXEMPT',
+ *   units: number, action: 'DOUBLE'|'MUTE'|'CAP'|'HOLD'|'PASS'|'EXEMPT',
  *   edge: number|null, unitsPre: number,
  * }}
  */
@@ -71,6 +74,10 @@ export function applyOgEdgeStake({
       return out(capped === pre ? 'HOLD' : 'DOUBLE', capped);
     }
     return out('HOLD');
+  }
+  if (e >= OG_EDGE_KEEP_MIN) {
+    const next = Math.min(pre, OG_EDGE_MID_CAP);
+    return out(next < pre ? 'CAP' : 'HOLD', next);
   }
   if (pre < OG_EDGE_KEEP_UNITS) return out('MUTE', 0);
   return out('HOLD');
