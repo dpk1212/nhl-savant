@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { applyOgEdgeStake } from './ogEdgeStake.js';
+
+const live = { pickDate: '2026-11-15', sport: 'NFL', odds: -110 };
+
+test('a 10+ stake over 1 and under 3 doubles', () => {
+  assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: 10 }).units, 4);
+  assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: 10 }).action, 'DOUBLE');
+  assert.equal(applyOgEdgeStake({ ...live, units: 1.5, edge: 18 }).units, 3);
+  assert.equal(applyOgEdgeStake({ ...live, units: 2.5, edge: 30 }).units, 5);
+  assert.equal(applyOgEdgeStake({ ...live, units: 3, edge: 12 }).action, 'HOLD');
+  assert.equal(applyOgEdgeStake({ ...live, units: 4, edge: 12 }).units, 4);
+});
+
+test('a 1u stake at 10 or more is muted', () => {
+  const one = applyOgEdgeStake({ ...live, units: 1, edge: 14 });
+  assert.equal(one.action, 'MUTE');
+  assert.equal(one.units, 0);
+  assert.equal(applyOgEdgeStake({ ...live, units: 1, edge: 30.9 }).units, 0);
+});
+
+test('under 10 mutes a stake under 3 and keeps 3 or more', () => {
+  for (const units of [1, 1.5, 2, 2.5]) {
+    const out = applyOgEdgeStake({ ...live, units, edge: 9.9 });
+    assert.equal(out.action, 'MUTE');
+    assert.equal(out.units, 0);
+  }
+  assert.equal(applyOgEdgeStake({ ...live, units: 3, edge: 0 }).units, 3);
+  assert.equal(applyOgEdgeStake({ ...live, units: 4, edge: -6 }).action, 'HOLD');
+});
+
+test('a missing edge, a quiet sport, and a day before the cut stay put', () => {
+  assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: null }).action, 'PASS');
+  assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: null }).units, 2);
+  assert.equal(applyOgEdgeStake({ ...live, sport: 'CBB', units: 2, edge: 20 }).action, 'EXEMPT');
+  assert.equal(applyOgEdgeStake({ ...live, pickDate: '2026-11-14', units: 1, edge: 4 }).units, 1);
+  assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: 12, manual: true }).action, 'EXEMPT');
+  assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: 4, killed: true }).units, 2);
+});
+
+test('the odds cap binds after the double', () => {
+  const dog = applyOgEdgeStake({ ...live, units: 2, edge: 15, odds: 130 });
+  assert.equal(dog.action, 'DOUBLE');
+  assert.equal(dog.units, 2.5);
+  const longer = applyOgEdgeStake({ ...live, units: 2, edge: 15, odds: 180 });
+  assert.equal(longer.units, 1.5);
+  const pickem = applyOgEdgeStake({ ...live, units: 2, edge: 15, odds: 110 });
+  assert.equal(pickem.units, 4);
+});
