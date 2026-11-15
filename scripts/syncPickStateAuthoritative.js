@@ -3291,10 +3291,12 @@ async function createMissingLockedPicks({
       return Math.max(fresh > 0 ? fresh : 0, stored > 0 ? stored : 0);
     };
     for (const side of sides) {
-      const top3Early = applyTop3PickRung({
-        units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
-        opponentUnits: unitsAgainst(side),
-      });
+      const top3Early = isTop3PickLive(TARGET_DATE)
+        ? applyTop3PickRung({
+          units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
+          opponentUnits: unitsAgainst(side),
+        })
+        : { fires: false, units: 0, action: 'hold', reason: 'off' };
       const gapEarly = applyGapLeadRescue({
         units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
         opponentUnits: unitsAgainst(side),
@@ -4413,21 +4415,23 @@ async function createMissingLockedPicks({
       if (!isOperatorKilled({ _id: docId }, side, null)) {
         const unitsBeforeTop3 = peakUnitsApplied;
         const tierBeforeTop3 = hcStakeTierCreate;
-        top3PolicyCreate = applyTop3PickRung({
-          units: peakUnitsApplied,
-          odds: stakeOdds,
-          sport,
-          market: marketType,
-          side,
-          pickDate: TARGET_DATE,
-          positions,
-          opponentUnits: unitsAgainst(side),
-        });
-        top3PolicyCreate.unitsBefore = unitsBeforeTop3;
-        top3PolicyCreate.tierBefore = tierBeforeTop3;
-        if (top3PolicyCreate.action === 'floor' || top3PolicyCreate.action === 'rescue') {
-          peakUnitsApplied = top3PolicyCreate.units;
-          hcStakeTierCreate = TOP3_PICK_STAKE_TIER;
+        if (isTop3PickLive(TARGET_DATE)) {
+          top3PolicyCreate = applyTop3PickRung({
+            units: peakUnitsApplied,
+            odds: stakeOdds,
+            sport,
+            market: marketType,
+            side,
+            pickDate: TARGET_DATE,
+            positions,
+            opponentUnits: unitsAgainst(side),
+          });
+          top3PolicyCreate.unitsBefore = unitsBeforeTop3;
+          top3PolicyCreate.tierBefore = tierBeforeTop3;
+          if (top3PolicyCreate.action === 'floor' || top3PolicyCreate.action === 'rescue') {
+            peakUnitsApplied = top3PolicyCreate.units;
+            hcStakeTierCreate = TOP3_PICK_STAKE_TIER;
+          }
         }
         unitsBeforeGap = peakUnitsApplied;
         tierBeforeGap = hcStakeTierCreate;
@@ -7818,6 +7822,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   if (!formTierRescued && isFormRescueStamp(sd.v8_rescuedBy)) {
     patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  }
+  if (!isTop3PickLive(pickDate) && sd.v8_rescuedBy === TOP3_PICK_RESCUED_BY && patch.v8_rescuedBy == null) {
+    patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  }
+  if (!isTop3PickLive(pickDate) && sd.v8_top3Pick === true) {
+    patch.v8_top3Pick = admin.firestore.FieldValue.delete();
+    patch.v8_top3PickUnits = admin.firestore.FieldValue.delete();
+    patch.v8_top3PickBestSr = admin.firestore.FieldValue.delete();
+    patch.v8_top3PickWallets = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== healthStatusOut) {
     const statusReason = (pressApplied && finalUnitsApplied === 0 && pressEval?.reason)

@@ -4,6 +4,7 @@ import {
   applyTop3PickRung,
   buildTop3PickRanks,
   hydrateTop3PickRanks,
+  isTop3PickLive,
   isTop3PickPrice,
   serializeTop3PickRanks,
   top3PickWindowStart,
@@ -63,147 +64,26 @@ test('pick price is −100 through +120, and 45¢ up to just under 52¢', () => 
   assert.equal(isTop3PickPrice(null, 0.52), false);
 });
 
-test('rank uses only bets before the morning, and needs four wallets', () => {
-  const { rows } = board();
-  const index = buildTop3PickRanks(rows, DAY);
-  assert.equal(index.get('NBA|SPREAD|aaaaaa').rank, 1);
-  assert.equal(index.get('NBA|SPREAD|cccccc').rank, 3);
-  assert.equal(index.get('NBA|SPREAD|eeeeee').rank, 5);
-  assert.equal(index.get('NBA|SPREAD|aaaaaa').n, 5);
+test('the rung is off, so it does not rank or size', () => {
+  assert.equal(isTop3PickLive(DAY), false);
+  assert.equal(isTop3PickLive('2026-11-15'), false);
   assert.equal(top3PickWindowStart(DAY), '2026-09-29');
-  const thin = buildTop3PickRanks(rows.filter((r) => r.walletShort === 'aaaaaa' || r.walletShort === 'bbbbbb'), DAY);
-  assert.equal(thin.size, 0);
-});
-
-test('4u at 1× to 1.5×, 2u under 1×, and a top-3 wallet on the other side blocks', () => {
-  const { ranks } = board();
-  const under = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    positions: [bet()],
-  });
-  assert.equal(under.action, 'rescue');
-  assert.equal(under.units, 2);
-
-  const full = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY,
-    positions: [bet({ betMultiplier: 1.2 })], ranks,
-  });
-  assert.equal(full.units, 4);
-
-  const press = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY,
-    positions: [bet({ betMultiplier: 1.5 })], ranks,
-  });
-  assert.equal(press.action, 'hold');
-
-  const kept = applyTop3PickRung({
-    units: 5, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY,
-    positions: [bet({ betMultiplier: 1.2 })], ranks,
-  });
-  assert.equal(kept.action, 'hold');
-  assert.equal(kept.units, 5);
-
-  const blocked = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY,
-    positions: [bet(), bet({ walletShort: 'bbbbbb', side: 'home', betMultiplier: 2 })], ranks,
-  });
-  assert.equal(blocked.reason, 'top3_against');
-  assert.equal(blocked.units, 0);
-});
-
-test('a pick already on the other side mutes the rung', () => {
-  const { ranks } = board();
-  const muted = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    positions: [bet({ betMultiplier: 1.2 })],
-    opponentUnits: 2,
-  });
-  assert.equal(muted.fires, false);
-  assert.equal(muted.reason, 'pick_against');
-  assert.equal(muted.units, 0);
-
-  const kept = applyTop3PickRung({
-    units: 2, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    positions: [bet({ betMultiplier: 1.2 })],
-    opponentUnits: 2,
-  });
-  assert.equal(kept.action, 'hold');
-  assert.equal(kept.units, 2);
-
-  const open = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    positions: [bet({ betMultiplier: 1.2 })],
-    opponentUnits: 0,
-  });
-  assert.equal(open.action, 'rescue');
-  assert.equal(open.units, 4);
-});
-
-test('a side juicier than −425 does not get the rung back', () => {
-  const { ranks } = board();
-  const juicy = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    odds: -1147,
-    positions: [bet({ betMultiplier: 0.8 })],
-  });
-  assert.equal(juicy.fires, false);
-  assert.equal(juicy.units, 0);
-  assert.equal(juicy.reason, 'fav_juice');
+  const { rows } = board();
+  assert.equal(buildTop3PickRanks(rows, DAY).size, 0);
   const held = applyTop3PickRung({
-    units: 1, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    odds: -3233,
-    positions: [bet({ betMultiplier: 0.8 })],
+    units: 1, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY,
+    positions: [bet({ betMultiplier: 1.2 })], odds: -100,
   });
   assert.equal(held.fires, false);
+  assert.equal(held.action, 'hold');
   assert.equal(held.units, 1);
-  assert.equal(held.reason, 'fav_juice');
-  const atLine = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    odds: -425,
-    positions: [bet({ betMultiplier: 0.8 })],
+  assert.equal(held.reason, 'off');
+  const zero = applyTop3PickRung({
+    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: '2026-11-15',
+    positions: [bet({ betMultiplier: 1.2 })], odds: -100,
   });
-  assert.equal(atLine.fires, false);
-  assert.equal(atLine.action, 'hold');
-  assert.equal(atLine.units, 0);
-  assert.equal(atLine.reason, 'not_pickem');
-});
-
-test('the book on the card is the pick’em, not the −100 receipt', () => {
-  const { ranks } = board();
-  const favorite = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    odds: -257,
-    positions: [bet({ betMultiplier: 0.4, avgPrice: 0.5 })],
-  });
-  assert.equal(favorite.fires, false);
-  assert.equal(favorite.reason, 'not_pickem');
-  assert.equal(favorite.units, 0);
-  const pickem = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    odds: -100,
-    positions: [bet({ betMultiplier: 0.8 })],
-  });
-  assert.equal(pickem.action, 'rescue');
-  assert.equal(pickem.units, 2);
-});
-
-test('a favorite, a day before the cutover, and another sport do not fire', () => {
-  const { ranks } = board();
-  const fav = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: DAY, ranks,
-    positions: [bet({ pinnacleOdds: -110 })],
-  });
-  assert.equal(fav.fires, false);
-  const early = applyTop3PickRung({
-    units: 0, sport: 'NBA', market: 'SPREAD', side: 'away', pickDate: '2026-10-28',
-    positions: [bet()], ranks,
-  });
-  assert.equal(early.fires, false);
-  const soccer = applyTop3PickRung({
-    units: 0, sport: 'SOC', market: 'ML', side: 'away', pickDate: DAY,
-    positions: [bet()], ranks,
-  });
-  assert.equal(soccer.fires, false);
+  assert.equal(zero.fires, false);
+  assert.equal(zero.units, 0);
 });
 
 test('the morning seats survive a cache round-trip', () => {

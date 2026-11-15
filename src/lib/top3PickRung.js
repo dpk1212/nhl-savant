@@ -1,5 +1,7 @@
 /**
- * Top-3 pick rung. From 2026-10-29.
+ * Top-3 pick rung. Off from 2026-11-15. The rank and the stake do not run.
+ *
+ * Was live from 2026-10-29.
  *
  * Each morning, inside one sport and one market, rank wallets by last-30-day
  * dollar ROI on bets dated before that morning. Need 5 bets and at least 4
@@ -27,8 +29,8 @@ const MARKETS = new Set(['ML', 'SPREAD', 'TOTAL']);
 
 let rankIndex = new Map();
 
-export function isTop3PickLive(pickDate) {
-  return typeof pickDate === 'string' && pickDate >= TOP3_PICK_FROM;
+export function isTop3PickLive(_pickDate) {
+  return false;
 }
 
 export function top3PickWindowStart(asOf) {
@@ -232,6 +234,11 @@ export function evaluateTop3Pick({ sport, market, side, pickDate, positions, ran
 export function applyTop3PickRung({
   units, sport, market, side, pickDate, positions, ranks = null, opponentUnits = 0, odds = null,
 }) {
+  if (!isTop3PickLive(pickDate)) {
+    const current = Number(units);
+    const safe = Number.isFinite(current) && current > 0 ? current : 0;
+    return { fires: false, units: safe, wallets: [], bestSr: null, reason: 'off', action: 'hold' };
+  }
   const ev = evaluateTop3Pick({ sport, market, side, pickDate, positions, ranks, opponentUnits });
   const current = Number(units);
   const safe = Number.isFinite(current) && current > 0 ? current : 0;
