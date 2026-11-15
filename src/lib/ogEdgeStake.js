@@ -7,7 +7,7 @@
  *
  * 10 or more, and the stake is over 1 and under 3: double it. The odds
  * cap still binds, so a dog longer than +120 cannot leave at the raw
- * double. A 1u stake at 10 or more is muted. 5 up to 10 keeps the ladder
+ * double. A 1u stake at 10 or more stays. 5 up to 10 keeps the ladder
  * stake and caps it at 2.5. Under 5, a stake under 3 is muted and a
  * stake of 3 or more stays. A missing edge does not move the stake.
  * Manual stake, operator kill, the T-15 freeze, and a graded ticket
@@ -61,7 +61,7 @@ export function applyOgEdgeStake({
   if (!hasEdge) return out('PASS');
   if (!(pre > 0)) return out('HOLD', 0);
   if (e >= OG_EDGE_MIN) {
-    if (pre <= 1) return out('MUTE', 0);
+    if (pre <= 1) return out('HOLD');
     if (pre < OG_EDGE_KEEP_UNITS) {
       const doubled = round2(pre * 2);
       const capped = Number.isFinite(Number(odds)) ? round2(oddsCap(doubled, Number(odds))) : doubled;

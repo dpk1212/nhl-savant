@@ -14,11 +14,11 @@ test('a 10+ stake over 1 and under 3 doubles', () => {
   assert.equal(applyOgEdgeStake({ ...live, units: 4, edge: 12 }).units, 4);
 });
 
-test('a 1u stake at 10 or more is muted', () => {
+test('a 1u stake at 10 or more stays', () => {
   const one = applyOgEdgeStake({ ...live, units: 1, edge: 14 });
-  assert.equal(one.action, 'MUTE');
-  assert.equal(one.units, 0);
-  assert.equal(applyOgEdgeStake({ ...live, units: 1, edge: 30.9 }).units, 0);
+  assert.equal(one.action, 'HOLD');
+  assert.equal(one.units, 1);
+  assert.equal(applyOgEdgeStake({ ...live, units: 1, edge: 30.9 }).units, 1);
 });
 
 test('5 up to 10 keeps the stake and caps it at 2.5', () => {
@@ -70,8 +70,8 @@ test('juice at -425 still zeros, even at EDGE 10+ or 5+', () => {
   assert.equal(cap.action, 'CAP');
   assert.equal(cap.units, 2.5);
   const one = applyOgEdgeStake({ ...live, units: 1, edge: 16.4, odds: -200 });
-  assert.equal(one.action, 'MUTE');
-  assert.equal(one.units, 0);
+  assert.equal(one.action, 'HOLD');
+  assert.equal(one.units, 1);
 });
 
 test('the odds cap binds after the double', () => {

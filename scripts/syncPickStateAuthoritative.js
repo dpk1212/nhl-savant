@@ -4703,7 +4703,7 @@ async function createMissingLockedPicks({
 
       // Summer EDGE last among size overlays. Juice still zeros a price
       // juicier than -425. A 10+ stake over 1 and under 3 doubles. A 1u
-      // stake at 10+ goes to 0. 5 up to 10 keeps the ladder stake and
+      // stake at 10+ stays. 5 up to 10 keeps the ladder stake and
       // caps it at 2.5. Under 5, a stake under 3 goes to 0. The odds
       // cap is inside the double. Every sport, from 2026-11-15.
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -7458,7 +7458,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   // Summer EDGE last among size overlays. Juice still zeros a price
   // juicier than -425. A 10+ stake over 1 and under 3 doubles. A 1u
-  // stake at 10+ goes to 0. 5 up to 10 keeps the ladder stake and
+  // stake at 10+ stays. 5 up to 10 keeps the ladder stake and
   // caps it at 2.5. Under 5, a stake under 3 goes to 0. Manual stake
   // and an operator kill stay. The T-15 freeze already returned.
   let ogEdgeStakePolicy = null;
