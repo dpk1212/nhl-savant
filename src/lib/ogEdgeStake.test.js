@@ -30,10 +30,12 @@ test('under 10 mutes a stake under 3 and keeps 3 or more', () => {
   assert.equal(applyOgEdgeStake({ ...live, units: 4, edge: -6 }).action, 'HOLD');
 });
 
-test('a missing edge, a quiet sport, and a day before the cut stay put', () => {
+test('a missing edge stays put, and every sport is in', () => {
   assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: null }).action, 'PASS');
   assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: null }).units, 2);
-  assert.equal(applyOgEdgeStake({ ...live, sport: 'CBB', units: 2, edge: 20 }).action, 'EXEMPT');
+  const cbb = applyOgEdgeStake({ ...live, sport: 'CBB', units: 2, edge: 20 });
+  assert.equal(cbb.action, 'DOUBLE');
+  assert.equal(cbb.units, 4);
   assert.equal(applyOgEdgeStake({ ...live, pickDate: '2026-11-14', units: 1, edge: 4 }).units, 1);
   assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: 12, manual: true }).action, 'EXEMPT');
   assert.equal(applyOgEdgeStake({ ...live, units: 2, edge: 4, killed: true }).units, 2);

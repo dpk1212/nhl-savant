@@ -1,6 +1,6 @@
 /**
- * Summer EDGE on the four-sport card, after the ladder has sized the bet
- * and the seat has stopped moving it. From 2026-11-15.
+ * Summer EDGE on every sport, after the ladder has sized the bet and the
+ * seat has stopped moving it. From 2026-11-15.
  *
  * EDGE is the winner-align number (mean FOR sport win rate, minus the
  * against side, or minus 50). It is not the press edge.
@@ -18,16 +18,13 @@ import { oddsCap } from './oddsCap.js';
 export const OG_EDGE_STAKE_FROM = '2026-11-15';
 export const OG_EDGE_MIN = 10;
 export const OG_EDGE_KEEP_UNITS = 3;
-export const OG_EDGE_SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
 
 function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
-export function isOgEdgeStakeLive(pickDate, sport) {
-  return typeof pickDate === 'string'
-    && pickDate >= OG_EDGE_STAKE_FROM
-    && OG_EDGE_SPORTS.has(String(sport || '').toUpperCase());
+export function isOgEdgeStakeLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= OG_EDGE_STAKE_FROM;
 }
 
 /**
@@ -40,7 +37,6 @@ export function applyOgEdgeStake({
   units,
   edge = null,
   pickDate = null,
-  sport = null,
   odds = null,
   manual = false,
   killed = false,
@@ -55,7 +51,7 @@ export function applyOgEdgeStake({
     unitsPre: pre,
   });
   if (manual === true || killed === true) return out('EXEMPT');
-  if (!isOgEdgeStakeLive(pickDate, sport)) return out('EXEMPT');
+  if (!isOgEdgeStakeLive(pickDate)) return out('EXEMPT');
   if (!hasEdge) return out('PASS');
   if (!(pre > 0)) return out('HOLD', 0);
   if (e >= OG_EDGE_MIN) {

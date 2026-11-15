@@ -4703,8 +4703,8 @@ async function createMissingLockedPicks({
 
       // Summer EDGE, after the ladder and the seat. A 10+ stake over 1
       // and under 3 doubles. A 1u stake at 10+, and any under-10 stake
-      // under 3, goes to 0. The odds cap is inside the double. Four
-      // sports, from 2026-11-15. Operator kill already zeroed the side.
+      // under 3, goes to 0. The odds cap is inside the double. Every
+      // sport, from 2026-11-15. Operator kill already zeroed the side.
       if (!isOperatorKilled({ _id: docId }, side, null)) {
         ogEdgeStakeCreate = applyOgEdgeStake({
           units: peakUnitsApplied,
