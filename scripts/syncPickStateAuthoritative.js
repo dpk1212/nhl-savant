@@ -4704,23 +4704,28 @@ async function createMissingLockedPicks({
       // Summer EDGE last among size overlays. Juice still zeros a price
       // juicier than -425. A 10+ stake over 1 and under 3 doubles. A 1u
       // stake at 10+ goes to 0. 5 up to 10 keeps the ladder stake and
-      // caps it at 2.5. Under 5, a stake under 3 goes to 0. The odds
-      // cap is inside the double. Every sport, from 2026-11-15.
+      // caps it at 2.5. Under 5, a stake under 3 goes to 0, except a
+      // moneyline whose price has shortened. The odds cap is inside
+      // the double. Every sport, from 2026-11-15.
       if (!isOperatorKilled({ _id: docId }, side, null)) {
         ogEdgeStakeCreate = applyOgEdgeStake({
           units: peakUnitsApplied,
           edge: waCreateEdge?.edge ?? null,
           pickDate: TARGET_DATE,
           sport,
+          market: marketType,
+          move: steamBookCreate?.mute?.m ?? null,
           odds: odds ?? null,
         });
         if (ogEdgeStakeCreate.action === 'MUTE'
             || ogEdgeStakeCreate.action === 'DOUBLE'
-            || ogEdgeStakeCreate.action === 'CAP') {
+            || ogEdgeStakeCreate.action === 'CAP'
+            || ogEdgeStakeCreate.action === 'RESCUE') {
           peakUnitsApplied = ogEdgeStakeCreate.units;
           if (!(peakUnitsApplied > 0)) hcStakeTierCreate = 'MONITORING';
           const verb = ogEdgeStakeCreate.action === 'MUTE' ? 'mute'
-            : ogEdgeStakeCreate.action === 'CAP' ? 'cap' : 'double';
+            : ogEdgeStakeCreate.action === 'CAP' ? 'cap'
+              : ogEdgeStakeCreate.action === 'RESCUE' ? 'rescue' : 'double';
           console.log(
             `  OG-EDGE: ${docId} ${side} edge=${ogEdgeStakeCreate.edge}`
             + ` ${ogEdgeStakeCreate.unitsPre}u ${verb} → ${ogEdgeStakeCreate.units}u`,
@@ -7459,8 +7464,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Summer EDGE last among size overlays. Juice still zeros a price
   // juicier than -425. A 10+ stake over 1 and under 3 doubles. A 1u
   // stake at 10+ goes to 0. 5 up to 10 keeps the ladder stake and
-  // caps it at 2.5. Under 5, a stake under 3 goes to 0. Manual stake
-  // and an operator kill stay. The T-15 freeze already returned.
+  // caps it at 2.5. Under 5, a stake under 3 goes to 0, except a
+  // moneyline whose price has shortened. Manual stake and an operator
+  // kill stay. The T-15 freeze already returned.
   let ogEdgeStakePolicy = null;
   if (!skipManualFlinch && !operatorKilled) {
     ogEdgeStakePolicy = applyOgEdgeStake({
@@ -7468,6 +7474,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       edge: winnerAlign?.edge ?? null,
       pickDate,
       sport: pick.sport,
+      market: mkt,
+      move: steamBookPolicy?.mute?.m ?? null,
       odds: sideOdds ?? sd.odds ?? null,
     });
     if (ogEdgeStakePolicy.action === 'MUTE'
@@ -8753,9 +8761,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     Object.assign(patch, ogEdgeStakeStamp(ogEdgeStakePolicy));
     if (ogEdgeStakePolicy.action === 'MUTE'
         || ogEdgeStakePolicy.action === 'DOUBLE'
-        || ogEdgeStakePolicy.action === 'CAP') {
+        || ogEdgeStakePolicy.action === 'CAP'
+        || ogEdgeStakePolicy.action === 'RESCUE') {
       const verb = ogEdgeStakePolicy.action === 'MUTE' ? 'mute'
-        : ogEdgeStakePolicy.action === 'CAP' ? 'cap' : 'double';
+        : ogEdgeStakePolicy.action === 'CAP' ? 'cap'
+          : ogEdgeStakePolicy.action === 'RESCUE' ? 'rescue' : 'double';
       changes.push(
         `OG-EDGE: edge=${ogEdgeStakePolicy.edge} ${ogEdgeStakePolicy.unitsPre}u ${verb} → ${ogEdgeStakePolicy.units}u`,
       );

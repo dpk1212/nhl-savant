@@ -9,7 +9,9 @@
  * cap still binds, so a dog longer than +120 cannot leave at the raw
  * double. A 1u stake at 10 or more is muted. 5 up to 10 keeps the ladder
  * stake and caps it at 2.5. Under 5, a stake under 3 is muted and a
- * stake of 3 or more stays. A missing edge does not move the stake.
+ * stake of 3 or more stays. A moneyline under 5 whose price has
+ * shortened stays at the stake that arrived. A flat price and a price
+ * that lengthened stay muted. A missing edge does not move the stake.
  * Manual stake, operator kill, the T-15 freeze, and a graded ticket
  * stay at the caller.
  *
@@ -29,14 +31,26 @@ function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
+function isMoneyline(market) {
+  const u = String(market || '').toUpperCase();
+  return u === 'ML' || u === 'MONEYLINE' || u === 'H2H';
+}
+
+/** The same tenth the steam book stores. Above 0 is a shorten. */
+function lineToward(move) {
+  const n = Number(move);
+  if (!Number.isFinite(n)) return false;
+  return Math.round(n * 10) / 10 > 0;
+}
+
 export function isOgEdgeStakeLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= OG_EDGE_STAKE_FROM;
 }
 
 /**
  * @returns {{
- *   units: number, action: 'DOUBLE'|'MUTE'|'CAP'|'HOLD'|'PASS'|'EXEMPT',
- *   edge: number|null, unitsPre: number,
+ *   units: number, action: 'DOUBLE'|'MUTE'|'CAP'|'RESCUE'|'HOLD'|'PASS'|'EXEMPT',
+ *   edge: number|null, unitsPre: number, move: number|null,
  * }}
  */
 export function applyOgEdgeStake({
@@ -44,17 +58,21 @@ export function applyOgEdgeStake({
   edge = null,
   pickDate = null,
   odds = null,
+  market = null,
+  move = null,
   manual = false,
   killed = false,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, round2(Number(units))) : 0;
   const e = Number(edge);
   const hasEdge = edge != null && Number.isFinite(e);
+  const toward = Number.isFinite(Number(move)) ? Number(move) : null;
   const out = (action, next = pre) => ({
     units: round2(next),
     action,
     edge: hasEdge ? e : null,
     unitsPre: pre,
+    move: toward,
   });
   if (manual === true || killed === true) return out('EXEMPT');
   if (!isOgEdgeStakeLive(pickDate)) return out('EXEMPT');
@@ -73,7 +91,10 @@ export function applyOgEdgeStake({
     const next = Math.min(pre, OG_EDGE_MID_CAP);
     return out(next < pre ? 'CAP' : 'HOLD', next);
   }
-  if (pre < OG_EDGE_KEEP_UNITS) return out('MUTE', 0);
+  if (pre < OG_EDGE_KEEP_UNITS) {
+    if (isMoneyline(market) && lineToward(toward)) return out('RESCUE');
+    return out('MUTE', 0);
+  }
   return out('HOLD');
 }
 
@@ -84,5 +105,6 @@ export function ogEdgeStakeStamp(policy) {
     v8_ogEdgeStakeEdge: policy.edge ?? null,
     v8_ogEdgeStakeUnits: Number.isFinite(policy.units) ? policy.units : null,
     v8_unitsPreOgEdgeStake: Number.isFinite(policy.unitsPre) ? policy.unitsPre : null,
+    v8_ogEdgeStakeMove: Number.isFinite(Number(policy.move)) ? Number(policy.move) : null,
   };
 }

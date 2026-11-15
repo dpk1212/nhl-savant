@@ -32,6 +32,20 @@ test('5 up to 10 keeps the stake and caps it at 2.5', () => {
   assert.equal(applyOgEdgeStake({ ...live, units: 4, edge: 9 }).units, 2.5);
 });
 
+test('a moneyline under 5 stays when the price has shortened', () => {
+  const kept = applyOgEdgeStake({ ...live, market: 'ML', units: 2, edge: 4, move: 3.2 });
+  assert.equal(kept.action, 'RESCUE');
+  assert.equal(kept.units, 2);
+  assert.equal(applyOgEdgeStake({ ...live, market: 'ML', units: 1, edge: 1.5, move: 0.06 }).units, 1);
+  assert.equal(applyOgEdgeStake({ ...live, market: 'ML', units: 2, edge: 4, move: 0 }).action, 'MUTE');
+  assert.equal(applyOgEdgeStake({ ...live, market: 'ML', units: 2, edge: 4, move: 0.04 }).action, 'MUTE');
+  assert.equal(applyOgEdgeStake({ ...live, market: 'ML', units: 2, edge: 4, move: -1.4 }).action, 'MUTE');
+  assert.equal(applyOgEdgeStake({ ...live, market: 'ML', units: 2, edge: 4, move: null }).action, 'MUTE');
+  assert.equal(applyOgEdgeStake({ ...live, market: 'SPREAD', units: 2, edge: 4, move: 6 }).action, 'MUTE');
+  assert.equal(applyOgEdgeStake({ ...live, market: 'TOTAL', units: 2, edge: 4, move: 6 }).units, 0);
+  assert.equal(applyOgEdgeStake({ ...live, market: 'ML', units: 3, edge: 4, move: 6 }).action, 'HOLD');
+});
+
 test('under 5 mutes a stake under 3 and keeps 3 or more', () => {
   for (const units of [1, 1.5, 2, 2.5]) {
     const out = applyOgEdgeStake({ ...live, units, edge: 4.9 });
