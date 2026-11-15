@@ -8,8 +8,10 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 
-export const MAX_CONFIRM_WALLETS = 60;
-export const CONFIRM_BUDGET_MS = 45_000;
+// Sunday NFL left 278 tickets unchecked at 60. A wallet read is about
+// 0.6s, so 250 needs three minutes or the loop still stops near 75.
+export const MAX_CONFIRM_WALLETS = 250;
+export const CONFIRM_BUDGET_MS = 180_000;
 export const CONFIRM_FILE_MAX_AGE_MS = 20 * 60 * 1000;
 export const CANDIDATE_FILE = 'prune_candidates.json';
 
