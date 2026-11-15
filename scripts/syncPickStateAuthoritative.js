@@ -406,6 +406,10 @@ import {
   pressUnder5CapStamp,
 } from '../src/lib/pressUnder5Cap.js';
 import {
+  applyOgEdgeStake,
+  ogEdgeStakeStamp,
+} from '../src/lib/ogEdgeStake.js';
+import {
   T5_EDGE_BAND_RESCUED_BY,
   T5_EDGE_BAND_STAKE_TIER,
   applyT5EdgeBandRescue,
@@ -4410,6 +4414,7 @@ async function createMissingLockedPicks({
       let t5EdgeBandCreate = null;
       let movedAgainstCreate = null;
       let steamBookCreate = null;
+      let ogEdgeStakeCreate = null;
       let unitsBeforeGap = peakUnitsApplied;
       let tierBeforeGap = hcStakeTierCreate;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -4696,6 +4701,29 @@ async function createMissingLockedPicks({
         }
       }
 
+      // Summer EDGE, after the ladder and the seat. A 10+ stake over 1
+      // and under 3 doubles. A 1u stake at 10+, and any under-10 stake
+      // under 3, goes to 0. The odds cap is inside the double. Four
+      // sports, from 2026-11-15. Operator kill already zeroed the side.
+      if (!isOperatorKilled({ _id: docId }, side, null)) {
+        ogEdgeStakeCreate = applyOgEdgeStake({
+          units: peakUnitsApplied,
+          edge: waCreateEdge?.edge ?? null,
+          pickDate: TARGET_DATE,
+          sport,
+          odds: odds ?? null,
+        });
+        if (ogEdgeStakeCreate.action === 'MUTE' || ogEdgeStakeCreate.action === 'DOUBLE') {
+          peakUnitsApplied = ogEdgeStakeCreate.units;
+          if (!(peakUnitsApplied > 0)) hcStakeTierCreate = 'MONITORING';
+          const verb = ogEdgeStakeCreate.action === 'MUTE' ? 'mute' : 'double';
+          console.log(
+            `  OG-EDGE: ${docId} ${side} edge=${ogEdgeStakeCreate.edge}`
+            + ` ${ogEdgeStakeCreate.unitsPre}u ${verb} → ${ogEdgeStakeCreate.units}u`,
+          );
+        }
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -4869,6 +4897,7 @@ async function createMissingLockedPicks({
       }
       if (movedAgainstCreate) Object.assign(v8Stamps, movedAgainstStamp(movedAgainstCreate));
       if (steamBookCreate) Object.assign(v8Stamps, steamBookStamp(steamBookCreate));
+      if (ogEdgeStakeCreate) Object.assign(v8Stamps, ogEdgeStakeStamp(ogEdgeStakeCreate));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -7423,6 +7452,24 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
     }
   }
+  // Summer EDGE, after the ladder, the seat, the cap, and steam. A 10+
+  // stake over 1 and under 3 doubles. A 1u stake at 10+, and any under-10
+  // stake under 3, goes to 0. Manual stake and an operator kill stay.
+  // The T-15 freeze and a graded ticket already returned.
+  let ogEdgeStakePolicy = null;
+  if (!skipManualFlinch && !operatorKilled) {
+    ogEdgeStakePolicy = applyOgEdgeStake({
+      units: finalUnitsApplied,
+      edge: winnerAlign?.edge ?? null,
+      pickDate,
+      sport: pick.sport,
+      odds: sideOdds ?? sd.odds ?? null,
+    });
+    if (ogEdgeStakePolicy.action === 'MUTE' || ogEdgeStakePolicy.action === 'DOUBLE') {
+      finalUnitsApplied = ogEdgeStakePolicy.units;
+      if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
+    }
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
@@ -8694,6 +8741,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_movedAgainstEdge = admin.firestore.FieldValue.delete();
     patch.v8_movedAgainstN = admin.firestore.FieldValue.delete();
     patch.v8_unitsPreMovedAgainst = admin.firestore.FieldValue.delete();
+  }
+  if (ogEdgeStakePolicy && ogEdgeStakePolicy.action !== 'EXEMPT') {
+    Object.assign(patch, ogEdgeStakeStamp(ogEdgeStakePolicy));
+    if (ogEdgeStakePolicy.action === 'MUTE' || ogEdgeStakePolicy.action === 'DOUBLE') {
+      const verb = ogEdgeStakePolicy.action === 'MUTE' ? 'mute' : 'double';
+      changes.push(
+        `OG-EDGE: edge=${ogEdgeStakePolicy.edge} ${ogEdgeStakePolicy.unitsPre}u ${verb} → ${ogEdgeStakePolicy.units}u`,
+      );
+    }
   }
   if (steamBookPolicy && (steamBookPolicy.mute.action !== 'EXEMPT' || steamBookPolicy.resize.action !== 'EXEMPT')) {
     Object.assign(patch, steamBookStamp(steamBookPolicy));
