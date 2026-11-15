@@ -734,7 +734,7 @@ test('ledger season start matches a 21-day hole and keeps only that season', () 
   assert.equal(wallets.aaaaaa[0][0], '2026-10-06');
 });
 
-test('from Nov 15 a four-sport seat leaves the ladder stake alone', () => {
+test('from Nov 15 every sport seat leaves the ladder stake alone', () => {
   const id = 'aaaaaa';
   setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
   const floored = applyT5Lead({
@@ -751,6 +751,23 @@ test('from Nov 15 a four-sport seat leaves the ladder stake alone', () => {
   });
   assert.equal(capped.units, 4);
   assert.equal(capped.mutedBy, null);
+  setT5SeasonLedger({
+    sports: {
+      CBB: {
+        seasonStart: '2026-10-10',
+        wallets: {
+          aaaaaa: book(id, winsDate('2026-10-10', 10), '2026-10-10').sports.NBA.wallets.aaaaaa,
+        },
+      },
+    },
+  });
+  const cbb = applyT5Lead({
+    units: 1, pickDate: '2026-11-15', odds: -110, walletDetails: leadWallets(id),
+    sport: 'CBB', side: 'home', winnerAlignEdge: 14,
+  });
+  assert.equal(cbb.reason, 'seat_off');
+  assert.equal(cbb.units, 1);
+  setT5SeasonLedger(book(id, winsDate('2026-10-10', 10), '2026-10-10'));
   const still = applyT5Lead({
     units: 1, pickDate: '2026-11-14', odds: -110, walletDetails: leadWallets(id),
     sport: 'NBA', side: 'home',

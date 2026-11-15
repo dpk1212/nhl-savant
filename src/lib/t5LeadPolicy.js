@@ -34,10 +34,10 @@
  * press edge is 5 or more. Under 5 is a 1-unit play, not gold.
  * Moneylines keep the gold test they have now.
  *
- * From 2026-11-15 the seat stops sizing NHL, NBA, NFL, and CFB. The
- * floor, the ceiling, the +1, the rescue, and the no-tier-5 steam mute
- * leave the ladder stake where it is. The lead and the gold label still
- * stamp. The summer EDGE sizes that card after the rest of the ladder.
+ * From 2026-11-15 the seat stops sizing every sport. The floor, the
+ * ceiling, the +1, the rescue, and the no-tier-5 steam mute leave the
+ * ladder stake where it is. The lead and the gold label still stamp.
+ * The summer EDGE sizes the card after the rest of the ladder.
  */
 
 import { buildTrustState } from './walletTrustStatus.js';
@@ -48,7 +48,6 @@ import { PRESS_UNDER5_CAP_FROM, PRESS_UNDER5_CAP_MAX } from './pressUnder5Cap.js
 
 export const T5_LEAD_FROM = '2026-11-08';
 export const T5_SEAT_SIZE_OFF = '2026-11-15';
-export const T5_SEAT_SIZE_SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
 export const T5_NO_T5_ST_FROM = '2026-11-10';
 export const T5_NO_T5_ST_MUTED_BY = 'no-t5-st-steam';
 export const T5_SEASON_GAP_DAYS = 21;
@@ -349,11 +348,9 @@ export function isNoT5StSteamLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= T5_NO_T5_ST_FROM;
 }
 
-/** Four-sport seats stop moving the stake. The label still stamps. */
-export function isT5SeatSizeOff(pickDate, sport) {
-  return typeof pickDate === 'string'
-    && pickDate >= T5_SEAT_SIZE_OFF
-    && T5_SEAT_SIZE_SPORTS.has(String(sport || '').toUpperCase());
+/** Seats stop moving the stake on every sport. The label still stamps. */
+export function isT5SeatSizeOff(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= T5_SEAT_SIZE_OFF;
 }
 
 export function t5StMarket(market) {
@@ -465,7 +462,7 @@ export function applyT5Lead({
   const price = impliedFromAmerican(odds);
   const seat = t5Seat(lead);
   const base = { lead, price, seat };
-  if (isT5SeatSizeOff(pickDate, sport)) {
+  if (isT5SeatSizeOff(pickDate)) {
     const edge = Number(winnerAlignEdge);
     const hasEdge = winnerAlignEdge != null && Number.isFinite(edge);
     return {
