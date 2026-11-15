@@ -407,7 +407,6 @@ import {
 } from '../src/lib/pressUnder5Cap.js';
 import {
   applyOgEdgeStake,
-  ogEdgeLastWins,
   ogEdgeStakeStamp,
 } from '../src/lib/ogEdgeStake.js';
 import {
@@ -4023,10 +4022,8 @@ async function createMissingLockedPicks({
       // steam-tail). Press / TRUST / PRESS-M can restake after this;
       // applyFavJuiceLastPublish re-runs after the ladder. American
       // odds juicier than -425 → 0u. Does not change oddsCap or path math.
-      // EDGE ≥ 5 leaves the stake for OG-EDGE last.
       let favJuicePolicyCreate = null;
-      if (createV121Eligible && peakUnitsApplied > 0
-          && !ogEdgeLastWins(waCreateEdge?.edge)) {
+      if (createV121Eligible && peakUnitsApplied > 0) {
         favJuicePolicyCreate = applyFavJuiceMuteOverlay({
           units: peakUnitsApplied,
           odds: stakeOdds,
@@ -4348,9 +4345,7 @@ async function createMissingLockedPicks({
       }
       // Last publish mute — press / TRUST / PRESS-M cannot lock a
       // long favorite. Keeps an earlier MUTE stamp when already 0u.
-      // EDGE ≥ 5 leaves the stake for OG-EDGE last.
-      if (pressAppliedCreate && peakUnitsApplied > 0
-          && !ogEdgeLastWins(waCreateEdge?.edge)) {
+      if (pressAppliedCreate && peakUnitsApplied > 0) {
         const favJuiceLastCreate = applyFavJuiceLastPublish({
           units: peakUnitsApplied,
           odds: stakeOdds,
@@ -4591,9 +4586,7 @@ async function createMissingLockedPicks({
       // Favorite juice again, after every rung that can put units back.
       // Top 3, the gap, the door, and the under-5 cap all sit past the
       // first mute. A price juicier than -425 ends at 0 on every sport.
-      // EDGE ≥ 5 leaves the stake for OG-EDGE last.
-      if (peakUnitsApplied > 0 && !isOperatorKilled({ _id: docId }, side, null)
-          && !ogEdgeLastWins(waCreateEdge?.edge)) {
+      if (peakUnitsApplied > 0 && !isOperatorKilled({ _id: docId }, side, null)) {
         const favJuiceAfterCreate = applyFavJuiceLastPublish({
           units: peakUnitsApplied,
           odds: stakeOdds,
@@ -4708,11 +4701,11 @@ async function createMissingLockedPicks({
         }
       }
 
-      // Summer EDGE last. Juice already yielded when EDGE ≥ 5. A 10+
-      // stake over 1 and under 3 doubles. A 1u stake at 10+ goes to 0.
-      // 5 up to 10 keeps the ladder stake and caps it at 2.5. Under 5,
-      // a stake under 3 goes to 0. The odds cap is inside the double.
-      // Every sport, from 2026-11-15. Operator kill already zeroed.
+      // Summer EDGE last among size overlays. Juice still zeros a price
+      // juicier than -425. A 10+ stake over 1 and under 3 doubles. A 1u
+      // stake at 10+ goes to 0. 5 up to 10 keeps the ladder stake and
+      // caps it at 2.5. Under 5, a stake under 3 goes to 0. The odds
+      // cap is inside the double. Every sport, from 2026-11-15.
       if (!isOperatorKilled({ _id: docId }, side, null)) {
         ogEdgeStakeCreate = applyOgEdgeStake({
           units: peakUnitsApplied,
@@ -6738,10 +6731,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // American odds juicier than -425 → 0u. Press / TRUST / PRESS-M can
   // restake after this; applyFavJuiceLastPublish re-runs after the
   // ladder. Does not change oddsCap or path math. Manual stake exempt.
-  // EDGE ≥ 5 leaves the stake for OG-EDGE last.
   let favJuicePolicy = null;
-  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch
-      && !ogEdgeLastWins(winnerAlign?.edge)) {
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
     favJuicePolicy = applyFavJuiceMuteOverlay({
       units: finalUnitsApplied,
       odds: stakeOdds,
@@ -7095,9 +7086,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // Last publish mute — press / TRUST / PRESS-M cannot lock a long
   // favorite. Manual stake exempt. Keeps an earlier MUTE stamp when
-      // already 0u. EDGE ≥ 5 leaves the stake for OG-EDGE last.
-  if (pressApplied && finalUnitsApplied > 0 && !skipManualFlinch
-      && !ogEdgeLastWins(winnerAlign?.edge)) {
+  // already 0u.
+  if (pressApplied && finalUnitsApplied > 0 && !skipManualFlinch) {
     const favJuiceLast = applyFavJuiceLastPublish({
       units: finalUnitsApplied,
       odds: stakeOdds,
@@ -7353,10 +7343,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   // Favorite juice again, after every rung that can put units back.
   // Manual stake never entered the ladder. A price juicier than -425
-      // ends at 0 on every sport, including one the under-5 cap left at 1u.
-  // EDGE ≥ 5 leaves the stake for OG-EDGE last.
-  if (!skipManualFlinch && !operatorKilled && finalUnitsApplied > 0
-      && !ogEdgeLastWins(winnerAlign?.edge)) {
+  // ends at 0 on every sport, including one the under-5 cap left at 1u.
+  if (!skipManualFlinch && !operatorKilled && finalUnitsApplied > 0) {
     const favJuiceAfter = applyFavJuiceLastPublish({
       units: finalUnitsApplied,
       odds: stakeOdds,
@@ -7468,11 +7456,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
     }
   }
-  // Summer EDGE last. Juice already yielded when EDGE ≥ 5. A 10+
-  // stake over 1 and under 3 doubles. A 1u stake at 10+ goes to 0.
-  // 5 up to 10 keeps the ladder stake and caps it at 2.5. Under 5,
-  // a stake under 3 goes to 0. Manual stake and an operator kill stay.
-  // The T-15 freeze and a graded ticket already returned.
+  // Summer EDGE last among size overlays. Juice still zeros a price
+  // juicier than -425. A 10+ stake over 1 and under 3 doubles. A 1u
+  // stake at 10+ goes to 0. 5 up to 10 keeps the ladder stake and
+  // caps it at 2.5. Under 5, a stake under 3 goes to 0. Manual stake
+  // and an operator kill stay. The T-15 freeze already returned.
   let ogEdgeStakePolicy = null;
   if (!skipManualFlinch && !operatorKilled) {
     ogEdgeStakePolicy = applyOgEdgeStake({
