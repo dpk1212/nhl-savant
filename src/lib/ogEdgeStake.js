@@ -13,8 +13,8 @@
  * Manual stake, operator kill, the T-15 freeze, and a graded ticket
  * stay at the caller.
  *
- * EDGE of 5 or more is the last size. The −425 juice mute does not
- * zero that stake; this overlay still mutes 1u at 10+ and doubles 1–3.
+ * The −425 juice mute still zeros a long favorite. This overlay sizes
+ * whatever stake juice left. It does not punch through −425.
  */
 
 import { oddsCap } from './oddsCap.js';
@@ -31,12 +31,6 @@ function round2(n) {
 
 export function isOgEdgeStakeLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= OG_EDGE_STAKE_FROM;
-}
-
-/** Juice yields. OG-EDGE sizes the ladder stake last. */
-export function ogEdgeLastWins(edge) {
-  const e = Number(edge);
-  return edge != null && Number.isFinite(e) && e >= OG_EDGE_KEEP_MIN;
 }
 
 /**
