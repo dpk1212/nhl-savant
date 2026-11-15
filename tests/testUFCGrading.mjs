@@ -3,7 +3,7 @@
  *
  * Run: node tests/testUFCGrading.mjs
  */
-import { findMatchingGame } from '../scripts/gradeSharpActions.js';
+import { findMatchingGame, ufcBoutScores } from '../scripts/gradeSharpActions.js';
 import {
   fightersMatch,
   isGradableUFCMainML,
@@ -180,6 +180,25 @@ check('flip rejects 3-part keys', flipUFCGameKey('a_b_c') === null);
   check('schedule key falls back to title order',
     resolveUFCScheduleKey(new Set(), 'Patricio Pitbull', 'Dooho Choi') === 'patriciopitbull_doohochoi');
 }
+
+check('decision uses the judge total when both winner flags are empty',
+  ufcBoutScores([
+    { winner: false, linescores: [{ value: '83' }] },
+    { winner: false, linescores: [{ value: '85' }] },
+  ])?.homeScore === 1 && ufcBoutScores([
+    { winner: false, linescores: [{ value: '83' }] },
+    { winner: false, linescores: [{ value: '85' }] },
+  ])?.awayScore === 0);
+check('equal judge totals stay ungraded',
+  ufcBoutScores([
+    { winner: false, linescores: [{ value: 28 }] },
+    { winner: false, linescores: [{ value: 28 }] },
+  ]) == null);
+check('a winner flag beats the scorecard',
+  ufcBoutScores([
+    { winner: true, linescores: [{ value: 83 }] },
+    { winner: false, linescores: [{ value: 85 }] },
+  ])?.awayScore === 1);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);

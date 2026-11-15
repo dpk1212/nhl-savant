@@ -271,6 +271,11 @@ async function fetchNHLFinalGames(dateStr) {
   }
 }
 
+function ncaaNoPlay(gameState) {
+  const state = String(gameState || '').toLowerCase();
+  return state === 'postponed' || state === 'canceled' || state === 'cancelled';
+}
+
 async function fetchNCAAFinalGames(dateStr) {
   try {
     const formatted = dateStr.replace(/-/g, '/');
@@ -278,22 +283,31 @@ async function fetchNCAAFinalGames(dateStr) {
     if (!res.ok) return [];
     const data = await res.json();
     return (data.games || [])
-      .filter(g => g.game?.gameState === 'final')
+      .filter(g => g.game?.gameState === 'final' || ncaaNoPlay(g.game?.gameState))
       .map(g => {
         const clock = etClock(g.game.startTimeEpoch ? g.game.startTimeEpoch * 1000 : null);
+        const postponed = ncaaNoPlay(g.game?.gameState);
         return {
           dateET: clock?.dateET || dateStr,
           startHourET: clock?.startHourET ?? null,
           awayTeam: g.game.away?.names?.short || '',
           homeTeam: g.game.home?.names?.short || '',
-          awayScore: parseInt(g.game.away?.score) || 0,
-          homeScore: parseInt(g.game.home?.score) || 0,
+          awayScore: postponed ? 0 : (parseInt(g.game.away?.score) || 0),
+          homeScore: postponed ? 0 : (parseInt(g.game.home?.score) || 0),
+          ...(postponed ? { postponed: true } : {}),
         };
       });
   } catch (e) {
     console.error('NCAA fetch error:', e.message);
     return [];
   }
+}
+
+function espnNoPlay(statusType) {
+  const name = String(statusType?.name || '');
+  return name.startsWith('STATUS_POSTPONED')
+    || name.startsWith('STATUS_CANCELED')
+    || name.startsWith('STATUS_CANCELLED');
 }
 
 async function fetchESPNCBBFinalGames(dateStr) {
@@ -306,10 +320,12 @@ async function fetchESPNCBBFinalGames(dateStr) {
     return (data.events || [])
       .filter(e => {
         const st = e.competitions?.[0]?.status?.type;
+        if (espnNoPlay(st)) return true;
         return st?.state === 'post' || st?.completed || String(st?.name || '').startsWith('STATUS_FINAL');
       })
       .map(e => {
         const comp = e.competitions[0];
+        const postponed = espnNoPlay(comp.status?.type);
         const comps = comp.competitors || [];
         const away = comps.find(c => c.homeAway === 'away') || {};
         const home = comps.find(c => c.homeAway === 'home') || {};
@@ -319,8 +335,9 @@ async function fetchESPNCBBFinalGames(dateStr) {
           startHourET: clock?.startHourET ?? null,
           awayTeam: away.team?.displayName || '',
           homeTeam: home.team?.displayName || '',
-          awayScore: parseInt(away.score) || 0,
-          homeScore: parseInt(home.score) || 0,
+          awayScore: postponed ? 0 : (parseInt(away.score) || 0),
+          homeScore: postponed ? 0 : (parseInt(home.score) || 0),
+          ...(postponed ? { postponed: true } : {}),
         };
       });
   } catch (e) {
@@ -713,10 +730,16 @@ async function fetchCFBFinalsFromOddsApi() {
   return out;
 }
 
+function cfbBoardUrls(dateStr) {
+  const ymd = dateStr ? String(dateStr).replace(/-/g, '') : '';
+  const dated = ymd ? `?dates=${ymd}&limit=300` : '?limit=300';
+  // The default board is FBS. FCS (Prairie View, Western Carolina) is groups=81.
+  return [`${ESPN_CFB_URL}${dated}`, `${ESPN_CFB_URL}${dated}&groups=81`];
+}
+
 async function fetchCFBFinalGames(dateStr) {
   try {
-    const ymd = dateStr ? String(dateStr).replace(/-/g, '') : '';
-    const urls = ymd ? [`${ESPN_CFB_URL}?dates=${ymd}`] : [ESPN_CFB_URL];
+    const urls = cfbBoardUrls(dateStr);
     const seen = new Set();
     const out = [];
     for (const url of urls) {
@@ -729,7 +752,6 @@ async function fetchCFBFinalGames(dateStr) {
         seen.add(k);
         out.push(g);
       }
-      if (out.length) break;
     }
     if (!out.length) {
       const odds = await fetchCFBFinalsFromOddsApi();
@@ -797,6 +819,23 @@ async function fetchSOCFinalGames(dateStr) {
  * (boolean), mapped to synthetic 1/0 scores for the shared ML grader.
  * No Contest (neither winner) is skipped — stay PENDING.
  */
+function ufcCompetitorTotal(comp) {
+  const raw = Array.isArray(comp?.linescores) ? comp.linescores[0]?.value : null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function ufcBoutScores(comps) {
+  if (!Array.isArray(comps) || comps.length < 2) return null;
+  const w0 = comps[0].winner === true;
+  const w1 = comps[1].winner === true;
+  if (w0 || w1) return { awayScore: w0 ? 1 : 0, homeScore: w1 ? 1 : 0 };
+  const t0 = ufcCompetitorTotal(comps[0]);
+  const t1 = ufcCompetitorTotal(comps[1]);
+  if (t0 == null || t1 == null || t0 === t1) return null;
+  return { awayScore: t0 > t1 ? 1 : 0, homeScore: t1 > t0 ? 1 : 0 };
+}
+
 async function fetchUFCFinalFights(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
@@ -818,9 +857,8 @@ async function fetchUFCFinalFights(dateStr) {
         const fighterName = (c) => c.athlete?.displayName || c.team?.displayName || c.team?.name || '';
         const f0 = fighterName(comps[0]);
         const f1 = fighterName(comps[1]);
-        const w0 = comps[0].winner === true;
-        const w1 = comps[1].winner === true;
-        if (!w0 && !w1) continue; // NC / no decisive result — do not invent a grade
+        const scores = ufcBoutScores(comps);
+        if (!scores) continue; // draw / no contest — do not invent a grade
         const code0 = resolveUFCFighter(f0);
         const code1 = resolveUFCFighter(f1);
         if (!code0 || !code1) continue;
@@ -833,8 +871,8 @@ async function fetchUFCFinalFights(dateStr) {
           homeFighter: f1,
           awayTeam: f0,
           homeTeam: f1,
-          awayScore: w0 ? 1 : 0,
-          homeScore: w1 ? 1 : 0,
+          awayScore: scores.awayScore,
+          homeScore: scores.homeScore,
         });
       }
     }
@@ -848,6 +886,7 @@ async function fetchUFCFinalFights(dateStr) {
 // ─── Outcome calculation (mirrors betTracking.js) ───────────────────────────
 
 function calculateOutcome(game, marketType, side, line, sport = null) {
+  if (game?.postponed) return 'PUSH';
   const totalScore = game.awayScore + game.homeScore;
   const awayWin = game.awayScore > game.homeScore;
   const homeWin = game.homeScore > game.awayScore;
@@ -1225,8 +1264,11 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
     else if (exact.length > 1 && exact.every((h) => sameScore(h, exact[0]))) pick = exact[0];
     else if (exact.length === 0 && hits.length === 1) pick = hits[0];
     if (!pick) return null;
-    if (pick.flip) return { awayScore: pick.g.homeScore, homeScore: pick.g.awayScore };
-    return { awayScore: pick.g.awayScore, homeScore: pick.g.homeScore };
+    const scored = pick.flip
+      ? { awayScore: pick.g.homeScore, homeScore: pick.g.awayScore }
+      : { awayScore: pick.g.awayScore, homeScore: pick.g.homeScore };
+    if (pick.g.postponed) scored.postponed = true;
+    return scored;
   }
 
   if (pos.sport === 'SOC') {
@@ -1402,6 +1444,32 @@ function pickLine(sideData) {
   return null;
 }
 
+const actionSlugCache = new Map();
+
+async function actionSlugForPick(db, pick) {
+  const own = String(pick?.slug || pick?.eventSlug || '').trim();
+  if (own) return own;
+  if (pick?.sport !== 'ATP' && pick?.sport !== 'CS2' && pick?.sport !== 'LOL') return '';
+  const raw = String(pick.gameKey || '').replace(/^(ATP|CS2|LOL):/, '');
+  if (!raw || !pick.date) return '';
+  const key = `${pick.sport}|${pick.date}|${raw}`;
+  if (actionSlugCache.has(key)) return actionSlugCache.get(key);
+  let slug = '';
+  try {
+    const snap = await db.collection(COLLECTION).where('gameKey', '==', raw).limit(25).get();
+    for (const doc of snap.docs) {
+      const d = doc.data() || {};
+      if (d.sport !== pick.sport || String(d.date) !== String(pick.date)) continue;
+      const found = String(d.slug || d.eventSlug || '').trim();
+      if (found) { slug = found; break; }
+    }
+  } catch (e) {
+    console.warn(`slug lookup ${key}: ${e.message}`);
+  }
+  actionSlugCache.set(key, slug);
+  return slug;
+}
+
 async function gradePendingSharpFlowPicks(db, finals) {
   const now = Date.now();
   const colMarkets = [
@@ -1447,24 +1515,29 @@ async function gradePendingSharpFlowPicks(db, finals) {
         finals.cs2Finals,
         finals.lolFinals,
       );
+      let settledOnPolymarket = false;
       if (!game) {
+        const slug = await actionSlugForPick(db, pick);
         game = await polymarketSettledGame({
           sport: pick.sport,
           away: pick.away,
           home: pick.home,
           date: pick.date,
-          slug: pick.slug || pick.eventSlug,
+          slug: pick.slug || pick.eventSlug || slug,
           commenceTime: pick.commenceTime,
         });
+        settledOnPolymarket = !!game;
       }
       if (!game) {
         skipped++;
         continue;
       }
-      const winner = game.wentBeyond90 ? 'draw'
+      const winner = game.postponed ? 'push'
+        : game.wentBeyond90 ? 'draw'
         : game.awayScore > game.homeScore ? 'away'
           : game.homeScore > game.awayScore ? 'home' : 'draw';
-      const source = pick.sport === 'NHL' ? 'NHL_API'
+      const source = settledOnPolymarket ? 'POLYMARKET'
+        : pick.sport === 'NHL' ? 'NHL_API'
         : pick.sport === 'CBB' ? 'NCAA_API'
           : pick.sport === 'NBA' ? 'ESPN_NBA_API'
             : pick.sport === 'WNBA' ? 'ESPN_WNBA_API'
@@ -1480,6 +1553,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
         'result.homeScore': game.homeScore,
         'result.winner': winner,
         'result.source': source,
+        ...(game.postponed ? { 'result.postponed': true } : {}),
       };
       let allSidesGraded = true;
       const sides = pick.sides && typeof pick.sides === 'object' ? pick.sides : null;
@@ -2106,7 +2180,7 @@ async function main() {
 }
 
 // Exported for tests (tests/testGradeDateGuard.mjs) — pure helpers, no I/O.
-export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone, alignMiskeyedCbb };
+export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone, alignMiskeyedCbb, ufcBoutScores, cfbBoardUrls };
 
 // Only run when executed directly (node scripts/gradeSharpActions.js), so
 // tests can import the helpers without triggering a live grading pass.
