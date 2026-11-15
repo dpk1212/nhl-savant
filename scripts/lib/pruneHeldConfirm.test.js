@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  CONFIRM_BUDGET_MS,
+  MAX_CONFIRM_WALLETS,
   candidatesAreFresh,
   heldAssetSet,
   selectHeldCandidates,
@@ -47,6 +49,13 @@ test('a held asset is kept, a missing one stays dropped, a failed fetch is not a
   assert.deepEqual(out.failed.map((r) => r.id), ['doc3']);
   assert.equal(out.noAsset.length, 1);
   assert.deepEqual(out.unchecked.map((r) => r.id), ['doc5']);
+});
+
+test('the default cap is 250 wallets inside a 3-minute budget', () => {
+  const rows = Array.from({ length: 300 }, (_, i) => row({ wallet: `0x${i}` }));
+  assert.equal(walletsInOrder(rows).length, MAX_CONFIRM_WALLETS);
+  assert.equal(MAX_CONFIRM_WALLETS, 250);
+  assert.equal(CONFIRM_BUDGET_MS, 180_000);
 });
 
 test('the wallet cap stops and a stale file is ignored', () => {
