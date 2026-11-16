@@ -23,10 +23,19 @@ import {
   serializeGapLeadBooks,
   setGapLeadBooks,
 } from '../../src/lib/gapLeadRescue.js';
+import {
+  buildMlMiniBook,
+  hydrateMlMiniBook,
+  isMlMiniLive,
+  serializeMlMiniBook,
+  setMlMiniBook,
+} from '../../src/lib/mlMiniRung.js';
 
 export const MORNING_RANK_COLLECTION = 'morningRank';
 const TOP3_DOC = 'top3';
 const GAP_DOC = 'gap';
+const ML_MINI_DOC = 'mlMini';
+const ML_MINI_FIELDS = ['wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice', 'result', 'won', 'side', 'gameKey', 'status'];
 const FIELDS = ['wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'settledPnl', 'result', 'postponed', 'status'];
 
 export function etSlateDate(now = new Date()) {
@@ -92,16 +101,58 @@ function stats(built, source) {
 }
 
 /**
+ * Good-wallet moneyline bands before this morning. The first scan of the
+ * day reads every graded position. Later scans read the stored book.
+ */
+async function ensureMlMiniBook(db, asOf, persist, { force = false } = {}) {
+  if (!isMlMiniLive(asOf)) {
+    setMlMiniBook(new Map());
+    return 0;
+  }
+  if (!force && persist) {
+    try {
+      const doc = await readDoc(db, ML_MINI_DOC, asOf);
+      if (doc) {
+        const index = hydrateMlMiniBook(doc);
+        setMlMiniBook(index);
+        return index.size;
+      }
+    } catch (err) {
+      console.warn(`[morning-rank] ml mini cache read failed, rebuilding: ${err.message}`);
+    }
+  }
+  const snap = await db.collection('sharp_action_positions')
+    .where('status', '==', 'GRADED')
+    .select(...ML_MINI_FIELDS)
+    .get();
+  const index = buildMlMiniBook(snap.docs.map((d) => d.data()), asOf);
+  setMlMiniBook(index);
+  if (persist) {
+    try {
+      await db.collection(MORNING_RANK_COLLECTION).doc(ML_MINI_DOC).set({
+        ...serializeMlMiniBook(index, asOf),
+        generatedAt: new Date().toISOString(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn(`[morning-rank] ml mini cache write failed: ${err.message}`);
+    }
+  }
+  return index.size;
+}
+
+/**
  * Use the stored morning when it matches this slate. A past --date= rebuilds
  * in memory and does not replace today's documents. Dry-run does not write.
  */
 export async function loadMorningRanks(db, asOf, { write = true, liveDate = null } = {}) {
   const live = liveDate || etSlateDate();
   const persist = write && asOf === live;
+  const mlMini = await ensureMlMiniBook(db, asOf, persist);
   if (!isTop3PickLive(asOf) && !isGapLeadLive(asOf)) {
     setTop3PickRanks(new Map());
     setGapLeadBooks(new Map());
-    return { source: 'not_live', seats: 0, gapWallets: 0, bets: 0, since: null };
+    return { source: 'not_live', seats: 0, gapWallets: 0, bets: 0, since: null, mlMini };
   }
   if (persist) {
     try {
@@ -120,6 +171,7 @@ export async function loadMorningRanks(db, asOf, { write = true, liveDate = null
           gapWallets: gap.size,
           bets: top3Doc.betCount ?? null,
           since: top3Doc.since ?? null,
+          mlMini,
         };
       }
     } catch (err) {
@@ -136,7 +188,7 @@ export async function loadMorningRanks(db, asOf, { write = true, liveDate = null
       console.warn(`[morning-rank] cache write failed: ${err.message}`);
     }
   }
-  return stats(built, 'built');
+  return { ...stats(built, 'built'), mlMini };
 }
 
 /** Grade just changed an older bet. Replace the stored morning. */
@@ -145,5 +197,6 @@ export async function rebuildMorningRanks(db, asOf) {
   setTop3PickRanks(built.top3);
   setGapLeadBooks(built.gap);
   await writeDocs(db, asOf, built);
-  return stats(built, 'rebuilt');
+  const mlMini = await ensureMlMiniBook(db, asOf, true, { force: true });
+  return { ...stats(built, 'rebuilt'), mlMini };
 }
