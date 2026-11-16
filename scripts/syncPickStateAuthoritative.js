@@ -432,6 +432,14 @@ import {
   totalMiniStamp,
 } from '../src/lib/totalMiniRung.js';
 import {
+  ML_PRESS_MUTED_BY,
+  ML_PRESS_RESCUED_BY,
+  ML_PRESS_STAKE_TIER,
+  applyMlPressRung,
+  mlPressStamp,
+  qualifyingPresses,
+} from '../src/lib/mlPressRung.js';
+import {
   T5_EDGE_BAND_RESCUED_BY,
   T5_EDGE_BAND_STAKE_TIER,
   applyT5EdgeBandRescue,
@@ -3339,7 +3347,8 @@ async function createMissingLockedPicks({
       const mlMiniOpens = marketType === 'ML' && qualifyingMinis({ sport, side, positions }).length > 0;
       const spreadSteamOpens = marketType === 'SPREAD' && qualifyingSpreadSteam({ sport, side, positions }).length > 0;
       const totalMiniOpens = marketType === 'TOTAL' && qualifyingTotalMinis({ sport, side, positions }).length > 0;
-      if (!top3Early.fires && !gapEarly.fires && !mlMiniOpens && !spreadSteamOpens && !totalMiniOpens && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
+      const pressOpens = marketType === 'ML' && qualifyingPresses({ sport, side, positions }).length > 0;
+      if (!top3Early.fires && !gapEarly.fires && !mlMiniOpens && !spreadSteamOpens && !totalMiniOpens && !pressOpens && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
 
       // Build walletDetails for AGS-U (sport-local size — Action parity).
       const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType);
@@ -4443,6 +4452,7 @@ async function createMissingLockedPicks({
       let mlMiniCreate = null;
       let spreadSteamCreate = null;
       let totalMiniCreate = null;
+      let mlPressCreate = null;
       let unitsBeforeGap = peakUnitsApplied;
       let tierBeforeGap = hcStakeTierCreate;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -4844,6 +4854,37 @@ async function createMissingLockedPicks({
         }
       }
 
+      // Moneyline press. After the total mini. −150 through −425 is the
+      // press band, or 4 when that band is missing. Pick'em up to −150
+      // with steam of 4.5 or more is three quarters of that size. Every
+      // other qualifying press is 0. A price juicier than −425 stays.
+      // Manual stake and an operator kill stay. The T-15 freeze already
+      // returned.
+      if (!isOperatorKilled({ _id: docId }, side, null)) {
+        mlPressCreate = applyMlPressRung({
+          units: peakUnitsApplied,
+          pickDate: TARGET_DATE,
+          sport,
+          market: marketType,
+          side,
+          positions,
+          odds: stakeOdds ?? odds ?? null,
+          steam: steamBookCreate?.mute?.m ?? null,
+        });
+        if (mlPressCreate.action === 'STAKE' || mlPressCreate.action === 'MUTE') {
+          peakUnitsApplied = mlPressCreate.units;
+          if (mlPressCreate.action === 'STAKE' && peakUnitsApplied > 0) {
+            hcStakeTierCreate = ML_PRESS_STAKE_TIER;
+          }
+          if (!(peakUnitsApplied > 0)) hcStakeTierCreate = 'MONITORING';
+          console.log(
+            `  ML-PRESS: ${docId} ${side} ${mlPressCreate.zone} full=${mlPressCreate.full}`
+            + ` steam=${mlPressCreate.steam ?? '—'}`
+            + ` ${mlPressCreate.unitsPre}u → ${mlPressCreate.units}u`,
+          );
+        }
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -5021,6 +5062,7 @@ async function createMissingLockedPicks({
       if (mlMiniCreate) Object.assign(v8Stamps, mlMiniStamp(mlMiniCreate));
       if (spreadSteamCreate) Object.assign(v8Stamps, spreadSteamStamp(spreadSteamCreate));
       if (totalMiniCreate) Object.assign(v8Stamps, totalMiniStamp(totalMiniCreate));
+      if (mlPressCreate) Object.assign(v8Stamps, mlPressStamp(mlPressCreate));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -5234,6 +5276,12 @@ async function createMissingLockedPicks({
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
+      } else if (mlPressCreate?.action === 'STAKE') {
+        delete v8Stamps.mutedBy;
+        v8Stamps.v8_rescuedBy = ML_PRESS_RESCUED_BY;
+      } else if (mlPressCreate?.action === 'MUTE') {
+        v8Stamps.mutedBy = ML_PRESS_MUTED_BY;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (mlMiniCreate?.action === 'STAKE') {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = ML_MINI_RESCUED_BY;
@@ -5412,9 +5460,9 @@ async function createMissingLockedPicks({
         ? peakUnitsApplied === 0
         : createSizeMutedLegacy;
       const healthStamp = {
-        status: (mlMiniCreate?.action === 'STAKE' || spreadSteamCreate?.action === 'STAKE' || totalMiniCreate?.action === 'STAKE') && peakUnitsApplied > 0
+        status: (mlPressCreate?.action === 'STAKE' || mlMiniCreate?.action === 'STAKE' || spreadSteamCreate?.action === 'STAKE' || totalMiniCreate?.action === 'STAKE') && peakUnitsApplied > 0
           ? 'ACTIVE'
-          : (mlMiniCreate?.action === 'MUTE' ? 'MUTED' : (createSizeMuted ? 'MUTED' : 'ACTIVE')),
+          : (mlPressCreate?.action === 'MUTE' || mlMiniCreate?.action === 'MUTE' ? 'MUTED' : (createSizeMuted ? 'MUTED' : 'ACTIVE')),
         reasons: [
           ...(pressAppliedCreate && pressEvalCreate?.reason
             ? [`press:${pressMirrorForceCreate ? pressMirrorCreate.reason : pressEvalCreate.reason}`]
@@ -5462,6 +5510,7 @@ async function createMissingLockedPicks({
         && mlMiniCreate?.action !== 'STAKE'
         && spreadSteamCreate?.action !== 'STAKE'
         && totalMiniCreate?.action !== 'STAKE'
+        && mlPressCreate?.action !== 'STAKE'
         && !trustKeepsCreate) {
         skipped.push({
           docId, side, reason: 'trust_rung_no_stake',
@@ -5498,6 +5547,21 @@ async function createMissingLockedPicks({
         && !trustedOnGame;
       if (totalDoorOnly && totalMiniCreate?.action !== 'STAKE') {
         skipped.push({ docId, side, reason: 'total_mini_no_stake' });
+        continue;
+      }
+      const pressDoorOnly = pressOpens
+        && !top3Early.fires
+        && !gapEarly.fires
+        && !mlMiniOpens
+        && !spreadSteamOpens
+        && !totalMiniOpens
+        && live.forW === 0
+        && live.agW === 0
+        && live.hcConfFor === 0
+        && live.hcConfAg === 0
+        && !trustedOnGame;
+      if (pressDoorOnly && mlPressCreate?.action !== 'STAKE') {
+        skipped.push({ docId, side, reason: 'ml_press_no_stake' });
         continue;
       }
       if (trustProbeCreate && trustKeepsCreate) {
@@ -7711,6 +7775,31 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (finalUnitsApplied > 0) hcStakeTier = TOTAL_MINI_STAKE_TIER;
     }
   }
+  // Moneyline press. After the total mini. −150 through −425 is the
+  // press band, or 4 when that band is missing. Pick'em up to −150 with
+  // steam of 4.5 or more is three quarters of that size. Every other
+  // qualifying press is 0. A price juicier than −425 stays. Manual stake
+  // and an operator kill stay. The T-15 freeze already returned.
+  let mlPressPolicy = null;
+  if (!skipManualFlinch && !operatorKilled) {
+    mlPressPolicy = applyMlPressRung({
+      units: finalUnitsApplied,
+      pickDate,
+      sport: pick.sport,
+      market: mkt,
+      side,
+      positions: group,
+      odds: sideOdds ?? sd.odds ?? null,
+      steam: steamBookPolicy?.mute?.m ?? null,
+    });
+    if (mlPressPolicy.action === 'STAKE' || mlPressPolicy.action === 'MUTE') {
+      finalUnitsApplied = mlPressPolicy.units;
+      if (mlPressPolicy.action === 'STAKE' && finalUnitsApplied > 0) {
+        hcStakeTier = ML_PRESS_STAKE_TIER;
+      }
+      if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
+    }
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
@@ -7760,6 +7849,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && totalMiniPolicy?.action === 'STAKE'
+  ) || (
+    appliedStatus === 'ACTIVE'
+    && finalUnitsApplied > 0
+    && mlPressPolicy?.action === 'STAKE'
   ) || trustShip;
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
@@ -7768,6 +7861,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       else if (mlMiniPolicy?.action === 'STAKE') lockStageReason = 'ml_mini_rung';
       else if (spreadSteamPolicy?.action === 'STAKE') lockStageReason = 'spread_steam_rung';
       else if (totalMiniPolicy?.action === 'STAKE') lockStageReason = 'total_mini_rung';
+      else if (mlPressPolicy?.action === 'STAKE') lockStageReason = 'ml_press_rung';
       else if (pressMirrorApplied) lockStageReason = PRESS_M_SUPERSEDED_REASON;
       else if (trustShip) {
         lockStageReason = isTrustMRule(pressEval?.trust?.rule) ? 'trust_m_ags_bypass' : 'trust_rung_ags_bypass';
@@ -7921,9 +8015,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     || (!formTierRescued && !hardUnoppFloored && (hardStForMuted
     || hardAgMuted
     || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled)))));
-  const healthStatusOut = (mlMiniPolicy?.action === 'STAKE' || spreadSteamPolicy?.action === 'STAKE' || totalMiniPolicy?.action === 'STAKE') && finalUnitsApplied > 0
+  const healthStatusOut = (mlPressPolicy?.action === 'STAKE' || mlMiniPolicy?.action === 'STAKE' || spreadSteamPolicy?.action === 'STAKE' || totalMiniPolicy?.action === 'STAKE') && finalUnitsApplied > 0
     ? 'ACTIVE'
-    : (mlMiniPolicy?.action === 'MUTE'
+    : (mlPressPolicy?.action === 'MUTE' || mlMiniPolicy?.action === 'MUTE'
       ? 'MUTED'
       : (sizeMuted ? 'MUTED' : appliedStatus));
   patch.health = {
@@ -7984,6 +8078,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
+  } else if (mlPressPolicy?.action === 'STAKE') {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+    patch.v8_rescuedBy = ML_PRESS_RESCUED_BY;
+  } else if (mlPressPolicy?.action === 'MUTE') {
+    patch.mutedBy = ML_PRESS_MUTED_BY;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (mlMiniPolicy?.action === 'STAKE') {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = ML_MINI_RESCUED_BY;
@@ -8355,7 +8455,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if ((t5EdgeBandPolicy?.action === 'RESCUE' && movedAgainstPolicy?.action !== 'MUTE')
         || mlMiniPolicy?.action === 'STAKE'
         || spreadSteamPolicy?.action === 'STAKE'
-        || totalMiniPolicy?.action === 'STAKE') {
+        || totalMiniPolicy?.action === 'STAKE'
+        || mlPressPolicy?.action === 'STAKE') {
       patch.v8_agsV12UnitsApplied = finalUnitsApplied;
       patch.finalUnits = finalUnitsApplied;
       if (v121Eligible) patch.v8_hcStakeTier = hcStakeTier;
@@ -8374,9 +8475,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       const kept = (t5EdgeBandPolicy?.action === 'RESCUE' && movedAgainstPolicy?.action !== 'MUTE')
         || mlMiniPolicy?.action === 'STAKE'
         || spreadSteamPolicy?.action === 'STAKE'
-        || totalMiniPolicy?.action === 'STAKE';
+        || totalMiniPolicy?.action === 'STAKE'
+        || mlPressPolicy?.action === 'STAKE';
       changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal${kept ? `, kept ${finalUnitsApplied}u` : ' — muted'})`);
-    } else if (sd.v8_agsTier == null && t5EdgeBandPolicy?.action !== 'RESCUE' && mlMiniPolicy?.action !== 'STAKE' && spreadSteamPolicy?.action !== 'STAKE' && totalMiniPolicy?.action !== 'STAKE') {
+    } else if (sd.v8_agsTier == null && t5EdgeBandPolicy?.action !== 'RESCUE' && mlMiniPolicy?.action !== 'STAKE' && spreadSteamPolicy?.action !== 'STAKE' && totalMiniPolicy?.action !== 'STAKE' && mlPressPolicy?.action !== 'STAKE') {
       changes.push(`AGS-v12: ∅ → ∅ (no signal — defensively muted to FADE/0u)`);
     }
   }
@@ -9041,6 +9143,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       `TOTAL-MINI: skill=${totalMiniPolicy.skill == null ? '—' : Number(totalMiniPolicy.skill).toFixed(1)}`
       + ` press=${totalMiniPolicy.press ?? '—'} steam=${totalMiniPolicy.steam ?? '—'}`
       + ` ${totalMiniPolicy.unitsPre}u → ${totalMiniPolicy.units}u`,
+    );
+  }
+  if (mlPressPolicy && (mlPressPolicy.action === 'STAKE' || mlPressPolicy.action === 'MUTE')) {
+    Object.assign(patch, mlPressStamp(mlPressPolicy));
+    changes.push(
+      `ML-PRESS: ${mlPressPolicy.zone} full=${mlPressPolicy.full}`
+      + ` steam=${mlPressPolicy.steam ?? '—'}`
+      + ` ${mlPressPolicy.unitsPre}u → ${mlPressPolicy.units}u`,
     );
   }
   if (ogEdgeStakePolicy && ogEdgeStakePolicy.action !== 'EXEMPT') {
