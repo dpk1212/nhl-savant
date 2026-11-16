@@ -284,6 +284,39 @@ test('no tier 5 on the other side stays on, even when already off', () => {
   assert.equal(mute.action, 'MUTE');
 });
 
+test('from Nov 16 the mute passes and the old hole stays retired', () => {
+  const off = '2026-11-16';
+  const steamOff = applyEdgeUnder5Mute({
+    units: 2.5, pressEdge: 1.2, blendEdge: 2.6, steamOn: false,
+    pickDate: off, sport: 'NHL', market: 'ML', odds: -150, gapFires: true,
+  });
+  assert.equal(steamOff.action, 'PASS');
+  assert.equal(steamOff.units, 2.5);
+  assert.equal(steamOff.reason, 'edge_under_5_off');
+  assert.equal(steamOff.mutedBy, null);
+
+  const stay = applyEdgeUnder5Mute({
+    units: 4, blendEdge: 1.2, steamOn: false,
+    pickDate: off, sport: 'NBA', market: 'SPREAD', odds: -110,
+    alreadyOff: true,
+  });
+  assert.equal(stay.action, 'PASS');
+  assert.equal(stay.units, 4);
+
+  const nov5 = applyEdgeUnder5Mute({
+    units: 4, pressEdge: 3.2, pickDate: '2026-11-05', sport: 'NFL', market: 'ML', odds: -150,
+  });
+  assert.equal(nov5.action, 'MUTE');
+  assert.equal(nov5.units, 0);
+
+  assert.equal(edgeUnder5Owns(off, 'NBA'), true);
+  const hole = applyPressEdgeNetClamp({
+    units: 4, pressEdge: 3, netMeanPrior: 2, pickDate: off, sport: 'NBA',
+  });
+  assert.equal(hole.action, 'PASS');
+  assert.equal(hole.units, 4);
+});
+
 test('the 2-unit band stays only when the edge is under 5 and the date is live', () => {
   assert.equal(gapBandStays({ units: 2, pressEdge: 1, pickDate: DAY }), true);
   assert.equal(gapBandStays({ units: 2, pressEdge: null, pickDate: DAY }), true);

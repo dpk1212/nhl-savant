@@ -4460,6 +4460,7 @@ async function createMissingLockedPicks({
       }
       // Edge under 5. After the gap rung. From Nov 6 a locked play comes
       // off only when the blended edge is under 5 and steam is off.
+      // From Nov 16 the mute passes and the later stake rules size it.
       let edgeUnder5Create = null;
       if (pressAppliedCreate && !isOperatorKilled({ _id: docId }, side, null)) {
         edgeUnder5Create = applyEdgeUnder5Mute({
@@ -7208,7 +7209,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Edge under 5, after the gap rung. Manual stake never entered the
   // ladder. Operator kill still wins, below. A stake already at 0 is left
   // alone. From Nov 6 steam on stays, and a missing blend stays. A side
-  // this mute already zeroed stays zero.
+  // this mute already zeroed stays zero through Nov 15. From Nov 16 the
+  // mute passes, including a side it zeroed earlier the same day, and the
+  // later stake rules size the ladder stake. T-15 still keeps a freeze.
   let edgeUnder5Policy = null;
   if (pressApplied && !skipManualFlinch) {
     const edgeAlreadyOff = (Number(sd.finalUnits) || 0) <= 0
