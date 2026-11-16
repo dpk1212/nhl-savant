@@ -14,7 +14,7 @@
  *
  * This is the size for that side. It replaces the stake that arrived.
  * Manual stake, an operator kill, the T-15 freeze, and a graded ticket
- * stay at the caller. Four sports. Moneyline only.
+ * stay at the caller. NHL, NBA, NFL, CFB, and CBB. Moneyline only.
  */
 
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
@@ -32,7 +32,7 @@ export const ML_MINI_STAKE_TIER = 'ML-MINI';
 export const ML_MINI_RESCUED_BY = 'ml-mini';
 export const ML_MINI_MUTED_BY = 'ml-mini';
 
-const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
+const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB', 'CBB']);
 
 let bookIndex = new Map();
 
@@ -50,7 +50,9 @@ export function mlMiniBookIndex() {
 
 export function normMlMiniSport(sport) {
   const u = String(sport || '').toUpperCase();
-  return (u === 'NCAAF' || u === 'NCAAFB') ? 'CFB' : u;
+  if (u === 'NCAAF' || u === 'NCAAFB') return 'CFB';
+  if (u === 'NCAAB' || u === 'NCAAMB') return 'CBB';
+  return u;
 }
 
 export function normMlMiniMarket(market) {

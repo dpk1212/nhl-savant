@@ -13,8 +13,8 @@
  * line, and a line moving against stay on the stake that arrived.
  *
  * This replaces the stake that arrived. Manual stake, an operator kill,
- * the T-15 freeze, and a graded ticket stay at the caller. Four sports.
- * Spread only.
+ * the T-15 freeze, and a graded ticket stay at the caller. NHL, NBA, NFL,
+ * CFB, and CBB. Spread only.
  */
 
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
@@ -29,12 +29,13 @@ export const SPREAD_STEAM_UNITS = 3;
 export const SPREAD_STEAM_STAKE_TIER = 'SPREAD-STEAM';
 export const SPREAD_STEAM_RESCUED_BY = 'spread-steam';
 
-const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
+const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB', 'CBB']);
 const SPREAD_MAG = {
   NHL: ['1.5', '2.5+'],
   NBA: ['to 3', '3 to 7', '7 to 10', '10+'],
   NFL: ['to 3', '3 to 7', '7 to 10', '10+'],
   CFB: ['to 7', '7 to 14', '14 to 21', '21+'],
+  CBB: ['to 3', '3 to 7', '7 to 10', '10+'],
 };
 
 let bookIndex = new Map();
@@ -53,7 +54,9 @@ export function spreadSteamBookIndex() {
 
 export function normSpreadSteamSport(sport) {
   const u = String(sport || '').toUpperCase();
-  return (u === 'NCAAF' || u === 'NCAAFB') ? 'CFB' : u;
+  if (u === 'NCAAF' || u === 'NCAAFB') return 'CFB';
+  if (u === 'NCAAB' || u === 'NCAAMB') return 'CBB';
+  return u;
 }
 
 export function normSpreadSteamMarket(market) {
@@ -89,7 +92,7 @@ export function spreadMagnitude(sport, line) {
     if (abs < 21.25) return '14 to 21';
     return '21+';
   }
-  if (sp !== 'NBA' && sp !== 'NFL') return null;
+  if (sp !== 'NBA' && sp !== 'NFL' && sp !== 'CBB') return null;
   if (abs < 3.25) return 'to 3';
   if (abs < 7.25) return '3 to 7';
   if (abs < 10.25) return '7 to 10';

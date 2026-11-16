@@ -15,8 +15,8 @@
  * moving against, and a press edge under 5 stay on the stake that arrived.
  *
  * This replaces the stake that arrived. Manual stake, an operator kill,
- * the T-15 freeze, and a graded ticket stay at the caller. Four sports.
- * Total only.
+ * the T-15 freeze, and a graded ticket stay at the caller. NHL, NBA, NFL,
+ * CFB, and CBB. Total only.
  */
 
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
@@ -32,12 +32,13 @@ export const TOTAL_MINI_UNITS = 3;
 export const TOTAL_MINI_STAKE_TIER = 'TOTAL-MINI';
 export const TOTAL_MINI_RESCUED_BY = 'total-mini';
 
-const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
+const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB', 'CBB']);
 const TOTAL_MAG = {
   NHL: ['to 5.5', '6', '6.5', '7+'],
   NBA: ['under 220', '220s', '230s', '240+'],
   NFL: ['under 43', '43 to 47', '47 to 51', '51+'],
   CFB: ['under 50', '50 to 58', '58 to 66', '66+'],
+  CBB: ['under 140', '140 to 150', '150 to 160', '160+'],
 };
 
 let bookIndex = new Map();
@@ -56,7 +57,9 @@ export function totalMiniBookIndex() {
 
 export function normTotalMiniSport(sport) {
   const u = String(sport || '').toUpperCase();
-  return (u === 'NCAAF' || u === 'NCAAFB') ? 'CFB' : u;
+  if (u === 'NCAAF' || u === 'NCAAFB') return 'CFB';
+  if (u === 'NCAAB' || u === 'NCAAMB') return 'CBB';
+  return u;
 }
 
 export function normTotalMiniMarket(market) {
@@ -92,6 +95,12 @@ export function totalMagnitude(sport, line) {
     if (n < 47) return '43 to 47';
     if (n < 51) return '47 to 51';
     return '51+';
+  }
+  if (sp === 'CBB') {
+    if (n < 140) return 'under 140';
+    if (n < 150) return '140 to 150';
+    if (n < 160) return '150 to 160';
+    return '160+';
   }
   if (n < 50) return 'under 50';
   if (n < 58) return '50 to 58';
