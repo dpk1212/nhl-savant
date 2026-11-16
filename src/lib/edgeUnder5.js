@@ -13,6 +13,11 @@
  * a steam-off play. A side this mute already zeroed stays zero, even
  * when steam is on. Nothing already muted is turned back on.
  *
+ * From Nov 16 the mute is off. The stake stays where the ladder left it
+ * and the later rules size it, including a side this mute already zeroed
+ * earlier the same day. The old press-edge hole stays retired. A stake
+ * already inside the T-15 freeze keeps the units it froze with.
+ *
  * The blend is each FOR wallet's market win rate pulled toward its other
  * markets in that sport (k = 10), then averaged, minus the price. Spreads
  * and totals use 52.4. A moneyline uses the American implied percent.
@@ -26,6 +31,7 @@
 
 export const EDGE_UNDER5_FROM = '2026-11-05';
 export const EDGE_BLEND_STEAM_FROM = '2026-11-06';
+export const EDGE_UNDER5_MUTE_OFF = '2026-11-16';
 export const BLEND_PULL = 10;
 export const BLEND_ST_IMPLIED_PCT = 52.4;
 export const EDGE_UNDER5_MAX = 5;
@@ -40,6 +46,10 @@ export function isEdgeUnder5Live(pickDate) {
 
 export function isBlendSteamLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= EDGE_BLEND_STEAM_FROM;
+}
+
+export function isEdgeUnder5MuteOff(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= EDGE_UNDER5_MUTE_OFF;
 }
 
 export function normEdgeSport(sport) {
@@ -240,6 +250,7 @@ export function applyEdgeUnder5Mute({
     rule: null,
     ...extra,
   });
+  if (isEdgeUnder5MuteOff(pickDate)) return out('PASS', 'edge_under_5_off');
   if (oppHasT5 === false) {
     return out('PASS', 'no_t5_against', 'no-t5-ag');
   }
