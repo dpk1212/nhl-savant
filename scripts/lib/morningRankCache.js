@@ -37,17 +37,25 @@ import {
   serializeSpreadSteamBook,
   setSpreadSteamBook,
 } from '../../src/lib/spreadSteamRung.js';
+import {
+  buildTotalMiniBook,
+  hydrateTotalMiniBook,
+  isTotalMiniLive,
+  serializeTotalMiniBook,
+  setTotalMiniBook,
+} from '../../src/lib/totalMiniRung.js';
 
 export const MORNING_RANK_COLLECTION = 'morningRank';
 const TOP3_DOC = 'top3';
 const GAP_DOC = 'gap';
 const ML_MINI_DOC = 'mlMini';
 const SPREAD_STEAM_DOC = 'spreadSteam';
+const TOTAL_MINI_DOC = 'totalMini';
 const SKILL_FIELDS = [
   'wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice',
   'result', 'won', 'side', 'gameKey', 'status',
   'title', 'outcome', 'outcomeIndex', 'slug', 'eventSlug',
-  'entryLine', 'spreadLine', 'away', 'home', 'awayName', 'homeName',
+  'entryLine', 'spreadLine', 'totalLine', 'away', 'home', 'awayName', 'homeName',
 ];
 const FIELDS = ['wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'settledPnl', 'result', 'postponed', 'status'];
 
@@ -114,36 +122,45 @@ function stats(built, source) {
 }
 
 /**
- * Good-wallet moneyline bands and spread line cells before this morning.
- * The first scan of the day reads every graded position once. Later scans
- * read the stored books. A missing book rebuilds both from that one read.
+ * Good-wallet moneyline bands, spread line cells, and total line cells
+ * before this morning. The first scan of the day reads every graded
+ * position once. Later scans read the stored books. A missing book
+ * rebuilds all of them from that one read.
  */
 async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}) {
   const mlLive = isMlMiniLive(asOf);
   const spreadLive = isSpreadSteamLive(asOf);
+  const totalLive = isTotalMiniLive(asOf);
   if (!mlLive) setMlMiniBook(new Map());
   if (!spreadLive) setSpreadSteamBook(new Map());
-  if (!mlLive && !spreadLive) return { mlMini: 0, spreadSteam: 0 };
+  if (!totalLive) setTotalMiniBook(new Map());
+  if (!mlLive && !spreadLive && !totalLive) return { mlMini: 0, spreadSteam: 0, totalMini: 0 };
 
   let mlDoc = null;
   let spreadDoc = null;
+  let totalDoc = null;
   if (!force && persist) {
     try {
       if (mlLive) mlDoc = await readDoc(db, ML_MINI_DOC, asOf);
       if (spreadLive) spreadDoc = await readDoc(db, SPREAD_STEAM_DOC, asOf);
+      if (totalLive) totalDoc = await readDoc(db, TOTAL_MINI_DOC, asOf);
     } catch (err) {
       console.warn(`[morning-rank] skill book cache read failed, rebuilding: ${err.message}`);
       mlDoc = null;
       spreadDoc = null;
+      totalDoc = null;
     }
     const mlReady = !mlLive || mlDoc;
     const spreadReady = !spreadLive || spreadDoc;
-    if (mlReady && spreadReady) {
+    const totalReady = !totalLive || totalDoc;
+    if (mlReady && spreadReady && totalReady) {
       const mlIndex = mlDoc ? hydrateMlMiniBook(mlDoc) : new Map();
       const spreadIndex = spreadDoc ? hydrateSpreadSteamBook(spreadDoc) : new Map();
+      const totalIndex = totalDoc ? hydrateTotalMiniBook(totalDoc) : new Map();
       if (mlLive) setMlMiniBook(mlIndex);
       if (spreadLive) setSpreadSteamBook(spreadIndex);
-      return { mlMini: mlIndex.size, spreadSteam: spreadIndex.size };
+      if (totalLive) setTotalMiniBook(totalIndex);
+      return { mlMini: mlIndex.size, spreadSteam: spreadIndex.size, totalMini: totalIndex.size };
     }
   }
 
@@ -154,6 +171,7 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
   const rows = snap.docs.map((d) => d.data());
   let mlSize = 0;
   let spreadSize = 0;
+  let totalSize = 0;
   if (mlLive) {
     const index = buildMlMiniBook(rows, asOf);
     setMlMiniBook(index);
@@ -186,7 +204,23 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
       }
     }
   }
-  return { mlMini: mlSize, spreadSteam: spreadSize };
+  if (totalLive) {
+    const index = buildTotalMiniBook(rows, asOf);
+    setTotalMiniBook(index);
+    totalSize = index.size;
+    if (persist) {
+      try {
+        await db.collection(MORNING_RANK_COLLECTION).doc(TOTAL_MINI_DOC).set({
+          ...serializeTotalMiniBook(index, asOf),
+          generatedAt: new Date().toISOString(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn(`[morning-rank] total mini cache write failed: ${err.message}`);
+      }
+    }
+  }
+  return { mlMini: mlSize, spreadSteam: spreadSize, totalMini: totalSize };
 }
 
 /**
