@@ -418,6 +418,13 @@ import {
   qualifyingMinis,
 } from '../src/lib/mlMiniRung.js';
 import {
+  SPREAD_STEAM_RESCUED_BY,
+  SPREAD_STEAM_STAKE_TIER,
+  applySpreadSteamRung,
+  qualifyingSpreadSteam,
+  spreadSteamStamp,
+} from '../src/lib/spreadSteamRung.js';
+import {
   T5_EDGE_BAND_RESCUED_BY,
   T5_EDGE_BAND_STAKE_TIER,
   applyT5EdgeBandRescue,
@@ -3323,7 +3330,8 @@ async function createMissingLockedPicks({
       // A top-3 pick wallet is not required to be on the whitelist.
       const trustedOnGame = groupHasTrustedWallet(positions, walletProfiles, sport, marketType);
       const mlMiniOpens = marketType === 'ML' && qualifyingMinis({ sport, side, positions }).length > 0;
-      if (!top3Early.fires && !gapEarly.fires && !mlMiniOpens && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
+      const spreadSteamOpens = marketType === 'SPREAD' && qualifyingSpreadSteam({ sport, side, positions }).length > 0;
+      if (!top3Early.fires && !gapEarly.fires && !mlMiniOpens && !spreadSteamOpens && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
 
       // Build walletDetails for AGS-U (sport-local size — Action parity).
       const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType);
@@ -4425,6 +4433,7 @@ async function createMissingLockedPicks({
       let steamBookCreate = null;
       let ogEdgeStakeCreate = null;
       let mlMiniCreate = null;
+      let spreadSteamCreate = null;
       let unitsBeforeGap = peakUnitsApplied;
       let tierBeforeGap = hcStakeTierCreate;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -4773,6 +4782,32 @@ async function createMissingLockedPicks({
         }
       }
 
+      // Spread steam. After the moneyline mini. Skill of 8 or more on
+      // this side of the number, at this size of the number, and a
+      // shorten of 4.5 or more: the side is 3u. Both shorten rungs are
+      // 3u. A smaller move stays on the stake that arrived. Manual stake
+      // and an operator kill stay. The T-15 freeze already returned.
+      if (!isOperatorKilled({ _id: docId }, side, null)) {
+        spreadSteamCreate = applySpreadSteamRung({
+          units: peakUnitsApplied,
+          pickDate: TARGET_DATE,
+          sport,
+          market: marketType,
+          side,
+          positions,
+          steam: steamBookCreate?.mute?.m ?? null,
+        });
+        if (spreadSteamCreate.action === 'STAKE') {
+          peakUnitsApplied = spreadSteamCreate.units;
+          if (peakUnitsApplied > 0) hcStakeTierCreate = SPREAD_STEAM_STAKE_TIER;
+          console.log(
+            `  SPREAD-STEAM: ${docId} ${side} skill=${spreadSteamCreate.skill == null ? '—' : Number(spreadSteamCreate.skill).toFixed(1)}`
+            + ` steam=${spreadSteamCreate.steam ?? '—'}`
+            + ` ${spreadSteamCreate.unitsPre}u → ${spreadSteamCreate.units}u`,
+          );
+        }
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -4948,6 +4983,7 @@ async function createMissingLockedPicks({
       if (steamBookCreate) Object.assign(v8Stamps, steamBookStamp(steamBookCreate));
       if (ogEdgeStakeCreate) Object.assign(v8Stamps, ogEdgeStakeStamp(ogEdgeStakeCreate));
       if (mlMiniCreate) Object.assign(v8Stamps, mlMiniStamp(mlMiniCreate));
+      if (spreadSteamCreate) Object.assign(v8Stamps, spreadSteamStamp(spreadSteamCreate));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -5167,6 +5203,9 @@ async function createMissingLockedPicks({
       } else if (mlMiniCreate?.action === 'MUTE') {
         v8Stamps.mutedBy = ML_MINI_MUTED_BY;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
+      } else if (spreadSteamCreate?.action === 'STAKE') {
+        delete v8Stamps.mutedBy;
+        v8Stamps.v8_rescuedBy = SPREAD_STEAM_RESCUED_BY;
       } else if (movedAgainstCreate?.action === 'MUTE') {
         v8Stamps.mutedBy = MOVED_AGAINST_MUTED_BY;
         if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
@@ -5333,7 +5372,7 @@ async function createMissingLockedPicks({
         ? peakUnitsApplied === 0
         : createSizeMutedLegacy;
       const healthStamp = {
-        status: mlMiniCreate?.action === 'STAKE' && peakUnitsApplied > 0
+        status: (mlMiniCreate?.action === 'STAKE' || spreadSteamCreate?.action === 'STAKE') && peakUnitsApplied > 0
           ? 'ACTIVE'
           : (mlMiniCreate?.action === 'MUTE' ? 'MUTED' : (createSizeMuted ? 'MUTED' : 'ACTIVE')),
         reasons: [
@@ -5381,6 +5420,7 @@ async function createMissingLockedPicks({
         && !unoppForceBypassAgs
         && !top3Early.fires
         && mlMiniCreate?.action !== 'STAKE'
+        && spreadSteamCreate?.action !== 'STAKE'
         && !trustKeepsCreate) {
         skipped.push({
           docId, side, reason: 'trust_rung_no_stake',
@@ -5390,6 +5430,19 @@ async function createMissingLockedPicks({
         console.log(
           `  TRUST no stake: ${docId} ${side} (score=${scoreV12 ?? '∅'} · ${pressEvalCreate?.rung || 'none'} ${pressEvalCreate?.units ?? 0}u)`,
         );
+        continue;
+      }
+      const spreadDoorOnly = spreadSteamOpens
+        && !top3Early.fires
+        && !gapEarly.fires
+        && !mlMiniOpens
+        && live.forW === 0
+        && live.agW === 0
+        && live.hcConfFor === 0
+        && live.hcConfAg === 0
+        && !trustedOnGame;
+      if (spreadDoorOnly && spreadSteamCreate?.action !== 'STAKE') {
+        skipped.push({ docId, side, reason: 'spread_steam_no_stake' });
         continue;
       }
       if (trustProbeCreate && trustKeepsCreate) {
@@ -7560,6 +7613,27 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
     }
   }
+  // Spread steam. After the moneyline mini. Skill of 8 or more on this
+  // side of the number, at this size of the number, and a shorten of 4.5
+  // or more: the side is 3u. Both shorten rungs are 3u. A smaller move
+  // stays on the stake that arrived. Manual stake and an operator kill
+  // stay. The T-15 freeze already returned.
+  let spreadSteamPolicy = null;
+  if (!skipManualFlinch && !operatorKilled) {
+    spreadSteamPolicy = applySpreadSteamRung({
+      units: finalUnitsApplied,
+      pickDate,
+      sport: pick.sport,
+      market: mkt,
+      side,
+      positions: group,
+      steam: steamBookPolicy?.mute?.m ?? null,
+    });
+    if (spreadSteamPolicy.action === 'STAKE') {
+      finalUnitsApplied = spreadSteamPolicy.units;
+      if (finalUnitsApplied > 0) hcStakeTier = SPREAD_STEAM_STAKE_TIER;
+    }
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
@@ -7601,12 +7675,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && mlMiniPolicy?.action === 'STAKE'
+  ) || (
+    appliedStatus === 'ACTIVE'
+    && finalUnitsApplied > 0
+    && spreadSteamPolicy?.action === 'STAKE'
   ) || trustShip;
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
       appliedLockStage = 'LOCKED';
       if (scoreV12Live != null && scoreV12Live > 0) lockStageReason = 'agsv12_positive_score';
       else if (mlMiniPolicy?.action === 'STAKE') lockStageReason = 'ml_mini_rung';
+      else if (spreadSteamPolicy?.action === 'STAKE') lockStageReason = 'spread_steam_rung';
       else if (pressMirrorApplied) lockStageReason = PRESS_M_SUPERSEDED_REASON;
       else if (trustShip) {
         lockStageReason = isTrustMRule(pressEval?.trust?.rule) ? 'trust_m_ags_bypass' : 'trust_rung_ags_bypass';
@@ -7760,7 +7839,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     || (!formTierRescued && !hardUnoppFloored && (hardStForMuted
     || hardAgMuted
     || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled)))));
-  const healthStatusOut = mlMiniPolicy?.action === 'STAKE' && finalUnitsApplied > 0
+  const healthStatusOut = (mlMiniPolicy?.action === 'STAKE' || spreadSteamPolicy?.action === 'STAKE') && finalUnitsApplied > 0
     ? 'ACTIVE'
     : (mlMiniPolicy?.action === 'MUTE'
       ? 'MUTED'
@@ -7829,6 +7908,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   } else if (mlMiniPolicy?.action === 'MUTE') {
     patch.mutedBy = ML_MINI_MUTED_BY;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+  } else if (spreadSteamPolicy?.action === 'STAKE') {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+    patch.v8_rescuedBy = SPREAD_STEAM_RESCUED_BY;
   } else if (movedAgainstPolicy?.action === 'MUTE') {
     patch.mutedBy = MOVED_AGAINST_MUTED_BY;
     if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
@@ -8186,7 +8268,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     // A tier-5 band rescue can fire on a side with no v12 score. The
     // stake still ships. Every other no-signal side stays at 0.
     if ((t5EdgeBandPolicy?.action === 'RESCUE' && movedAgainstPolicy?.action !== 'MUTE')
-        || mlMiniPolicy?.action === 'STAKE') {
+        || mlMiniPolicy?.action === 'STAKE'
+        || spreadSteamPolicy?.action === 'STAKE') {
       patch.v8_agsV12UnitsApplied = finalUnitsApplied;
       patch.finalUnits = finalUnitsApplied;
       if (v121Eligible) patch.v8_hcStakeTier = hcStakeTier;
@@ -8203,9 +8286,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       patch.v8_agsV12 = admin.firestore.FieldValue.delete();
       patch.v8_agsV12Quintile = admin.firestore.FieldValue.delete();
       const kept = (t5EdgeBandPolicy?.action === 'RESCUE' && movedAgainstPolicy?.action !== 'MUTE')
-        || mlMiniPolicy?.action === 'STAKE';
+        || mlMiniPolicy?.action === 'STAKE'
+        || spreadSteamPolicy?.action === 'STAKE';
       changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal${kept ? `, kept ${finalUnitsApplied}u` : ' — muted'})`);
-    } else if (sd.v8_agsTier == null && t5EdgeBandPolicy?.action !== 'RESCUE' && mlMiniPolicy?.action !== 'STAKE') {
+    } else if (sd.v8_agsTier == null && t5EdgeBandPolicy?.action !== 'RESCUE' && mlMiniPolicy?.action !== 'STAKE' && spreadSteamPolicy?.action !== 'STAKE') {
       changes.push(`AGS-v12: ∅ → ∅ (no signal — defensively muted to FADE/0u)`);
     }
   }
@@ -8854,6 +8938,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       `ML-MINI: skill=${mlMiniPolicy.skill == null ? '—' : Number(mlMiniPolicy.skill).toFixed(1)}`
       + ` against=${mlMiniPolicy.against} steam=${mlMiniPolicy.steam ?? '—'}`
       + ` ${mlMiniPolicy.unitsPre}u → ${mlMiniPolicy.units}u`,
+    );
+  }
+  if (spreadSteamPolicy?.action === 'STAKE') {
+    Object.assign(patch, spreadSteamStamp(spreadSteamPolicy));
+    changes.push(
+      `SPREAD-STEAM: skill=${spreadSteamPolicy.skill == null ? '—' : Number(spreadSteamPolicy.skill).toFixed(1)}`
+      + ` steam=${spreadSteamPolicy.steam ?? '—'}`
+      + ` ${spreadSteamPolicy.unitsPre}u → ${spreadSteamPolicy.units}u`,
     );
   }
   if (ogEdgeStakePolicy && ogEdgeStakePolicy.action !== 'EXEMPT') {
@@ -10198,6 +10290,7 @@ async function main() {
   const groups = buildPositionGroupsFromFirestore(positions);
   console.log(`Loaded ${positions.length} sharp_action_positions in ${groups.size} game-market clusters`);
   const morning = await loadMorningRanks(db, TARGET_DATE, { write: !DRY_RUN });
+  console.log(`SPREAD-STEAM book: ${morning.spreadSteam ?? 0} wallets`);
   if (morning.source !== 'not_live') {
     const bets = morning.bets == null ? '?' : morning.bets;
     console.log(`TOP3-PICK ranks: ${morning.source}, ${morning.seats} top-3 seats from ${bets} bets since ${morning.since}`);
