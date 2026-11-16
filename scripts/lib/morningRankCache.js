@@ -30,12 +30,25 @@ import {
   serializeMlMiniBook,
   setMlMiniBook,
 } from '../../src/lib/mlMiniRung.js';
+import {
+  buildSpreadSteamBook,
+  hydrateSpreadSteamBook,
+  isSpreadSteamLive,
+  serializeSpreadSteamBook,
+  setSpreadSteamBook,
+} from '../../src/lib/spreadSteamRung.js';
 
 export const MORNING_RANK_COLLECTION = 'morningRank';
 const TOP3_DOC = 'top3';
 const GAP_DOC = 'gap';
 const ML_MINI_DOC = 'mlMini';
-const ML_MINI_FIELDS = ['wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice', 'result', 'won', 'side', 'gameKey', 'status'];
+const SPREAD_STEAM_DOC = 'spreadSteam';
+const SKILL_FIELDS = [
+  'wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice',
+  'result', 'won', 'side', 'gameKey', 'status',
+  'title', 'outcome', 'outcomeIndex', 'slug', 'eventSlug',
+  'entryLine', 'spreadLine', 'away', 'home', 'awayName', 'homeName',
+];
 const FIELDS = ['wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'settledPnl', 'result', 'postponed', 'status'];
 
 export function etSlateDate(now = new Date()) {
@@ -101,44 +114,79 @@ function stats(built, source) {
 }
 
 /**
- * Good-wallet moneyline bands before this morning. The first scan of the
- * day reads every graded position. Later scans read the stored book.
+ * Good-wallet moneyline bands and spread line cells before this morning.
+ * The first scan of the day reads every graded position once. Later scans
+ * read the stored books. A missing book rebuilds both from that one read.
  */
-async function ensureMlMiniBook(db, asOf, persist, { force = false } = {}) {
-  if (!isMlMiniLive(asOf)) {
-    setMlMiniBook(new Map());
-    return 0;
-  }
+async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}) {
+  const mlLive = isMlMiniLive(asOf);
+  const spreadLive = isSpreadSteamLive(asOf);
+  if (!mlLive) setMlMiniBook(new Map());
+  if (!spreadLive) setSpreadSteamBook(new Map());
+  if (!mlLive && !spreadLive) return { mlMini: 0, spreadSteam: 0 };
+
+  let mlDoc = null;
+  let spreadDoc = null;
   if (!force && persist) {
     try {
-      const doc = await readDoc(db, ML_MINI_DOC, asOf);
-      if (doc) {
-        const index = hydrateMlMiniBook(doc);
-        setMlMiniBook(index);
-        return index.size;
-      }
+      if (mlLive) mlDoc = await readDoc(db, ML_MINI_DOC, asOf);
+      if (spreadLive) spreadDoc = await readDoc(db, SPREAD_STEAM_DOC, asOf);
     } catch (err) {
-      console.warn(`[morning-rank] ml mini cache read failed, rebuilding: ${err.message}`);
+      console.warn(`[morning-rank] skill book cache read failed, rebuilding: ${err.message}`);
+      mlDoc = null;
+      spreadDoc = null;
+    }
+    const mlReady = !mlLive || mlDoc;
+    const spreadReady = !spreadLive || spreadDoc;
+    if (mlReady && spreadReady) {
+      const mlIndex = mlDoc ? hydrateMlMiniBook(mlDoc) : new Map();
+      const spreadIndex = spreadDoc ? hydrateSpreadSteamBook(spreadDoc) : new Map();
+      if (mlLive) setMlMiniBook(mlIndex);
+      if (spreadLive) setSpreadSteamBook(spreadIndex);
+      return { mlMini: mlIndex.size, spreadSteam: spreadIndex.size };
     }
   }
+
   const snap = await db.collection('sharp_action_positions')
     .where('status', '==', 'GRADED')
-    .select(...ML_MINI_FIELDS)
+    .select(...SKILL_FIELDS)
     .get();
-  const index = buildMlMiniBook(snap.docs.map((d) => d.data()), asOf);
-  setMlMiniBook(index);
-  if (persist) {
-    try {
-      await db.collection(MORNING_RANK_COLLECTION).doc(ML_MINI_DOC).set({
-        ...serializeMlMiniBook(index, asOf),
-        generatedAt: new Date().toISOString(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    } catch (err) {
-      console.warn(`[morning-rank] ml mini cache write failed: ${err.message}`);
+  const rows = snap.docs.map((d) => d.data());
+  let mlSize = 0;
+  let spreadSize = 0;
+  if (mlLive) {
+    const index = buildMlMiniBook(rows, asOf);
+    setMlMiniBook(index);
+    mlSize = index.size;
+    if (persist) {
+      try {
+        await db.collection(MORNING_RANK_COLLECTION).doc(ML_MINI_DOC).set({
+          ...serializeMlMiniBook(index, asOf),
+          generatedAt: new Date().toISOString(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn(`[morning-rank] ml mini cache write failed: ${err.message}`);
+      }
     }
   }
-  return index.size;
+  if (spreadLive) {
+    const index = buildSpreadSteamBook(rows, asOf);
+    setSpreadSteamBook(index);
+    spreadSize = index.size;
+    if (persist) {
+      try {
+        await db.collection(MORNING_RANK_COLLECTION).doc(SPREAD_STEAM_DOC).set({
+          ...serializeSpreadSteamBook(index, asOf),
+          generatedAt: new Date().toISOString(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn(`[morning-rank] spread steam cache write failed: ${err.message}`);
+      }
+    }
+  }
+  return { mlMini: mlSize, spreadSteam: spreadSize };
 }
 
 /**
@@ -148,11 +196,11 @@ async function ensureMlMiniBook(db, asOf, persist, { force = false } = {}) {
 export async function loadMorningRanks(db, asOf, { write = true, liveDate = null } = {}) {
   const live = liveDate || etSlateDate();
   const persist = write && asOf === live;
-  const mlMini = await ensureMlMiniBook(db, asOf, persist);
+  const skillBooks = await ensureMorningSkillBooks(db, asOf, persist);
   if (!isTop3PickLive(asOf) && !isGapLeadLive(asOf)) {
     setTop3PickRanks(new Map());
     setGapLeadBooks(new Map());
-    return { source: 'not_live', seats: 0, gapWallets: 0, bets: 0, since: null, mlMini };
+    return { source: 'not_live', seats: 0, gapWallets: 0, bets: 0, since: null, ...skillBooks };
   }
   if (persist) {
     try {
@@ -171,7 +219,7 @@ export async function loadMorningRanks(db, asOf, { write = true, liveDate = null
           gapWallets: gap.size,
           bets: top3Doc.betCount ?? null,
           since: top3Doc.since ?? null,
-          mlMini,
+          ...skillBooks,
         };
       }
     } catch (err) {
@@ -188,7 +236,7 @@ export async function loadMorningRanks(db, asOf, { write = true, liveDate = null
       console.warn(`[morning-rank] cache write failed: ${err.message}`);
     }
   }
-  return { ...stats(built, 'built'), mlMini };
+  return { ...stats(built, 'built'), ...skillBooks };
 }
 
 /** Grade just changed an older bet. Replace the stored morning. */
@@ -197,6 +245,6 @@ export async function rebuildMorningRanks(db, asOf) {
   setTop3PickRanks(built.top3);
   setGapLeadBooks(built.gap);
   await writeDocs(db, asOf, built);
-  const mlMini = await ensureMlMiniBook(db, asOf, true, { force: true });
-  return { ...stats(built, 'rebuilt'), mlMini };
+  const skillBooks = await ensureMorningSkillBooks(db, asOf, true, { force: true });
+  return { ...stats(built, 'rebuilt'), ...skillBooks };
 }
