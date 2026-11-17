@@ -2,7 +2,10 @@ name: Grade Sharp Actions
 
 on:
   schedule:
-    - cron: '0 3,5,7,9 * * *'
+    # Wallet bets and the sports the 10-minute function cannot settle
+    # (Nations League, CONCACAF, ATP challengers) grade here.
+    # ET, November onward (UTC-5): noon, 2, 4, 6, 8, 10pm, midnight, 2am, 4am.
+    - cron: '0 1,3,5,7,9,17,19,21,23 * * *'
   workflow_dispatch:
 
 jobs:
