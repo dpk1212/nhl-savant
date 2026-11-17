@@ -251,6 +251,15 @@ export const PRESS_STAMP_FROM = '2026-10-06';
 export const PRESS_MONEY_MIN = 0.6;
 export const PRESS_SEASONED_N = 15;
 export const PRESS_RATIO_MIN = 1.5;
+/**
+ * PRESS bands 3/4/5 from this date. The wallet that sets the band is tier
+ * 4 or 5, form on, and the sport book is at least 15 days old. Money share,
+ * Door-2, and the seasoned count do not gate it. The band is still that
+ * wallet's size. A steam tenth of 0 is 0u. A positive tenth, a lengthened
+ * line, and a missing read keep the band's units. Every sport the ladder
+ * sizes. Settled tickets are not rewritten.
+ */
+export const PRESS_BAND_TRUST_FROM = '2026-11-17';
 export const PRESS_BAND_5 = 3.0;
 export const PRESS_BAND_4 = 2.0;
 export const PRESS_EDGE_MIN_N = 10;
@@ -655,6 +664,20 @@ export function isHotL10(l10) {
 
 export function isPressLadderLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= PRESS_LADDER_FROM;
+}
+
+export function isPressBandTrustLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= PRESS_BAND_TRUST_FROM;
+}
+
+/** Tier 4 or 5, form on, sport book at least 15 days old, pressing 1.5× or more. */
+export function isPressBandWallet(row) {
+  const t = row?.trust;
+  if (!t || row.dir !== 'FOR') return false;
+  if (!(Number(t.tier) >= TRUST_TIER_MIN)) return false;
+  if (!isTrustOn(t.status)) return false;
+  if (!(Number.isFinite(t.age) && t.age >= TRUST_MIN_AGE_DAYS)) return false;
+  return Number.isFinite(row.ratio) && row.ratio >= PRESS_RATIO_MIN;
 }
 
 export function isPressStampLive(pickDate) {
@@ -1140,7 +1163,26 @@ export function evaluatePressLadder(args = {}) {
       out = { ...core, rung: FADE_F_STAKE_TIER, units: FADE_F_UNITS, reason: `fade_f_${floorFade.reason}` };
     }
   }
-  return clampAtpToTrustedMargin(applyTrustLayer(out, args), args);
+  out = clampAtpToTrustedMargin(applyTrustLayer(out, args), args);
+  return applyPressBandFlatMute(out, core, args);
+}
+
+/**
+ * A flat tenth zeros a PRESS band the new standard opened. Runs after the
+ * trust layer so a floor cannot put the units back. A lengthened line and
+ * a missing read are not flat.
+ */
+export function applyPressBandFlatMute(out, core, { steam = null } = {}) {
+  if (!core?.pressBandTrust) return out;
+  if (trustGSteamTenth(steam) !== 0) return out;
+  if (!(out?.units > 0)) return { ...out, pressFlat: true };
+  return {
+    ...out,
+    units: 0,
+    rung: PRESS_STAKE_TIER,
+    pressFlat: true,
+    reason: `${core.reason}_flat`,
+  };
 }
 
 /**
@@ -1433,19 +1475,26 @@ function evaluatePressLadderCore({
   const edge = pressEdge(rows, marketType, sideOdds);
   const strip = (r) => ({ wallet: r.wallet, ratio: Math.round(r.ratio * 100) / 100, n: r.n, wr: r.wr });
 
-  if (gate.pass) {
-    const band = pressBand(maxRatio);
+  const bandWallet = isPressBandTrustLive(pickDate)
+    ? forRows.filter(isPressBandWallet).sort((a, b) => b.ratio - a.ratio)[0] || null
+    : null;
+  if (bandWallet || (!isPressBandTrustLive(pickDate) && gate.pass)) {
+    const lead = bandWallet || presser;
+    const leadRatio = bandWallet ? bandWallet.ratio : maxRatio;
+    const band = pressBand(leadRatio);
     const priceStep = pressPriceStep({ steamOn: !!steamOn, heavyFav, edge });
     const implied = impliedFromAmerican(sideOdds);
     const dog = isPressDog(implied);
     const units = pressUnits(band, priceStep, implied);
     return {
       gate, moneyShare, door2Ag, door2For,
-      presser: strip(presser), maxRatio, band, priceStep, edge,
+      presser: strip(lead), maxRatio: leadRatio, band, priceStep, edge,
       steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
       veterans: [],
       dissenters: [],
       rung: PRESS_STAKE_TIER, units,
+      pressBandTrust: !!bandWallet,
+      pressFlat: false,
       reason: `press_${band}_${priceStep === 0 ? 'clean' : (priceStep === 1 ? 'moved_edge_pos' : 'moved_edge_neg')}${dog ? '_dog_cap' : ''}`,
     };
   }
