@@ -83,6 +83,9 @@ import {
   TRUST_S_STAKE_TIER,
   TRUST_T_STAKE_TIER, TRUST_T_MIN_FOR, TRUST_T_UNITS, TRUST_T_PRESS_UNITS, TRUST_T_PRESS_IMPLIED_MAX,
   TRUST_S_UNITS,
+  TRUST_S_STEAM_FROM,
+  TRUST_S_STEAM_CUT_UNITS,
+  isTrustSSteamLive,
   TRUST_S_PRESS_UNITS,
   TRUST_S_DOG_UNITS,
   TRUST_S_IMPLIED_MIN,
@@ -1058,6 +1061,24 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(spr({ sideOdds: -234 }).units, 0, '−234 is .7006 → outside → 0u');
   eq(spr({ sideOdds: +100 }).units, TRUST_S_UNITS, '+100 is .500 → inside → 2u');
   eq(spr({ sideOdds: null }).units, 0, 'no price → no TRUST-S stake');
+  // Steam tiers from 2026-11-17. Against is 0. A shorten of 4.5 or more keeps the units. Everything else is 0.75u.
+  const STEAM_DAY = TRUST_S_STEAM_FROM;
+  eq(isTrustSSteamLive('2026-11-16'), false, 'steam tiers off on the 16th');
+  eq(isTrustSSteamLive(STEAM_DAY), true, 'steam tiers on from the 17th');
+  eq(spr({ pickDate: '2026-11-16' }).units, TRUST_S_UNITS, 'the day before keeps 2u with no steam');
+  const cut = spr({ pickDate: STEAM_DAY });
+  eq(cut.units, TRUST_S_STEAM_CUT_UNITS, 'no tenth → 0.75u'); eq(cut.rung, TRUST_S_STAKE_TIER, 'rung stays'); eq(cut.trust.rule, 'trust_s+trust_s_cut', 'cut rule');
+  eq(spr({ pickDate: STEAM_DAY, steam: { sinceOpenPct: 0 } }).units, TRUST_S_STEAM_CUT_UNITS, 'flat tenth → 0.75u');
+  eq(spr({ pickDate: STEAM_DAY, steam: { lastHourPct: 2.2 } }).units, TRUST_S_STEAM_CUT_UNITS, 'shorten under 4.5 → 0.75u');
+  eq(spr({ pickDate: STEAM_DAY, steam: { sinceOpenPct: -0.04 } }).units, TRUST_S_STEAM_CUT_UNITS, '−0.04 rounds to flat → 0.75u');
+  const steamFull = spr({ pickDate: STEAM_DAY, steam: { sinceOpenPct: 4.5 } });
+  eq(steamFull.units, TRUST_S_UNITS, '4.5 keeps 2u'); eq(steamFull.trust.rule, 'trust_s+trust_s_full', 'full rule');
+  eq(spr({ pickDate: STEAM_DAY, steam: { lastHourPct: 10 }, walletDetails: [wd('ssssss', 'home', 1500), wd('dddddd', 'away', 50)] }).units, TRUST_S_PRESS_UNITS, '10 or more keeps 2.5u');
+  const against = spr({ pickDate: STEAM_DAY, steam: { sinceOpenPct: -2 } });
+  eq(against.units, 0, 'against → 0'); eq(against.rung, null, 'against clears the rung'); eq(against.trust.rule, 'trust_s+trust_s_against', 'against rule');
+  const floored = spr({ pickDate: STEAM_DAY, walletDetails: [wd('ssssss', 'home', 900), wd('tttttt', 'home', 900), wd('dddddd', 'away', 50)] });
+  eq(floored.units, TRUST_S_STEAM_CUT_UNITS, 'margin floor does not put a cut back to 3u');
+  eq(spr({ pickDate: STEAM_DAY, steam: { sinceOpenPct: 6 }, walletDetails: [wd('ssssss', 'home', 900), wd('tttttt', 'home', 900), wd('dddddd', 'away', 50)] }).units, TRUST_M_STRONG_FLOOR_UNITS, '4.5 or more keeps the 3u floor');
   eq(spr({ pickDate: PRE }).units, 0, 'before TRUST_FROM → 0u'); eq(spr({ pickDate: PRE }).trust.rule, null, 'before: no rule');
   eq(spr({ walletDetails: [wd('uuuuuu', 'home', 900), wd('dddddd', 'away', 50)] }).units, 0, 'spread status FALLEN_OFF (ML trusted) → not trusted here → 0u');
   eq(spr({ marketType: 'TOTAL', side: 'over', walletDetails: [wd('ssssss', 'over', 900), wd('dddddd', 'under', 50)] }).units, 0, 'TRUST-S is spreads only');

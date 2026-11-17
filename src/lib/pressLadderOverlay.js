@@ -171,6 +171,9 @@
  *     rule replays +41u against −12.9u as staked at half the drawdown.
  *     Staked book Jun 3 → Oct 8: clean-trusted 38-27 +14.8u, the rest 52-54
  *     −16.6u. Sides without a trusted FOR keep their ladder stake.
+ *     From TRUST_S_STEAM_FROM a published TRUST-S stake mutes a negative
+ *     steam tenth, keeps its units at a tenth of 4.5 or more, and cuts
+ *     every other tenth, including a missing one, to TRUST_S_STEAM_CUT_UNITS.
  *   • TRUST-T (2026-10-09 night): totals read the wallet's status in THIS
  *     sport's totals market, and separate on agreement rather than on one
  *     wallet. Exactly one trusted FOR (no trusted AG) → 0u: the wallets' own
@@ -432,6 +435,13 @@ export const TRUST_S_DOG_UNITS = 1;
 export const TRUST_S_IMPLIED_MIN = 0.50;
 export const TRUST_S_IMPLIED_MAX = 0.70;
 export const TRUST_S_CONVICTION_RATIO = 1.5;
+/** From this date a TRUST-S spread mutes a line moving against, keeps its units at a shorten of 4.5 or more, and cuts every other one to 0.75u. */
+export const TRUST_S_STEAM_FROM = '2026-11-17';
+export const TRUST_S_STEAM_MIN = 4.5;
+export const TRUST_S_STEAM_CUT_UNITS = 0.75;
+export function isTrustSSteamLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TRUST_S_STEAM_FROM;
+}
 // TRUST-T — totals, market-level status (the wallet's totals book in this
 // sport). Totals separate on agreement, not on a single wallet: a lone
 // trusted FOR is negative in every dataset (wallets' own bets Aug 1 → Oct 5
@@ -1411,6 +1421,26 @@ export function applyTrustLayer(result, {
     out.units = TRUST_M_STRONG_FLOOR_UNITS;
     out.reason = `${out.reason}+trust_m_floor${TRUST_M_STRONG_FLOOR_UNITS}_${mTag}`;
     rules.push('trust_m_floor');
+  }
+
+  // TRUST-S steam tiers. After the floors, so a margin floor cannot put a cut back.
+  // A shorten of 4.5 or more keeps the units. A line moving against goes to 0.
+  // A smaller shorten, a flat line, and a missing tenth go to 0.75u.
+  if (isTrustSSteamLive(pickDate) && isSpread && out.rung === TRUST_S_STAKE_TIER && out.units > 0) {
+    const tenth = trustGSteamTenth(steam);
+    if (tenth != null && tenth < 0) {
+      out.units = 0;
+      out.rung = null;
+      out.reason = `${out.reason}+trust_s_against`;
+      rules.push('trust_s_against');
+    } else if (tenth != null && tenth >= TRUST_S_STEAM_MIN) {
+      out.reason = `${out.reason}+trust_s_full`;
+      rules.push('trust_s_full');
+    } else {
+      out.units = TRUST_S_STEAM_CUT_UNITS;
+      out.reason = `${out.reason}+trust_s_cut${TRUST_S_STEAM_CUT_UNITS}`;
+      rules.push('trust_s_cut');
+    }
   }
 
   out.trust = {
