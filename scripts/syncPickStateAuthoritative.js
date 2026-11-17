@@ -517,6 +517,11 @@ import {
   TRUST_FROM,
   TRUST_G_STAKE_TIER,
   TRUST_G_UNITS,
+  TRUST_G_SHORT_UNITS,
+  TRUST_G_TIER,
+  TRUST_G_RATIO_MAX,
+  TRUST_G_SWEET_MIN,
+  TRUST_G_SWEET_MAX,
   TRUST_TIER_MIN,
   ML_FLOOR_UNITS,
   ML_FLOOR_IMPLIED_MIN,
@@ -1852,7 +1857,7 @@ function movedAgainstOnSide({
 
 function steamBookOnSide({
   units, pickDate, sport, market, odds, side, pressEdge, mktFor, mktAg, ceiling,
-  manual = false, killed = false,
+  manual = false, killed = false, hold = false,
   pinnGame = null, line = null, commenceMs = null, storedSteam = null, nowMs = Date.now(),
 }) {
   const live = steamPctsFromPinn(pinnGame, {
@@ -1874,7 +1879,17 @@ function steamBookOnSide({
     lead: t5MarketLead(mktFor, mktAg),
     manual,
     killed,
+    hold,
   });
+}
+
+/** Live tape steam, else the stamp already on the side. Missing is not a shorten. */
+function ladderSteam(snap, stored) {
+  const live = snap?.steam;
+  const has = (row) => row && (row.lastHourPct != null && row.lastHourPct !== ''
+    || row.sinceOpenPct != null && row.sinceOpenPct !== '');
+  if (has(live)) return live;
+  return has(stored) ? stored : null;
 }
 
 function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
@@ -4356,6 +4371,7 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE,
           // Legacy chain's stake before the ladder overrides — TRUST-G input.
           legacyUnits: trustMirrorYieldCreate ? 0 : peakUnitsApplied,
+          steam: ladderSteam(liveTapeCreate, null),
         });
       }
       if (isPressLadderLive(TARGET_DATE)) {
@@ -4710,6 +4726,7 @@ async function createMissingLockedPicks({
           mktAg: pressEvalCreate?.trust?.mktAg,
           ceiling: t5PolicyCreate?.seat?.ceiling,
           killed: isOperatorKilled({ _id: docId }, side, null),
+          hold: pressEvalCreate?.rung === TRUST_G_STAKE_TIER,
           pinnGame: tapeMoved.pinnGame,
           line: tapeMoved.ticketLine,
           commenceMs: tapeMoved.commenceMs,
@@ -4755,6 +4772,7 @@ async function createMissingLockedPicks({
           market: marketType,
           move: steamBookCreate?.mute?.m ?? null,
           odds: odds ?? null,
+          hold: pressEvalCreate?.rung === TRUST_G_STAKE_TIER,
         });
         if (ogEdgeStakeCreate.action === 'MUTE'
             || ogEdgeStakeCreate.action === 'DOUBLE'
@@ -7257,6 +7275,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pickDate,
       // Legacy chain's stake before the ladder overrides — TRUST-G input.
       legacyUnits: trustMirrorYield ? 0 : finalUnitsApplied,
+      steam: ladderSteam(liveTapeSnap, sd?.v8_steam || null),
     });
   }
   const pressLive = isPressLadderLive(pickDate);
@@ -7669,6 +7688,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       ceiling: t5Policy?.seat?.ceiling,
       manual: skipManualFlinch,
       killed: operatorKilled,
+      hold: pressEval?.rung === TRUST_G_STAKE_TIER,
       pinnGame: tapeSteam.pinnGame,
       line: tapeSteam.ticketLine,
       commenceMs: tapeSteam.commenceMs,
@@ -7701,6 +7721,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       market: mkt,
       move: steamBookPolicy?.mute?.m ?? null,
       odds: sideOdds ?? sd.odds ?? null,
+      hold: pressEval?.rung === TRUST_G_STAKE_TIER,
     });
     if (ogEdgeStakePolicy.action === 'MUTE'
         || ogEdgeStakePolicy.action === 'DOUBLE'
@@ -10247,8 +10268,8 @@ async function main() {
     if (isTrustLive(TARGET_DATE)) {
       console.log(
         `TRUST LIVE: wallet trust status (tier ≥${TRUST_TIER_MIN} on running edge vs own prices + last-10 form ON, per wallet × sport) stamped FOR/AG on every side (v8_trust*)`
-        + ` · TRUST-G: moneyline at gate_fail + legacy V12 stake > 0 + trusted wallet for → ${TRUST_G_UNITS}u (${TRUST_G_STAKE_TIER})`
-        + ` · gated ML floor: staked moneyline rung (TRUST-G included) + trusted wallet for + implied ${Math.round(ML_FLOOR_IMPLIED_MIN * 100)}–${Math.round(ML_FLOOR_IMPLIED_MAX * 100)}% → ≥${ML_FLOOR_UNITS}u (oddsCap still rules)`
+        + ` · TRUST-G: moneyline at gate_fail + legacy V12 stake > 0 + tier-${TRUST_G_TIER} form-ON wallet for under ${TRUST_G_RATIO_MAX}× → ${TRUST_G_UNITS}u from ${TRUST_G_SWEET_MIN} through ${TRUST_G_SWEET_MAX} when steam has shortened, ${TRUST_G_SHORT_UNITS}u shorter than ${TRUST_G_SWEET_MIN} (${TRUST_G_STAKE_TIER}, every sport)`
+        + ` · gated ML floor: staked moneyline rung other than TRUST-G + trusted wallet for + implied ${Math.round(ML_FLOOR_IMPLIED_MIN * 100)}–${Math.round(ML_FLOOR_IMPLIED_MAX * 100)}% → ≥${ML_FLOOR_UNITS}u (oddsCap still rules)`
         + ` · TRUST-S: spread with a wallet trusted in this sport's spread market for + none against + implied ${Math.round(TRUST_S_IMPLIED_MIN * 100)}–${Math.round(TRUST_S_IMPLIED_MAX * 100)}% → ${TRUST_S_UNITS}u, ${TRUST_S_PRESS_UNITS}u with conviction or two trusted for (${TRUST_S_STAKE_TIER}); a trusted wallet against vetoes the spread`
         + ` · TRUST-T: total with ${TRUST_T_MIN_FOR}+ wallets trusted in this sport's totals market for + none against → ${TRUST_T_UNITS}u, ${TRUST_T_PRESS_UNITS}u at implied ≤${Math.round(TRUST_T_PRESS_IMPLIED_MAX * 100)}% (${TRUST_T_STAKE_TIER}); exactly one trusted wallet for → 0u; trusted wallets both sides → 0u`
         + ` · a wallet holding both sides of the same spread/total is a self-hedge and is netted out of both lists before TRUST-S/T read (+hedge_<wallet>)`

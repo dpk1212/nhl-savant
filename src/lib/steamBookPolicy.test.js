@@ -126,3 +126,11 @@ test('a tier-5 lead is for minus against, and a fallen wallet does not count', (
   assert.equal(t5MarketLead([t5('aaaaaa')], [t5('aaaaaa')]), false);
   assert.equal(t5MarketLead([t5('aaaaaa', 4)], []), false);
 });
+
+test('a TRUST-G stake is not resized by the steam book', () => {
+  const held = applySteamBook({ ...base, units: 3, m: 2, edge: 1, lead: false, hold: true });
+  assert.equal(held.units, 3);
+  assert.equal(held.mute.action, 'PASS');
+  assert.equal(held.resize.action, 'PASS');
+  assert.equal(held.mid.action, 'PASS');
+});

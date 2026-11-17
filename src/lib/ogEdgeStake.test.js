@@ -97,3 +97,12 @@ test('the odds cap binds after the double', () => {
   const pickem = applyOgEdgeStake({ ...live, units: 2, edge: 15, odds: 110 });
   assert.equal(pickem.units, 4);
 });
+
+test('a TRUST-G stake stays at the units it arrived with', () => {
+  const three = applyOgEdgeStake({ ...live, units: 3, edge: 7, hold: true });
+  assert.equal(three.action, 'HOLD');
+  assert.equal(three.units, 3);
+  const one = applyOgEdgeStake({ ...live, units: 1, edge: 2, market: 'ML', hold: true });
+  assert.equal(one.action, 'HOLD');
+  assert.equal(one.units, 1);
+});

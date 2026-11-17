@@ -62,6 +62,7 @@ export function applyOgEdgeStake({
   move = null,
   manual = false,
   killed = false,
+  hold = false,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, round2(Number(units))) : 0;
   const e = Number(edge);
@@ -76,6 +77,7 @@ export function applyOgEdgeStake({
   });
   if (manual === true || killed === true) return out('EXEMPT');
   if (!isOgEdgeStakeLive(pickDate)) return out('EXEMPT');
+  if (hold === true) return out('HOLD');
   if (!hasEdge) return out('PASS');
   if (!(pre > 0)) return out('HOLD', 0);
   if (e >= OG_EDGE_MIN) {

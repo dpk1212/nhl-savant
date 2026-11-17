@@ -142,14 +142,17 @@
  * every month ≥ 60.5%. Spreads + totals 97-94 vs 198-195 (p = .95) — no
  * gate there; the market-level status is stamped as a shadow.
  *   • Every side carries v8_trust* (FOR / AG statuses, sport + market gate).
- *   • TRUST-G (3u, 4u inside the floor window): moneyline the ladder left at
- *     gate_fail / 0u, legacy V12 sizing would have staked it, and a tier-4+
- *     form-ON wallet is FOR. Retro cell Aug 1 → Oct 5: 34-21 61.8% +12.3%,
- *     every one gate_fail; by implied .40–.50 6-3, .50–.55 6-4, .55–.60 7-0,
- *     .60–.65 7-3 (26-10 in .40–.65). Shipped at 1u midday 2026-10-09,
- *     raised the same evening; oddsCap at the call site still trims dogs.
- *   • Gated ML floor (2026-10-09 evening): a staked moneyline rung
- *     (TRUST-G included) with a trusted wallet FOR and the side's implied in
+ *   • TRUST-G (2026-11-17): moneyline the ladder left at gate_fail / 0u,
+ *     legacy V12 sizing would have staked, and a tier-5 form-ON wallet
+ *     (age floor still applies) is FOR at under 0.75× its sport usual.
+ *     Every sport. −150 through −200 with the line already shortened
+ *     (steam tenth > 0) is 3u. Shorter than −200 is 1u. A dog, a pick'em,
+ *     −110 to −150, a flat or missing steam move at the 3u price, a tier-4
+ *     wallet, and a ticket at 0.75× or more stay at 0u. The ML floor and
+ *     the margin floor do not move this number. Juice juicier than −425
+ *     still zeros at the call site.
+ *   • Gated ML floor (2026-10-09 evening): a staked moneyline rung other
+ *     than TRUST-G, with a trusted wallet FOR and the side's implied in
  *     [ML_FLOOR_IMPLIED_MIN, ML_FLOOR_IMPLIED_MAX) floors at ML_FLOOR_UNITS.
  *     Live book Jun 1 → Oct 9: gate ON at .50–.65 is 76-24 (+18pp vs price,
  *     every month ≥ 11pp except Oct), the sub-3u part 20-4; gate OFF at the
@@ -391,7 +394,14 @@ export const PRESS_GATE_MUTED_BY = 'press-gate';
 export const TRUST_FROM = '2026-10-09';
 export const TRUST_G_STAKE_TIER = 'TRUST-G';
 export const TRUST_G_UNITS = 3;
-/** Staked moneyline rungs with a trusted wallet FOR floor here inside the implied window (TRUST-G included: 3u → 4u in the window). */
+export const TRUST_G_SHORT_UNITS = 1;
+export const TRUST_G_TIER = 5;
+/** The qualifying ticket is under this multiple of the wallet's sport usual. 0.75× is the mini rung. */
+export const TRUST_G_RATIO_MAX = 0.75;
+/** American odds, inclusive. −200 through −150. Shorter than −200 is TRUST_G_SHORT_UNITS. */
+export const TRUST_G_SWEET_MIN = -200;
+export const TRUST_G_SWEET_MAX = -150;
+/** Staked moneyline rungs other than TRUST-G floor here inside the implied window. */
 export const ML_FLOOR_UNITS = 4;
 export const ML_FLOOR_IMPLIED_MIN = 0.50;
 export const ML_FLOOR_IMPLIED_MAX = 0.65;
@@ -1096,8 +1106,10 @@ export function pressPriceStep({ steamOn, heavyFav, edge }) {
  * The TRUST layer (from TRUST_FROM) runs last: `trust` (FOR / AG statuses,
  * gate) is attached on every evaluated side; TRUST-G rescues a gate_fail
  * moneyline that legacy V12 sizing (`legacyUnits` > 0) would have staked
- * when a trusted wallet is FOR; staked moneyline rungs with a trusted wallet
- * FOR floor at ML_FLOOR_UNITS inside the implied window; TRUST-S vetoes /
+ * when a tier-5 wallet is FOR under 0.75×, at 3u from −150 through −200
+ * with positive steam and at 1u shorter than −200; staked moneyline rungs
+ * other than TRUST-G with a trusted wallet FOR floor at ML_FLOOR_UNITS
+ * inside the implied window; TRUST-S vetoes /
  * stakes spreads and TRUST-T mutes lone / stakes consensus totals off
  * market-level status; spreads cap at SPREAD_CAP_UNITS, totals at
  * ST_CAP_UNITS. TRUST-M: a market-book trusted margin ≥ TRUST_M_MARGIN, or
@@ -1144,12 +1156,51 @@ export function atpMayStake() {
   return true;
 }
 
+/** Steam tenth. Missing is null. 0.04 rounds to 0 and is not a shorten. */
+export function trustGSteamTenth(steam) {
+  if (!steam || typeof steam !== 'object') return null;
+  const vals = [];
+  for (const key of ['lastHourPct', 'sinceOpenPct']) {
+    const raw = steam[key];
+    if (raw == null || raw === '') continue;
+    const n = Number(raw);
+    if (Number.isFinite(n)) vals.push(n);
+  }
+  if (!vals.length) return null;
+  return Math.round(Math.max(...vals) * 10) / 10;
+}
+
+/**
+ * Tier 5, form ON, not young, ticket under 0.75×. The wallets that can open TRUST-G.
+ */
+export function trustGWallets(trust) {
+  return (trust?.for || []).filter((w) => isTrustedWallet(w)
+    && Number(w.tier) >= TRUST_G_TIER
+    && Number(w.ratio) > 0
+    && Number(w.ratio) < TRUST_G_RATIO_MAX);
+}
+
+/**
+ * 3u from −200 through −150 when the line has shortened. 1u shorter than −200.
+ * Every other price, and the 3u band without a positive steam tenth, is 0.
+ */
+export function trustGStakeUnits(american, steam) {
+  const o = Number(american);
+  if (!Number.isFinite(o) || o === 0) return 0;
+  if (o <= TRUST_G_SWEET_MAX && o >= TRUST_G_SWEET_MIN) {
+    return trustGSteamTenth(steam) > 0 ? TRUST_G_UNITS : 0;
+  }
+  if (o < TRUST_G_SWEET_MIN) return TRUST_G_SHORT_UNITS;
+  return 0;
+}
+
 /**
  * Attach the trust read and, when live, apply TRUST-G / the ML floor /
  * TRUST-S / TRUST-T / the spread-total caps. Pure: returns a new result object.
  */
 export function applyTrustLayer(result, {
   walletDetails, side, sport, marketType, walletProfiles, sideOdds = null, pickDate = null, legacyUnits = null,
+  steam = null,
 } = {}) {
   const rows = (Array.isArray(walletDetails) && walletDetails.length && side && sport && walletProfiles)
     ? pressWalletRows(walletDetails, side, sport, walletProfiles, marketType, pickDate)
@@ -1173,17 +1224,19 @@ export function applyTrustLayer(result, {
     rules.push('trust_m');
   }
 
+  const gWallets = trustGWallets(trust);
+  const gUnits = trustGStakeUnits(sideOdds, steam);
   if (isML && out.units === 0 && !vetoed
     && typeof out.reason === 'string' && out.reason.startsWith('gate_fail')
-    && Number(legacyUnits) > 0 && trust.gate) {
+    && Number(legacyUnits) > 0 && gWallets.length && gUnits > 0) {
     out.rung = TRUST_G_STAKE_TIER;
-    out.units = TRUST_G_UNITS;
-    out.reason = `trust_g_for_${trust.gateWallets.join('+')}_legacy${Number(legacyUnits)}u:${out.reason}`;
+    out.units = gUnits;
+    out.reason = `trust_g_for_${gWallets.map((w) => w.wallet).join('+')}_legacy${Number(legacyUnits)}u:${out.reason}`;
     rules.push('trust_g');
   }
 
   const inFloorWindow = implied != null && implied >= ML_FLOOR_IMPLIED_MIN && implied < ML_FLOOR_IMPLIED_MAX;
-  if (isML && out.units > 0
+  if (isML && out.units > 0 && !rules.includes('trust_g')
     && trust.gate && inFloorWindow && out.units < ML_FLOOR_UNITS) {
     out.units = ML_FLOOR_UNITS;
     out.reason = `${out.reason}+ml_floor${ML_FLOOR_UNITS}_gate_${trust.gateWallets.join('+')}`;
@@ -1312,7 +1365,7 @@ export function applyTrustLayer(result, {
     rules.push('st_cap');
   }
   // TRUST-M v3: margin ≥ 2 is the best play on the book — floor every staked side, in every market, over the caps.
-  if (m.strong && out.units > 0 && out.units < TRUST_M_STRONG_FLOOR_UNITS) {
+  if (m.strong && out.units > 0 && out.units < TRUST_M_STRONG_FLOOR_UNITS && !rules.includes('trust_g')) {
     out.units = TRUST_M_STRONG_FLOOR_UNITS;
     out.reason = `${out.reason}+trust_m_floor${TRUST_M_STRONG_FLOOR_UNITS}_${mTag}`;
     rules.push('trust_m_floor');

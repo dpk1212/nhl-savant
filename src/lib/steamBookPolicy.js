@@ -242,7 +242,22 @@ export function applySteamBook({
   odds = null,
   manual = false,
   killed = false,
+  hold = false,
 } = {}) {
+  if (hold === true) {
+    const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
+    const pass = {
+      units: pre,
+      unitsPrePolicy: pre,
+      m: finiteOrNull(m),
+      edge: finiteOrNull(edge),
+      action: 'PASS',
+      reason: 'trust_g',
+      mutedBy: null,
+      lead: lead === true,
+    };
+    return { mute: pass, resize: pass, mid: pass, units: pre };
+  }
   const mute = applyShortMoveMute({
     units, pickDate, sport, market, m, edge, lead, manual, killed,
   });

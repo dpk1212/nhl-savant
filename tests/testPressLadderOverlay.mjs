@@ -70,6 +70,10 @@ import {
   TRUST_FROM,
   TRUST_G_STAKE_TIER,
   TRUST_G_UNITS,
+  TRUST_G_SHORT_UNITS,
+  TRUST_G_TIER,
+  TRUST_G_RATIO_MAX,
+  trustGStakeUnits,
   TRUST_TIER_MIN,
   ML_FLOOR_UNITS,
   ML_FLOOR_IMPLIED_MIN,
@@ -493,7 +497,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   ok(isHeavyFavorite('ML', -150), '-150 is 60%'); ok(!isHeavyFavorite('ML', -149), '-149 is below 60%'); ok(!isHeavyFavorite('SPREAD', -300), 'spreads never heavy fav');
   eq(pressPriceStep({ steamOn: false, heavyFav: false, edge: -20 }), 0, 'clean ignores edge');
   eq(pressPriceStep({ steamOn: true, heavyFav: false, edge: null }), 2, 'moved with unknown edge is −2');
-  const e = pressEdge([{ dir: 'FOR', n: 12, wr: 60 }, { dir: 'FOR', n: 5, wr: 90 }, { dir: 'AG', n: 50, wr: 70 }], 'TOTAL', -110);
+  const e = pressEdge([{ dir: 'FOR', n: 12, wr: 60, mktN: 12, mktWr: 60 }, { dir: 'FOR', n: 5, wr: 90, mktN: 5, mktWr: 90 }, { dir: 'AG', n: 50, wr: 70, mktN: 50, mktWr: 70 }], 'TOTAL', -110);
   ok(Math.abs(e - (60 - 52.4)) < 1e-9, 'edge uses FOR n≥10 only vs 52.4');
   eq(PRESS_LADDER_FROM, '2026-10-06', 'live from Oct 6');
   eq(PRESS_STAMP_FROM, '2026-10-06', 'stamps from Oct 6');
@@ -872,7 +876,16 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
 {
   eq(TRUST_FROM, '2026-10-09', 'TRUST live date');
   ok(!isTrustLive('2026-10-08') && isTrustLive('2026-10-09') && !isTrustLive(null), 'live gate');
-  eq(TRUST_G_STAKE_TIER, 'TRUST-G', 'rung name'); eq(TRUST_G_UNITS, 3, 'TRUST-G 3u');
+  eq(TRUST_G_STAKE_TIER, 'TRUST-G', 'rung name'); eq(TRUST_G_UNITS, 3, 'TRUST-G 3u'); eq(TRUST_G_SHORT_UNITS, 1, 'short favorite 1u'); eq(TRUST_G_TIER, 5, 'tier 5'); eq(TRUST_G_RATIO_MAX, 0.75, 'under 0.75×');
+  eq(trustGStakeUnits(-170, { lastHourPct: 2.1 }), 3, '−170 shortened → 3u');
+  eq(trustGStakeUnits(-150, { sinceOpenPct: 0.06 }), 3, '−150 and a tenth above 0 → 3u');
+  eq(trustGStakeUnits(-200, { lastHourPct: 1 }), 3, '−200 inclusive → 3u');
+  eq(trustGStakeUnits(-170, { lastHourPct: 0.04 }), 0, '0.04 rounds to flat → 0u');
+  eq(trustGStakeUnits(-170, { lastHourPct: -1.2 }), 0, 'a move against → 0u');
+  eq(trustGStakeUnits(-170, null), 0, 'missing steam → 0u');
+  eq(trustGStakeUnits(-201, null), 1, 'shorter than −200 → 1u');
+  eq(trustGStakeUnits(-130, { lastHourPct: 6 }), 0, '−130 stays out');
+  eq(trustGStakeUnits(130, { lastHourPct: 6 }), 0, 'a dog stays out');
   eq(ML_FLOOR_UNITS, 4, 'gated ML floor 4u'); eq(ST_CAP_UNITS, 2, 'total cap 2u'); eq(SPREAD_CAP_UNITS, 2.5, 'spread cap 2.5u'); eq(TRUST_S_STAKE_TIER, 'TRUST-S', 'rung'); eq(TRUST_S_UNITS, 2, 'TRUST-S 2u'); eq(TRUST_S_PRESS_UNITS, 2.5, 'pressed 2.5u'); eq(TRUST_S_DOG_UNITS, 1, 'dog 1u'); eq(TRUST_S_IMPLIED_MIN, 0.5, 'window min'); eq(TRUST_S_IMPLIED_MAX, 0.7, 'window max'); eq(TRUST_S_CONVICTION_RATIO, 1.5, 'conviction'); eq(TRUST_T_STAKE_TIER, 'TRUST-T', 'rung T'); eq(TRUST_T_MIN_FOR, 2, 'consensus ≥ 2'); eq(TRUST_T_UNITS, 2.5, 'TRUST-T 2.5u'); eq(TRUST_T_PRESS_UNITS, 3, 'pressed 3u'); eq(TRUST_T_PRESS_IMPLIED_MAX, 0.5, 'press at ≤ .50'); eq(TRUST_TIER_MIN, 4, 'tier ≥ 4');
 
   const T = (status, tier, n = 40) => ({ status, tier, n, edge: tier >= 4 ? 6 : -2, formOn: status.endsWith('_ON') });
@@ -905,37 +918,48 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(tr.agTrusted.length, 0, 'tier 3 AG is not trusted'); eq(tr.mktGate, false, 'market gate: aaaaaa SPREAD status OFF');
   eq(tr.for.length, 2, 'two FOR'); eq(tr.ag.length, 2, 'two AG'); eq(tr.ag[1].status, 'UNPROVEN', 'missing → UNPROVEN'); eq(tr.ag[1].tier, 0, 'missing → tier 0');
 
-  // A. TRUST-G: gate_fail moneyline, legacy V12 would have staked, trusted wallet FOR → 3u (4u inside the floor window)
+  // A. TRUST-G: tier 5, under 0.75×, −150 through −200, steam already shortened → 3u. The floor does not lift it.
+  const [, b5] = profileT('bbbbbb', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('STABLE_ON', 5) });
+  const profilesG = new Map(profilesT);
+  profilesG.set('bbbbbb', b5);
   const gfail = (over = {}) => evaluatePressLadder({
-    walletDetails: [wd('bbbbbb', 'home', 2000), wd('dddddd', 'away', 100)],
-    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesT, sideOdds: -115, steamOn: false,
+    walletDetails: [wd('bbbbbb', 'home', 200), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesG, sideOdds: -170,
+    steam: { lastHourPct: 2.1 }, steamOn: false,
     pickDate: LIVE, legacyUnits: 2, ...over,
   });
   const g = gfail();
   ok(!g.gate.pass, 'ladder gate fails (bbbbbb is not Door 2)');
-  eq(g.rung, TRUST_G_STAKE_TIER, 'TRUST-G'); eq(g.units, ML_FLOOR_UNITS, '−115 is .535 implied → the window → 4u');
+  eq(g.rung, TRUST_G_STAKE_TIER, 'TRUST-G'); eq(g.units, TRUST_G_UNITS, '−170 shortened, 0.40× tier 5 → 3u');
   ok(g.reason.startsWith('trust_g_for_bbbbbb_legacy2u:gate_fail:'), g.reason);
-  ok(g.reason.endsWith('+ml_floor4_gate_bbbbbb'), g.reason);
-  eq(g.trust.gate, true, 'trust gate'); eq(g.trust.rule, 'trust_g+ml_floor', 'rule'); eq(g.trust.lift, false, 'TRUST-G is not a lift');
+  ok(!g.reason.includes('ml_floor'), 'the 3u does not ride the floor');
+  eq(g.trust.gate, true, 'trust gate'); eq(g.trust.rule, 'trust_g', 'rule'); eq(g.trust.lift, false, 'TRUST-G is not a lift');
   const g3 = gfail({ sideOdds: +110 });
-  eq(g3.rung, TRUST_G_STAKE_TIER, 'TRUST-G at +110'); eq(g3.units, TRUST_G_UNITS, '+110 is .476 → outside the window → 3u');
-  eq(g3.trust.rule, 'trust_g', 'rule trust_g only'); ok(g3.reason.endsWith(':no_seasoned_press') || !g3.reason.includes('ml_floor'), g3.reason);
+  eq(g3.rung, null, 'pick’em stays out'); eq(g3.units, 0, '+110 → 0u');
   eq(gfail({ pickDate: PRE }).units, 0, 'before TRUST_FROM: 0u'); eq(gfail({ pickDate: PRE }).rung, null, 'before: no rung');
   eq(gfail({ pickDate: PRE }).trust.gate, true, 'before: statuses still read'); eq(gfail({ pickDate: PRE }).trust.rule, null, 'before: no rule');
   eq(gfail({ legacyUnits: 0 }).units, 0, 'legacy 0u → no rescue'); eq(gfail({ legacyUnits: null }).units, 0, 'legacy unknown → no rescue');
-  eq(gfail({ marketType: 'SPREAD', sideOdds: -110 }).units, 0, 'spread → no TRUST-G');
-  eq(gfail({ marketType: 'TOTAL', sideOdds: -110 }).units, 0, 'total → no TRUST-G');
-  eq(gfail({ walletDetails: [wd('gggggg', 'home', 2000), wd('dddddd', 'away', 100)] }).units, 0, 'tier 3 FOR → no rescue');
-  eq(gfail({ walletDetails: [wd('hhhhhh', 'home', 2000), wd('dddddd', 'away', 100)] }).units, 0, 'FALLEN_OFF tier 5 FOR → no rescue');
-  eq(gfail({ walletDetails: [wd('dddddd', 'home', 2000), wd('bbbbbb', 'away', 100)] }).units, 0, 'trusted wallet AG only → no rescue');
-  const reg = gfail({ walletDetails: [wd('iiiiii', 'home', 2000), wd('dddddd', 'away', 100)] });
-  eq(reg.rung, TRUST_G_STAKE_TIER, 'REGAINED_ON tier 4 counts'); eq(reg.units, ML_FLOOR_UNITS, '4u in the window');
-  // TRUST-G outside the window is 3u (oddsCap at the call site still trims long dogs); inside it rides the floor to 4u.
-  const gDog = gfail({ sideOdds: +130 }); eq(gDog.rung, TRUST_G_STAKE_TIER, 'dog TRUST-G'); eq(gDog.units, TRUST_G_UNITS, 'dog 3u');
-  eq(gfail({ sideOdds: -200 }).units, TRUST_G_UNITS, '−200 is .667 → outside → 3u');
-  eq(gfail({ sideOdds: -185 }).units, ML_FLOOR_UNITS, '−185 is .649 → inside → 4u');
-  eq(gfail({ sideOdds: +100 }).units, ML_FLOOR_UNITS, '+100 is .500 → inside → 4u');
-  eq(gfail({ sideOdds: null }).units, TRUST_G_UNITS, 'no price → 3u');
+  eq(gfail({ marketType: 'SPREAD', sideOdds: -170 }).units, 0, 'spread → no TRUST-G');
+  eq(gfail({ marketType: 'TOTAL', sideOdds: -170 }).units, 0, 'total → no TRUST-G');
+  eq(gfail({ walletDetails: [wd('gggggg', 'home', 200), wd('dddddd', 'away', 100)] }).units, 0, 'tier 3 FOR → no rescue');
+  eq(gfail({ walletDetails: [wd('hhhhhh', 'home', 200), wd('dddddd', 'away', 100)] }).units, 0, 'FALLEN_OFF tier 5 FOR → no rescue');
+  eq(gfail({ walletDetails: [wd('dddddd', 'home', 200), wd('bbbbbb', 'away', 100)] }).units, 0, 'trusted wallet AG only → no rescue');
+  eq(gfail({ walletProfiles: profilesT, walletDetails: [wd('bbbbbb', 'home', 200), wd('dddddd', 'away', 100)] }).units, 0, 'tier 4 FOR → no rescue');
+  const reg = gfail({ walletDetails: [wd('iiiiii', 'home', 200), wd('dddddd', 'away', 100)] });
+  eq(reg.rung, null, 'REGAINED_ON tier 4 stays out'); eq(reg.units, 0, '0u');
+  eq(gfail({ sideOdds: +130 }).units, 0, 'dog → 0u');
+  eq(gfail({ sideOdds: -200 }).units, TRUST_G_UNITS, '−200 shortened → 3u');
+  eq(gfail({ sideOdds: -150 }).units, TRUST_G_UNITS, '−150 shortened → 3u');
+  eq(gfail({ sideOdds: -185 }).units, TRUST_G_UNITS, '−185 stays 3u, not the 4u floor');
+  eq(gfail({ sideOdds: -201 }).units, TRUST_G_SHORT_UNITS, '−201 → 1u');
+  eq(gfail({ sideOdds: -300, steam: null }).units, TRUST_G_SHORT_UNITS, 'shorter than −200 does not need steam');
+  eq(gfail({ sideOdds: -130 }).units, 0, '−130 → 0u');
+  eq(gfail({ sideOdds: +100 }).units, 0, '+100 → 0u');
+  eq(gfail({ sideOdds: null }).units, 0, 'no price → 0u');
+  eq(gfail({ steam: { lastHourPct: 0 } }).units, 0, 'flat steam → 0u');
+  eq(gfail({ steam: { lastHourPct: -3 } }).units, 0, 'steam against → 0u');
+  eq(gfail({ walletDetails: [wd('bbbbbb', 'home', 400), wd('dddddd', 'away', 100)] }).units, 0, '0.80× is the mini lane');
+  eq(gfail({ walletDetails: [wd('bbbbbb', 'home', 375), wd('dddddd', 'away', 100)] }).units, 0, '0.75× stays with mini');
 
   // B. Gated ML floor: staked moneyline rung under 4u, trusted wallet FOR, implied in [.50, .65) → 4u
   eq(ML_FLOOR_IMPLIED_MIN, 0.5, 'floor window from .50'); eq(ML_FLOOR_IMPLIED_MAX, 0.65, 'floor window to .65');
@@ -1204,8 +1228,16 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(mlM({ walletDetails: [wd('wwwwww', 'home', 900), wd('xxxxxx', 'home', 900), wd('xxxxxx', 'away', 100), wd('dddddd', 'away', 50)] }).units, 0, 'one FOR hedges itself → netted margin +1 → 0u');
   eq(mlM({ pickDate: PRE }).units, 0, 'before TRUST_FROM → 0u');
   // TRUST-G (sport gate + legacy stake) wins first; the margin leg does not re-touch a staked side.
-  const mm4 = mlM({ walletDetails: [wd('bbbbbb', 'home', 900), wd('wwwwww', 'home', 900), wd('xxxxxx', 'home', 900), wd('dddddd', 'away', 50)], legacyUnits: 2 });
-  eq(mm4.rung, TRUST_G_STAKE_TIER, 'TRUST-G'); eq(mm4.units, ML_FLOOR_UNITS, 'TRUST-G 3u → floored 4u in the window'); ok(mm4.reason.startsWith('trust_g_for_bbbbbb_legacy2u:'), mm4.reason); ok(!mm4.reason.includes('trust_m'), 'no margin leg on a staked side');
+  const mm4 = mlM({
+    walletDetails: [wd('aaaaaa', 'home', 400), wd('wwwwww', 'home', 900), wd('xxxxxx', 'home', 900), wd('dddddd', 'away', 50)],
+    legacyUnits: 2, sideOdds: -170, steam: { lastHourPct: 2.4 },
+  });
+  eq(mm4.rung, TRUST_G_STAKE_TIER, 'TRUST-G'); eq(mm4.units, TRUST_G_UNITS, '3u holds in front of the margin floor'); ok(mm4.reason.startsWith('trust_g_for_aaaaaa_legacy2u:'), mm4.reason); ok(!mm4.reason.includes('trust_m'), 'no margin leg on a staked side'); ok(!mm4.reason.includes('ml_floor'), 'no floor on the 3u');
+  const mmShort = mlM({
+    walletDetails: [wd('aaaaaa', 'home', 400), wd('wwwwww', 'home', 900), wd('xxxxxx', 'home', 900), wd('dddddd', 'away', 50)],
+    legacyUnits: 2, sideOdds: -250,
+  });
+  eq(mmShort.units, TRUST_G_SHORT_UNITS, 'shorter than −200 stays 1u'); ok(!mmShort.reason.includes('trust_m_floor'), 'margin floor does not lift the 1u');
   const mmStamp = pressStamp(mm1, 2);
   eq(mmStamp.v8_pressRung, 'TRUST-G', 'stamp rung'); eq(mmStamp.v8_pressUnits, 3, 'stamp units'); eq(mmStamp.v8_trustRule, 'trust_m+trust_m_floor', 'stamp rule');
 
@@ -1317,8 +1349,8 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
 
   // E. Stamp: v8_trust* on every side, nothing undefined
   const st = pressStamp(g, 7);
-  eq(st.v8_pressRung, 'TRUST-G', 'stamp rung'); eq(st.v8_pressUnits, 4, 'stamp units');
-  eq(st.v8_trustGate, true, 'stamp gate'); eq(st.v8_trustGateWallets.join(','), 'bbbbbb', 'stamp gate wallets'); eq(st.v8_trustRule, 'trust_g+ml_floor', 'stamp rule');
+  eq(st.v8_pressRung, 'TRUST-G', 'stamp rung'); eq(st.v8_pressUnits, 3, 'stamp units');
+  eq(st.v8_trustGate, true, 'stamp gate'); eq(st.v8_trustGateWallets.join(','), 'bbbbbb', 'stamp gate wallets'); eq(st.v8_trustRule, 'trust_g', 'stamp rule');
   eq(st.v8_trustFor[0].status, 'STABLE_ON', 'stamp FOR status'); eq(st.v8_trustAg[0].status, 'UNPROVEN', 'stamp AG status');
   eq(st.v8_trustCounts.forOn, 1, 'stamp counts'); eq(st.v8_trustLift, false, 'stamp lift'); eq(st.v8_trustMktGate, false, 'no ML market stamp on bbbbbb → false');
   for (const [k, val] of Object.entries(st)) ok(val !== undefined, `stamp ${k} defined`);
@@ -1343,8 +1375,9 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     profileT('dddddd', SPORT, { n: 3, wr: 67, dollarRoi: 20, usual: 100 }),
   ]);
   const ageML = (forWallet, pickDate, over = {}) => evaluatePressLadder({
-    walletDetails: [wd(forWallet, 'home', 2000), wd('dddddd', 'away', 100)],
-    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesAge, sideOdds: +110, steamOn: false,
+    walletDetails: [wd(forWallet, 'home', 200), wd('dddddd', 'away', 100)],
+    side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profilesAge, sideOdds: -170,
+    steam: { lastHourPct: 1.5 }, steamOn: false,
     pickDate, legacyUnits: 2, ...over,
   });
   // Rows carry the age; the market record takes the sport book's age.
@@ -1366,7 +1399,7 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   // Seasoned books rescue as before: 59 days, exactly 15 days, and a record with no age fields.
   eq(ageML('oooooo', AGE).rung, TRUST_G_STAKE_TIER, '59-day book rescues'); eq(ageML('oooooo', AGE).trust.for[0].age, 59, 'age 59');
   eq(ageML('kkkkkk', AGE).rung, TRUST_G_STAKE_TIER, 'exactly 15 days is not young'); eq(ageML('kkkkkk', AGE).trust.for[0].young, false, 'kkkkkk not young');
-  eq(ageML('bbbbbb', AGE).rung, TRUST_G_STAKE_TIER, 'no age fields → trusted as before'); eq(ageML('bbbbbb', AGE).trust.for[0].young, false, 'unknown age never young');
+  eq(ageML('bbbbbb', AGE).rung, null, 'tier 4 does not open TRUST-G'); eq(ageML('bbbbbb', AGE).units, 0, '0u'); eq(ageML('bbbbbb', AGE).trust.for[0].young, false, 'unknown age never young');
   // Symmetric: a young wallet AGAINST does not veto a spread; before the live date it does.
   const ageSp = (pickDate) => evaluatePressLadder({
     walletDetails: [wd('oooooo', 'home', 1500), wd('yyyyyy', 'away', 1500)],
