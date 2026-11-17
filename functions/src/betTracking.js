@@ -48,6 +48,8 @@ const ESPN_SOC_URLS = [
   "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard",
   "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard",
   "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard",
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard",
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/concacaf.nations.league/scoreboard",
 ];
 const ESPN_UFC_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard";
 const ESPN_ATP_URL = "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard";
@@ -351,6 +353,72 @@ const SOC_NAME_TO_CODE = {
   "turkiye": "TUR", "turkey": "TUR",
   "uruguay": "URU", "usa": "USA", "unitedstates": "USA", "unitedstatesofamerica": "USA",
   "uzbekistan": "UZB",
+  // UEFA Nations League + CONCACAF Nations League. Same codes as
+  // scripts/lib/soccerTeams.js. Slovenia is SVN, Romania is ROU,
+  // North Macedonia is MKD.
+  "albania": "ALB",
+  "andorra": "AND",
+  "armenia": "ARM",
+  "aruba": "ARU",
+  "antiguaandbarbuda": "ATG",
+  "azerbaijan": "AZE",
+  "bermuda": "BER",
+  "belarus": "BLR",
+  "belize": "BLZ",
+  "bonaire": "BON",
+  "barbados": "BRB",
+  "bulgaria": "BUL",
+  "caymanislands": "CAY",
+  "cuba": "CUB",
+  "cyprus": "CYP",
+  "denmark": "DEN",
+  "dominica": "DMA",
+  "estonia": "EST",
+  "finland": "FIN",
+  "faroeislands": "FRO",
+  "georgia": "GEO",
+  "gibraltar": "GIB",
+  "guadeloupe": "GLP",
+  "greece": "GRE",
+  "grenada": "GRN",
+  "guatemala": "GUA",
+  "frenchguiana": "GUF",
+  "guyana": "GUY",
+  "hungary": "HUN",
+  "republicofireland": "IRL", "ireland": "IRL",
+  "iceland": "ISL",
+  "israel": "ISR",
+  "jamaica": "JAM",
+  "kazakhstan": "KAZ",
+  "kosovo": "KVX",
+  "stlucia": "LCA", "saintlucia": "LCA",
+  "liechtenstein": "LIE",
+  "lithuania": "LTU",
+  "luxembourg": "LUX",
+  "latvia": "LVA",
+  "saintmartin": "MAF", "stmartin": "MAF",
+  "malta": "MLT",
+  "moldova": "MDA",
+  "northmacedonia": "MKD",
+  "montenegro": "MNE",
+  "montserrat": "MSR",
+  "martinique": "MTQ",
+  "nicaragua": "NCA",
+  "northernireland": "NIR",
+  "poland": "POL",
+  "puertorico": "PUR",
+  "romania": "ROU",
+  "stkittsandnevis": "SKN", "saintkittsandnevis": "SKN",
+  "elsalvador": "SLV",
+  "sanmarino": "SMR",
+  "serbia": "SRB",
+  "slovakia": "SVK",
+  "slovenia": "SVN",
+  "sintmaarten": "SXM",
+  "trinidadandtobago": "TRI",
+  "ukraine": "UKR",
+  "stvincentandthegrenadines": "VIN", "saintvincentandthegrenadines": "VIN",
+  "wales": "WAL",
   // EPL
   "arsenal": "ARS", "arsenalfc": "ARS",
   "astonvilla": "AST", "astonvillafc": "AST",
@@ -1667,7 +1735,10 @@ exports.updateBetResults = onSchedule({
                 sport === "NFL" ? "ESPN_NFL_API" :
                 sport === "CFB" ? "ESPN_CFB_API" :
                 sport === "SOC" ? "ESPN_SOC_API" :
-                sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
+                sport === "UFC" ? "ESPN_UFC_API" :
+                sport === "ATP" ? "ESPN_ATP_API" :
+                sport === "CS2" ? "BO3_CS2" :
+                sport === "LOL" ? "BO3_LOL" : "ESPN_MLB_API",
             };
             let allSidesGraded = true;
 
@@ -1770,7 +1841,10 @@ exports.updateBetResults = onSchedule({
                 sport === "NFL" ? "ESPN_NFL_API" :
                 sport === "CFB" ? "ESPN_CFB_API" :
                 sport === "SOC" ? "ESPN_SOC_API" :
-                sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
+                sport === "UFC" ? "ESPN_UFC_API" :
+                sport === "ATP" ? "ESPN_ATP_API" :
+                sport === "CS2" ? "BO3_CS2" :
+                sport === "LOL" ? "BO3_LOL" : "ESPN_MLB_API",
               "result.gradedAt":
                 admin.firestore.FieldValue.serverTimestamp(),
               "status": "COMPLETED",
