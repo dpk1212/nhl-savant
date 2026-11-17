@@ -84,6 +84,8 @@ import {
   TRUST_T_STAKE_TIER, TRUST_T_MIN_FOR, TRUST_T_UNITS, TRUST_T_PRESS_UNITS, TRUST_T_PRESS_IMPLIED_MAX,
   TRUST_S_UNITS,
   TRUST_S_STEAM_FROM,
+  TRUST_T_STEAM_FROM,
+  isTrustTSteamLive,
   TRUST_S_STEAM_CUT_UNITS,
   isTrustSSteamLive,
   TRUST_S_PRESS_UNITS,
@@ -1146,6 +1148,17 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const t3 = totT({ walletDetails: [wd('oooooo', 'over', 1500), wd('pppppp', 'over', 900), wd('dddddd', 'under', 50)] });
   eq(t3.units, TRUST_M_STRONG_FLOOR_UNITS, 'conviction is stamped, not sized (floor 3u)'); ok(t3.reason.startsWith('trust_t_for_oooooo+pppppp_x2_conv2.5u:'), t3.reason);
   eq(totT({ pickDate: PRE }).units, 0, 'before TRUST_FROM → 0u'); eq(totT({ pickDate: PRE }).trust.rule, null, 'before: no rule');
+  // A shorten of 4.5 or more zeros TRUST-T from 2026-11-17. Anything else keeps the units.
+  eq(isTrustTSteamLive('2026-11-16'), false, 'total shorten mute off on the 16th');
+  eq(isTrustTSteamLive(TRUST_T_STEAM_FROM), true, 'total shorten mute on from the 17th');
+  eq(totT({ pickDate: '2026-11-16', steam: { sinceOpenPct: 6 } }).units, TRUST_M_STRONG_FLOOR_UNITS, 'the day before keeps the floor');
+  const ttShort = totT({ pickDate: TRUST_T_STEAM_FROM, steam: { sinceOpenPct: 4.5 } });
+  eq(ttShort.units, 0, '4.5 shorten → 0'); eq(ttShort.rung, null, 'shorten clears the rung'); ok(String(ttShort.trust.rule).includes('trust_t_shorten'), ttShort.trust.rule);
+  eq(totT({ pickDate: TRUST_T_STEAM_FROM, steam: { lastHourPct: 10 } }).units, 0, '10 or more → 0');
+  eq(totT({ pickDate: TRUST_T_STEAM_FROM, steam: { sinceOpenPct: 4.4 } }).units, TRUST_M_STRONG_FLOOR_UNITS, '4.4 stays');
+  eq(totT({ pickDate: TRUST_T_STEAM_FROM, steam: { sinceOpenPct: 0 } }).units, TRUST_M_STRONG_FLOOR_UNITS, 'flat stays');
+  eq(totT({ pickDate: TRUST_T_STEAM_FROM, steam: { sinceOpenPct: -2 } }).units, TRUST_M_STRONG_FLOOR_UNITS, 'against stays');
+  eq(totT({ pickDate: TRUST_T_STEAM_FROM }).units, TRUST_M_STRONG_FLOOR_UNITS, 'missing tenth stays');
   // Lone: exactly one trusted FOR → 0u, staked or not.
   const l1 = totT({ walletDetails: [wd('oooooo', 'over', 900), wd('dddddd', 'under', 50)] });
   eq(l1.units, 0, 'one trusted FOR alone → 0u'); eq(l1.rung, null, 'no rung'); eq(l1.trust.rule, 'trust_t_lone', 'rule'); ok(l1.reason.startsWith('trust_t_lone_oooooo:gate_fail'), l1.reason);

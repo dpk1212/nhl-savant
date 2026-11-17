@@ -185,6 +185,9 @@
  *     (own bets 143-99 / 84-49 +16pp at ≤ .50; board 44-33 / 20-11; staked
  *     4-1). Sides without a trusted FOR keep their ladder stake under
  *     ST_CAP_UNITS. Replay: staked book −20.0u → +15.8u, board −19.4u → +24.0u.
+ *     From TRUST_T_STEAM_FROM a published TRUST-T stake goes to 0 when the
+ *     line has shortened by 4.5 or more. A smaller move, a flat line, a
+ *     line moving against, and a missing tenth keep the units.
  *   • Hedge netting (2026-10-12): a wallet holding positions on BOTH sides
  *     of the same spread / total is hedging its own bet, not disagreeing
  *     with another trusted wallet. It is dropped from both the FOR and AG
@@ -458,6 +461,12 @@ export const TRUST_T_UNITS = 2.5;
 /** Consensus at implied ≤ TRUST_T_PRESS_IMPLIED_MAX presses to this. */
 export const TRUST_T_PRESS_UNITS = 3;
 export const TRUST_T_PRESS_IMPLIED_MAX = 0.50;
+/** From this date a TRUST-T total goes to 0 when the line has shortened by 4.5 or more. */
+export const TRUST_T_STEAM_FROM = '2026-11-17';
+export const TRUST_T_STEAM_MIN = 4.5;
+export function isTrustTSteamLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TRUST_T_STEAM_FROM;
+}
 // TRUST-M — market-level trusted margin (2026-10-12). Margin = trusted FOR −
 // trusted AG on THIS market's book, self-hedges netted. At ≥ TRUST_M_MARGIN
 // the margin goes through: a spread / total with a trusted wallet against is
@@ -1440,6 +1449,18 @@ export function applyTrustLayer(result, {
       out.units = TRUST_S_STEAM_CUT_UNITS;
       out.reason = `${out.reason}+trust_s_cut${TRUST_S_STEAM_CUT_UNITS}`;
       rules.push('trust_s_cut');
+    }
+  }
+
+  // TRUST-T steam mute. A shorten of 4.5 or more zeros the rung. A smaller
+  // move, a flat line, a line moving against, and a missing tenth stay.
+  if (isTrustTSteamLive(pickDate) && isTotal && out.rung === TRUST_T_STAKE_TIER && out.units > 0) {
+    const tenth = trustGSteamTenth(steam);
+    if (tenth != null && tenth >= TRUST_T_STEAM_MIN) {
+      out.units = 0;
+      out.rung = null;
+      out.reason = `${out.reason}+trust_t_shorten`;
+      rules.push('trust_t_shorten');
     }
   }
 
