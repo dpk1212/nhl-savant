@@ -4452,6 +4452,7 @@ async function createMissingLockedPicks({
           pressGateMuted: peakUnitsApplied === 0
             && !favJuicePolicyCreate?.mutedBy
             && pressEdgeNetPolicyCreate?.action !== 'MUTE'
+            && pressEvalCreate?.pressFlat !== true
             && scoreV12 != null && Number.isFinite(scoreV12) && scoreV12 > 0
             && !(pressEvalCreate?.floorFade?.status === 'VETO' && isFadeFLive(TARGET_DATE)),
         });
@@ -7392,6 +7393,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pressGateMuted: finalUnitsApplied === 0
         && !favJuicePolicy?.mutedBy
         && pressEdgeNetPolicy?.action !== 'MUTE'
+        && pressEval?.pressFlat !== true
         && Number.isFinite(scoreV12Live) && scoreV12Live > 0
         && !(pressEval?.floorFade?.status === 'VETO' && isFadeFLive(pickDate)),
     });
