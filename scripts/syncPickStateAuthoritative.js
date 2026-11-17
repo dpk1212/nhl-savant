@@ -4872,12 +4872,12 @@ async function createMissingLockedPicks({
         }
       }
 
-      // Moneyline press. After the total mini. −150 through −425 is the
-      // press band, or 4 when that band is missing. Pick'em up to −150
-      // with steam of 4.5 or more is three quarters of that size. Every
-      // other qualifying press is 0. A price juicier than −425 stays.
-      // Manual stake and an operator kill stay. The T-15 freeze already
-      // returned.
+      // Moneyline press. After the total mini. From 2026-11-17 a wallet
+      // already 8 points over the price in that exact band is 4u when the
+      // summer edge is 5 or more, and 4u under 5 only when the line has
+      // shortened. A flat or missing shorten under 5 is 0. A missing edge
+      // stays. A price juicier than −425 stays. Manual stake and an
+      // operator kill stay. The T-15 freeze already returned.
       if (!isOperatorKilled({ _id: docId }, side, null)) {
         mlPressCreate = applyMlPressRung({
           units: peakUnitsApplied,
@@ -4888,6 +4888,7 @@ async function createMissingLockedPicks({
           positions,
           odds: stakeOdds ?? odds ?? null,
           steam: steamBookCreate?.mute?.m ?? null,
+          edge: waCreateEdge?.edge ?? null,
         });
         if (mlPressCreate.action === 'STAKE' || mlPressCreate.action === 'MUTE') {
           peakUnitsApplied = mlPressCreate.units;
@@ -4897,7 +4898,7 @@ async function createMissingLockedPicks({
           if (!(peakUnitsApplied > 0)) hcStakeTierCreate = 'MONITORING';
           console.log(
             `  ML-PRESS: ${docId} ${side} ${mlPressCreate.zone} full=${mlPressCreate.full}`
-            + ` steam=${mlPressCreate.steam ?? '—'}`
+            + ` edge=${mlPressCreate.edge ?? '—'} steam=${mlPressCreate.steam ?? '—'}`
             + ` ${mlPressCreate.unitsPre}u → ${mlPressCreate.units}u`,
           );
         }
@@ -7796,11 +7797,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (finalUnitsApplied > 0) hcStakeTier = TOTAL_MINI_STAKE_TIER;
     }
   }
-  // Moneyline press. After the total mini. −150 through −425 is the
-  // press band, or 4 when that band is missing. Pick'em up to −150 with
-  // steam of 4.5 or more is three quarters of that size. Every other
-  // qualifying press is 0. A price juicier than −425 stays. Manual stake
-  // and an operator kill stay. The T-15 freeze already returned.
+  // Moneyline press. After the total mini. From 2026-11-17 a wallet
+  // already 8 points over the price in that exact band is 4u when the
+  // summer edge is 5 or more, and 4u under 5 only when the line has
+  // shortened. A flat or missing shorten under 5 is 0. A missing edge
+  // stays. A price juicier than −425 stays. Manual stake and an operator
+  // kill stay. The T-15 freeze already returned.
   let mlPressPolicy = null;
   if (!skipManualFlinch && !operatorKilled) {
     mlPressPolicy = applyMlPressRung({
@@ -7812,6 +7814,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       positions: group,
       odds: sideOdds ?? sd.odds ?? null,
       steam: steamBookPolicy?.mute?.m ?? null,
+      edge: winnerAlign?.edge ?? null,
     });
     if (mlPressPolicy.action === 'STAKE' || mlPressPolicy.action === 'MUTE') {
       finalUnitsApplied = mlPressPolicy.units;

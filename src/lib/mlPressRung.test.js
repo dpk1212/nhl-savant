@@ -3,13 +3,16 @@ import test from 'node:test';
 import { buildMlMiniBook } from './mlMiniRung.js';
 import {
   applyMlPressRung,
+  exactBandSkill,
   pressFullSize,
   pressPriceZone,
   pressQuarterSize,
   steamCoversPress,
+  steamIsPositiveTenth,
 } from './mlPressRung.js';
 
 const DAY = '2026-11-16';
+const EDGE_DAY = '2026-11-17';
 
 function prior(wallet, sport = 'NBA') {
   const rows = [];
@@ -135,4 +138,71 @@ test('juice, a mini, CBB, and the exemptions stay on their own path', () => {
     positions: [pos('aaaaaa', 320)], odds: -200, manual: true, book: index,
   });
   assert.equal(manual.action, 'EXEMPT');
+});
+
+function rangeHistory(wallet) {
+  const rows = [];
+  for (let i = 0; i < 16; i += 1) {
+    const date = new Date(Date.parse('2026-10-01T00:00:00Z') + i * 86400000).toISOString().slice(0, 10);
+    const won = i !== 0;
+    rows.push({
+      wallet, date, sport: 'NBA', marketType: 'ML', side: 'home', gameKey: `r${wallet}${i}`,
+      invested: 100, avgPrice: 0.62, won, result: won ? 'WIN' : 'LOSS',
+    });
+  }
+  return rows;
+}
+
+test('from Nov 17 an edge of 5 or more is 4u at any steam and any price', () => {
+  const index = buildMlMiniBook(rangeHistory('cccccc'), EDGE_DAY);
+  const priced = { wallet: 'cccccc', side: 'home', invested: 40, avgPrice: 0.62 };
+  const full = applyMlPressRung({
+    units: 1, pickDate: EDGE_DAY, sport: 'NBA', market: 'ML', side: 'home',
+    positions: [priced], odds: 140, steam: 0, edge: 5, book: index,
+  });
+  assert.equal(full.action, 'STAKE');
+  assert.equal(full.units, 4);
+  assert.equal(full.zone, 'full');
+  const dog = applyMlPressRung({
+    units: 0, pickDate: EDGE_DAY, sport: 'NBA', market: 'ML', side: 'home',
+    positions: [priced], odds: -120, steam: -2, edge: 12, book: index,
+  });
+  assert.equal(dog.units, 4);
+  const below = applyMlPressRung({
+    units: 2, pickDate: EDGE_DAY, sport: 'NBA', market: 'ML', side: 'home',
+    positions: [priced], odds: -180, steam: 6, edge: 4.9, book: index,
+  });
+  assert.equal(below.action, 'STAKE');
+  assert.equal(below.zone, 'steam');
+  assert.equal(below.units, 4);
+  const flat = applyMlPressRung({
+    units: 3, pickDate: EDGE_DAY, sport: 'NBA', market: 'ML', side: 'home',
+    positions: [priced], odds: -180, steam: 0, edge: 4.9, book: index,
+  });
+  assert.equal(flat.action, 'MUTE');
+  assert.equal(flat.units, 0);
+  const missing = applyMlPressRung({
+    units: 2, pickDate: EDGE_DAY, sport: 'NBA', market: 'ML', side: 'home',
+    positions: [priced], odds: -180, steam: 3, edge: null, book: index,
+  });
+  assert.equal(missing.action, 'PASS');
+  assert.equal(missing.units, 2);
+  const juice = applyMlPressRung({
+    units: 0, pickDate: EDGE_DAY, sport: 'NBA', market: 'ML', side: 'home',
+    positions: [priced], odds: -450, steam: 3, edge: 12, book: index,
+  });
+  assert.equal(juice.action, 'PASS');
+  assert.equal(juice.units, 0);
+  assert.equal(steamIsPositiveTenth(0.04), false);
+  assert.equal(steamIsPositiveTenth(0.05), true);
+  const bands = index.get('NBA|cccccc').bands;
+  assert.ok(exactBandSkill(bands, 0.62) >= 8);
+  assert.equal(exactBandSkill(bands, 0.4), null);
+  const otherBand = applyMlPressRung({
+    units: 1, pickDate: EDGE_DAY, sport: 'NBA', market: 'ML', side: 'home',
+    positions: [{ wallet: 'cccccc', side: 'home', invested: 200, avgPrice: 0.4 }],
+    odds: 150, steam: 0, edge: 12, book: index,
+  });
+  assert.equal(otherBand.action, 'PASS');
+  assert.equal(otherBand.units, 1);
 });
