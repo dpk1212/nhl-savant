@@ -26,10 +26,11 @@ function legs(sport, away, home, side) {
     home,
     side,
     marketType: 'ML',
-    odds: -140 - i * 8,
-    invested: 400 + i * 120,
-    sizeRatio: 0.8 + i * 0.15,
-    sizeBand: i >= 3 ? 'press' : 'lean',
+    odds: -122,
+    invested: [900, 1000, 500, 600, 1400][i],
+    sizeRatio: [1.09, 1.21, 0.61, 0.73, 1.7][i],
+    sizeBand: i < 2 ? 'full' : (i >= 4 ? 'press' : 'lean'),
+    priceBand: 3,
     won: 1,
     dollarPnl: 180 + i * 90,
     flat: 0.4,
@@ -61,6 +62,18 @@ function profile({
         positions: { n: 14, wr: 79, wins: 11, losses: 3, dollarRoi: 41, positionFlatRoi: 22 },
         recentActionWindow: {
           n: 18, wins: 14, losses: 4, wr: 78, dollarRoi: 35, settledPnl: l30, days: 30,
+        },
+        priceBands: {
+          3: {
+            l30: { n: 7, wins: 5, losses: 2, invested: 4000, settledPnl: 1800, dollarRoi: 45, wr: 71.4 },
+            all: { n: 7, wins: 5, losses: 2, invested: 4000, settledPnl: 1800, dollarRoi: 45, wr: 71.4 },
+          },
+        },
+        sizeBands: {
+          full: {
+            l30: { n: 2, wins: 1, losses: 1, invested: 900, settledPnl: 40, dollarRoi: 4.4, wr: 50 },
+            all: { n: 2, wins: 1, losses: 1, invested: 900, settledPnl: 40, dollarRoi: 4.4, wr: 50 },
+          },
         },
       },
     }
@@ -178,7 +191,7 @@ const sharpPositions = {
       positions: [
         ticket({
           sport: 'NFL', gameKey: 'car_gb', away: 'Panthers', home: 'Packers',
-          side: 'home', wallet: 'a1a1a1', invested: 825, price: 0.65, hoursAgo: 23,
+          side: 'home', wallet: 'a1a1a1', invested: 825, price: 0.55, hoursAgo: 23,
         }),
       ],
     },

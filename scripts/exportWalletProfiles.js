@@ -82,6 +82,7 @@ import {
   WALLET_PROFILES_META_DOC_ID,
 } from './lib/loadWalletProfiles.js';
 import { buildSizeRatioBands, meanDecidedStake } from '../src/lib/sizeRatioBands.js';
+import { marketBandBooks, priceBandOf } from '../src/lib/actionBandBooks.js';
 import { buildTrustState, trustSummary } from '../src/lib/walletTrustStatus.js';
 import {
   T5_LEDGER_COLLECTION,
@@ -644,6 +645,7 @@ function viewActionLeg(b, sportUsualBet = null) {
     invested: Math.round(Number(b.invested) || 0),
     sizeRatio: sr,
     sizeBand: sizeBandKey(sr),
+    priceBand: priceBandOf(b),
     won: b.won,
     settledPnl: Math.round(Number(b.settledPnl) || 0),
     dollarPnl: Math.round(Number(b.settledPnl) || 0),
@@ -968,6 +970,10 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     const byMarketInSport = {};
     for (const market of new Set([...pp.map((b) => b.market), ...ps.map((b) => b.market)].filter(Boolean))) {
       const mPos = ps.filter((b) => b.market === market);
+      const bands = marketBandBooks(mPos, {
+        usual: sportUsual,
+        cutoff: etDateMinusDays(RECENT_LEGS_DAYS),
+      });
       byMarketInSport[market] = {
         picks: picksAgg(pp.filter((b) => b.market === market)),
         positions: positionsAgg(mPos),
@@ -975,6 +981,8 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
         l90Window: buildCalendarWindow(mPos, { days: L90_DAYS, today: todayET }),
         // Market-level trust — shadow stamp for spreads / totals.
         trust: trustFor(mPos),
+        priceBands: bands.priceBands,
+        sizeBands: bands.sizeBands,
       };
     }
     bySport[sport] = {
