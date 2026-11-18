@@ -7,6 +7,7 @@
 const crypto = require('crypto');
 const { unitMarketHit } = require('./sharpflowHit');
 const { profileRead, specialistRank, ticketsFor, sizeLabel } = require('./sharpflowWallet');
+const { validateRecentArgs, recentRead } = require('./walletRecent');
 
 const SERVER_NAME = 'NHL Savant - Sharpflow';
 const SERVER_VERSION = '1.0.0';
@@ -24,6 +25,7 @@ const INSTRUCTIONS = [
   'sharp on a ticket is the Action tab for that wallet: size versus their usual in this sport and across all sports, both in dollars, last-10 bets, last-30 dollars, and the record in this market. Every record names its window. opposed is unopposed or contested.',
   'Each ticket has id, the same six characters the site shows after the dots. wallet_profile looks that id up. sameNight is a letter for tonight only. The letter changes when the board changes, so it is not a lookup key.',
   'wallet_profile returns the overall record, the sport and market records, and three size splits when they exist: all time in the sport, all time across all sports, and the last 30 days in the sport. Buckets are under 0.5x, 0.5x, 1x, and 1.5x and up. The press record next to a sport record is all time in that sport. Usual bet is shown in dollars for the sport and for all sports.',
+  'wallet_recent returns the last 5 settled bets for an id on tonight\'s board. Pass a sport and at most one of market, size, or odds. Each bet is a band, not a price, a stake, or a matchup. Fewer than 5 settled bets returns no rows.',
   'find_specialists takes a sport and ranks tonight\'s wallets by how far that sport\'s record beats the overall record. It flags a wallet betting 1.5x or more tonight.',
   'Each ticket has the price paid and the line. kickoffEt is the game time.',
   'Do not name a wallet. Do not explain how a stake was chosen. A post uses the summary and ends with the site link.',
@@ -110,6 +112,24 @@ const TOOLS = [
         market: { type: 'string', description: 'Optional market: ML, SPREAD, or TOTAL.' },
         date: { type: 'string', description: 'Game date YYYY-MM-DD in US Eastern. Defaults to today.' },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'wallet_recent',
+    title: 'Wallet recent bets',
+    annotations: { ...READ, title: 'Wallet recent bets' },
+    description: 'Last 5 settled bets for one wallet on tonight\'s board. Pass id, the six characters the site shows. Optional sport, and at most one of market (ML, SPREAD, TOTAL), size (under 0.5x, 0.5x, 1x, 1.5x and up), or odds (-200 or shorter, -199 to -121, -120 to +120, +121 to +200, longer than +200). Each bet has sport, market, result, price band, size bucket, and date bucket. No matchup, no exact price, no exact stake. Fewer than 5 settled bets in the slice returns no rows.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Six characters the site shows after the dots, such as 487b8b. The wallet must be on tonight\'s board.' },
+        sport: { type: 'string', description: 'Optional sport, such as NBA or NHL.' },
+        market: { type: 'string', description: 'Optional. ML, SPREAD, or TOTAL. Do not combine with size or odds.' },
+        size: { type: 'string', description: 'Optional. under 0.5x, 0.5x, 1x, or 1.5x and up, versus that sport\'s usual. Do not combine with market or odds.' },
+        odds: { type: 'string', description: 'Optional price band: -200 or shorter, -199 to -121, -120 to +120, +121 to +200, or longer than +200. Do not combine with market or size.' },
+      },
+      required: ['id'],
       additionalProperties: false,
     },
   },
@@ -1098,6 +1118,39 @@ async function callTool(name, args, ctx) {
       site: SITE,
       date,
       ...(matched ? { matched } : {}),
+      ...read,
+    });
+  }
+  if (name === 'wallet_recent') {
+    const check = validateRecentArgs(a);
+    if (check.error) return toolError(check.error);
+    const date = etDate();
+    const { games, profiles } = await ctx.loadAction();
+    const prices = ctx.loadPrices ? await ctx.loadPrices() : null;
+    const open = openBoard(games, profiles, prices, date);
+    const profile = profiles.get(check.id);
+    if (!profile || !ticketsFor(open.games, check.id).length) {
+      return toolError('No confirmed wallet with that id is on tonight\'s board.');
+    }
+    let rows = null;
+    try {
+      rows = ctx.loadWalletRecent ? await ctx.loadWalletRecent(check.id) : null;
+    } catch {
+      rows = null;
+    }
+    if (!Array.isArray(rows)) return toolError('Recent bets are not loaded.');
+    const read = recentRead({
+      id: check.id,
+      profile,
+      rows,
+      sport: check.sport,
+      filter: check.filter,
+      today: date,
+    });
+    return textBlock({
+      source: 'Last 5 settled bets for one wallet on tonight\'s board, newest first. Size is versus that sport\'s usual: under 0.5x, 0.5x, 1x, or 1.5x and up. Date buckets are last 3 days, this week (Sunday start, Eastern), last 2 weeks, or older. Fewer than 5 in the slice returns no rows. No names, no matchup, no exact price, no exact stake.',
+      site: SITE,
+      date,
       ...read,
     });
   }

@@ -111,6 +111,48 @@ async function loadWalletBets(short) {
   return bets;
 }
 
+const recentCache = new Map();
+
+async function loadWalletRecent(short) {
+  const id = String(short || '').toLowerCase();
+  if (!/^[0-9a-f]{6}$/.test(id)) return [];
+  const now = Date.now();
+  const cached = recentCache.get(id);
+  if (cached && now - cached.at < CACHE_MS) return cached.rows;
+  const db = admin.firestore();
+  const snap = await db.collection('sharp_action_positions')
+    .where('walletShort', '==', id)
+    .select(
+      'sport', 'marketType', 'result', 'postponed', 'status',
+      'invested', 'size', 'settledPnl', 'positionPnl', 'date', 'gradedAt',
+      'pinnacleOdds', 'bestRetailOdds', 'odds', 'avgPrice',
+    )
+    .get();
+  const rows = [];
+  snap.forEach((doc) => {
+    const row = doc.data() || {};
+    rows.push({
+      sport: row.sport ? String(row.sport).toUpperCase() : null,
+      marketType: row.marketType || null,
+      result: row.result || null,
+      postponed: row.postponed === true,
+      status: row.status || null,
+      invested: row.invested ?? null,
+      size: row.size ?? null,
+      settledPnl: row.settledPnl ?? null,
+      positionPnl: row.positionPnl ?? null,
+      date: row.date ? String(row.date).slice(0, 10) : null,
+      gradedAt: typeof row.gradedAt?.toMillis === 'function' ? row.gradedAt.toMillis() : (Number(row.gradedAt) || 0),
+      pinnacleOdds: row.pinnacleOdds ?? null,
+      bestRetailOdds: row.bestRetailOdds ?? null,
+      odds: row.odds ?? null,
+      avgPrice: row.avgPrice ?? null,
+    });
+  });
+  recentCache.set(id, { at: now, rows });
+  return rows;
+}
+
 async function loadProfiles(shorts) {
   const db = admin.firestore();
   const map = new Map();
@@ -313,7 +355,7 @@ async function onMcp(req, res) {
     sendRpc(req, res, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid request' } }, 400);
     return;
   }
-  const ctx = { loadLocked, loadAction, loadRecord, loadPrices, loadWalletBets };
+  const ctx = { loadLocked, loadAction, loadRecord, loadPrices, loadWalletBets, loadWalletRecent };
   if (Array.isArray(body)) {
     const replies = [];
     for (const msg of body) {
