@@ -1,23 +1,34 @@
 /**
- * Live flash promo — NBA tip-off week.
+ * Live flash promo — Thanksgiving.
  * First invoice only: first week on Weekly (scout), first month on Monthly
  * (elite). Annual stays full price. Stripe promotion code must match `code`
  * and stay restricted to those two prices.
  *
- * Window: restored for one more week. Through Tue Nov 3 night ET
- * (Wed Nov 4, 12:00am ET). DST ended Nov 1, so that midnight is 05:00 UTC.
+ * Window: through Thanksgiving night, Thu Nov 26 ET
+ * (Fri Nov 27, 12:00am ET). DST ended Nov 1, so that midnight is 05:00 UTC.
  */
 export const PAYWALL_PROMO = {
-  code: 'FALL50',
-  discount: 0.50,
-  label: 'NBA Tip-Off',
-  endMs: Date.parse('2026-11-04T05:00:00Z'),
-  endCopy: 'Tuesday, November 3',
-  seasonCopy: 'the start of the NBA season',
+  code: 'THANKSGIVING',
+  discount: 0.33,
+  label: 'Thanksgiving',
+  endMs: Date.parse('2026-11-27T05:00:00Z'),
+  endCopy: 'Thursday, November 26',
+  seasonCopy: 'Thanksgiving',
   tiers: ['elite', 'scout'],
 };
 
 export const PROMO_CODES = {
+  THANKSGIVING: {
+    code: 'THANKSGIVING',
+    discount: 33,
+    label: 'Thanksgiving',
+    forLife: false,
+    flash: true,
+    durationLabel: 'your first week (Weekly) or first month (Monthly)',
+    expires: new Date(PAYWALL_PROMO.endMs),
+    tiers: ['scout', 'elite'],
+  },
+  // Expired tip-off code — old ?promo=FALL50 links fail closed.
   FALL50: {
     code: 'FALL50',
     discount: 50,
@@ -25,7 +36,7 @@ export const PROMO_CODES = {
     forLife: false,
     flash: true,
     durationLabel: 'your first week (Weekly) or first month (Monthly)',
-    expires: new Date(PAYWALL_PROMO.endMs),
+    expires: new Date('2026-11-04T05:00:00Z'),
     tiers: ['scout', 'elite'],
   },
   // Expired opening-week code — old ?promo=NHL40 links fail closed.

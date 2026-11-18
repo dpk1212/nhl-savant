@@ -12,6 +12,7 @@ import {
 import { buildSavedSharpGroups } from '../../lib/savedSharpSlate.js';
 import { buildGradedPlays, collectRecentLegs } from '../../lib/mySharpsDesk.js';
 import { BetGroup } from './MySharpsDesk.jsx';
+import { PAYWALL_PROMO } from '../../lib/paywallPromo.js';
 
 const B = {
   gold: '#D4AF37',
@@ -238,7 +239,7 @@ export default function MySharpsSlate({
         title="My Sharps"
         body="Follow the wallets you trust. Their bets land here, next to locked picks and HC positions."
         action="Unlock My Sharps"
-        href="#/pricing?promo=FALL50"
+        href={`#/pricing?promo=${PAYWALL_PROMO.code}`}
       />
     );
   }
