@@ -9,6 +9,7 @@ const {
   refreshDecision,
   protectedResourceMetadata,
   authorizationServerMetadata,
+  connectPageUrl,
 } = require('./connectorOauth');
 
 test('PKCE accepts the matching verifier and rejects a mismatch', () => {
@@ -49,6 +50,25 @@ test('a reused refresh token revokes the family, and the current one rotates', (
   assert.deepEqual(refreshDecision(current, family, now), { ok: true, nextGeneration: 3 });
   assert.deepEqual(refreshDecision(old, family, now), { ok: false, revokeFamily: true });
   assert.equal(refreshDecision({ type: 'refresh', generation: 2, revoked: false, expiresAt: now - 1 }, family, now).ok, false);
+});
+
+test('sign-in is handed to the Firebase Hosting page', () => {
+  const url = new URL(connectPageUrl({
+    client_id: 'https://claude.ai/oauth/mcp-oauth-client-metadata',
+    redirect_uri: 'https://claude.ai/api/mcp/auth_callback',
+    state: 'abc',
+    code_challenge: 'xyz',
+    code_challenge_method: 'S256',
+    response_type: 'code',
+    scope: 'sharpflow.read',
+    resource: 'https://sharpflowmcpmember-lviwud3q2q-uc.a.run.app',
+    junk: 'nope',
+  }));
+  assert.equal(url.origin, 'https://nhl-savant.firebaseapp.com');
+  assert.equal(url.pathname, '/connect');
+  assert.equal(url.searchParams.get('redirect_uri'), 'https://claude.ai/api/mcp/auth_callback');
+  assert.equal(url.searchParams.get('state'), 'abc');
+  assert.equal(url.searchParams.get('junk'), null);
 });
 
 test('discovery documents point at the member host', () => {

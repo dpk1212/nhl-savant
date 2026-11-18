@@ -56,7 +56,7 @@ test('the public connector lists no tools and says the test is over', () => {
 test('today is the first tool and every tool is a read', async () => {
   const reply = await handleMcpMessage({ jsonrpc: '2.0', id: 2, method: 'tools/list' }, {});
   const tools = reply.result.tools;
-  assert.deepEqual(tools.map((t) => t.name), ['today', 'locked_card', 'game_action', 'sport_action', 'wallet_profile', 'find_specialists']);
+  assert.deepEqual(tools.map((t) => t.name), ['today', 'locked_card', 'game_action', 'sport_action', 'wallet_profile', 'wallet_recent', 'profit_curve', 'money_board', 'hot_vs_slipping', 'streak_strip', 'morning_recap', 'find_specialists']);
   assert.equal(tools.every((t) => t.annotations.readOnlyHint === true), true);
   assert.equal(tools.every((t) => t.annotations.openWorldHint === false), true);
   assert.equal(TOOLS[0].name, 'today');

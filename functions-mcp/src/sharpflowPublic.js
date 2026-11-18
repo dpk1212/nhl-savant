@@ -7,6 +7,8 @@
 const crypto = require('crypto');
 const { unitMarketHit } = require('./sharpflowHit');
 const { profileRead, specialistRank, ticketsFor, sizeLabel } = require('./sharpflowWallet');
+const { validateRecentArgs, recentRead } = require('./walletRecent');
+const { CARD_TOOLS, answerCard } = require('./cardTools');
 
 const SERVER_NAME = 'NHL Savant - Sharpflow';
 const SERVER_VERSION = '1.0.0';
@@ -24,6 +26,8 @@ const INSTRUCTIONS = [
   'sharp on a ticket is the Action tab for that wallet: size versus their usual in this sport and across all sports, both in dollars, last-10 bets, last-30 dollars, and the record in this market. Every record names its window. opposed is unopposed or contested.',
   'Each ticket has id, the same six characters the site shows after the dots. wallet_profile looks that id up. sameNight is a letter for tonight only. The letter changes when the board changes, so it is not a lookup key.',
   'wallet_profile returns the overall record, the sport and market records, and three size splits when they exist: all time in the sport, all time across all sports, and the last 30 days in the sport. Buckets are under 0.5x, 0.5x, 1x, and 1.5x and up. The press record next to a sport record is all time in that sport. Usual bet is shown in dollars for the sport and for all sports.',
+  'wallet_recent returns the last 5 settled bets for an id on tonight\'s board. Pass a sport and at most one of market, size, or odds. Each bet is a band, not a price, a stake, or a matchup. Fewer than 5 settled bets returns no rows.',
+  'profit_curve, money_board, hot_vs_slipping, streak_strip, and morning_recap return a shareable card: image_url, story_url, share_url, a short post, and the numbers on the card. Records match the wallet profile. No names and no model.',
   'find_specialists takes a sport and ranks tonight\'s wallets by how far that sport\'s record beats the overall record. It flags a wallet betting 1.5x or more tonight.',
   'Each ticket has the price paid and the line. kickoffEt is the game time.',
   'Do not name a wallet. Do not explain how a stake was chosen. A post uses the summary and ends with the site link.',
@@ -109,6 +113,100 @@ const TOOLS = [
         sport: { type: 'string', description: 'Optional sport, such as CFB or ATP.' },
         market: { type: 'string', description: 'Optional market: ML, SPREAD, or TOTAL.' },
         date: { type: 'string', description: 'Game date YYYY-MM-DD in US Eastern. Defaults to today.' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'wallet_recent',
+    title: 'Wallet recent bets',
+    annotations: { ...READ, title: 'Wallet recent bets' },
+    description: 'Last 5 settled bets for one wallet on tonight\'s board. Pass id, the six characters the site shows. Optional sport, and at most one of market (ML, SPREAD, TOTAL), size (under 0.5x, 0.5x, 1x, 1.5x and up), or odds (-200 or shorter, -199 to -121, -120 to +120, +121 to +200, longer than +200). Each bet has sport, market, result, price band, size bucket, and date bucket. No matchup, no exact price, no exact stake. Fewer than 5 settled bets in the slice returns no rows.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Six characters the site shows after the dots, such as 487b8b. The wallet must be on tonight\'s board.' },
+        sport: { type: 'string', description: 'Optional sport, such as NBA or NHL.' },
+        market: { type: 'string', description: 'Optional. ML, SPREAD, or TOTAL. Do not combine with size or odds.' },
+        size: { type: 'string', description: 'Optional. under 0.5x, 0.5x, 1x, or 1.5x and up, versus that sport\'s usual. Do not combine with market or odds.' },
+        odds: { type: 'string', description: 'Optional price band: -200 or shorter, -199 to -121, -120 to +120, +121 to +200, or longer than +200. Do not combine with market or size.' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'profit_curve',
+    title: 'Profit curve',
+    annotations: { ...READ, title: 'Profit curve' },
+    description: 'Shareable card for one wallet on tonight\'s board. Running return for 30d, 90d, or all, with the peak and the deepest drop. Default window is 30d. Optional sport and market. The line is percent ROI. Returns image_url, story_url, share_url, post, and data.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Six characters the site shows. The wallet must be on tonight\'s board.' },
+        sport: { type: 'string', description: 'Optional sport, such as NBA.' },
+        market: { type: 'string', description: 'Optional. ML, SPREAD, or TOTAL.' },
+        window: { type: 'string', description: '30d, 90d, or all. Defaults to 30d.' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'money_board',
+    title: 'Money board',
+    annotations: { ...READ, title: 'Money board' },
+    description: 'Shareable card of tonight\'s confirmed sharp money. Each side shows the dollars, the wallet count, and a hot mark when that side is up in the market. No wallet ids. Optional sport. Returns image_url, story_url, share_url, post, and data.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sport: { type: 'string', description: 'Optional sport, such as NHL.' },
+        date: { type: 'string', description: 'Tonight only. YYYY-MM-DD in US Eastern.' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'hot_vs_slipping',
+    title: 'Hot versus slipping',
+    annotations: { ...READ, title: 'Hot versus slipping' },
+    description: 'Shareable card for one wallet on tonight\'s board. The best and worst sport and market over the last 30 days, each with at least 10 bets. Returns image_url, story_url, share_url, post, and data. Not enough history when no pair qualifies.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Six characters the site shows. The wallet must be on tonight\'s board.' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'streak_strip',
+    title: 'Streak strip',
+    annotations: { ...READ, title: 'Streak strip' },
+    description: 'Shareable card of the last 20 settled results for one wallet on tonight\'s board, newest on the right, last 5 marked. Pass one of market, size, or odds, and an optional sport. Same bands as wallet_recent. Needs at least 5 bets. Returns image_url, story_url, share_url, post, and data.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Six characters the site shows. The wallet must be on tonight\'s board.' },
+        sport: { type: 'string', description: 'Optional sport, such as NBA.' },
+        market: { type: 'string', description: 'ML, SPREAD, or TOTAL. Do not combine with size or odds.' },
+        size: { type: 'string', description: 'under 0.5x, 0.5x, 1x, or 1.5x and up. Do not combine with market or odds.' },
+        odds: { type: 'string', description: 'Price band. Do not combine with market or size.' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'morning_recap',
+    title: 'Morning recap',
+    annotations: { ...READ, title: 'Morning recap' },
+    description: 'Shareable card for one settled date, default yesterday. Results by size bucket, the best and worst wallet by ROI among wallets with at least 3 bets, and the night\'s confirmed money. Wallets are six-character ids. Returns image_url, story_url, share_url, post, and data.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        date: { type: 'string', description: 'YYYY-MM-DD in US Eastern. Defaults to yesterday.' },
       },
       additionalProperties: false,
     },
@@ -1029,6 +1127,15 @@ async function betsFor(ctx, short) {
 
 async function callTool(name, args, ctx) {
   const a = args || {};
+  if (CARD_TOOLS.includes(name)) {
+    const result = await answerCard(name, a, { ...ctx, etDate, openBoard, ticketsFor });
+    if (result.error) return toolError(result.error);
+    return textBlock({
+      source: 'Shareable SharpFlow card. image_url is the portrait. story_url is the tall card. share_url is the page X can preview. Records match the wallet profile. No names and no model.',
+      site: SITE,
+      ...result.card,
+    });
+  }
   if (name === 'today' || name === 'locked_card') return dayPayload(a, ctx);
   if (name === 'game_action') {
     const query = String(a.query || '').trim();
@@ -1098,6 +1205,39 @@ async function callTool(name, args, ctx) {
       site: SITE,
       date,
       ...(matched ? { matched } : {}),
+      ...read,
+    });
+  }
+  if (name === 'wallet_recent') {
+    const check = validateRecentArgs(a);
+    if (check.error) return toolError(check.error);
+    const date = etDate();
+    const { games, profiles } = await ctx.loadAction();
+    const prices = ctx.loadPrices ? await ctx.loadPrices() : null;
+    const open = openBoard(games, profiles, prices, date);
+    const profile = profiles.get(check.id);
+    if (!profile || !ticketsFor(open.games, check.id).length) {
+      return toolError('No confirmed wallet with that id is on tonight\'s board.');
+    }
+    let rows = null;
+    try {
+      rows = ctx.loadWalletRecent ? await ctx.loadWalletRecent(check.id) : null;
+    } catch {
+      rows = null;
+    }
+    if (!Array.isArray(rows)) return toolError('Recent bets are not loaded.');
+    const read = recentRead({
+      id: check.id,
+      profile,
+      rows,
+      sport: check.sport,
+      filter: check.filter,
+      today: date,
+    });
+    return textBlock({
+      source: 'Last 5 settled bets for one wallet on tonight\'s board, newest first. Size is versus that sport\'s usual: under 0.5x, 0.5x, 1x, or 1.5x and up. Date buckets are last 3 days, this week (Sunday start, Eastern), last 2 weeks, or older. Fewer than 5 in the slice returns no rows. No names, no matchup, no exact price, no exact stake.',
+      site: SITE,
+      date,
       ...read,
     });
   }
@@ -1281,6 +1421,7 @@ module.exports = {
   shortsInGames,
   handleMcpMessage,
   handleClosedPublic,
+  openBoard,
   redirectAllowed,
   issueCode,
   verifyCode,

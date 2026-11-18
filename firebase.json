@@ -26,5 +26,18 @@
   ],
   "firestore": {
     "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": "hosting",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/connect",
+        "run": {
+          "serviceId": "sharpflowmcpmember",
+          "region": "us-central1"
+        }
+      }
+    ]
   }
 }

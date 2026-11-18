@@ -14,6 +14,17 @@ const CODE_TTL_MS = 60 * 1000;
 const ACCESS_TTL_MS = 60 * 60 * 1000;
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const PLAN_URL = 'https://nhlsavant.com/pricing';
+const CONNECT_PAGE = 'https://nhl-savant.firebaseapp.com/connect';
+
+function connectPageUrl(query) {
+  const dest = new URL(CONNECT_PAGE);
+  const source = query || {};
+  for (const key of ['client_id', 'redirect_uri', 'state', 'code_challenge', 'code_challenge_method', 'response_type', 'scope', 'resource']) {
+    const value = source[key];
+    if (typeof value === 'string' && value) dest.searchParams.set(key, value);
+  }
+  return dest.toString();
+}
 
 function newSecret(prefix) {
   return `${prefix}_${crypto.randomBytes(32).toString('base64url')}`;
@@ -365,19 +376,22 @@ function loginPage({ issuer, params, clientName, config }) {
       });
       return 'https://' + boot.config.authDomain + '/__/auth/handler?' + query.toString();
     }
-    // The tap itself has to open Google. A redirect started after an await
-    // never leaves the page on an iPhone.
-    button.href = googleUrl();
+    function showGoogle() {
+      label.textContent = 'Sign in with Google';
+      button.href = googleUrl();
+    }
+    function fail(message) {
+      showGoogle();
+      err.textContent = message || 'Sign-in did not finish. Tap the button to try again.';
+    }
+    let leaving = false;
+    showGoogle();
     button.addEventListener('click', function () {
-      try {
-        sessionStorage.setItem(pendingKey, JSON.stringify('true'));
-      } catch (e) {
-        err.textContent = 'Sign-in did not finish. Tap the button to try again.';
-      }
+      try { sessionStorage.setItem(pendingKey, JSON.stringify('true')); } catch (e) {}
     });
     async function finish(user) {
+      leaving = true;
       label.textContent = 'Sending you back…';
-      button.style.pointerEvents = 'none';
       const idToken = await user.getIdToken();
       const res = await fetch(boot.issuer + '/oauth/complete', {
         method: 'POST',
@@ -386,7 +400,9 @@ function loginPage({ issuer, params, clientName, config }) {
       });
       const data = await res.json();
       if (data.redirect) {
-        window.location = data.redirect;
+        button.href = data.redirect;
+        label.textContent = 'Return to ' + name;
+        window.location.replace(data.redirect);
         return;
       }
       button.style.display = 'none';
@@ -403,12 +419,17 @@ function loginPage({ issuer, params, clientName, config }) {
     try { returning = sessionStorage.getItem(pendingKey) === JSON.stringify('true'); } catch (e) {}
     if (returning) {
       label.textContent = 'Sending you back…';
-      auth.getRedirectResult().then(function (pending) {
+      const result = auth.getRedirectResult();
+      const timer = setTimeout(function () {
+        if (!leaving) fail('Sign-in did not finish. Tap the button to try again.');
+      }, 8000);
+      result.then(function (pending) {
+        clearTimeout(timer);
         if (pending && pending.user) return finish(pending.user);
-        label.textContent = 'Sign in with Google';
+        if (!leaving) showGoogle();
       }).catch(function () {
-        label.textContent = 'Sign in with Google';
-        err.textContent = 'Sign-in did not finish. Tap the button to try again.';
+        clearTimeout(timer);
+        if (!leaving) fail('Sign-in did not finish. Tap the button to try again.');
       });
     }
   </script>
@@ -498,6 +519,14 @@ function createOauthHandlers({ db, auth, issuer, now = () => Date.now() }) {
       res.status(400).json({ error: 'invalid_request' });
       return;
     }
+    const rawPath = String(req.path || req.originalUrl || req.url || '').split('?')[0];
+    const onConnectPage = rawPath === '/connect' || rawPath.endsWith('/connect');
+    if (!onConnectPage) {
+      res.set('Cache-Control', 'no-store');
+      res.redirect(302, connectPageUrl(q));
+      return;
+    }
+    res.set('Cache-Control', 'no-store');
     res.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     res.type('html').send(loginPage({
       issuer,
@@ -693,6 +722,8 @@ module.exports = {
   ACCESS_TTL_MS,
   REFRESH_TTL_MS,
   PLAN_URL,
+  CONNECT_PAGE,
+  connectPageUrl,
   newSecret,
   pkceS256,
   redirectAllowed,
