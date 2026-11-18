@@ -32,6 +32,27 @@ test('initialize names the connector', async () => {
   assert.equal(reply.result.capabilities.tools.listChanged, false);
 });
 
+test('the public connector lists no tools and says the test is over', () => {
+  const { handleClosedPublic, PUBLIC_CLOSED } = require('./sharpflowPublic');
+  const listed = handleClosedPublic({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
+  assert.deepEqual(listed.result.tools, []);
+  const called = handleClosedPublic({
+    jsonrpc: '2.0',
+    id: 3,
+    method: 'tools/call',
+    params: { name: 'today', arguments: {} },
+  });
+  assert.equal(called.result.content[0].text, PUBLIC_CLOSED);
+  const hello = handleClosedPublic({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: { protocolVersion: '2025-06-18' },
+  });
+  assert.equal(hello.result.instructions, PUBLIC_CLOSED);
+  assert.equal(hello.result.capabilities.tools.listChanged, false);
+});
+
 test('today is the first tool and every tool is a read', async () => {
   const reply = await handleMcpMessage({ jsonrpc: '2.0', id: 2, method: 'tools/list' }, {});
   const tools = reply.result.tools;

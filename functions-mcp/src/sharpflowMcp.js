@@ -10,7 +10,7 @@ const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
 const {
   SERVER_NAME,
-  TOOLS,
+  PUBLIC_CLOSED,
   etDate,
   publicLockedSide,
   gradedStake,
@@ -20,6 +20,7 @@ const {
   indexFeeds,
   shortsInGames,
   handleMcpMessage,
+  handleClosedPublic,
   redirectAllowed,
   issueCode,
   verifyCode,
@@ -267,6 +268,39 @@ function formBody(req) {
   return out;
 }
 
+async function onClosed(req, res) {
+  let body;
+  try {
+    body = readBody(req);
+  } catch {
+    sendRpc(req, res, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }, 400);
+    return;
+  }
+  if (!body) {
+    sendRpc(req, res, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid request' } }, 400);
+    return;
+  }
+  if (Array.isArray(body)) {
+    const replies = [];
+    for (const msg of body) {
+      const reply = handleClosedPublic(msg);
+      if (reply) replies.push(reply);
+    }
+    if (!replies.length) {
+      res.status(202).send('');
+      return;
+    }
+    sendRpc(req, res, replies);
+    return;
+  }
+  const reply = handleClosedPublic(body);
+  if (!reply) {
+    res.status(202).send('');
+    return;
+  }
+  sendRpc(req, res, reply);
+}
+
 async function onMcp(req, res) {
   let body;
   try {
@@ -374,8 +408,8 @@ const sharpflowMcp = onRequest({
       res.json({
         name: SERVER_NAME,
         transport: 'streamable-http',
-        authentication: 'none, or the optional OAuth handshake on this same URL',
-        tools: TOOLS.map((tool) => tool.name),
+        message: PUBLIC_CLOSED,
+        tools: [],
       });
       return;
     }
@@ -385,7 +419,7 @@ const sharpflowMcp = onRequest({
     if (route === 'register' && req.method === 'POST') return onRegister(req, res);
     if (route === 'authorize' && req.method === 'GET') return onAuthorize(req, res);
     if (route === 'token' && req.method === 'POST') return onToken(req, res);
-    if (req.method === 'POST' && route === 'mcp') return await onMcp(req, res);
+    if (req.method === 'POST' && route === 'mcp') return await onClosed(req, res);
     res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     logger.error('sharpflowMcp', err);

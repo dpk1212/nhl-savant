@@ -15,6 +15,8 @@ const PROTOCOL = '2025-03-26';
 
 const SITE = 'https://nhlsavant.com/?utm_source=mcp&utm_medium=sharpflow';
 
+const PUBLIC_CLOSED = 'The free testing period is over. New connection instructions are on the account settings page.';
+
 const INSTRUCTIONS = [
   'Call today or locked_card once. The payload is the whole day.',
   'Locks with confirmed money on the same side come first. That order is agreement, then dollars. It is not an edge ranking.',
@@ -1159,6 +1161,31 @@ async function callTool(name, args, ctx) {
   return toolError(`Unknown tool ${name}`);
 }
 
+function handleClosedPublic(msg) {
+  if (!msg || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') {
+    return rpcError(msg?.id ?? null, -32600, 'Invalid request');
+  }
+  const { id, method, params } = msg;
+  if (method.startsWith('notifications/')) return null;
+  if (method === 'initialize') {
+    const clientVersion = params?.protocolVersion;
+    return rpcResult(id, {
+      protocolVersion: typeof clientVersion === 'string' && clientVersion ? clientVersion : PROTOCOL,
+      capabilities: { tools: { listChanged: false } },
+      serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
+      instructions: PUBLIC_CLOSED,
+    });
+  }
+  if (method === 'ping') return rpcResult(id, {});
+  if (method === 'tools/list') return rpcResult(id, { tools: [] });
+  if (method === 'resources/list') return rpcResult(id, { resources: [] });
+  if (method === 'prompts/list') return rpcResult(id, { prompts: [] });
+  if (method === 'tools/call') {
+    return rpcResult(id, { content: [{ type: 'text', text: PUBLIC_CLOSED }] });
+  }
+  return rpcError(id, -32601, PUBLIC_CLOSED);
+}
+
 function rpcResult(id, result) {
   return { jsonrpc: '2.0', id, result };
 }
@@ -1233,6 +1260,7 @@ function verifyCode(code, verifier) {
 module.exports = {
   SERVER_NAME,
   MIN_DOLLARS,
+  PUBLIC_CLOSED,
   TOOLS,
   etDate,
   publicLockedSide,
@@ -1252,6 +1280,7 @@ module.exports = {
   quotePrice,
   shortsInGames,
   handleMcpMessage,
+  handleClosedPublic,
   redirectAllowed,
   issueCode,
   verifyCode,
