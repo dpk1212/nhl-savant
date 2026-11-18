@@ -1070,9 +1070,9 @@ function computeRecentWindowStats(picks, daysBack = 7) {
   return { ready: true, w, l, pu, total, profit, record: `${w}-${l}${pu ? `-${pu}` : ''}` };
 }
 
-// Sharp Flow paywall — NBA tip-off week (src/lib/paywallPromo.js).
-// FALL50 is monthly/weekly only — annual stays full price. Stripe coupon
-// is 50% once (first week on weekly, first month on monthly).
+// Sharp Flow paywall — Thanksgiving (src/lib/paywallPromo.js).
+// THANKSGIVING is monthly/weekly only — annual stays full price. Stripe coupon
+// is 33% once (first week on weekly, first month on monthly).
 const PAYWALL_PROMO_PCT = Math.round((PAYWALL_PROMO.discount || 0) * 100);
 const ELITE_PROMO = promoPrice(25.99);
 const SCOUT_PROMO = promoPrice(7.99);
@@ -14519,7 +14519,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           textAlign: 'center',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase', lineHeight: 1.35 }}>
-            NBA TIP-OFF · CODE {promoCode} · {promoPct}% OFF YOUR FIRST WEEK OR MONTH — THROUGH {PAYWALL_PROMO.endCopy.toUpperCase()}
+            {promoLabel.toUpperCase()} · CODE {promoCode} · {promoPct}% OFF YOUR FIRST WEEK OR MONTH — THROUGH {PAYWALL_PROMO.endCopy.toUpperCase()}
           </span>
         </div>
       )}

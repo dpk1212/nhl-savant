@@ -232,7 +232,7 @@ const Pricing = () => {
       savings: flashLive ? `Save ${activeDiscount.discount}% your first month` : 'Save $9/month vs weekly',
       saleBadge: ' FIRST MONTH',
       cta: 'Start 7-Day Trial',
-      highlight: flashLive ? 'Opening week — monthly & weekly' : 'Most popular with serious bettors'
+      highlight: flashLive ? `${activeDiscount.label} — first month` : 'Most popular with serious bettors'
     },
     {
       id: 'scout',
@@ -243,7 +243,7 @@ const Pricing = () => {
       trial: '5-day free trial',
       description: 'Follow the sharps, week to week',
       featured: flashLive,
-      featuredLabel: 'NBA Tip-Off',
+      featuredLabel: activeDiscount?.label || 'Thanksgiving',
       priceAnchor: flashLive
         ? `${activeDiscount.discount}% off your first week with code ${activeDiscount.code}`
         : 'Less than one stadium beer',
@@ -251,7 +251,7 @@ const Pricing = () => {
       savings: flashLive ? `Save ${activeDiscount.discount}% your first week` : null,
       saleBadge: ' FIRST WEEK',
       cta: 'Start 5-Day Trial',
-      highlight: flashLive ? `Same ${activeDiscount.discount}% off for tip-off week` : 'No commitment — cancel any week'
+      highlight: flashLive ? `${activeDiscount.label} — first week` : 'No commitment — cancel any week'
     },
     {
       id: 'pro',

@@ -37,15 +37,15 @@ const TRIAL_DAYS = {
   pro: 10,
 };
 
-// NBA tip-off week — mirrors frontend src/lib/paywallPromo.js FALL50.
-// Auto-applied at Checkout for monthly/weekly only. Stripe coupon is 50%
+// Thanksgiving — mirrors frontend src/lib/paywallPromo.js THANKSGIVING.
+// Auto-applied at Checkout for monthly/weekly only. Stripe coupon is 33%
 // once (first invoice = first week on weekly, first month on monthly).
 // Keep it restricted to scout + elite prices. Annual stays full price.
 const FLASH_PROMO = {
-  code: 'FALL50',
-  codeAliases: ['FALL50', 'fall50'],
+  code: 'THANKSGIVING',
+  codeAliases: ['THANKSGIVING', 'thanksgiving'],
   tiers: new Set(['scout', 'elite']),
-  endMs: Date.parse('2026-11-04T05:00:00Z'), // Wed Nov 4, 12:00am ET
+  endMs: Date.parse('2026-11-27T05:00:00Z'), // Fri Nov 27, 12:00am ET
 };
 
 async function resolveFlashPromoId(stripeClient, tier) {
@@ -219,7 +219,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
       },
     };
 
-    // Tip-off week: auto-apply FALL50 on monthly/weekly so users don't miss the code.
+    // Thanksgiving: auto-apply THANKSGIVING on monthly/weekly so users don't miss the code.
     // Stripe forbids discounts + allow_promotion_codes together.
     const flashPromoId = await resolveFlashPromoId(stripeClient, tier);
     if (flashPromoId) {
