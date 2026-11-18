@@ -5,10 +5,11 @@
  */
 
 const { onRequest, onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
 const { SERVER_NAME, TOOLS } = require('./sharpflowPublic');
-const { postMcp } = require('./sharpflowMcp');
+const { postMcp, loadDayBets } = require('./sharpflowMcp');
 const {
   membershipFromUser,
   hashKey,
@@ -22,6 +23,9 @@ const {
   wwwAuthenticate,
   createOauthHandlers,
 } = require('./connectorOauth');
+const { gcsCardStore, sharePage, ISSUER } = require('./cardStore');
+const { answerCard } = require('./cardTools');
+const { etDate } = require('./sharpflowPublic');
 
 const KEYS = 'sharpflowConnectorKeys';
 const MEMBER_URL = 'https://sharpflowmcpmember-lviwud3q2q-uc.a.run.app';
@@ -97,15 +101,46 @@ async function resolveMember(req) {
   return { ok: true, uid, ...member };
 }
 
+function cardMatch(path) {
+  const match = String(path || '').match(/^\/card\/([a-f0-9]{20})(-story)?(\.png)?$/);
+  if (!match) return null;
+  return { id: match[1], story: Boolean(match[2]), png: Boolean(match[3]) };
+}
+
+async function sendCard(req, res, path) {
+  const hit = cardMatch(path);
+  if (!hit || req.method !== 'GET') return false;
+  const store = gcsCardStore();
+  if (hit.png) {
+    const image = await store.getImage(hit.id, hit.story);
+    if (!image) {
+      res.status(404).type('text').send('This card has expired.');
+      return true;
+    }
+    res.set('Cache-Control', 'public, max-age=300');
+    res.type('png').send(image);
+    return true;
+  }
+  const meta = await store.getMeta(hit.id);
+  if (!meta) {
+    res.status(404).type('html').send('<!doctype html><title>SharpFlow</title><p>This card has expired.</p>');
+    return true;
+  }
+  res.set('Cache-Control', 'public, max-age=300');
+  res.type('html').send(sharePage({ id: hit.id, post: meta.post, issuer: ISSUER }));
+  return true;
+}
+
 const sharpflowMcpMember = onRequest({
   region: 'us-central1',
   cors: true,
-  memory: '512MiB',
+  memory: '1GiB',
   timeoutSeconds: 60,
   invoker: 'public',
 }, async (req, res) => {
   try {
     const path = routePath(req);
+    if (await sendCard(req, res, path)) return;
     const oauth = oauthApi();
     if (path === '/.well-known/oauth-protected-resource' || path.startsWith('/.well-known/oauth-protected-resource/')) {
       res.json(protectedResourceMetadata(MEMBER_URL));
@@ -252,8 +287,25 @@ const revokeSharpflowConnectorApp = onCall({
   return { ok: true };
 });
 
+const sharpflowMorningCard = onSchedule({
+  schedule: '0 8 * * *',
+  timeZone: 'America/New_York',
+  region: 'us-central1',
+  memory: '1GiB',
+  timeoutSeconds: 120,
+}, async () => {
+  const result = await answerCard('morning_recap', {}, {
+    etDate,
+    loadDayBets,
+    cardStore: gcsCardStore(),
+    issuer: ISSUER,
+  });
+  if (result.error) logger.info('morning card', result.error);
+});
+
 module.exports = {
   sharpflowMcpMember,
+  sharpflowMorningCard,
   createSharpflowConnectorKey,
   listSharpflowConnectorApps,
   revokeSharpflowConnectorApp,

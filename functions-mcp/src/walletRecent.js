@@ -269,5 +269,7 @@ module.exports = {
   dateBucket,
   oddsBand,
   americanOf,
+  marketOf,
+  usualFor,
   recentRead,
 };

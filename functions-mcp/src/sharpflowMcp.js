@@ -25,6 +25,8 @@ const {
   issueCode,
   verifyCode,
 } = require('./sharpflowPublic');
+const { usualFor } = require('./walletRecent');
+const { gcsCardStore, ISSUER } = require('./cardStore');
 
 const FEEDS = [
   ['ML', 'sharp_positions.json'],
@@ -151,6 +153,50 @@ async function loadWalletRecent(short) {
   });
   recentCache.set(id, { at: now, rows });
   return rows;
+}
+
+function positionRow(row) {
+  return {
+    sport: row.sport ? String(row.sport).toUpperCase() : null,
+    marketType: row.marketType || null,
+    result: row.result || null,
+    postponed: row.postponed === true,
+    status: row.status || null,
+    invested: row.invested ?? null,
+    size: row.size ?? null,
+    settledPnl: row.settledPnl ?? null,
+    positionPnl: row.positionPnl ?? null,
+    date: row.date ? String(row.date).slice(0, 10) : null,
+    gradedAt: typeof row.gradedAt?.toMillis === 'function' ? row.gradedAt.toMillis() : (Number(row.gradedAt) || 0),
+    pinnacleOdds: row.pinnacleOdds ?? null,
+    bestRetailOdds: row.bestRetailOdds ?? null,
+    odds: row.odds ?? null,
+    avgPrice: row.avgPrice ?? null,
+    walletShort: /^[0-9a-f]{6}$/.test(String(row.walletShort || '').toLowerCase())
+      ? String(row.walletShort).toLowerCase()
+      : null,
+  };
+}
+
+async function loadDayBets(date) {
+  const day = String(date || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return [];
+  const db = admin.firestore();
+  const snap = await db.collection('sharp_action_positions')
+    .where('date', '==', day)
+    .select(
+      'walletShort', 'sport', 'marketType', 'result', 'postponed', 'status',
+      'invested', 'size', 'settledPnl', 'positionPnl', 'date', 'gradedAt',
+      'pinnacleOdds', 'bestRetailOdds', 'odds', 'avgPrice',
+    )
+    .get();
+  const rows = [];
+  snap.forEach((doc) => rows.push(positionRow(doc.data() || {})));
+  const profiles = await loadProfiles([...new Set(rows.map((row) => row.walletShort).filter(Boolean))]);
+  return rows.map((row) => ({
+    ...row,
+    usual: row.walletShort ? usualFor(profiles.get(row.walletShort), row.sport) : null,
+  }));
 }
 
 async function loadProfiles(shorts) {
@@ -355,7 +401,17 @@ async function onMcp(req, res) {
     sendRpc(req, res, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid request' } }, 400);
     return;
   }
-  const ctx = { loadLocked, loadAction, loadRecord, loadPrices, loadWalletBets, loadWalletRecent };
+  const ctx = {
+    loadLocked,
+    loadAction,
+    loadRecord,
+    loadPrices,
+    loadWalletBets,
+    loadWalletRecent,
+    loadDayBets,
+    cardStore: gcsCardStore(),
+    issuer: ISSUER,
+  };
   if (Array.isArray(body)) {
     const replies = [];
     for (const msg of body) {
@@ -475,4 +531,4 @@ const sharpflowMcp = onRequest({
   }
 });
 
-module.exports = { sharpflowMcp, postMcp: onMcp, sendRpc };
+module.exports = { sharpflowMcp, postMcp: onMcp, sendRpc, loadDayBets };
