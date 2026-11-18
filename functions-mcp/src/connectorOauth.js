@@ -253,7 +253,7 @@ function loginPage({ issuer, params, clientName, config }) {
       box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
       flex: none;
     }
-    button {
+    button, a#go {
       width: 100%;
       margin-top: 1.25rem;
       display: flex;
@@ -262,6 +262,7 @@ function loginPage({ issuer, params, clientName, config }) {
       gap: 0.7rem;
       background: #fff;
       color: #1F2937;
+      text-decoration: none;
       border: 0;
       border-radius: 12px;
       padding: 0.85rem 1rem;
@@ -320,7 +321,7 @@ function loginPage({ issuer, params, clientName, config }) {
         <li>Uses the Google account on your plan or free trial</li>
         <li>Turn it off anytime from your account page</li>
       </ul>
-      <button id="go" type="button">
+      <a id="go" href="#">
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
           <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
           <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
@@ -328,7 +329,7 @@ function loginPage({ issuer, params, clientName, config }) {
           <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
         </svg>
         <span id="label">Sign in with Google</span>
-      </button>
+      </a>
       <p class="err" id="err"></p>
       <div id="extra"></div>
       <p class="foot">You return to the app after sign-in. <a href="https://nhlsavant.com">nhlsavant.com</a></p>
@@ -350,12 +351,33 @@ function loginPage({ issuer, params, clientName, config }) {
     const auth = firebase.auth();
     const params = boot.params;
     const button = document.getElementById('go');
-    function resetButton() {
-      button.disabled = false;
-      label.textContent = 'Sign in with Google';
+    const appName = firebase.app().name;
+    const pendingKey = 'firebase:pendingRedirect:' + boot.config.apiKey + ':' + appName;
+    function googleUrl() {
+      const query = new URLSearchParams({
+        apiKey: boot.config.apiKey,
+        appName: appName,
+        authType: 'signInViaRedirect',
+        redirectUrl: window.location.href,
+        v: firebase.SDK_VERSION || '10.14.1',
+        providerId: 'google.com',
+        customParameters: JSON.stringify({ prompt: 'select_account' }),
+      });
+      return 'https://' + boot.config.authDomain + '/__/auth/handler?' + query.toString();
     }
+    // The tap itself has to open Google. A redirect started after an await
+    // never leaves the page on an iPhone.
+    button.href = googleUrl();
+    button.addEventListener('click', function () {
+      try {
+        sessionStorage.setItem(pendingKey, JSON.stringify('true'));
+      } catch (e) {
+        err.textContent = 'Sign-in did not finish. Tap the button to try again.';
+      }
+    });
     async function finish(user) {
       label.textContent = 'Sending you back…';
+      button.style.pointerEvents = 'none';
       const idToken = await user.getIdToken();
       const res = await fetch(boot.issuer + '/oauth/complete', {
         method: 'POST',
@@ -377,28 +399,19 @@ function loginPage({ issuer, params, clientName, config }) {
         document.getElementById('extra').appendChild(link);
       }
     }
-    auth.getRedirectResult().then(function (pending) {
-      if (pending && pending.user) {
-        button.disabled = true;
-        return finish(pending.user);
-      }
-    }).catch(function () {
-      resetButton();
-      err.textContent = 'Sign-in did not finish. Click the button to try again.';
-    });
-    button.onclick = async () => {
-      button.disabled = true;
-      err.textContent = '';
-      label.textContent = 'Taking you to Google…';
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      try {
-        await auth.signInWithRedirect(provider);
-      } catch (e) {
-        resetButton();
-        err.textContent = 'Sign-in did not finish. Click the button to try again.';
-      }
-    };
+    let returning = false;
+    try { returning = sessionStorage.getItem(pendingKey) === JSON.stringify('true'); } catch (e) {}
+    if (returning) {
+      label.textContent = 'Sending you back…';
+      auth.getRedirectResult().then(function (pending) {
+        if (pending && pending.user) return finish(pending.user);
+        label.textContent = 'Sign in with Google';
+        err.textContent = 'Sign-in did not finish. Tap the button to try again.';
+      }).catch(function () {
+        label.textContent = 'Sign in with Google';
+        err.textContent = 'Sign-in did not finish. Tap the button to try again.';
+      });
+    }
   </script>
 </body>
 </html>`;
