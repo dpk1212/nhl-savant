@@ -67,11 +67,12 @@ jobs:
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Auto-update: Sharp wallet profiles + tier cell stats [$(TZ='America/New_York' date +'%Y-%m-%d %H:%M')] [skip ci]" &&
             git stash --include-untracked &&
-            git pull --rebase -X theirs &&
             (git stash pop || true) &&
-            for i in 1 2 3; do
-              git push && break
+            for i in 1 2 3 4 5 6; do
+              git pull --rebase -X theirs && git push && exit 0
               echo "Push attempt $i failed, retrying..."
-              sleep 2
+              sleep 8
             done
+            echo "profile commit did not reach main"
+            exit 1
           )
