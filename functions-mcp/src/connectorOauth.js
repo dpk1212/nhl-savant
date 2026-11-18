@@ -1,6 +1,6 @@
 /**
  * Sign-in for the member connector.
- * ChatGPT, Claude, and Grok register a public client, send the member
+ * ChatGPT, Claude, Grok, and Perplexity register a public client, send the member
  * through NHL Savant login, and then call with a bearer token.
  * Pasted account keys stay valid for apps that only have a key field.
  */
@@ -50,7 +50,19 @@ function redirectAllowed(uri) {
   if (url.hostname === 'grok.com') {
     return path === '/connectors-oauth-exchange-code' || path.startsWith('/oauth/');
   }
+  if (perplexityHost(url.hostname)) {
+    return path === '/rest/connections/oauth_callback';
+  }
   return false;
+}
+
+function perplexityHost(hostname) {
+  return hostname === 'www.perplexity.ai'
+    || hostname === 'www.perplexity.com'
+    || hostname === 'enterprise.perplexity.ai'
+    || hostname === 'enterprise.perplexity.com'
+    || hostname === 'perplexity.ai'
+    || hostname === 'perplexity.com';
 }
 
 function cleanRedirects(list) {
@@ -68,7 +80,10 @@ function cimdAllowed(uri) {
   } catch {
     return false;
   }
-  return url.protocol === 'https:' && ['chatgpt.com', 'claude.ai', 'claude.com', 'grok.com'].includes(url.hostname);
+  return url.protocol === 'https:' && (
+    ['chatgpt.com', 'claude.ai', 'claude.com', 'grok.com'].includes(url.hostname)
+    || perplexityHost(url.hostname)
+  );
 }
 
 function refreshDecision(token, family, now) {
@@ -116,6 +131,7 @@ function appLabel(redirects, clientName) {
   if (host === 'chatgpt.com') return 'ChatGPT';
   if (host === 'claude.ai' || host === 'claude.com') return 'Claude';
   if (host === 'grok.com') return 'Grok';
+  if (perplexityHost(host)) return 'Perplexity';
   return 'This app';
 }
 

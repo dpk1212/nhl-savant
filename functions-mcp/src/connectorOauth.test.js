@@ -5,6 +5,7 @@ const {
   pkceS256,
   redirectAllowed,
   cleanRedirects,
+  cimdAllowed,
   refreshDecision,
   protectedResourceMetadata,
   authorizationServerMetadata,
@@ -18,13 +19,18 @@ test('PKCE accepts the matching verifier and rejects a mismatch', () => {
   assert.equal(pkceS256('', challenge), false);
 });
 
-test('redirects are limited to ChatGPT, Claude, Grok, and local inspector', () => {
+test('redirects are limited to ChatGPT, Claude, Grok, Perplexity, and local inspector', () => {
   assert.equal(redirectAllowed('https://chatgpt.com/connector_platform_oauth_redirect'), true);
   assert.equal(redirectAllowed('https://chatgpt.com/connector/oauth/callback'), true);
   assert.equal(redirectAllowed('https://claude.ai/api/mcp/auth_callback'), true);
   assert.equal(redirectAllowed('https://claude.com/api/mcp/auth_callback'), true);
   assert.equal(redirectAllowed('https://grok.com/connectors-oauth-exchange-code/'), true);
   assert.equal(redirectAllowed('https://grok.com/oauth/other'), true);
+  assert.equal(redirectAllowed('https://www.perplexity.ai/rest/connections/oauth_callback'), true);
+  assert.equal(redirectAllowed('https://www.perplexity.com/rest/connections/oauth_callback'), true);
+  assert.equal(redirectAllowed('https://staging.perplexity.ai/rest/connections/oauth_callback'), false);
+  assert.equal(cimdAllowed('https://www.perplexity.ai/.well-known/mcp-client.json'), true);
+  assert.equal(cimdAllowed('https://evil.example/.well-known/mcp-client.json'), false);
   assert.equal(redirectAllowed('http://127.0.0.1:6274/oauth/callback'), true);
   assert.equal(redirectAllowed('https://evil.com/callback'), false);
   assert.equal(redirectAllowed('https://chatgpt.com/account'), false);
