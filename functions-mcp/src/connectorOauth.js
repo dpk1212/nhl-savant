@@ -348,8 +348,12 @@ function loginPage({ issuer, params, clientName, config }) {
     lead.textContent = 'Sign in with the Google account on your NHL Savant plan or free trial. ' + name + ' can then read your SharpFlow card.';
     firebase.initializeApp(boot.config);
     const auth = firebase.auth();
-    sessionStorage.removeItem('sf_oauth');
     const params = boot.params;
+    const button = document.getElementById('go');
+    function resetButton() {
+      button.disabled = false;
+      label.textContent = 'Sign in with Google';
+    }
     async function finish(user) {
       label.textContent = 'Sending you back…';
       const idToken = await user.getIdToken();
@@ -359,12 +363,11 @@ function loginPage({ issuer, params, clientName, config }) {
         body: JSON.stringify(Object.assign({ idToken: idToken }, params)),
       });
       const data = await res.json();
-      sessionStorage.removeItem('sf_oauth');
       if (data.redirect) {
         window.location = data.redirect;
         return;
       }
-      document.getElementById('go').style.display = 'none';
+      button.style.display = 'none';
       err.textContent = data.message || 'This account needs an active plan or a free trial.';
       if (data.planUrl) {
         const link = document.createElement('a');
@@ -374,23 +377,26 @@ function loginPage({ issuer, params, clientName, config }) {
         document.getElementById('extra').appendChild(link);
       }
     }
-    document.getElementById('go').onclick = async () => {
-      const button = document.getElementById('go');
+    auth.getRedirectResult().then(function (pending) {
+      if (pending && pending.user) {
+        button.disabled = true;
+        return finish(pending.user);
+      }
+    }).catch(function () {
+      resetButton();
+      err.textContent = 'Sign-in did not finish. Click the button to try again.';
+    });
+    button.onclick = async () => {
       button.disabled = true;
       err.textContent = '';
-      label.textContent = 'Opening Google…';
+      label.textContent = 'Taking you to Google…';
       const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       try {
-        const result = await auth.signInWithPopup(provider);
-        if (result && result.user) await finish(result.user);
+        await auth.signInWithRedirect(provider);
       } catch (e) {
-        label.textContent = 'Sign in with Google';
-        err.textContent = e && e.code === 'auth/popup-blocked'
-          ? 'Allow the sign-in window, then click the button again.'
-          : ((e && e.message) || 'Sign-in failed.');
-      } finally {
-        button.disabled = false;
-        if (label.textContent === 'Opening Google…') label.textContent = 'Sign in with Google';
+        resetButton();
+        err.textContent = 'Sign-in did not finish. Click the button to try again.';
       }
     };
   </script>
