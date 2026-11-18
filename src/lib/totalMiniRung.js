@@ -10,9 +10,11 @@
  * the same side at 6. Eight points or more qualifies.
  *
  * The side is 3u when the market press edge is 5 or more and the line
- * is flat. Press edge is the FOR wallets' win rate minus 52.4, rounded
- * to a tenth. Flat is a steam M that rounds to 0. A shorten, a line
- * moving against, and a press edge under 5 stay on the stake that arrived.
+ * holds. Press edge is the FOR wallets' win rate minus 52.4, rounded
+ * to a tenth. Through Nov 16 a hold is a steam M that rounds to 0.
+ * From Nov 17 a flat line and a shorten under 4.5 both hold. A tenth
+ * of 4.5 or more, a line moving against, and a press edge under 5 stay
+ * on the stake that arrived.
  *
  * This replaces the stake that arrived. Manual stake, an operator kill,
  * the T-15 freeze, and a graded ticket stay at the caller. NHL, NBA, NFL,
@@ -28,6 +30,8 @@ export const TOTAL_MINI_SKILL = 8;
 export const TOTAL_MINI_EXACT_N = 4;
 export const TOTAL_MINI_WIDE_N = 6;
 export const TOTAL_MINI_PRESS = 5;
+export const TOTAL_MINI_SHORT_FROM = '2026-11-17';
+export const TOTAL_MINI_SHORT_MAX = 4.5;
 export const TOTAL_MINI_UNITS = 3;
 export const TOTAL_MINI_STAKE_TIER = 'TOTAL-MINI';
 export const TOTAL_MINI_RESCUED_BY = 'total-mini';
@@ -157,6 +161,18 @@ export function pressCoversTotalMini(edge) {
 
 export function steamIsFlat(m) {
   return roundTenth(m) === 0;
+}
+
+export function isTotalMiniShortLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TOTAL_MINI_SHORT_FROM;
+}
+
+/** Flat, or from Nov 17 a shorten whose tenth is under 4.5. */
+export function steamHoldsTotalMini(m, pickDate) {
+  const r = roundTenth(m);
+  if (r == null || r < 0) return false;
+  if (!isTotalMiniShortLive(pickDate)) return r === 0;
+  return r < TOTAL_MINI_SHORT_MAX;
 }
 
 /** Points over the price in the line cell. Null when the read is too thin. */
@@ -346,7 +362,7 @@ export function applyTotalMiniRung({
     skill: best.skill,
     wallets: quals.map((q) => q.wallet),
   };
-  if (!pressCoversTotalMini(edge) || !steamIsFlat(move)) return { ...held, action: 'PASS' };
+  if (!pressCoversTotalMini(edge) || !steamHoldsTotalMini(move, pickDate)) return { ...held, action: 'PASS' };
   return {
     ...held,
     fires: true,

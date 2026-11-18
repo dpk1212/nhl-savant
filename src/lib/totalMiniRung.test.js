@@ -4,6 +4,7 @@ import {
   applyTotalMiniRung,
   buildTotalMiniBook,
   pressCoversTotalMini,
+  steamHoldsTotalMini,
   steamIsFlat,
   totalMiniSkill,
 } from './totalMiniRung.js';
@@ -90,6 +91,20 @@ test('a qualifying mini with press of 5 and a flat line is 3u', () => {
   assert.equal(up.units, 3);
   const zero = run({ units: 0 });
   assert.equal(zero.units, 3);
+});
+
+test('from Nov 17 a shorten under 4.5 holds and 4.5 lets go', () => {
+  assert.equal(steamHoldsTotalMini(0.47, '2026-11-17'), true);
+  assert.equal(steamHoldsTotalMini(0.06, '2026-11-16'), false);
+  assert.equal(steamHoldsTotalMini(4.44, '2026-11-17'), true);
+  assert.equal(steamHoldsTotalMini(4.46, '2026-11-17'), false);
+  assert.equal(steamHoldsTotalMini(4.5, '2026-11-17'), false);
+  assert.equal(steamHoldsTotalMini(-0.47, '2026-11-17'), false);
+  const held = run({ pickDate: '2026-11-17', steam: 0.47, units: 0 });
+  assert.equal(held.action, 'STAKE');
+  assert.equal(held.units, 3);
+  assert.equal(run({ pickDate: '2026-11-17', steam: 4.5, units: 0 }).action, 'PASS');
+  assert.equal(run({ pickDate: '2026-11-17', steam: -0.47, units: 1 }).units, 1);
 });
 
 test('a shorten, a press edge under 5, the other side, skill under 8, and size outside the band stay put', () => {

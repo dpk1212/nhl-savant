@@ -4848,7 +4848,7 @@ async function createMissingLockedPicks({
 
       // Total mini. After the spread rung. A mini at 0.75× up to 1.5×
       // with skill of 8 or more on this side of the number, a press edge
-      // of 5 or more, and a flat line: the side is 3u. A shorten, a line
+      // of 5 or more, and a shorten under 4.5: the side is 3u. A tenth of 4.5 or more, a line
       // moving against, and a press edge under 5 stay. Manual stake and
       // an operator kill stay. The T-15 freeze already returned.
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -7779,7 +7779,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   // Total mini. After the spread rung. A mini at 0.75× up to 1.5× with
   // skill of 8 or more on this side of the number, a press edge of 5 or
-  // more, and a flat line: the side is 3u. A shorten, a line moving
+  // more, and a shorten under 4.5: the side is 3u. A tenth of 4.5 or more, a line moving
   // against, and a press edge under 5 stay. Manual stake and an operator
   // kill stay. The T-15 freeze already returned.
   let totalMiniPolicy = null;
