@@ -5,7 +5,8 @@
  * Removed from primary: Analytics Hub, Data Inspector, Today's Games as peer tabs
  */
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Menu, X, TrendingUp, BarChart3, BookOpen, Target, User, LogOut, CreditCard,
   Crown, HelpCircle, Database, ChevronDown, Lock, Layers, Zap,
@@ -80,8 +81,6 @@ function DropdownMenu({ open, onClose, align = 'left', children, minWidth = 200 
         top: 'calc(100% + 0.45rem)',
         [align]: 0,
         background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: '12px',
         padding: '0.5rem',
@@ -90,7 +89,6 @@ function DropdownMenu({ open, onClose, align = 'left', children, minWidth = 200 
         animation: 'sfNavSlideDown 0.2s ease-out',
         zIndex: 1001,
       }}
-      onMouseLeave={onClose}
     >
       {children}
     </div>
@@ -99,7 +97,9 @@ function DropdownMenu({ open, onClose, align = 'left', children, minWidth = 200 
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuTop, setMenuTop] = useState(48);
   const [hoveredLink, setHoveredLink] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -135,6 +135,26 @@ const Navigation = () => {
     setUserMenuOpen(false);
   };
 
+  const go = (to) => {
+    closeMenus();
+    navigate(to);
+  };
+
+  const toggleMobile = () => {
+    setUserMenuOpen(false);
+    if (!mobileMenuOpen && navRef.current) {
+      setMenuTop(Math.round(navRef.current.getBoundingClientRect().bottom));
+    }
+    setMobileMenuOpen((open) => !open);
+  };
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [mobileMenuOpen]);
+
   useLayoutEffect(() => {
     const nav = navRef.current;
     if (!lockOn || !nav) return undefined;
@@ -166,8 +186,6 @@ const Navigation = () => {
           alignItems: 'center',
         } : {
           background: 'rgba(17, 24, 39, 0.98)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
           padding: '0.75rem 1rem',
         }),
@@ -397,13 +415,13 @@ const Navigation = () => {
                       {isPremium ? <span style={{ color: GOLD, fontWeight: 600 }}>{tier?.toUpperCase()}</span> : 'Free'}
                     </div>
                   </div>
-                  <Link to="/account" onClick={closeMenus} style={menuItemStyle}>
+                  <button type="button" onClick={() => go('/account')} style={menuButtonStyle}>
                     <User size={14} /> Account
-                  </Link>
+                  </button>
                   {isPremium && (
-                    <Link to="/account" onClick={closeMenus} style={menuItemStyle}>
+                    <button type="button" onClick={() => go('/account')} style={menuButtonStyle}>
                       <CreditCard size={14} /> Billing
-                    </Link>
+                    </button>
                   )}
                   <button type="button" onClick={() => { signOut(); closeMenus(); }} style={{ ...menuItemStyle, color: '#EF4444', width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                     <LogOut size={14} /> Sign Out
@@ -466,20 +484,27 @@ const Navigation = () => {
             </button>
           )}
           {user && (
-            <Link to="/account" onClick={closeMenus} className="sf-nav-avatar" style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: lockOn ? '0.5px solid rgba(255,255,255,0.16)' : '2px solid rgba(212,175,55,0.4)', display: 'block' }}>
+            <button
+              type="button"
+              className="sf-nav-avatar"
+              aria-label="Account"
+              onClick={() => go('/account')}
+              style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: lockOn ? '0.5px solid rgba(255,255,255,0.16)' : '2px solid rgba(212,175,55,0.4)', display: 'block', padding: 0, background: 'rgba(212,175,55,0.12)', cursor: 'pointer' }}
+            >
               {user.photoURL ? (
-                <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
               ) : (
-                <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', background: 'rgba(212,175,55,0.12)' }}>
-                  <User size={14} color={GOLD} />
-                </div>
+                <span style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: GOLD, fontWeight: 700, fontSize: 13 }}>
+                  {(user.displayName || user.email || 'A').trim().charAt(0).toUpperCase()}
+                </span>
               )}
-            </Link>
+            </button>
           )}
           <button
             type="button"
             className="sf-mobile-menu-btn"
-            onClick={() => { setMobileMenuOpen((v) => !v); setUserMenuOpen(false); }}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            onClick={toggleMobile}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -500,64 +525,71 @@ const Navigation = () => {
         </div>
       </div>
 
-      {mobileMenuOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            background: 'linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(17, 24, 39, 0.98) 100%)',
-            borderBottom: '1px solid rgba(212, 175, 55, 0.15)',
-            padding: '0.625rem',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            maxHeight: 'calc(100vh - 60px)',
-            overflowY: 'auto',
-          }}
-        >
-          {primaryLinks.map((link) => {
-            const Icon = link.icon;
-            const active = link.match(path);
-            return (
-              <Link key={link.path} to={link.path} onClick={closeMenus} style={mobileRow(active)}>
-                <Icon size={16} /> {link.label}
-              </Link>
-            );
-          })}
+      {mobileMenuOpen && createPortal(
+        <div style={{ position: 'fixed', top: menuTop, left: 0, right: 0, bottom: 0, zIndex: 10050 }}>
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={closeMenus}
+            style={{ position: 'absolute', inset: 0, border: 'none', padding: 0, margin: 0, background: 'transparent', cursor: 'pointer' }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              background: 'linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(17, 24, 39, 0.98) 100%)',
+              borderBottom: '1px solid rgba(212, 175, 55, 0.15)',
+              padding: '0.625rem',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              maxHeight: '100%',
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
+            {primaryLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <button key={link.path} type="button" onClick={() => go(link.path)} style={tapRow(mobileRow(link.match(path)))}>
+                  <Icon size={16} /> {link.label}
+                </button>
+              );
+            })}
 
-          <SectionLabel>Models</SectionLabel>
-          {modelLinks.map((m) => (
-            <Link key={m.path} to={m.path} onClick={closeMenus} style={mobileRow(path.startsWith(m.path), m.color)}>
-              <span>{m.emoji}</span> {m.label}
-            </Link>
-          ))}
-
-          <SectionLabel>Learn</SectionLabel>
-          {learnLinks.map((l) => {
-            const Icon = l.icon;
-            return (
-              <Link key={l.path} to={l.path} onClick={closeMenus} style={mobileRow(path.startsWith(l.path))}>
-                <Icon size={16} /> {l.label}
-              </Link>
-            );
-          })}
-
-          {user && !isPremium && (
-            <Link to="/pricing" onClick={closeMenus} style={{ ...mobileRow(false), background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)', color: '#0A0E27', fontWeight: 700, marginTop: '0.5rem' }}>
-              <Crown size={16} /> Upgrade
-            </Link>
-          )}
-          {user && (
-            <>
-              <Link to="/account" onClick={closeMenus} style={mobileRow(path === '/account')}>
-                <User size={16} /> Account
-              </Link>
-              <button type="button" onClick={() => { signOut(); closeMenus(); }} style={{ ...mobileRow(false), color: '#EF4444', width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                <LogOut size={16} /> Sign Out
+            <SectionLabel>Models</SectionLabel>
+            {modelLinks.map((m) => (
+              <button key={m.path} type="button" onClick={() => go(m.path)} style={tapRow(mobileRow(path.startsWith(m.path), m.color))}>
+                <span>{m.emoji}</span> {m.label}
               </button>
-            </>
-          )}
-        </div>
+            ))}
+
+            <SectionLabel>Learn</SectionLabel>
+            {learnLinks.map((l) => {
+              const Icon = l.icon;
+              return (
+                <button key={l.path} type="button" onClick={() => go(l.path)} style={tapRow(mobileRow(path.startsWith(l.path)))}>
+                  <Icon size={16} /> {l.label}
+                </button>
+              );
+            })}
+
+            {user && !isPremium && (
+              <button type="button" onClick={() => go('/pricing')} style={tapRow({ ...mobileRow(false), background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)', color: '#0A0E27', fontWeight: 700, marginTop: '0.5rem' })}>
+                <Crown size={16} /> Upgrade
+              </button>
+            )}
+            {user && (
+              <>
+                <button type="button" onClick={() => go('/account')} style={tapRow(mobileRow(path === '/account'))}>
+                  <User size={16} /> Account
+                </button>
+                <button type="button" onClick={() => { signOut(); closeMenus(); }} style={tapRow({ ...mobileRow(false), color: '#EF4444' })}>
+                  <LogOut size={16} /> Sign Out
+                </button>
+              </>
+            )}
+          </div>
+        </div>,
+        document.body
       )}
 
       <style>{`
@@ -592,6 +624,29 @@ const menuItemStyle = {
   fontWeight: 500,
   marginBottom: '0.2rem',
 };
+
+const menuButtonStyle = {
+  ...menuItemStyle,
+  width: '100%',
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  textAlign: 'left',
+  fontFamily: 'inherit',
+};
+
+function tapRow(style) {
+  return {
+    background: 'transparent',
+    border: 'none',
+    ...style,
+    width: '100%',
+    cursor: 'pointer',
+    textAlign: 'left',
+    fontFamily: 'inherit',
+    WebkitTapHighlightColor: 'transparent',
+  };
+}
 
 function SectionLabel({ children }) {
   return (
