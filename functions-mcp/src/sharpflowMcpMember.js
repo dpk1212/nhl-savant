@@ -123,7 +123,7 @@ const sharpflowMcpMember = onRequest({
       await oauth.token(req, res);
       return;
     }
-    if ((path === '/oauth/authorize' || path === '/authorize') && req.method === 'GET') {
+    if ((path === '/oauth/authorize' || path === '/authorize' || path === '/connect') && req.method === 'GET') {
       await oauth.authorize(req, res);
       return;
     }
