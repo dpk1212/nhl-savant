@@ -13,7 +13,10 @@ import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
 import {
   sportDisplaySizeRatio as sportDisplaySizeRatioFromProfile,
   sportUsualBetFromProfile,
+  sizeBandKeyFromRatio,
 } from './sizeRatioBands.js';
+import { mlPriceBand } from './mlMiniRung.js';
+import { priceBandLabel, sizeBandChip } from './actionBandBooks.js';
 import { steamForGame } from './steamMove.js';
 import { signedSpreadEntryLine } from './spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
@@ -457,6 +460,7 @@ function rollupFromAgg(agg, source) {
   const roiRaw = source === 'action' ? agg.dollarRoi : agg.flatRoi;
   const roi = Number.isFinite(Number(roiRaw)) ? Math.round(Number(roiRaw)) : null;
   const wr = Number.isFinite(Number(agg.wr)) ? Math.round(Number(agg.wr)) : null;
+  const settled = Number(agg.settledPnl);
   return {
     n: agg.n,
     wins,
@@ -466,6 +470,27 @@ function rollupFromAgg(agg, source) {
     roi,
     source,
     window: 'all',
+    settledPnl: Number.isFinite(settled) ? Math.round(settled) : null,
+  };
+}
+
+function rollupFromBand(book, window) {
+  if (!book || !(book.n > 0)) return null;
+  const wins = Number(book.wins) || 0;
+  const losses = Number.isFinite(book.losses) ? Number(book.losses) : Math.max(0, book.n - wins);
+  const roi = Number(book.dollarRoi);
+  const wr = Number(book.wr);
+  const settled = Number(book.settledPnl);
+  return {
+    n: book.n,
+    wins,
+    losses,
+    record: `${wins}-${losses}`,
+    wr: Number.isFinite(wr) ? Math.round(wr) : null,
+    roi: Number.isFinite(roi) ? Math.round(roi) : null,
+    settledPnl: Number.isFinite(settled) ? Math.round(settled) : null,
+    source: 'action',
+    window,
   };
 }
 
@@ -494,12 +519,18 @@ function rollupFromRecentWindow(win, source = 'action') {
 }
 
 /** Sport + sport×market books for Action expand (featured flat / action $). */
-function contextRollupsFromProfile(prof, sport, marketType) {
+function contextRollupsFromProfile(prof, sport, marketType, ticket = {}) {
   const rec = prof?.bySport?.[sport];
+  const emptyBands = {
+    oddsAction: null, oddsActionAll: null, sizeAction: null, sizeActionAll: null,
+    oddsLabel: priceBandLabel(ticket.priceBand),
+    sizeLabel: sizeBandChip(ticket.sizeBand),
+  };
   if (!rec) {
     return {
       sportFeatured: null, sportAction: null, sportActionAll: null,
       marketFeatured: null, marketAction: null, marketActionAll: null,
+      ...emptyBands,
     };
   }
   const mkt = String(marketType || '').toUpperCase();
@@ -509,6 +540,10 @@ function contextRollupsFromProfile(prof, sport, marketType) {
   const marketActionL30 = rollupFromRecentWindow(mRec?.recentActionWindow, 'action');
   const sportActionAll = rollupFromAgg(rec.positions, 'action');
   const marketActionAll = rollupFromAgg(mRec?.positions, 'action');
+  const priceCell = ticket.priceBand == null
+    ? null
+    : mRec?.priceBands?.[String(ticket.priceBand)] || null;
+  const sizeCell = ticket.sizeBand ? mRec?.sizeBands?.[ticket.sizeBand] || null : null;
   return {
     sportFeatured: rollupFromAgg(rec.picks, 'featured'),
     // Keep L30 and all-time separate — UI shows both. Never collapse into one.
@@ -517,6 +552,12 @@ function contextRollupsFromProfile(prof, sport, marketType) {
     marketFeatured: rollupFromAgg(mRec?.picks, 'featured'),
     marketAction: marketActionL30,
     marketActionAll,
+    oddsAction: rollupFromBand(priceCell?.l30, '30d'),
+    oddsActionAll: rollupFromBand(priceCell?.all, 'all'),
+    sizeAction: rollupFromBand(sizeCell?.l30, '30d'),
+    sizeActionAll: rollupFromBand(sizeCell?.all, 'all'),
+    oddsLabel: priceBandLabel(ticket.priceBand),
+    sizeLabel: sizeBandChip(ticket.sizeBand),
   };
 }
 
@@ -524,6 +565,7 @@ function contextRollupsFromProfile(prof, sport, marketType) {
 export const _test = {
   rollupFromRecentWindow,
   rollupFromAgg,
+  contextRollupsFromProfile,
   formFromProfile,
   sparkPointsForTab,
   teamLabel,
@@ -814,6 +856,8 @@ export function buildConfirmedActionRows({
     const ts = entryTsMs(pos);
     const rawPrice = pos.entryAvgPrice ?? pos.avgPrice ?? pos.price ?? null;
     const prob = normalizeProb(rawPrice);
+    const ticketPriceBand = mlPriceBand(prob);
+    const ticketSizeBand = sizeBandKeyFromRatio(dispSr);
     const cents = prob != null ? Math.round(prob * 100) : null;
     const americanOdds = Number.isFinite(pos.odds)
       ? Math.round(pos.odds)
@@ -900,7 +944,12 @@ export function buildConfirmedActionRows({
       recentActionWindow: form.recentActionWindow || null,
       sportUsualBet: sportUsualBetFromProfile(prof, sport),
       trust: trustFromProfile(prof, sport),
-      ...contextRollupsFromProfile(prof, sport, marketType),
+      ticketPriceBand,
+      ticketSizeBand,
+      ...contextRollupsFromProfile(prof, sport, marketType, {
+        priceBand: ticketPriceBand,
+        sizeBand: ticketSizeBand,
+      }),
       pinMove: pin, // 'with' | 'against' | null
       steam,
       hardMarket,

@@ -4,6 +4,8 @@
  */
 import React, { useEffect, useMemo, useState, memo } from 'react';
 import { Activity, ChevronDown } from 'lucide-react';
+import { actionTileMatch, sizeWord } from '../../lib/actionBandBooks.js';
+import { trackEvent } from '../../utils/analytics.js';
 import {
   buildConfirmedActionRows,
   mergePortfolioActionRows,
@@ -169,6 +171,9 @@ const PremiumSpark = memo(function PremiumSpark({
   width = 320,
   height = 64,
   endLabel = null,
+  dim = false,
+  marks = null,
+  hideEnd = false,
 }) {
   if (!points || points.length < 2) return null;
   const min = Math.min(...points);
@@ -210,7 +215,7 @@ const PremiumSpark = memo(function PremiumSpark({
             <stop offset="100%" stopColor={stroke} stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={fill} fill={`url(#${gid})`} />
+        <path d={fill} fill={`url(#${gid})`} opacity={dim ? 0.6 : 1} />
         <path
           d={line}
           fill="none"
@@ -218,9 +223,20 @@ const PremiumSpark = memo(function PremiumSpark({
           strokeWidth={2.2}
           strokeLinecap="round"
           strokeLinejoin="round"
+          opacity={dim ? 0.6 : 1}
         />
-        <circle cx={last.x} cy={last.y} r={3.2} fill={stroke} />
-        <circle cx={last.x} cy={last.y} r={6} fill={fillTint} />
+        {Array.isArray(marks) ? marks.map((on, i) => (on && pts[i] ? (
+          <g key={`m-${i}`}>
+            <circle cx={pts[i].x} cy={pts[i].y} r={6.5} fill="rgba(232,210,138,0.28)" />
+            <circle cx={pts[i].x} cy={pts[i].y} r={3.3} fill="#E8D28A" />
+          </g>
+        ) : null)) : null}
+        {hideEnd ? null : (
+          <>
+            <circle cx={last.x} cy={last.y} r={3.2} fill={stroke} />
+            <circle cx={last.x} cy={last.y} r={6} fill={fillTint} />
+          </>
+        )}
       </svg>
       {endLabel != null && (
         <span style={{
@@ -263,13 +279,6 @@ function fmtLegDate(dateStr) {
   } catch {
     return dateStr;
   }
-}
-
-function sizeWord(band, ratio) {
-  if (band === 'press' || ratio >= 1.5) return 'press';
-  if (band === 'light' || (Number.isFinite(ratio) && ratio < 0.5)) return 'light';
-  if (band === 'lean' || (Number.isFinite(ratio) && ratio < 1)) return 'lean';
-  return 'usual';
 }
 
 /** "TOTAL 7.5" / "SPREAD -1.5" / "ML" — totals never get a + prefix. */
@@ -352,7 +361,9 @@ function legCrestName(leg) {
   return legPickName(leg);
 }
 
-function TicketLegRow({ leg, showSize, pnlMode = 'flat', isMobile = false, sport }) {
+function TicketLegRow({
+  leg, showSize, pnlMode = 'flat', isMobile = false, sport, match = null, pill = null,
+}) {
   const win = leg.won === 1;
   const ratio = Number(leg.sizeRatio);
   const band = leg.sizeBand;
@@ -362,7 +373,16 @@ function TicketLegRow({ leg, showSize, pnlMode = 'flat', isMobile = false, sport
   const matchup = legMatchup(leg);
   const oddsTxt = formatAmerican(Number(leg.odds));
   const dollar = legDollarPnl(leg);
-  const sizeHot = Number.isFinite(ratio) && ratio >= 1.5;
+  const sizeHot = match == null && Number.isFinite(ratio) && ratio >= 1.5;
+  const oddsPill = match === true && pill === 'odds';
+  const sizePill = match === true && pill === 'size';
+  const pillStyle = {
+    padding: '0.12rem 0.38rem',
+    borderRadius: 999,
+    color: '#E8D28A',
+    background: 'rgba(212,175,55,0.08)',
+    border: '1px solid rgba(212,175,55,0.26)',
+  };
   const midText = showSize
     ? (Number.isFinite(ratio) ? `${ratio.toFixed(1)}× ${sizeWord(band, ratio)}` : '—')
     : pnlMode === 'actual'
@@ -405,6 +425,12 @@ function TicketLegRow({ leg, showSize, pnlMode = 'flat', isMobile = false, sport
       alignItems: 'center',
       padding: isMobile ? '0.62rem 0.05rem' : '0.72rem 0.1rem',
       borderBottom: '1px solid rgba(255,255,255,0.06)',
+      borderLeft: match === true ? '3px solid #E8D28A' : '3px solid transparent',
+      boxShadow: match === true ? 'inset 12px 0 22px rgba(212,175,55,0.10)' : 'none',
+      background: match === true
+        ? 'linear-gradient(90deg, rgba(212,175,55,0.10), rgba(212,175,55,0))'
+        : 'transparent',
+      opacity: match === false ? 0.34 : 1,
       fontFeatureSettings: "'tnum'",
     }}
     >
@@ -443,10 +469,15 @@ function TicketLegRow({ leg, showSize, pnlMode = 'flat', isMobile = false, sport
       </div>
       {isMobile ? (
         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.22rem' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: oddsTxt ? B.textSec : B.textSubtle }}>
+          <span style={{
+            fontSize: '0.72rem', fontWeight: 700,
+            color: oddsPill ? '#E8D28A' : (oddsTxt ? B.textSec : B.textSubtle),
+            ...(oddsPill ? pillStyle : {}),
+          }}
+          >
             {oddsTxt || '—'}
           </span>
-          <span style={{ fontSize: '0.72rem', fontWeight: 720, color: midColor }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 720, color: midColor, ...(sizePill ? pillStyle : {}) }}>
             {midText}
             {stakeNote ? <span style={{ color: B.textSubtle, fontWeight: 600 }}> · {stakeNote}</span> : null}
           </span>
@@ -455,14 +486,17 @@ function TicketLegRow({ leg, showSize, pnlMode = 'flat', isMobile = false, sport
       ) : (
         <>
           <span style={{
-            fontSize: '0.78rem', fontWeight: 700, color: oddsTxt ? B.text : B.textSubtle,
+            fontSize: '0.78rem', fontWeight: 700,
+            color: oddsPill ? '#E8D28A' : (oddsTxt ? B.text : B.textSubtle),
             textAlign: 'right',
+            justifySelf: 'end',
+            ...(oddsPill ? pillStyle : {}),
           }}
           >
             {oddsTxt || '—'}
           </span>
           <span style={{ textAlign: 'right', minWidth: 0 }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 720, color: midColor }}>{midText}</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 720, color: midColor, ...(sizePill ? pillStyle : {}) }}>{midText}</span>
             {stakeNote ? (
               <span style={{ display: 'block', marginTop: '0.1rem', fontSize: '0.64rem', fontWeight: 650, color: B.textSubtle }}>
                 {stakeNote}
@@ -547,7 +581,7 @@ function bookBits(book) {
   ].filter(Boolean);
 }
 
-function ScopeHero({ book, empty }) {
+function ScopeHero({ book, empty, figure = '1.48rem', quiet = false }) {
   if (!book) {
     return (
       <div style={{ ...T.micro, color: B.textSubtle, padding: '0.45rem 0 0.15rem' }}>{empty}</div>
@@ -556,38 +590,35 @@ function ScopeHero({ book, empty }) {
   const pnl = Number.isFinite(book.settledPnl) ? book.settledPnl : null;
   const pnlLabel = fmtBookPnl(pnl);
   const record = bookRecord(book) || '—';
-  const sub = [bookRoiText(book), Number.isFinite(book.wr) ? `${book.wr}% wins` : null]
-    .filter(Boolean)
-    .join('  ·  ');
+  const sub = quiet
+    ? `ⓘ Small sample · ${book.n} bet${book.n === 1 ? '' : 's'}`
+    : [bookRoiText(book), Number.isFinite(book.wr) ? `${book.wr}% wins` : null]
+      .filter(Boolean)
+      .join('  ·  ');
+  const figureStyle = {
+    fontSize: figure,
+    fontWeight: 700,
+    letterSpacing: '-0.045em',
+    lineHeight: 1,
+    fontFeatureSettings: "'tnum'",
+  };
   return (
     <>
       <div style={{
         display: 'flex',
         alignItems: 'baseline',
         justifyContent: 'space-between',
-        gap: '0.65rem',
+        gap: '0.45rem',
         marginTop: '0.42rem',
       }}
       >
-        <span style={{
-          fontSize: '1.48rem',
-          fontWeight: 680,
-          letterSpacing: '-0.045em',
-          lineHeight: 1,
-          color: B.text,
-          fontFeatureSettings: "'tnum'",
-        }}
-        >
+        <span style={{ ...figureStyle, color: quiet ? B.textSec : B.text }}>
           {record}
         </span>
         {pnlLabel ? (
           <span style={{
-            fontSize: '1.48rem',
-            fontWeight: 680,
-            letterSpacing: '-0.045em',
-            lineHeight: 1,
-            color: pnl >= 0 ? '#34D399' : '#F07178',
-            fontFeatureSettings: "'tnum'",
+            ...figureStyle,
+            color: quiet ? B.textMuted : (pnl >= 0 ? '#34D399' : '#F07178'),
           }}
           >
             {pnlLabel}
@@ -616,6 +647,96 @@ function windowEyebrow(book, fallback) {
   return `Last ${book.window}`;
 }
 
+function marketPhrase(sport, marketType) {
+  const s = String(sport || '').toUpperCase();
+  const m = String(marketType || '').toUpperCase();
+  const word = m === 'ML' ? 'moneylines' : m === 'SPREAD' ? 'spreads' : m === 'TOTAL' ? 'totals' : String(m || '').toLowerCase();
+  return `${s} ${word}`.trim();
+}
+
+function allTimeBits(book) {
+  if (!book || !(book.n > 0)) return '—';
+  const pnl = fmtBookPnl(book.settledPnl);
+  const roi = book.n >= 5 && Number.isFinite(book.roi)
+    ? `${book.roi >= 0 ? '+' : ''}${book.roi}%`
+    : null;
+  return [book.record, pnl, roi].filter(Boolean).join(' · ');
+}
+
+function TileToggle({ on }) {
+  return (
+    <span
+      className="sf-band-toggle"
+      aria-hidden
+      style={{
+        width: 18,
+        height: 18,
+        borderRadius: 999,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        border: on ? '1px solid rgba(212,175,55,0.85)' : '1px solid rgba(255,255,255,0.18)',
+        background: on ? 'rgba(212,175,55,0.16)' : 'transparent',
+        color: '#E8D28A',
+        fontSize: 11,
+        fontWeight: 800,
+        lineHeight: 1,
+      }}
+    >
+      {on ? '✓' : ''}
+    </span>
+  );
+}
+
+function BandTiles({
+  sport,
+  marketType,
+  tiles,
+  active,
+  onPick,
+}) {
+  return (
+    <div className={`sf-band-tiles is-four${active ? ' has-selection' : ''}`}>
+      {tiles.map((tile) => {
+        const n = Number(tile.l30?.n) || 0;
+        const dead = n < 1;
+        const on = active === tile.id;
+        const quiet = n > 0 && n < 5;
+        return (
+          <button
+            key={tile.id}
+            type="button"
+            data-tile={tile.id}
+            className={`sf-band-tile${on ? ' is-on' : ''}`}
+            aria-pressed={on}
+            aria-disabled={dead}
+            disabled={dead}
+            title={tile.tip || undefined}
+            onClick={() => { if (!dead) onPick(tile.id); }}
+          >
+            <span className="sf-band-label">
+              <span>{tile.label}</span>
+              <TileToggle on={on} />
+            </span>
+            <span className={`sf-band-chip${tile.gold ? ' is-gold' : ''}`}>{tile.chip}</span>
+            <span className="sf-band-eyebrow">Last 30 days</span>
+            {dead ? (
+              <span className="sf-band-empty">{tile.empty}</span>
+            ) : (
+              <ScopeHero book={tile.l30} empty={tile.empty} figure="1.3rem" quiet={quiet} />
+            )}
+            <span className="sf-band-all">
+              <span>All time</span>
+              <span>{allTimeBits(tile.all)}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * Action tab: L30 is the loud book, all-time sits under it.
  * Featured tab: one book per scope.
@@ -627,9 +748,68 @@ function BetTypeRollupStrip({
   marketRollup,
   sportAllTime = null,
   marketAllTime = null,
+  oddsRollup = null,
+  oddsAllTime = null,
+  sizeRollup = null,
+  sizeAllTime = null,
+  oddsLabel = null,
+  sizeLabel = null,
   showDualWindows = false,
+  showBandTiles = false,
+  activeTile = null,
+  onTile = null,
   isMobile = false,
 }) {
+  if (showBandTiles) {
+    const phrase = marketPhrase(sport, marketType);
+    const mkt = String(marketType || '').toUpperCase();
+    const mktLabel = mkt === 'ML' ? 'ML' : mkt;
+    return (
+      <BandTiles
+        sport={sport}
+        marketType={marketType}
+        active={activeTile}
+        onPick={onTile}
+        tiles={[
+          {
+            id: 'sport',
+            label: String(sport || '').toUpperCase(),
+            chip: 'All bets',
+            l30: sportRollup,
+            all: sportAllTime,
+            empty: `No ${String(sport || '').toUpperCase()} bets yet`,
+          },
+          {
+            id: 'market',
+            label: `${String(sport || '').toUpperCase()} ${mktLabel}`.trim(),
+            chip: 'This bet type',
+            l30: marketRollup,
+            all: marketAllTime,
+            empty: `No ${phrase} yet`,
+          },
+          {
+            id: 'odds',
+            label: 'At these odds',
+            chip: oddsLabel || '—',
+            gold: !!oddsLabel,
+            l30: oddsRollup,
+            all: oddsAllTime,
+            empty: `No ${phrase} at these odds yet`,
+          },
+          {
+            id: 'size',
+            label: 'At this size',
+            chip: sizeLabel || '—',
+            gold: !!sizeLabel,
+            l30: sizeRollup,
+            all: sizeAllTime,
+            empty: `No ${phrase} at this size yet`,
+            tip: "Size versus this sport's usual when the profile was built.",
+          },
+        ]}
+      />
+    );
+  }
   const mkt = String(marketType || '').toUpperCase();
   const mktLabel = mkt === 'ML' ? 'ML' : mkt;
   const rows = [
@@ -798,11 +978,44 @@ function Segmented({ value, onChange, options }) {
   );
 }
 
+const moreBtn = {
+  marginTop: '0.7rem',
+  width: '100%',
+  background: 'rgba(212,175,55,0.08)',
+  border: '1px solid rgba(212,175,55,0.22)',
+  borderRadius: 10,
+  cursor: 'pointer',
+  fontSize: '0.72rem',
+  fontWeight: 740,
+  letterSpacing: '0.04em',
+  color: '#E8D28A',
+  padding: '0.55rem 0.7rem',
+};
+
+function curveFromLegs(legs, mode, matchOf) {
+  const ordered = [...(legs || [])].sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  let cum = 0;
+  const points = [];
+  const marks = [];
+  for (const leg of ordered) {
+    let delta = null;
+    if (mode === 'actual') delta = legDollarPnl(leg);
+    else if (Number.isFinite(leg?.flat)) delta = Number(leg.flat);
+    if (delta == null) continue;
+    cum += delta;
+    points.push(mode === 'actual' ? Math.round(cum) : +cum.toFixed(2));
+    marks.push(matchOf(leg));
+  }
+  return points.length >= 2 ? { points, marks } : null;
+}
+
 function ActionExpandPanel({ row, isMobile }) {
   // form = this sharp's featured history; recent = this sharp's Action tickets
   // Default Action — that's the desk context; featured is one click away.
   const [tab, setTab] = useState('recent');
   const [showMore, setShowMore] = useState(false);
+  const [tileFilter, setTileFilter] = useState(null);
+  const [filterMode, setFilterMode] = useState('highlight');
   // Actual $ first — locked picks & Action tickets are sized, not 1u flat.
   const [sparkMode, setSparkMode] = useState('actual');
   const featured = useMemo(
@@ -821,8 +1034,6 @@ function ActionExpandPanel({ row, isMobile }) {
   const legs = tab === 'form' ? formLegs : action;
   const formListIsActionFallback = tab === 'form' && !featured.length && action.length > 0;
   const actionTotalN = Number(row.recentActionTotalN) || action.length;
-  const previewN = 5;
-  const visibleLegs = showMore ? legs : legs.slice(-previewN);
   const l5 = tab === 'recent' ? (row.form?.actionL5 || row.form?.l5) : row.form?.l5;
   const l10 = tab === 'recent' ? (row.form?.actionL10 || row.form?.l10) : row.form?.l10;
   const formRecord = (window) => {
@@ -855,6 +1066,50 @@ function ActionExpandPanel({ row, isMobile }) {
   })();
   const sportAllTime = useActionBooks ? (row.sportActionAll || null) : null;
   const marketAllTime = useActionBooks ? (row.marketActionAll || null) : null;
+  const showBandTiles = tab === 'recent';
+  const oddsRollup = showBandTiles ? (row.oddsAction || null) : null;
+  const sizeRollup = showBandTiles ? (row.sizeAction || null) : null;
+  const filtering = showBandTiles && !!tileFilter;
+  const matchOf = (leg) => actionTileMatch(leg, tileFilter, row);
+  const matchedLegs = filtering ? legs.filter(matchOf) : legs;
+  const previewN = filtering && filterMode === 'highlight' ? 10 : 5;
+  const listed = filtering && filterMode === 'only' ? matchedLegs : legs;
+  const visibleLegs = showMore ? listed : listed.slice(-previewN);
+  const matchCount = filtering ? matchedLegs.length : legs.length;
+
+  useEffect(() => {
+    if (tab !== 'recent') return undefined;
+    trackEvent('sf_tiles_view', {
+      has_odds: !!(row.oddsAction && row.oddsAction.n > 0),
+      has_size: !!(row.sizeAction && row.sizeAction.n > 0),
+      small_odds: !!(row.oddsAction && row.oddsAction.n > 0 && row.oddsAction.n < 5),
+      small_size: !!(row.sizeAction && row.sizeAction.n > 0 && row.sizeAction.n < 5),
+    });
+    return undefined;
+  }, [row.id]);
+
+  const pickTile = (id) => {
+    if (id === 'sport' || tileFilter === id) {
+      if (tileFilter) trackEvent('sf_tile_filter_clear', { via: 'tile' });
+      setTileFilter(null);
+      return;
+    }
+    const next = legs.filter((leg) => actionTileMatch(leg, id, row));
+    const bucket = id === 'odds' ? (row.oddsLabel || '') : id === 'size' ? (row.sizeLabel || '') : row.marketType;
+    trackEvent('sf_tile_filter', {
+      tile: id,
+      bucket: String(bucket || ''),
+      sport: row.sport || '',
+      market: row.marketType || '',
+      n_match: next.length,
+      n_total: legs.length,
+      mode: filterMode,
+    });
+    setTileFilter(id);
+    setShowMore(false);
+  };
+
+  const marked = filtering ? curveFromLegs(legs, sparkMode, matchOf) : null;
 
   const sizeHead = tab === 'recent' || formListIsActionFallback
     ? 'Size'
@@ -867,6 +1122,12 @@ function ActionExpandPanel({ row, isMobile }) {
     <div
       className="sf-action-expand"
       data-expand="book"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && tileFilter) {
+          trackEvent('sf_tile_filter_clear', { via: 'esc' });
+          setTileFilter(null);
+        }
+      }}
       style={{
         borderTop: '1px solid rgba(232,210,138,0.16)',
         background: 'linear-gradient(180deg, rgba(18,22,32,0.98) 0%, rgba(12,15,22,1) 100%)',
@@ -885,7 +1146,15 @@ function ActionExpandPanel({ row, isMobile }) {
       >
         <Segmented
           value={tab}
-          onChange={(id) => { setTab(id); setShowMore(false); }}
+          onChange={(id) => {
+            if (tileFilter) {
+              trackEvent('sf_tile_filter_clear', { via: 'tab' });
+            }
+            setTab(id);
+            setShowMore(false);
+            setTileFilter(null);
+            setFilterMode('highlight');
+          }}
           options={[
             { id: 'recent', label: 'Their Action' },
             { id: 'form', label: 'Their featured' },
@@ -939,7 +1208,16 @@ function ActionExpandPanel({ row, isMobile }) {
         marketRollup={marketRollup}
         sportAllTime={sportAllTime}
         marketAllTime={marketAllTime}
+        oddsRollup={oddsRollup}
+        oddsAllTime={showBandTiles ? (row.oddsActionAll || null) : null}
+        sizeRollup={sizeRollup}
+        sizeAllTime={showBandTiles ? (row.sizeActionAll || null) : null}
+        oddsLabel={row.oddsLabel}
+        sizeLabel={row.sizeLabel}
         showDualWindows={useActionBooks}
+        showBandTiles={showBandTiles}
+        activeTile={tileFilter}
+        onTile={pickTile}
         isMobile={isMobile}
       />
 
@@ -976,13 +1254,23 @@ function ActionExpandPanel({ row, isMobile }) {
             />
           </span>
         </div>
-        {spark ? (
-          <PremiumSpark
-            points={spark.points}
-            width={isMobile ? 280 : 520}
-            height={isMobile ? 64 : 78}
-            endLabel={spark.endLabel}
-          />
+        {spark || marked ? (
+          <>
+            <PremiumSpark
+              points={(marked || spark).points}
+              width={isMobile ? 280 : 520}
+              height={isMobile ? 64 : 78}
+              endLabel={spark?.endLabel}
+              dim={!!marked}
+              marks={marked ? marked.marks : null}
+              hideEnd={!!marked}
+            />
+            {marked ? (
+              <div style={{ marginTop: '0.35rem', fontSize: '0.72rem', fontWeight: 700, color: '#E8D28A' }}>
+                ● {matchCount} matching bet{matchCount === 1 ? '' : 's'}
+              </div>
+            ) : null}
+          </>
         ) : (
           <div style={{ ...T.micro, color: B.textSubtle, padding: '0.7rem 0.15rem' }}>
             Not enough graded tickets in the last {curveDays} days for a curve.
@@ -1004,6 +1292,48 @@ function ActionExpandPanel({ row, isMobile }) {
         </div>
       ) : (
         <div>
+          {filtering ? (
+            <div className="sf-band-filter" aria-live="polite">
+              <span className="sf-band-dot" aria-hidden />
+              <span>
+                {tileFilter === 'odds'
+                  ? `At these odds · ${row.oddsLabel || '—'} · ${marketPhrase(row.sport, row.marketType)}`
+                  : tileFilter === 'size'
+                    ? `At this size · ${row.sizeLabel || '—'} · ${marketPhrase(row.sport, row.marketType)}`
+                    : `This bet type · ${marketPhrase(row.sport, row.marketType)}`}
+              </span>
+              <span>{matchCount} of {legs.length} match</span>
+              <Segmented
+                value={filterMode}
+                onChange={(id) => {
+                  setFilterMode(id);
+                  setShowMore(false);
+                  trackEvent('sf_tile_filter_mode', { mode: id === 'only' ? 'only' : 'highlight' });
+                }}
+                options={[
+                  { id: 'highlight', label: 'Highlight' },
+                  { id: 'only', label: 'Only these' },
+                ]}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  trackEvent('sf_tile_filter_clear', { via: 'clear' });
+                  setTileFilter(null);
+                }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#E8D28A',
+                  cursor: 'pointer',
+                  fontWeight: 740,
+                  fontSize: '0.72rem',
+                }}
+              >
+                Clear ✕
+              </button>
+            </div>
+          ) : null}
           <div style={{
             display: 'flex',
             alignItems: 'baseline',
@@ -1017,7 +1347,7 @@ function ActionExpandPanel({ row, isMobile }) {
               {isMobile ? sizeHead : `Odds  ·  ${sizeHead}  ·  Result`}
             </span>
           </div>
-          {[...visibleLegs].reverse().map((leg, i) => (
+          {[...(filtering && filterMode === 'only' ? listed : visibleLegs)].reverse().map((leg, i) => (
             <TicketLegRow
               key={`${leg.date}-${leg.side}-${leg.gameKey || i}`}
               leg={leg}
@@ -1025,33 +1355,36 @@ function ActionExpandPanel({ row, isMobile }) {
               pnlMode={sparkMode}
               isMobile={isMobile}
               sport={row.sport}
+              match={filtering ? matchOf(leg) : null}
+              pill={tileFilter === 'odds' ? 'odds' : tileFilter === 'size' ? 'size' : null}
             />
           ))}
-          {legs.length > previewN && (
-            <button
-              type="button"
-              onClick={() => setShowMore((v) => !v)}
-              style={{
-                marginTop: '0.7rem',
-                width: '100%',
-                background: 'rgba(212,175,55,0.08)',
-                border: '1px solid rgba(212,175,55,0.22)',
-                borderRadius: 10,
-                cursor: 'pointer',
-                fontSize: '0.72rem',
-                fontWeight: 740,
-                letterSpacing: '0.04em',
-                color: '#E8D28A',
-                padding: '0.55rem 0.7rem',
-              }}
-            >
-              {showMore
-                ? 'Show less'
+          {(() => {
+            const otherN = legs.length - matchCount;
+            const capped = filtering && filterMode === 'only'
+              ? false
+              : listed.length > previewN;
+            if (filtering && filterMode === 'only' && otherN > 0) {
+              return (
+                <button type="button" onClick={() => { setFilterMode('highlight'); setShowMore(true); }} style={moreBtn}>
+                  {`Show the other ${otherN} ticket${otherN === 1 ? '' : 's'}`}
+                </button>
+              );
+            }
+            if (!capped) return null;
+            const label = showMore
+              ? 'Show less'
+              : filtering
+                ? `Show all ${legs.length} · ${matchCount} match`
                 : (actionTotalN > legs.length && tab === 'recent'
                   ? `Show all ${legs.length} of ${actionTotalN}`
-                  : `Show all ${legs.length}`)}
-            </button>
-          )}
+                  : `Show all ${legs.length}`);
+            return (
+              <button type="button" onClick={() => setShowMore((v) => !v)} style={moreBtn}>
+                {label}
+              </button>
+            );
+          })()}
         </div>
       )}
     </div>
