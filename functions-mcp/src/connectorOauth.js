@@ -406,7 +406,6 @@ function loginPage({ issuer, params, clientName, config }) {
       auth.getRedirectResult().then(function (pending) {
         if (pending && pending.user) return finish(pending.user);
         label.textContent = 'Sign in with Google';
-        err.textContent = 'Sign-in did not finish. Tap the button to try again.';
       }).catch(function () {
         label.textContent = 'Sign in with Google';
         err.textContent = 'Sign-in did not finish. Tap the button to try again.';
