@@ -384,6 +384,12 @@ import {
 import { loadMorningRanks } from './lib/morningRankCache.js';
 import { cbbV12StakeMuted, CBB_MATURE_MUTED_BY } from '../src/lib/cbbStakeMute.js';
 import {
+  V12PLUS_ML_DISABLED_MUTED_BY,
+  V12PLUS_ML_DISABLED_REASON,
+  applyV12plusMlStakeDisable,
+  isV12plusMlDisabled,
+} from '../src/lib/v12plusMlDisabled.js';
+import {
   applyEdgeUnder5Mute,
   blendEdgeForSide,
   EDGE_UNDER5_MUTED_BY,
@@ -4924,8 +4930,9 @@ async function createMissingLockedPicks({
       // longer than that. A missing edge, a missing steam on an edge of 0
       // or more, and a price juicier than −425 stay. The price is the
       // book. Manual stake and an operator kill stay. The T-15 freeze
-      // already returned.
-      if (!isOperatorKilled({ _id: docId }, side, null)) {
+      // already returned. Always evaluate every ML side so the stamp is current.
+      if (marketType === 'ML') {
+        const killedCreate = isOperatorKilled({ _id: docId }, side, null);
         v13MlCreate = applyV13MlPath({
           units: peakUnitsApplied,
           pickDate: TARGET_DATE,
@@ -4936,15 +4943,17 @@ async function createMissingLockedPicks({
           odds: stakeOdds ?? odds ?? null,
           steam: steamBookCreate?.mute?.m ?? null,
           edge: waCreateEdge?.edge ?? null,
+          killed: killedCreate,
         });
-        if (v13MlCreate.action === 'STAKE' || v13MlCreate.action === 'MUTE') {
+        if (!killedCreate && (v13MlCreate.action === 'STAKE' || v13MlCreate.action === 'MUTE')) {
           peakUnitsApplied = v13MlCreate.units;
           if (v13MlCreate.action === 'STAKE' && peakUnitsApplied > 0) {
             hcStakeTierCreate = V13_ML_STAKE_TIER;
           }
           if (!(peakUnitsApplied > 0)) hcStakeTierCreate = 'MONITORING';
           console.log(
-            `  V13-ML: ${docId} ${side} ${v13MlCreate.zone}`
+            `  V13-ML: ${docId} ${side} ${v13MlCreate.action}/${v13MlCreate.reason}`
+            + ` zone=${v13MlCreate.zone ?? '—'}`
             + ` edge=${v13MlCreate.edge ?? '—'} steam=${v13MlCreate.steam ?? '—'}`
             + ` against=${v13MlCreate.against}`
             + ` ${v13MlCreate.unitsPre}u → ${v13MlCreate.units}u`,
@@ -5130,7 +5139,7 @@ async function createMissingLockedPicks({
       if (spreadSteamCreate) Object.assign(v8Stamps, spreadSteamStamp(spreadSteamCreate));
       if (totalMiniCreate) Object.assign(v8Stamps, totalMiniStamp(totalMiniCreate));
       if (mlPressCreate) Object.assign(v8Stamps, mlPressStamp(mlPressCreate));
-      if (v13MlCreate) Object.assign(v8Stamps, v13MlStamp(v13MlCreate));
+      if (v13MlCreate) Object.assign(v8Stamps, v13MlStamp(v13MlCreate, { now }));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -5661,6 +5670,33 @@ async function createMissingLockedPicks({
       if (trustProbeCreate && trustKeepsCreate) {
         console.log(
           `  TRUST stake: ${docId} ${side} ${pressEvalCreate.rung} ${peakUnitsApplied}u (score=${scoreV12 ?? '∅'} · ${pressEvalCreate.trust?.rule || 'rung'})`,
+        );
+      }
+      // V12+ ML stake disable — AFTER V12+ rungs and V13. V13 STAKE/MUTE
+      // keep their result. Every other ML side → 0u muted with flag marker.
+      // Manual stake / operator kill stay. Never raises a stake.
+      const mlStakeDisableCreate = applyV12plusMlStakeDisable({
+        market: marketType,
+        units: peakUnitsApplied,
+        operatorKilled: isOperatorKilled({ _id: docId }, side, null),
+        v13Action: v13MlCreate?.action ?? null,
+      });
+      if (mlStakeDisableCreate.applied) {
+        peakUnitsApplied = 0;
+        peakSnapshot.units = 0;
+        peakSnapshot.unitTier = unitTierLabel(0);
+        if (v8Stamps.v8_agsUnitsApplied != null) v8Stamps.v8_agsUnitsApplied = 0;
+        if (v8Stamps.v8_agsV12UnitsApplied != null) v8Stamps.v8_agsV12UnitsApplied = 0;
+        v8Stamps.mutedBy = V12PLUS_ML_DISABLED_MUTED_BY;
+        Object.assign(v8Stamps, mlStakeDisableCreate.marker);
+        healthStamp.status = 'MUTED';
+        healthStamp.reasons = [
+          V12PLUS_ML_DISABLED_REASON,
+          ...(healthStamp.reasons || []).filter((r) => r !== V12PLUS_ML_DISABLED_REASON),
+        ];
+        console.log(
+          `  V12PLUS-ML-DISABLED: ${docId} ${side} ${mlStakeDisableCreate.unitsPre}u → 0u muted (${V12PLUS_ML_DISABLED_MUTED_BY})`
+          + ` (v13=${v13MlCreate?.action || '∅'})`,
         );
       }
       newSides[side] = {
@@ -7909,9 +7945,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // longer than that. A missing edge, a missing steam on an edge of 0
   // or more, and a price juicier than −425 stay. The price is the book,
   // the same number fav juice reads. Manual stake and an operator kill
-  // stay. The T-15 freeze already returned.
+  // stay. The T-15 freeze already returned. Always evaluate every ML side
+  // so the stamp is current (PASS/EXEMPT overwrite prior STAKE fields).
   let v13MlPolicy = null;
-  if (!skipManualFlinch && !operatorKilled) {
+  if (mkt === 'ML') {
     v13MlPolicy = applyV13MlPath({
       units: finalUnitsApplied,
       pickDate,
@@ -7922,8 +7959,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       odds: stakeOdds,
       steam: steamBookPolicy?.mute?.m ?? null,
       edge: winnerAlign?.edge ?? null,
+      manual: skipManualFlinch,
+      killed: operatorKilled,
     });
-    if (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE') {
+    if (!skipManualFlinch && !operatorKilled
+        && (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE')) {
       finalUnitsApplied = v13MlPolicy.units;
       if (v13MlPolicy.action === 'STAKE' && finalUnitsApplied > 0) {
         hcStakeTier = V13_ML_STAKE_TIER;
@@ -7935,6 +7975,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP / TRUST rescue that forced through an AGS mute.
+  // Computed on full pipeline units BEFORE the V12+ ML stake disable so
+  // lockStage matches Nov-18 behavior; units are forced to 0 afterward.
   let appliedLockStage = lockStage;
   let lockStageReason = null;
   const trustShip = appliedStatus === 'ACTIVE'
@@ -8204,6 +8246,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const T5_ST_STEAM_MUTE_VALUES = new Set([T5_NO_T5_ST_MUTED_BY]);
   if (movedAgainstPolicy?.action === 'PASS' && sd.mutedBy === MOVED_AGAINST_MUTED_BY) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
+  }
+  // V13 PASS / EXEMPT — drop a leftover mute or rescue marker before the
+  // mutedBy chain (stamp fields themselves are overwritten below).
+  if (v13MlPolicy && v13MlPolicy.action !== 'STAKE' && v13MlPolicy.action !== 'MUTE') {
+    if (sd.mutedBy === V13_ML_MUTED_BY) {
+      patch.mutedBy = admin.firestore.FieldValue.delete();
+    }
+    if (sd.v8_rescuedBy === V13_ML_RESCUED_BY) {
+      patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    }
   }
   if (steamBookPolicy?.mute?.action !== 'MUTE' && sd.mutedBy === SHORT_MOVE_MUTED_BY) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
@@ -9297,13 +9349,28 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + ` ${mlPressPolicy.unitsPre}u → ${mlPressPolicy.units}u`,
     );
   }
-  if (v13MlPolicy && (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE')) {
-    Object.assign(patch, v13MlStamp(v13MlPolicy));
-    changes.push(
-      `V13-ML: ${v13MlPolicy.zone} edge=${v13MlPolicy.edge ?? '—'}`
-      + ` steam=${v13MlPolicy.steam ?? '—'} against=${v13MlPolicy.against}`
-      + ` ${v13MlPolicy.unitsPre}u → ${v13MlPolicy.units}u`,
-    );
+  // Always overwrite the full V13 stamp on every ML side (PASS included)
+  // so a prior STAKE cannot leave units/zone/reason behind.
+  if (v13MlPolicy) {
+    Object.assign(patch, v13MlStamp(v13MlPolicy, { now }));
+    if (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE') {
+      changes.push(
+        `V13-ML: ${v13MlPolicy.action}/${v13MlPolicy.reason}`
+        + ` zone=${v13MlPolicy.zone ?? '—'}`
+        + ` edge=${v13MlPolicy.edge ?? '—'} steam=${v13MlPolicy.steam ?? '—'}`
+        + ` against=${v13MlPolicy.against}`
+        + ` ${v13MlPolicy.unitsPre}u → ${v13MlPolicy.units}u`,
+      );
+    } else if (sd.v8_v13MlAction != null && sd.v8_v13MlAction !== v13MlPolicy.action) {
+      changes.push(
+        `V13-ML: ${sd.v8_v13MlAction} → ${v13MlPolicy.action}/${v13MlPolicy.reason}`
+        + ` (stamp overwrite)`,
+      );
+    } else if (sd.v8_v13MlAction == null) {
+      changes.push(
+        `V13-ML: ${v13MlPolicy.action}/${v13MlPolicy.reason} (stamp)`,
+      );
+    }
   }
   if (ogEdgeStakePolicy && ogEdgeStakePolicy.action !== 'EXEMPT') {
     Object.assign(patch, ogEdgeStakeStamp(ogEdgeStakePolicy));
@@ -9916,6 +9983,52 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     changes.push('superseded: cleared (live side re-locked)');
   }
 
+  // V12+ ML stake disable — LAST step, after V12+ rungs and V13. V13
+  // STAKE/MUTE keep their result. Every other ML → 0u muted with flag
+  // marker. Manual stake / operator kill stay. Never raises a stake.
+  // Spreads/totals skip. lockStage and policy stamps stay as computed.
+  const mlStakeDisable = applyV12plusMlStakeDisable({
+    market: mkt,
+    units: finalUnitsApplied,
+    operatorKilled,
+    manual: skipManualFlinch,
+    v13Action: v13MlPolicy?.action ?? null,
+  });
+  if (mlStakeDisable.applied) {
+    const unitsPreDisable = mlStakeDisable.unitsPre;
+    finalUnitsApplied = 0;
+    patch.finalUnits = 0;
+    patch.v8_agsUnitsApplied = 0;
+    patch.v8_agsV12UnitsApplied = 0;
+    patch.mutedBy = V12PLUS_ML_DISABLED_MUTED_BY;
+    if (!patch.health) patch.health = {};
+    patch.health = {
+      ...patch.health,
+      status: 'MUTED',
+      reasons: [
+        V12PLUS_ML_DISABLED_REASON,
+        ...((patch.health.reasons || []).filter((r) => r !== V12PLUS_ML_DISABLED_REASON)),
+      ],
+    };
+    Object.assign(patch, mlStakeDisable.marker);
+    patch.peak = {
+      ...(sd.peak || {}),
+      ...(patch.peak || {}),
+      units: 0,
+      unitTier: unitTierLabel(0),
+    };
+    patch.lock = {
+      ...(sd.lock || {}),
+      ...(patch.lock || {}),
+      units: 0,
+      unitTier: unitTierLabel(0),
+    };
+    changes.push(
+      `V12PLUS-ML-DISABLED: ${unitsPreDisable}u → 0u muted (${V12PLUS_ML_DISABLED_MUTED_BY})`
+      + ` (v13=${v13MlPolicy?.action || '∅'})`,
+    );
+  }
+
   wroteAnything = changes.length > 0 || stampedStatus !== appliedStatus;
 
   // Persist the refreshed live snapshot so peak.v8Scoring no longer carries
@@ -10035,6 +10148,7 @@ async function main() {
   const now = Date.now();
   console.log(`\n=== syncPickStateAuthoritative — ${TARGET_DATE} ===`);
   console.log(`Mode: ${DRY_RUN ? 'DRY RUN (no writes)' : 'WRITE'}${FORCE ? ' · FORCE (bypass T-15)' : ''}`);
+  console.log(`V12PLUS_ML_DISABLED: ${isV12plusMlDisabled() ? 'ON (non-V13 ML → 0u muted; V13 STAKE/MUTE kept)' : 'OFF'}`);
   console.log(`now=${new Date(now).toISOString()}\n`);
 
   // Load wallet profiles — prefer committed data/wallet-profiles.json (same
