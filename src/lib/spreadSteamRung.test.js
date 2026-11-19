@@ -106,7 +106,7 @@ test('a shorten under 4.5, the other side of the number, and skill under 8 stay 
   assert.equal(under.action, 'PASS');
 });
 
-test('qualification is the spread book, so a sport book does not carry a young spread book', () => {
+test('confirmed comes first, then the spread book, and a young spread book stays out', () => {
   const ml = prior('cccccc', 20, 0.5, 0.8).map((row) => ({ ...row, marketType: 'ML', entryLine: null }));
   const youngSpreads = prior('cccccc', 12, 0.5, 0.8).map((row, i) => ({
     ...row,
@@ -120,7 +120,12 @@ test('qualification is the spread book, so a sport book does not carry a young s
     ...row, marketType: 'ML', entryLine: null, gameKey: `ml${row.gameKey}`,
   }));
   const old = buildSpreadSteamBook([...oldSpreads, ...badMl], DAY);
-  assert.equal(old.has('NBA|dddddd'), true);
+  assert.equal(old.has('NBA|dddddd'), false);
+  const confirmedMl = prior('eeeeee', 20, 0.5, 0.8).map((row) => ({
+    ...row, marketType: 'ML', entryLine: null, gameKey: `ml${row.gameKey}`,
+  }));
+  const confirmed = buildSpreadSteamBook([...prior('eeeeee', 12, 0.5, 0.8), ...confirmedMl], DAY);
+  assert.equal(confirmed.has('NBA|eeeeee'), true);
 });
 
 test('a moneyline, a total, an earlier date, a manual stake, and a kill stay put', () => {

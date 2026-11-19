@@ -268,6 +268,8 @@ export const PRESS_RATIO_MIN = 1.5;
  * units. Every sport the ladder sizes. Settled tickets are not rewritten.
  */
 export const PRESS_BAND_TRUST_FROM = '2026-11-17';
+/** Confirmed, then the tier, on the stake paths from this morning. */
+export const CONFIRMED_STAKE_FROM = '2026-11-19';
 export const PRESS_BAND_5 = 3.0;
 export const PRESS_BAND_4 = 2.0;
 export const PRESS_EDGE_MIN_N = 10;
@@ -695,14 +697,21 @@ export function isPressBandTrustLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= PRESS_BAND_TRUST_FROM;
 }
 
+export function isConfirmedStakeLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= CONFIRMED_STAKE_FROM;
+}
+
 function isSpreadMarket(marketType) {
   const u = String(marketType || '').toUpperCase();
   return u === 'SPREAD' || u === 'SPREADS';
 }
 
-/** Tier 4 or 5, form on, book at least 15 days old, pressing 1.5× or more.
- *  A spread reads the spread book. Every other market reads the sport book. */
-export function isPressBandWallet(row, marketType = null) {
+/** Confirmed in the sport, then tier 4 or 5, form on, book at least 15
+ *  days old, pressing 1.5× or more. A spread reads the spread book.
+ *  Every other market reads the sport book. Confirmed applies from
+ *  CONFIRMED_STAKE_FROM. */
+export function isPressBandWallet(row, marketType = null, pickDate = null) {
+  if (isConfirmedStakeLive(pickDate) && row?.door2 !== true) return false;
   const t = isSpreadMarket(marketType) ? row?.trustMkt : row?.trust;
   if (!t || row.dir !== 'FOR') return false;
   if (!(Number(t.tier) >= TRUST_TIER_MIN)) return false;
@@ -1009,6 +1018,7 @@ export function trustRead(rows, { ageLive = false } = {}) {
     ratio: Number.isFinite(r.ratio) ? r.ratio : null,
     // Ticket dollars (TRUST-M dollar-margin input); stamped on v8_t4 only.
     invested: Number(r.invested) || 0,
+    confirmed: r.door2 === true,
   });
   const forRows = rows.filter((r) => r.dir === 'FOR');
   const agRows = rows.filter((r) => r.dir === 'AG');
@@ -1297,7 +1307,12 @@ export function applyTrustLayer(result, {
   // TRUST-M read on this market's book. A side that goes through (margin ≥
   // TRUST_M_MARGIN, or +1 with conviction) crosses a FADE-F veto too; any
   // other side keeps the veto.
-  const m = trustMarginRead(trust.mktFor, trust.mktAg);
+  const marketU = String(marketType || '').toUpperCase();
+  const confirmedBooks = isConfirmedStakeLive(pickDate)
+    && (isSpreadMarket(marketType) || marketU === 'TOTAL' || marketU === 'TOTALS');
+  const mktForStake = confirmedBooks ? trust.mktFor.filter((w) => w.confirmed) : trust.mktFor;
+  const mktAgStake = confirmedBooks ? trust.mktAg.filter((w) => w.confirmed) : trust.mktAg;
+  const m = trustMarginRead(mktForStake, mktAgStake);
   const mTag = trustMTag(m);
   const vetoed = fadeVetoed && !m.through;
   if (fadeVetoed && m.through) {
@@ -1548,7 +1563,7 @@ function evaluatePressLadderCore({
   const strip = (r) => ({ wallet: r.wallet, ratio: Math.round(r.ratio * 100) / 100, n: r.n, wr: r.wr });
 
   const bandWallet = isPressBandTrustLive(pickDate)
-    ? forRows.filter((r) => isPressBandWallet(r, marketType)).sort((a, b) => b.ratio - a.ratio)[0] || null
+    ? forRows.filter((r) => isPressBandWallet(r, marketType, pickDate)).sort((a, b) => b.ratio - a.ratio)[0] || null
     : null;
   if (bandWallet || (!isPressBandTrustLive(pickDate) && gate.pass)) {
     const lead = bandWallet || presser;

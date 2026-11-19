@@ -118,6 +118,11 @@ test('a shorten, a press edge under 5, the other side, skill under 8, and size o
   assert.equal(run({ positions: [pos('aaaaaa', 'over', 6.5, 50)] }).units, 1);
 });
 
+test('a tier 5 total book that is not confirmed stays out', () => {
+  const index = buildTotalMiniBook(prior('zzzzzz', 20, 0.4, 0.5), DAY);
+  assert.equal(index.has('NHL|zzzzzz'), false);
+});
+
 test('a spread, an earlier date, a manual stake, and a kill stay put', () => {
   assert.equal(run({ market: 'SPREAD' }).action, 'PASS');
   assert.equal(run({ pickDate: '2026-11-15' }).action, 'EXEMPT');

@@ -1,10 +1,13 @@
 /**
  * v13 moneyline. From 2026-11-19.
  *
- * A wallet qualifies on its moneyline book only, the bets dated before
- * this morning. Tier 4 or 5, form on, and that book is at least 15 days
- * old. The branch fires when one of those wallets is on this side and
- * none of them is on the other side.
+ * A wallet qualifies on the bets dated before this morning. Confirmed
+ * comes first, on the sport: 6 or more graded bets, a win rate of at
+ * least 55, and dollar ROI above 3. Then the moneyline book. Tier 4 or
+ * 5, form on, and that book is at least 15 days old. A later copy of
+ * the same game, side, stake, and dollars is one bet. The branch fires
+ * when one of those wallets is on this side and none of them is on the
+ * other side.
  *
  * Edge under 0. −150 or shorter is 2. A longer price stays. Steam does
  * not enter.
@@ -32,6 +35,7 @@
  */
 
 import { oddsCap } from './oddsCap.js';
+import { dedupePositionCopies, sportBookConfirmed } from './sportConfirmed.js';
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
 import { mlMiniWalletId, mlPriceBand, normMlMiniMarket, normMlMiniSport } from './mlMiniRung.js';
 
@@ -52,7 +56,7 @@ export const V13_ML_UNDER_UNITS = 2;
 export const V13_ML_STAKE_TIER = 'V13-ML';
 export const V13_ML_RESCUED_BY = 'v13-ml';
 export const V13_ML_MUTED_BY = 'v13-ml';
-export const V13_ML_BOOK_VERSION = 2;
+export const V13_ML_BOOK_VERSION = 3;
 
 let bookIndex = new Map();
 
@@ -158,7 +162,8 @@ export function v13HighPriceZone(odds, price) {
 
 /**
  * Qualified moneyline wallets, as of the morning in `asOf`.
- * Key is sport|wallet. Spreads and totals never enter the book.
+ * Key is sport|wallet. The sport book has to be confirmed. The tier
+ * then reads the moneyline bets only.
  */
 export function buildV13MlBook(rows, asOf) {
   const index = new Map();
@@ -170,7 +175,6 @@ export function buildV13MlBook(rows, asOf) {
     const date = String(row?.date || '').slice(0, 10);
     const sport = normMlMiniSport(row?.sport);
     if (!wallet || date.length < 10 || !sport || date >= asOf) continue;
-    if (normMlMiniMarket(row?.marketType || row?.market) !== 'ML') continue;
     if (!byWallet.has(wallet)) byWallet.set(wallet, []);
     byWallet.get(wallet).push(row);
   }
@@ -181,9 +185,12 @@ export function buildV13MlBook(rows, asOf) {
       if (!bySport.has(sport)) bySport.set(sport, []);
       bySport.get(sport).push(row);
     }
-    for (const [sport, bets] of bySport) {
+    for (const [sport, raw] of bySport) {
+      const bets = dedupePositionCopies(raw);
+      if (!sportBookConfirmed(bets)) continue;
       const trustRows = [];
       for (const row of bets) {
+        if (normMlMiniMarket(row?.marketType || row?.market) !== 'ML') continue;
         const won = wonOf(row);
         const price = Number(row.avgPrice ?? row.price);
         const date = String(row.date).slice(0, 10);
