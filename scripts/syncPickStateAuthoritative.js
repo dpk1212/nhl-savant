@@ -4946,7 +4946,8 @@ async function createMissingLockedPicks({
       // 10 or more: steam against is 0, then 3 at −150 or shorter and 1.5
       // longer than that. A missing edge, a missing steam on an edge of 0
       // or more, and a price juicier than −425 stay. The price is the
-      // book. Manual stake and an operator kill stay. The T-15 freeze
+      // book. The dog cap still rules a sized bet: longer than +200 is 0.
+      // Manual stake and an operator kill stay. The T-15 freeze
       // already returned. Always evaluate every ML side so the stamp is current.
       if (marketType === 'ML') {
         const killedCreate = isOperatorKilled({ _id: docId }, side, null);
@@ -7964,7 +7965,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // 10 or more: steam against is 0, then 3 at −150 or shorter and 1.5
   // longer than that. A missing edge, a missing steam on an edge of 0
   // or more, and a price juicier than −425 stay. The price is the book,
-  // the same number fav juice reads. Manual stake and an operator kill
+  // the same number fav juice reads. The dog cap still rules a sized bet:
+  // longer than +200 is 0. Manual stake and an operator kill
   // stay. The T-15 freeze already returned. Always evaluate every ML side
   // so the stamp is current (PASS/EXEMPT overwrite prior STAKE fields).
   let v13MlPolicy = null;
