@@ -66,8 +66,8 @@ jobs:
           git add data/wallet-profiles.json data/moved-against-ledger.json data/sharp-tier-cell-stats.json public/sharp-tier-cell-stats.json WALLET_ROSTER.md WALLET_PROFILES_SUMMARY.md
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Auto-update: Sharp wallet profiles + tier cell stats [$(TZ='America/New_York' date +'%Y-%m-%d %H:%M')] [skip ci]" &&
-            git stash --include-untracked &&
-            (git stash pop || true) &&
+            git checkout -- data/clv-skill-ledger.json || true
+            rm -f data/t5-season-ledger.json
             for i in 1 2 3 4 5 6; do
               git pull --rebase -X theirs && git push && exit 0
               echo "Push attempt $i failed, retrying..."
