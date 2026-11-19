@@ -16,9 +16,10 @@
  * Edge 10 or more. Steam against is 0. A flat line and any shorten take
  * the price: −150 or shorter is 3, and a price longer than −150 is 1.5.
  *
- * A missing edge, a missing steam on an edge of 0 or more, and a price
- * juicier than −425 stay on the stake that arrived. The juice check runs
- * before every size, so a shorten cannot put a juiced favorite back on.
+ * A missing edge, a missing steam on an edge of 0 or more, a missing
+ * price, and a price juicier than −425 stay on the stake that arrived.
+ * The juice check and the price check run before every size, so a
+ * shorten cannot put a juiced favorite, or a side with no number, back on.
  *
  * This is the size for that side. It replaces the stake that arrived.
  * Manual stake, an operator kill, the T-15 freeze, and a graded ticket
@@ -344,6 +345,7 @@ export function applyV13MlPath({
   }
   const zone = v13PriceZone(odds, price);
   if (zone === 'juice') return { ...armed, action: 'PASS', zone, reason: 'juice' };
+  if (zone == null) return { ...armed, action: 'PASS', reason: 'no_price' };
   if (move >= V13_ML_STEAM_HEAVY) {
     return {
       ...armed,
@@ -362,7 +364,6 @@ export function applyV13MlPath({
       reason: 'mid',
     };
   }
-  if (zone == null) return { ...armed, action: 'PASS', reason: 'no_price' };
   if (zone === 'favorite') {
     return {
       ...armed,

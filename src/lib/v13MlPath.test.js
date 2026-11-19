@@ -102,6 +102,20 @@ test('4.5 up to 10 is 0.75, 10 or more is 4, and steam against is 0', () => {
   assert.equal(against.zone, 'against');
 });
 
+test('a shorten of 4.5 or more stays off when the price is missing', () => {
+  const mid = run({ units: 2, steam: 5, odds: null, price: null });
+  assert.equal(mid.action, 'PASS');
+  assert.equal(mid.units, 2);
+  assert.equal(mid.reason, 'no_price');
+  const heavy = run({ units: 1, steam: 12, odds: null, price: null });
+  assert.equal(heavy.action, 'PASS');
+  assert.equal(heavy.units, 1);
+  assert.equal(heavy.reason, 'no_price');
+  const implied = run({ steam: 10, odds: null, price: 0.62 });
+  assert.equal(implied.action, 'STAKE');
+  assert.equal(implied.units, 4);
+});
+
 test('juice stays off on a shorten of 4.5 or more', () => {
   const mid = run({ units: 0, steam: 5, odds: -450 });
   assert.equal(mid.action, 'PASS');

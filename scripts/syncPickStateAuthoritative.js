@@ -10034,6 +10034,31 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     );
   }
 
+  // The bet size is finalUnits. A v13 stake or mute rewrites the lock and
+  // peak units to that number so the review snapshot matches the bet.
+  // Odds and the line stay. Manual stake and an operator kill stay.
+  if (!skipManualFlinch && !operatorKilled
+      && (v13MlPolicy?.action === 'STAKE' || v13MlPolicy?.action === 'MUTE')) {
+    const lockNow = Number(patch.lock?.units ?? sd.lock?.units);
+    const peakNow = Number(patch.peak?.units ?? sd.peak?.units);
+    if (lockNow !== finalUnitsApplied || peakNow !== finalUnitsApplied) {
+      const tier = unitTierLabel(finalUnitsApplied);
+      patch.peak = {
+        ...(sd.peak || {}),
+        ...(patch.peak || {}),
+        units: finalUnitsApplied,
+        unitTier: tier,
+      };
+      patch.lock = {
+        ...(sd.lock || {}),
+        ...(patch.lock || {}),
+        units: finalUnitsApplied,
+        unitTier: tier,
+      };
+      changes.push(`lock units: ${Number.isFinite(lockNow) ? lockNow : '∅'} → ${finalUnitsApplied} (matches the bet)`);
+    }
+  }
+
   wroteAnything = changes.length > 0 || stampedStatus !== appliedStatus;
 
   // Persist the refreshed live snapshot so peak.v8Scoring no longer carries
