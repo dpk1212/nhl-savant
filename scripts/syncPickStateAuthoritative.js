@@ -384,6 +384,12 @@ import {
 import { loadMorningRanks } from './lib/morningRankCache.js';
 import { cbbV12StakeMuted, CBB_MATURE_MUTED_BY } from '../src/lib/cbbStakeMute.js';
 import {
+  V12PLUS_ML_DISABLED_MUTED_BY,
+  V12PLUS_ML_DISABLED_REASON,
+  applyV12plusMlStakeDisable,
+  isV12plusMlDisabled,
+} from '../src/lib/v12plusMlDisabled.js';
+import {
   applyEdgeUnder5Mute,
   blendEdgeForSide,
   EDGE_UNDER5_MUTED_BY,
@@ -5663,6 +5669,30 @@ async function createMissingLockedPicks({
           `  TRUST stake: ${docId} ${side} ${pressEvalCreate.rung} ${peakUnitsApplied}u (score=${scoreV12 ?? '∅'} · ${pressEvalCreate.trust?.rule || 'rung'})`,
         );
       }
+      // V12+ ML stake disable — AFTER all stamps/health. Lock + stamps stay
+      // as computed; force 0u + muted with the flag as mute source.
+      const mlStakeDisableCreate = applyV12plusMlStakeDisable({
+        market: marketType,
+        units: peakUnitsApplied,
+        operatorKilled: isOperatorKilled({ _id: docId }, side, null),
+      });
+      if (mlStakeDisableCreate.applied) {
+        peakUnitsApplied = 0;
+        peakSnapshot.units = 0;
+        peakSnapshot.unitTier = unitTierLabel(0);
+        if (v8Stamps.v8_agsUnitsApplied != null) v8Stamps.v8_agsUnitsApplied = 0;
+        if (v8Stamps.v8_agsV12UnitsApplied != null) v8Stamps.v8_agsV12UnitsApplied = 0;
+        v8Stamps.mutedBy = V12PLUS_ML_DISABLED_MUTED_BY;
+        Object.assign(v8Stamps, mlStakeDisableCreate.marker);
+        healthStamp.status = 'MUTED';
+        healthStamp.reasons = [
+          V12PLUS_ML_DISABLED_REASON,
+          ...(healthStamp.reasons || []).filter((r) => r !== V12PLUS_ML_DISABLED_REASON),
+        ];
+        console.log(
+          `  V12PLUS-ML-DISABLED: ${docId} ${side} ${mlStakeDisableCreate.unitsPre}u → 0u muted (${V12PLUS_ML_DISABLED_MUTED_BY})`,
+        );
+      }
       newSides[side] = {
         team: team || side,
         lockStage: 'LOCKED',
@@ -7935,6 +7965,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP / TRUST rescue that forced through an AGS mute.
+  // Computed on full pipeline units BEFORE the V12+ ML stake disable so
+  // lockStage matches Nov-18 behavior; units are forced to 0 afterward.
   let appliedLockStage = lockStage;
   let lockStageReason = null;
   const trustShip = appliedStatus === 'ACTIVE'
@@ -9916,6 +9948,51 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     changes.push('superseded: cleared (live side re-locked)');
   }
 
+  // V12+ ML stake disable — LAST step. All overlays, lockStage, and policy
+  // stamps already match Nov-18 behavior. Force every ML side to 0u, treat
+  // as muted with the flag as mute source. Spreads/totals skip.
+  const mlStakeDisable = applyV12plusMlStakeDisable({
+    market: mkt,
+    units: finalUnitsApplied,
+    operatorKilled,
+  });
+  if (mlStakeDisable.applied) {
+    const unitsPreDisable = mlStakeDisable.unitsPre;
+    finalUnitsApplied = 0;
+    patch.finalUnits = 0;
+    patch.v8_agsUnitsApplied = 0;
+    patch.v8_agsV12UnitsApplied = 0;
+    patch.mutedBy = V12PLUS_ML_DISABLED_MUTED_BY;
+    if (!patch.health) patch.health = {};
+    patch.health = {
+      ...patch.health,
+      status: 'MUTED',
+      reasons: [
+        V12PLUS_ML_DISABLED_REASON,
+        ...((patch.health.reasons || []).filter((r) => r !== V12PLUS_ML_DISABLED_REASON)),
+      ],
+    };
+    Object.assign(patch, mlStakeDisable.marker);
+    // Keep lockStage / press / rung stamps as computed. Only zero the
+    // stake mirrors on peak/lock so the card shows 0u. Spread from the
+    // stamped peak/lock so merge:true does not wipe other peak fields.
+    patch.peak = {
+      ...(sd.peak || {}),
+      ...(patch.peak || {}),
+      units: 0,
+      unitTier: unitTierLabel(0),
+    };
+    patch.lock = {
+      ...(sd.lock || {}),
+      ...(patch.lock || {}),
+      units: 0,
+      unitTier: unitTierLabel(0),
+    };
+    changes.push(
+      `V12PLUS-ML-DISABLED: ${unitsPreDisable}u → 0u muted (${V12PLUS_ML_DISABLED_MUTED_BY})`,
+    );
+  }
+
   wroteAnything = changes.length > 0 || stampedStatus !== appliedStatus;
 
   // Persist the refreshed live snapshot so peak.v8Scoring no longer carries
@@ -10035,6 +10112,7 @@ async function main() {
   const now = Date.now();
   console.log(`\n=== syncPickStateAuthoritative — ${TARGET_DATE} ===`);
   console.log(`Mode: ${DRY_RUN ? 'DRY RUN (no writes)' : 'WRITE'}${FORCE ? ' · FORCE (bypass T-15)' : ''}`);
+  console.log(`V12PLUS_ML_DISABLED: ${isV12plusMlDisabled() ? 'ON (ML → 0u muted)' : 'OFF'}`);
   console.log(`now=${new Date(now).toISOString()}\n`);
 
   // Load wallet profiles — prefer committed data/wallet-profiles.json (same
