@@ -8,7 +8,8 @@
  *
  * The side ships when two or more qualified wallets are on it, the other
  * side has a score, our score leads by 40 points, and the other score is
- * negative. A side at zero goes to 3u. A side already under 3u gets +1.
+ * negative. A side at zero goes to 3u, and from GAP_LEAD_V13_FROM that zero
+ * is 2u. A side already under 3u gets +1.
  * A side at 3u or more stays. From 2026-11-05 a stake already in the
  * 2-unit band, from 2 up to but not including 3, stays there when the
  * press edge is under 5. That is the gap hold in the edge-under-5 mute.
@@ -27,6 +28,9 @@ export const GAP_LEAD_MIN_N = 5;
 export const GAP_LEAD_MIN_WALLETS = 2;
 export const GAP_LEAD_MARGIN = 40;
 export const GAP_LEAD_RESCUE_UNITS = 3;
+/** From this date a zero returns at 2u. The +1 on a stake already under 3 stays. */
+export const GAP_LEAD_V13_FROM = '2026-11-19';
+export const GAP_LEAD_V13_UNITS = 2;
 export const GAP_LEAD_BOOST_UNDER = 3;
 export const GAP_LEAD_STAKE_TIER = 'GAP-LEAD';
 export const GAP_LEAD_RESCUED_BY = 'gap-lead';
@@ -224,7 +228,10 @@ export function applyGapLeadRescue({
     return { ...ev, action: 'hold', units: safe, reason: 'gap_band_stays' };
   }
   if (safe + 0.001 >= GAP_LEAD_BOOST_UNDER) return { ...ev, action: 'hold', units: safe };
-  const raw = safe <= 0 ? GAP_LEAD_RESCUE_UNITS : safe + 1;
+  const rescueUnits = typeof pickDate === 'string' && pickDate >= GAP_LEAD_V13_FROM
+    ? GAP_LEAD_V13_UNITS
+    : GAP_LEAD_RESCUE_UNITS;
+  const raw = safe <= 0 ? rescueUnits : safe + 1;
   const capped = roundUnits(oddsCap(raw, Number.isFinite(odds) ? odds : null));
   if (!(capped > safe + 0.001)) return { ...ev, action: 'hold', units: safe };
   return { ...ev, action: safe > 0 ? 'boost' : 'rescue', units: capped };

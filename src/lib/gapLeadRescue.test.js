@@ -44,6 +44,24 @@ function tonight(books, units, odds = -110, extra = []) {
   });
 }
 
+test('from Nov 19 a zero returns at 2u', () => {
+  const books = booksFrom([
+    ...fill('aaaaaa', 80),
+    ...fill('bbbbbb', 40),
+    ...fill('cccccc', -20),
+  ]);
+  const out = applyGapLeadRescue({
+    units: 0, odds: -110, sport: 'NBA', market: 'ML', side: 'home',
+    pickDate: '2026-11-19', positions: [
+      { walletShort: 'aaaaaa', side: 'home', invested: 100 },
+      { walletShort: 'bbbbbb', side: 'home', invested: 100 },
+      { walletShort: 'cccccc', side: 'away', invested: 100 },
+    ], books,
+  });
+  assert.equal(out.action, 'rescue');
+  assert.equal(out.units, 2);
+});
+
 test('a zero with two wallets and a 40-point lead over a losing book goes to 3u', () => {
   const books = booksFrom([
     ...fill('aaaaaa', 80),
@@ -149,7 +167,7 @@ test('the odds cap clamps a rescue and never shrinks a stake already on the side
     ...fill('bbbbbb', 40),
     ...fill('cccccc', -20),
   ]);
-  assert.equal(tonight(books, 0, 220).units, 1);
+  assert.equal(tonight(books, 0, 220).units, 0);
   assert.equal(tonight(books, 0, 160).units, 1.5);
   assert.equal(tonight(books, 2, 220).action, 'hold');
   assert.equal(tonight(books, 2, 220).units, 2);

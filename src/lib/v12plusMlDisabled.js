@@ -7,6 +7,7 @@
  * Stake rule (after V12+ rungs, ML-MINI, juice, and the full V13 path
  * including #484 / #486 edge10+ / #487 rescue):
  *   • V13 action STAKE or MUTE → keep that exact V13 result
+ *   • TRUST-G, STEAM-C, and GAP-LEAD keep the stake they already wrote
  *   • Every other ML side (PASS / EXEMPT) → 0u muted with
  *     mutedBy / marker naming this flag as the mute source
  *   • Manual stake and operator kill still win
@@ -84,6 +85,13 @@ export function isV13MlStakeKept(v13Action) {
   return a === 'STAKE' || a === 'MUTE';
 }
 
+/** Rungs that still stake a moneyline after the flag. Everything else goes to 0. */
+const V12PLUS_ML_KEEP_TIERS = new Set(['TRUST-G', 'STEAM-C', 'GAP-LEAD']);
+
+export function isV12plusMlRungKept(stakeTier) {
+  return V12PLUS_ML_KEEP_TIERS.has(String(stakeTier || ''));
+}
+
 /**
  * Final ML stake/mute override.
  * Call AFTER V12+ rungs and AFTER applyV13MlPath.
@@ -95,6 +103,7 @@ export function applyV12plusMlStakeDisable({
   operatorKilled = false,
   manual = false,
   v13Action = null,
+  stakeTier = null,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const base = {
@@ -112,6 +121,9 @@ export function applyV12plusMlStakeDisable({
   if (manual === true) return { ...base, preservedBy: 'manual' };
   if (isV13MlStakeKept(v13Action)) {
     return { ...base, preservedBy: 'v13' };
+  }
+  if (pre > 0 && isV12plusMlRungKept(stakeTier)) {
+    return { ...base, preservedBy: String(stakeTier) };
   }
   // V13 PASS / EXEMPT / absent → strip the V12+ stake; mute with flag marker.
   return {

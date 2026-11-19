@@ -10,6 +10,7 @@ import {
   applyV12plusMlStakeDisable,
   isMoneylineMarket,
   isV12plusMlDisabled,
+  isV12plusMlRungKept,
   isV13MlStakeKept,
   v12plusMlStakeDisabled,
 } from './v12plusMlDisabled.js';
@@ -64,6 +65,28 @@ test('V13-staked side is untouched (keeps V13 units)', () => {
   assert.equal(out.preservedBy, 'v13');
   assert.equal(out.marker, null);
   assert.equal(out.mutedBy, null);
+  if (prev == null) delete process.env.V12PLUS_ML_DISABLED;
+  else process.env.V12PLUS_ML_DISABLED = prev;
+});
+
+test('Trust-G, steam-C, and gap lead keep a moneyline stake', () => {
+  const prev = process.env.V12PLUS_ML_DISABLED;
+  process.env.V12PLUS_ML_DISABLED = '1';
+  assert.equal(isV12plusMlRungKept('TRUST-G'), true);
+  assert.equal(isV12plusMlRungKept('PRESS'), false);
+  for (const stakeTier of ['TRUST-G', 'STEAM-C', 'GAP-LEAD']) {
+    const out = applyV12plusMlStakeDisable({
+      market: 'ML', units: 2, v13Action: 'PASS', stakeTier,
+    });
+    assert.equal(out.applied, false);
+    assert.equal(out.units, 2);
+    assert.equal(out.preservedBy, stakeTier);
+  }
+  const muted = applyV12plusMlStakeDisable({
+    market: 'ML', units: 2, v13Action: 'PASS', stakeTier: 'PRESS',
+  });
+  assert.equal(muted.applied, true);
+  assert.equal(muted.units, 0);
   if (prev == null) delete process.env.V12PLUS_ML_DISABLED;
   else process.env.V12PLUS_ML_DISABLED = prev;
 });

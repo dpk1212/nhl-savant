@@ -532,6 +532,9 @@ import {
   TRUST_G_STAKE_TIER,
   TRUST_G_UNITS,
   TRUST_G_SHORT_UNITS,
+  TRUST_G_SWEET_UNITS,
+  TRUST_G_SHORT_V13_UNITS,
+  isTrustGPriceLive,
   TRUST_G_TIER,
   TRUST_G_RATIO_MAX,
   TRUST_G_SWEET_MIN,
@@ -5680,6 +5683,7 @@ async function createMissingLockedPicks({
         units: peakUnitsApplied,
         operatorKilled: isOperatorKilled({ _id: docId }, side, null),
         v13Action: v13MlCreate?.action ?? null,
+        stakeTier: hcStakeTierCreate,
       });
       if (mlStakeDisableCreate.applied) {
         peakUnitsApplied = 0;
@@ -9993,6 +9997,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     operatorKilled,
     manual: skipManualFlinch,
     v13Action: v13MlPolicy?.action ?? null,
+    stakeTier: hcStakeTier,
   });
   if (mlStakeDisable.applied) {
     const unitsPreDisable = mlStakeDisable.unitsPre;
@@ -10513,7 +10518,11 @@ async function main() {
     if (isTrustLive(TARGET_DATE)) {
       console.log(
         `TRUST LIVE: wallet trust status (tier ≥${TRUST_TIER_MIN} on running edge vs own prices + last-10 form ON, per wallet × sport) stamped FOR/AG on every side (v8_trust*)`
-        + ` · TRUST-G: moneyline at gate_fail + legacy V12 stake > 0 + tier-${TRUST_G_TIER} form-ON wallet for under ${TRUST_G_RATIO_MAX}× → ${TRUST_G_UNITS}u from ${TRUST_G_SWEET_MIN} through ${TRUST_G_SWEET_MAX} when steam has shortened, ${TRUST_G_SHORT_UNITS}u shorter than ${TRUST_G_SWEET_MIN} (${TRUST_G_STAKE_TIER}, every sport)`
+        + ` · TRUST-G: moneyline at gate_fail + legacy V12 stake > 0 + tier-${TRUST_G_TIER} form-ON wallet for under ${TRUST_G_RATIO_MAX}×`
+        + (isTrustGPriceLive(TARGET_DATE)
+          ? ` on the moneyline book → ${TRUST_G_SWEET_UNITS}u from ${TRUST_G_SWEET_MIN} through ${TRUST_G_SWEET_MAX}, ${TRUST_G_SHORT_V13_UNITS}u shorter than ${TRUST_G_SWEET_MIN}, any other price stays 0`
+          : ` → ${TRUST_G_UNITS}u from ${TRUST_G_SWEET_MIN} through ${TRUST_G_SWEET_MAX} when steam has shortened, ${TRUST_G_SHORT_UNITS}u shorter than ${TRUST_G_SWEET_MIN}`)
+        + ` (${TRUST_G_STAKE_TIER}, every sport)`
         + ` · gated ML floor: staked moneyline rung other than TRUST-G + trusted wallet for + implied ${Math.round(ML_FLOOR_IMPLIED_MIN * 100)}–${Math.round(ML_FLOOR_IMPLIED_MAX * 100)}% → ≥${ML_FLOOR_UNITS}u (oddsCap still rules)`
         + ` · TRUST-S: spread with a wallet trusted in this sport's spread market for + none against + implied ${Math.round(TRUST_S_IMPLIED_MIN * 100)}–${Math.round(TRUST_S_IMPLIED_MAX * 100)}% → ${TRUST_S_UNITS}u, ${TRUST_S_PRESS_UNITS}u with conviction or two trusted for (${TRUST_S_STAKE_TIER}); a trusted wallet against vetoes the spread`
         + ` · TRUST-T: total with ${TRUST_T_MIN_FOR}+ wallets trusted in this sport's totals market for + none against → ${TRUST_T_UNITS}u, ${TRUST_T_PRESS_UNITS}u at implied ≤${Math.round(TRUST_T_PRESS_IMPLIED_MAX * 100)}% (${TRUST_T_STAKE_TIER}); exactly one trusted wallet for → 0u; trusted wallets both sides → 0u`
