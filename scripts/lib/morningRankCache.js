@@ -44,6 +44,13 @@ import {
   serializeTotalMiniBook,
   setTotalMiniBook,
 } from '../../src/lib/totalMiniRung.js';
+import {
+  buildV13MlBook,
+  hydrateV13MlBook,
+  isV13MlLive,
+  serializeV13MlBook,
+  setV13MlBook,
+} from '../../src/lib/v13MlPath.js';
 
 export const MORNING_RANK_COLLECTION = 'morningRank';
 const TOP3_DOC = 'top3';
@@ -51,9 +58,10 @@ const GAP_DOC = 'gap';
 const ML_MINI_DOC = 'mlMini';
 const SPREAD_STEAM_DOC = 'spreadSteam';
 const TOTAL_MINI_DOC = 'totalMini';
+const V13_ML_DOC = 'v13Ml';
 const SKILL_FIELDS = [
   'wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice',
-  'result', 'won', 'side', 'gameKey', 'status',
+  'result', 'won', 'side', 'gameKey', 'status', 'postponed',
   'title', 'outcome', 'outcomeIndex', 'slug', 'eventSlug',
   'entryLine', 'spreadLine', 'totalLine', 'away', 'home', 'awayName', 'homeName',
 ];
@@ -131,36 +139,51 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
   const mlLive = isMlMiniLive(asOf);
   const spreadLive = isSpreadSteamLive(asOf);
   const totalLive = isTotalMiniLive(asOf);
+  const v13Live = isV13MlLive(asOf);
   if (!mlLive) setMlMiniBook(new Map());
   if (!spreadLive) setSpreadSteamBook(new Map());
   if (!totalLive) setTotalMiniBook(new Map());
-  if (!mlLive && !spreadLive && !totalLive) return { mlMini: 0, spreadSteam: 0, totalMini: 0 };
+  if (!v13Live) setV13MlBook(new Map());
+  if (!mlLive && !spreadLive && !totalLive && !v13Live) {
+    return { mlMini: 0, spreadSteam: 0, totalMini: 0, v13Ml: 0 };
+  }
 
   let mlDoc = null;
   let spreadDoc = null;
   let totalDoc = null;
+  let v13Doc = null;
   if (!force && persist) {
     try {
       if (mlLive) mlDoc = await readDoc(db, ML_MINI_DOC, asOf);
       if (spreadLive) spreadDoc = await readDoc(db, SPREAD_STEAM_DOC, asOf);
       if (totalLive) totalDoc = await readDoc(db, TOTAL_MINI_DOC, asOf);
+      if (v13Live) v13Doc = await readDoc(db, V13_ML_DOC, asOf);
     } catch (err) {
       console.warn(`[morning-rank] skill book cache read failed, rebuilding: ${err.message}`);
       mlDoc = null;
       spreadDoc = null;
       totalDoc = null;
+      v13Doc = null;
     }
     const mlReady = !mlLive || mlDoc;
     const spreadReady = !spreadLive || spreadDoc;
     const totalReady = !totalLive || totalDoc;
-    if (mlReady && spreadReady && totalReady) {
+    const v13Ready = !v13Live || v13Doc;
+    if (mlReady && spreadReady && totalReady && v13Ready) {
       const mlIndex = mlDoc ? hydrateMlMiniBook(mlDoc) : new Map();
       const spreadIndex = spreadDoc ? hydrateSpreadSteamBook(spreadDoc) : new Map();
       const totalIndex = totalDoc ? hydrateTotalMiniBook(totalDoc) : new Map();
+      const v13Index = v13Doc ? hydrateV13MlBook(v13Doc) : new Map();
       if (mlLive) setMlMiniBook(mlIndex);
       if (spreadLive) setSpreadSteamBook(spreadIndex);
       if (totalLive) setTotalMiniBook(totalIndex);
-      return { mlMini: mlIndex.size, spreadSteam: spreadIndex.size, totalMini: totalIndex.size };
+      if (v13Live) setV13MlBook(v13Index);
+      return {
+        mlMini: mlIndex.size,
+        spreadSteam: spreadIndex.size,
+        totalMini: totalIndex.size,
+        v13Ml: v13Index.size,
+      };
     }
   }
 
@@ -172,6 +195,7 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
   let mlSize = 0;
   let spreadSize = 0;
   let totalSize = 0;
+  let v13Size = 0;
   if (mlLive) {
     const index = buildMlMiniBook(rows, asOf);
     setMlMiniBook(index);
@@ -220,7 +244,23 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
       }
     }
   }
-  return { mlMini: mlSize, spreadSteam: spreadSize, totalMini: totalSize };
+  if (v13Live) {
+    const index = buildV13MlBook(rows, asOf);
+    setV13MlBook(index);
+    v13Size = index.size;
+    if (persist) {
+      try {
+        await db.collection(MORNING_RANK_COLLECTION).doc(V13_ML_DOC).set({
+          ...serializeV13MlBook(index, asOf),
+          generatedAt: new Date().toISOString(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn(`[morning-rank] v13 ml cache write failed: ${err.message}`);
+      }
+    }
+  }
+  return { mlMini: mlSize, spreadSteam: spreadSize, totalMini: totalSize, v13Ml: v13Size };
 }
 
 /**
