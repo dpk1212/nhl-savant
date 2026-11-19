@@ -198,15 +198,16 @@
  *     consensus stakes sit above that cap by design).
  *   • v8_trustLift: shadow flag on gated moneyline rungs — no units beyond
  *     the floor yet.
- *   • Book age (TRUST_AGE_FROM, 2026-10-26): a tier-4+ wallet whose sport
- *     book is under TRUST_MIN_AGE_DAYS old on the pick date counts for
+ *   • Book age (TRUST_AGE_FROM, 2026-10-26): a tier-4+ wallet whose book
+ *     is under TRUST_MIN_AGE_DAYS old on the pick date counts for
  *     nothing in the trust read — no gate, margin, veto, rescue, floor or
  *     ceiling, FOR or AG. Day-of stamps Oct 9–24: wallet-lifted staked plays
  *     carried only by books under 15 days 10-20-1 −28.7u (NBA 5-10-1, NHL
  *     4-7, CFB 1-2, nothing in SOC / NFL / MLB), 15 days and older 67-34-1
- *     +39.8u. Age is firstBetDate → pickDate off the profile's trust record
- *     (sport level, applied to the market book too), daysActive before the
- *     export carries firstBetDate. The young wallet's status is still read
+ *     +39.8u. Age is firstBetDate → pickDate off the profile's trust record,
+ *     daysActive before the export carries firstBetDate. A spread uses that
+ *     market's own first bet. A total and a moneyline keep the sport book's
+ *     age on the market record. The young wallet's status is still read
  *     and stamped (`young: true`, v8_trustYoung) so the floor can be audited.
  *   • v8_t4 (2026-10-26): one durable block per side with the market-book
  *     margin read as the ladder saw it — margin, trusted dollars, conviction,
@@ -259,11 +260,12 @@ export const PRESS_SEASONED_N = 15;
 export const PRESS_RATIO_MIN = 1.5;
 /**
  * PRESS bands 3/4/5 from this date. The wallet that sets the band is tier
- * 4 or 5, form on, and the sport book is at least 15 days old. Money share,
- * Door-2, and the seasoned count do not gate it. The band is still that
- * wallet's size. A steam tenth of 0 is 0u. A positive tenth, a lengthened
- * line, and a missing read keep the band's units. Every sport the ladder
- * sizes. Settled tickets are not rewritten.
+ * 4 or 5, form on, and the book is at least 15 days old. A spread reads
+ * the spread book, from its own first bet. Every other market reads the
+ * sport book. Money share, Door-2, and the seasoned count do not gate it.
+ * The band is still that wallet's size. A steam tenth of 0 is 0u. A
+ * positive tenth, a lengthened line, and a missing read keep the band's
+ * units. Every sport the ladder sizes. Settled tickets are not rewritten.
  */
 export const PRESS_BAND_TRUST_FROM = '2026-11-17';
 export const PRESS_BAND_5 = 3.0;
@@ -693,9 +695,15 @@ export function isPressBandTrustLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= PRESS_BAND_TRUST_FROM;
 }
 
-/** Tier 4 or 5, form on, sport book at least 15 days old, pressing 1.5× or more. */
-export function isPressBandWallet(row) {
-  const t = row?.trust;
+function isSpreadMarket(marketType) {
+  const u = String(marketType || '').toUpperCase();
+  return u === 'SPREAD' || u === 'SPREADS';
+}
+
+/** Tier 4 or 5, form on, book at least 15 days old, pressing 1.5× or more.
+ *  A spread reads the spread book. Every other market reads the sport book. */
+export function isPressBandWallet(row, marketType = null) {
+  const t = isSpreadMarket(marketType) ? row?.trustMkt : row?.trust;
   if (!t || row.dir !== 'FOR') return false;
   if (!(Number(t.tier) >= TRUST_TIER_MIN)) return false;
   if (!isTrustOn(t.status)) return false;
@@ -918,10 +926,9 @@ export function sportBook(profile, sport, marketType = null, asOf = null) {
   const mktWr = Number(mktPos?.wr);
   const trust = trustPick(rec?.trust, asOf);
   const trustMkt = mkt ? trustPick(rec?.byMarket?.[mkt]?.trust, asOf) : null;
-  // The age floor reads the sport book's age on the market record too: the
-  // sport's first decided bet is never later than any market's, and the
-  // research cell was cut on the sport book.
-  if (trustMkt && trust && trust.age != null) trustMkt.age = trust.age;
+  // A total and a moneyline keep the sport book's age on the market record.
+  // A spread keeps the age of its own first bet.
+  if (trustMkt && trust && trust.age != null && !isSpreadMarket(mkt)) trustMkt.age = trust.age;
   return {
     n,
     wr: Number.isFinite(wr) ? wr : null,
@@ -1541,7 +1548,7 @@ function evaluatePressLadderCore({
   const strip = (r) => ({ wallet: r.wallet, ratio: Math.round(r.ratio * 100) / 100, n: r.n, wr: r.wr });
 
   const bandWallet = isPressBandTrustLive(pickDate)
-    ? forRows.filter(isPressBandWallet).sort((a, b) => b.ratio - a.ratio)[0] || null
+    ? forRows.filter((r) => isPressBandWallet(r, marketType)).sort((a, b) => b.ratio - a.ratio)[0] || null
     : null;
   if (bandWallet || (!isPressBandTrustLive(pickDate) && gate.pass)) {
     const lead = bandWallet || presser;
