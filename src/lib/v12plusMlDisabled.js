@@ -4,14 +4,16 @@
  * When ON, moneylines still pick, lock, and stamp exactly as before —
  * every overlay, rung, receipt, and diagnostic field still runs and writes.
  *
- * Stake rule (after V12+ rungs and after the V13 path from #484):
- *   • V13 action STAKE or MUTE → keep the V13 result exactly (do not touch)
- *   • Every other ML side (V13 PASS / EXEMPT / not matched) → 0u muted with
+ * Stake rule (after V12+ rungs, ML-MINI, juice, and the full V13 path
+ * including #484 / #486 edge10+ / #487 rescue):
+ *   • V13 action STAKE or MUTE → keep that exact V13 result
+ *   • Every other ML side (PASS / EXEMPT) → 0u muted with
  *     mutedBy / marker naming this flag as the mute source
- *   • Manual stake and operator kill still win (same as #484)
- *   • Never raises any stake
+ *   • Manual stake and operator kill still win
+ *   • Never raises any stake; juice only lowers
  *
- * Spreads and totals are unchanged. Does not modify v13MlPath.js.
+ * Spreads and totals are unchanged. V13 stamps every ML side each sync
+ * (STAKE/MUTE/PASS) in v13MlPath.js — this flag only changes stake/mute.
  *
  * Default ON in this PR. Rollback: set V12PLUS_ML_DISABLED_DEFAULT to false,
  * or run with env V12PLUS_ML_DISABLED=0 / false / off.

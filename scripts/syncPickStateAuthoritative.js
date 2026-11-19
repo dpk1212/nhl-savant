@@ -4930,8 +4930,9 @@ async function createMissingLockedPicks({
       // longer than that. A missing edge, a missing steam on an edge of 0
       // or more, and a price juicier than −425 stay. The price is the
       // book. Manual stake and an operator kill stay. The T-15 freeze
-      // already returned.
-      if (!isOperatorKilled({ _id: docId }, side, null)) {
+      // already returned. Always evaluate every ML side so the stamp is current.
+      if (marketType === 'ML') {
+        const killedCreate = isOperatorKilled({ _id: docId }, side, null);
         v13MlCreate = applyV13MlPath({
           units: peakUnitsApplied,
           pickDate: TARGET_DATE,
@@ -4942,15 +4943,17 @@ async function createMissingLockedPicks({
           odds: stakeOdds ?? odds ?? null,
           steam: steamBookCreate?.mute?.m ?? null,
           edge: waCreateEdge?.edge ?? null,
+          killed: killedCreate,
         });
-        if (v13MlCreate.action === 'STAKE' || v13MlCreate.action === 'MUTE') {
+        if (!killedCreate && (v13MlCreate.action === 'STAKE' || v13MlCreate.action === 'MUTE')) {
           peakUnitsApplied = v13MlCreate.units;
           if (v13MlCreate.action === 'STAKE' && peakUnitsApplied > 0) {
             hcStakeTierCreate = V13_ML_STAKE_TIER;
           }
           if (!(peakUnitsApplied > 0)) hcStakeTierCreate = 'MONITORING';
           console.log(
-            `  V13-ML: ${docId} ${side} ${v13MlCreate.zone}`
+            `  V13-ML: ${docId} ${side} ${v13MlCreate.action}/${v13MlCreate.reason}`
+            + ` zone=${v13MlCreate.zone ?? '—'}`
             + ` edge=${v13MlCreate.edge ?? '—'} steam=${v13MlCreate.steam ?? '—'}`
             + ` against=${v13MlCreate.against}`
             + ` ${v13MlCreate.unitsPre}u → ${v13MlCreate.units}u`,
@@ -5136,7 +5139,7 @@ async function createMissingLockedPicks({
       if (spreadSteamCreate) Object.assign(v8Stamps, spreadSteamStamp(spreadSteamCreate));
       if (totalMiniCreate) Object.assign(v8Stamps, totalMiniStamp(totalMiniCreate));
       if (mlPressCreate) Object.assign(v8Stamps, mlPressStamp(mlPressCreate));
-      if (v13MlCreate) Object.assign(v8Stamps, v13MlStamp(v13MlCreate));
+      if (v13MlCreate) Object.assign(v8Stamps, v13MlStamp(v13MlCreate, { now }));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -7942,9 +7945,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // longer than that. A missing edge, a missing steam on an edge of 0
   // or more, and a price juicier than −425 stay. The price is the book,
   // the same number fav juice reads. Manual stake and an operator kill
-  // stay. The T-15 freeze already returned.
+  // stay. The T-15 freeze already returned. Always evaluate every ML side
+  // so the stamp is current (PASS/EXEMPT overwrite prior STAKE fields).
   let v13MlPolicy = null;
-  if (!skipManualFlinch && !operatorKilled) {
+  if (mkt === 'ML') {
     v13MlPolicy = applyV13MlPath({
       units: finalUnitsApplied,
       pickDate,
@@ -7955,8 +7959,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       odds: stakeOdds,
       steam: steamBookPolicy?.mute?.m ?? null,
       edge: winnerAlign?.edge ?? null,
+      manual: skipManualFlinch,
+      killed: operatorKilled,
     });
-    if (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE') {
+    if (!skipManualFlinch && !operatorKilled
+        && (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE')) {
       finalUnitsApplied = v13MlPolicy.units;
       if (v13MlPolicy.action === 'STAKE' && finalUnitsApplied > 0) {
         hcStakeTier = V13_ML_STAKE_TIER;
@@ -8239,6 +8246,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const T5_ST_STEAM_MUTE_VALUES = new Set([T5_NO_T5_ST_MUTED_BY]);
   if (movedAgainstPolicy?.action === 'PASS' && sd.mutedBy === MOVED_AGAINST_MUTED_BY) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
+  }
+  // V13 PASS / EXEMPT — drop a leftover mute or rescue marker before the
+  // mutedBy chain (stamp fields themselves are overwritten below).
+  if (v13MlPolicy && v13MlPolicy.action !== 'STAKE' && v13MlPolicy.action !== 'MUTE') {
+    if (sd.mutedBy === V13_ML_MUTED_BY) {
+      patch.mutedBy = admin.firestore.FieldValue.delete();
+    }
+    if (sd.v8_rescuedBy === V13_ML_RESCUED_BY) {
+      patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    }
   }
   if (steamBookPolicy?.mute?.action !== 'MUTE' && sd.mutedBy === SHORT_MOVE_MUTED_BY) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
@@ -9332,13 +9349,28 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + ` ${mlPressPolicy.unitsPre}u → ${mlPressPolicy.units}u`,
     );
   }
-  if (v13MlPolicy && (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE')) {
-    Object.assign(patch, v13MlStamp(v13MlPolicy));
-    changes.push(
-      `V13-ML: ${v13MlPolicy.zone} edge=${v13MlPolicy.edge ?? '—'}`
-      + ` steam=${v13MlPolicy.steam ?? '—'} against=${v13MlPolicy.against}`
-      + ` ${v13MlPolicy.unitsPre}u → ${v13MlPolicy.units}u`,
-    );
+  // Always overwrite the full V13 stamp on every ML side (PASS included)
+  // so a prior STAKE cannot leave units/zone/reason behind.
+  if (v13MlPolicy) {
+    Object.assign(patch, v13MlStamp(v13MlPolicy, { now }));
+    if (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE') {
+      changes.push(
+        `V13-ML: ${v13MlPolicy.action}/${v13MlPolicy.reason}`
+        + ` zone=${v13MlPolicy.zone ?? '—'}`
+        + ` edge=${v13MlPolicy.edge ?? '—'} steam=${v13MlPolicy.steam ?? '—'}`
+        + ` against=${v13MlPolicy.against}`
+        + ` ${v13MlPolicy.unitsPre}u → ${v13MlPolicy.units}u`,
+      );
+    } else if (sd.v8_v13MlAction != null && sd.v8_v13MlAction !== v13MlPolicy.action) {
+      changes.push(
+        `V13-ML: ${sd.v8_v13MlAction} → ${v13MlPolicy.action}/${v13MlPolicy.reason}`
+        + ` (stamp overwrite)`,
+      );
+    } else if (sd.v8_v13MlAction == null) {
+      changes.push(
+        `V13-ML: ${v13MlPolicy.action}/${v13MlPolicy.reason} (stamp)`,
+      );
+    }
   }
   if (ogEdgeStakePolicy && ogEdgeStakePolicy.action !== 'EXEMPT') {
     Object.assign(patch, ogEdgeStakeStamp(ogEdgeStakePolicy));

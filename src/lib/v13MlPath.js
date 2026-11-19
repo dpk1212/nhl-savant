@@ -249,8 +249,9 @@ function againstWallets(positions, sport, side, book) {
 /**
  * @returns {{
  *   fires: boolean, action: 'STAKE'|'MUTE'|'PASS'|'EXEMPT',
- *   units: number, unitsPre: number, zone: string|null,
+ *   reason: string, units: number, unitsPre: number, zone: string|null,
  *   steam: number|null, edge: number|null, against: number, wallets: string[],
+ *   odds: number|null, price: number|null,
  * }}
  */
 export function applyV13MlPath({
@@ -270,6 +271,8 @@ export function applyV13MlPath({
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const move = roundTenth(steam);
+  const oddsN = Number.isFinite(Number(odds)) ? Number(odds) : null;
+  const priceN = price > 0 && price < 1 ? Number(price) : null;
   const base = {
     fires: false,
     units: pre,
@@ -279,62 +282,146 @@ export function applyV13MlPath({
     edge: finiteEdge(edge),
     against: 0,
     wallets: [],
+    odds: oddsN,
+    price: priceN,
   };
-  if (manual === true || killed === true) return { ...base, action: 'EXEMPT' };
-  if (!isV13MlLive(pickDate)) return { ...base, action: 'EXEMPT' };
+  if (manual === true) return { ...base, action: 'EXEMPT', reason: 'manual' };
+  if (killed === true) return { ...base, action: 'EXEMPT', reason: 'operator_kill' };
+  if (!isV13MlLive(pickDate)) return { ...base, action: 'EXEMPT', reason: 'not_live' };
   if (normMlMiniMarket(market) !== 'ML' || !normMlMiniSport(sport)) {
-    return { ...base, action: 'PASS' };
+    return { ...base, action: 'PASS', reason: 'not_ml' };
   }
   const index = bookOf(book);
   const wallets = qualifyingV13Wallets({ sport, side, positions, book: index });
-  if (!wallets.length) return { ...base, action: 'PASS' };
+  if (!wallets.length) {
+    return { ...base, action: 'PASS', reason: 'no_qualified_wallet' };
+  }
   const against = againstWallets(positions, sport, side, index);
   const armed = { ...base, fires: true, against, wallets };
-  if (against > 0) return { ...armed, action: 'PASS' };
-  if (armed.edge == null) return { ...armed, action: 'PASS' };
+  if (against > 0) return { ...armed, action: 'PASS', reason: 'qualified_against' };
+  if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
   if (armed.edge < 0) {
     const under = v13HighPriceZone(odds, price);
     if (under === 'short') {
-      return { ...armed, action: 'STAKE', units: V13_ML_UNDER_UNITS, zone: 'rescue' };
+      return {
+        ...armed,
+        action: 'STAKE',
+        units: V13_ML_UNDER_UNITS,
+        zone: 'rescue',
+        reason: 'rescue',
+      };
     }
-    return { ...armed, action: 'PASS', zone: under || null };
+    if (under === 'juice') {
+      return { ...armed, action: 'PASS', zone: 'juice', reason: 'juice' };
+    }
+    return { ...armed, action: 'PASS', zone: under || null, reason: under || 'under_pass' };
   }
-  if (move == null) return { ...armed, action: 'PASS' };
-  if (move < 0) return { ...armed, action: 'MUTE', units: 0, zone: 'against' };
+  if (move == null) return { ...armed, action: 'PASS', reason: 'no_steam' };
+  if (move < 0) {
+    return { ...armed, action: 'MUTE', units: 0, zone: 'against', reason: 'against' };
+  }
   if (armed.edge >= V13_ML_EDGE_MAX) {
     const high = v13HighPriceZone(odds, price);
-    if (high === 'juice' || high == null) return { ...armed, action: 'PASS', zone: high || null };
-    if (high === 'short') {
-      return { ...armed, action: 'STAKE', units: V13_ML_HIGH_FULL_UNITS, zone: high };
+    if (high === 'juice' || high == null) {
+      return { ...armed, action: 'PASS', zone: high || null, reason: high === 'juice' ? 'juice' : 'no_price' };
     }
-    return { ...armed, action: 'STAKE', units: V13_ML_HIGH_LONG_UNITS, zone: high };
+    if (high === 'short') {
+      return {
+        ...armed,
+        action: 'STAKE',
+        units: V13_ML_HIGH_FULL_UNITS,
+        zone: high,
+        reason: 'edge10_short',
+      };
+    }
+    return {
+      ...armed,
+      action: 'STAKE',
+      units: V13_ML_HIGH_LONG_UNITS,
+      zone: high,
+      reason: 'edge10_longer',
+    };
   }
   const zone = v13PriceZone(odds, price);
-  if (zone === 'juice') return { ...armed, action: 'PASS', zone };
+  if (zone === 'juice') return { ...armed, action: 'PASS', zone, reason: 'juice' };
   if (move >= V13_ML_STEAM_HEAVY) {
-    return { ...armed, action: 'STAKE', units: V13_ML_HEAVY_UNITS, zone: 'heavy' };
+    return {
+      ...armed,
+      action: 'STAKE',
+      units: V13_ML_HEAVY_UNITS,
+      zone: 'heavy',
+      reason: 'heavy',
+    };
   }
   if (move >= V13_ML_STEAM_MID) {
-    return { ...armed, action: 'STAKE', units: V13_ML_MID_UNITS, zone: 'mid' };
+    return {
+      ...armed,
+      action: 'STAKE',
+      units: V13_ML_MID_UNITS,
+      zone: 'mid',
+      reason: 'mid',
+    };
   }
-  if (zone == null) return { ...armed, action: 'PASS' };
+  if (zone == null) return { ...armed, action: 'PASS', reason: 'no_price' };
   if (zone === 'favorite') {
-    return { ...armed, action: 'STAKE', units: V13_ML_FAVORITE_UNITS, zone };
+    return {
+      ...armed,
+      action: 'STAKE',
+      units: V13_ML_FAVORITE_UNITS,
+      zone,
+      reason: 'favorite',
+    };
   }
-  return { ...armed, action: 'STAKE', units: V13_ML_LONG_UNITS, zone };
+  return {
+    ...armed,
+    action: 'STAKE',
+    units: V13_ML_LONG_UNITS,
+    zone,
+    reason: 'long',
+  };
 }
 
-export function v13MlStamp(policy) {
-  if (!policy || policy.action === 'EXEMPT' || policy.action === 'PASS') return {};
+/** Every field the V13 stamp overwrites on each sync (no leftovers). */
+export const V13_ML_STAMP_FIELDS = Object.freeze([
+  'v8_v13Ml',
+  'v8_v13MlAction',
+  'v8_v13MlReason',
+  'v8_v13MlUnits',
+  'v8_v13MlZone',
+  'v8_v13MlSteam',
+  'v8_v13MlEdge',
+  'v8_v13MlAgainst',
+  'v8_v13MlWallets',
+  'v8_v13MlOdds',
+  'v8_v13MlPrice',
+  'v8_v13MlEvaluatedAt',
+  'v8_unitsPreV13Ml',
+]);
+
+/**
+ * Full current V13 stamp for every ML side. Always overwrites the whole set
+ * so a STAKE→PASS (e.g. juice) cannot leave a prior units/zone/reason behind.
+ * Stamp units are 0 on PASS and MUTE; STAKE keeps the sized units.
+ */
+export function v13MlStamp(policy, { now = Date.now() } = {}) {
+  if (!policy || !policy.action) return {};
+  const action = String(policy.action).toUpperCase();
+  const stampUnits = (action === 'STAKE')
+    ? (Number.isFinite(Number(policy.units)) ? Number(policy.units) : 0)
+    : 0;
   return {
     v8_v13Ml: true,
-    v8_v13MlAction: policy.action,
-    v8_v13MlUnits: policy.units,
+    v8_v13MlAction: action,
+    v8_v13MlReason: policy.reason ?? null,
+    v8_v13MlUnits: stampUnits,
     v8_v13MlZone: policy.zone ?? null,
     v8_v13MlSteam: policy.steam ?? null,
     v8_v13MlEdge: policy.edge ?? null,
     v8_v13MlAgainst: policy.against ?? 0,
-    v8_v13MlWallets: policy.wallets || [],
+    v8_v13MlWallets: Array.isArray(policy.wallets) ? policy.wallets : [],
+    v8_v13MlOdds: policy.odds ?? null,
+    v8_v13MlPrice: policy.price ?? null,
+    v8_v13MlEvaluatedAt: now,
     v8_unitsPreV13Ml: policy.unitsPre,
   };
 }
