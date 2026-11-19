@@ -62,11 +62,12 @@ const TOTAL_MINI_DOC = 'totalMini';
 const V13_ML_DOC = 'v13Ml';
 const SKILL_FIELDS = [
   'wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice',
-  'result', 'won', 'side', 'gameKey', 'status', 'postponed',
+  'result', 'won', 'side', 'gameKey', 'status', 'postponed', 'settledPnl',
   'title', 'outcome', 'outcomeIndex', 'slug', 'eventSlug',
   'entryLine', 'spreadLine', 'totalLine', 'away', 'home', 'awayName', 'homeName',
 ];
 const FIELDS = ['wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'settledPnl', 'result', 'postponed', 'status'];
+const SKILL_BOOK_VERSION = 2;
 
 export function etSlateDate(now = new Date()) {
   return now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -162,6 +163,10 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
         v13Doc = await readDoc(db, V13_ML_DOC, asOf);
         if (v13Doc && v13Doc.bookVersion !== V13_ML_BOOK_VERSION) v13Doc = null;
       }
+      if (mlDoc && mlDoc.skillVersion !== SKILL_BOOK_VERSION) mlDoc = null;
+      if (spreadDoc && spreadDoc.skillVersion !== SKILL_BOOK_VERSION) spreadDoc = null;
+      if (totalDoc && totalDoc.skillVersion !== SKILL_BOOK_VERSION) totalDoc = null;
+      if (v13Doc && v13Doc.skillVersion !== SKILL_BOOK_VERSION) v13Doc = null;
     } catch (err) {
       console.warn(`[morning-rank] skill book cache read failed, rebuilding: ${err.message}`);
       mlDoc = null;
@@ -208,6 +213,7 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
       try {
         await db.collection(MORNING_RANK_COLLECTION).doc(ML_MINI_DOC).set({
           ...serializeMlMiniBook(index, asOf),
+          skillVersion: SKILL_BOOK_VERSION,
           generatedAt: new Date().toISOString(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -224,6 +230,7 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
       try {
         await db.collection(MORNING_RANK_COLLECTION).doc(SPREAD_STEAM_DOC).set({
           ...serializeSpreadSteamBook(index, asOf),
+          skillVersion: SKILL_BOOK_VERSION,
           generatedAt: new Date().toISOString(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -240,6 +247,7 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
       try {
         await db.collection(MORNING_RANK_COLLECTION).doc(TOTAL_MINI_DOC).set({
           ...serializeTotalMiniBook(index, asOf),
+          skillVersion: SKILL_BOOK_VERSION,
           generatedAt: new Date().toISOString(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -256,6 +264,7 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
       try {
         await db.collection(MORNING_RANK_COLLECTION).doc(V13_ML_DOC).set({
           ...serializeV13MlBook(index, asOf),
+          skillVersion: SKILL_BOOK_VERSION,
           generatedAt: new Date().toISOString(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });

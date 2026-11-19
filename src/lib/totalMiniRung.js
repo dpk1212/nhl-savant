@@ -2,8 +2,11 @@
  * Total mini rung. From 2026-11-16.
  *
  * A mini is 0.75× up to 1.5× of that wallet's sport usual, measured on
- * bets dated before this morning. The wallet is tier 4 or 5, form on,
- * and the sport book is at least 15 days old. Skill is how far those
+ * bets dated before this morning. Confirmed comes first, on the sport:
+ * 6 or more graded bets, a win rate of at least 55, and dollar ROI
+ * above 3. Then the tier. Tier 4 or 5, form on, and the sport book is
+ * at least 15 days old. A later copy of the same game, side, stake,
+ * and dollars is one bet. Skill is how far those
  * prior totals beat the price on this side of the number and at this
  * size of the number: over or under, then the band inside the sport.
  * The exact band at 4 bets, otherwise that band and its neighbors on
@@ -21,6 +24,7 @@
  * CFB, and CBB. Total only.
  */
 
+import { dedupePositionCopies, sportBookConfirmed } from './sportConfirmed.js';
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
 
 export const TOTAL_MINI_FROM = '2026-11-16';
@@ -223,7 +227,9 @@ export function buildTotalMiniBook(rows, asOf) {
       if (!bySport.has(sport)) bySport.set(sport, []);
       bySport.get(sport).push(row);
     }
-    for (const [sport, bets] of bySport) {
+    for (const [sport, raw] of bySport) {
+      const bets = dedupePositionCopies(raw);
+      if (!sportBookConfirmed(bets)) continue;
       const trustRows = [];
       const cells = {};
       let n = 0;

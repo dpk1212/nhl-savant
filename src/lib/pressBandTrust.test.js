@@ -114,6 +114,47 @@ test('a spread band reads the spread book, not the sport book', () => {
   assert.equal(marketOnly.units, 2.5);
 });
 
+test('from Nov 19 the wallet is confirmed, then the tier', () => {
+  const unconfirmed = run({
+    pickDate: '2026-11-19',
+    sport: 'NHL',
+    market: 'SPREAD',
+    odds: -110,
+    invested: 900,
+    steam: { sinceOpenPct: 5 },
+    profiles: new Map([['aaaaaa', profile('NHL', {
+      status: 'UNPROVEN', tier: 0, n: 0, edge: 0, formOn: false,
+    }, { n: 20, wr: 48, dollarRoi: -5, invested: 20000 }, on)]]),
+  });
+  assert.equal(unconfirmed.units, 0);
+  const confirmed = run({
+    pickDate: '2026-11-19',
+    sport: 'NHL',
+    market: 'SPREAD',
+    odds: -110,
+    invested: 900,
+    steam: { sinceOpenPct: 5 },
+    profiles: new Map([['aaaaaa', profile('NHL', {
+      status: 'UNPROVEN', tier: 0, n: 0, edge: 0, formOn: false,
+    }, { n: 20, wr: 60, dollarRoi: 10, invested: 20000 }, on)]]),
+  });
+  assert.equal(confirmed.rung, 'TRUST-S');
+  assert.equal(confirmed.units, 2);
+  const band = run({
+    pickDate: '2026-11-19',
+    invested: 200,
+    profiles: new Map([['aaaaaa', profile('NHL', on, { n: 20, wr: 52, dollarRoi: 1, invested: 1000 })]]),
+  });
+  assert.equal(band.units, 0);
+  const bandOn = run({
+    pickDate: '2026-11-19',
+    invested: 200,
+    profiles: new Map([['aaaaaa', profile('NHL', on, { n: 20, wr: 60, dollarRoi: 10, invested: 1000 })]]),
+  });
+  assert.equal(bandOn.rung, 'PRESS');
+  assert.ok(bandOn.units > 0);
+});
+
 test('a dog shorten stays at 1u and a flat dog is 0, on CBB as on the other sports', () => {
   const up = run({ sport: 'CBB', odds: 150, steam: { lastHourPct: 6 } });
   assert.equal(up.band, 5);

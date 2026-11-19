@@ -1,8 +1,11 @@
 /**
  * Spread steam rung. From 2026-11-16.
  *
- * The wallet is tier 4 or 5, form on, and the spread book is at least 15
- * days old, counted from its own first bet. Skill is how far those prior spreads beat the price on this
+ * Confirmed comes first, on the sport: 6 or more graded bets, a win
+ * rate of at least 55, and dollar ROI above 3. Then the spread book.
+ * Tier 4 or 5, form on, and that book is at least 15 days old, counted
+ * from its own first bet. A later copy of the same game, side, stake,
+ * and dollars is one bet. Skill is how far those prior spreads beat the price on this
  * side of the number and at this size of the number: laying or getting,
  * then the band. The exact band at 4 bets, otherwise that band and its
  * neighbors on the same side at 6. Eight points or more qualifies.
@@ -17,6 +20,7 @@
  * CFB, and CBB. Spread only.
  */
 
+import { dedupePositionCopies, sportBookConfirmed } from './sportConfirmed.js';
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
 import { signedSpreadEntryLine } from './spreadLineSign.js';
 
@@ -187,7 +191,9 @@ export function buildSpreadSteamBook(rows, asOf) {
       if (!bySport.has(sport)) bySport.set(sport, []);
       bySport.get(sport).push(row);
     }
-    for (const [sport, bets] of bySport) {
+    for (const [sport, raw] of bySport) {
+      const bets = dedupePositionCopies(raw);
+      if (!sportBookConfirmed(bets)) continue;
       const trustRows = [];
       const cells = {};
       for (const row of bets) {

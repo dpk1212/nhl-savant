@@ -213,6 +213,29 @@ test('the branch stays off without an edge, without a steam, and with opposition
   assert.deepEqual(alone.wallets, ['aaaaaa']);
 });
 
+test('confirmed comes first, then the tier, and a copy is one bet', () => {
+  const lowWin = buildV13MlBook(history('lowwin', { n: 12, price: 0.4, winsFrom: 6 }), DAY);
+  assert.equal(lowWin.has('NBA|lowwin'), false);
+  const red = history('reddol', { n: 12, price: 0.5, winsFrom: 4 }).map((row) => ({
+    ...row,
+    invested: 100,
+    settledPnl: row.won ? 10 : -400,
+  }));
+  assert.equal(buildV13MlBook(red, DAY).has('NBA|reddol'), false);
+  const real = history('copies', { n: 5, price: 0.5, winsFrom: 3, start: '2026-06-01' }).map((row, i) => ({
+    ...row,
+    invested: 100,
+    settledPnl: row.won ? 100 : -100,
+    gameKey: `game${i}`,
+  }));
+  const copies = real.filter((row) => row.won).flatMap((row) => [1, 2, 3].map((k) => ({
+    ...row,
+    date: `2026-06-${20 + k}`,
+  })));
+  assert.equal(buildV13MlBook([...real, ...copies], DAY).has('NBA|copies'), false);
+  assert.equal(book().has('NBA|aaaaaa'), true);
+});
+
 test('any sport qualifies on its own moneyline book', () => {
   const mlb = buildV13MlBook(history('eeeeee', { sport: 'MLB' }), DAY);
   assert.equal(mlb.has('MLB|eeeeee'), true);

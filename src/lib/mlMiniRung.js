@@ -2,8 +2,11 @@
  * Moneyline mini rung. From 2026-11-16.
  *
  * A mini is 0.75× up to 1.5× of that wallet's sport usual, measured on
- * bets dated before this morning. The wallet is tier 4 or 5, form on,
- * and the sport book is at least 15 days old. Skill is how far those
+ * bets dated before this morning. Confirmed comes first, on the sport:
+ * 6 or more graded bets, a win rate of at least 55, and dollar ROI
+ * above 3. Then the tier. Tier 4 or 5, form on, and the sport book is
+ * at least 15 days old. A later copy of the same game, side, stake,
+ * and dollars is one bet. Skill is how far those
  * prior moneyline bets beat the price in this odds band: the exact band
  * at 4 bets, otherwise the band and its neighbors at 6. Eight points or
  * more qualifies.
@@ -17,6 +20,7 @@
  * stay at the caller. NHL, NBA, NFL, CFB, and CBB. Moneyline only.
  */
 
+import { dedupePositionCopies, sportBookConfirmed } from './sportConfirmed.js';
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
 
 export const ML_MINI_FROM = '2026-11-16';
@@ -162,7 +166,9 @@ export function buildMlMiniBook(rows, asOf) {
       if (!bySport.has(sport)) bySport.set(sport, []);
       bySport.get(sport).push(row);
     }
-    for (const [sport, bets] of bySport) {
+    for (const [sport, raw] of bySport) {
+      const bets = dedupePositionCopies(raw);
+      if (!sportBookConfirmed(bets)) continue;
       const trustRows = [];
       const bands = emptyBands();
       let n = 0;
