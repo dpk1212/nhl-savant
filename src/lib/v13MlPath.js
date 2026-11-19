@@ -4,7 +4,10 @@
  * A wallet qualifies on its moneyline book only, the bets dated before
  * this morning. Tier 4 or 5, form on, and that book is at least 15 days
  * old. The branch fires when one of those wallets is on this side and
- * none of them is on the other side, and the summer edge is 0 or more.
+ * none of them is on the other side.
+ *
+ * Edge under 0. −150 or shorter is 2. A longer price stays. Steam does
+ * not enter.
  *
  * Edge 0 up to 10. Steam against is 0. Flat through a shorten under 4.5
  * is 4 at −110 or shorter, and 2 from +110 through the prices in between.
@@ -13,9 +16,9 @@
  * Edge 10 or more. Steam against is 0. A flat line and any shorten take
  * the price: −150 or shorter is 3, and a price longer than −150 is 1.5.
  *
- * A missing edge, a missing steam, an edge under 0, and a price juicier
- * than −425 stay on the stake that arrived. The juice check runs before
- * every size, so a shorten cannot put a juiced favorite back on.
+ * A missing edge, a missing steam on an edge of 0 or more, and a price
+ * juicier than −425 stay on the stake that arrived. The juice check runs
+ * before every size, so a shorten cannot put a juiced favorite back on.
  *
  * This is the size for that side. It replaces the stake that arrived.
  * Manual stake, an operator kill, the T-15 freeze, and a graded ticket
@@ -40,6 +43,7 @@ export const V13_ML_MID_UNITS = 0.75;
 export const V13_ML_HEAVY_UNITS = 4;
 export const V13_ML_HIGH_FULL_UNITS = 3;
 export const V13_ML_HIGH_LONG_UNITS = 1.5;
+export const V13_ML_UNDER_UNITS = 2;
 export const V13_ML_STAKE_TIER = 'V13-ML';
 export const V13_ML_RESCUED_BY = 'v13-ml';
 export const V13_ML_MUTED_BY = 'v13-ml';
@@ -287,7 +291,14 @@ export function applyV13MlPath({
   const against = againstWallets(positions, sport, side, index);
   const armed = { ...base, fires: true, against, wallets };
   if (against > 0) return { ...armed, action: 'PASS' };
-  if (armed.edge == null || armed.edge < 0) return { ...armed, action: 'PASS' };
+  if (armed.edge == null) return { ...armed, action: 'PASS' };
+  if (armed.edge < 0) {
+    const under = v13HighPriceZone(odds, price);
+    if (under === 'short') {
+      return { ...armed, action: 'STAKE', units: V13_ML_UNDER_UNITS, zone: 'rescue' };
+    }
+    return { ...armed, action: 'PASS', zone: under || null };
+  }
   if (move == null) return { ...armed, action: 'PASS' };
   if (move < 0) return { ...armed, action: 'MUTE', units: 0, zone: 'against' };
   if (armed.edge >= V13_ML_EDGE_MAX) {

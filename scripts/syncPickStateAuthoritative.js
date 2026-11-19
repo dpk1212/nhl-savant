@@ -4916,13 +4916,14 @@ async function createMissingLockedPicks({
       }
 
       // v13 moneyline. After the press. A market-qualified wallet, nobody
-      // qualified against, summer edge 0 or more. Steam against is 0.
-      // Edge 0 up to 10: flat through a shorten under 4.5 is 4 at −110 or
-      // shorter and 2 at +110, pick'em included. 4.5 up to 10 is 0.75.
-      // 10 or more is 4. Edge 10 or more: a flat line and any shorten are
-      // 3 at −150 or shorter and 1.5 longer than that. A missing edge, a
-      // missing steam, and a price juicier than −425 stay. The price is
-      // the book. Manual stake and an operator kill stay. The T-15 freeze
+      // qualified against. Edge under 0 is 2 at −150 or shorter, and a
+      // longer price stays. Edge 0 up to 10: steam against is 0, flat
+      // through a shorten under 4.5 is 4 at −110 or shorter and 2 at +110,
+      // pick'em included, 4.5 up to 10 is 0.75, and 10 or more is 4. Edge
+      // 10 or more: steam against is 0, then 3 at −150 or shorter and 1.5
+      // longer than that. A missing edge, a missing steam on an edge of 0
+      // or more, and a price juicier than −425 stay. The price is the
+      // book. Manual stake and an operator kill stay. The T-15 freeze
       // already returned.
       if (!isOperatorKilled({ _id: docId }, side, null)) {
         v13MlCreate = applyV13MlPath({
@@ -7900,14 +7901,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
   // v13 moneyline. After the press. A market-qualified wallet, nobody
-  // qualified against, summer edge 0 or more. Steam against is 0.
-  // Edge 0 up to 10: flat through a shorten under 4.5 is 4 at −110 or
-  // shorter and 2 at +110, pick'em included. 4.5 up to 10 is 0.75.
-  // 10 or more is 4. Edge 10 or more: a flat line and any shorten are
-  // 3 at −150 or shorter and 1.5 longer than that. A missing edge, a
-  // missing steam, and a price juicier than −425 stay. The price is the
-  // book, the same number fav juice reads. Manual stake and an operator
-  // kill stay. The T-15 freeze already returned.
+  // qualified against. Edge under 0 is 2 at −150 or shorter, and a
+  // longer price stays. Edge 0 up to 10: steam against is 0, flat
+  // through a shorten under 4.5 is 4 at −110 or shorter and 2 at +110,
+  // pick'em included, 4.5 up to 10 is 0.75, and 10 or more is 4. Edge
+  // 10 or more: steam against is 0, then 3 at −150 or shorter and 1.5
+  // longer than that. A missing edge, a missing steam on an edge of 0
+  // or more, and a price juicier than −425 stay. The price is the book,
+  // the same number fav juice reads. Manual stake and an operator kill
+  // stay. The T-15 freeze already returned.
   let v13MlPolicy = null;
   if (!skipManualFlinch && !operatorKilled) {
     v13MlPolicy = applyV13MlPath({
