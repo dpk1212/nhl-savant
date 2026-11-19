@@ -141,9 +141,27 @@ test('edge of 10 or more mutes a move against, then sizes the price', () => {
   assert.equal(noMove.units, 1);
 });
 
-test('the branch stays off under the edge, without a steam, and with opposition', () => {
-  const under = run({ edge: -0.1 });
-  assert.equal(under.action, 'PASS');
+test('an edge under 0 rescues −150 or shorter at 2', () => {
+  const full = run({ edge: -0.1, odds: -150, steam: null });
+  assert.equal(full.action, 'STAKE');
+  assert.equal(full.units, 2);
+  assert.equal(full.zone, 'rescue');
+  const shorter = run({ edge: -8, odds: -300, steam: -4 });
+  assert.equal(shorter.units, 2);
+  const boundary = run({ edge: -3, odds: -200 });
+  assert.equal(boundary.units, 2);
+  const longer = run({ units: 1, edge: -1, odds: -149 });
+  assert.equal(longer.action, 'PASS');
+  assert.equal(longer.units, 1);
+  const dog = run({ edge: -6, odds: 130 });
+  assert.equal(dog.action, 'PASS');
+  const juice = run({ units: 0, edge: -4, odds: -450, steam: 8 });
+  assert.equal(juice.action, 'PASS');
+  assert.equal(juice.units, 0);
+  assert.equal(juice.zone, 'juice');
+});
+
+test('the branch stays off without an edge, without a steam, and with opposition', () => {
   const missingEdge = run({ edge: null });
   assert.equal(missingEdge.action, 'PASS');
   const missingSteam = run({ steam: null });
