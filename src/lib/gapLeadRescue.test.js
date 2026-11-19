@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   applyGapLeadRescue,
   buildGapLeadBooks,
+  gapConfirmedWallets,
   GAP_LEAD_FROM,
   hydrateGapLeadBooks,
   serializeGapLeadBooks,
@@ -44,22 +45,58 @@ function tonight(books, units, odds = -110, extra = []) {
   });
 }
 
-test('from Nov 19 a zero returns at 2u', () => {
+test('from Nov 19 a zero returns at 2u when the wallets are confirmed', () => {
   const books = booksFrom([
     ...fill('aaaaaa', 80),
     ...fill('bbbbbb', 40),
     ...fill('cccccc', -20),
   ]);
+  const positions = [
+    { walletShort: 'aaaaaa', side: 'home', invested: 100 },
+    { walletShort: 'bbbbbb', side: 'home', invested: 100 },
+    { walletShort: 'cccccc', side: 'away', invested: 100 },
+  ];
   const out = applyGapLeadRescue({
     units: 0, odds: -110, sport: 'NBA', market: 'ML', side: 'home',
-    pickDate: '2026-11-19', positions: [
-      { walletShort: 'aaaaaa', side: 'home', invested: 100 },
-      { walletShort: 'bbbbbb', side: 'home', invested: 100 },
-      { walletShort: 'cccccc', side: 'away', invested: 100 },
-    ], books,
+    pickDate: '2026-11-19', positions, books,
+    confirmedWallets: ['aaaaaa', 'bbbbbb', 'cccccc'],
   });
   assert.equal(out.action, 'rescue');
   assert.equal(out.units, 2);
+  const open = applyGapLeadRescue({
+    units: 0, odds: -110, sport: 'NBA', market: 'ML', side: 'home',
+    pickDate: '2026-11-19', positions, books,
+  });
+  assert.equal(open.fires, false);
+  assert.equal(open.reason, 'need_two_wallets');
+});
+
+test('from Nov 19 a wallet that is not confirmed does not score', () => {
+  const spread = (rows) => rows.map((row) => ({ ...row, marketType: 'SPREAD' }));
+  const books = booksFrom([
+    ...spread(fill('aaaaaa', 80)),
+    ...spread(fill('bbbbbb', 40)),
+    ...spread(fill('cccccc', -20)),
+  ]);
+  const positions = [
+    { walletShort: 'aaaaaa', side: 'home', invested: 100 },
+    { walletShort: 'bbbbbb', side: 'home', invested: 100 },
+    { walletShort: 'cccccc', side: 'away', invested: 100 },
+  ];
+  const sportBook = (wr, dollarRoi) => ({ n: 20, wr, dollarRoi, invested: 2000 });
+  const profiles = new Map([
+    ['aaaaaa', { bySport: { NBA: { positions: sportBook(60, 10) } } }],
+    ['bbbbbb', { bySport: { NBA: { positions: sportBook(48, -5) } } }],
+    ['cccccc', { bySport: { NBA: { positions: sportBook(60, 10) } } }],
+  ]);
+  const ids = gapConfirmedWallets(positions, profiles, 'NBA');
+  assert.deepEqual(ids, ['aaaaaa', 'cccccc']);
+  const out = applyGapLeadRescue({
+    units: 0, odds: -110, sport: 'NBA', market: 'SPREAD', side: 'home',
+    pickDate: '2026-11-19', positions, books, confirmedWallets: ids,
+  });
+  assert.equal(out.fires, false);
+  assert.equal(out.reason, 'need_two_wallets');
 });
 
 test('a zero with two wallets and a 40-point lead over a losing book goes to 3u', () => {
