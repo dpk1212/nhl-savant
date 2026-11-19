@@ -1,16 +1,21 @@
 /**
- * v13 moneyline, first branch. From 2026-11-19.
+ * v13 moneyline. From 2026-11-19.
  *
  * A wallet qualifies on its moneyline book only, the bets dated before
  * this morning. Tier 4 or 5, form on, and that book is at least 15 days
  * old. The branch fires when one of those wallets is on this side and
- * none of them is on the other side, and the summer edge is 0 up to 10.
+ * none of them is on the other side, and the summer edge is 0 or more.
  *
- * Steam against is 0. Flat through a shorten under 4.5 is 4 at −110 or
- * shorter, and 2 from +110 through the prices in between. A shorten of
- * 4.5 up to 10 is 0.75. A shorten of 10 or more is 4. A missing edge, a
- * missing steam, an edge outside 0 up to 10, and a price juicier than
- * −425 stay on the stake that arrived.
+ * Edge 0 up to 10. Steam against is 0. Flat through a shorten under 4.5
+ * is 4 at −110 or shorter, and 2 from +110 through the prices in between.
+ * A shorten of 4.5 up to 10 is 0.75. A shorten of 10 or more is 4.
+ *
+ * Edge 10 or more. Steam against is 0. A flat line and any shorten take
+ * the price: −150 or shorter is 3, and a price longer than −150 is 1.5.
+ *
+ * A missing edge, a missing steam, an edge under 0, and a price juicier
+ * than −425 stay on the stake that arrived. The juice check runs before
+ * every size, so a shorten cannot put a juiced favorite back on.
  *
  * This is the size for that side. It replaces the stake that arrived.
  * Manual stake, an operator kill, the T-15 freeze, and a graded ticket
@@ -25,11 +30,14 @@ export const V13_ML_EDGE_MAX = 10;
 export const V13_ML_STEAM_MID = 4.5;
 export const V13_ML_STEAM_HEAVY = 10;
 export const V13_ML_FAVORITE_ODDS = -110;
+export const V13_ML_HIGH_ODDS = -150;
 export const V13_ML_JUICE_ODDS = -425;
 export const V13_ML_FAVORITE_UNITS = 4;
 export const V13_ML_LONG_UNITS = 2;
 export const V13_ML_MID_UNITS = 0.75;
 export const V13_ML_HEAVY_UNITS = 4;
+export const V13_ML_HIGH_FULL_UNITS = 3;
+export const V13_ML_HIGH_LONG_UNITS = 1.5;
 export const V13_ML_STAKE_TIER = 'V13-ML';
 export const V13_ML_RESCUED_BY = 'v13-ml';
 export const V13_ML_MUTED_BY = 'v13-ml';
@@ -83,14 +91,19 @@ function impliedOf(odds) {
   return n < 0 ? (-n) / (-n + 100) : 100 / (n + 100);
 }
 
-/** favorite, long, or juice. Long is +110 and the prices between +110 and −110. */
-export function v13PriceZone(odds, price) {
+function americanAndImplied(odds, price) {
   const american = Number(odds);
   const hasAmerican = Number.isFinite(american) && Math.abs(american) >= 100;
-  if (hasAmerican && american < V13_ML_JUICE_ODDS) return 'juice';
   const implied = hasAmerican
     ? impliedOf(american)
     : (price > 0 && price < 1 ? price : null);
+  return { american, hasAmerican, implied };
+}
+
+/** favorite, long, or juice. Long is +110 and the prices between +110 and −110. */
+export function v13PriceZone(odds, price) {
+  const { american, hasAmerican, implied } = americanAndImplied(odds, price);
+  if (hasAmerican && american < V13_ML_JUICE_ODDS) return 'juice';
   if (implied == null) return null;
   if (!hasAmerican && implied > (425 / 525)) return 'juice';
   const favoriteAt = impliedOf(V13_ML_FAVORITE_ODDS);
@@ -100,6 +113,21 @@ export function v13PriceZone(odds, price) {
   }
   if (implied >= favoriteAt) return 'favorite';
   return 'long';
+}
+
+/** short, longer, or juice. Short is −150 or shorter. Longer is every price past that. */
+export function v13HighPriceZone(odds, price) {
+  const { american, hasAmerican, implied } = americanAndImplied(odds, price);
+  if (hasAmerican && american < V13_ML_JUICE_ODDS) return 'juice';
+  if (implied == null) return null;
+  if (!hasAmerican && implied > (425 / 525)) return 'juice';
+  const shortAt = impliedOf(V13_ML_HIGH_ODDS);
+  if (hasAmerican) {
+    if (american <= V13_ML_HIGH_ODDS) return 'short';
+    return 'longer';
+  }
+  if (implied >= shortAt) return 'short';
+  return 'longer';
 }
 
 /**
@@ -258,19 +286,26 @@ export function applyV13MlPath({
   const against = againstWallets(positions, sport, side, index);
   const armed = { ...base, fires: true, against, wallets };
   if (against > 0) return { ...armed, action: 'PASS' };
-  if (armed.edge == null || armed.edge < 0 || armed.edge >= V13_ML_EDGE_MAX) {
-    return { ...armed, action: 'PASS' };
-  }
+  if (armed.edge == null || armed.edge < 0) return { ...armed, action: 'PASS' };
   if (move == null) return { ...armed, action: 'PASS' };
   if (move < 0) return { ...armed, action: 'MUTE', units: 0, zone: 'against' };
+  if (armed.edge >= V13_ML_EDGE_MAX) {
+    const high = v13HighPriceZone(odds, price);
+    if (high === 'juice' || high == null) return { ...armed, action: 'PASS', zone: high || null };
+    if (high === 'short') {
+      return { ...armed, action: 'STAKE', units: V13_ML_HIGH_FULL_UNITS, zone: high };
+    }
+    return { ...armed, action: 'STAKE', units: V13_ML_HIGH_LONG_UNITS, zone: high };
+  }
+  const zone = v13PriceZone(odds, price);
+  if (zone === 'juice') return { ...armed, action: 'PASS', zone };
   if (move >= V13_ML_STEAM_HEAVY) {
     return { ...armed, action: 'STAKE', units: V13_ML_HEAVY_UNITS, zone: 'heavy' };
   }
   if (move >= V13_ML_STEAM_MID) {
     return { ...armed, action: 'STAKE', units: V13_ML_MID_UNITS, zone: 'mid' };
   }
-  const zone = v13PriceZone(odds, price);
-  if (zone === 'juice' || zone == null) return { ...armed, action: 'PASS', zone: zone || null };
+  if (zone == null) return { ...armed, action: 'PASS' };
   if (zone === 'favorite') {
     return { ...armed, action: 'STAKE', units: V13_ML_FAVORITE_UNITS, zone };
   }
