@@ -410,6 +410,10 @@ export const TRUST_FROM = '2026-10-09';
 export const TRUST_G_STAKE_TIER = 'TRUST-G';
 export const TRUST_G_UNITS = 3;
 export const TRUST_G_SHORT_UNITS = 1;
+/** From this date the price map is the v13 moneyline read: −200 through −150 is 2u, shorter than −200 is 1.5u, every other price stays 0. */
+export const TRUST_G_PRICE_FROM = '2026-11-19';
+export const TRUST_G_SWEET_UNITS = 2;
+export const TRUST_G_SHORT_V13_UNITS = 1.5;
 export const TRUST_G_TIER = 5;
 /** The qualifying ticket is under this multiple of the wallet's sport usual. 0.75× is the mini rung. */
 export const TRUST_G_RATIO_MAX = 0.75;
@@ -1231,27 +1235,36 @@ export function trustGSteamTenth(steam) {
   return Math.round(Math.max(...vals) * 10) / 10;
 }
 
+export function isTrustGPriceLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TRUST_G_PRICE_FROM;
+}
+
 /**
  * Tier 5, form ON, not young, ticket under 0.75×. The wallets that can open TRUST-G.
+ * From TRUST_G_PRICE_FROM the tier is the moneyline book. Before that it is the sport book.
  */
-export function trustGWallets(trust) {
-  return (trust?.for || []).filter((w) => isTrustedWallet(w)
+export function trustGWallets(trust, { market = false } = {}) {
+  const list = market ? trust?.mktFor : trust?.for;
+  return (list || []).filter((w) => isTrustedWallet(w)
     && Number(w.tier) >= TRUST_G_TIER
     && Number(w.ratio) > 0
     && Number(w.ratio) < TRUST_G_RATIO_MAX);
 }
 
 /**
- * 3u from −200 through −150 when the line has shortened. 1u shorter than −200.
- * Every other price, and the 3u band without a positive steam tenth, is 0.
+ * Before TRUST_G_PRICE_FROM: 3u from −200 through −150 when the line has shortened,
+ * 1u shorter than −200, and 0 everywhere else.
+ * From that date: 2u from −200 through −150, 1.5u shorter than −200, and 0 at every other price.
  */
-export function trustGStakeUnits(american, steam) {
+export function trustGStakeUnits(american, steam, pickDate = null) {
   const o = Number(american);
   if (!Number.isFinite(o) || o === 0) return 0;
+  const v13 = isTrustGPriceLive(pickDate);
   if (o <= TRUST_G_SWEET_MAX && o >= TRUST_G_SWEET_MIN) {
+    if (v13) return TRUST_G_SWEET_UNITS;
     return trustGSteamTenth(steam) > 0 ? TRUST_G_UNITS : 0;
   }
-  if (o < TRUST_G_SWEET_MIN) return TRUST_G_SHORT_UNITS;
+  if (o < TRUST_G_SWEET_MIN) return v13 ? TRUST_G_SHORT_V13_UNITS : TRUST_G_SHORT_UNITS;
   return 0;
 }
 
@@ -1285,8 +1298,9 @@ export function applyTrustLayer(result, {
     rules.push('trust_m');
   }
 
-  const gWallets = trustGWallets(trust);
-  const gUnits = trustGStakeUnits(sideOdds, steam);
+  const gMarket = isTrustGPriceLive(pickDate);
+  const gWallets = trustGWallets(trust, { market: gMarket });
+  const gUnits = trustGStakeUnits(sideOdds, steam, pickDate);
   if (isML && out.units === 0 && !vetoed
     && typeof out.reason === 'string' && out.reason.startsWith('gate_fail')
     && Number(legacyUnits) > 0 && gWallets.length && gUnits > 0) {
