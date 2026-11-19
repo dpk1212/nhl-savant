@@ -5,15 +5,13 @@ import { evaluatePressLadder } from './pressLadderOverlay.js';
 const DAY = '2026-11-17';
 const BEFORE = '2026-11-16';
 
-function profile(sport, trust, positions = { n: 20, wr: 52, dollarRoi: 1, invested: 1000 }) {
-  return {
-    bySport: {
-      [sport]: {
-        positions: { ...positions, wins: 10, settledPnl: 0 },
-        trust,
-      },
-    },
+function profile(sport, trust, positions = { n: 20, wr: 52, dollarRoi: 1, invested: 1000 }, marketTrust = null) {
+  const rec = {
+    positions: { ...positions, wins: 10, settledPnl: 0 },
+    trust,
   };
+  if (marketTrust) rec.byMarket = { SPREAD: { trust: marketTrust } };
+  return { bySport: { [sport]: rec } };
 }
 
 const on = {
@@ -89,10 +87,31 @@ test('the biggest qualifying ticket sets the band, and a 2× spread keeps 2u', (
   assert.equal(r.band, 5);
   assert.equal(r.presser.wallet, 'bbbbbb');
   const band4 = run({
-    sport: 'NFL', market: 'SPREAD', odds: -110, invested: 100, steam: { sinceOpenPct: 1.2 },
+    sport: 'NFL', market: 'SPREAD', odds: -250, invested: 100, steam: { sinceOpenPct: 1.2 },
+    profiles: new Map([['aaaaaa', profile('NFL', { ...on, tier: 1 }, undefined, on)]]),
   });
   assert.equal(band4.band, 4);
   assert.equal(band4.units, 2);
+});
+
+test('a spread band reads the spread book, not the sport book', () => {
+  const youngSpread = { ...on, firstBetDate: '2026-11-10' };
+  const sportOnly = run({
+    sport: 'NFL', market: 'SPREAD', odds: -110, invested: 200, steam: { sinceOpenPct: 2 },
+  });
+  assert.equal(sportOnly.units, 0);
+  const young = run({
+    sport: 'NFL', market: 'SPREAD', odds: -110, invested: 200, steam: { sinceOpenPct: 2 },
+    profiles: new Map([['aaaaaa', profile('NFL', on, undefined, youngSpread)]]),
+  });
+  assert.equal(young.units, 0);
+  const marketOnly = run({
+    sport: 'NFL', market: 'SPREAD', odds: -110, invested: 200, steam: { sinceOpenPct: 2 },
+    profiles: new Map([['aaaaaa', profile('NFL', youngSpread, undefined, on)]]),
+  });
+  assert.equal(marketOnly.rung, 'PRESS');
+  assert.equal(marketOnly.band, 5);
+  assert.equal(marketOnly.units, 2.5);
 });
 
 test('a dog shorten stays at 1u and a flat dog is 0, on CBB as on the other sports', () => {

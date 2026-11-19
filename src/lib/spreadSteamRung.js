@@ -1,8 +1,8 @@
 /**
  * Spread steam rung. From 2026-11-16.
  *
- * The wallet is tier 4 or 5, form on, and the sport book is at least 15
- * days old. Skill is how far those prior spreads beat the price on this
+ * The wallet is tier 4 or 5, form on, and the spread book is at least 15
+ * days old, counted from its own first bet. Skill is how far those prior spreads beat the price on this
  * side of the number and at this size of the number: laying or getting,
  * then the band. The exact band at 4 bets, otherwise that band and its
  * neighbors on the same side at 6. Eight points or more qualifies.
@@ -195,8 +195,8 @@ export function buildSpreadSteamBook(rows, asOf) {
         const price = Number(row.avgPrice ?? row.price);
         const date = String(row.date).slice(0, 10);
         if (won == null || !(price > 0 && price < 1)) continue;
-        trustRows.push({ date, price, won, key: `${date}|${row.gameKey || ''}|${row.side || ''}|${row.marketType || ''}` });
         if (normSpreadSteamMarket(row.marketType || row.market) !== 'SPREAD') continue;
+        trustRows.push({ date, price, won, key: `${date}|${row.gameKey || ''}|${row.side || ''}|${row.marketType || ''}` });
         const line = signedSpreadEntryLine(row);
         const sign = spreadSign(line);
         const mag = spreadMagnitude(sport, line);

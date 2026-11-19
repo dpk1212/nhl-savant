@@ -1431,9 +1431,11 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     steam: { lastHourPct: 1.5 }, steamOn: false,
     pickDate, legacyUnits: 2, ...over,
   });
-  // Rows carry the age; the market record takes the sport book's age.
+  // A moneyline market record takes the sport book's age. A spread keeps its own.
   const ageRows = pressWalletRows([wd('yyyyyy', 'home', 2000)], 'home', SPORT, profilesAge, 'ML', AGE);
-  eq(ageRows[0].trust.age, 9, 'sport book age on the pick date'); eq(ageRows[0].trustMkt.age, 9, 'market record reads the sport age');
+  eq(ageRows[0].trust.age, 9, 'sport book age on the pick date'); eq(ageRows[0].trustMkt.age, 9, 'moneyline market record reads the sport age');
+  const spreadAgeRows = pressWalletRows([wd('yyyyyy', 'home', 2000)], 'home', SPORT, profilesAge, 'SPREAD', AGE);
+  eq(spreadAgeRows[0].trust.age, 9, 'sport age stays on the sport record'); eq(spreadAgeRows[0].trustMkt.age, 8, 'a spread reads its own book age');
   eq(pressWalletRows([wd('yyyyyy', 'home', 2000)], 'home', SPORT, profilesAge, 'ML', PRE_AGE)[0].trust.age, 4, 'age moves with the pick date');
   eq(pressWalletRows([wd('yyyyyy', 'home', 2000)], 'home', SPORT, profilesAge, 'ML')[0].trust.age, 3, 'no pick date → export daysActive');
   eq(pressWalletRows([wd('bbbbbb', 'home', 2000)], 'home', SPORT, profilesAge, 'ML', AGE)[0].trust.age, null, 'no age fields → null');

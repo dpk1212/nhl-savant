@@ -106,6 +106,23 @@ test('a shorten under 4.5, the other side of the number, and skill under 8 stay 
   assert.equal(under.action, 'PASS');
 });
 
+test('qualification is the spread book, so a sport book does not carry a young spread book', () => {
+  const ml = prior('cccccc', 20, 0.5, 0.8).map((row) => ({ ...row, marketType: 'ML', entryLine: null }));
+  const youngSpreads = prior('cccccc', 12, 0.5, 0.8).map((row, i) => ({
+    ...row,
+    date: new Date(Date.parse('2026-11-05T00:00:00Z') + i * 86400000).toISOString().slice(0, 10),
+    gameKey: `young${i}`,
+  }));
+  const young = buildSpreadSteamBook([...ml, ...youngSpreads], DAY);
+  assert.equal(young.has('NBA|cccccc'), false);
+  const oldSpreads = prior('dddddd', 12, 0.5, 0.8);
+  const badMl = prior('dddddd', 20, 0.5, 0.2).map((row) => ({
+    ...row, marketType: 'ML', entryLine: null, gameKey: `ml${row.gameKey}`,
+  }));
+  const old = buildSpreadSteamBook([...oldSpreads, ...badMl], DAY);
+  assert.equal(old.has('NBA|dddddd'), true);
+});
+
 test('a moneyline, a total, an earlier date, a manual stake, and a kill stay put', () => {
   const index = book();
   const positions = [pos('aaaaaa', 'home')];
