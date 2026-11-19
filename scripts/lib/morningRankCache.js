@@ -50,6 +50,7 @@ import {
   isV13MlLive,
   serializeV13MlBook,
   setV13MlBook,
+  V13_ML_BOOK_VERSION,
 } from '../../src/lib/v13MlPath.js';
 
 export const MORNING_RANK_COLLECTION = 'morningRank';
@@ -157,7 +158,10 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
       if (mlLive) mlDoc = await readDoc(db, ML_MINI_DOC, asOf);
       if (spreadLive) spreadDoc = await readDoc(db, SPREAD_STEAM_DOC, asOf);
       if (totalLive) totalDoc = await readDoc(db, TOTAL_MINI_DOC, asOf);
-      if (v13Live) v13Doc = await readDoc(db, V13_ML_DOC, asOf);
+      if (v13Live) {
+        v13Doc = await readDoc(db, V13_ML_DOC, asOf);
+        if (v13Doc && v13Doc.bookVersion !== V13_ML_BOOK_VERSION) v13Doc = null;
+      }
     } catch (err) {
       console.warn(`[morning-rank] skill book cache read failed, rebuilding: ${err.message}`);
       mlDoc = null;

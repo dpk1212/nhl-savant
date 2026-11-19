@@ -19,7 +19,9 @@
  *
  * This is the size for that side. It replaces the stake that arrived.
  * Manual stake, an operator kill, the T-15 freeze, and a graded ticket
- * stay at the caller. NHL, NBA, NFL, and CFB. Moneyline only.
+ * stay at the caller. The fit was NHL, NBA, NFL, and CFB. The path is
+ * every sport's moneyline from 2026-11-19. A wallet qualifies on that
+ * sport's own book.
  */
 
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
@@ -41,8 +43,7 @@ export const V13_ML_HIGH_LONG_UNITS = 1.5;
 export const V13_ML_STAKE_TIER = 'V13-ML';
 export const V13_ML_RESCUED_BY = 'v13-ml';
 export const V13_ML_MUTED_BY = 'v13-ml';
-
-const SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
+export const V13_ML_BOOK_VERSION = 2;
 
 let bookIndex = new Map();
 
@@ -143,7 +144,7 @@ export function buildV13MlBook(rows, asOf) {
     const wallet = mlMiniWalletId(row);
     const date = String(row?.date || '').slice(0, 10);
     const sport = normMlMiniSport(row?.sport);
-    if (!wallet || date.length < 10 || !SPORTS.has(sport) || date >= asOf) continue;
+    if (!wallet || date.length < 10 || !sport || date >= asOf) continue;
     if (normMlMiniMarket(row?.marketType || row?.market) !== 'ML') continue;
     if (!byWallet.has(wallet)) byWallet.set(wallet, []);
     byWallet.get(wallet).push(row);
@@ -181,7 +182,7 @@ export function serializeV13MlBook(index, asOf) {
     rows.push({ sport, wallet });
   }
   rows.sort((a, b) => a.sport.localeCompare(b.sport) || a.wallet.localeCompare(b.wallet));
-  return { asOf, rows };
+  return { asOf, bookVersion: V13_ML_BOOK_VERSION, rows };
 }
 
 export function hydrateV13MlBook(payload) {
@@ -215,7 +216,7 @@ export function qualifyingV13Wallets({ sport, side, positions, book = null } = {
   const sp = normMlMiniSport(sport);
   const mySide = String(side || '').toLowerCase();
   const out = [];
-  if (!SPORTS.has(sp) || !mySide) return out;
+  if (!sp || !mySide) return out;
   const seen = new Set();
   for (const raw of positions || []) {
     const row = viewPosition(raw);
@@ -277,7 +278,7 @@ export function applyV13MlPath({
   };
   if (manual === true || killed === true) return { ...base, action: 'EXEMPT' };
   if (!isV13MlLive(pickDate)) return { ...base, action: 'EXEMPT' };
-  if (normMlMiniMarket(market) !== 'ML' || !SPORTS.has(normMlMiniSport(sport))) {
+  if (normMlMiniMarket(market) !== 'ML' || !normMlMiniSport(sport)) {
     return { ...base, action: 'PASS' };
   }
   const index = bookOf(book);

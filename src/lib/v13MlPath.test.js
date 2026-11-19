@@ -158,15 +158,37 @@ test('the branch stays off under the edge, without a steam, and with opposition'
   assert.deepEqual(alone.wallets, ['aaaaaa']);
 });
 
-test('a young book, a spread, CBB, a manual stake, and yesterday stay put', () => {
+test('any sport qualifies on its own moneyline book', () => {
+  const mlb = buildV13MlBook(history('eeeeee', { sport: 'MLB' }), DAY);
+  assert.equal(mlb.has('MLB|eeeeee'), true);
+  const cbbBook = buildV13MlBook(history('ffffff', { sport: 'NCAAB' }), DAY);
+  assert.equal(cbbBook.has('CBB|ffffff'), true);
+  const played = applyV13MlPath({
+    units: 1,
+    pickDate: DAY,
+    sport: 'CBB',
+    market: 'ML',
+    side: 'home',
+    positions: [pos('ffffff')],
+    odds: -150,
+    steam: 0,
+    edge: 4,
+    book: cbbBook,
+  });
+  assert.equal(played.action, 'STAKE');
+  assert.equal(played.units, 4);
+  assert.deepEqual(played.wallets, ['ffffff']);
+  const blank = run({ sport: '' });
+  assert.equal(blank.action, 'PASS');
+});
+
+test('a young book, a spread, a manual stake, and yesterday stay put', () => {
   const young = buildV13MlBook(history('cccccc', { n: 12, start: '2026-11-08' }), DAY);
   assert.equal(young.has('NBA|cccccc'), false);
   const spreadOnly = buildV13MlBook(history('dddddd', { market: 'SPREAD' }), DAY);
   assert.equal(spreadOnly.has('NBA|dddddd'), false);
   const indexed = book();
   assert.equal(indexed.has('NBA|aaaaaa'), true);
-  const cbb = run({ sport: 'CBB' });
-  assert.equal(cbb.action, 'PASS');
   const spread = run({ market: 'SPREAD' });
   assert.equal(spread.action, 'PASS');
   const manual = run({ manual: true, units: 2 });
