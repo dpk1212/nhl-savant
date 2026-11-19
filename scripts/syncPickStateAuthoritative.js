@@ -211,6 +211,7 @@ import {
 } from './lib/hydrateLivePositionsFromScan.js';
 import { buildIsProvenFn, buildWalletPriorStatsFn } from '../src/lib/marketProvenCarve.js';
 import { resolveInstrument, ticketAmerican, coherentTicket, walletsOnSide, isBooklessMlSport } from '../src/lib/ticketInstrument.js';
+import { polySteamForSide } from '../src/lib/polySteam.js';
 import {
   bestAvailableTicket,
   snapshotBookRail,
@@ -1844,17 +1845,30 @@ function applySkillFeatureStamps(target, bundle, now, {
   target.v8_skillEvaluatedAt = now;
 }
 
-function movedAgainstOnSide({
-  units, pickDate, sport, market, odds, walletDetails, side, profiles = null,
-  manual = false, killed = false,
-  pinnGame = null, line = null, commenceMs = null, storedSteam = null, nowMs = Date.now(),
-}) {
-  const live = steamPctsFromPinn(pinnGame, {
+/** Book tape when it exists. Tennis and esports use the Polymarket line. */
+function liveSteamPcts({
+  pinnGame = null, polySteam = null, sport = null, side = null,
+  market = null, line = null, commenceMs = null, nowMs = Date.now(),
+} = {}) {
+  const pinn = steamPctsFromPinn(pinnGame, {
     marketType: market,
     sideNorm: side,
     line,
     nowSec: Math.floor(Number(nowMs) / 1000),
     freezeAtMs: commenceMs,
+  });
+  if (pinn) return pinn;
+  if (!isBooklessMlSport(sport)) return null;
+  return polySteamForSide(polySteam, side);
+}
+
+function movedAgainstOnSide({
+  units, pickDate, sport, market, odds, walletDetails, side, profiles = null,
+  manual = false, killed = false,
+  pinnGame = null, line = null, commenceMs = null, storedSteam = null, polySteam = null, nowMs = Date.now(),
+}) {
+  const live = liveSteamPcts({
+    pinnGame, polySteam, sport, side, market, line, commenceMs, nowMs,
   });
   return decideMovedAgainst({
     units,
@@ -1875,14 +1889,10 @@ function movedAgainstOnSide({
 function steamBookOnSide({
   units, pickDate, sport, market, odds, side, pressEdge, mktFor, mktAg, ceiling,
   manual = false, killed = false, hold = false,
-  pinnGame = null, line = null, commenceMs = null, storedSteam = null, nowMs = Date.now(),
+  pinnGame = null, line = null, commenceMs = null, storedSteam = null, polySteam = null, nowMs = Date.now(),
 }) {
-  const live = steamPctsFromPinn(pinnGame, {
-    marketType: market,
-    sideNorm: side,
-    line,
-    nowSec: Math.floor(Number(nowMs) / 1000),
-    freezeAtMs: commenceMs,
+  const live = liveSteamPcts({
+    pinnGame, polySteam, sport, side, market, line, commenceMs, nowMs,
   });
   return applySteamBook({
     units,
@@ -1924,6 +1934,7 @@ function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
     ticketLine: extra.ticketLine ?? sd?.peak?.line ?? sd?.lock?.line ?? null,
     commenceMs: extra.commenceMs ?? gm?.commenceTime ?? null,
     existingTapeLog: extra.existingTapeLog ?? sd?.v8_ticketTapeLog ?? null,
+    polySteam: gm?.polySteam ?? null,
   };
 }
 
@@ -2748,6 +2759,7 @@ function loadGameMetadata() {
         const ptLine = g.polyTotal?.line;
         if (Number.isFinite(ptLine)) cur.polyTotalLine = Number(ptLine);
         if (g.polyMl?.conditionId) cur.polyMlConditionId = String(g.polyMl.conditionId);
+        if (g.polySteam) cur.polySteam = g.polySteam;
         meta.set(key, cur);
       }
     }
@@ -4724,6 +4736,7 @@ async function createMissingLockedPicks({
           pinnGame: tapeMoved.pinnGame,
           line: tapeMoved.ticketLine,
           commenceMs: tapeMoved.commenceMs,
+          polySteam: tapeMoved.polySteam,
           nowMs: now,
         });
         if (movedAgainstCreate.action === 'MUTE') {
@@ -4750,6 +4763,7 @@ async function createMissingLockedPicks({
           pinnGame: tapeMoved.pinnGame,
           line: tapeMoved.ticketLine,
           commenceMs: tapeMoved.commenceMs,
+          polySteam: tapeMoved.polySteam,
           nowMs: now,
         });
         if (steamBookCreate.mute.action === 'MUTE') {
@@ -7779,6 +7793,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       line: tapeMoved.ticketLine,
       commenceMs: tapeMoved.commenceMs,
       storedSteam: sd?.v8_steam || null,
+      polySteam: tapeMoved.polySteam,
       nowMs: now,
     });
     if (movedAgainstPolicy.action === 'MUTE') {
@@ -7810,6 +7825,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       line: tapeSteam.ticketLine,
       commenceMs: tapeSteam.commenceMs,
       storedSteam: sd?.v8_steam || null,
+      polySteam: tapeSteam.polySteam,
       nowMs: now,
     });
     if (steamBookPolicy.mute.action === 'MUTE') {

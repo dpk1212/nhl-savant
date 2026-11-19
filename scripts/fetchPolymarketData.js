@@ -42,6 +42,8 @@ import {
   findCbbTeamInMap,
   isMainCBBGameSlug,
 } from '../src/lib/cbbGameKey.js';
+import { isBooklessMlSport } from '../src/lib/ticketInstrument.js';
+import { polySteamPcts } from '../src/lib/polySteam.js';
 import {
   makeATPGameKey,
   extractATPPlayersFromTitle,
@@ -1719,6 +1721,8 @@ async function run() {
 
       let priceMove1h = null;
       let priceHistory = null;
+      let hist1h = null;
+      let hist24h = null;
       const markets = ev.markets || [];
 
       // Classify markets into ML, spread, and O/U
@@ -1822,11 +1826,11 @@ async function run() {
       if (typeof tokenIds === 'string') tokenIds = JSON.parse(tokenIds || '[]').filter(Boolean);
       else if (mlMarket?.tokens) tokenIds = mlMarket.tokens.map(t => t.token_id);
       if (Array.isArray(tokenIds) && tokenIds.length > 0) {
-        const hist1h = await getPriceHistory(tokenIds[0], '1h');
+        hist1h = await getPriceHistory(tokenIds[0], '1h');
         priceMove1h = priceMovePct(hist1h);
 
         // 24h price history for sparkline (sample ~12 points)
-        const hist24h = await getPriceHistory(tokenIds[0], '1d');
+        hist24h = await getPriceHistory(tokenIds[0], '1d');
         if (hist24h && hist24h.length >= 2) {
           const step = Math.max(1, Math.floor(hist24h.length / 12));
           const sampled = [];
@@ -1957,6 +1961,16 @@ async function run() {
         if (priceMove1h != null) priceMove1h = -priceMove1h;
       }
 
+      // Tennis and esports have no book tape. The Polymarket line on the
+      // card is the steam, in the same percents a book shorten uses.
+      let polySteam = null;
+      if (isBooklessMlSport(sport) && Array.isArray(hist24h) && hist24h.length >= 2) {
+        polySteam = {
+          away: polySteamPcts(hist24h, hist1h, { complement: token0IsAway === false }),
+          home: polySteamPcts(hist24h, hist1h, { complement: token0IsAway === true }),
+        };
+      }
+
       // Extract spread market data
       let polySpread = null;
       if (spreadMarket) {
@@ -2048,6 +2062,7 @@ async function run() {
         sampleCash: agg.totalCash,
         priceMove1h,
         priceHistory: priceHistory || bucket[key]?.priceHistory || null,
+        polySteam,
         whales: whaleData,
         awayProb: awayProb != null ? Number((awayProb * 100).toFixed(1)) : null,
         homeProb: homeProb != null ? Number((homeProb * 100).toFixed(1)) : null,
