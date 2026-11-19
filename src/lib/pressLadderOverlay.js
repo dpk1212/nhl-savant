@@ -28,6 +28,12 @@
  * Rescue rung R6 (2u, re-sized 2026-10-07 from 1u on 20-9 +27.9%) when gate 2
  * fails: ≥2 FOR wallets with n ≥ 15 each at sizeRatio ≥ 1.0, zero Door-2 AG,
  * money ≥ 0.60. Removed if 60 stamped R6 plays are negative.
+ * From R6_SKILL_FROM that veteran rule stands down. R6 is two wallets already
+ * 8 points over the price in this bet's cell, and nobody on the side at
+ * 1.5× or more. The wallet is the morning skill book: tier 4 or 5, form on,
+ * sport book at least 15 days old. NHL, NBA, NFL, CFB. Moneyline, spread,
+ * and total. Oct 6–Nov 17 that cell was 9-2, +31.7pp (spreads 6-1, totals
+ * 2-0, moneylines 1-1). Still 2u.
  *
  * Exception rung PRESS-X (3u steam off / 2u steam on) when ONLY gate 3 fails: gates 1, 2, 4 pass,
  * Door-2 margin (FOR − AG) ≥ 1, and every Door-2 AG wallet is betting under
@@ -245,6 +251,10 @@
 import { edgeUnder5Owns } from './edgeUnder5.js';
 import { isConfirmedSportRec } from './whitelistTier.js';
 import { stakeSizeRatio } from './sizeRatioBands.js';
+import { mlMiniBookIndex, mlMiniSkill } from './mlMiniRung.js';
+import { spreadSteamBookIndex, spreadSteamSkill } from './spreadSteamRung.js';
+import { totalMiniBookIndex, totalMiniSkill, totalLineOf } from './totalMiniRung.js';
+import { signedSpreadEntryLine } from './spreadLineSign.js';
 import {
   isTrustedWallet, isTrustOn, isTrustOff, isTrustYoung, trustAgeDays, TRUST_TIER_MIN, TRUST_MIN_AGE_DAYS,
 } from './walletTrustStatus.js';
@@ -309,6 +319,13 @@ export const PRESS_EDGE_NET_MUTED_BY = 'press-edge-net';
 export const R6_MIN_VETERANS = 2;
 export const R6_RATIO_MIN = 1.0;
 export const R6_UNITS = 2;
+/** From this date R6 is two skill-8 wallets and nobody pressing. The veteran rule stands down. */
+export const R6_SKILL_FROM = '2026-11-17';
+export const R6_SKILL = 8;
+const R6_SKILL_SPORTS = new Set(['NHL', 'NBA', 'NFL', 'CFB']);
+export function isR6SkillLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= R6_SKILL_FROM;
+}
 
 /** PRESS-X: Door-2 margin (FOR − AG) must be at least this. */
 export const PRESS_X_MIN_MARGIN = 1;
@@ -1472,6 +1489,60 @@ export function applyTrustLayer(result, {
   return out;
 }
 
+function r6SkillSport(sport) {
+  const u = String(sport || '').toUpperCase();
+  if (u === 'NCAAF' || u === 'NCAAFB') return 'CFB';
+  return u;
+}
+
+function r6Position(positions, wallet, side) {
+  const id = String(wallet || '').slice(-6).toLowerCase();
+  const my = String(side || '').toLowerCase();
+  for (const raw of positions || []) {
+    const w = String(raw?.walletShort || raw?.wallet || '').slice(-6).toLowerCase();
+    if (w !== id) continue;
+    const s = String(raw?.side || '').toLowerCase();
+    if (s && s !== my) continue;
+    return raw;
+  }
+  return null;
+}
+
+function r6BetPrice(pos, sideOdds) {
+  const p = Number(pos?.avgPrice ?? pos?.price);
+  if (p > 0 && p < 1) return p;
+  return impliedFromAmerican(sideOdds);
+}
+
+/** Skill of one FOR wallet in this bet's cell. Null when the morning book does not qualify them. */
+function r6SkillOf(row, { sport, marketType, side, sideOdds, line, positions }) {
+  const sp = r6SkillSport(sport);
+  if (!R6_SKILL_SPORTS.has(sp)) return null;
+  const mkt = String(marketType || '').toUpperCase();
+  const pos = r6Position(positions, row.wallet, side);
+  if (mkt === 'ML') {
+    const info = mlMiniBookIndex().get(`${sp}|${row.wallet}`);
+    if (!info?.good) return null;
+    return mlMiniSkill(info.bands, r6BetPrice(pos, sideOdds));
+  }
+  if (mkt === 'SPREAD') {
+    const info = spreadSteamBookIndex().get(`${sp}|${row.wallet}`);
+    if (!info?.good) return null;
+    const signed = pos ? signedSpreadEntryLine(pos) : null;
+    const use = Number.isFinite(signed) ? signed : (Number.isFinite(Number(line)) ? Number(line) : null);
+    return spreadSteamSkill(info.cells, sp, use);
+  }
+  if (mkt === 'TOTAL' || mkt === 'TOTALS') {
+    const info = totalMiniBookIndex().get(`${sp}|${row.wallet}`);
+    if (!info?.good) return null;
+    const fromPos = pos ? totalLineOf(pos) : null;
+    const use = fromPos != null ? fromPos : (Number.isFinite(Number(line)) ? Number(line) : null);
+    const totalSide = side === 'over' || side === 'under' ? side : null;
+    return totalMiniSkill(info.cells, sp, totalSide, use);
+  }
+  return null;
+}
+
 function evaluatePressLadderCore({
   walletDetails,
   side,
@@ -1481,6 +1552,8 @@ function evaluatePressLadderCore({
   sideOdds = null,
   steamOn = false,
   pickDate = null,
+  positions = null,
+  line = null,
 } = {}) {
   const empty = {
     gate: { money: false, seasPress: false, noDoor2Ag: false, door2For: false, pass: false },
@@ -1627,22 +1700,42 @@ function evaluatePressLadderCore({
     };
   }
 
-  // R6 — two veterans at normal size, only when there is no seasoned press.
+  // R6. Before R6_SKILL_FROM: two veterans at normal size, no seasoned press.
+  // From that date: two wallets at skill 8 in this cell, and nobody at 1.5×.
   const veterans = seasonedFor.filter((r) => r.ratio >= R6_RATIO_MIN).sort((a, b) => b.ratio - a.ratio);
-  const r6 = !gate.seasPress
-    && veterans.length >= R6_MIN_VETERANS
-    && gate.noDoor2Ag
-    && gate.money;
-  if (r6) {
-    return {
-      gate, moneyShare, door2Ag, door2For,
-      presser: null, maxRatio, band: null, priceStep: null, edge,
-      steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
-      veterans: veterans.map(strip),
-      dissenters: [],
-      rung: PRESS_R6_STAKE_TIER, units: R6_UNITS,
-      reason: 'r6_two_veterans',
-    };
+  const pressing = forRows.some((r) => Number.isFinite(r.ratio) && r.ratio >= PRESS_RATIO_MIN);
+  if (isR6SkillLive(pickDate)) {
+    const skilled = pressing ? [] : forRows
+      .map((r) => ({ ...r, skill: r6SkillOf(r, { sport, marketType, side, sideOdds, line, positions }) }))
+      .filter((r) => r.skill >= R6_SKILL)
+      .sort((a, b) => b.skill - a.skill);
+    if (skilled.length >= R6_MIN_VETERANS) {
+      return {
+        gate, moneyShare, door2Ag, door2For,
+        presser: null, maxRatio, band: null, priceStep: null, edge,
+        steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
+        veterans: skilled.map(strip),
+        dissenters: [],
+        rung: PRESS_R6_STAKE_TIER, units: R6_UNITS,
+        reason: `r6_skill_${skilled.map((r) => r.wallet).join('+')}`,
+      };
+    }
+  } else {
+    const r6 = !gate.seasPress
+      && veterans.length >= R6_MIN_VETERANS
+      && gate.noDoor2Ag
+      && gate.money;
+    if (r6) {
+      return {
+        gate, moneyShare, door2Ag, door2For,
+        presser: null, maxRatio, band: null, priceStep: null, edge,
+        steamOn: !!steamOn, heavyFav, floorFade: empty.floorFade,
+        veterans: veterans.map(strip),
+        dissenters: [],
+        rung: PRESS_R6_STAKE_TIER, units: R6_UNITS,
+        reason: 'r6_two_veterans',
+      };
+    }
   }
 
   // STEAM-S — the market overrules a seasoned wallet's ordinary bet. Steam
