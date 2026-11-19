@@ -5669,12 +5669,14 @@ async function createMissingLockedPicks({
           `  TRUST stake: ${docId} ${side} ${pressEvalCreate.rung} ${peakUnitsApplied}u (score=${scoreV12 ?? '∅'} · ${pressEvalCreate.trust?.rule || 'rung'})`,
         );
       }
-      // V12+ ML stake disable — AFTER all stamps/health. Lock + stamps stay
-      // as computed; force 0u + muted with the flag as mute source.
+      // V12+ ML stake disable — AFTER V12+ rungs and V13. V13 STAKE/MUTE
+      // keep their result. Every other ML side → 0u muted with flag marker.
+      // Manual stake / operator kill stay. Never raises a stake.
       const mlStakeDisableCreate = applyV12plusMlStakeDisable({
         market: marketType,
         units: peakUnitsApplied,
         operatorKilled: isOperatorKilled({ _id: docId }, side, null),
+        v13Action: v13MlCreate?.action ?? null,
       });
       if (mlStakeDisableCreate.applied) {
         peakUnitsApplied = 0;
@@ -5690,7 +5692,8 @@ async function createMissingLockedPicks({
           ...(healthStamp.reasons || []).filter((r) => r !== V12PLUS_ML_DISABLED_REASON),
         ];
         console.log(
-          `  V12PLUS-ML-DISABLED: ${docId} ${side} ${mlStakeDisableCreate.unitsPre}u → 0u muted (${V12PLUS_ML_DISABLED_MUTED_BY})`,
+          `  V12PLUS-ML-DISABLED: ${docId} ${side} ${mlStakeDisableCreate.unitsPre}u → 0u muted (${V12PLUS_ML_DISABLED_MUTED_BY})`
+          + ` (v13=${v13MlCreate?.action || '∅'})`,
         );
       }
       newSides[side] = {
@@ -9948,13 +9951,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     changes.push('superseded: cleared (live side re-locked)');
   }
 
-  // V12+ ML stake disable — LAST step. All overlays, lockStage, and policy
-  // stamps already match Nov-18 behavior. Force every ML side to 0u, treat
-  // as muted with the flag as mute source. Spreads/totals skip.
+  // V12+ ML stake disable — LAST step, after V12+ rungs and V13. V13
+  // STAKE/MUTE keep their result. Every other ML → 0u muted with flag
+  // marker. Manual stake / operator kill stay. Never raises a stake.
+  // Spreads/totals skip. lockStage and policy stamps stay as computed.
   const mlStakeDisable = applyV12plusMlStakeDisable({
     market: mkt,
     units: finalUnitsApplied,
     operatorKilled,
+    manual: skipManualFlinch,
+    v13Action: v13MlPolicy?.action ?? null,
   });
   if (mlStakeDisable.applied) {
     const unitsPreDisable = mlStakeDisable.unitsPre;
@@ -9973,9 +9979,6 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       ],
     };
     Object.assign(patch, mlStakeDisable.marker);
-    // Keep lockStage / press / rung stamps as computed. Only zero the
-    // stake mirrors on peak/lock so the card shows 0u. Spread from the
-    // stamped peak/lock so merge:true does not wipe other peak fields.
     patch.peak = {
       ...(sd.peak || {}),
       ...(patch.peak || {}),
@@ -9989,7 +9992,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitTier: unitTierLabel(0),
     };
     changes.push(
-      `V12PLUS-ML-DISABLED: ${unitsPreDisable}u → 0u muted (${V12PLUS_ML_DISABLED_MUTED_BY})`,
+      `V12PLUS-ML-DISABLED: ${unitsPreDisable}u → 0u muted (${V12PLUS_ML_DISABLED_MUTED_BY})`
+      + ` (v13=${v13MlPolicy?.action || '∅'})`,
     );
   }
 
@@ -10112,7 +10116,7 @@ async function main() {
   const now = Date.now();
   console.log(`\n=== syncPickStateAuthoritative — ${TARGET_DATE} ===`);
   console.log(`Mode: ${DRY_RUN ? 'DRY RUN (no writes)' : 'WRITE'}${FORCE ? ' · FORCE (bypass T-15)' : ''}`);
-  console.log(`V12PLUS_ML_DISABLED: ${isV12plusMlDisabled() ? 'ON (ML → 0u muted)' : 'OFF'}`);
+  console.log(`V12PLUS_ML_DISABLED: ${isV12plusMlDisabled() ? 'ON (non-V13 ML → 0u muted; V13 STAKE/MUTE kept)' : 'OFF'}`);
   console.log(`now=${new Date(now).toISOString()}\n`);
 
   // Load wallet profiles — prefer committed data/wallet-profiles.json (same
