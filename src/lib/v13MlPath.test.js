@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   applyV13MlPath,
   buildV13MlBook,
+  v13HighPriceZone,
   v13PriceZone,
 } from './v13MlPath.js';
 
@@ -60,6 +61,13 @@ test('the price cut is −110, and juice is left alone', () => {
   assert.equal(v13PriceZone(180), 'long');
   assert.equal(v13PriceZone(null, 0.55), 'favorite');
   assert.equal(v13PriceZone(null, 0.48), 'long');
+  assert.equal(v13HighPriceZone(-150), 'short');
+  assert.equal(v13HighPriceZone(-300), 'short');
+  assert.equal(v13HighPriceZone(-149), 'longer');
+  assert.equal(v13HighPriceZone(110), 'longer');
+  assert.equal(v13HighPriceZone(-426), 'juice');
+  assert.equal(v13HighPriceZone(null, 0.6), 'short');
+  assert.equal(v13HighPriceZone(null, 0.59), 'longer');
 });
 
 test('flat through a small shorten is 4 at −110 or shorter and 2 otherwise', () => {
@@ -94,10 +102,46 @@ test('4.5 up to 10 is 0.75, 10 or more is 4, and steam against is 0', () => {
   assert.equal(against.zone, 'against');
 });
 
-test('the branch stays off outside the edge, without a steam, and with opposition', () => {
-  const high = run({ edge: 10 });
-  assert.equal(high.action, 'PASS');
-  assert.equal(high.units, 1);
+test('juice stays off on a shorten of 4.5 or more', () => {
+  const mid = run({ units: 0, steam: 5, odds: -450 });
+  assert.equal(mid.action, 'PASS');
+  assert.equal(mid.units, 0);
+  assert.equal(mid.zone, 'juice');
+  const heavy = run({ units: 0, steam: 10, odds: -450 });
+  assert.equal(heavy.action, 'PASS');
+  assert.equal(heavy.units, 0);
+  assert.equal(heavy.zone, 'juice');
+  const priced = run({ steam: 5, odds: -200 });
+  assert.equal(priced.units, 0.75);
+});
+
+test('edge of 10 or more mutes a move against, then sizes the price', () => {
+  const full = run({ edge: 10, steam: 0, odds: -150 });
+  assert.equal(full.action, 'STAKE');
+  assert.equal(full.units, 3);
+  assert.equal(full.zone, 'short');
+  const shorter = run({ edge: 18, steam: 6, odds: -200 });
+  assert.equal(shorter.units, 3);
+  assert.equal(shorter.zone, 'short');
+  const longer = run({ edge: 12, steam: 0, odds: -149 });
+  assert.equal(longer.units, 1.5);
+  assert.equal(longer.zone, 'longer');
+  const dog = run({ edge: 12, steam: 11, odds: 140 });
+  assert.equal(dog.units, 1.5);
+  const against = run({ edge: 14, units: 4, steam: -0.1, odds: -180 });
+  assert.equal(against.action, 'MUTE');
+  assert.equal(against.units, 0);
+  assert.equal(against.zone, 'against');
+  const juice = run({ edge: 15, units: 0, steam: 10, odds: -450 });
+  assert.equal(juice.action, 'PASS');
+  assert.equal(juice.units, 0);
+  assert.equal(juice.zone, 'juice');
+  const noMove = run({ edge: 11, steam: null, odds: -180 });
+  assert.equal(noMove.action, 'PASS');
+  assert.equal(noMove.units, 1);
+});
+
+test('the branch stays off under the edge, without a steam, and with opposition', () => {
   const under = run({ edge: -0.1 });
   assert.equal(under.action, 'PASS');
   const missingEdge = run({ edge: null });
@@ -114,15 +158,37 @@ test('the branch stays off outside the edge, without a steam, and with oppositio
   assert.deepEqual(alone.wallets, ['aaaaaa']);
 });
 
-test('a young book, a spread, CBB, a manual stake, and yesterday stay put', () => {
+test('any sport qualifies on its own moneyline book', () => {
+  const mlb = buildV13MlBook(history('eeeeee', { sport: 'MLB' }), DAY);
+  assert.equal(mlb.has('MLB|eeeeee'), true);
+  const cbbBook = buildV13MlBook(history('ffffff', { sport: 'NCAAB' }), DAY);
+  assert.equal(cbbBook.has('CBB|ffffff'), true);
+  const played = applyV13MlPath({
+    units: 1,
+    pickDate: DAY,
+    sport: 'CBB',
+    market: 'ML',
+    side: 'home',
+    positions: [pos('ffffff')],
+    odds: -150,
+    steam: 0,
+    edge: 4,
+    book: cbbBook,
+  });
+  assert.equal(played.action, 'STAKE');
+  assert.equal(played.units, 4);
+  assert.deepEqual(played.wallets, ['ffffff']);
+  const blank = run({ sport: '' });
+  assert.equal(blank.action, 'PASS');
+});
+
+test('a young book, a spread, a manual stake, and yesterday stay put', () => {
   const young = buildV13MlBook(history('cccccc', { n: 12, start: '2026-11-08' }), DAY);
   assert.equal(young.has('NBA|cccccc'), false);
   const spreadOnly = buildV13MlBook(history('dddddd', { market: 'SPREAD' }), DAY);
   assert.equal(spreadOnly.has('NBA|dddddd'), false);
   const indexed = book();
   assert.equal(indexed.has('NBA|aaaaaa'), true);
-  const cbb = run({ sport: 'CBB' });
-  assert.equal(cbb.action, 'PASS');
   const spread = run({ market: 'SPREAD' });
   assert.equal(spread.action, 'PASS');
   const manual = run({ manual: true, units: 2 });
