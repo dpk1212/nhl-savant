@@ -3,7 +3,8 @@
  *
  * Each morning, inside one sport and one market, a wallet's last-30-day
  * dollar ROI is the graded bets dated before that morning. Five bets are
- * enough. There is no peer minimum. Tonight's invested stake-weights those
+ * enough. There is no peer minimum. From 2026-11-19 the wallet also has
+ * to be confirmed in the sport. Tonight's invested stake-weights those
  * ROIs on each side.
  *
  * The side ships when two or more qualified wallets are on it, the other
@@ -22,6 +23,8 @@
 
 import { gapBandStays } from './edgeUnder5.js';
 import { oddsCap } from './oddsCap.js';
+import { isConfirmedStakeLive } from './pressLadderOverlay.js';
+import { isConfirmedSportRec } from './whitelistTier.js';
 
 export const GAP_LEAD_FROM = '2026-10-30';
 export const GAP_LEAD_MIN_N = 5;
@@ -139,10 +142,42 @@ export function buildGapLeadBooks(rows, asOf) {
   return index;
 }
 
-function sideScore(rows, sport, market, side, books) {
+function profileOf(walletProfiles, position) {
+  if (!walletProfiles || !position) return null;
+  const keys = [walletId(position), String(position.wallet || ''), String(position.walletShort || '')];
+  for (const key of keys) {
+    if (!key) continue;
+    if (typeof walletProfiles.get === 'function') {
+      const hit = walletProfiles.get(key)
+        || walletProfiles.get(key.toLowerCase())
+        || walletProfiles.get(key.toUpperCase());
+      if (hit) return hit;
+    } else if (walletProfiles[key]) return walletProfiles[key];
+  }
+  return null;
+}
+
+/** Wallet ids whose sport book is confirmed. The gap score uses these from Nov 19. */
+export function gapConfirmedWallets(positions, walletProfiles, sport) {
+  const sp = normGapSport(sport);
+  const ids = [];
+  const seen = new Set();
+  for (const position of positions || []) {
+    const id = walletId(position);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const profile = profileOf(walletProfiles, position);
+    const rec = profile?.bySport?.[sp] || profile?.bySport?.[sport];
+    if (isConfirmedSportRec(rec)) ids.push(id);
+  }
+  return ids;
+}
+
+function sideScore(rows, sport, market, side, books, confirmedSet) {
   const byWallet = new Map();
   for (const row of rows) {
     if (row.side !== side || !row.wallet) continue;
+    if (confirmedSet && !confirmedSet.has(row.wallet)) continue;
     const info = books.get(bookKey(sport, market, row.wallet));
     if (!info) continue;
     const invested = Number(row.invested);
@@ -170,7 +205,7 @@ function view(position) {
  * One side of one game. `positions` is every wallet on that game and market,
  * both sides. Uses the books last passed to setGapLeadBooks.
  */
-export function evaluateGapLead({ sport, market, side, pickDate, positions, books = null }) {
+export function evaluateGapLead({ sport, market, side, pickDate, positions, books = null, confirmedWallets = null }) {
   const empty = {
     fires: false, ours: null, other: null, margin: null, wallets: [], reason: null,
   };
@@ -181,9 +216,12 @@ export function evaluateGapLead({ sport, market, side, pickDate, positions, book
   if (!isGapLeadLive(pickDate) || !sp || !MARKETS.has(mkt) || !mySide) {
     return { ...empty, reason: 'not_live' };
   }
+  const confirmedSet = isConfirmedStakeLive(pickDate)
+    ? new Set((confirmedWallets || []).map((id) => walletId({ wallet: id })))
+    : null;
   const rows = (positions || []).map(view);
-  const ours = sideScore(rows, sp, mkt, mySide, index);
-  const opp = sideScore(rows, sp, mkt, opposite(mySide), index);
+  const ours = sideScore(rows, sp, mkt, mySide, index, confirmedSet);
+  const opp = sideScore(rows, sp, mkt, opposite(mySide), index, confirmedSet);
   if (ours.wallets.length < GAP_LEAD_MIN_WALLETS) {
     return { ...empty, ours: ours.l30, other: opp.l30, wallets: ours.wallets, reason: 'need_two_wallets' };
   }
@@ -213,8 +251,9 @@ export function applyGapLeadRescue({
   units, odds = null, sport, market, side, pickDate, positions, books = null,
   opponentUnits = 0,
   pressEdge = null,
+  confirmedWallets = null,
 }) {
-  const ev = evaluateGapLead({ sport, market, side, pickDate, positions, books });
+  const ev = evaluateGapLead({ sport, market, side, pickDate, positions, books, confirmedWallets });
   const current = Number(units);
   const safe = Number.isFinite(current) && current > 0 ? current : 0;
   if (Number(opponentUnits) > 0) {

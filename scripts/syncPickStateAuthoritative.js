@@ -379,6 +379,7 @@ import {
   GAP_LEAD_RESCUED_BY,
   GAP_LEAD_STAKE_TIER,
   applyGapLeadRescue,
+  gapConfirmedWallets,
   gapLeadStamp,
   isGapLeadLive,
 } from '../src/lib/gapLeadRescue.js';
@@ -3378,6 +3379,7 @@ async function createMissingLockedPicks({
       const gapEarly = applyGapLeadRescue({
         units: 0, sport, market: marketType, side, pickDate: TARGET_DATE, positions,
         opponentUnits: unitsAgainst(side),
+        confirmedWallets: gapConfirmedWallets(positions, walletProfiles, sport),
       });
       const sideAlready = docAlready && existingSideKeys?.has(`${col}|${docId}|${side}`);
       if (sideAlready) continue;
@@ -4536,6 +4538,7 @@ async function createMissingLockedPicks({
           positions,
           opponentUnits: unitsAgainst(side),
           pressEdge: pressEvalCreate?.edge ?? null,
+          confirmedWallets: gapConfirmedWallets(positions, walletProfiles, sport),
         });
         gapPolicyCreate.unitsBefore = unitsBeforeGap;
         gapPolicyCreate.tierBefore = tierBeforeGap;
@@ -7566,6 +7569,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       positions: group,
       opponentUnits: oppositeStakeUnits(side, pick.sides),
       pressEdge: pressEval?.edge ?? null,
+      confirmedWallets: gapConfirmedWallets(group, walletProfiles, pick.sport),
     });
     if ((gapPolicy.action === 'rescue' || gapPolicy.action === 'boost') && appliedStatus !== 'ACTIVE') {
       appliedStatus = 'ACTIVE';

@@ -974,14 +974,31 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   const profilesGv13 = new Map(profilesG);
   const [, b5m] = profileT('bbbbbb', SPORT, { n: 20, wr: 48, dollarRoi: -5, usual: 500, trust: T('STABLE_ON', 5), trustMkt: { ML: T('STABLE_ON', 5) } });
   profilesGv13.set('bbbbbb', b5m);
-  const g13 = gfail({ pickDate: V13, walletProfiles: profilesGv13, steam: { lastHourPct: 0 } });
-  eq(g13.rung, TRUST_G_STAKE_TIER, 'v13 TRUST-G'); eq(g13.units, 2, 'v13 flat −170 on the moneyline book → 2u');
-  eq(gfail({ pickDate: V13, walletProfiles: profilesGv13, sideOdds: -240 }).units, 1.5, 'v13 −240 → 1.5u');
+  eq(gfail({ pickDate: V13, walletProfiles: profilesGv13, steam: { lastHourPct: 0 } }).units, 0, 'v13 unconfirmed tier 5 stays out');
+  const [, b5c] = profileT('bbbbbb', SPORT, { n: 20, wr: 60, dollarRoi: 10, usual: 500, trust: T('STABLE_ON', 5), trustMkt: { ML: T('STABLE_ON', 5) } });
+  const profilesGConfirmed = new Map(profilesG);
+  profilesGConfirmed.set('bbbbbb', b5c);
+  const g13 = gfail({ pickDate: V13, walletProfiles: profilesGConfirmed, steam: { lastHourPct: 0 } });
+  eq(g13.rung, TRUST_G_STAKE_TIER, 'v13 TRUST-G'); eq(g13.units, 2, 'v13 flat −170 on a confirmed moneyline book → 2u');
+  eq(gfail({ pickDate: V13, walletProfiles: profilesGConfirmed, sideOdds: -240 }).units, 1.5, 'v13 −240 on a confirmed book → 1.5u');
   eq(gfail({ pickDate: V13, walletProfiles: profilesGv13, sideOdds: -130 }).units, 0, 'v13 −130 stays muted');
   eq(gfail({ pickDate: V13, steam: { lastHourPct: 0 } }).units, 0, 'v13 sport-book tier 5 with no moneyline book stays out');
   eq(gfail({ steam: { lastHourPct: -3 } }).units, 0, 'steam against → 0u');
   eq(gfail({ walletDetails: [wd('bbbbbb', 'home', 400), wd('dddddd', 'away', 100)] }).units, 0, '0.80× is the mini lane');
   eq(gfail({ walletDetails: [wd('bbbbbb', 'home', 375), wd('dddddd', 'away', 100)] }).units, 0, '0.75× stays with mini');
+  const floorArgs = (profiles) => [
+    { rung: 'STEAM-C', units: 2, reason: 'steam_c', gate: { pass: false } },
+    {
+      walletDetails: [wd('bbbbbb', 'home', 200)],
+      side: 'home', sport: SPORT, marketType: 'ML', walletProfiles: profiles,
+      sideOdds: -130, pickDate: V13,
+    },
+  ];
+  const floorOff = applyTrustLayer(...floorArgs(profilesGv13));
+  eq(floorOff.units, 2, 'from Nov 19 an unconfirmed tier 5 does not open the ML floor');
+  ok(!floorOff.reason.includes('ml_floor'), 'no floor on an unconfirmed wallet');
+  const floorOn = applyTrustLayer(...floorArgs(profilesGConfirmed));
+  ok(floorOn.reason.includes('ml_floor4_gate_bbbbbb'), floorOn.reason);
 
   // B. Gated ML floor: staked moneyline rung under 4u, trusted wallet FOR, implied in [.50, .65) → 4u
   eq(ML_FLOOR_IMPLIED_MIN, 0.5, 'floor window from .50'); eq(ML_FLOOR_IMPLIED_MAX, 0.65, 'floor window to .65');
@@ -1278,6 +1295,10 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
   eq(mlM({ walletDetails: [wd('wwwwww', 'home', 900), wd('xxxxxx', 'home', 900), wd('aaaaaa', 'away', 900)] }).units, 0, '2 v 1 on the ML book → margin +1 → 0u');
   eq(mlM({ walletDetails: [wd('wwwwww', 'home', 900), wd('xxxxxx', 'home', 900), wd('xxxxxx', 'away', 100), wd('dddddd', 'away', 50)] }).units, 0, 'one FOR hedges itself → netted margin +1 → 0u');
   eq(mlM({ pickDate: PRE }).units, 0, 'before TRUST_FROM → 0u');
+  eq(mlM({ pickDate: V13 }).units, 0, 'from Nov 19 an unconfirmed ML book does not open TRUST-M');
+  const confirmedMl = (short) => profileT(short, SPORT, { n: 20, wr: 60, dollarRoi: 10, usual: 1000, trustMkt: { ML: T('STABLE_ON', 5) } });
+  const profilesConfirmedMl = new Map([...profilesM2, confirmedMl('wwwwww'), confirmedMl('xxxxxx')]);
+  eq(mlM({ pickDate: V13, walletProfiles: profilesConfirmedMl }).units, TRUST_M_STRONG_FLOOR_UNITS, 'from Nov 19 two confirmed ML books still open TRUST-M');
   // TRUST-G (sport gate + legacy stake) wins first; the margin leg does not re-touch a staked side.
   const mm4 = mlM({
     walletDetails: [wd('aaaaaa', 'home', 400), wd('wwwwww', 'home', 900), wd('xxxxxx', 'home', 900), wd('dddddd', 'away', 50)],

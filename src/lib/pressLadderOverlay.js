@@ -145,6 +145,7 @@
  *   • TRUST-G (2026-11-17): moneyline the ladder left at gate_fail / 0u,
  *     legacy V12 sizing would have staked, and a tier-5 form-ON wallet
  *     (age floor still applies) is FOR at under 0.75× its sport usual.
+ *     From CONFIRMED_STAKE_FROM that wallet is confirmed in the sport.
  *     Every sport. −150 through −200 with the line already shortened
  *     (steam tenth > 0) is 3u. Shorter than −200 is 1u. A dog, a pick'em,
  *     −110 to −150, a flat or missing steam move at the 3u price, a tier-4
@@ -152,7 +153,8 @@
  *     the margin floor do not move this number. Juice juicier than −425
  *     still zeros at the call site.
  *   • Gated ML floor (2026-10-09 evening): a staked moneyline rung other
- *     than TRUST-G, with a trusted wallet FOR and the side's implied in
+ *     than TRUST-G, with a trusted wallet FOR (confirmed in the sport
+ *     from CONFIRMED_STAKE_FROM) and the side's implied in
  *     [ML_FLOOR_IMPLIED_MIN, ML_FLOOR_IMPLIED_MAX) floors at ML_FLOOR_UNITS.
  *     Live book Jun 1 → Oct 9: gate ON at .50–.65 is 76-24 (+18pp vs price,
  *     every month ≥ 11pp except Oct), the sub-3u part 20-4; gate OFF at the
@@ -1259,13 +1261,15 @@ export function isTrustGPriceLive(pickDate) {
 /**
  * Tier 5, form ON, not young, ticket under 0.75×. The wallets that can open TRUST-G.
  * From TRUST_G_PRICE_FROM the tier is the moneyline book. Before that it is the sport book.
+ * From CONFIRMED_STAKE_FROM the wallet is confirmed in the sport.
  */
-export function trustGWallets(trust, { market = false } = {}) {
+export function trustGWallets(trust, { market = false, confirmed = false } = {}) {
   const list = market ? trust?.mktFor : trust?.for;
   return (list || []).filter((w) => isTrustedWallet(w)
     && Number(w.tier) >= TRUST_G_TIER
     && Number(w.ratio) > 0
-    && Number(w.ratio) < TRUST_G_RATIO_MAX);
+    && Number(w.ratio) < TRUST_G_RATIO_MAX
+    && (!confirmed || w.confirmed === true));
 }
 
 /**
@@ -1306,12 +1310,11 @@ export function applyTrustLayer(result, {
   const fadeVetoed = typeof out.reason === 'string' && out.reason.startsWith('fade_f_veto');
   // TRUST-M read on this market's book. A side that goes through (margin ≥
   // TRUST_M_MARGIN, or +1 with conviction) crosses a FADE-F veto too; any
-  // other side keeps the veto.
-  const marketU = String(marketType || '').toUpperCase();
-  const confirmedBooks = isConfirmedStakeLive(pickDate)
-    && (isSpreadMarket(marketType) || marketU === 'TOTAL' || marketU === 'TOTALS');
-  const mktForStake = confirmedBooks ? trust.mktFor.filter((w) => w.confirmed) : trust.mktFor;
-  const mktAgStake = confirmedBooks ? trust.mktAg.filter((w) => w.confirmed) : trust.mktAg;
+  // other side keeps the veto. From the confirmed date the moneyline uses
+  // the same filter as the spread and the total.
+  const confirmedLive = isConfirmedStakeLive(pickDate);
+  const mktForStake = confirmedLive ? trust.mktFor.filter((w) => w.confirmed) : trust.mktFor;
+  const mktAgStake = confirmedLive ? trust.mktAg.filter((w) => w.confirmed) : trust.mktAg;
   const m = trustMarginRead(mktForStake, mktAgStake);
   const mTag = trustMTag(m);
   const vetoed = fadeVetoed && !m.through;
@@ -1321,7 +1324,9 @@ export function applyTrustLayer(result, {
   }
 
   const gMarket = isTrustGPriceLive(pickDate);
-  const gWallets = trustGWallets(trust, { market: gMarket });
+  const gWallets = trustGWallets(trust, { market: gMarket, confirmed: confirmedLive });
+  const floorWallets = (trust.for || []).filter((w) => isTrustedWallet(w) && (!confirmedLive || w.confirmed === true));
+  const floorGate = floorWallets.length >= 1;
   const gUnits = trustGStakeUnits(sideOdds, steam, pickDate);
   if (isML && out.units === 0 && !vetoed
     && typeof out.reason === 'string' && out.reason.startsWith('gate_fail')
@@ -1334,9 +1339,9 @@ export function applyTrustLayer(result, {
 
   const inFloorWindow = implied != null && implied >= ML_FLOOR_IMPLIED_MIN && implied < ML_FLOOR_IMPLIED_MAX;
   if (isML && out.units > 0 && !rules.includes('trust_g')
-    && trust.gate && inFloorWindow && out.units < ML_FLOOR_UNITS) {
+    && floorGate && inFloorWindow && out.units < ML_FLOOR_UNITS) {
     out.units = ML_FLOOR_UNITS;
-    out.reason = `${out.reason}+ml_floor${ML_FLOOR_UNITS}_gate_${trust.gateWallets.join('+')}`;
+    out.reason = `${out.reason}+ml_floor${ML_FLOOR_UNITS}_gate_${floorWallets.map((w) => w.wallet).join('+')}`;
     rules.push('ml_floor');
   }
 
@@ -1502,7 +1507,7 @@ export function applyTrustLayer(result, {
 
   out.trust = {
     ...trust,
-    lift: isML && out.units > 0 && out.rung !== TRUST_G_STAKE_TIER && trust.gate,
+    lift: isML && out.units > 0 && out.rung !== TRUST_G_STAKE_TIER && floorGate,
     rule: rules.length ? rules.join('+') : null,
   };
   return out;
