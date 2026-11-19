@@ -94,7 +94,7 @@ test('4.5 up to 10 is 0.75, 10 or more is 4, and steam against is 0', () => {
   const justUnder = run({ steam: 4.44, odds: 130 });
   assert.equal(justUnder.units, 2);
   const heavy = run({ steam: 10, odds: 150 });
-  assert.equal(heavy.units, 4);
+  assert.equal(heavy.units, 2.5);
   assert.equal(heavy.zone, 'heavy');
   const against = run({ units: 4, steam: -0.1, odds: -160 });
   assert.equal(against.action, 'MUTE');
@@ -153,6 +153,29 @@ test('edge of 10 or more mutes a move against, then sizes the price', () => {
   const noMove = run({ edge: 11, steam: null, odds: -180 });
   assert.equal(noMove.action, 'PASS');
   assert.equal(noMove.units, 1);
+});
+
+test('a dog longer than +200 comes off, and the shorter dog steps keep the cap', () => {
+  const longDog = run({ units: 2, odds: 300, steam: 0 });
+  assert.equal(longDog.action, 'MUTE');
+  assert.equal(longDog.units, 0);
+  assert.equal(longDog.reason, 'dog');
+  assert.equal(longDog.zone, 'long');
+  const fromPrice = run({ units: 2, odds: null, price: 0.25, steam: 1 });
+  assert.equal(fromPrice.action, 'MUTE');
+  assert.equal(fromPrice.units, 0);
+  assert.equal(fromPrice.reason, 'dog');
+  const plus200 = run({ odds: 200, steam: 1 });
+  assert.equal(plus200.action, 'STAKE');
+  assert.equal(plus200.units, 1);
+  const midDog = run({ odds: 180, steam: 0 });
+  assert.equal(midDog.units, 1.5);
+  const heavyDog = run({ steam: 12, odds: 300 });
+  assert.equal(heavyDog.action, 'MUTE');
+  assert.equal(heavyDog.units, 0);
+  assert.equal(heavyDog.reason, 'dog');
+  const pick = run({ odds: 110, steam: 0 });
+  assert.equal(pick.units, 2);
 });
 
 test('an edge under 0 rescues −150 or shorter at 2', () => {

@@ -20,6 +20,9 @@
  * price, and a price juicier than −425 stay on the stake that arrived.
  * The juice check and the price check run before every size, so a
  * shorten cannot put a juiced favorite, or a side with no number, back on.
+ * The dog cap still rules a sized bet. Longer than +200 is 0. +200 is
+ * at most 1. +151 through +199 is at most 1.5. +121 through +150 is at
+ * most 2.5. Favorites through +120 keep the size above.
  *
  * This is the size for that side. It replaces the stake that arrived.
  * Manual stake, an operator kill, the T-15 freeze, and a graded ticket
@@ -28,6 +31,7 @@
  * sport's own book.
  */
 
+import { oddsCap } from './oddsCap.js';
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
 import { mlMiniWalletId, mlPriceBand, normMlMiniMarket, normMlMiniSport } from './mlMiniRung.js';
 
@@ -95,6 +99,22 @@ function impliedOf(odds) {
   const n = Number(odds);
   if (!Number.isFinite(n) || Math.abs(n) < 100) return null;
   return n < 0 ? (-n) / (-n + 100) : 100 / (n + 100);
+}
+
+/** American number for the dog cap. A price alone converts; a favorite stays negative. */
+function capAmerican(odds, price) {
+  const american = Number(odds);
+  if (Number.isFinite(american) && Math.abs(american) >= 100) return american;
+  if (!(price > 0 && price < 1) || price === 0.5) return price === 0.5 ? 100 : null;
+  return price > 0.5 ? (-100 * price) / (1 - price) : (100 * (1 - price)) / price;
+}
+
+function sized(armed, units, zone, reason) {
+  const capped = oddsCap(units, capAmerican(armed.odds, armed.price));
+  if (!(capped > 0)) {
+    return { ...armed, action: 'MUTE', units: 0, zone, reason: 'dog' };
+  }
+  return { ...armed, action: 'STAKE', units: capped, zone, reason };
 }
 
 function americanAndImplied(odds, price) {
@@ -303,15 +323,7 @@ export function applyV13MlPath({
   if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
   if (armed.edge < 0) {
     const under = v13HighPriceZone(odds, price);
-    if (under === 'short') {
-      return {
-        ...armed,
-        action: 'STAKE',
-        units: V13_ML_UNDER_UNITS,
-        zone: 'rescue',
-        reason: 'rescue',
-      };
-    }
+    if (under === 'short') return sized(armed, V13_ML_UNDER_UNITS, 'rescue', 'rescue');
     if (under === 'juice') {
       return { ...armed, action: 'PASS', zone: 'juice', reason: 'juice' };
     }
@@ -326,60 +338,16 @@ export function applyV13MlPath({
     if (high === 'juice' || high == null) {
       return { ...armed, action: 'PASS', zone: high || null, reason: high === 'juice' ? 'juice' : 'no_price' };
     }
-    if (high === 'short') {
-      return {
-        ...armed,
-        action: 'STAKE',
-        units: V13_ML_HIGH_FULL_UNITS,
-        zone: high,
-        reason: 'edge10_short',
-      };
-    }
-    return {
-      ...armed,
-      action: 'STAKE',
-      units: V13_ML_HIGH_LONG_UNITS,
-      zone: high,
-      reason: 'edge10_longer',
-    };
+    if (high === 'short') return sized(armed, V13_ML_HIGH_FULL_UNITS, high, 'edge10_short');
+    return sized(armed, V13_ML_HIGH_LONG_UNITS, high, 'edge10_longer');
   }
   const zone = v13PriceZone(odds, price);
   if (zone === 'juice') return { ...armed, action: 'PASS', zone, reason: 'juice' };
   if (zone == null) return { ...armed, action: 'PASS', reason: 'no_price' };
-  if (move >= V13_ML_STEAM_HEAVY) {
-    return {
-      ...armed,
-      action: 'STAKE',
-      units: V13_ML_HEAVY_UNITS,
-      zone: 'heavy',
-      reason: 'heavy',
-    };
-  }
-  if (move >= V13_ML_STEAM_MID) {
-    return {
-      ...armed,
-      action: 'STAKE',
-      units: V13_ML_MID_UNITS,
-      zone: 'mid',
-      reason: 'mid',
-    };
-  }
-  if (zone === 'favorite') {
-    return {
-      ...armed,
-      action: 'STAKE',
-      units: V13_ML_FAVORITE_UNITS,
-      zone,
-      reason: 'favorite',
-    };
-  }
-  return {
-    ...armed,
-    action: 'STAKE',
-    units: V13_ML_LONG_UNITS,
-    zone,
-    reason: 'long',
-  };
+  if (move >= V13_ML_STEAM_HEAVY) return sized(armed, V13_ML_HEAVY_UNITS, 'heavy', 'heavy');
+  if (move >= V13_ML_STEAM_MID) return sized(armed, V13_ML_MID_UNITS, 'mid', 'mid');
+  if (zone === 'favorite') return sized(armed, V13_ML_FAVORITE_UNITS, zone, 'favorite');
+  return sized(armed, V13_ML_LONG_UNITS, zone, 'long');
 }
 
 /** Every field the V13 stamp overwrites on each sync (no leftovers). */
