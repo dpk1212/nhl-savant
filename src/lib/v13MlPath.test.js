@@ -4,6 +4,7 @@ import {
   applyV13MlPath,
   buildV13MlBook,
   v13HighPriceZone,
+  v13HalfStake,
   v13OpensSide,
   v13PriceZone,
   v13UsesTrustedList,
@@ -284,14 +285,16 @@ test('a young book, a spread, a manual stake, and yesterday stay put', () => {
 
 const LIST_DAY = '2026-11-21';
 
+const EVERY_SPORT = ['NHL', 'NBA', 'NFL', 'CFB', 'CBB', 'SOC', 'ATP', 'CS2', 'LOL', 'MLB', 'WNBA', 'UFC'];
+
 function trusted(...wallets) {
   const index = new Map();
   for (const w of wallets) index.set(`ML|${w}`, {
-    trusted: true, standing: 0.9, score: 0.02, n: 20, sports: ['NHL', 'NBA', 'NFL', 'CFB', 'CBB', 'SOC', 'ATP', 'CS2', 'LOL', 'MLB', 'WNBA', 'UFC'],
+    trusted: true, standing: 0.9, score: 0.02, n: 20, sports: EVERY_SPORT, played: EVERY_SPORT,
   });
   // A spread name must never open a moneyline.
   index.set('SPREAD|spread1', {
-    trusted: true, standing: 0.95, score: 0.03, n: 20, sports: ['NHL', 'NBA', 'NFL', 'CFB', 'CBB', 'SOC', 'ATP', 'CS2', 'LOL', 'MLB', 'WNBA', 'UFC'],
+    trusted: true, standing: 0.95, score: 0.03, n: 20, sports: EVERY_SPORT, played: EVERY_SPORT,
   });
   return index;
 }
@@ -438,20 +441,22 @@ test('the create door opens on the list only when the side is ahead', () => {
   assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('aaaaaa')] }), false);
 });
 
-test('a trusted wallet opens a moneyline only in a sport where it is profitable on 10 bets', () => {
+test('a trusted wallet counts on a moneyline only in a sport where it has 10 bets', () => {
   const list = new Map([
-    ['ML|tttt01', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NHL'] }],
-    ['ML|tttt02', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NBA'] }],
-    ['ML|tttt03', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [] }],
+    ['ML|tttt01', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NHL'], played: ['NHL'] }],
+    ['ML|tttt02', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NBA'], played: ['NBA'] }],
+    ['ML|tttt03', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [], played: [] }],
   ]);
-  // NBA: the NHL-only wallet and the wallet with no profitable sport do not open the side.
+  // NBA: the NHL-only wallet and the wallet with under 10 bets anywhere do not open the side.
   const none = runList({ list, positions: [pos('tttt01'), pos('tttt03')] });
   assert.equal(none.action, 'PASS');
   assert.equal(none.reason, 'no_trusted_wallet');
   assert.equal(v13OpensSide({ pickDate: LIST_DAY, sport: 'NBA', side: 'home', positions: [pos('tttt01')], list }), false);
-  // The same wallet on an NHL side does.
+  // The same wallet on an NHL side does, at the full size.
   const nhl = runList({ list, sport: 'NHL', positions: [pos('tttt01')] });
   assert.equal(nhl.action, 'STAKE');
+  assert.equal(nhl.half, false);
+  assert.equal(nhl.units, 4);
   assert.deepEqual(nhl.wallets, ['tttt01']);
   assert.equal(v13OpensSide({ pickDate: LIST_DAY, sport: 'NHL', side: 'home', positions: [pos('tttt01')], list }), true);
   // And it does not count against an NBA side either.
@@ -459,4 +464,79 @@ test('a trusted wallet opens a moneyline only in a sport where it is profitable 
   assert.equal(ahead.action, 'STAKE');
   assert.equal(ahead.margin, 1);
   assert.equal(ahead.against, 0);
+});
+
+// ─── Half stake: ahead only with wallets that are down in units ───
+
+/** up1, up2: profitable on NBA moneylines. down1, down2: 10 or more NBA moneyline bets, down in units. thin1: under 10. */
+const MIXED = new Map([
+  ['ML|up0001', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NBA'], played: ['NBA'] }],
+  ['ML|up0002', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NBA'], played: ['NBA'] }],
+  ['ML|down01', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [], played: ['NBA'] }],
+  ['ML|down02', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [], played: ['NBA'] }],
+  ['ML|thin01', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [], played: [] }],
+]);
+
+test('a side that is ahead only with wallets down in units takes half the size', () => {
+  const half = runList({ list: MIXED, positions: [pos('down01')] });
+  assert.equal(half.action, 'STAKE');
+  assert.equal(half.half, true);
+  assert.equal(half.units, 2);
+  assert.equal(half.reason, 'favorite');
+  assert.deepEqual(half.wallets, ['down01']);
+  assert.equal(half.margin, 1);
+  // A profitable wallet on the side makes it the full size.
+  const full = runList({ list: MIXED, positions: [pos('up0001')] });
+  assert.equal(full.half, false);
+  assert.equal(full.units, 4);
+  const both = runList({ list: MIXED, positions: [pos('up0001'), pos('down01')] });
+  assert.equal(both.half, false);
+  assert.equal(both.units, 4);
+  assert.equal(both.margin, 2);
+  // A wallet with under 10 bets there still opens nothing.
+  const thin = runList({ list: MIXED, positions: [pos('thin01')] });
+  assert.equal(thin.action, 'PASS');
+  assert.equal(thin.reason, 'no_trusted_wallet');
+});
+
+test('wallets that are down in units count against a side too', () => {
+  // One profitable wallet for, one down wallet against: even, no stake.
+  const even = runList({ list: MIXED, positions: [pos('up0001'), pos('down01', 'away')] });
+  assert.equal(even.action, 'PASS');
+  assert.equal(even.reason, 'trusted_not_ahead');
+  assert.equal(even.margin, 0);
+  // Two down wallets for, one profitable against: ahead on the wide count only, half.
+  const mixed = runList({ list: MIXED, positions: [pos('down01'), pos('down02'), pos('up0001', 'away')] });
+  assert.equal(mixed.action, 'STAKE');
+  assert.equal(mixed.half, true);
+  assert.equal(mixed.margin, 1);
+  // Two profitable for, one down against: ahead on both counts, full.
+  const full = runList({ list: MIXED, positions: [pos('up0001'), pos('up0002'), pos('down01', 'away')] });
+  assert.equal(full.action, 'STAKE');
+  assert.equal(full.half, false);
+  assert.equal(full.units, 4);
+  // The create door opens on the wide count.
+  const door = { pickDate: LIST_DAY, sport: 'NBA', side: 'home', list: MIXED };
+  assert.equal(v13OpensSide({ ...door, positions: [pos('down01')] }), true);
+  assert.equal(v13OpensSide({ ...door, positions: [pos('thin01')] }), false);
+  assert.equal(v13OpensSide({ ...door, positions: [pos('up0001'), pos('down01', 'away')] }), false);
+});
+
+test('half of every v13 size, to the quarter unit, and the dog cap comes first', () => {
+  for (const [full, half] of [[4, 2], [3, 1.5], [2.5, 1.25], [2, 1], [1.5, 0.75], [1, 0.5], [0.75, 0.5], [0.25, 0.25]]) {
+    assert.equal(v13HalfStake(full), half, `${full}u`);
+  }
+  assert.equal(v13HalfStake(0), 0);
+  const positions = [pos('down01')];
+  // Edge under 0 at −150 or shorter: 2u, half is 1u.
+  assert.equal(runList({ list: MIXED, positions, edge: -3, odds: -160 }).units, 1);
+  // Edge 10 or more at −150 or shorter: 3u, half is 1.5u.
+  assert.equal(runList({ list: MIXED, positions, edge: 12, odds: -160 }).units, 1.5);
+  // A shorten of 4.5 up to 10: 0.75u, half is 0.5u.
+  assert.equal(runList({ list: MIXED, positions, steam: 6 }).units, 0.5);
+  // +130: the long size is 2u, under the 2.5u cap, half is 1u.
+  assert.equal(runList({ list: MIXED, positions, odds: 130 }).units, 1);
+  // Longer than +200 is still 0, and steam against is still 0.
+  assert.equal(runList({ list: MIXED, positions, odds: 240 }).units, 0);
+  assert.equal(runList({ list: MIXED, positions, steam: -2 }).action, 'MUTE');
 });

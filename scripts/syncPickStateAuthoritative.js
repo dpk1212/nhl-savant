@@ -4989,7 +4989,7 @@ async function createMissingLockedPicks({
             + ` zone=${v13MlCreate.zone ?? '—'}`
             + ` edge=${v13MlCreate.edge ?? '—'} steam=${v13MlCreate.steam ?? '—'}`
             + ` against=${v13MlCreate.against}`
-            + ` list=${v13MlCreate.list} margin=${v13MlCreate.margin}`
+            + ` list=${v13MlCreate.list} margin=${v13MlCreate.margin}${v13MlCreate.half ? ' half' : ''}`
             + ` ${v13MlCreate.unitsPre}u → ${v13MlCreate.units}u`,
           );
         }
@@ -9488,7 +9488,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + ` zone=${v13MlPolicy.zone ?? '—'}`
         + ` edge=${v13MlPolicy.edge ?? '—'} steam=${v13MlPolicy.steam ?? '—'}`
         + ` against=${v13MlPolicy.against}`
-        + ` list=${v13MlPolicy.list} margin=${v13MlPolicy.margin}`
+        + ` list=${v13MlPolicy.list} margin=${v13MlPolicy.margin}${v13MlPolicy.half ? ' half' : ''}`
         + ` ${v13MlPolicy.unitsPre}u → ${v13MlPolicy.units}u`,
       );
     } else if (sd.v8_v13MlAction != null && sd.v8_v13MlAction !== v13MlPolicy.action) {

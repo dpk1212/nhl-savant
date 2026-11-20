@@ -198,7 +198,7 @@ const PROFITABLE_IN = ['NHL', 'NBA', 'NFL', 'CFB', 'CBB', 'SOC', 'ATP', 'CS2', '
 function listOf(market, ...ids) {
   const index = new Map();
   for (const id of ids) index.set(`${market}|${id}`, {
-    trusted: true, standing: 0.9, score: 0.01, n: 12, sports: PROFITABLE_IN,
+    trusted: true, standing: 0.9, score: 0.01, n: 12, sports: PROFITABLE_IN, played: PROFITABLE_IN,
   });
   return index;
 }
@@ -366,8 +366,10 @@ test('a side counts a wallet by the sport on its position, then by the sport of 
 test('the stored morning carries the sports and reads back the same', () => {
   const list = buildTrustedList(seasonWithOtherSports(), MORNING);
   const stored = serializeTrustedList(list, MORNING);
-  assert.equal(stored.listVersion, 2);
+  assert.equal(stored.listVersion, TRUSTED_LIST_VERSION);
   assert.ok(stored.rows.every((r) => r.sports.length === 1 && r.sports[0] === 'NBA'));
+  // 10 or more bets, up or down: NBA and the 12 losing CFB moneylines. The 9 NHL bets are short.
+  assert.ok(stored.rows.every((r) => r.played.join() === 'CFB,NBA'));
   const back = hydrateTrustedList(JSON.parse(JSON.stringify(stored)));
   for (let w = 0; w < 8; w += 1) {
     assert.equal(isTrustedWalletOn('ML', wallet(w), 'NBA', back), true);
@@ -386,4 +388,24 @@ test('each bet on the walk carries the record its wallet had in that sport that 
   const nba = tags.filter((t) => t.sport === 'NBA' && t.date === day(23) && t.trusted);
   assert.equal(nba.length, 8);
   assert.ok(nba.every((t) => t.counts === true && t.sportBets === 23 && t.sportUnits > 0));
+});
+
+test('the wide count takes a trusted wallet with 10 bets there, up or down, and nobody with fewer', () => {
+  const list = buildTrustedList(seasonWithOtherSports(), MORNING);
+  const w6 = wallet(0).slice(-6);
+  assert.deepEqual(list.get(`ML|${w6}`).played, ['CFB', 'NBA']);
+  const on = (sport, wide) => trustedSideCount({
+    sport, market: 'ML', side: 'home', positions: [pos(w6, 'home')], list, wide,
+  }).margin;
+  // NBA: up on 24 bets. Counts on both.
+  assert.equal(on('NBA', false), 1);
+  assert.equal(on('NBA', true), 1);
+  // CFB: 0-12. Only the wide count.
+  assert.equal(on('CFB', false), 0);
+  assert.equal(on('CFB', true), 1);
+  // NHL: 9-0, one bet short. Neither.
+  assert.equal(on('NHL', false), 0);
+  assert.equal(on('NHL', true), 0);
+  const back = hydrateTrustedList(JSON.parse(JSON.stringify(serializeTrustedList(list, MORNING))));
+  assert.deepEqual(back.get(`ML|${w6}`).played, ['CFB', 'NBA']);
 });
