@@ -99,7 +99,7 @@ export function applyTrustedSpreadPath({
   if (normTrustedMarket(market) !== 'SPREAD') return { ...base, action: 'PASS', reason: 'not_spread' };
   if (!trustedSpreadSport(sport)) return { ...base, action: 'PASS', reason: 'sport' };
   if (!trustedListReady(list)) return { ...base, action: 'PASS', reason: 'no_list' };
-  const count = trustedSideCount({ market: 'SPREAD', side, positions, list });
+  const count = trustedSideCount({ market: 'SPREAD', side, positions, sport, list });
   const read = {
     ...base, margin: count.margin, wallets: count.for, against: count.against,
   };

@@ -286,9 +286,13 @@ const LIST_DAY = '2026-11-21';
 
 function trusted(...wallets) {
   const index = new Map();
-  for (const w of wallets) index.set(`ML|${w}`, { trusted: true, standing: 0.9, score: 0.02, n: 20 });
+  for (const w of wallets) index.set(`ML|${w}`, {
+    trusted: true, standing: 0.9, score: 0.02, n: 20, sports: ['NHL', 'NBA', 'NFL', 'CFB', 'CBB', 'SOC', 'ATP', 'CS2', 'LOL', 'MLB', 'WNBA', 'UFC'],
+  });
   // A spread name must never open a moneyline.
-  index.set('SPREAD|spread1', { trusted: true, standing: 0.95, score: 0.03, n: 20 });
+  index.set('SPREAD|spread1', {
+    trusted: true, standing: 0.95, score: 0.03, n: 20, sports: ['NHL', 'NBA', 'NFL', 'CFB', 'CBB', 'SOC', 'ATP', 'CS2', 'LOL', 'MLB', 'WNBA', 'UFC'],
+  });
   return index;
 }
 
@@ -432,4 +436,27 @@ test('the create door opens on the list only when the side is ahead', () => {
   assert.equal(v13OpensSide({ ...args, pickDate: '2026-11-19', positions: [pos('aaaaaa')] }), true);
   assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('tttt01')] }), true);
   assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('aaaaaa')] }), false);
+});
+
+test('a trusted wallet opens a moneyline only in a sport where it is profitable on 10 bets', () => {
+  const list = new Map([
+    ['ML|tttt01', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NHL'] }],
+    ['ML|tttt02', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NBA'] }],
+    ['ML|tttt03', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [] }],
+  ]);
+  // NBA: the NHL-only wallet and the wallet with no profitable sport do not open the side.
+  const none = runList({ list, positions: [pos('tttt01'), pos('tttt03')] });
+  assert.equal(none.action, 'PASS');
+  assert.equal(none.reason, 'no_trusted_wallet');
+  assert.equal(v13OpensSide({ pickDate: LIST_DAY, sport: 'NBA', side: 'home', positions: [pos('tttt01')], list }), false);
+  // The same wallet on an NHL side does.
+  const nhl = runList({ list, sport: 'NHL', positions: [pos('tttt01')] });
+  assert.equal(nhl.action, 'STAKE');
+  assert.deepEqual(nhl.wallets, ['tttt01']);
+  assert.equal(v13OpensSide({ pickDate: LIST_DAY, sport: 'NHL', side: 'home', positions: [pos('tttt01')], list }), true);
+  // And it does not count against an NBA side either.
+  const ahead = runList({ list, positions: [pos('tttt02'), pos('tttt01', 'away'), pos('tttt03', 'away')] });
+  assert.equal(ahead.action, 'STAKE');
+  assert.equal(ahead.margin, 1);
+  assert.equal(ahead.against, 0);
 });

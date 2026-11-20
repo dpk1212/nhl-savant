@@ -58,6 +58,7 @@ import {
   isTrustedListLive,
   serializeTrustedList,
   setTrustedList,
+  trustedListCounting,
   trustedListSizes,
   TRUSTED_LIST_VERSION,
 } from '../../src/lib/trustedList.js';
@@ -295,11 +296,14 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
 
 function trustedStats(index, source) {
   const sizes = trustedListSizes(index);
+  const counting = trustedListCounting(index);
   return {
     trustedSource: source,
     trustedMl: sizes.ML,
     trustedSpread: sizes.SPREAD,
     trustedTotal: sizes.TOTAL,
+    countingMl: counting.ML,
+    countingSpread: counting.SPREAD,
   };
 }
 

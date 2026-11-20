@@ -10961,7 +10961,8 @@ async function main() {
   const morning = await loadMorningRanks(db, TARGET_DATE, { write: !DRY_RUN });
   console.log(`SPREAD-STEAM book: ${morning.spreadSteam ?? 0} wallets`);
   if (morning.trustedSource !== 'not_live') {
-    console.log(`TRUSTED list: ${morning.trustedSource}, ML ${morning.trustedMl ?? 0} · spread ${morning.trustedSpread ?? 0} · total ${morning.trustedTotal ?? 0} wallets`);
+    console.log(`TRUSTED list: ${morning.trustedSource}, ML ${morning.trustedMl ?? 0} · spread ${morning.trustedSpread ?? 0} · total ${morning.trustedTotal ?? 0} wallets`
+      + ` · profitable on 10+ bets in a sport: ML ${morning.countingMl ?? 0} · spread ${morning.countingSpread ?? 0}`);
     if (!(morning.trustedMl > 0)) {
       console.warn('TRUSTED list did not build. v13 moneylines read the tier book and the trusted spread path passes this scan.');
     }

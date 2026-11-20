@@ -25,6 +25,11 @@
  * the same side and line is dropped. Wins and losses only. The same two
  * teams more than a day apart are two games.
  *
+ * To count on a side a trusted wallet also has to be profitable there:
+ * 10 or more graded bets in that sport and that market before the
+ * morning, and up in units on them at 1 unit a bet at its own prices.
+ * The line read alone let a losing wallet onto the moneyline list.
+ *
  * A side's count is the trusted wallets on it minus the trusted wallets
  * on the other side. A wallet on both sides counts on its larger ticket.
  *
@@ -34,9 +39,11 @@
  */
 
 export const TRUSTED_LIST_FROM = '2026-11-20';
-export const TRUSTED_LIST_VERSION = 1;
+export const TRUSTED_LIST_VERSION = 2;
 export const TRUSTED_LIST_BAR = 0.8;
 export const TRUSTED_LIST_MIN_PRIOR = 300;
+/** Graded bets in the sport and market before a trusted wallet counts there. */
+export const TRUSTED_SPORT_MIN_BETS = 10;
 export const TRUSTED_LIST_MARKETS = Object.freeze(['ML', 'SPREAD', 'TOTAL']);
 export const TRUSTED_LIST_SPORTS = Object.freeze(['NHL', 'NBA', 'NFL', 'CFB']);
 
@@ -305,13 +312,34 @@ function keptLine(w) {
 }
 
 function newState() {
-  const state = { cells: new Map(), line: new Map(), ids: new Map(), rec: {}, slope: {}, prior: {} };
+  const state = {
+    cells: new Map(), line: new Map(), ids: new Map(), sport: new Map(), rec: {}, slope: {}, prior: {},
+  };
   for (const m of TRUSTED_LIST_MARKETS) {
     state.rec[m] = new Map();
     state.slope[m] = { sxx: 0, sxy: 0, n: 0 };
     state.prior[m] = [];
   }
   return state;
+}
+
+/** A wallet's record in one sport and market: bets, and units at 1 unit a bet. */
+function sportRecord(state, wallet, market, sport) {
+  return state.sport.get(wallet)?.get(`${market}|${sport}`) || null;
+}
+
+function profitableRecord(r) {
+  return !!r && r.n >= TRUSTED_SPORT_MIN_BETS && r.u > 0;
+}
+
+/** The sports where this wallet is profitable in this market, sorted. */
+function profitableSports(state, wallet, market) {
+  const out = [];
+  for (const [key, r] of state.sport.get(wallet) || []) {
+    const [m, sport] = key.split('|');
+    if (m === market && profitableRecord(r)) out.push(sport);
+  }
+  return out.sort();
 }
 
 function morningParams(state) {
@@ -368,7 +396,7 @@ function absorbDay(state, par, todays, onBet) {
       b.resid = b.lead - (c ? c.sum / (c.n + 20) : 0);
     }
     if (STANDING_SPORTS.has(b.sport) && sc.rated) scores.push([b.market, sc.score]);
-    if (onBet) onBet(b, sc);
+    if (onBet) onBet(b, sc, sportRecord(state, b.wallet, b.market, normTrustedSport(b.sport)));
   }
   for (const [m, s] of scores) state.prior[m].push(s);
   for (const b of todays) {
@@ -397,6 +425,12 @@ function absorbDay(state, par, todays, onBet) {
     r.S += b.won - b.price;
     r.V += b.price * (1 - b.price);
     state.rec[b.market].set(b.wallet, r);
+    if (!state.sport.has(b.wallet)) state.sport.set(b.wallet, new Map());
+    const sk = `${b.market}|${normTrustedSport(b.sport)}`;
+    const sr = state.sport.get(b.wallet).get(sk) || { n: 0, u: 0 };
+    sr.n += 1;
+    sr.u += b.won ? (1 - b.price) / b.price : -1;
+    state.sport.get(b.wallet).set(sk, sr);
   }
 }
 
@@ -421,7 +455,7 @@ function walk(bets, asOf, onBet) {
 export function scoreTrustedListBets(rows) {
   const bets = trustedListBets(rows);
   const out = [];
-  walk(bets, null, (b, sc) => {
+  walk(bets, null, (b, sc, sr) => {
     out.push({
       id: b.id,
       date: b.date,
@@ -438,6 +472,9 @@ export function scoreTrustedListBets(rows) {
       rated: sc.rated,
       standing: sc.standing,
       trusted: sc.trusted,
+      sportBets: sr ? sr.n : 0,
+      sportUnits: sr ? sr.u : 0,
+      counts: sc.trusted && profitableRecord(sr),
     });
   });
   return out;
@@ -445,7 +482,9 @@ export function scoreTrustedListBets(rows) {
 
 /**
  * The list for the morning in `asOf`. Key is market|wallet, the wallet's
- * last six. Rated wallets only. `trusted` is the flag the paths read.
+ * last six. Rated wallets only. `trusted` is the top fifth. `sports` are
+ * the sports where the wallet is profitable in that market. A side reads
+ * both.
  */
 export function buildTrustedList(rows, asOf) {
   const index = new Map();
@@ -469,6 +508,7 @@ export function buildTrustedList(rows, asOf) {
         standing: sc.standing,
         score: sc.score,
         n: sc.n,
+        sports: profitableSports(state, wallet, market),
       });
     }
   }
@@ -493,6 +533,7 @@ export function serializeTrustedList(index, asOf) {
       standing: round(info.standing, 4),
       score: round(info.score, 5),
       n: info.n ?? 0,
+      sports: Array.isArray(info.sports) ? info.sports : [],
     });
   }
   rows.sort((a, b) => a.market.localeCompare(b.market) || a.wallet.localeCompare(b.wallet));
@@ -508,25 +549,34 @@ export function hydrateTrustedList(payload) {
       standing: Number.isFinite(Number(row.standing)) ? Number(row.standing) : null,
       score: Number.isFinite(Number(row.score)) ? Number(row.score) : null,
       n: Number(row.n) || 0,
+      sports: Array.isArray(row.sports) ? row.sports.map((x) => normTrustedSport(x)) : [],
     });
   }
   return index;
 }
 
-export function isTrustedWalletOn(market, wallet, list = null) {
+/** Trusted, and profitable on 10 or more bets in this sport and market. */
+function countsIn(info, sport) {
+  const sp = normTrustedSport(sport);
+  return info?.trusted === true && !!sp && Array.isArray(info.sports) && info.sports.includes(sp);
+}
+
+export function isTrustedWalletOn(market, wallet, sport, list = null) {
   const index = list instanceof Map ? list : listIndex;
-  return index.get(listKey(normTrustedMarket(market), String(wallet || '').slice(-6).toLowerCase()))?.trusted === true;
+  const info = index.get(listKey(normTrustedMarket(market), String(wallet || '').slice(-6).toLowerCase()));
+  return countsIn(info, sport);
 }
 
 /**
  * Trusted wallets on this side and on the other side of one market.
  * `positions` are the live positions on that game. A row with a market
  * that is not this market is skipped. A wallet on both sides counts on
- * its larger ticket.
+ * its larger ticket. A wallet counts only where it is profitable: the
+ * row's sport, or `sport` when the row carries none.
  *
  * @returns {{ for: string[], against: string[], margin: number }}
  */
-export function trustedSideCount({ market, side, positions, list = null } = {}) {
+export function trustedSideCount({ market, side, positions, sport = null, list = null } = {}) {
   const index = list instanceof Map ? list : listIndex;
   const mkt = normTrustedMarket(market);
   const mySide = String(side || '').toLowerCase();
@@ -539,7 +589,7 @@ export function trustedSideCount({ market, side, positions, list = null } = {}) 
     const wallet = trustedWalletId(raw);
     const rowSide = String(raw?.side || '').toLowerCase();
     if (!wallet || !rowSide) continue;
-    if (index.get(listKey(mkt, wallet))?.trusted !== true) continue;
+    if (!countsIn(index.get(listKey(mkt, wallet)), raw?.sport || sport)) continue;
     const invested = Number(raw?.invested ?? raw?.size);
     const size = invested > 0 ? invested : 0;
     if (!held.has(wallet)) held.set(wallet, new Map());
@@ -576,6 +626,18 @@ export function trustedListSizes(list = null) {
   return out;
 }
 
+/** Trusted wallets per market that are profitable in at least one sport, so can count on a side. */
+export function trustedListCounting(list = null) {
+  const index = list instanceof Map ? list : listIndex;
+  const out = { ML: 0, SPREAD: 0, TOTAL: 0 };
+  for (const [key, info] of index) {
+    if (info?.trusted !== true || !(Array.isArray(info.sports) && info.sports.length > 0)) continue;
+    const market = String(key).split('|')[0];
+    if (market in out) out[market] += 1;
+  }
+  return out;
+}
+
 export const TRUSTED_COUNT_STAMP_FIELDS = Object.freeze([
   'v8_trustedListFor',
   'v8_trustedListAgainst',
@@ -593,7 +655,7 @@ export function trustedCountStamp({ pickDate, sport, market, side, positions, li
   if (!TRUSTED_LIST_MARKETS.includes(mkt)) return {};
   if (!normTrustedSport(sport)) return {};
   if (mkt !== 'ML' && !trustedListSport(sport)) return {};
-  const count = trustedSideCount({ market, side, positions, list });
+  const count = trustedSideCount({ market, side, positions, sport, list });
   return {
     v8_trustedListFor: count.for,
     v8_trustedListAgainst: count.against,

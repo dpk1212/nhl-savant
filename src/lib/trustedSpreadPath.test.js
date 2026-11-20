@@ -12,9 +12,13 @@ const DAY = '2026-11-21';
 
 function listOf(...wallets) {
   const index = new Map();
-  for (const w of wallets) index.set(`SPREAD|${w}`, { trusted: true, standing: 0.9, score: 0.02, n: 20 });
+  for (const w of wallets) index.set(`SPREAD|${w}`, {
+    trusted: true, standing: 0.9, score: 0.02, n: 20, sports: ['NBA', 'NFL', 'CFB', 'NHL'],
+  });
   // A moneyline name that must never count on a spread.
-  index.set('ML|mlonly', { trusted: true, standing: 0.95, score: 0.03, n: 30 });
+  index.set('ML|mlonly', {
+    trusted: true, standing: 0.95, score: 0.03, n: 30, sports: ['NBA', 'NFL', 'CFB', 'NHL'],
+  });
   return index;
 }
 
@@ -171,4 +175,24 @@ test('the stamp carries every field on every action', () => {
   assert.deepEqual(trustedSpreadStamp(run({ market: 'ML' })), {});
   assert.deepEqual(trustedSpreadStamp(run({ pickDate: '2026-11-19' })), {});
   assert.deepEqual(trustedSpreadStamp(null), {});
+});
+
+test('a trusted spread wallet counts only in a sport where it is profitable on 10 bets', () => {
+  const list = new Map();
+  for (const w of ['aaaaa1', 'aaaaa2']) list.set(`SPREAD|${w}`, { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NBA', 'CFB'] });
+  list.set('SPREAD|aaaaa3', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['CFB'] });
+  // NBA: the third wallet is not profitable there, so the side is ahead by 2 and stays.
+  const nba = run({ list });
+  assert.equal(nba.margin, 2);
+  assert.equal(nba.action, 'PASS');
+  assert.equal(nba.units, 0);
+  // CFB: all three count.
+  const cfb = run({ list, sport: 'CFB' });
+  assert.equal(cfb.margin, 3);
+  assert.equal(cfb.action, 'STAKE');
+  assert.equal(cfb.units, TRUSTED_SPREAD_UNITS);
+  // A wallet that is not profitable there does not mute a stake from the other side.
+  const behind = run({ list, units: 3, side: 'away', positions: [pos('aaaaa3', 'home')] });
+  assert.equal(behind.margin, 0);
+  assert.equal(behind.units, 3);
 });
