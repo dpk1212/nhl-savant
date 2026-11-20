@@ -285,7 +285,7 @@ export function v13UsesTrustedList(pickDate, sport, list = null) {
  */
 export function v13OpensSide({ pickDate, sport, side, positions, book = null, list = null } = {}) {
   if (v13UsesTrustedList(pickDate, sport, list)) {
-    return trustedSideCount({ market: 'ML', side, positions, list }).margin >= V13_ML_TRUSTED_AHEAD;
+    return trustedSideCount({ market: 'ML', side, positions, sport, list }).margin >= V13_ML_TRUSTED_AHEAD;
   }
   return qualifyingV13Wallets({ sport, side, positions, book }).length > 0;
 }
@@ -355,7 +355,7 @@ export function applyV13MlPath({
   }
   let armed;
   if (onList) {
-    const count = trustedSideCount({ market: 'ML', side, positions, list });
+    const count = trustedSideCount({ market: 'ML', side, positions, sport, list });
     const read = {
       ...base, wallets: count.for, against: count.against.length, margin: count.margin,
     };
