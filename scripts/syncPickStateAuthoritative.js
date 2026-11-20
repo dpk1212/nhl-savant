@@ -452,9 +452,17 @@ import {
   V13_ML_RESCUED_BY,
   V13_ML_STAKE_TIER,
   applyV13MlPath,
-  qualifyingV13Wallets,
   v13MlStamp,
+  v13OpensSide,
 } from '../src/lib/v13MlPath.js';
+import {
+  TRUSTED_SPREAD_MUTED_BY,
+  TRUSTED_SPREAD_RESCUED_BY,
+  TRUSTED_SPREAD_STAKE_TIER,
+  applyTrustedSpreadPath,
+  trustedSpreadStamp,
+} from '../src/lib/trustedSpreadPath.js';
+import { trustedCountStamp } from '../src/lib/trustedList.js';
 import {
   T5_EDGE_BAND_RESCUED_BY,
   T5_EDGE_BAND_STAKE_TIER,
@@ -3394,7 +3402,9 @@ async function createMissingLockedPicks({
       const spreadSteamOpens = marketType === 'SPREAD' && qualifyingSpreadSteam({ sport, side, positions }).length > 0;
       const totalMiniOpens = marketType === 'TOTAL' && qualifyingTotalMinis({ sport, side, positions }).length > 0;
       const pressOpens = marketType === 'ML' && qualifyingPresses({ sport, side, positions }).length > 0;
-      const v13Opens = marketType === 'ML' && qualifyingV13Wallets({ sport, side, positions }).length > 0;
+      // On the trusted list (NHL, NBA, NFL, CFB from 2026-11-21) the side
+      // opens when the list is ahead on it. Elsewhere one tier-book wallet.
+      const v13Opens = marketType === 'ML' && v13OpensSide({ pickDate: TARGET_DATE, sport, side, positions });
       if (!top3Early.fires && !gapEarly.fires && !mlMiniOpens && !spreadSteamOpens && !totalMiniOpens && !pressOpens && !v13Opens && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
 
       // Build walletDetails for AGS-U (sport-local size — Action parity).
@@ -4503,6 +4513,7 @@ async function createMissingLockedPicks({
       let totalMiniCreate = null;
       let mlPressCreate = null;
       let v13MlCreate = null;
+      let trustedSpreadCreate = null;
       let unitsBeforeGap = peakUnitsApplied;
       let tierBeforeGap = hcStakeTierCreate;
       if (!isOperatorKilled({ _id: docId }, side, null)) {
@@ -4977,7 +4988,40 @@ async function createMissingLockedPicks({
             + ` zone=${v13MlCreate.zone ?? '—'}`
             + ` edge=${v13MlCreate.edge ?? '—'} steam=${v13MlCreate.steam ?? '—'}`
             + ` against=${v13MlCreate.against}`
+            + ` list=${v13MlCreate.list} margin=${v13MlCreate.margin}`
             + ` ${v13MlCreate.unitsPre}u → ${v13MlCreate.units}u`,
+          );
+        }
+      }
+
+      // Trusted spread path. Last on a spread. NBA, NFL, and CFB from
+      // 2026-11-21. The trusted spread list ahead by 3 or more at a price
+      // shorter than +100, on a side the v12 score is positive on, is at
+      // least 2u. The list behind is 0. Everything else stays on the
+      // stake that arrived. An operator kill stays. The T-15 freeze
+      // already returned. Always evaluated so the stamp is current.
+      if (marketType === 'SPREAD') {
+        const killedCreate = isOperatorKilled({ _id: docId }, side, null);
+        trustedSpreadCreate = applyTrustedSpreadPath({
+          units: peakUnitsApplied,
+          pickDate: TARGET_DATE,
+          sport,
+          market: marketType,
+          side,
+          positions,
+          odds: stakeOdds ?? odds ?? null,
+          score: scoreV12,
+          killed: killedCreate,
+        });
+        if (trustedSpreadCreate.action === 'STAKE' || trustedSpreadCreate.action === 'MUTE') {
+          peakUnitsApplied = trustedSpreadCreate.units;
+          hcStakeTierCreate = trustedSpreadCreate.action === 'STAKE' && peakUnitsApplied > 0
+            ? TRUSTED_SPREAD_STAKE_TIER
+            : 'MONITORING';
+          console.log(
+            `  LIST-SPREAD: ${docId} ${side} ${trustedSpreadCreate.action}/${trustedSpreadCreate.reason}`
+            + ` margin=${trustedSpreadCreate.margin}`
+            + ` ${trustedSpreadCreate.unitsPre}u → ${trustedSpreadCreate.units}u`,
           );
         }
       }
@@ -5161,6 +5205,11 @@ async function createMissingLockedPicks({
       if (totalMiniCreate) Object.assign(v8Stamps, totalMiniStamp(totalMiniCreate));
       if (mlPressCreate) Object.assign(v8Stamps, mlPressStamp(mlPressCreate));
       if (v13MlCreate) Object.assign(v8Stamps, v13MlStamp(v13MlCreate, { now }));
+      if (trustedSpreadCreate) Object.assign(v8Stamps, trustedSpreadStamp(trustedSpreadCreate));
+      // The trusted list's count on this side, every market, for the record.
+      Object.assign(v8Stamps, trustedCountStamp({
+        pickDate: TARGET_DATE, sport, market: marketType, side, positions,
+      }));
       if (pressMirrorCreate) {
         Object.assign(v8Stamps, pressMirrorStamp(pressMirrorCreate, pressMirrorShapeCreate, now));
         if (pressMirrorForceCreate) v8Stamps.v8_pressMirrorForceCreate = true;
@@ -5374,6 +5423,12 @@ async function createMissingLockedPicks({
       if (isOperatorKilled({ _id: docId }, side, null)) {
         v8Stamps.mutedBy = OPERATOR_MUTED_BY;
         v8Stamps.manualMute = true;
+      } else if (trustedSpreadCreate?.action === 'STAKE') {
+        delete v8Stamps.mutedBy;
+        v8Stamps.v8_rescuedBy = TRUSTED_SPREAD_RESCUED_BY;
+      } else if (trustedSpreadCreate?.action === 'MUTE') {
+        v8Stamps.mutedBy = TRUSTED_SPREAD_MUTED_BY;
+        if (v8Stamps.v8_rescuedBy != null) delete v8Stamps.v8_rescuedBy;
       } else if (v13MlCreate?.action === 'STAKE') {
         delete v8Stamps.mutedBy;
         v8Stamps.v8_rescuedBy = V13_ML_RESCUED_BY;
@@ -5564,9 +5619,11 @@ async function createMissingLockedPicks({
         ? peakUnitsApplied === 0
         : createSizeMutedLegacy;
       const healthStamp = {
-        status: (v13MlCreate?.action === 'STAKE' || mlPressCreate?.action === 'STAKE' || mlMiniCreate?.action === 'STAKE' || spreadSteamCreate?.action === 'STAKE' || totalMiniCreate?.action === 'STAKE') && peakUnitsApplied > 0
-          ? 'ACTIVE'
-          : (v13MlCreate?.action === 'MUTE' || mlPressCreate?.action === 'MUTE' || mlMiniCreate?.action === 'MUTE' ? 'MUTED' : (createSizeMuted ? 'MUTED' : 'ACTIVE')),
+        status: trustedSpreadCreate?.action === 'MUTE'
+          ? 'MUTED'
+          : ((trustedSpreadCreate?.action === 'STAKE' || v13MlCreate?.action === 'STAKE' || mlPressCreate?.action === 'STAKE' || mlMiniCreate?.action === 'STAKE' || spreadSteamCreate?.action === 'STAKE' || totalMiniCreate?.action === 'STAKE') && peakUnitsApplied > 0
+            ? 'ACTIVE'
+            : (v13MlCreate?.action === 'MUTE' || mlPressCreate?.action === 'MUTE' || mlMiniCreate?.action === 'MUTE' ? 'MUTED' : (createSizeMuted ? 'MUTED' : 'ACTIVE'))),
         reasons: [
           ...(pressAppliedCreate && pressEvalCreate?.reason
             ? [`press:${pressMirrorForceCreate ? pressMirrorCreate.reason : pressEvalCreate.reason}`]
@@ -5637,7 +5694,7 @@ async function createMissingLockedPicks({
         && live.hcConfFor === 0
         && live.hcConfAg === 0
         && !trustedOnGame;
-      if (spreadDoorOnly && spreadSteamCreate?.action !== 'STAKE') {
+      if (spreadDoorOnly && (spreadSteamCreate?.action !== 'STAKE' || trustedSpreadCreate?.action === 'MUTE')) {
         skipped.push({ docId, side, reason: 'spread_steam_no_stake' });
         continue;
       }
@@ -7997,6 +8054,33 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
     }
   }
+  // Trusted spread path. Last on a spread. NBA, NFL, and CFB from
+  // 2026-11-21. The trusted spread list ahead by 3 or more at a price
+  // shorter than +100, on a side the v12 score is positive on, is at
+  // least 2u. The list behind is 0. Everything else stays on the stake
+  // that arrived. Manual stake and an operator kill stay. The T-15 freeze
+  // already returned. Always evaluated so the stamp is current.
+  let trustedSpreadPolicy = null;
+  if (mkt === 'SPREAD') {
+    trustedSpreadPolicy = applyTrustedSpreadPath({
+      units: finalUnitsApplied,
+      pickDate,
+      sport: pick.sport,
+      market: mkt,
+      side,
+      positions: group,
+      odds: stakeOdds,
+      score: scoreV12Live,
+      manual: skipManualFlinch,
+      killed: operatorKilled,
+    });
+    if (trustedSpreadPolicy.action === 'STAKE' || trustedSpreadPolicy.action === 'MUTE') {
+      finalUnitsApplied = trustedSpreadPolicy.units;
+      hcStakeTier = trustedSpreadPolicy.action === 'STAKE' && finalUnitsApplied > 0
+        ? TRUSTED_SPREAD_STAKE_TIER
+        : 'MONITORING';
+    }
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
@@ -8219,11 +8303,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     || (!formTierRescued && !hardUnoppFloored && (hardStForMuted
     || hardAgMuted
     || (!hardExceptionRescued && (earlyMuteCancelled || lateMuteCancelled)))));
-  const healthStatusOut = (v13MlPolicy?.action === 'STAKE' || mlPressPolicy?.action === 'STAKE' || mlMiniPolicy?.action === 'STAKE' || spreadSteamPolicy?.action === 'STAKE' || totalMiniPolicy?.action === 'STAKE') && finalUnitsApplied > 0
-    ? 'ACTIVE'
-    : (v13MlPolicy?.action === 'MUTE' || mlPressPolicy?.action === 'MUTE' || mlMiniPolicy?.action === 'MUTE'
-      ? 'MUTED'
-      : (sizeMuted ? 'MUTED' : appliedStatus));
+  const healthStatusOut = trustedSpreadPolicy?.action === 'MUTE'
+    ? 'MUTED'
+    : ((trustedSpreadPolicy?.action === 'STAKE' || v13MlPolicy?.action === 'STAKE' || mlPressPolicy?.action === 'STAKE' || mlMiniPolicy?.action === 'STAKE' || spreadSteamPolicy?.action === 'STAKE' || totalMiniPolicy?.action === 'STAKE') && finalUnitsApplied > 0
+      ? 'ACTIVE'
+      : (v13MlPolicy?.action === 'MUTE' || mlPressPolicy?.action === 'MUTE' || mlMiniPolicy?.action === 'MUTE'
+        ? 'MUTED'
+        : (sizeMuted ? 'MUTED' : appliedStatus)));
   patch.health = {
     status: healthStatusOut,
     reasons,
@@ -8283,6 +8369,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
     }
   }
+  // Trusted spread PASS / EXEMPT — drop its leftover mute or rescue marker
+  // before the mutedBy chain.
+  if (trustedSpreadPolicy?.action !== 'STAKE' && trustedSpreadPolicy?.action !== 'MUTE') {
+    if (sd.mutedBy === TRUSTED_SPREAD_MUTED_BY) {
+      patch.mutedBy = admin.firestore.FieldValue.delete();
+    }
+    if (sd.v8_rescuedBy === TRUSTED_SPREAD_RESCUED_BY) {
+      patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
+    }
+  }
   if (steamBookPolicy?.mute?.action !== 'MUTE' && sd.mutedBy === SHORT_MOVE_MUTED_BY) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -8292,6 +8388,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (operatorKilled) {
     patch.mutedBy = OPERATOR_MUTED_BY;
     patch.manualMute = true;
+  } else if (trustedSpreadPolicy?.action === 'STAKE') {
+    patch.mutedBy = admin.firestore.FieldValue.delete();
+    patch.v8_rescuedBy = TRUSTED_SPREAD_RESCUED_BY;
+  } else if (trustedSpreadPolicy?.action === 'MUTE') {
+    patch.mutedBy = TRUSTED_SPREAD_MUTED_BY;
+    if (sd.v8_rescuedBy != null) patch.v8_rescuedBy = admin.firestore.FieldValue.delete();
   } else if (v13MlPolicy?.action === 'STAKE') {
     patch.mutedBy = admin.firestore.FieldValue.delete();
     patch.v8_rescuedBy = V13_ML_RESCUED_BY;
@@ -9385,6 +9487,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + ` zone=${v13MlPolicy.zone ?? '—'}`
         + ` edge=${v13MlPolicy.edge ?? '—'} steam=${v13MlPolicy.steam ?? '—'}`
         + ` against=${v13MlPolicy.against}`
+        + ` list=${v13MlPolicy.list} margin=${v13MlPolicy.margin}`
         + ` ${v13MlPolicy.unitsPre}u → ${v13MlPolicy.units}u`,
       );
     } else if (sd.v8_v13MlAction != null && sd.v8_v13MlAction !== v13MlPolicy.action) {
@@ -9396,6 +9499,42 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       changes.push(
         `V13-ML: ${v13MlPolicy.action}/${v13MlPolicy.reason} (stamp)`,
       );
+    }
+  }
+  // Always overwrite the full trusted spread stamp on every spread side the
+  // path looked at, so a prior STAKE or MUTE cannot leave fields behind.
+  if (trustedSpreadPolicy) {
+    const spreadStamp = trustedSpreadStamp(trustedSpreadPolicy);
+    Object.assign(patch, spreadStamp);
+    if (trustedSpreadPolicy.action === 'STAKE' || trustedSpreadPolicy.action === 'MUTE') {
+      changes.push(
+        `LIST-SPREAD: ${trustedSpreadPolicy.action}/${trustedSpreadPolicy.reason}`
+        + ` margin=${trustedSpreadPolicy.margin}`
+        + ` ${trustedSpreadPolicy.unitsPre}u → ${trustedSpreadPolicy.units}u`,
+      );
+    } else if (spreadStamp.v8_trustedSpreadAction != null
+        && sd.v8_trustedSpreadAction !== trustedSpreadPolicy.action) {
+      changes.push(
+        `LIST-SPREAD: ${sd.v8_trustedSpreadAction ?? '∅'} → ${trustedSpreadPolicy.action}/${trustedSpreadPolicy.reason} (stamp)`,
+      );
+    }
+  }
+  // The trusted list's count on this side, every market, for the record.
+  // Written when it is new or the margin moved.
+  {
+    const countStamp = trustedCountStamp({
+      pickDate, sport: pick.sport, market: mkt, side, positions: group,
+    });
+    if (countStamp.v8_trustedListMargin != null) {
+      Object.assign(patch, countStamp);
+      const hadFor = Array.isArray(sd.v8_trustedListFor) ? sd.v8_trustedListFor.length : null;
+      const hadAg = Array.isArray(sd.v8_trustedListAgainst) ? sd.v8_trustedListAgainst.length : null;
+      if (hadFor !== countStamp.v8_trustedListFor.length || hadAg !== countStamp.v8_trustedListAgainst.length) {
+        changes.push(
+          `LIST: ${hadFor ?? '∅'} for / ${hadAg ?? '∅'} against → `
+          + `${countStamp.v8_trustedListFor.length} for / ${countStamp.v8_trustedListAgainst.length} against`,
+        );
+      }
     }
   }
   if (ogEdgeStakePolicy && ogEdgeStakePolicy.action !== 'EXEMPT') {
@@ -10056,11 +10195,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     );
   }
 
-  // The bet size is finalUnits. A v13 stake or mute rewrites the lock and
-  // peak units to that number so the review snapshot matches the bet.
+  // The bet size is finalUnits. A v13 or trusted spread stake or mute
+  // rewrites the lock and peak units to that number so the review snapshot
+  // matches the bet.
   // Odds and the line stay. Manual stake and an operator kill stay.
   if (!skipManualFlinch && !operatorKilled
-      && (v13MlPolicy?.action === 'STAKE' || v13MlPolicy?.action === 'MUTE')) {
+      && (v13MlPolicy?.action === 'STAKE' || v13MlPolicy?.action === 'MUTE'
+        || trustedSpreadPolicy?.action === 'STAKE' || trustedSpreadPolicy?.action === 'MUTE')) {
     const lockNow = Number(patch.lock?.units ?? sd.lock?.units);
     const peakNow = Number(patch.peak?.units ?? sd.peak?.units);
     if (lockNow !== finalUnitsApplied || peakNow !== finalUnitsApplied) {
@@ -10818,6 +10959,12 @@ async function main() {
   console.log(`Loaded ${positions.length} sharp_action_positions in ${groups.size} game-market clusters`);
   const morning = await loadMorningRanks(db, TARGET_DATE, { write: !DRY_RUN });
   console.log(`SPREAD-STEAM book: ${morning.spreadSteam ?? 0} wallets`);
+  if (morning.trustedSource !== 'not_live') {
+    console.log(`TRUSTED list: ${morning.trustedSource}, ML ${morning.trustedMl ?? 0} · spread ${morning.trustedSpread ?? 0} · total ${morning.trustedTotal ?? 0} wallets`);
+    if (!(morning.trustedMl > 0)) {
+      console.warn('TRUSTED list did not build. v13 moneylines read the tier book and the trusted spread path passes this scan.');
+    }
+  }
   console.log(`TOTAL-MINI book: ${morning.totalMini ?? 0} wallets`);
   if (morning.source !== 'not_live') {
     const bets = morning.bets == null ? '?' : morning.bets;

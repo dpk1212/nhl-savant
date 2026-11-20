@@ -195,3 +195,30 @@ test('PASS reasons cover no_qualified_wallet, qualified_against, missing_edge, n
   assert.equal(run({ edge: null }).reason, 'missing_edge');
   assert.equal(run({ steam: null }).reason, 'no_steam');
 });
+
+test('the stamp says which list the side read and the count on it', () => {
+  const tier = v13MlStamp(run(), { now: 1 });
+  assert.equal(tier.v8_v13MlList, 'tier');
+  assert.equal(tier.v8_v13MlMargin, 1);
+  const list = new Map([
+    ['ML|tttt01', { trusted: true }], ['ML|tttt02', { trusted: true }], ['ML|tttt03', { trusted: true }],
+  ]);
+  const onList = run({
+    pickDate: '2026-11-21', list,
+    positions: [pos('tttt01'), pos('tttt02'), pos('tttt03', 'away')],
+  });
+  const stamp = v13MlStamp(onList, { now: 1 });
+  assert.equal(stamp.v8_v13MlAction, 'STAKE');
+  assert.equal(stamp.v8_v13MlList, 'trusted');
+  assert.equal(stamp.v8_v13MlMargin, 1);
+  assert.equal(stamp.v8_v13MlAgainst, 1);
+  assert.deepEqual(stamp.v8_v13MlWallets, ['tttt01', 'tttt02']);
+  const behind = run({ pickDate: '2026-11-21', list, positions: [pos('tttt03', 'away')] });
+  const passStamp = v13MlStamp(behind, { now: 1 });
+  assert.equal(passStamp.v8_v13MlAction, 'PASS');
+  assert.equal(passStamp.v8_v13MlReason, 'no_trusted_wallet');
+  assert.equal(passStamp.v8_v13MlMargin, -1);
+  for (const field of V13_ML_STAMP_FIELDS) {
+    assert.ok(Object.prototype.hasOwnProperty.call(passStamp, field), `missing ${field}`);
+  }
+});

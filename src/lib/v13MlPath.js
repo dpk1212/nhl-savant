@@ -1,13 +1,20 @@
 /**
  * v13 moneyline. From 2026-11-19.
  *
- * A wallet qualifies on the bets dated before this morning. Confirmed
- * comes first, on the sport: 6 or more graded bets, a win rate of at
- * least 55, and dollar ROI above 3. Then the moneyline book. Tier 4 or
- * 5, form on, and that book is at least 15 days old. A later copy of
- * the same game, side, stake, and dollars is one bet. The branch fires
- * when one of those wallets is on this side and none of them is on the
- * other side.
+ * From 2026-11-21, on NHL, NBA, NFL, and CFB, the wallets are the
+ * trusted list for moneylines that morning (trustedList.js). The branch
+ * fires when the trusted wallets on this side outnumber the trusted
+ * wallets on the other side. A wallet on both sides counts on its
+ * larger ticket.
+ *
+ * On every other sport, on every date before that, and on a morning the
+ * list did not build, a wallet qualifies on the bets dated before this
+ * morning. Confirmed comes first, on the sport: 6 or more graded bets, a
+ * win rate of at least 55, and dollar ROI above 3. Then the moneyline
+ * book. Tier 4 or 5, form on, and that book is at least 15 days old. A
+ * later copy of the same game, side, stake, and dollars is one bet. The
+ * branch fires when one of those wallets is on this side and none of
+ * them is on the other side.
  *
  * Edge under 0. −150 or shorter is 2. A longer price stays. Steam does
  * not enter.
@@ -30,14 +37,16 @@
  * This is the size for that side. It replaces the stake that arrived.
  * Manual stake, an operator kill, the T-15 freeze, and a graded ticket
  * stay at the caller. The fit was NHL, NBA, NFL, and CFB. The path is
- * every sport's moneyline from 2026-11-19. A wallet qualifies on that
- * sport's own book.
+ * every sport's moneyline from 2026-11-19.
  */
 
 import { oddsCap } from './oddsCap.js';
 import { dedupePositionCopies, sportBookConfirmed } from './sportConfirmed.js';
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
 import { mlMiniWalletId, mlPriceBand, normMlMiniMarket, normMlMiniSport } from './mlMiniRung.js';
+import {
+  isTrustedListLive, trustedListReady, trustedListSport, trustedSideCount,
+} from './trustedList.js';
 
 export const V13_ML_FROM = '2026-11-19';
 export const V13_ML_EDGE_MAX = 10;
@@ -57,6 +66,9 @@ export const V13_ML_STAKE_TIER = 'V13-ML';
 export const V13_ML_RESCUED_BY = 'v13-ml';
 export const V13_ML_MUTED_BY = 'v13-ml';
 export const V13_ML_BOOK_VERSION = 3;
+export const V13_ML_LIST_TRUSTED = 'trusted';
+export const V13_ML_LIST_TIER = 'tier';
+export const V13_ML_TRUSTED_AHEAD = 1;
 
 let bookIndex = new Map();
 
@@ -261,6 +273,27 @@ export function qualifyingV13Wallets({ sport, side, positions, book = null } = {
   return out;
 }
 
+/**
+ * True when this side reads the trusted list: the four fitted sports,
+ * from the list's first day, on a morning the list built. A morning with
+ * no list reads the tier book, and the stamp says which one it read.
+ */
+export function v13UsesTrustedList(pickDate, sport, list = null) {
+  return isTrustedListLive(pickDate) && trustedListSport(sport) && trustedListReady(list);
+}
+
+/**
+ * Does a v13 wallet read open this side for the create pass. On the
+ * trusted list the side has to be ahead. On the tier book one qualified
+ * wallet on the side is enough, as before.
+ */
+export function v13OpensSide({ pickDate, sport, side, positions, book = null, list = null } = {}) {
+  if (v13UsesTrustedList(pickDate, sport, list)) {
+    return trustedSideCount({ market: 'ML', side, positions, list }).margin >= V13_ML_TRUSTED_AHEAD;
+  }
+  return qualifyingV13Wallets({ sport, side, positions, book }).length > 0;
+}
+
 function againstWallets(positions, sport, side, book) {
   const sp = normMlMiniSport(sport);
   const mySide = String(side || '').toLowerCase();
@@ -279,6 +312,7 @@ function againstWallets(positions, sport, side, book) {
  *   fires: boolean, action: 'STAKE'|'MUTE'|'PASS'|'EXEMPT',
  *   reason: string, units: number, unitsPre: number, zone: string|null,
  *   steam: number|null, edge: number|null, against: number, wallets: string[],
+ *   margin: number, list: 'trusted'|'tier',
  *   odds: number|null, price: number|null,
  * }}
  */
@@ -296,11 +330,13 @@ export function applyV13MlPath({
   manual = false,
   killed = false,
   book = null,
+  list = null,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const move = roundTenth(steam);
   const oddsN = Number.isFinite(Number(odds)) ? Number(odds) : null;
   const priceN = price > 0 && price < 1 ? Number(price) : null;
+  const onList = v13UsesTrustedList(pickDate, sport, list);
   const base = {
     fires: false,
     units: pre,
@@ -310,6 +346,8 @@ export function applyV13MlPath({
     edge: finiteEdge(edge),
     against: 0,
     wallets: [],
+    margin: 0,
+    list: onList ? V13_ML_LIST_TRUSTED : V13_ML_LIST_TIER,
     odds: oddsN,
     price: priceN,
   };
@@ -319,14 +357,29 @@ export function applyV13MlPath({
   if (normMlMiniMarket(market) !== 'ML' || !normMlMiniSport(sport)) {
     return { ...base, action: 'PASS', reason: 'not_ml' };
   }
-  const index = bookOf(book);
-  const wallets = qualifyingV13Wallets({ sport, side, positions, book: index });
-  if (!wallets.length) {
-    return { ...base, action: 'PASS', reason: 'no_qualified_wallet' };
+  let armed;
+  if (onList) {
+    const count = trustedSideCount({ market: 'ML', side, positions, list });
+    const read = {
+      ...base, wallets: count.for, against: count.against.length, margin: count.margin,
+    };
+    if (!count.for.length) return { ...read, action: 'PASS', reason: 'no_trusted_wallet' };
+    armed = { ...read, fires: true };
+    if (count.margin < V13_ML_TRUSTED_AHEAD) {
+      return { ...armed, action: 'PASS', reason: 'trusted_not_ahead' };
+    }
+  } else {
+    const index = bookOf(book);
+    const wallets = qualifyingV13Wallets({ sport, side, positions, book: index });
+    if (!wallets.length) {
+      return { ...base, action: 'PASS', reason: 'no_qualified_wallet' };
+    }
+    const against = againstWallets(positions, sport, side, index);
+    armed = {
+      ...base, fires: true, against, wallets, margin: wallets.length - against,
+    };
+    if (against > 0) return { ...armed, action: 'PASS', reason: 'qualified_against' };
   }
-  const against = againstWallets(positions, sport, side, index);
-  const armed = { ...base, fires: true, against, wallets };
-  if (against > 0) return { ...armed, action: 'PASS', reason: 'qualified_against' };
   if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
   if (armed.edge < 0) {
     const under = v13HighPriceZone(odds, price);
@@ -368,6 +421,8 @@ export const V13_ML_STAMP_FIELDS = Object.freeze([
   'v8_v13MlEdge',
   'v8_v13MlAgainst',
   'v8_v13MlWallets',
+  'v8_v13MlMargin',
+  'v8_v13MlList',
   'v8_v13MlOdds',
   'v8_v13MlPrice',
   'v8_v13MlEvaluatedAt',
@@ -395,6 +450,8 @@ export function v13MlStamp(policy, { now = Date.now() } = {}) {
     v8_v13MlEdge: policy.edge ?? null,
     v8_v13MlAgainst: policy.against ?? 0,
     v8_v13MlWallets: Array.isArray(policy.wallets) ? policy.wallets : [],
+    v8_v13MlMargin: Number.isFinite(Number(policy.margin)) ? Number(policy.margin) : 0,
+    v8_v13MlList: policy.list ?? V13_ML_LIST_TIER,
     v8_v13MlOdds: policy.odds ?? null,
     v8_v13MlPrice: policy.price ?? null,
     v8_v13MlEvaluatedAt: now,

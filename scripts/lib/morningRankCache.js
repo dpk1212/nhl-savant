@@ -1,5 +1,5 @@
 /**
- * Morning top-3 seats and gap-lead books.
+ * Morning top-3 seats, gap-lead books, skill books, and the trusted list.
  *
  * Both rules read the same 30-day book of bets dated before this morning.
  * The scan used to re-read that book every cycle. It now reads two documents.
@@ -52,6 +52,15 @@ import {
   setV13MlBook,
   V13_ML_BOOK_VERSION,
 } from '../../src/lib/v13MlPath.js';
+import {
+  buildTrustedList,
+  hydrateTrustedList,
+  isTrustedListLive,
+  serializeTrustedList,
+  setTrustedList,
+  trustedListSizes,
+  TRUSTED_LIST_VERSION,
+} from '../../src/lib/trustedList.js';
 
 export const MORNING_RANK_COLLECTION = 'morningRank';
 const TOP3_DOC = 'top3';
@@ -60,6 +69,14 @@ const ML_MINI_DOC = 'mlMini';
 const SPREAD_STEAM_DOC = 'spreadSteam';
 const TOTAL_MINI_DOC = 'totalMini';
 const V13_ML_DOC = 'v13Ml';
+const TRUSTED_DOC = 'trusted';
+// The trusted list reads the price tape on every graded bet. It is its own
+// read so the tape never rides along with, or takes down, the other books.
+const TRUSTED_FIELDS = [
+  'wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice',
+  'result', 'postponed', 'gameKey', 'side', 'entryLine', 'spreadLine', 'totalLine',
+  'ticketTapeLog',
+];
 const SKILL_FIELDS = [
   'wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice',
   'result', 'won', 'side', 'gameKey', 'status', 'postponed', 'settledPnl',
@@ -276,6 +293,79 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
   return { mlMini: mlSize, spreadSteam: spreadSize, totalMini: totalSize, v13Ml: v13Size };
 }
 
+function trustedStats(index, source) {
+  const sizes = trustedListSizes(index);
+  return {
+    trustedSource: source,
+    trustedMl: sizes.ML,
+    trustedSpread: sizes.SPREAD,
+    trustedTotal: sizes.TOTAL,
+  };
+}
+
+/**
+ * The trusted list for this morning. The first scan of the day reads
+ * every graded position with its price tape and stores the trusted
+ * wallets. Later scans read that one document. A grade run rebuilds it.
+ *
+ * A failed read, a failed build, or an empty result leaves the list
+ * empty. The paths that read it then change nothing: moneylines go back
+ * to the tier book and the spread path passes. The other morning books
+ * are not touched by a failure here.
+ */
+async function ensureTrustedList(db, asOf, persist, { force = false } = {}) {
+  if (!isTrustedListLive(asOf)) {
+    setTrustedList(new Map());
+    return trustedStats(new Map(), 'not_live');
+  }
+  try {
+    if (!force && persist) {
+      try {
+        const doc = await readDoc(db, TRUSTED_DOC, asOf);
+        if (doc && doc.listVersion === TRUSTED_LIST_VERSION && doc.rows.length > 0) {
+          const index = hydrateTrustedList(doc);
+          setTrustedList(index);
+          return trustedStats(index, 'cache');
+        }
+      } catch (err) {
+        console.warn(`[morning-rank] trusted list cache read failed, rebuilding: ${err.message}`);
+      }
+    }
+    const snap = await db.collection('sharp_action_positions')
+      .where('status', '==', 'GRADED')
+      .select(...TRUSTED_FIELDS)
+      .get();
+    const rows = snap.docs.map((d) => d.data());
+    const full = buildTrustedList(rows, asOf);
+    const payload = serializeTrustedList(full, asOf);
+    // Hydrate what is stored, so every scan of the day reads the same list
+    // whether it built it or loaded it.
+    const index = hydrateTrustedList(payload);
+    setTrustedList(index);
+    if (index.size === 0) {
+      console.warn(`[morning-rank] trusted list is empty for ${asOf} (${rows.length} graded rows read). Paths fall back.`);
+      return trustedStats(index, 'empty');
+    }
+    if (persist) {
+      try {
+        await db.collection(MORNING_RANK_COLLECTION).doc(TRUSTED_DOC).set({
+          ...payload,
+          betRows: rows.length,
+          generatedAt: new Date().toISOString(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn(`[morning-rank] trusted list cache write failed: ${err.message}`);
+      }
+    }
+    return trustedStats(index, force ? 'rebuilt' : 'built');
+  } catch (err) {
+    console.warn(`[morning-rank] trusted list build failed for ${asOf}: ${err.message}. Paths fall back.`);
+    setTrustedList(new Map());
+    return trustedStats(new Map(), 'failed');
+  }
+}
+
 /**
  * Use the stored morning when it matches this slate. A past --date= rebuilds
  * in memory and does not replace today's documents. Dry-run does not write.
@@ -283,7 +373,10 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
 export async function loadMorningRanks(db, asOf, { write = true, liveDate = null } = {}) {
   const live = liveDate || etSlateDate();
   const persist = write && asOf === live;
-  const skillBooks = await ensureMorningSkillBooks(db, asOf, persist);
+  const skillBooks = {
+    ...(await ensureMorningSkillBooks(db, asOf, persist)),
+    ...(await ensureTrustedList(db, asOf, persist)),
+  };
   if (!isTop3PickLive(asOf) && !isGapLeadLive(asOf)) {
     setTop3PickRanks(new Map());
     setGapLeadBooks(new Map());
@@ -332,6 +425,9 @@ export async function rebuildMorningRanks(db, asOf) {
   setTop3PickRanks(built.top3);
   setGapLeadBooks(built.gap);
   await writeDocs(db, asOf, built);
-  const skillBooks = await ensureMorningSkillBooks(db, asOf, true, { force: true });
+  const skillBooks = {
+    ...(await ensureMorningSkillBooks(db, asOf, true, { force: true })),
+    ...(await ensureTrustedList(db, asOf, true, { force: true })),
+  };
   return { ...stats(built, 'rebuilt'), ...skillBooks };
 }

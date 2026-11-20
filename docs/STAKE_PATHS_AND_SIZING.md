@@ -6,6 +6,43 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 
 ---
 
+## TRUSTED LIST — v13 moneyline gate and the spread path, from 2026-11-21
+
+_Code: `src/lib/trustedList.js` (the list) · `src/lib/v13MlPath.js` (moneyline) · `src/lib/trustedSpreadPath.js` (spread) · built in `scripts/lib/morningRankCache.js` · wired in `scripts/syncPickStateAuthoritative.js` (create + reconcile) · tests `src/lib/trustedList.test.js`, `trustedSpreadPath.test.js`, `v13MlPath.test.js`, `v13MlStamp.test.js`_
+
+**The list.** Every morning each wallet gets one score per market (ML, SPREAD, TOTAL) from graded bets dated before that morning. Two parts, both in points of edge per bet. **Price:** how far the Pinnacle fair line moved toward the wallet after it was first seen, with the average move for that market, first-sight edge, and price taken out; learned on moneylines and spreads in every sport, counted from 8 taped bets, half weight at 25, then scaled by how much of it has shown up in that market's own line moves. **Results:** the wallet's win rate against its own prices in that market, minus the market's average wallet, shrunk by how much lasting wallet-to-wallet spread the market has shown. A wallet is rated at 8 bets in the market or a kept price read. Its standing is the share of earlier rated NHL / NBA / NFL / CFB scores in that market below its own. **Standing of 0.80 or more is trusted.** One bet is one wallet, game, and market (the largest ticket); the same two teams more than a day apart are two games.
+
+**Where it is built.** `ensureTrustedList` in the morning cache. The first scan of a date reads every graded position with its price tape (its own read, separate from the skill books), builds the list, and stores the trusted wallets in `morningRank/trusted` (`asOf`, `listVersion`, about 10 KB). Later scans read that document. Every grade run rebuilds it. A row dated that morning or later is never read. A failed read, a failed build, or an empty list leaves the list empty and logs a warning: moneylines then read the tier book as before, and the spread path passes.
+
+**The count.** On one game and market: trusted wallets on this side minus trusted wallets on the other side, from the live positions. A wallet on both sides counts once, on its larger ticket.
+
+**v13 moneyline (NHL, NBA, NFL, CFB).** The wallet gate is the count: **ahead by 1 or more** fires. Zones and sizes are unchanged (edge under 0 → 2u at −150 or shorter; edge 0–10 by steam → 4 / 2 / 0.75 / 4, steam against 0; edge 10+ → 3u at −150 or shorter, 1.5u longer; juice past −425 and a missing edge / steam / price pass; dog cap after). New PASS reasons `no_trusted_wallet`, `trusted_not_ahead`. Stamps `v8_v13MlList` (`trusted` | `tier`) and `v8_v13MlMargin`. Every other sport, and a morning with no list, stay on the tier book (confirmed, then tier 4+ form ON, nobody qualified against). V12+ ML disable is unchanged: a v13 PASS is 0u.
+
+**Trusted spread path (NBA, NFL, CFB).** Runs last on a spread. **Ahead by 3 or more, price shorter than +100, v12 score positive → at least 2u** (tier `LIST-SPREAD`, `v8_rescuedBy=list-spread`; a stake of 2u or more that arrived stays). **Behind → 0u** (`mutedBy=list-spread`). Everything else stays on the stake that arrived. NHL puck lines are out: the count ran backwards there (trusted NHL spread bets 39-56, −16.4u). Stamps `v8_trustedSpread*`, `v8_unitsPreTrustedSpread`. Manual stake, operator kill, and the T-15 freeze win.
+
+**Totals.** No totals stake reads the list. Trusted totals bets were 194-209, −20.6u against their own prices. The totals count is stamped for the record only.
+
+**Every side.** `v8_trustedListFor`, `v8_trustedListAgainst`, `v8_trustedListMargin` on every NHL / NBA / NFL / CFB moneyline, spread, and total side.
+
+**Evidence, Oct 6 → Nov 19, the shipped functions on the lists the morning build would have produced each day** (`research/skill/35_replay.mjs`, `39_gate_check.mjs`). Halves cut Oct 16 / Oct 28. All in-sample.
+
+| Cell | Record | Units | Windows |
+|------|--------|-------|---------|
+| Trusted wallets' own ML bets, 1u | 1242-1059 | +58.2u | −8.1 · +42.9 · +23.5 |
+| Trusted wallets' own spread bets, 1u | 1055-861 | +173.7u | +0.3 · +76.6 · +96.8 |
+| ML board, v13 sizes, list ahead (shipped gate) | 126-61 | +98.9u on 525.8u | −1.7 · +39.6 · +61.0 |
+| ML board, same sizes, list not ahead | 119-91 | +6.4u on 517.8u | +4.1 · −16.5 · +18.8 |
+| ML board as it ran | 136-88 | +26.3u on 527.5u | −19.2 · +27.9 · +17.5 |
+| Spread board as it ran | 70-63 | −1.2u on 290.5u | +3.2 · +6.2 · −10.6 |
+| Spread board with the path | 84-67 | +17.7u on 325.0u | +0.6 · +16.9 · +0.2 |
+| Spread rescues and floors (new 2u) | 21-10 | +20.0u on 62.0u | 0.0 · +5.6 · +14.4 |
+| Spread stakes the path zeroes, as they ran | 5-6 | −0.8u on 25.5u | +2.5 · −5.1 · +1.8 |
+| Every two-sided NBA/NFL/CFB spread, list behind, 1u | 193-243 | −56.8u | −2.6 · −27.7 · −26.5 |
+
+The ML rows read a missing steam stamp as flat (steam is stamped on every side from Nov 15). Read strictly, where a missing steam passes, the shipped gate is 69-35, +31.9u on 282.8u. The spread mute rests on the wide sample, not on the 11 stakes it would have zeroed.
+
+---
+
 ## PRESS LADDER — authoritative stake from 2026-10-06
 
 _Code: `src/lib/pressLadderOverlay.js` · wired in `scripts/syncPickStateAuthoritative.js` (create + reconcile) · tests `tests/testPressLadderOverlay.mjs`_

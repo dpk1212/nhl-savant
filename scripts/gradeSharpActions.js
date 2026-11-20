@@ -2171,6 +2171,9 @@ async function main() {
       const asOf = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
       const morning = await rebuildMorningRanks(db, asOf);
       console.log(`Morning rank cache: ${morning.seats} top-3 seats, ${morning.gapWallets} gap-lead wallets, ${morning.bets} bets since ${morning.since}`);
+      if (morning.trustedSource !== 'not_live') {
+        console.log(`Trusted list: ${morning.trustedSource}, ML ${morning.trustedMl}, spread ${morning.trustedSpread}, total ${morning.trustedTotal}`);
+      }
     } catch (err) {
       console.warn(`Morning rank cache rebuild failed: ${err.message}`);
     }
