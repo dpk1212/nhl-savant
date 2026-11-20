@@ -1,16 +1,16 @@
 # Wallet Profiles Summary
 
-Generated: 11/19/2026, 3:15:23 PM ET · V8 cutover: 2026-04-18 · whitelistVersion: 5
+Generated: 11/19/2026, 8:09:45 PM ET · V8 cutover: 2026-04-18 · whitelistVersion: 5
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
-**Population**: 1469 wallets · 39992 graded picks · 74770 graded positions.
+**Population**: 1470 wallets · 40003 graded picks · 74805 graded positions.
 
 ## Population by verdict
 
 | Verdict | Wallets |
 |---|---|
-| INCONCLUSIVE | 403 |
+| INCONCLUSIVE | 404 |
 | CONFIRMED_WINNER | 291 |
 | CONFIRMED_BLEEDER | 266 |
 | MIXED_PICKS_GOOD_$_BAD | 154 |
@@ -26,7 +26,7 @@ Door 2 Proven = Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven. FLAT is 
 
 | Sport | CONFIRMED | FLAT-or-better | WR50-only | Active (≥2 bets) | Any activity |
 |---|---|---|---|---|---|
-| ATP | 24 | 24 | 36 | 134 | 194 |
+| ATP | 24 | 24 | 37 | 135 | 196 |
 | CBB | 6 | 6 | 14 | 52 | 97 |
 | CFB | 43 | 43 | 92 | 216 | 289 |
 | CS2 | 28 | 28 | 73 | 198 | 264 |
@@ -64,16 +64,16 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 
 | # | Wallet | Tier | N | WR% | Flat ROI | Flat PnL (u) | $ ROI | $ PnL |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 28658e | CONFIRMED | 6 | 83.3% | +72.5% | +4.35 | +33.6% | +34350 |
-| 2 | 316c47 | CONFIRMED | 2 | 100% | +61.5% | +1.23 | +10% | +161 |
-| 3 | 0c2659 | CONFIRMED | 5 | 80% | +60.4% | +3.02 | +28.8% | +290 |
-| 4 | 621848 | CONFIRMED | 8 | 75% | +40.5% | +3.24 | +29.3% | +8941 |
+| 1 | 8bbab3 | CONFIRMED | 1 | 100% | +125% | +1.25 | +36.9% | +9542 |
+| 2 | 28658e | CONFIRMED | 6 | 83.3% | +72.5% | +4.35 | +33.6% | +34350 |
+| 3 | 316c47 | CONFIRMED | 2 | 100% | +61.5% | +1.23 | +10% | +161 |
+| 4 | 0c2659 | CONFIRMED | 5 | 80% | +60.4% | +3.02 | +28.8% | +290 |
 | 5 | 70be3f | CONFIRMED | 6 | 66.7% | +38% | +2.28 | +13.2% | +3741 |
-| 6 | 12b48f | CONFIRMED | 2 | 100% | +37.3% | +0.75 | +5.7% | +2236 |
-| 7 | 8fda40 | CONFIRMED | 25 | 76% | +30.4% | +7.59 | +14.7% | +3185 |
-| 8 | e51246 | CONFIRMED | 2 | 50% | +28.5% | +0.57 | +42.3% | +9286 |
-| 9 | 926566 | CONFIRMED | 2 | 50% | +28.5% | +0.57 | +23.6% | +9893 |
-| 10 | 24994f | CONFIRMED | 12 | 75% | +26.9% | +3.23 | +6.4% | +732 |
+| 6 | 621848 | CONFIRMED | 9 | 77.8% | +38% | +3.42 | +29.2% | +8986 |
+| 7 | 12b48f | CONFIRMED | 2 | 100% | +37.3% | +0.75 | +5.7% | +2236 |
+| 8 | 8fda40 | CONFIRMED | 27 | 77.8% | +33.4% | +9.02 | +15% | +3348 |
+| 9 | e51246 | CONFIRMED | 2 | 50% | +28.5% | +0.57 | +42.3% | +9286 |
+| 10 | 926566 | CONFIRMED | 2 | 50% | +28.5% | +0.57 | +23.6% | +9893 |
 
 ### CBB
 
@@ -240,7 +240,7 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 
 Definition: `causalPctPos` from `src/lib/walletClvSkill.js` — % of graded positions since **2026-04-01** with CLV > 0, requiring ≥ **5** events. Stored on every profile as `clvSkill` and upserted to `sharpWalletProfiles` each `grade-sharp-actions` run.
 
-**Coverage:** 455 / 1469 wallets scored · mean pctPos **61.6%**.
+**Coverage:** 455 / 1470 wallets scored · mean pctPos **61.6%**.
 
 | # | Wallet | Beats close % | n (CLV grades) | nPos | Verdict |
 |---|---|---|---|---|---|
@@ -262,222 +262,11 @@ Definition: `causalPctPos` from `src/lib/walletClvSkill.js` — % of graded posi
 
 ## Churn since last run
 
-**212** wallet-sport tier changes since the prior run.
+**1** wallet-sport tier changes since the prior run.
 
 | Wallet | Sport | From | To | Notes |
 |---|---|---|---|---|
-| 04c524 | CBB | — | WR50 |  |
-| 05de6b | ATP | WR50 | CONFIRMED |  |
-| 0889ba | CS2 | — | WR50 |  |
-| 0a41e0 | SOC | — | WR50 |  |
-| 0b01a8 | CS2 | CONFIRMED | WR50 |  |
-| 0cebbc | SOC | — | WR50 | new wallet |
-| 0d827f | NBA | CONFIRMED | WR50 |  |
-| 103923 | NBA | — | WR50 | new wallet |
-| 10395c | NBA | CONFIRMED | WR50 |  |
-| 11c640 | CFB | — | WR50 |  |
-| 12c933 | NFL | WR50 | CONFIRMED |  |
-| 172dbf | CS2 | — | WR50 |  |
-| 189445 | CBB | — | WR50 | new wallet |
-| 189445 | CS2 | — | WR50 | new wallet |
-| 189445 | NBA | — | WR50 | new wallet |
-| 1895dc | NBA | CONFIRMED | WR50 |  |
-| 199296 | CS2 | CONFIRMED | WR50 |  |
-| 199296 | NFL | WR50 | — |  |
-| 19d0d0 | NFL | — | WR50 |  |
-| 1e462e | CFB | — | WR50 |  |
-| 241915 | NFL | — | WR50 |  |
-| 25172c | NBA | — | WR50 |  |
-| 2a4176 | CS2 | — | WR50 | new wallet |
-| 2d2ca8 | NFL | WR50 | CONFIRMED |  |
-| 2d9192 | ATP | CONFIRMED | WR50 |  |
-| 2d9192 | NBA | — | WR50 |  |
-| 2fe9c9 | NBA | — | WR50 | new wallet |
-| 3102d7 | NBA | — | WR50 |  |
-| 3102d7 | NFL | — | CONFIRMED |  |
-| 3102d7 | NHL | — | CONFIRMED |  |
-| 326f79 | CS2 | — | WR50 | new wallet |
-| 32e7e0 | NBA | CONFIRMED | WR50 |  |
-| 3507f1 | NFL | — | WR50 |  |
-| 353a6c | NBA | — | WR50 |  |
-| 35dd0f | NBA | — | WR50 |  |
-| 378b15 | NBA | — | WR50 |  |
-| 388d4c | ATP | — | WR50 |  |
-| 388d4c | CS2 | — | WR50 |  |
-| 388d4c | NBA | — | WR50 |  |
-| 388d4c | NFL | — | WR50 |  |
-| 38a5de | SOC | — | WR50 |  |
-| 3a72c1 | CS2 | WR50 | — |  |
-| 3ac0ae | CS2 | — | WR50 | new wallet |
-| 3b3e28 | SOC | — | WR50 |  |
-| 3bcb94 | NFL | WR50 | CONFIRMED |  |
-| 3bdd7e | CS2 | — | WR50 |  |
-| 3bdd7e | NBA | — | CONFIRMED |  |
-| 3bdd7e | NHL | — | CONFIRMED |  |
-| 3f8a61 | CFB | WR50 | CONFIRMED |  |
-| 3f8a61 | NBA | — | WR50 |  |
-| 411018 | CS2 | — | WR50 |  |
-| 417b88 | NBA | — | WR50 | new wallet |
-| 41ce5c | ATP | — | WR50 |  |
-| 41ce5c | NBA | — | WR50 |  |
-| 42af9e | NBA | — | WR50 | new wallet |
-| 4417bc | NBA | — | CONFIRMED |  |
-| 45232f | NBA | WR50 | CONFIRMED |  |
-| 46824b | NBA | — | WR50 |  |
-| 469a4a | CS2 | — | WR50 |  |
-| 4a7808 | SOC | — | WR50 |  |
-| 4dd3c7 | SOC | CONFIRMED | WR50 |  |
-| 51176e | CBB | — | WR50 |  |
-| 51176e | NBA | WR50 | CONFIRMED |  |
-| 51176e | NFL | CONFIRMED | WR50 |  |
-| 533820 | NBA | CONFIRMED | WR50 |  |
-| 53a0be | NFL | WR50 | — |  |
-| 5b1e50 | ATP | — | WR50 |  |
-| 5b1e50 | CFB | — | WR50 |  |
-| 5b1e50 | CS2 | — | CONFIRMED |  |
-| 5b1e50 | NBA | CONFIRMED | WR50 |  |
-| 5b1e50 | NFL | — | WR50 |  |
-| 5c2194 | NFL | CONFIRMED | WR50 |  |
-| 5c32f2 | NBA | WR50 | — |  |
-| 60db79 | NBA | — | WR50 |  |
-| 61526f | CFB | CONFIRMED | — |  |
-| 621848 | CBB | — | WR50 |  |
-| 666f49 | NBA | — | WR50 |  |
-| 67285c | SOC | — | WR50 | new wallet |
-| 67f462 | NFL | — | WR50 |  |
-| 67fe71 | SOC | — | WR50 |  |
-| 68e508 | NBA | — | WR50 | new wallet |
-| 68e508 | SOC | — | WR50 | new wallet |
-| 69f882 | SOC | WR50 | CONFIRMED |  |
-| 720df6 | NBA | — | WR50 |  |
-| 72f5b2 | ATP | — | WR50 |  |
-| 755cfd | CS2 | — | WR50 |  |
-| 7676e9 | CS2 | — | CONFIRMED | new wallet |
-| 76b24e | CS2 | CONFIRMED | WR50 |  |
-| 76b24e | NFL | — | WR50 |  |
-| 76b487 | NBA | WR50 | — |  |
-| 77c4dc | CS2 | WR50 | — |  |
-| 7c5bf1 | NBA | — | WR50 |  |
-| 7caac5 | NBA | — | WR50 |  |
-| 7cc9a7 | ATP | — | WR50 |  |
-| 7cf76a | NBA | — | WR50 |  |
-| 81db24 | NFL | — | CONFIRMED | new wallet |
-| 81e757 | NBA | — | WR50 |  |
-| 839105 | NBA | — | CONFIRMED | new wallet |
-| 85ffd8 | NBA | WR50 | — |  |
-| 88e535 | ATP | — | WR50 |  |
-| 88e535 | CS2 | — | WR50 |  |
-| 89298f | NBA | CONFIRMED | WR50 |  |
-| 8a3782 | NHL | — | WR50 |  |
-| 8b0e4c | NFL | WR50 | CONFIRMED |  |
-| 8d3672 | NBA | WR50 | CONFIRMED |  |
-| 8eb5c3 | NHL | — | WR50 |  |
-| 8ec926 | NBA | — | WR50 |  |
-| 8ec926 | NFL | CONFIRMED | WR50 |  |
-| 8fda40 | ATP | — | CONFIRMED |  |
-| 90617d | NBA | — | WR50 |  |
-| 921288 | NBA | CONFIRMED | WR50 |  |
-| 921288 | SOC | — | WR50 |  |
-| 9214c2 | CFB | — | WR50 |  |
-| 9214c2 | CS2 | CONFIRMED | WR50 |  |
-| 9214c2 | NFL | — | WR50 |  |
-| 9214c2 | SOC | — | WR50 |  |
-| 929b23 | NBA | WR50 | — |  |
-| 934d3a | NHL | WR50 | CONFIRMED |  |
-| 934d3a | SOC | — | WR50 |  |
-| 955c26 | NBA | WR50 | CONFIRMED |  |
-| 95618e | NBA | — | WR50 |  |
-| 95618e | NFL | — | WR50 |  |
-| 958882 | NHL | WR50 | — |  |
-| 9682b8 | NFL | WR50 | — |  |
-| 97f826 | NBA | — | WR50 | new wallet |
-| 97f826 | NFL | — | WR50 | new wallet |
-| a0cff6 | ATP | CONFIRMED | WR50 |  |
-| a0cff6 | NHL | — | WR50 |  |
-| a94ac3 | NFL | — | WR50 |  |
-| aa738b | SOC | WR50 | CONFIRMED |  |
-| aa894c | NFL | WR50 | — |  |
-| aa894c | NHL | — | WR50 |  |
-| aa9fb4 | NBA | CONFIRMED | WR50 |  |
-| aa9fb4 | NFL | CONFIRMED | WR50 |  |
-| aaedcd | CBB | — | WR50 |  |
-| ad88a3 | NFL | WR50 | — |  |
-| ad9e7a | NBA | — | WR50 |  |
-| b0d23a | CS2 | WR50 | — |  |
-| b503b8 | SOC | WR50 | — |  |
-| b70cbc | NHL | WR50 | CONFIRMED |  |
-| b70f9a | NBA | WR50 | CONFIRMED |  |
-| b7a02b | NFL | — | WR50 |  |
-| b7f4da | NFL | WR50 | CONFIRMED |  |
-| b8128d | NBA | — | WR50 | new wallet |
-| b8128d | SOC | — | WR50 | new wallet |
-| ba234f | NBA | WR50 | — |  |
-| bb823a | NFL | — | WR50 |  |
-| bc35e3 | NFL | WR50 | — |  |
-| bf28eb | NHL | WR50 | — |  |
-| bfe3bc | NFL | — | WR50 |  |
-| c10f2b | NBA | — | WR50 | new wallet |
-| c19b3c | NBA | WR50 | CONFIRMED |  |
-| c23df5 | CS2 | — | WR50 | new wallet |
-| c6c4d6 | CBB | CONFIRMED | WR50 |  |
-| c6c4d6 | NBA | CONFIRMED | WR50 |  |
-| c772ae | NFL | CONFIRMED | WR50 |  |
-| c911a4 | NBA | WR50 | CONFIRMED |  |
-| c911a4 | NFL | WR50 | CONFIRMED |  |
-| c94998 | NFL | — | WR50 |  |
-| cb8d9f | CS2 | — | CONFIRMED | new wallet |
-| cbff8c | NFL | WR50 | CONFIRMED |  |
-| cc63b8 | ATP | — | WR50 |  |
-| cc63b8 | CS2 | WR50 | — |  |
-| cc63b8 | NBA | CONFIRMED | WR50 |  |
-| cc63b8 | SOC | CONFIRMED | WR50 |  |
-| cc9f80 | NFL | WR50 | CONFIRMED |  |
-| ccd43c | NFL | — | WR50 |  |
-| ccd43c | NHL | — | WR50 |  |
-| ce5c8c | NBA | — | WR50 |  |
-| ce63a2 | SOC | — | WR50 |  |
-| cfc6ef | SOC | — | WR50 |  |
-| d1c818 | ATP | WR50 | — |  |
-| d1c818 | NFL | WR50 | CONFIRMED |  |
-| d25968 | CS2 | — | WR50 | new wallet |
-| d3567c | NBA | — | WR50 | new wallet |
-| d3948b | CFB | — | WR50 |  |
-| d3948b | NBA | WR50 | — |  |
-| d633d1 | NHL | — | WR50 |  |
-| d9a42a | NBA | CONFIRMED | WR50 |  |
-| da7c26 | SOC | — | WR50 |  |
-| daf4de | SOC | WR50 | CONFIRMED |  |
-| dc406e | CS2 | — | WR50 |  |
-| dc727b | NBA | — | WR50 | new wallet |
-| dfbdea | NBA | — | WR50 | new wallet |
-| e11302 | CBB | CONFIRMED | WR50 |  |
-| e1cbe9 | SOC | WR50 | — |  |
-| e38ce5 | SOC | — | WR50 |  |
-| e3ca79 | NBA | WR50 | CONFIRMED |  |
-| e47e66 | NBA | — | WR50 |  |
-| e47e66 | NFL | — | WR50 |  |
-| e51246 | ATP | WR50 | CONFIRMED |  |
-| e54fcb | NBA | — | CONFIRMED |  |
-| e68bcd | NBA | — | WR50 | new wallet |
-| e68bcd | NFL | — | WR50 | new wallet |
-| ea2104 | CS2 | — | WR50 |  |
-| eca4ae | NFL | — | WR50 |  |
-| ed8ab1 | NBA | — | WR50 | new wallet |
-| ee7507 | NBA | — | WR50 | new wallet |
-| eeb218 | NBA | — | WR50 |  |
-| f1a030 | NBA | — | WR50 | new wallet |
-| f23633 | ATP | — | WR50 |  |
-| f2d71d | SOC | — | WR50 |  |
-| f2f960 | NFL | — | WR50 |  |
-| f3e961 | SOC | — | WR50 | new wallet |
-| f5d7bb | NBA | — | WR50 | new wallet |
-| f6f9b7 | NBA | — | WR50 |  |
-| f6f9b7 | SOC | — | WR50 |  |
-| f7d32b | NBA | — | WR50 |  |
-| f9a112 | NBA | — | WR50 | new wallet |
-| f9bdb3 | ATP | — | WR50 |  |
-| f9bdb3 | NBA | — | CONFIRMED |  |
-| fc0491 | NHL | — | WR50 |  |
+| 26256c | ATP | — | WR50 |  |
 
 ---
 *Generated by `scripts/exportWalletProfiles.js`.*
