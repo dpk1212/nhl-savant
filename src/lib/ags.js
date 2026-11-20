@@ -1084,7 +1084,8 @@ export const AGS_V12_STAKE_PATH = {
   'TRUST-S':     'press ladder · spread: wallet trusted in this spread market is for, none against',
   'TRUST-T':     'press ladder · total: two or more wallets trusted in this totals market are for, none against',
   'PRESS-R6':    'press ladder · two veterans',
-  'V13-ML':      'v13 moneyline · qualified, nobody against · edge under 0 at −150 or shorter, edge 0–10 by steam, edge 10+ by price',
+  'V13-ML':      'v13 moneyline · trusted list ahead (NHL, NBA, NFL, CFB) or qualified, nobody against · edge under 0 at −150 or shorter, edge 0–10 by steam, edge 10+ by price',
+  'LIST-SPREAD': 'trusted list · spread: trusted spread wallets ahead by 3 or more at a price shorter than +100',
   MONITORING:    'watch',
   FADE:          'muted',
 };
@@ -1097,7 +1098,7 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6', 'TRUST-G', 'TRUST-S', 'TRUST-T', 'V13-ML'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6', 'TRUST-G', 'TRUST-S', 'TRUST-T', 'V13-ML', 'LIST-SPREAD'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
   { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'SOLO-Q', 'PRESS-M'] },
 ];
@@ -1224,6 +1225,10 @@ export const AGS_V12_STAKE_TIER_META = {
   // (4, 3, 2, 1.5, or 0.75). `units` is the 0–10 favorite size.
   // An edge under 0 at −150 or shorter is 2.
   'V13-ML':      { label: 'SHARP PLAY', short: 'V13',   color: '#22C55E', bg: 'rgba(34,197,94,0.14)',   units: 4,                     ribbon: null, stars: 4 },
+  // 2026-11-21: trusted spread path. NBA, NFL, CFB. The trusted spread
+  // list ahead by 3 or more at a price shorter than +100 is at least 2u.
+  // The card shows cron finalUnits.
+  'LIST-SPREAD': { label: 'SHARP PLAY', short: 'LIST',  color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 2,                     ribbon: null, stars: 2.5 },
   MONITORING:    { label: 'MONITORING', short: 'WATCH', color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 0,                     ribbon: null, stars: 0 },
   FADE:          { label: 'PASS',      short: 'PASS',   color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   units: 0,                     ribbon: null, stars: 0 },
 };

@@ -4,7 +4,9 @@ import {
   applyV13MlPath,
   buildV13MlBook,
   v13HighPriceZone,
+  v13OpensSide,
   v13PriceZone,
+  v13UsesTrustedList,
 } from './v13MlPath.js';
 
 const DAY = '2026-11-19';
@@ -276,4 +278,140 @@ test('a young book, a spread, a manual stake, and yesterday stay put', () => {
   assert.equal(early.action, 'EXEMPT');
   const none = run({ positions: [pos('zzzzzz')] });
   assert.equal(none.action, 'PASS');
+});
+
+// ─── The trusted list, from 2026-11-21, on NHL, NBA, NFL, and CFB ───────
+
+const LIST_DAY = '2026-11-21';
+
+function trusted(...wallets) {
+  const index = new Map();
+  for (const w of wallets) index.set(`ML|${w}`, { trusted: true, standing: 0.9, score: 0.02, n: 20 });
+  // A spread name must never open a moneyline.
+  index.set('SPREAD|spread1', { trusted: true, standing: 0.95, score: 0.03, n: 20 });
+  return index;
+}
+
+const LIST = trusted('tttt01', 'tttt02', 'tttt03', 'tttt04');
+
+function runList(over = {}) {
+  return applyV13MlPath({
+    units: 1,
+    pickDate: LIST_DAY,
+    sport: 'NBA',
+    market: 'ML',
+    side: 'home',
+    positions: [pos('tttt01')],
+    odds: -150,
+    steam: 0,
+    edge: 4,
+    book: book(),
+    list: LIST,
+    ...over,
+  });
+}
+
+test('from 11-21 a core-four moneyline reads the trusted list, not the tier book', () => {
+  const on = runList();
+  assert.equal(on.action, 'STAKE');
+  assert.equal(on.list, 'trusted');
+  assert.equal(on.margin, 1);
+  assert.deepEqual(on.wallets, ['tttt01']);
+  // A tier-book wallet that is not on the list no longer opens the side.
+  const tierOnly = runList({ positions: [pos('aaaaaa')] });
+  assert.equal(tierOnly.action, 'PASS');
+  assert.equal(tierOnly.reason, 'no_trusted_wallet');
+  assert.equal(tierOnly.units, 1);
+  // And a tier-book wallet on the other side no longer blocks it.
+  const tierAgainst = runList({ positions: [pos('tttt01'), pos('bbbbbb', 'away')] });
+  assert.equal(tierAgainst.action, 'STAKE');
+  assert.equal(tierAgainst.against, 0);
+});
+
+test('the list gate is the count: ahead by 1 or more fires, even and behind stay', () => {
+  const ahead = runList({ positions: [pos('tttt01'), pos('tttt02'), pos('tttt03', 'away')] });
+  assert.equal(ahead.action, 'STAKE');
+  assert.equal(ahead.margin, 1);
+  assert.equal(ahead.against, 1);
+  const even = runList({ units: 2, positions: [pos('tttt01'), pos('tttt03', 'away')] });
+  assert.equal(even.action, 'PASS');
+  assert.equal(even.reason, 'trusted_not_ahead');
+  assert.equal(even.units, 2);
+  assert.equal(even.margin, 0);
+  assert.equal(even.fires, true);
+  const behind = runList({ positions: [pos('tttt01'), pos('tttt03', 'away'), pos('tttt04', 'away')] });
+  assert.equal(behind.action, 'PASS');
+  assert.equal(behind.reason, 'trusted_not_ahead');
+  assert.equal(behind.margin, -1);
+  const spreadName = runList({ positions: [pos('spread1')] });
+  assert.equal(spreadName.reason, 'no_trusted_wallet');
+});
+
+test('the sizes on the list are the sizes on the tier book, zone for zone', () => {
+  const cases = [
+    { odds: -110, steam: 0, edge: 4 },
+    { odds: 110, steam: 2.4, edge: 4 },
+    { odds: -200, steam: 4.5, edge: 4 },
+    { odds: -200, steam: 10, edge: 4 },
+    { odds: -200, steam: -1, edge: 4 },
+    { odds: -150, steam: 3, edge: 12 },
+    { odds: -140, steam: 3, edge: 12 },
+    { odds: -150, steam: -2, edge: 12 },
+    { odds: -150, steam: null, edge: -3 },
+    { odds: -140, steam: null, edge: -3 },
+    { odds: 210, steam: 1, edge: 4 },
+    { odds: 160, steam: 1, edge: 4 },
+    { odds: -450, steam: 1, edge: 4 },
+    { odds: -150, steam: null, edge: 4 },
+    { odds: -150, steam: 1, edge: null },
+  ];
+  for (const c of cases) {
+    const tier = run({ ...c, units: 1.25 });
+    const list = runList({ ...c, units: 1.25 });
+    assert.equal(list.action, tier.action, JSON.stringify(c));
+    assert.equal(list.units, tier.units, JSON.stringify(c));
+    assert.equal(list.zone, tier.zone, JSON.stringify(c));
+    assert.equal(list.reason, tier.reason, JSON.stringify(c));
+  }
+});
+
+test('other sports, earlier dates, and a morning with no list stay on the tier book', () => {
+  const cbb = applyV13MlPath({
+    units: 1, pickDate: LIST_DAY, sport: 'CBB', market: 'ML', side: 'home',
+    positions: [pos('cccccc')], odds: -150, steam: 0, edge: 4,
+    book: buildV13MlBook(history('cccccc', { sport: 'CBB' }), LIST_DAY), list: LIST,
+  });
+  assert.equal(cbb.action, 'STAKE');
+  assert.equal(cbb.list, 'tier');
+  const before = runList({ pickDate: '2026-11-20', positions: [pos('aaaaaa')] });
+  assert.equal(before.action, 'STAKE');
+  assert.equal(before.list, 'tier');
+  const noList = runList({ list: new Map(), positions: [pos('aaaaaa')] });
+  assert.equal(noList.action, 'STAKE');
+  assert.equal(noList.list, 'tier');
+  assert.equal(v13UsesTrustedList(LIST_DAY, 'NBA', LIST), true);
+  assert.equal(v13UsesTrustedList(LIST_DAY, 'NBA', new Map()), false);
+  assert.equal(v13UsesTrustedList(LIST_DAY, 'SOC', LIST), false);
+  assert.equal(v13UsesTrustedList('2026-11-20', 'NBA', LIST), false);
+  for (const sport of ['NHL', 'NBA', 'NFL', 'CFB', 'NCAAF']) {
+    assert.equal(runList({ sport }).list, 'trusted', sport);
+  }
+});
+
+test('manual stake and an operator kill still win on the list', () => {
+  const manual = runList({ units: 5, manual: true });
+  assert.equal(manual.action, 'EXEMPT');
+  assert.equal(manual.units, 5);
+  const killed = runList({ units: 0, killed: true });
+  assert.equal(killed.action, 'EXEMPT');
+});
+
+test('the create door opens on the list only when the side is ahead', () => {
+  const args = { pickDate: LIST_DAY, sport: 'NBA', side: 'home', book: book(), list: LIST };
+  assert.equal(v13OpensSide({ ...args, positions: [pos('tttt01')] }), true);
+  assert.equal(v13OpensSide({ ...args, positions: [pos('tttt01'), pos('tttt02', 'away')] }), false);
+  assert.equal(v13OpensSide({ ...args, positions: [pos('aaaaaa')] }), false);
+  // Tier book: one qualified wallet opens, as before.
+  assert.equal(v13OpensSide({ ...args, pickDate: '2026-11-20', positions: [pos('aaaaaa')] }), true);
+  assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('tttt01')] }), false);
 });
