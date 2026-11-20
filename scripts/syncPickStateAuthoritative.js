@@ -8093,6 +8093,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const trustShip = appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && isTrustAgsBypass(pressEval);
+  // A v13 moneyline stake ships on its own. The v12 score does not have
+  // to be positive on the side: the path sizes it, the health block reads
+  // ACTIVE, and the lock has to match the bet. Before 2026-11-20 evening
+  // this read the pre-v13 status, so a v13 stake on a side the v12 score
+  // had muted kept its units and stayed SHADOW, off the board.
+  const v13Ships = !operatorKilled
+    && finalUnitsApplied > 0
+    && v13MlPolicy?.action === 'STAKE';
   const passesShipFloor = (
     appliedStatus === 'ACTIVE'
     && scoreV12Live != null
@@ -8137,11 +8145,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && mlPressPolicy?.action === 'STAKE'
-  ) || (
-    appliedStatus === 'ACTIVE'
-    && finalUnitsApplied > 0
-    && v13MlPolicy?.action === 'STAKE'
-  ) || trustShip;
+  ) || v13Ships || trustShip;
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
       appliedLockStage = 'LOCKED';
@@ -10126,7 +10130,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // and let createMissingLockedPicks rebuild the live-best side this cycle.
   // The FADE/0u stamps from the mute path above still write alongside, so
   // the grader/record see an honest 0u faded side until it's superseded.
-  if (flipSupersede && !sd.superseded) {
+  // A side the v13 moneyline path stakes is not the wrong side: it is not
+  // superseded for a v12 flip, and a supersede it already carries clears.
+  if (flipSupersede && !v13Ships && !sd.superseded) {
     patch.superseded = true;
     patch.supersededAt = now;
     patch.supersededReason = 'v12_live_side_flip';
@@ -10138,7 +10144,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.supersededReason = PRESS_M_SUPERSEDED_REASON;
     patch.supersededFlipTo = mirrorFlipTo;
     changes.push(`superseded: PRESS-M mirror → ${mirrorFlipTo} (this V12 side ${scoreV12Live.toFixed(2)} at 0u; shape on ${mirrorFlipTo})`);
-  } else if (!flipSupersede && !mirrorFlipTo && !mirrorHold && appliedLockStage === 'LOCKED' && sd.superseded) {
+  } else if ((!flipSupersede || v13Ships) && !mirrorFlipTo && !mirrorHold && appliedLockStage === 'LOCKED' && sd.superseded) {
     // Money flipped back onto this side — clear the stale supersede so the
     // Locked list can show it again. Without this, a SHADOW+superseded side
     // that re-scores > 0 stays invisible forever even at TOP units.
