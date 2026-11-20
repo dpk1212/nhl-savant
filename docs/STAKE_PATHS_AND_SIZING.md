@@ -6,7 +6,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 
 ---
 
-## TRUSTED LIST — v13 moneyline gate and the spread path, from 2026-11-21
+## TRUSTED LIST — v13 moneyline gate and the spread path, from 2026-11-20
 
 _Code: `src/lib/trustedList.js` (the list) · `src/lib/v13MlPath.js` (moneyline) · `src/lib/trustedSpreadPath.js` (spread) · built in `scripts/lib/morningRankCache.js` · wired in `scripts/syncPickStateAuthoritative.js` (create + reconcile) · tests `src/lib/trustedList.test.js`, `trustedSpreadPath.test.js`, `v13MlPath.test.js`, `v13MlStamp.test.js`_
 

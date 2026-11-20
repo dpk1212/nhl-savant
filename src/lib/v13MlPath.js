@@ -1,7 +1,7 @@
 /**
  * v13 moneyline. From 2026-11-19.
  *
- * From 2026-11-21, in every sport, the wallets are the trusted list for
+ * From 2026-11-20, in every sport, the wallets are the trusted list for
  * moneylines that morning (trustedList.js). The branch fires when the
  * trusted wallets on this side outnumber the trusted wallets on the
  * other side. A wallet on both sides counts on its larger ticket.

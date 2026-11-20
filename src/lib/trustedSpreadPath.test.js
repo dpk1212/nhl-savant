@@ -124,7 +124,7 @@ test('NHL, another market, an earlier date, manual, and a kill change nothing', 
   assert.equal(run({ sport: 'CBB' }).reason, 'sport');
   assert.equal(run({ market: 'ML' }).reason, 'not_spread');
   assert.equal(run({ market: 'TOTAL' }).reason, 'not_spread');
-  assert.equal(run({ pickDate: '2026-11-20' }).action, 'EXEMPT');
+  assert.equal(run({ pickDate: '2026-11-19' }).action, 'EXEMPT');
   assert.equal(run({ manual: true }).action, 'EXEMPT');
   assert.equal(run({ killed: true }).action, 'EXEMPT');
   assert.equal(run({ manual: true }).units, 0);
@@ -169,6 +169,6 @@ test('the stamp carries every field on every action', () => {
     assert.equal(stamp.v8_trustedSpreadUnits, p.units);
   }
   assert.deepEqual(trustedSpreadStamp(run({ market: 'ML' })), {});
-  assert.deepEqual(trustedSpreadStamp(run({ pickDate: '2026-11-20' })), {});
+  assert.deepEqual(trustedSpreadStamp(run({ pickDate: '2026-11-19' })), {});
   assert.deepEqual(trustedSpreadStamp(null), {});
 });
