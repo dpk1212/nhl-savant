@@ -3402,7 +3402,7 @@ async function createMissingLockedPicks({
       const spreadSteamOpens = marketType === 'SPREAD' && qualifyingSpreadSteam({ sport, side, positions }).length > 0;
       const totalMiniOpens = marketType === 'TOTAL' && qualifyingTotalMinis({ sport, side, positions }).length > 0;
       const pressOpens = marketType === 'ML' && qualifyingPresses({ sport, side, positions }).length > 0;
-      // On the trusted list (every sport from 2026-11-21) the side opens
+      // On the trusted list (every sport from 2026-11-20) the side opens
       // when the list is ahead on it. On a morning with no list, one
       // tier-book wallet.
       const v13Opens = marketType === 'ML' && v13OpensSide({ pickDate: TARGET_DATE, sport, side, positions });
@@ -4996,7 +4996,7 @@ async function createMissingLockedPicks({
       }
 
       // Trusted spread path. Last on a spread. NBA, NFL, and CFB from
-      // 2026-11-21. The trusted spread list ahead by 3 or more at a price
+      // 2026-11-20. The trusted spread list ahead by 3 or more at a price
       // shorter than +100, on a side the v12 score is positive on, is at
       // least 2u. The list behind is 0. Everything else stays on the
       // stake that arrived. An operator kill stays. The T-15 freeze
@@ -8056,7 +8056,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
   // Trusted spread path. Last on a spread. NBA, NFL, and CFB from
-  // 2026-11-21. The trusted spread list ahead by 3 or more at a price
+  // 2026-11-20. The trusted spread list ahead by 3 or more at a price
   // shorter than +100, on a side the v12 score is positive on, is at
   // least 2u. The list behind is 0. Everything else stays on the stake
   // that arrived. Manual stake and an operator kill stay. The T-15 freeze

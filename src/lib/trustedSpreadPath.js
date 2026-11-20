@@ -1,5 +1,5 @@
 /**
- * Trusted spread path. From 2026-11-21.
+ * Trusted spread path. From 2026-11-20.
  *
  * The count is the trusted spread wallets on this side minus the trusted
  * spread wallets on the other side, on this morning's list

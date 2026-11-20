@@ -1,5 +1,5 @@
 /**
- * Trusted list. From 2026-11-21.
+ * Trusted list. From 2026-11-20.
  *
  * Every morning each wallet gets one score per market, from graded bets
  * dated before that morning. The score has two parts, both in points of
@@ -33,7 +33,7 @@
  * totals stake reads it. The totals count is stamped for the record only.
  */
 
-export const TRUSTED_LIST_FROM = '2026-11-21';
+export const TRUSTED_LIST_FROM = '2026-11-20';
 export const TRUSTED_LIST_VERSION = 1;
 export const TRUSTED_LIST_BAR = 0.8;
 export const TRUSTED_LIST_MIN_PRIOR = 300;

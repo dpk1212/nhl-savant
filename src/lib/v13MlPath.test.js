@@ -280,7 +280,7 @@ test('a young book, a spread, a manual stake, and yesterday stay put', () => {
   assert.equal(none.action, 'PASS');
 });
 
-// ─── The trusted list, from 2026-11-21, on NHL, NBA, NFL, and CFB ───────
+// ─── The trusted list, from 2026-11-20, in every sport ───────
 
 const LIST_DAY = '2026-11-21';
 
@@ -311,7 +311,7 @@ function runList(over = {}) {
   });
 }
 
-test('from 11-21 a moneyline reads the trusted list, not the tier book', () => {
+test('from the list day a moneyline reads the trusted list, not the tier book', () => {
   const on = runList();
   assert.equal(on.action, 'STAKE');
   assert.equal(on.list, 'trusted');
@@ -399,7 +399,7 @@ test('every sport reads the list; earlier dates and a morning with no list stay 
   assert.equal(draw.action, 'PASS');
   assert.equal(draw.reason, 'trusted_not_ahead');
   assert.equal(draw.margin, 0);
-  const before = runList({ pickDate: '2026-11-20', positions: [pos('aaaaaa')] });
+  const before = runList({ pickDate: '2026-11-19', positions: [pos('aaaaaa')] });
   assert.equal(before.action, 'STAKE');
   assert.equal(before.list, 'tier');
   const noList = runList({ list: new Map(), positions: [pos('aaaaaa')] });
@@ -409,7 +409,7 @@ test('every sport reads the list; earlier dates and a morning with no list stay 
   assert.equal(v13UsesTrustedList(LIST_DAY, 'NBA', new Map()), false);
   assert.equal(v13UsesTrustedList(LIST_DAY, 'SOC', LIST), true);
   assert.equal(v13UsesTrustedList(LIST_DAY, '', LIST), false);
-  assert.equal(v13UsesTrustedList('2026-11-20', 'NBA', LIST), false);
+  assert.equal(v13UsesTrustedList('2026-11-19', 'NBA', LIST), false);
   for (const sport of ['NHL', 'NBA', 'NFL', 'CFB', 'NCAAF']) {
     assert.equal(runList({ sport }).list, 'trusted', sport);
   }
@@ -429,7 +429,7 @@ test('the create door opens on the list only when the side is ahead', () => {
   assert.equal(v13OpensSide({ ...args, positions: [pos('tttt01'), pos('tttt02', 'away')] }), false);
   assert.equal(v13OpensSide({ ...args, positions: [pos('aaaaaa')] }), false);
   // Tier book: one qualified wallet opens, as before.
-  assert.equal(v13OpensSide({ ...args, pickDate: '2026-11-20', positions: [pos('aaaaaa')] }), true);
+  assert.equal(v13OpensSide({ ...args, pickDate: '2026-11-19', positions: [pos('aaaaaa')] }), true);
   assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('tttt01')] }), true);
   assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('aaaaaa')] }), false);
 });

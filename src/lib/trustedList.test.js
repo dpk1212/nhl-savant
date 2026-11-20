@@ -228,7 +228,7 @@ test('a soccer draw ticket by a trusted wallet counts against both teams', () =>
 
 test('the list is live from its first day; four sports set the standing', () => {
   assert.equal(isTrustedListLive(TRUSTED_LIST_FROM), true);
-  assert.equal(isTrustedListLive('2026-11-20'), false);
+  assert.equal(isTrustedListLive('2026-11-19'), false);
   assert.equal(isTrustedListLive(null), false);
   for (const s of ['NHL', 'NBA', 'NFL', 'CFB', 'NCAAF', 'nba']) assert.equal(trustedListSport(s), true, s);
   for (const s of ['CBB', 'SOC', 'MLB', 'ATP', 'UFC', '']) assert.equal(trustedListSport(s), false, s);
@@ -244,7 +244,7 @@ test('the count stamp: moneylines in every sport, spreads and totals on the four
   assert.deepEqual(stamp.v8_trustedListAgainst, ['aaaaa1']);
   assert.equal(stamp.v8_trustedListMargin, -1);
   const args = { pickDate: TRUSTED_LIST_FROM, sport: 'NBA', market: 'TOTAL', side: 'under', positions, list };
-  assert.deepEqual(trustedCountStamp({ ...args, pickDate: '2026-11-20' }), {});
+  assert.deepEqual(trustedCountStamp({ ...args, pickDate: '2026-11-19' }), {});
   assert.deepEqual(trustedCountStamp({ ...args, sport: 'CBB' }), {});
   assert.deepEqual(trustedCountStamp({ ...args, sport: 'SOC', market: 'SPREAD' }), {});
   const ml = { ...args, market: 'ML', side: 'home', positions: [pos('aaaaa1', 'home', 100, 'ML')] };

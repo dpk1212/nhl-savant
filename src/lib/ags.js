@@ -1225,7 +1225,7 @@ export const AGS_V12_STAKE_TIER_META = {
   // (4, 3, 2, 1.5, or 0.75). `units` is the 0–10 favorite size.
   // An edge under 0 at −150 or shorter is 2.
   'V13-ML':      { label: 'SHARP PLAY', short: 'V13',   color: '#22C55E', bg: 'rgba(34,197,94,0.14)',   units: 4,                     ribbon: null, stars: 4 },
-  // 2026-11-21: trusted spread path. NBA, NFL, CFB. The trusted spread
+  // 2026-11-20: trusted spread path. NBA, NFL, CFB. The trusted spread
   // list ahead by 3 or more at a price shorter than +100 is at least 2u.
   // The card shows cron finalUnits.
   'LIST-SPREAD': { label: 'SHARP PLAY', short: 'LIST',  color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 2,                     ribbon: null, stars: 2.5 },
