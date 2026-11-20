@@ -3402,8 +3402,9 @@ async function createMissingLockedPicks({
       const spreadSteamOpens = marketType === 'SPREAD' && qualifyingSpreadSteam({ sport, side, positions }).length > 0;
       const totalMiniOpens = marketType === 'TOTAL' && qualifyingTotalMinis({ sport, side, positions }).length > 0;
       const pressOpens = marketType === 'ML' && qualifyingPresses({ sport, side, positions }).length > 0;
-      // On the trusted list (NHL, NBA, NFL, CFB from 2026-11-21) the side
-      // opens when the list is ahead on it. Elsewhere one tier-book wallet.
+      // On the trusted list (every sport from 2026-11-21) the side opens
+      // when the list is ahead on it. On a morning with no list, one
+      // tier-book wallet.
       const v13Opens = marketType === 'ML' && v13OpensSide({ pickDate: TARGET_DATE, sport, side, positions });
       if (!top3Early.fires && !gapEarly.fires && !mlMiniOpens && !spreadSteamOpens && !totalMiniOpens && !pressOpens && !v13Opens && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
 

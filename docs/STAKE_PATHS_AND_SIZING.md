@@ -16,13 +16,13 @@ _Code: `src/lib/trustedList.js` (the list) · `src/lib/v13MlPath.js` (moneyline)
 
 **The count.** On one game and market: trusted wallets on this side minus trusted wallets on the other side, from the live positions. A wallet on both sides counts once, on its larger ticket.
 
-**v13 moneyline (NHL, NBA, NFL, CFB).** The wallet gate is the count: **ahead by 1 or more** fires. Zones and sizes are unchanged (edge under 0 → 2u at −150 or shorter; edge 0–10 by steam → 4 / 2 / 0.75 / 4, steam against 0; edge 10+ → 3u at −150 or shorter, 1.5u longer; juice past −425 and a missing edge / steam / price pass; dog cap after). New PASS reasons `no_trusted_wallet`, `trusted_not_ahead`. Stamps `v8_v13MlList` (`trusted` | `tier`) and `v8_v13MlMargin`. Every other sport, and a morning with no list, stay on the tier book (confirmed, then tier 4+ form ON, nobody qualified against). V12+ ML disable is unchanged: a v13 PASS is 0u.
+**v13 moneyline (every sport).** The wallet gate is the count: **ahead by 1 or more** fires. Zones and sizes are unchanged (edge under 0 → 2u at −150 or shorter; edge 0–10 by steam → 4 / 2 / 0.75 / 4, steam against 0; edge 10+ → 3u at −150 or shorter, 1.5u longer; juice past −425 and a missing edge / steam / price pass; dog cap after). New PASS reasons `no_trusted_wallet`, `trusted_not_ahead`. Stamps `v8_v13MlList` (`trusted` | `tier`) and `v8_v13MlMargin`. A morning with no list stays on the tier book (confirmed, then tier 4+ form ON, nobody qualified against). The four-sport limit on this gate was lifted the day before go-live on Dale's call; the list itself is unchanged, and NHL / NBA / NFL / CFB scores still set the standing. V12+ ML disable is unchanged: a v13 PASS is 0u.
 
 **Trusted spread path (NBA, NFL, CFB).** Runs last on a spread. **Ahead by 3 or more, price shorter than +100, v12 score positive → at least 2u** (tier `LIST-SPREAD`, `v8_rescuedBy=list-spread`; a stake of 2u or more that arrived stays). **Behind → 0u** (`mutedBy=list-spread`). Everything else stays on the stake that arrived. NHL puck lines are out: the count ran backwards there (trusted NHL spread bets 39-56, −16.4u). Stamps `v8_trustedSpread*`, `v8_unitsPreTrustedSpread`. Manual stake, operator kill, and the T-15 freeze win.
 
 **Totals.** No totals stake reads the list. Trusted totals bets were 194-209, −20.6u against their own prices. The totals count is stamped for the record only.
 
-**Every side.** `v8_trustedListFor`, `v8_trustedListAgainst`, `v8_trustedListMargin` on every NHL / NBA / NFL / CFB moneyline, spread, and total side.
+**Every side.** `v8_trustedListFor`, `v8_trustedListAgainst`, `v8_trustedListMargin` on every moneyline side in every sport, and on every NHL / NBA / NFL / CFB spread and total side.
 
 **Evidence, Oct 6 → Nov 19, the shipped functions on the lists the morning build would have produced each day** (`research/skill/35_replay.mjs`, `39_gate_check.mjs`). Halves cut Oct 16 / Oct 28. All in-sample.
 
@@ -39,7 +39,9 @@ _Code: `src/lib/trustedList.js` (the list) · `src/lib/v13MlPath.js` (moneyline)
 | Spread stakes the path zeroes, as they ran | 5-6 | −0.8u on 25.5u | +2.5 · −5.1 · +1.8 |
 | Every two-sided NBA/NFL/CFB spread, list behind, 1u | 193-243 | −56.8u | −2.6 · −27.7 · −26.5 |
 
-The ML rows read a missing steam stamp as flat (steam is stamped on every side from Nov 15). Read strictly, where a missing steam passes, the shipped gate is 69-35, +31.9u on 282.8u. The spread mute rests on the wide sample, not on the 11 stakes it would have zeroed.
+**Outside NHL / NBA / NFL / CFB the moneyline gate is not proven** (`research/skill/40_all_sports.mjs`, 642 graded board sides, steam stamped on 167). Trusted wallets' own moneyline bets there: 732-565, +78.0u, +2.0 points against their prices, all three windows green; rated but not trusted 3215-2755, +39.0u, +0.4 points. On the board at v13 sizes, missing steam read as flat: tier book gate 86-54, +26.7u on 350.0u; trusted list ahead 114-74, +5.1u on 499.5u (+7.9 · −1.8 · −1.1). Stamped sides only: tier 27-20, +2.5u on 116.0u; list 35-16, +17.7u on 130.5u. Soccer list +19.8u on 182.0u (tier +30.6u on 201.5u); CS2 list −15.8u on 117.0u (tier +2.3u on 49.0u); ATP list −4.8u on 83.5u (tier −10.3u on 45.0u). The list behind at 1u flat: 37-59, −19.0u.
+
+The ML rows in the table read a missing steam stamp as flat (steam is stamped on every side from Nov 15). Read strictly, where a missing steam passes, the shipped gate is 69-35, +31.9u on 282.8u. The spread mute rests on the wide sample, not on the 11 stakes it would have zeroed.
 
 ---
 
