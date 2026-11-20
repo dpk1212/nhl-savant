@@ -61,6 +61,12 @@ import {
   rejectNonFullGameBoardPosition,
 } from './lib/totalMarketFilter.js';
 import { minutesToCommence, shouldSkipScanDropExit } from '../src/lib/actionLockPin.js';
+import {
+  positionDocId,
+  positionDocIdLegacy,
+  resolvePositionDocId,
+  softPositionKey,
+} from './lib/positionIdentity.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -152,15 +158,6 @@ function todayStr() {
 
 function utcDateStr() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function positionDocId(pos) {
-  return `${pos.date}_${pos.sport}_${pos.gameKey}_${pos.wallet.slice(-8)}_${pos.marketType}_${pos.side}`;
-}
-
-/** Soft key used when a legacy PENDING doc has no Polymarket asset id yet. */
-function softPositionKey(wallet, sport, gameKey, marketType, side) {
-  return `${String(wallet || '').toLowerCase()}|${sport}|${gameKey}|${marketType}|${side}`;
 }
 
 /**
@@ -1045,7 +1042,7 @@ async function main() {
   // Write to Firebase in batches
   let written = 0, skipped = 0, updated = 0, reopened = 0;
   const BATCH_SIZE = 400;
-  const presentDocIds = new Set(positions.map(positionDocId));
+  const presentDocIds = new Set();
 
   for (let i = 0; i < positions.length; i += BATCH_SIZE) {
     const chunk = positions.slice(i, i + BATCH_SIZE);
@@ -1053,7 +1050,15 @@ async function main() {
     let batchOps = 0;
 
     for (const pos of chunk) {
-      const docId = positionDocId(pos);
+      const nextId = positionDocId(pos);
+      const legacyId = positionDocIdLegacy(pos);
+      let legacyData = null;
+      if (nextId !== legacyId) {
+        const legacySnap = await db.collection(COLLECTION).doc(legacyId).get();
+        if (legacySnap.exists) legacyData = legacySnap.data();
+      }
+      const { id: docId } = resolvePositionDocId(pos, legacyData);
+      presentDocIds.add(docId);
       const ref = db.collection(COLLECTION).doc(docId);
       const existing = await ref.get();
 
@@ -1239,7 +1244,10 @@ async function main() {
           vault_hcTier: pos.vault_hcTier,
           vault_isHcWallet: pos.vault_isHcWallet,
         };
-        if (pos.entryLine != null) updatePayload.entryLine = pos.entryLine;
+        if (pos.entryLine != null) {
+          const sameAsset = !data.asset || !pos.asset || String(data.asset) === String(pos.asset);
+          if (sameAsset) updatePayload.entryLine = pos.entryLine;
+        }
         if (pos.spreadLine != null && !data.spreadLine) updatePayload.spreadLine = pos.spreadLine;
         if (pos.totalLine != null && !data.totalLine) updatePayload.totalLine = pos.totalLine;
         if (pos.title && !data.title) updatePayload.title = String(pos.title).slice(0, 120);
