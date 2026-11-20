@@ -226,7 +226,7 @@ test('a soccer draw ticket by a trusted wallet counts against both teams', () =>
   assert.equal(trustedSideCount({ market: 'ML', side: 'draw', positions, list }).margin, 1);
 });
 
-test('the list is live from its first day on the four sports it was tested on', () => {
+test('the list is live from its first day; four sports set the standing', () => {
   assert.equal(isTrustedListLive(TRUSTED_LIST_FROM), true);
   assert.equal(isTrustedListLive('2026-11-20'), false);
   assert.equal(isTrustedListLive(null), false);
@@ -234,7 +234,7 @@ test('the list is live from its first day on the four sports it was tested on', 
   for (const s of ['CBB', 'SOC', 'MLB', 'ATP', 'UFC', '']) assert.equal(trustedListSport(s), false, s);
 });
 
-test('the count stamp writes on the four sports and three markets, and is empty otherwise', () => {
+test('the count stamp: moneylines in every sport, spreads and totals on the four, empty otherwise', () => {
   const list = new Map([...listOf('TOTAL', 'aaaaa1'), ...listOf('ML', 'aaaaa1')]);
   const positions = [pos('aaaaa1', 'over', 100, 'TOTAL')];
   const stamp = trustedCountStamp({
@@ -246,6 +246,12 @@ test('the count stamp writes on the four sports and three markets, and is empty 
   const args = { pickDate: TRUSTED_LIST_FROM, sport: 'NBA', market: 'TOTAL', side: 'under', positions, list };
   assert.deepEqual(trustedCountStamp({ ...args, pickDate: '2026-11-20' }), {});
   assert.deepEqual(trustedCountStamp({ ...args, sport: 'CBB' }), {});
+  assert.deepEqual(trustedCountStamp({ ...args, sport: 'SOC', market: 'SPREAD' }), {});
+  const ml = { ...args, market: 'ML', side: 'home', positions: [pos('aaaaa1', 'home', 100, 'ML')] };
+  for (const sport of ['SOC', 'ATP', 'CS2', 'CBB', 'NBA']) {
+    assert.equal(trustedCountStamp({ ...ml, sport }).v8_trustedListMargin, 1, sport);
+  }
+  assert.deepEqual(trustedCountStamp({ ...ml, sport: '' }), {});
   assert.deepEqual(trustedCountStamp({ ...args, market: 'PROP' }), {});
   assert.deepEqual(trustedCountStamp({ ...args, list: new Map() }), {});
 });

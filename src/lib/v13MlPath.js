@@ -1,15 +1,13 @@
 /**
  * v13 moneyline. From 2026-11-19.
  *
- * From 2026-11-21, on NHL, NBA, NFL, and CFB, the wallets are the
- * trusted list for moneylines that morning (trustedList.js). The branch
- * fires when the trusted wallets on this side outnumber the trusted
- * wallets on the other side. A wallet on both sides counts on its
- * larger ticket.
+ * From 2026-11-21, in every sport, the wallets are the trusted list for
+ * moneylines that morning (trustedList.js). The branch fires when the
+ * trusted wallets on this side outnumber the trusted wallets on the
+ * other side. A wallet on both sides counts on its larger ticket.
  *
- * On every other sport, on every date before that, and on a morning the
- * list did not build, a wallet qualifies on the bets dated before this
- * morning. Confirmed comes first, on the sport: 6 or more graded bets, a
+ * On every date before that, and on a morning the list did not build, a
+ * wallet qualifies on the bets dated before this morning. Confirmed comes first, on the sport: 6 or more graded bets, a
  * win rate of at least 55, and dollar ROI above 3. Then the moneyline
  * book. Tier 4 or 5, form on, and that book is at least 15 days old. A
  * later copy of the same game, side, stake, and dollars is one bet. The
@@ -44,9 +42,7 @@ import { oddsCap } from './oddsCap.js';
 import { dedupePositionCopies, sportBookConfirmed } from './sportConfirmed.js';
 import { buildTrustState, isTrustOn } from './walletTrustStatus.js';
 import { mlMiniWalletId, mlPriceBand, normMlMiniMarket, normMlMiniSport } from './mlMiniRung.js';
-import {
-  isTrustedListLive, trustedListReady, trustedListSport, trustedSideCount,
-} from './trustedList.js';
+import { isTrustedListLive, trustedListReady, trustedSideCount } from './trustedList.js';
 
 export const V13_ML_FROM = '2026-11-19';
 export const V13_ML_EDGE_MAX = 10;
@@ -274,12 +270,12 @@ export function qualifyingV13Wallets({ sport, side, positions, book = null } = {
 }
 
 /**
- * True when this side reads the trusted list: the four fitted sports,
- * from the list's first day, on a morning the list built. A morning with
- * no list reads the tier book, and the stamp says which one it read.
+ * True when this side reads the trusted list: any sport, from the list's
+ * first day, on a morning the list built. A morning with no list reads
+ * the tier book, and the stamp says which one it read.
  */
 export function v13UsesTrustedList(pickDate, sport, list = null) {
-  return isTrustedListLive(pickDate) && trustedListSport(sport) && trustedListReady(list);
+  return isTrustedListLive(pickDate) && !!normMlMiniSport(sport) && trustedListReady(list);
 }
 
 /**

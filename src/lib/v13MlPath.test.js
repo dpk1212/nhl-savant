@@ -311,7 +311,7 @@ function runList(over = {}) {
   });
 }
 
-test('from 11-21 a core-four moneyline reads the trusted list, not the tier book', () => {
+test('from 11-21 a moneyline reads the trusted list, not the tier book', () => {
   const on = runList();
   assert.equal(on.action, 'STAKE');
   assert.equal(on.list, 'trusted');
@@ -375,14 +375,30 @@ test('the sizes on the list are the sizes on the tier book, zone for zone', () =
   }
 });
 
-test('other sports, earlier dates, and a morning with no list stay on the tier book', () => {
-  const cbb = applyV13MlPath({
+test('every sport reads the list; earlier dates and a morning with no list stay on the tier book', () => {
+  // A tier-book wallet in another sport no longer opens the side. The list does.
+  const cbbArgs = {
     units: 1, pickDate: LIST_DAY, sport: 'CBB', market: 'ML', side: 'home',
-    positions: [pos('cccccc')], odds: -150, steam: 0, edge: 4,
+    odds: -150, steam: 0, edge: 4,
     book: buildV13MlBook(history('cccccc', { sport: 'CBB' }), LIST_DAY), list: LIST,
-  });
-  assert.equal(cbb.action, 'STAKE');
-  assert.equal(cbb.list, 'tier');
+  };
+  const cbbTier = applyV13MlPath({ ...cbbArgs, positions: [pos('cccccc')] });
+  assert.equal(cbbTier.action, 'PASS');
+  assert.equal(cbbTier.reason, 'no_trusted_wallet');
+  assert.equal(cbbTier.list, 'trusted');
+  const cbbList = applyV13MlPath({ ...cbbArgs, positions: [pos('tttt01')] });
+  assert.equal(cbbList.action, 'STAKE');
+  assert.equal(cbbList.list, 'trusted');
+  assert.equal(cbbList.units, runList().units);
+  for (const sport of ['SOC', 'ATP', 'CS2', 'LOL', 'UFC', 'MLB', 'WNBA', 'CBB', 'NCAAB']) {
+    assert.equal(runList({ sport }).list, 'trusted', sport);
+    assert.equal(runList({ sport }).action, 'STAKE', sport);
+  }
+  // Three-way: a trusted wallet on the draw counts against home.
+  const draw = runList({ sport: 'SOC', positions: [pos('tttt01'), pos('tttt02', 'draw')] });
+  assert.equal(draw.action, 'PASS');
+  assert.equal(draw.reason, 'trusted_not_ahead');
+  assert.equal(draw.margin, 0);
   const before = runList({ pickDate: '2026-11-20', positions: [pos('aaaaaa')] });
   assert.equal(before.action, 'STAKE');
   assert.equal(before.list, 'tier');
@@ -391,7 +407,8 @@ test('other sports, earlier dates, and a morning with no list stay on the tier b
   assert.equal(noList.list, 'tier');
   assert.equal(v13UsesTrustedList(LIST_DAY, 'NBA', LIST), true);
   assert.equal(v13UsesTrustedList(LIST_DAY, 'NBA', new Map()), false);
-  assert.equal(v13UsesTrustedList(LIST_DAY, 'SOC', LIST), false);
+  assert.equal(v13UsesTrustedList(LIST_DAY, 'SOC', LIST), true);
+  assert.equal(v13UsesTrustedList(LIST_DAY, '', LIST), false);
   assert.equal(v13UsesTrustedList('2026-11-20', 'NBA', LIST), false);
   for (const sport of ['NHL', 'NBA', 'NFL', 'CFB', 'NCAAF']) {
     assert.equal(runList({ sport }).list, 'trusted', sport);
@@ -413,5 +430,6 @@ test('the create door opens on the list only when the side is ahead', () => {
   assert.equal(v13OpensSide({ ...args, positions: [pos('aaaaaa')] }), false);
   // Tier book: one qualified wallet opens, as before.
   assert.equal(v13OpensSide({ ...args, pickDate: '2026-11-20', positions: [pos('aaaaaa')] }), true);
-  assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('tttt01')] }), false);
+  assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('tttt01')] }), true);
+  assert.equal(v13OpensSide({ ...args, sport: 'CBB', positions: [pos('aaaaaa')] }), false);
 });

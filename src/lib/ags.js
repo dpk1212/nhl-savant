@@ -1084,7 +1084,7 @@ export const AGS_V12_STAKE_PATH = {
   'TRUST-S':     'press ladder · spread: wallet trusted in this spread market is for, none against',
   'TRUST-T':     'press ladder · total: two or more wallets trusted in this totals market are for, none against',
   'PRESS-R6':    'press ladder · two veterans',
-  'V13-ML':      'v13 moneyline · trusted list ahead (NHL, NBA, NFL, CFB) or qualified, nobody against · edge under 0 at −150 or shorter, edge 0–10 by steam, edge 10+ by price',
+  'V13-ML':      'v13 moneyline · trusted list ahead · edge under 0 at −150 or shorter, edge 0–10 by steam, edge 10+ by price',
   'LIST-SPREAD': 'trusted list · spread: trusted spread wallets ahead by 3 or more at a price shorter than +100',
   MONITORING:    'watch',
   FADE:          'muted',

@@ -28,9 +28,9 @@
  * A side's count is the trusted wallets on it minus the trusted wallets
  * on the other side. A wallet on both sides counts on its larger ticket.
  *
- * Moneylines and spreads read the list. The totals list lost to its own
- * prices on the test, so no totals stake reads it. The totals count is
- * stamped for the record only.
+ * Moneylines read the list in every sport. Spreads read it on NBA, NFL,
+ * and CFB. The totals list lost to its own prices on the test, so no
+ * totals stake reads it. The totals count is stamped for the record only.
  */
 
 export const TRUSTED_LIST_FROM = '2026-11-21';
@@ -84,7 +84,7 @@ export function normTrustedMarket(market) {
   return u;
 }
 
-/** True for the sports the list was tested on. */
+/** NHL, NBA, NFL, CFB: the sports whose scores set the standing. */
 export function trustedListSport(sport) {
   return STANDING_SPORTS.has(normTrustedSport(sport));
 }
@@ -583,13 +583,16 @@ export const TRUSTED_COUNT_STAMP_FIELDS = Object.freeze([
 ]);
 
 /**
- * The count on one side, for the record. NHL, NBA, NFL, and CFB, on
- * moneylines, spreads, and totals, from the list's first day. Empty when
- * the side is outside that or the list did not build.
+ * The count on one side, for the record, from the list's first day.
+ * Moneylines in every sport. Spreads and totals on NHL, NBA, NFL, and
+ * CFB. Empty when the side is outside that or the list did not build.
  */
 export function trustedCountStamp({ pickDate, sport, market, side, positions, list = null } = {}) {
-  if (!isTrustedListLive(pickDate) || !trustedListSport(sport) || !trustedListReady(list)) return {};
-  if (!TRUSTED_LIST_MARKETS.includes(normTrustedMarket(market))) return {};
+  if (!isTrustedListLive(pickDate) || !trustedListReady(list)) return {};
+  const mkt = normTrustedMarket(market);
+  if (!TRUSTED_LIST_MARKETS.includes(mkt)) return {};
+  if (!normTrustedSport(sport)) return {};
+  if (mkt !== 'ML' && !trustedListSport(sport)) return {};
   const count = trustedSideCount({ market, side, positions, list });
   return {
     v8_trustedListFor: count.for,
