@@ -30,6 +30,12 @@
  * morning, and up in units on them at 1 unit a bet at its own prices.
  * The line read alone let a losing wallet onto the moneyline list.
  *
+ * Moneylines also read a wider count: every trusted wallet with 10 or
+ * more graded bets in that sport and market, up or down. A moneyline
+ * that is ahead on the wider count but not on the profitable one is
+ * staked at half (v13MlPath.js). A wallet with under 10 bets there
+ * counts on neither.
+ *
  * A side's count is the trusted wallets on it minus the trusted wallets
  * on the other side. A wallet on both sides counts on its larger ticket.
  *
@@ -39,7 +45,7 @@
  */
 
 export const TRUSTED_LIST_FROM = '2026-11-20';
-export const TRUSTED_LIST_VERSION = 2;
+export const TRUSTED_LIST_VERSION = 3;
 export const TRUSTED_LIST_BAR = 0.8;
 export const TRUSTED_LIST_MIN_PRIOR = 300;
 /** Graded bets in the sport and market before a trusted wallet counts there. */
@@ -342,6 +348,16 @@ function profitableSports(state, wallet, market) {
   return out.sort();
 }
 
+/** The sports where this wallet has 10 or more bets in this market, up or down, sorted. */
+function playedSports(state, wallet, market) {
+  const out = [];
+  for (const [key, r] of state.sport.get(wallet) || []) {
+    const [m, sport] = key.split('|');
+    if (m === market && r.n >= TRUSTED_SPORT_MIN_BETS) out.push(sport);
+  }
+  return out.sort();
+}
+
 function morningParams(state) {
   const par = {};
   for (const m of TRUSTED_LIST_MARKETS) {
@@ -509,6 +525,7 @@ export function buildTrustedList(rows, asOf) {
         score: sc.score,
         n: sc.n,
         sports: profitableSports(state, wallet, market),
+        played: playedSports(state, wallet, market),
       });
     }
   }
@@ -534,6 +551,7 @@ export function serializeTrustedList(index, asOf) {
       score: round(info.score, 5),
       n: info.n ?? 0,
       sports: Array.isArray(info.sports) ? info.sports : [],
+      played: Array.isArray(info.played) ? info.played : [],
     });
   }
   rows.sort((a, b) => a.market.localeCompare(b.market) || a.wallet.localeCompare(b.wallet));
@@ -550,15 +568,20 @@ export function hydrateTrustedList(payload) {
       score: Number.isFinite(Number(row.score)) ? Number(row.score) : null,
       n: Number(row.n) || 0,
       sports: Array.isArray(row.sports) ? row.sports.map((x) => normTrustedSport(x)) : [],
+      played: Array.isArray(row.played) ? row.played.map((x) => normTrustedSport(x)) : [],
     });
   }
   return index;
 }
 
-/** Trusted, and profitable on 10 or more bets in this sport and market. */
-function countsIn(info, sport) {
+/**
+ * Trusted, and profitable on 10 or more bets in this sport and market.
+ * `wide` drops the profit: trusted with 10 or more bets there.
+ */
+function countsIn(info, sport, wide = false) {
   const sp = normTrustedSport(sport);
-  return info?.trusted === true && !!sp && Array.isArray(info.sports) && info.sports.includes(sp);
+  const where = wide ? info?.played : info?.sports;
+  return info?.trusted === true && !!sp && Array.isArray(where) && where.includes(sp);
 }
 
 export function isTrustedWalletOn(market, wallet, sport, list = null) {
@@ -572,11 +595,14 @@ export function isTrustedWalletOn(market, wallet, sport, list = null) {
  * `positions` are the live positions on that game. A row with a market
  * that is not this market is skipped. A wallet on both sides counts on
  * its larger ticket. A wallet counts only where it is profitable: the
- * row's sport, or `sport` when the row carries none.
+ * row's sport, or `sport` when the row carries none. With `wide`, a
+ * trusted wallet with 10 or more bets there counts, up or down.
  *
  * @returns {{ for: string[], against: string[], margin: number }}
  */
-export function trustedSideCount({ market, side, positions, sport = null, list = null } = {}) {
+export function trustedSideCount({
+  market, side, positions, sport = null, list = null, wide = false,
+} = {}) {
   const index = list instanceof Map ? list : listIndex;
   const mkt = normTrustedMarket(market);
   const mySide = String(side || '').toLowerCase();
@@ -589,7 +615,7 @@ export function trustedSideCount({ market, side, positions, sport = null, list =
     const wallet = trustedWalletId(raw);
     const rowSide = String(raw?.side || '').toLowerCase();
     if (!wallet || !rowSide) continue;
-    if (!countsIn(index.get(listKey(mkt, wallet)), raw?.sport || sport)) continue;
+    if (!countsIn(index.get(listKey(mkt, wallet)), raw?.sport || sport, wide === true)) continue;
     const invested = Number(raw?.invested ?? raw?.size);
     const size = invested > 0 ? invested : 0;
     if (!held.has(wallet)) held.set(wallet, new Map());

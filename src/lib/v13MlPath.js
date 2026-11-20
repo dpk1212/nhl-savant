@@ -6,6 +6,15 @@
  * trusted wallets on this side outnumber the trusted wallets on the
  * other side. A wallet on both sides counts on its larger ticket.
  *
+ * Two counts, from 2026-11-20 evening. The wide count is every trusted
+ * wallet with 10 or more graded moneyline bets in the sport, up or down
+ * in units. The profitable count is the ones that are up. The side has
+ * to be ahead by 1 on the wide count to fire. Ahead on the profitable
+ * count too, it takes the full size. Ahead on the wide count only, the
+ * side rests on wallets that lead the line and are down in units, and it
+ * takes half the size, to the nearest quarter unit, never under 0.25.
+ * A trusted wallet with under 10 bets there counts on neither.
+ *
  * On every date before that, and on a morning the list did not build, a
  * wallet qualifies on the bets dated before this morning. Confirmed comes first, on the sport: 6 or more graded bets, a
  * win rate of at least 55, and dollar ROI above 3. Then the moneyline
@@ -126,7 +135,15 @@ function sized(armed, units, zone, reason) {
   if (!(capped > 0)) {
     return { ...armed, action: 'MUTE', units: 0, zone, reason: 'dog' };
   }
-  return { ...armed, action: 'STAKE', units: capped, zone, reason };
+  const out = armed.half === true ? v13HalfStake(capped) : capped;
+  return { ...armed, action: 'STAKE', units: out, zone, reason };
+}
+
+/** Half the size, to the nearest quarter unit, never under 0.25. */
+export function v13HalfStake(units) {
+  const n = Number(units);
+  if (!(n > 0)) return 0;
+  return Math.max(0.25, Math.round(n * 2) / 4);
 }
 
 function americanAndImplied(odds, price) {
@@ -285,7 +302,9 @@ export function v13UsesTrustedList(pickDate, sport, list = null) {
  */
 export function v13OpensSide({ pickDate, sport, side, positions, book = null, list = null } = {}) {
   if (v13UsesTrustedList(pickDate, sport, list)) {
-    return trustedSideCount({ market: 'ML', side, positions, sport, list }).margin >= V13_ML_TRUSTED_AHEAD;
+    return trustedSideCount({
+      market: 'ML', side, positions, sport, list, wide: true,
+    }).margin >= V13_ML_TRUSTED_AHEAD;
   }
   return qualifyingV13Wallets({ sport, side, positions, book }).length > 0;
 }
@@ -308,7 +327,7 @@ function againstWallets(positions, sport, side, book) {
  *   fires: boolean, action: 'STAKE'|'MUTE'|'PASS'|'EXEMPT',
  *   reason: string, units: number, unitsPre: number, zone: string|null,
  *   steam: number|null, edge: number|null, against: number, wallets: string[],
- *   margin: number, list: 'trusted'|'tier',
+ *   margin: number, half: boolean, list: 'trusted'|'tier',
  *   odds: number|null, price: number|null,
  * }}
  */
@@ -343,6 +362,7 @@ export function applyV13MlPath({
     against: 0,
     wallets: [],
     margin: 0,
+    half: false,
     list: onList ? V13_ML_LIST_TRUSTED : V13_ML_LIST_TIER,
     odds: oddsN,
     price: priceN,
@@ -355,7 +375,12 @@ export function applyV13MlPath({
   }
   let armed;
   if (onList) {
-    const count = trustedSideCount({ market: 'ML', side, positions, sport, list });
+    // Wide: trusted with 10 or more moneyline bets in the sport, up or down.
+    // Kept: the ones that are up in units there.
+    const count = trustedSideCount({
+      market: 'ML', side, positions, sport, list, wide: true,
+    });
+    const kept = trustedSideCount({ market: 'ML', side, positions, sport, list });
     const read = {
       ...base, wallets: count.for, against: count.against.length, margin: count.margin,
     };
@@ -364,6 +389,8 @@ export function applyV13MlPath({
     if (count.margin < V13_ML_TRUSTED_AHEAD) {
       return { ...armed, action: 'PASS', reason: 'trusted_not_ahead' };
     }
+    // Ahead only with the wallets that are down in units: half the size.
+    if (kept.margin < V13_ML_TRUSTED_AHEAD) armed.half = true;
   } else {
     const index = bookOf(book);
     const wallets = qualifyingV13Wallets({ sport, side, positions, book: index });
@@ -419,6 +446,7 @@ export const V13_ML_STAMP_FIELDS = Object.freeze([
   'v8_v13MlWallets',
   'v8_v13MlMargin',
   'v8_v13MlList',
+  'v8_v13MlHalf',
   'v8_v13MlOdds',
   'v8_v13MlPrice',
   'v8_v13MlEvaluatedAt',
@@ -448,6 +476,7 @@ export function v13MlStamp(policy, { now = Date.now() } = {}) {
     v8_v13MlWallets: Array.isArray(policy.wallets) ? policy.wallets : [],
     v8_v13MlMargin: Number.isFinite(Number(policy.margin)) ? Number(policy.margin) : 0,
     v8_v13MlList: policy.list ?? V13_ML_LIST_TIER,
+    v8_v13MlHalf: action === 'STAKE' && policy.half === true,
     v8_v13MlOdds: policy.odds ?? null,
     v8_v13MlPrice: policy.price ?? null,
     v8_v13MlEvaluatedAt: now,

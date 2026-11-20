@@ -202,8 +202,8 @@ test('the stamp says which list the side read and the count on it', () => {
   assert.equal(tier.v8_v13MlMargin, 1);
   const IN = ['NHL', 'NBA', 'NFL', 'CFB', 'CBB', 'SOC', 'ATP', 'CS2', 'LOL', 'MLB', 'WNBA', 'UFC'];
   const list = new Map([
-    ['ML|tttt01', { trusted: true, sports: IN }], ['ML|tttt02', { trusted: true, sports: IN }],
-    ['ML|tttt03', { trusted: true, sports: IN }],
+    ['ML|tttt01', { trusted: true, sports: IN, played: IN }], ['ML|tttt02', { trusted: true, sports: IN, played: IN }],
+    ['ML|tttt03', { trusted: true, sports: IN, played: IN }],
   ]);
   const onList = run({
     pickDate: '2026-11-21', list,
