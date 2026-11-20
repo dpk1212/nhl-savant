@@ -2,7 +2,7 @@
 
 MLB predictions for Monday, November 16, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total.
 
-[![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Take your betting further. Explore Dimers Pro plans. ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
+[![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) BLACK FRIDAY SALE: 50% OFF SELECT PRO PLANS ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
 Date: Oct 28 2026Oct 28
 
