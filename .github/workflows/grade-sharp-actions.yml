@@ -76,3 +76,21 @@ jobs:
             echo "profile commit did not reach main"
             exit 1
           )
+
+      # One compressed copy of every wallet profile, in a few documents
+      # (walletProfilesPacked). STAGE ONE: nothing reads it yet. The page and
+      # every job read what they read before.
+      #
+      # Last step on purpose, with continue-on-error and its own time limit:
+      # a failure or a hang here cannot change grading, the profile export,
+      # or the commit above. The script writes only its own collection, and
+      # only when data/wallet-profiles.json and the profile documents are
+      # from the same export run and the copy reads back identical.
+      - name: Publish packed wallet profiles (nothing reads this yet)
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/publishPackedWalletProfiles.js --write
