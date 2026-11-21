@@ -87,6 +87,7 @@ import { bestAvailableTicket, isT15BestLockLive } from '../lib/t15BestLock.js';
 import { sportsWithActionPositions } from '../lib/confirmedActionDesk.js';
 import { buildWalletPriorStatsFn } from '../lib/marketProvenCarve.js';
 import { oddsCap } from '../lib/oddsCap.js';
+import { createProfileRefresher } from '../lib/profileRefresh.js';
 // Browser-side mirror of cron v12 priors (Door 2 sport book).
 // Used by SharpPositionCard for UNLOCKED game cards so the chip/banner
 // match cron before the stamp. LOCKED cards continue to mirror the
@@ -3165,18 +3166,27 @@ function useMarketData() {
   // wrong or keep counting a demoted one. Reload on visibilitychange too
   // so tab-back-after-an-hour doesn't render stale lock decisions.
   //
+  // 2026-11-21 — a return to the tab reloads only when the last good copy
+  // is a full refresh window old. One reload is every profile document
+  // (1,494 documents, 29 MB), and it used to run on every return however
+  // recent the last load was. The copy is still never more than one window
+  // old while the tab is visible: the timer counts from the last attempt,
+  // not from the return. See src/lib/profileRefresh.js.
+  //
   // Also fetches the AGS calibration doc on the same cadence so the
   // displayed AGS values track the daily-refreshed normalizers.
   useEffect(() => {
     let cancelled = false;
     const loadProfiles = async () => {
+      let profilesLoaded = false;
       try {
         const snap = await getDocs(collection(db, 'sharpWalletProfiles'));
-        if (cancelled) return;
+        if (cancelled) return false;
         const m = new Map();
         snap.forEach(d => { m.set(d.id, d.data()); });
         setWalletProfiles(m);
         setWalletProfilesCache(m);
+        profilesLoaded = true;
         console.log(`[walletProfiles] Loaded ${m.size} profiles into Phase-2 cache`);
       } catch (err) {
         console.warn('[walletProfiles] fetch failed:', err.message);
@@ -3185,7 +3195,7 @@ function useMarketData() {
       // hardcoded last-known-good if Firestore is unreachable.
       try {
         const calSnap = await getDoc(doc(db, 'agsCalibration', 'current'));
-        if (cancelled) return;
+        if (cancelled) return profilesLoaded;
         if (calSnap.exists()) {
           const cal = calSnap.data();
           if (cal && cal.normalizers) {
@@ -3200,26 +3210,21 @@ function useMarketData() {
         console.warn('[agsCalibration] fetch failed, using fallback:', err.message);
         setAgsCalibrationCache(AGS_FALLBACK_CALIBRATION);
       }
+      return profilesLoaded;
     };
-    loadProfiles();
-    const REFRESH_MS = 8 * 60 * 1000;
-    let timer = null;
-    const start = () => {
-      if (timer) return;
-      timer = setInterval(() => {
-        if (document.visibilityState === 'visible') loadProfiles();
-      }, REFRESH_MS);
-    };
-    const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') { loadProfiles(); start(); }
-      else stop();
-    };
-    start();
+    // Loads once now, then every 8 minutes while the tab is visible. A
+    // return to the tab reloads only when the last good copy is 8 minutes
+    // old; a hidden tab holds no timer.
+    const refresher = createProfileRefresher({
+      load: loadProfiles,
+      isVisible: () => document.visibilityState === 'visible',
+    });
+    const onVisibility = () => refresher.onVisibilityChange();
+    refresher.start();
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       cancelled = true;
-      stop();
+      refresher.stop();
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
