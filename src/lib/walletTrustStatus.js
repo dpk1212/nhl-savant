@@ -95,6 +95,19 @@ export function isTrustedWallet(trust, tierMin = TRUST_TIER_MIN) {
 }
 
 /**
+ * Chart / read: tier 4+ form-on on this market's book, or on the sport book.
+ * The market book wins when both exist so a spread tier-5 with a sport tier-3
+ * still counts. Display only — the age floor stays a staking rule.
+ */
+export function profileIsTrusted(profile, sport, marketType = null) {
+  const rec = profile?.bySport?.[sport];
+  if (!rec) return false;
+  const mkt = marketType ? String(marketType).toUpperCase() : '';
+  if (mkt && isTrustedWallet(rec.byMarket?.[mkt]?.trust)) return true;
+  return isTrustedWallet(rec.trust);
+}
+
+/**
  * Age of a trust record's book in days on `asOf` (YYYY-MM-DD): first decided
  * bet → asOf when the record carries `firstBetDate`, else the export's own
  * `daysActive` (first bet → the day after the last bet). Null when neither
