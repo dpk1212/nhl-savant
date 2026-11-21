@@ -25,11 +25,11 @@ function sampleFile(generatedAt, count = 400, mark = '') {
   return { generatedAt, whitelistVersion: 5, totals: { wallets: count }, profiles };
 }
 
-// An in-memory stand-in for the four Firestore calls the publish flow makes.
+// An in-memory stand-in for the Firestore calls the publish flow makes.
 function fakeDb(seed = {}) {
   const store = new Map(Object.entries(seed));
   const ops = [];
-  const hooks = { failSet: null, failGetAll: false, afterSet: null, failSelect: false };
+  const hooks = { failSet: null, failGetAll: false, afterSet: null, failSelect: false, beforeTransaction: null, landThenFail: null };
   const snap = (path) => {
     const d = store.get(path);
     return { id: path.split('/')[1], exists: d !== undefined, data: () => d, get: (f) => d?.[f], ref: docRef(path) };
@@ -65,6 +65,23 @@ function fakeDb(seed = {}) {
       if (hooks.failGetAll) throw new Error('read refused');
       return refs.map((r) => snap(r.path));
     },
+    // Reads first, writes applied together after the callback returns.
+    runTransaction: async (fn) => {
+      hooks.beforeTransaction?.(store);
+      const pending = [];
+      const out = await fn({
+        get: async (ref) => { ops.push(['get', ref.path]); return snap(ref.path); },
+        set: (ref, data) => { pending.push([ref, data]); },
+      });
+      for (const [ref, data] of pending) {
+        if (hooks.landThenFail?.(ref.path)) {
+          store.set(ref.path, data);
+          throw new Error('deadline exceeded');
+        }
+        await ref.set(data);
+      }
+      return out;
+    },
   };
 }
 
@@ -84,6 +101,7 @@ function readLive(db) {
 const G1 = '2026-11-21T00:41:12.000Z';
 const G2 = '2026-11-21T08:10:06.007Z';
 const G3 = '2026-11-21T17:22:40.500Z';
+const G4 = '2026-11-21T19:05:11.250Z';
 
 test('offline mode builds and checks without touching Firestore', async () => {
   const r = await publishWalletProfilesPack({ file: sampleFile(G1), mode: 'offline', db: null, ...quiet });
@@ -227,20 +245,138 @@ test('a write that fails part-way: nothing live changes and the half-written par
   assert.deepEqual(readLive(db), f1.profiles);
 });
 
-test('a failed read-back or a failed pointer write leaves the old copy live', async () => {
+test('a failed read-back leaves the old copy live and removes the new parts', async () => {
   const f1 = sampleFile(G1, 400, ' one');
   const f2 = sampleFile(G2, 400, ' two');
-  for (const breakIt of [(db) => { db.hooks.failGetAll = true; }, (db) => { db.hooks.failSet = (path) => path === POINTER_PATH; }]) {
-    const db = fakeDb({ [STAMP]: stampFor(f1) });
-    const r1 = await publishWalletProfilesPack({ file: f1, mode: 'write', db, ...quiet });
-    db.store.set(STAMP, stampFor(f2));
-    breakIt(db);
-    const r2 = await publishWalletProfilesPack({ file: f2, mode: 'write', db, ...quiet });
-    assert.equal(r2.outcome, 'failed');
-    assert.equal(db.store.get(POINTER_PATH).generation, r1.pointer.generation);
-    assert.equal(partPaths(db, buildPack(f2, { partBytes: PART }).pointer.generation).length, 0);
-    assert.deepEqual(readLive(db), f1.profiles);
+  const db = fakeDb({ [STAMP]: stampFor(f1) });
+  const r1 = await publishWalletProfilesPack({ file: f1, mode: 'write', db, ...quiet });
+  db.store.set(STAMP, stampFor(f2));
+  db.hooks.failGetAll = true;
+  const r2 = await publishWalletProfilesPack({ file: f2, mode: 'write', db, ...quiet });
+  assert.equal(r2.outcome, 'failed');
+  assert.equal(db.store.get(POINTER_PATH).generation, r1.pointer.generation);
+  assert.equal(partPaths(db, buildPack(f2, { partBytes: PART }).pointer.generation).length, 0);
+  assert.deepEqual(readLive(db), f1.profiles);
+});
+
+test('a failed pointer write leaves the old copy live; the stranded parts go on a later run', async () => {
+  const f1 = sampleFile(G1, 400, ' one');
+  const f2 = sampleFile(G2, 400, ' two');
+  const f3 = sampleFile(G3, 400, ' three');
+  const f4 = sampleFile(G4, 400, ' four');
+  const db = fakeDb({ [STAMP]: stampFor(f1) });
+  const r1 = await publishWalletProfilesPack({ file: f1, mode: 'write', db, ...quiet });
+
+  db.store.set(STAMP, stampFor(f2));
+  db.hooks.failSet = (path) => path === POINTER_PATH;
+  const r2 = await publishWalletProfilesPack({ file: f2, mode: 'write', db, ...quiet });
+  assert.equal(r2.outcome, 'failed');
+  assert.equal(r2.code, 1);
+  assert.equal(db.store.get(POINTER_PATH).generation, r1.pointer.generation);
+  assert.deepEqual(readLive(db), f1.profiles);
+  const g2 = buildPack(f2, { partBytes: PART }).pointer.generation;
+  assert.ok(partPaths(db, g2).length > 0, 'after a pointer write was attempted, this run deletes nothing');
+
+  db.hooks.failSet = null;
+  db.store.set(STAMP, stampFor(f3));
+  const r3 = await publishWalletProfilesPack({ file: f3, mode: 'write', db, ...quiet });
+  assert.equal(r3.outcome, 'published');
+  db.store.set(STAMP, stampFor(f4));
+  const r4 = await publishWalletProfilesPack({ file: f4, mode: 'write', db, ...quiet });
+  assert.equal(r4.outcome, 'published');
+  assert.equal(partPaths(db, g2).length, 0, 'stranded parts removed once they are older than the previous generation');
+  assert.equal(partPaths(db, r1.pointer.generation).length, 0);
+  assert.equal(partPaths(db, r3.pointer.generation).length, r3.pointer.partCount);
+  assert.deepEqual(readLive(db), f4.profiles);
+});
+
+test('a pointer write that reports an error but landed: the live parts are not deleted', async () => {
+  const f1 = sampleFile(G1, 400, ' one');
+  const f2 = sampleFile(G2, 400, ' two');
+  const db = fakeDb({ [STAMP]: stampFor(f1) });
+  const r1 = await publishWalletProfilesPack({ file: f1, mode: 'write', db, ...quiet });
+
+  db.store.set(STAMP, stampFor(f2));
+  db.hooks.landThenFail = (path) => path === POINTER_PATH;
+  const r2 = await publishWalletProfilesPack({ file: f2, mode: 'write', db, ...quiet });
+  assert.equal(r2.outcome, 'published');
+  assert.equal(db.store.get(POINTER_PATH).generation, r2.pointer.generation);
+  assert.equal(partPaths(db, r2.pointer.generation).length, r2.pointer.partCount);
+  assert.deepEqual(readLive(db), f2.profiles);
+  assert.equal(partPaths(db, r1.pointer.generation).length, r1.pointer.partCount, 'previous generation kept');
+});
+
+test('overlapping runs: a newer export finishing first is never rolled back by the older run', async () => {
+  const older = sampleFile(G2, 400, ' older');
+  const newer = sampleFile(G3, 400, ' newer');
+  const g1 = sampleFile(G1, 400, ' base');
+  const db = fakeDb({ [STAMP]: stampFor(g1) });
+  await publishWalletProfilesPack({ file: g1, mode: 'write', db, ...quiet });
+
+  // The older run starts while its export is the newest. Just before it
+  // moves the pointer, the newer run exports and publishes in full.
+  db.store.set(STAMP, stampFor(older));
+  const olderPack = buildPack(older, { partBytes: PART });
+  const newerPack = buildPack(newer, { partBytes: PART });
+  db.hooks.beforeTransaction = (store) => {
+    // Newer run: stamp, parts, pointer all land inside the older run's window.
+    store.set(STAMP, stampFor(newer));
+    for (const p of newerPack.parts) {
+      store.set(`${PACK}/${p.id}`, { formatVersion: 1, generation: p.generation, index: p.index, partCount: p.partCount, data: p.data });
+    }
+    store.set(POINTER_PATH, { ...newerPack.pointer, previousGeneration: store.get(POINTER_PATH).generation });
+    db.hooks.beforeTransaction = null;
+  };
+  const r = await publishWalletProfilesPack({ file: older, mode: 'write', db, ...quiet });
+  assert.equal(r.outcome, 'refused');
+  assert.equal(r.code, 0);
+  assert.equal(db.store.get(POINTER_PATH).generation, newerPack.pointer.generation, 'the newer copy stays live');
+  assert.deepEqual(readLive(db), newer.profiles);
+  assert.equal(partPaths(db, olderPack.pointer.generation).length, 0, 'the older run removes only its own unreachable parts');
+});
+
+test('overlapping runs: an older pointer is refused even when the stamp still matches', async () => {
+  const older = sampleFile(G2, 400, ' older');
+  const newerPack = buildPack(sampleFile(G3, 400, ' newer'), { partBytes: PART });
+  const db = fakeDb({ [STAMP]: stampFor(older) });
+  db.hooks.beforeTransaction = (store) => {
+    for (const p of newerPack.parts) {
+      store.set(`${PACK}/${p.id}`, { formatVersion: 1, generation: p.generation, index: p.index, partCount: p.partCount, data: p.data });
+    }
+    store.set(POINTER_PATH, { ...newerPack.pointer, previousGeneration: null });
+  };
+  const r = await publishWalletProfilesPack({ file: older, mode: 'write', db, ...quiet });
+  assert.equal(r.outcome, 'refused');
+  assert.equal(db.store.get(POINTER_PATH).generation, newerPack.pointer.generation);
+  assert.equal(partPaths(db, newerPack.pointer.generation).length, newerPack.pointer.partCount);
+});
+
+test('cleanup never deletes parts newer than the live copy (a run that is still publishing)', async () => {
+  const f1 = sampleFile(G1, 400, ' one');
+  const f2 = sampleFile(G2, 400, ' two');
+  const inFlight = buildPack(sampleFile(G3, 400, ' in flight'), { partBytes: PART });
+  const db = fakeDb({ [STAMP]: stampFor(f1) });
+  await publishWalletProfilesPack({ file: f1, mode: 'write', db, ...quiet });
+  for (const p of inFlight.parts) {
+    db.store.set(`${PACK}/${p.id}`, { formatVersion: 1, generation: p.generation, index: p.index, partCount: p.partCount, data: p.data });
   }
+  db.store.set(STAMP, stampFor(f2));
+  const r2 = await publishWalletProfilesPack({ file: f2, mode: 'write', db, ...quiet });
+  assert.equal(r2.outcome, 'published');
+  assert.equal(partPaths(db, inFlight.pointer.generation).length, inFlight.pointer.partCount);
+});
+
+test('a failure never deletes parts the live pointer names', async () => {
+  const file = sampleFile(G1);
+  const db = fakeDb({ [STAMP]: stampFor(file) });
+  const r1 = await publishWalletProfilesPack({ file, mode: 'write', db, ...quiet });
+  // Break the pointer so the next run does not stop at "already published",
+  // but leave it naming this generation; then make the read-back fail.
+  db.store.set(POINTER_PATH, { ...db.store.get(POINTER_PATH), formatVersion: 99 });
+  db.hooks.failGetAll = true;
+  const r2 = await publishWalletProfilesPack({ file, mode: 'write', db, ...quiet });
+  assert.equal(r2.outcome, 'failed');
+  assert.equal(partPaths(db, r1.pointer.generation).length, r1.pointer.partCount);
 });
 
 test('a failed cleanup does not undo a good publish', async () => {

@@ -8,9 +8,12 @@
  *      export run (walletProfilesMeta/current);
  *   3. write the parts under this generation's own ids;
  *   4. read them back and open them; they must equal the JSON built in 1;
- *   5. only then move the pointer;
+ *   5. only then move the pointer, in a transaction that re-reads the stamp
+ *      and the pointer: it moves only if this is still the newest export;
  *   6. drop generations older than the previous one.
  * Anything that goes wrong before 5 leaves the last good generation live.
+ * Parts the live pointer names are never deleted, and once step 5 has been
+ * attempted this run does not delete its own parts at all.
  */
 
 import {
@@ -74,10 +77,8 @@ export async function publishWalletProfilesPack({
   // ── 2. Is the file from the same run as the profile documents? ──
   const packCol = db.collection(WALLET_PROFILES_PACK_COLLECTION);
   const pointerRef = packCol.doc(WALLET_PROFILES_PACK_POINTER_ID);
-  const [stampSnap, pointerSnap] = await Promise.all([
-    db.collection(WALLET_PROFILES_META_COLLECTION).doc(WALLET_PROFILES_META_DOC_ID).get(),
-    pointerRef.get(),
-  ]);
+  const stampRef = db.collection(WALLET_PROFILES_META_COLLECTION).doc(WALLET_PROFILES_META_DOC_ID);
+  const [stampSnap, pointerSnap] = await Promise.all([stampRef.get(), pointerRef.get()]);
   const stamp = stampSnap.exists ? stampSnap.data() : null;
   const stampAt = stampMs(stamp?.generatedAt);
   if (stampAt == null || stampAt !== Date.parse(file.generatedAt) || stamp?.walletCount !== pointer.walletCount) {
@@ -115,7 +116,21 @@ export async function publishWalletProfilesPack({
 
   // ── 3. Write the parts ─────────────────────────────────────────
   const refs = parts.map((p) => packCol.doc(p.id));
-  const removeParts = () => Promise.allSettled(refs.map((r) => r.delete()));
+  // Used only before this run has tried to move the pointer. Even then it
+  // looks first: parts the live pointer names are never deleted.
+  const removeUnreachableParts = async () => {
+    try {
+      const now = await pointerRef.get();
+      if (now.exists && now.get('generation') === pointer.generation) {
+        warn(`The live pointer names generation ${pointer.generation}; leaving its parts in place.`);
+        return;
+      }
+    } catch (err) {
+      warn(`Could not read the pointer (${err.message}); leaving the new parts for a later run to remove.`);
+      return;
+    }
+    await Promise.allSettled(refs.map((r) => r.delete()));
+  };
   try {
     for (let i = 0; i < parts.length; i += 1) {
       const p = parts[i];
@@ -129,8 +144,7 @@ export async function publishWalletProfilesPack({
       });
     }
   } catch (err) {
-    // The pointer never moved, so no reader can reach these parts. Remove them.
-    await removeParts();
+    await removeUnreachableParts();
     warn(`FAILED: writing parts: ${err.message}. Pointer not moved; the last good generation stays live.`);
     return { outcome: 'failed', code: 1 };
   }
@@ -151,29 +165,77 @@ export async function publishWalletProfilesPack({
     warn(`Read-back failed: ${err.message}`);
   }
   if (!verified) {
-    await removeParts();
+    await removeUnreachableParts();
     warn('FAILED: pointer not moved; the last good generation stays live.');
     return { outcome: 'failed', code: 1 };
   }
 
   // ── 5. Move the pointer ────────────────────────────────────────
-  const previousGeneration = liveOk ? live.generation : null;
+  // One transaction re-reads the stamp and the pointer and moves the pointer
+  // only if this is still the newest export. Two grade runs that overlap can
+  // therefore never leave the older one's copy live.
+  let move;
   try {
-    await pointerRef.set({ ...pointer, previousGeneration, publishedAt: serverTimestamp() });
+    move = await db.runTransaction(async (tx) => {
+      const stampNowSnap = await tx.get(stampRef);
+      const liveNowSnap = await tx.get(pointerRef);
+      const stampNow = stampNowSnap.exists ? stampNowSnap.data() : null;
+      if (stampMs(stampNow?.generatedAt) !== Date.parse(file.generatedAt) || stampNow?.walletCount !== pointer.walletCount) {
+        return { moved: false, why: 'a newer export rebuilt the profile documents while this run was publishing' };
+      }
+      const liveNow = liveNowSnap.exists ? liveNowSnap.data() : null;
+      const liveNowOk = liveNow ? checkPackPointer(liveNow).ok : false;
+      if (liveNowOk && liveNow.generation === pointer.generation) {
+        return { moved: false, why: 'another run published this generation while this run was publishing' };
+      }
+      if (liveNowOk && Date.parse(liveNow.generatedAt) > Date.parse(pointer.generatedAt)) {
+        return { moved: false, why: `a newer generation (${liveNow.generation}) is already live` };
+      }
+      const prev = liveNowOk ? liveNow.generation : null;
+      tx.set(pointerRef, { ...pointer, previousGeneration: prev, publishedAt: serverTimestamp() });
+      return { moved: true, previousGeneration: prev };
+    });
   } catch (err) {
-    await removeParts();
-    warn(`FAILED: moving the pointer: ${err.message}. The last good generation stays live.`);
-    return { outcome: 'failed', code: 1 };
+    // A write can report an error and still have landed. From here on this
+    // run never deletes its own parts: if the pointer did move they are the
+    // live copy, and if it did not a later run removes them.
+    let landed = null;
+    try {
+      const now = await pointerRef.get();
+      if (now.exists && now.get('generation') === pointer.generation && now.get('sha256') === pointer.sha256) landed = now.data();
+    } catch { /* cannot tell; treated as not landed, parts stay */ }
+    if (!landed) {
+      warn(
+        `FAILED: moving the pointer: ${err.message}. The pointer does not name this generation; `
+        + 'its parts are left in place and a later run removes them.',
+      );
+      return { outcome: 'failed', code: 1 };
+    }
+    warn(`The pointer write reported an error (${err.message}) but the pointer did move.`);
+    move = { moved: true, previousGeneration: landed.previousGeneration ?? null };
   }
+  if (!move.moved) {
+    await removeUnreachableParts();
+    log(`REFUSED: ${move.why}. Pointer not moved by this run.`);
+    return { outcome: 'refused', code: 0 };
+  }
+  const { previousGeneration } = move;
   log(`✓ Published generation ${pointer.generation} (read-back matched). Pointer moved.`);
 
   // ── 6. Drop generations older than the previous one ────────────
   // The previous one stays so a reader that fetched the old pointer a moment
-  // ago can still fetch its parts.
+  // ago can still fetch its parts. Only OLDER generations go: parts newer
+  // than the live one may belong to a run that is publishing right now.
   try {
-    const keep = new Set([pointer.generation, previousGeneration].filter(Boolean));
+    const oldestKept = previousGeneration && previousGeneration < pointer.generation
+      ? previousGeneration
+      : pointer.generation;
     const all = await packCol.select('generation').get();
-    const stale = all.docs.filter((d) => d.id !== WALLET_PROFILES_PACK_POINTER_ID && !keep.has(d.get('generation')));
+    const stale = all.docs.filter((d) => {
+      if (d.id === WALLET_PROFILES_PACK_POINTER_ID) return false;
+      const g = d.get('generation');
+      return typeof g === 'string' && g < oldestKept;
+    });
     for (const d of stale) await d.ref.delete();
     log(`Removed ${stale.length} parts from older generations.`);
   } catch (err) {

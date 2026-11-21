@@ -86,7 +86,13 @@ jobs:
       # or the commit above. The script writes only its own collection, and
       # only when data/wallet-profiles.json and the profile documents are
       # from the same export run and the copy reads back identical.
+      #
+      # Runs even when an earlier step failed (for example the commit above
+      # could not push): the profile documents may already be rebuilt, and
+      # the copy should follow them. If they were not rebuilt, the script
+      # sees the stamp does not match the file and publishes nothing.
       - name: Publish packed wallet profiles (nothing reads this yet)
+        if: ${{ !cancelled() }}
         continue-on-error: true
         timeout-minutes: 5
         env:
