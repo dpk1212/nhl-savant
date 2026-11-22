@@ -38,6 +38,10 @@ jobs:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          # These three steps load most of sharp_action_positions into memory.
+          # Node's default limit (about 2 GB) was reached on 2026-11-21 and the
+          # sync step crashed. GitHub's standard runner for a public repo has 16 GB.
+          NODE_OPTIONS: --max-old-space-size=8192
         run: node scripts/syncWalletBets.js --write
 
       # Rebuilds whitelist tiers + profile.clvSkill (causal %+CLV / beats-the-close).
@@ -48,6 +52,7 @@ jobs:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          NODE_OPTIONS: --max-old-space-size=8192
         run: node scripts/exportWalletProfiles.js --write-firebase
 
       # As-of Sharp tier × size × opposition hist WR/$ROI for Action row stamps.
@@ -57,6 +62,7 @@ jobs:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          NODE_OPTIONS: --max-old-space-size=8192
         run: node scripts/exportSharpTierCellStats.js --write-firebase
 
       - name: Commit updated wallet profile artifacts
