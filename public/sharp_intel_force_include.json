@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-08-12T20:36:44.118Z",
-  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3/4 reinstates hardened with fuller history (maxClosed 1500–2000) and broad sport filter after classifier gaps undercounted both-sides on some names. 2026-08-12: MLB CONFIRMED coverage audit reinstated dv-pm / ndb1 / AV23IUa / 33aa70 / wapol. + fcc12b/dfa240/aa9fb4/10c684 (suspicion dig); 95618e intentionally NOT included (tiny-bet spray).",
+  "updatedAt": "2026-11-22T15:48:05.870Z",
+  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3/4 reinstates hardened with fuller history (maxClosed 1500–2000) and broad sport filter after classifier gaps undercounted both-sides on some names. 2026-08-12: MLB CONFIRMED coverage audit reinstated dv-pm / ndb1 / AV23IUa / 33aa70 / wapol. + fcc12b/dfa240/aa9fb4/10c684 (suspicion dig); 95618e intentionally NOT included (tiny-bet spray). 2026-11-22: reinstated 5fcee5/bc44b0/4c8ed9/aaedcd, directional, tripped both-sides count on tiny opposite legs.",
   "wallets": [
     {
       "addr": "0xbddf61af533ff524d27154e589d2d7a81510c684",
@@ -181,6 +181,30 @@
       "name": "05143",
       "reason": "Batch4 recheck: both 1.1%, overall game ROI ~29% (recent hot / older half negative)",
       "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x0235dc24b38772bf3339a9e5ec5db3d3a05fcee5",
+      "name": "5fcee5",
+      "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
+      "auditedAt": "2026-11-22"
+    },
+    {
+      "addr": "0x27f738fe203827445690339104aae35b20bc44b0",
+      "name": "bc44b0",
+      "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
+      "auditedAt": "2026-11-22"
+    },
+    {
+      "addr": "0x885ffdf360e5b0b6e6acb963fb3f8ba2344c8ed9",
+      "name": "4c8ed9",
+      "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
+      "auditedAt": "2026-11-22"
+    },
+    {
+      "addr": "0xddb993dbaee76440dbb42408a1925e38b7aaedcd",
+      "name": "aaedcd",
+      "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
+      "auditedAt": "2026-11-22"
     }
   ]
 }
