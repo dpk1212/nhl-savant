@@ -54,7 +54,7 @@ TodayYesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLSat 11/21
+NHLSun 11/22
 
 Opener
 
@@ -71,62 +71,41 @@ Opener
 |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- |
 
-| LIVEEnd of 1st<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>6-16<br>0<br>+140BetAnything | +141 | +135 | +140 | +133 | +136 | +140 |
-| ![](https://logos.oddstrader.com/logos-original/3e689bd8-9b9d-4d02-ac49-cd5942e18007-original.png?d=100x100)<br>Calgary<br>10-13<br>1<br>-149Bet105 | -160 | -153 | -160 | -155 | -152 | -160 |
+| STARTS IN 00:35:38 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)NHL Network...<br>![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>9-14<br>+177Bet105 | +171 | +171 | +175 | +175 | +174 | +170 |
+| ![](https://logos.oddstrader.com/logos-original/c8d52a39-5aa1-4997-8c81-7618dfbd5e22-original.PNG?d=100x100)<br>Tampa Bay<br>15-7<br>-194Heritage | -196 | -195 | -210 | -210 | -194 | -200 |
 
-| STARTS IN 01:40:58 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)MSG-B...<br>![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>9-13<br>+128Heritage | +128 | +123 | +125 | +125 | +128 | +120 |
-| ![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>12-11<br>-139Bet105 | -145 | -140 | -145 | -145 | -142 | -140 |
+| SUN 11/227:00 PM<br>![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>7-15<br>+200BetOnline | +179 | +200 | +190 | +195 | +195 | +195 |
+| ![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>14-8<br>-219Heritage | -205 | -230 | -230 | -235 | -219 | -234 |
 
-| STARTS IN 01:40:58 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN+...<br>![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>7-14<br>+120Heritage | +116 | +117 | +117 | +117 | +120 | +118 |
-| ![](https://logos.oddstrader.com/logos-original/5e8d35d8-0bed-4ae7-a56f-519fdfc050f0-original.PNG?d=100x100)<br>Nashville<br>11-11<br>-132Heritage | -132 | -133 | -137 | -137 | -132 | -138 |
+| SUN 11/227:00 PM<br>![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>17-8<br>+108Heritage | -112 | +107 | -101 | -103 | +108 | +107 |
+| ![](https://logos.oddstrader.com/logos-original/c1442ea3-f57e-4147-87c3-d0b03c05f2dc-original.PNG?d=100x100)<br>St. Louis<br>12-11<br>-117Bovada | -102 | -121 | -119 | -117 | -120 | -127 |
 
-| SAT 11/217:00 PM<br>![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>13-11<br>-127BetOnline | -130 | -127 | -135 | -137 | -130 | -135 |
-| ![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>11-12<br>+118Heritage | +115 | +112 | +115 | +117 | +118 | +115 |
+| SUN 11/228:00 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>7-16<br>-109Heritage | -104 | -111 | -110 | -112 | -109 | -111 |
+| ![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>6-19<br>-101Heritage | -110 | -103 | -110 | -108 | -101 | -109 |
 
-| SAT 11/217:00 PM<br>![](https://logos.oddstrader.com/logos-original/e83b8824-4198-4a1c-8edb-ff6a63acaeb1-original.PNG?d=100x100)<br>Washington<br>10-10<br>+123BetOnline | -104 | +123 | +120 | +117 | +117 | +116 |
-| ![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>14-8<br>-129Heritage | -110 | -140 | -140 | -137 | -129 | -136 |
+| MON 11/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)<br>Columbus<br>9-12<br>+175BetOnline | +175 | +175 | - | - | +175 | - |
+| ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>15-8<br>-195Heritage | -200 | -200 | - | - | -195 | - |
 
-| SAT 11/217:00 PM<br>![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>10-11<br>-125Everygame | -107 | -128 | -130 | -133 | -126 | -137 |
-| ![](https://logos.oddstrader.com/logos-original/52534474-761e-4a71-bdd4-999393f47c56-original.PNG?d=100x100)<br>Detroit<br>8-14<br>+116Bookmaker | -107 | +113 | +110 | +112 | +114 | +116 |
+| MON 11/237:30 PM<br>![](https://logos.oddstrader.com/logos-original/3e689bd8-9b9d-4d02-ac49-cd5942e18007-original.png?d=100x100)<br>Calgary<br>10-14<br>+182Heritage | +166 | +179 | - | - | +182 | - |
+| ![](https://logos.oddstrader.com/logos-original/2c3e122c-e355-4a23-a013-3003db82fbdd-original.png?d=100x100)<br>Ottawa<br>15-9<br>-204Heritage | -190 | -205 | - | - | -204 | - |
 
-| SAT 11/217:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>8-17<br>+138Heritage | +146 | +136 | +135 | +137 | +138 | +135 |
-| ![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>14-9<br>-152Heritage | -166 | -154 | -155 | -163 | -152 | -155 |
+| MON 11/237:30 PM<br>![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>12-12<br>-107Heritage | -109 | -109 | - | - | -107 | - |
+| ![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>11-13<br>-103Heritage | -105 | -105 | - | - | -103 | - |
 
-| SAT 11/217:00 PM<br>![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>15-7<br>-125Heritage | -130 | -127 | -135 | -135 | -125 | -130 |
-| ![](https://logos.oddstrader.com/logos-original/c1442ea3-f57e-4147-87c3-d0b03c05f2dc-original.PNG?d=100x100)<br>St. Louis<br>11-11<br>+115BetAnything | +115 | +112 | +115 | +115 | +113 | +110 |
+| MON 11/237:30 PM<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>7-14<br>+128BetOnline | +128 | +128 | - | - | +128 | - |
+| ![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>14-10<br>-142Heritage | -145 | -145 | - | - | -142 | - |
 
-| SAT 11/217:00 PM<br>![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)<br>Columbus<br>8-12<br>+106BetOnline | +110 | +106 | +100 | +100 | +104 | -105 |
-| ![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>8-16<br>-112Everygame | -125 | -120 | -120 | -120 | -116 | -115 |
+| MON 11/237:30 PM<br>![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>8-17<br>+132Heritage | +115 | +128 | - | - | +132 | - |
+| ![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>11-11<br>-145BetOnline | -130 | -145 | - | - | -146 | - |
 
-| SAT 11/217:00 PM<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>7-13<br>+161Bet105 | +141 | +160 | +155 | +160 | +154 | +160 |
-| ![](https://logos.oddstrader.com/logos-original/2c3e122c-e355-4a23-a013-3003db82fbdd-original.png?d=100x100)<br>Ottawa<br>14-9<br>-170Heritage | -160 | -183 | -185 | -185 | -170 | -185 |
+| MON 11/239:40 PM<br>![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>11-13<br>+100Heritage | -104 | -102 | - | - | +100 | - |
+| ![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>10-10<br>-110Heritage | -110 | -112 | - | - | -110 | - |
 
-| SAT 11/219:00 PM<br>![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>11-12<br>+150Everygame | +141 | +141 | +140 | +137 | +143 | +144 |
-| ![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>11-12<br>-157Bet105 | -160 | -160 | -165 | -163 | -159 | -165 |
+| MON 11/2310:00 PM<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>17-8<br>-206Heritage | -210 | -210 | - | - | -206 | - |
+| ![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>11-14<br>+184Heritage | +183 | +183 | - | - | +184 | - |
 
-| SAT 11/2110:00 PM<br>![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>10-9<br>+101Heritage | -102 | -101 | -105 | -105 | +101 | -105 |
-| ![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>10-14<br>-111Heritage | -112 | -113 | -115 | -115 | -111 | -115 |
-
-| SAT 11/2110:00 PM<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>17-7<br>-270BetOnline | -270 | -270 | -295 | -320 | -274 | -290 |
-| ![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>5-19<br>+260Bovada | +232 | +232 | +240 | +260 | +244 | +237 |
-
-| SUN 11/2212:30 PM<br>![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>16-6<br>-143Heritage | -145 | -145 | - | - | -143 | - |
-| ![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>13-9<br>+129Heritage | +128 | +128 | - | - | +129 | - |
-
-| SUN 11/225:00 PM<br>![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>9-13<br>+174Heritage | +171 | +171 | - | - | +174 | - |
-| ![](https://logos.oddstrader.com/logos-original/c8d52a39-5aa1-4997-8c81-7618dfbd5e22-original.PNG?d=100x100)<br>Tampa Bay<br>15-7<br>-194Heritage | -196 | -196 | - | - | -194 | - |
-
-| SUN 11/227:00 PM<br>![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>7-14<br>+192Heritage | - | - | - | - | +192 | - |
-| ![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>14-8<br>-214Heritage | - | - | - | - | -214 | - |
-
-| SUN 11/227:00 PM<br>![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>17-7<br>-122Heritage | - | - | - | - | -122 | - |
-| ![](https://logos.oddstrader.com/logos-original/c1442ea3-f57e-4147-87c3-d0b03c05f2dc-original.PNG?d=100x100)<br>St. Louis<br>11-11<br>+110Heritage | - | - | - | - | +110 | - |
-
-| SUN 11/228:00 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>6-16<br>-102Heritage | -104 | -104 | - | - | -102 | - |
-| ![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>5-19<br>-108Heritage | -110 | -110 | - | - | -108 | - |
-
-| FINAL<br>![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>17-7<br>4<br>+218Bookmaker | +150 | +200 | +175 | +195 | +195 | +218 |
-| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>16-6<br>7<br>-200Everygame | -171 | -230 | -210 | -235 | -219 | -265 |
+| FINAL<br>![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>18-6<br>5<br>-155Everygame | -145 | -178 | -160 | -168 | -160 | -168 |
+| ![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>13-10<br>2<br>+156BetOnline | +128 | +156 | +140 | +142 | +144 | +146 |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
@@ -277,7 +256,7 @@ NHL
 [Spread Astaire](https://www.oddstrader.com/betting/author/spreadastaire/)
 November 6, 2026
 
-[Load More](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1795295938131#)
+[Load More](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1795382657605#)
 
 ![oddstraderLogo](https://otcdn.virginia.us-east-1.oddstrader.com/OT-LogoWhiteGreen.svg)
 
