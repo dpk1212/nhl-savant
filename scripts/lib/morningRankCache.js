@@ -59,7 +59,9 @@ import {
   serializeTrustedList,
   setTrustedList,
   trustedListCounting,
+  trustedListReady,
   trustedListSizes,
+  trustedRecordSizes,
   TRUSTED_LIST_VERSION,
 } from '../../src/lib/trustedList.js';
 
@@ -304,13 +306,15 @@ function trustedStats(index, source) {
     trustedTotal: sizes.TOTAL,
     countingMl: counting.ML,
     countingSpread: counting.SPREAD,
+    recordsSpread: trustedRecordSizes(index).SPREAD,
   };
 }
 
 /**
  * The trusted list for this morning. The first scan of the day reads
  * every graded position with its price tape and stores the trusted
- * wallets. Later scans read that one document. A grade run rebuilds it.
+ * wallets and every wallet's spread record. Later scans read that one
+ * document. A grade run rebuilds it.
  *
  * A failed read, a failed build, or an empty result leaves the list
  * empty. The paths that read it then change nothing: moneylines go back
@@ -346,7 +350,7 @@ async function ensureTrustedList(db, asOf, persist, { force = false } = {}) {
     // whether it built it or loaded it.
     const index = hydrateTrustedList(payload);
     setTrustedList(index);
-    if (index.size === 0) {
+    if (!trustedListReady(index)) {
       console.warn(`[morning-rank] trusted list is empty for ${asOf} (${rows.length} graded rows read). Paths fall back.`);
       return trustedStats(index, 'empty');
     }

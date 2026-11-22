@@ -16,6 +16,9 @@ import {
   trustedListReady,
   trustedListSizes,
   trustedListSport,
+  trustedRecordLead,
+  trustedRecordSizes,
+  trustedRecordsReady,
   trustedSideCount,
 } from './trustedList.js';
 
@@ -408,4 +411,97 @@ test('the wide count takes a trusted wallet with 10 bets there, up or down, and 
   assert.equal(on('NHL', true), 0);
   const back = hydrateTrustedList(JSON.parse(JSON.stringify(serializeTrustedList(list, MORNING))));
   assert.deepEqual(back.get(`ML|${w6}`).played, ['CFB', 'NBA']);
+});
+
+// ─── Spread records ──────────────────────────────────────────────────────
+
+/**
+ * Three wallets on spreads at a price of 0.5, one bet a day. Wallet 50
+ * wins 9 of 12, wallet 51 wins 3 of 12, wallet 52 has 9 bets.
+ */
+function spreadSeason() {
+  const rows = [];
+  for (let d = 0; d < 12; d += 1) {
+    rows.push(row({ w: 50, date: day(d), game: `s${d}_50`, marketType: 'SPREAD', line: -3.5, sport: d % 2 ? 'NBA' : 'NHL', result: d < 9 ? 'WIN' : 'LOSS' }));
+    rows.push(row({ w: 51, date: day(d), game: `s${d}_51`, marketType: 'SPREAD', line: 3.5, sport: 'CFB', result: d < 3 ? 'WIN' : 'LOSS' }));
+    if (d < 9) rows.push(row({ w: 52, date: day(d), game: `s${d}_52`, marketType: 'SPREAD', line: 3.5, result: 'WIN' }));
+  }
+  return rows;
+}
+
+const W50 = wallet(50).slice(-6);
+const W51 = wallet(51).slice(-6);
+const W52 = wallet(52).slice(-6);
+
+test('a record is spread results against the wallet\'s own prices, every sport, from 10 bets', () => {
+  const list = buildTrustedList([...ROWS, ...spreadSeason()], MORNING);
+  // 9 wins in 12 at 0.5: (9 − 6) / sqrt(12 × 0.25) = 1.732.
+  assert.ok(Math.abs(list.get(`SPREAD|${W50}`).record - 3 / Math.sqrt(3)) < 1e-9);
+  // 3 wins in 12: −1.732.
+  assert.ok(Math.abs(list.get(`SPREAD|${W51}`).record + 3 / Math.sqrt(3)) < 1e-9);
+  // 9 bets: no record yet.
+  assert.equal(list.get(`SPREAD|${W52}`).record, null);
+  // Neither is trusted: a record does not need the list.
+  assert.equal(list.get(`SPREAD|${W50}`).trusted, false);
+});
+
+test('a record reads only bets dated before the morning', () => {
+  const rows = [...ROWS, ...spreadSeason()];
+  // The morning of day 9 has 9 bets behind it: no record.
+  const early = buildTrustedList(rows, day(9));
+  assert.equal(early.get(`SPREAD|${W50}`).record, null);
+  // The morning of day 10 has days 0–9: 9 wins and 1 loss. Day 10 itself is not read.
+  const tenth = buildTrustedList(rows, day(10));
+  assert.ok(Math.abs(tenth.get(`SPREAD|${W50}`).record - 4 / Math.sqrt(2.5)) < 1e-9);
+  const tags = scoreTrustedListBets(rows).filter((t) => t.market === 'SPREAD' && t.w6 === W50);
+  assert.deepEqual(tags.map((t) => t.record == null), [...Array(10).fill(true), false, false]);
+  assert.ok(Math.abs(tags[10].record - tenth.get(`SPREAD|${W50}`).record) < 1e-9);
+});
+
+test('the stored morning carries every spread record, trusted or not, and reads back the same', () => {
+  const list = buildTrustedList([...ROWS, ...spreadSeason()], MORNING);
+  const stored = serializeTrustedList(list, MORNING);
+  assert.deepEqual(stored.records.map((r) => r.wallet).sort(), [W50, W51].sort());
+  assert.ok(stored.records.every((r) => r.market === 'SPREAD' && r.n === 12));
+  // The moneyline wallets have no stored record.
+  assert.equal(stored.rows.length, 8);
+  const back = hydrateTrustedList(JSON.parse(JSON.stringify(stored)));
+  assert.equal(back.get(`SPREAD|${W50}`).record, 1.732);
+  assert.equal(back.get(`SPREAD|${W51}`).record, -1.732);
+  assert.equal(back.get(`SPREAD|${W50}`).trusted, false);
+  assert.equal(back.has(`SPREAD|${W52}`), false);
+  assert.equal(trustedRecordsReady('SPREAD', back), true);
+  assert.equal(trustedRecordsReady('ML', back), false);
+  assert.deepEqual(trustedRecordSizes(back), { ML: 0, SPREAD: 2, TOTAL: 0 });
+  // A record name is not a trusted name: the sizes and the count do not move.
+  assert.deepEqual(trustedListSizes(back), trustedListSizes(hydrateTrustedList({ rows: stored.rows })));
+  assert.equal(isTrustedWalletOn('SPREAD', wallet(50), 'NBA', back), false);
+  // A morning stored before records were kept has none.
+  assert.equal(trustedRecordsReady('SPREAD', hydrateTrustedList({ rows: stored.rows })), false);
+  // Records with no trusted wallet are not a list: the paths fall back as they do on an empty morning.
+  const recordsOnly = hydrateTrustedList({ rows: [], records: stored.records });
+  assert.equal(recordsOnly.size, 2);
+  assert.equal(trustedListReady(recordsOnly), false);
+  assert.equal(trustedListReady(back), true);
+});
+
+test('the record lead is the records for minus the records against', () => {
+  const list = hydrateTrustedList(serializeTrustedList(buildTrustedList([...ROWS, ...spreadSeason()], MORNING), MORNING));
+  const p = (w, side, invested = 500, marketType = 'SPREAD') => ({ wallet: wallet(w), walletShort: wallet(w).slice(-6), side, invested, marketType });
+  const both = trustedRecordLead({ market: 'SPREAD', side: 'home', positions: [p(50, 'home'), p(51, 'away'), p(52, 'away')], list });
+  assert.equal(both.for, 1.732);
+  assert.equal(both.against, -1.732);
+  assert.equal(both.lead, 3.464);
+  assert.equal(both.walletsFor, 1);
+  assert.equal(both.walletsAgainst, 1);
+  const other = trustedRecordLead({ market: 'SPREAD', side: 'away', positions: [p(50, 'home'), p(51, 'away')], list });
+  assert.equal(other.lead, -3.464);
+  // Larger ticket decides the side; two tickets on a side are one wallet.
+  const split = trustedRecordLead({ market: 'SPREAD', side: 'home', positions: [p(50, 'home', 100), p(50, 'away', 900), p(51, 'away'), p(51, 'away', 50)], list });
+  assert.equal(split.for, 0);
+  assert.equal(split.against, 0);
+  assert.equal(split.walletsAgainst, 2);
+  // A moneyline position and a moneyline ask add nothing.
+  assert.equal(trustedRecordLead({ market: 'SPREAD', side: 'home', positions: [p(50, 'home', 500, 'ML')], list }).lead, 0);
+  assert.equal(trustedRecordLead({ market: 'ML', side: 'home', positions: [p(50, 'home')], list }).lead, 0);
 });

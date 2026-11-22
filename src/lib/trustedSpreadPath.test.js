@@ -1,13 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  TRUSTED_SPREAD_OWNS_FROM,
   TRUSTED_SPREAD_STAMP_FIELDS,
   TRUSTED_SPREAD_UNITS,
   applyTrustedSpreadPath,
   trustedSpreadLive,
+  trustedSpreadOwns,
   trustedSpreadStamp,
 } from './trustedSpreadPath.js';
 
+// The older rule: 2026-11-20 through 2026-11-21.
 const DAY = '2026-11-21';
 
 function listOf(...wallets) {
@@ -195,4 +198,229 @@ test('a trusted spread wallet counts only in a sport where it is profitable on 1
   const behind = run({ list, units: 3, side: 'away', positions: [pos('aaaaa3', 'home')] });
   assert.equal(behind.margin, 0);
   assert.equal(behind.units, 3);
+});
+
+// ─── From 2026-11-22: the path owns the spread stake ─────────────────────
+
+const OWN = '2026-11-22';
+
+/** `trusted` are the wallets that count on a side. `records` is wallet → record, trusted or not. */
+function ownList({ trusted = [], records = {} } = {}) {
+  const index = new Map();
+  for (const w of trusted) {
+    index.set(`SPREAD|${w}`, {
+      trusted: true, standing: 0.9, score: 0.02, n: 20, sports: ['NBA', 'NFL', 'CFB'], record: null,
+    });
+  }
+  for (const [w, z] of Object.entries(records)) {
+    const had = index.get(`SPREAD|${w}`);
+    if (had) had.record = z;
+    else index.set(`SPREAD|${w}`, { trusted: false, standing: null, score: null, n: 20, sports: [], played: [], record: z });
+  }
+  return index;
+}
+
+function own(over = {}) {
+  return applyTrustedSpreadPath({
+    units: 0, pickDate: OWN, sport: 'NBA', market: 'SPREAD', side: 'home',
+    positions: [pos('aaaaa1', 'home')], odds: -110, score: null,
+    list: ownList({ trusted: ['aaaaa1'], records: { aaaaa1: 2.5 } }), ...over,
+  });
+}
+
+test('the path owns the stake from 2026-11-22, and not a day before', () => {
+  assert.equal(TRUSTED_SPREAD_OWNS_FROM, '2026-11-22');
+  assert.equal(trustedSpreadOwns('2026-11-21'), false);
+  assert.equal(trustedSpreadOwns('2026-11-22'), true);
+  assert.equal(trustedSpreadOwns(null), false);
+  assert.equal(own().rule, 'gate');
+  assert.equal(run().rule, 'ahead_3');
+});
+
+test('count ahead by 1 and records ahead by 2 at a short price: 2u, with no v12 score', () => {
+  const p = own();
+  assert.equal(p.action, 'STAKE');
+  assert.equal(p.reason, 'gate');
+  assert.equal(p.units, 2);
+  assert.equal(p.margin, 1);
+  assert.equal(p.recordLead, 2.5);
+  for (const score of [null, 0, -0.8, 0.9]) assert.equal(own({ score }).units, 2);
+});
+
+test('the ladder sets the stake whatever arrived: 4u comes down to 2u, 1u goes up to 2u', () => {
+  for (const units of [0, 0.75, 1, 2, 3, 4, 6]) {
+    const p = own({ units });
+    assert.equal(p.action, 'STAKE');
+    assert.equal(p.units, 2);
+    assert.equal(p.unitsPre, units);
+  }
+});
+
+test('count ahead by 2 and records ahead by 4 at a short price: 3u', () => {
+  const list = ownList({ trusted: ['aaaaa1', 'aaaaa2'], records: { aaaaa1: 2.5, aaaaa2: 1.5 } });
+  const positions = [pos('aaaaa1', 'home'), pos('aaaaa2', 'home')];
+  const p = own({ list, positions });
+  assert.equal(p.action, 'STAKE');
+  assert.equal(p.reason, 'gate_top');
+  assert.equal(p.units, 3);
+  // Records ahead by 3.9: the count is there, the records are not. 2u.
+  const short = own({ list: ownList({ trusted: ['aaaaa1', 'aaaaa2'], records: { aaaaa1: 2.5, aaaaa2: 1.4 } }), positions });
+  assert.equal(short.units, 2);
+  // Records ahead by 4 on a count of 1: 2u.
+  const one = own({ list: ownList({ trusted: ['aaaaa1'], records: { aaaaa1: 4.5 } }) });
+  assert.equal(one.units, 2);
+  assert.equal(one.reason, 'gate');
+});
+
+test('+100 or longer inside the gate is 1u, top cell or not', () => {
+  assert.equal(own({ odds: 100 }).units, 1);
+  assert.equal(own({ odds: 100 }).reason, 'gate_plus_price');
+  assert.equal(own({ odds: 104, units: 4 }).units, 1);
+  assert.equal(own({ odds: -101 }).units, 2);
+  assert.equal(own({ odds: null, price: 0.5 }).units, 1);
+  assert.equal(own({ odds: null, price: 0.52 }).units, 2);
+  const list = ownList({ trusted: ['aaaaa1', 'aaaaa2'], records: { aaaaa1: 3, aaaaa2: 3 } });
+  const top = own({ list, positions: [pos('aaaaa1', 'home'), pos('aaaaa2', 'home')], odds: 102 });
+  assert.equal(top.units, 1);
+});
+
+test('records ahead by under 2: a stake goes to 0, and a side at 0 is left alone', () => {
+  const list = ownList({ trusted: ['aaaaa1'], records: { aaaaa1: 1.9 } });
+  const staked = own({ list, units: 4 });
+  assert.equal(staked.action, 'MUTE');
+  assert.equal(staked.reason, 'records_not_ahead');
+  assert.equal(staked.units, 0);
+  assert.equal(staked.unitsPre, 4);
+  const flat = own({ list });
+  assert.equal(flat.action, 'PASS');
+  assert.equal(flat.reason, 'records_not_ahead_no_stake');
+  assert.equal(flat.units, 0);
+  // Exactly 2 is in.
+  assert.equal(own({ list: ownList({ trusted: ['aaaaa1'], records: { aaaaa1: 2 } }) }).action, 'STAKE');
+});
+
+test('every wallet with a record counts in the records, trusted or not, on both sides', () => {
+  // A trusted wallet at +1.0 and two untrusted winners at +0.8 each: 2.6 for.
+  const list = ownList({ trusted: ['aaaaa1'], records: { aaaaa1: 1.0, ccccc1: 0.8, ccccc2: 0.8, ddddd1: -3.0, ddddd2: 1.5 } });
+  const forOnly = [pos('aaaaa1', 'home'), pos('ccccc1', 'home'), pos('ccccc2', 'home')];
+  const p = own({ list, positions: forOnly });
+  assert.equal(p.margin, 1);
+  assert.ok(Math.abs(p.recordFor - 2.6) < 1e-9);
+  assert.equal(p.action, 'STAKE');
+  // A loser on the other side adds to the lead: 2.6 − (−3.0) = 5.6.
+  const fade = own({ list, positions: [...forOnly, pos('ddddd1', 'away')] });
+  assert.ok(Math.abs(fade.recordLead - 5.6) < 1e-9);
+  assert.equal(fade.units, 2);
+  // A winner on the other side takes it away: 2.6 − 1.5 = 1.1. The stake goes to 0.
+  const opposed = own({ list, units: 3, positions: [...forOnly, pos('ddddd2', 'away')] });
+  assert.ok(Math.abs(opposed.recordLead - 1.1) < 1e-9);
+  assert.equal(opposed.action, 'MUTE');
+  // A wallet with no record adds nothing.
+  const none = own({ list, positions: [...forOnly, pos('zzzzz9', 'away')] });
+  assert.ok(Math.abs(none.recordLead - 2.6) < 1e-9);
+});
+
+test('records ahead without the count ahead is 0: level, nobody trusted, and behind', () => {
+  const list = ownList({ trusted: ['aaaaa1', 'bbbbb1'], records: { aaaaa1: 5, bbbbb1: -5, ccccc1: 6 } });
+  const level = own({ list, units: 3, positions: [pos('aaaaa1', 'home'), pos('bbbbb1', 'away')] });
+  assert.equal(level.margin, 0);
+  assert.equal(level.recordLead, 10);
+  assert.equal(level.action, 'MUTE');
+  assert.equal(level.reason, 'not_ahead');
+  const nobody = own({ list, units: 3, positions: [pos('ccccc1', 'home')] });
+  assert.equal(nobody.action, 'MUTE');
+  assert.equal(nobody.reason, 'no_trusted_wallet');
+  assert.equal(own({ list, units: 0, positions: [pos('ccccc1', 'home')] }).action, 'PASS');
+  const behind = own({ list, units: 3, side: 'away', positions: [pos('aaaaa1', 'home')] });
+  assert.equal(behind.action, 'MUTE');
+  assert.equal(behind.reason, 'behind');
+  assert.equal(own({ list, units: 0, side: 'away', positions: [pos('aaaaa1', 'home')] }).reason, 'behind_no_stake');
+});
+
+test('a wallet on both sides adds its record once, on its larger ticket', () => {
+  const list = ownList({ trusted: ['aaaaa1'], records: { aaaaa1: 2.5, ccccc1: 3 } });
+  const p = own({ list, positions: [pos('aaaaa1', 'home'), pos('ccccc1', 'home', 100), pos('ccccc1', 'away', 900)] });
+  assert.equal(p.recordFor, 2.5);
+  assert.equal(p.recordAgainst, 3);
+  assert.equal(p.recordLead, -0.5);
+  assert.equal(p.action, 'PASS');
+});
+
+test('a moneyline position adds no record on a spread', () => {
+  const list = ownList({ trusted: ['aaaaa1'], records: { aaaaa1: 1, ccccc1: 3 } });
+  const p = own({ list, positions: [pos('aaaaa1', 'home'), pos('ccccc1', 'home', 500, 'ML')] });
+  assert.equal(p.recordLead, 1);
+  assert.equal(p.action, 'PASS');
+});
+
+test('inside the gate with no price, or a price juicier than −425, the stake that arrived stays', () => {
+  const noPrice = own({ units: 3, odds: null, price: null });
+  assert.equal(noPrice.action, 'PASS');
+  assert.equal(noPrice.reason, 'no_price');
+  assert.equal(noPrice.units, 3);
+  const juice = own({ units: 3, odds: -450 });
+  assert.equal(juice.reason, 'juice');
+  assert.equal(juice.units, 3);
+  // Outside the gate the price is not read: the stake goes to 0.
+  const out = own({ units: 3, odds: null, price: null, positions: [pos('zzzzz9', 'home')] });
+  assert.equal(out.action, 'MUTE');
+});
+
+test('NHL, CBB, another market, manual, and a kill change nothing after 2026-11-22', () => {
+  const stray = [pos('zzzzz9', 'home')];
+  for (const sport of ['NHL', 'CBB', 'MLB', 'SOC']) {
+    const p = own({ sport, units: 3, positions: stray });
+    assert.equal(p.action, 'PASS');
+    assert.equal(p.reason, 'sport');
+    assert.equal(p.units, 3);
+  }
+  assert.equal(own({ market: 'TOTAL', units: 3, positions: stray }).units, 3);
+  assert.equal(own({ market: 'ML', units: 3, positions: stray }).units, 3);
+  const manual = own({ manual: true, units: 5, positions: stray });
+  assert.equal(manual.action, 'EXEMPT');
+  assert.equal(manual.units, 5);
+  const killed = own({ killed: true, units: 0 });
+  assert.equal(killed.action, 'EXEMPT');
+  assert.equal(killed.units, 0);
+  for (const sport of ['NBA', 'NFL', 'CFB', 'NCAAF']) assert.equal(own({ sport }).action, 'STAKE');
+});
+
+test('a morning with no list, or a list with no records, leaves every stake alone', () => {
+  const stray = [pos('zzzzz9', 'home')];
+  const noList = own({ list: new Map(), units: 3, positions: stray });
+  assert.equal(noList.action, 'PASS');
+  assert.equal(noList.reason, 'no_list');
+  assert.equal(noList.units, 3);
+  const noRecords = own({ list: ownList({ trusted: ['aaaaa1'] }), units: 3, positions: stray });
+  assert.equal(noRecords.action, 'PASS');
+  assert.equal(noRecords.reason, 'no_records');
+  assert.equal(noRecords.units, 3);
+  // The gate cannot fire without records either.
+  assert.equal(own({ list: ownList({ trusted: ['aaaaa1'] }) }).action, 'PASS');
+});
+
+test('the count still needs the wallet profitable in that sport', () => {
+  const list = ownList({ records: { aaaaa1: 4 } });
+  list.set('SPREAD|aaaaa1', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['CFB'], record: 4 });
+  assert.equal(own({ list, sport: 'CFB' }).action, 'STAKE');
+  const nba = own({ list, units: 3 });
+  assert.equal(nba.margin, 0);
+  assert.equal(nba.action, 'MUTE');
+});
+
+test('the stamp carries the rule and the records on every action', () => {
+  const cases = [
+    own(), own({ units: 3, positions: [pos('zzzzz9', 'home')] }), own({ odds: 120 }), own({ manual: true }), run(),
+  ];
+  for (const p of cases) {
+    const stamp = trustedSpreadStamp(p);
+    assert.deepEqual(Object.keys(stamp).sort(), [...TRUSTED_SPREAD_STAMP_FIELDS].sort());
+    assert.equal(stamp.v8_trustedSpreadRule, p.rule);
+    assert.equal(stamp.v8_trustedSpreadUnits, p.units);
+  }
+  const stamp = trustedSpreadStamp(own());
+  assert.equal(stamp.v8_trustedSpreadRecordLead, 2.5);
+  assert.equal(stamp.v8_trustedSpreadRecordFor, 2.5);
+  assert.equal(stamp.v8_trustedSpreadRecordAgainst, 0);
+  assert.equal(trustedSpreadStamp(run()).v8_trustedSpreadRecordLead, null);
 });

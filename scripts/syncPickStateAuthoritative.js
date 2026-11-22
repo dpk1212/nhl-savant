@@ -4995,12 +4995,13 @@ async function createMissingLockedPicks({
         }
       }
 
-      // Trusted spread path. Last on a spread. NBA, NFL, and CFB from
-      // 2026-11-20. The trusted spread list ahead by 3 or more at a price
-      // shorter than +100, on a side the v12 score is positive on, is at
-      // least 2u. The list behind is 0. Everything else stays on the
-      // stake that arrived. An operator kill stays. The T-15 freeze
-      // already returned. Always evaluated so the stamp is current.
+      // Trusted spread path. Last on a spread. NBA, NFL, and CFB. From
+      // 2026-11-22 it owns the stake: the trusted count ahead by 1 or more
+      // and the wallets' spread records ahead by 2 or more is 3u, 2u, or
+      // 1u by its ladder, and every other side is 0, whatever the rungs
+      // before it wrote. The v12 score is not read. An operator kill
+      // stays. The T-15 freeze already returned. Always evaluated so the
+      // stamp is current.
       if (marketType === 'SPREAD') {
         const killedCreate = isOperatorKilled({ _id: docId }, side, null);
         trustedSpreadCreate = applyTrustedSpreadPath({
@@ -5022,6 +5023,7 @@ async function createMissingLockedPicks({
           console.log(
             `  LIST-SPREAD: ${docId} ${side} ${trustedSpreadCreate.action}/${trustedSpreadCreate.reason}`
             + ` margin=${trustedSpreadCreate.margin}`
+            + ` records=${trustedSpreadCreate.recordLead == null ? '—' : trustedSpreadCreate.recordLead.toFixed(1)}`
             + ` ${trustedSpreadCreate.unitsPre}u → ${trustedSpreadCreate.units}u`,
           );
         }
@@ -8055,12 +8057,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
     }
   }
-  // Trusted spread path. Last on a spread. NBA, NFL, and CFB from
-  // 2026-11-20. The trusted spread list ahead by 3 or more at a price
-  // shorter than +100, on a side the v12 score is positive on, is at
-  // least 2u. The list behind is 0. Everything else stays on the stake
-  // that arrived. Manual stake and an operator kill stay. The T-15 freeze
-  // already returned. Always evaluated so the stamp is current.
+  // Trusted spread path. Last on a spread. NBA, NFL, and CFB. From
+  // 2026-11-22 it owns the stake: the trusted count ahead by 1 or more
+  // and the wallets' spread records ahead by 2 or more is 3u, 2u, or 1u
+  // by its ladder, and every other side is 0, whatever the rungs before
+  // it wrote. The v12 score is not read. Manual stake and an operator
+  // kill stay. The T-15 freeze already returned. Always evaluated so the
+  // stamp is current.
   let trustedSpreadPolicy = null;
   if (mkt === 'SPREAD') {
     trustedSpreadPolicy = applyTrustedSpreadPath({
@@ -8101,6 +8104,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const v13Ships = !operatorKilled
     && finalUnitsApplied > 0
     && v13MlPolicy?.action === 'STAKE';
+  // The same for a spread the trusted spread path stakes from 2026-11-22.
+  // It does not read the v12 score, so the side it stakes can be one the
+  // score muted. Without this the stake keeps its units and stays SHADOW.
+  const listSpreadShips = !operatorKilled
+    && finalUnitsApplied > 0
+    && trustedSpreadPolicy?.action === 'STAKE'
+    && trustedSpreadPolicy?.rule === 'gate';
+  const listShips = v13Ships || listSpreadShips;
   const passesShipFloor = (
     appliedStatus === 'ACTIVE'
     && scoreV12Live != null
@@ -8145,7 +8156,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     appliedStatus === 'ACTIVE'
     && finalUnitsApplied > 0
     && mlPressPolicy?.action === 'STAKE'
-  ) || v13Ships || trustShip;
+  ) || listShips || trustShip;
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
       appliedLockStage = 'LOCKED';
@@ -8154,6 +8165,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       else if (spreadSteamPolicy?.action === 'STAKE') lockStageReason = 'spread_steam_rung';
       else if (totalMiniPolicy?.action === 'STAKE') lockStageReason = 'total_mini_rung';
       else if (v13MlPolicy?.action === 'STAKE') lockStageReason = 'v13_ml_path';
+      else if (listSpreadShips) lockStageReason = 'list_spread_path';
       else if (mlPressPolicy?.action === 'STAKE') lockStageReason = 'ml_press_rung';
       else if (pressMirrorApplied) lockStageReason = PRESS_M_SUPERSEDED_REASON;
       else if (trustShip) {
@@ -8784,7 +8796,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || spreadSteamPolicy?.action === 'STAKE'
         || totalMiniPolicy?.action === 'STAKE'
         || mlPressPolicy?.action === 'STAKE'
-        || v13MlPolicy?.action === 'STAKE') {
+        || v13MlPolicy?.action === 'STAKE'
+        || trustedSpreadPolicy?.action === 'STAKE') {
       patch.v8_agsV12UnitsApplied = finalUnitsApplied;
       patch.finalUnits = finalUnitsApplied;
       if (v121Eligible) patch.v8_hcStakeTier = hcStakeTier;
@@ -8805,9 +8818,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || spreadSteamPolicy?.action === 'STAKE'
         || totalMiniPolicy?.action === 'STAKE'
         || mlPressPolicy?.action === 'STAKE'
-        || v13MlPolicy?.action === 'STAKE';
+        || v13MlPolicy?.action === 'STAKE'
+        || trustedSpreadPolicy?.action === 'STAKE';
       changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal${kept ? `, kept ${finalUnitsApplied}u` : ' — muted'})`);
-    } else if (sd.v8_agsTier == null && t5EdgeBandPolicy?.action !== 'RESCUE' && mlMiniPolicy?.action !== 'STAKE' && spreadSteamPolicy?.action !== 'STAKE' && totalMiniPolicy?.action !== 'STAKE' && mlPressPolicy?.action !== 'STAKE' && v13MlPolicy?.action !== 'STAKE') {
+    } else if (sd.v8_agsTier == null && t5EdgeBandPolicy?.action !== 'RESCUE' && mlMiniPolicy?.action !== 'STAKE' && spreadSteamPolicy?.action !== 'STAKE' && totalMiniPolicy?.action !== 'STAKE' && mlPressPolicy?.action !== 'STAKE' && v13MlPolicy?.action !== 'STAKE' && trustedSpreadPolicy?.action !== 'STAKE') {
       changes.push(`AGS-v12: ∅ → ∅ (no signal — defensively muted to FADE/0u)`);
     }
   }
@@ -9515,6 +9529,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       changes.push(
         `LIST-SPREAD: ${trustedSpreadPolicy.action}/${trustedSpreadPolicy.reason}`
         + ` margin=${trustedSpreadPolicy.margin}`
+        + ` records=${trustedSpreadPolicy.recordLead == null ? '—' : trustedSpreadPolicy.recordLead.toFixed(1)}`
         + ` ${trustedSpreadPolicy.unitsPre}u → ${trustedSpreadPolicy.units}u`,
       );
     } else if (spreadStamp.v8_trustedSpreadAction != null
@@ -10130,9 +10145,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // and let createMissingLockedPicks rebuild the live-best side this cycle.
   // The FADE/0u stamps from the mute path above still write alongside, so
   // the grader/record see an honest 0u faded side until it's superseded.
-  // A side the v13 moneyline path stakes is not the wrong side: it is not
-  // superseded for a v12 flip, and a supersede it already carries clears.
-  if (flipSupersede && !v13Ships && !sd.superseded) {
+  // A side the v13 moneyline path or the trusted spread path stakes is not
+  // the wrong side: it is not superseded for a v12 flip, and a supersede
+  // it already carries clears.
+  if (flipSupersede && !listShips && !sd.superseded) {
     patch.superseded = true;
     patch.supersededAt = now;
     patch.supersededReason = 'v12_live_side_flip';
@@ -10144,7 +10160,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.supersededReason = PRESS_M_SUPERSEDED_REASON;
     patch.supersededFlipTo = mirrorFlipTo;
     changes.push(`superseded: PRESS-M mirror → ${mirrorFlipTo} (this V12 side ${scoreV12Live.toFixed(2)} at 0u; shape on ${mirrorFlipTo})`);
-  } else if ((!flipSupersede || v13Ships) && !mirrorFlipTo && !mirrorHold && appliedLockStage === 'LOCKED' && sd.superseded) {
+  } else if ((!flipSupersede || listShips) && !mirrorFlipTo && !mirrorHold && appliedLockStage === 'LOCKED' && sd.superseded) {
     // Money flipped back onto this side — clear the stale supersede so the
     // Locked list can show it again. Without this, a SHADOW+superseded side
     // that re-scores > 0 stays invisible forever even at TOP units.
@@ -10968,7 +10984,11 @@ async function main() {
   console.log(`SPREAD-STEAM book: ${morning.spreadSteam ?? 0} wallets`);
   if (morning.trustedSource !== 'not_live') {
     console.log(`TRUSTED list: ${morning.trustedSource}, ML ${morning.trustedMl ?? 0} · spread ${morning.trustedSpread ?? 0} · total ${morning.trustedTotal ?? 0} wallets`
-      + ` · profitable on 10+ bets in a sport: ML ${morning.countingMl ?? 0} · spread ${morning.countingSpread ?? 0}`);
+      + ` · profitable on 10+ bets in a sport: ML ${morning.countingMl ?? 0} · spread ${morning.countingSpread ?? 0}`
+      + ` · spread records: ${morning.recordsSpread ?? 0} wallets`);
+    if (morning.trustedMl > 0 && !(morning.recordsSpread > 0)) {
+      console.warn('TRUSTED list carries no spread records. The trusted spread path passes this scan and the older spread rungs keep their stakes.');
+    }
     if (!(morning.trustedMl > 0)) {
       console.warn('TRUSTED list did not build. v13 moneylines read the tier book and the trusted spread path passes this scan.');
     }
