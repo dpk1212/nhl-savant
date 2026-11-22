@@ -42,14 +42,25 @@
  * Moneylines read the list in every sport. Spreads read it on NBA, NFL,
  * and CFB. The totals list lost to its own prices on the test, so no
  * totals stake reads it. The totals count is stamped for the record only.
+ *
+ * Record. From 2026-11-22 a spread side also adds up records. A wallet's
+ * record is its spread results against its own prices, every sport,
+ * before the morning: wins minus the wins its prices implied, over the
+ * luck in that many bets. It needs 10 spread bets. Every wallet with a
+ * record is stored, trusted or not, so a side can add the records on it
+ * and take away the records against it (trustedSpreadPath.js).
  */
 
 export const TRUSTED_LIST_FROM = '2026-11-20';
-export const TRUSTED_LIST_VERSION = 3;
+export const TRUSTED_LIST_VERSION = 4;
 export const TRUSTED_LIST_BAR = 0.8;
 export const TRUSTED_LIST_MIN_PRIOR = 300;
 /** Graded bets in the sport and market before a trusted wallet counts there. */
 export const TRUSTED_SPORT_MIN_BETS = 10;
+/** Graded bets in the market, every sport, before a wallet has a record. */
+export const TRUSTED_RECORD_MIN_BETS = 10;
+/** The markets whose records are stored and added up on a side. */
+export const TRUSTED_RECORD_MARKETS = Object.freeze(['SPREAD']);
 export const TRUSTED_LIST_MARKETS = Object.freeze(['ML', 'SPREAD', 'TOTAL']);
 export const TRUSTED_LIST_SPORTS = Object.freeze(['NHL', 'NBA', 'NFL', 'CFB']);
 
@@ -76,10 +87,16 @@ export function trustedListIndex() {
   return listIndex;
 }
 
-/** False when this morning's list did not build. An empty list is not a list. */
+/**
+ * False when this morning's list did not build. An empty list is not a
+ * list, and neither is one that carries records but no trusted wallet.
+ */
 export function trustedListReady(list = null) {
   const index = list instanceof Map ? list : listIndex;
-  return index.size > 0;
+  for (const info of index.values()) {
+    if (info?.trusted === true) return true;
+  }
+  return false;
 }
 
 export function normTrustedSport(sport) {
@@ -358,6 +375,16 @@ function playedSports(state, wallet, market) {
   return out.sort();
 }
 
+/**
+ * Results against the wallet's own prices in one market, in units of
+ * luck: sum of (won − price) over the square root of sum of
+ * price × (1 − price). Null under 10 bets.
+ */
+function recordOf(r) {
+  if (!r || r.n < TRUSTED_RECORD_MIN_BETS || !(r.V > 0)) return null;
+  return r.S / Math.sqrt(r.V);
+}
+
 function morningParams(state) {
   const par = {};
   for (const m of TRUSTED_LIST_MARKETS) {
@@ -398,6 +425,7 @@ function scoreWallet(state, par, wallet, market) {
     kl,
     standing,
     trusted: rated && standing != null && standing >= TRUSTED_LIST_BAR,
+    record: recordOf(r),
   };
 }
 
@@ -491,6 +519,7 @@ export function scoreTrustedListBets(rows) {
       sportBets: sr ? sr.n : 0,
       sportUnits: sr ? sr.u : 0,
       counts: sc.trusted && profitableRecord(sr),
+      record: sc.record,
     });
   });
   return out;
@@ -526,6 +555,7 @@ export function buildTrustedList(rows, asOf) {
         n: sc.n,
         sports: profitableSports(state, wallet, market),
         played: playedSports(state, wallet, market),
+        record: sc.record,
       });
     }
   }
@@ -538,12 +568,19 @@ function round(v, places) {
   return Math.round(v * f) / f;
 }
 
-/** Trusted wallets only. The stored morning does not carry the rest. */
+/**
+ * `rows` are the trusted wallets. `records` are every wallet with a
+ * spread record, trusted or not. The stored morning carries nothing else.
+ */
 export function serializeTrustedList(index, asOf) {
   const rows = [];
+  const records = [];
   for (const [key, info] of index?.entries?.() || []) {
-    if (!info?.trusted) continue;
     const [market, wallet] = String(key).split('|');
+    if (TRUSTED_RECORD_MARKETS.includes(market) && Number.isFinite(info?.record)) {
+      records.push({ market, wallet, z: round(info.record, 3), n: info.n ?? 0 });
+    }
+    if (!info?.trusted) continue;
     rows.push({
       market,
       wallet,
@@ -554,8 +591,10 @@ export function serializeTrustedList(index, asOf) {
       played: Array.isArray(info.played) ? info.played : [],
     });
   }
-  rows.sort((a, b) => a.market.localeCompare(b.market) || a.wallet.localeCompare(b.wallet));
-  return { asOf, listVersion: TRUSTED_LIST_VERSION, rows };
+  const order = (a, b) => a.market.localeCompare(b.market) || a.wallet.localeCompare(b.wallet);
+  rows.sort(order);
+  records.sort(order);
+  return { asOf, listVersion: TRUSTED_LIST_VERSION, rows, records };
 }
 
 export function hydrateTrustedList(payload) {
@@ -569,7 +608,21 @@ export function hydrateTrustedList(payload) {
       n: Number(row.n) || 0,
       sports: Array.isArray(row.sports) ? row.sports.map((x) => normTrustedSport(x)) : [],
       played: Array.isArray(row.played) ? row.played.map((x) => normTrustedSport(x)) : [],
+      record: null,
     });
+  }
+  for (const row of payload?.records || []) {
+    if (!row?.market || !row?.wallet) continue;
+    const z = Number(row.z);
+    if (row.z == null || !Number.isFinite(z)) continue;
+    const key = listKey(row.market, row.wallet);
+    const had = index.get(key);
+    if (had) had.record = z;
+    else {
+      index.set(key, {
+        trusted: false, standing: null, score: null, n: Number(row.n) || 0, sports: [], played: [], record: z,
+      });
+    }
   }
   return index;
 }
@@ -637,6 +690,78 @@ export function trustedSideCount({
   out.for.sort();
   out.against.sort();
   out.margin = out.for.length - out.against.length;
+  return out;
+}
+
+/** True when the list carries at least one record in this market. */
+export function trustedRecordsReady(market, list = null) {
+  const index = list instanceof Map ? list : listIndex;
+  const prefix = `${normTrustedMarket(market)}|`;
+  for (const [key, info] of index) {
+    if (Number.isFinite(info?.record) && String(key).startsWith(prefix)) return true;
+  }
+  return false;
+}
+
+/**
+ * The records on this side added up, the records on the other side added
+ * up, and the lead: for minus against. Every wallet with a record counts,
+ * trusted or not, in every sport. A wallet on both sides counts on its
+ * larger ticket. A row with a market that is not this market is skipped.
+ *
+ * @returns {{ for: number, against: number, lead: number, walletsFor: number, walletsAgainst: number }}
+ */
+export function trustedRecordLead({ market, side, positions, list = null } = {}) {
+  const index = list instanceof Map ? list : listIndex;
+  const mkt = normTrustedMarket(market);
+  const mySide = String(side || '').toLowerCase();
+  const out = { for: 0, against: 0, lead: 0, walletsFor: 0, walletsAgainst: 0 };
+  if (!mySide || !TRUSTED_RECORD_MARKETS.includes(mkt)) return out;
+  const held = new Map();
+  for (const raw of positions || []) {
+    const rowMarket = normTrustedMarket(raw?.marketType || raw?.market);
+    if (rowMarket && rowMarket !== mkt) continue;
+    const wallet = trustedWalletId(raw);
+    const rowSide = String(raw?.side || '').toLowerCase();
+    if (!wallet || !rowSide) continue;
+    const record = index.get(listKey(mkt, wallet))?.record;
+    if (!Number.isFinite(record)) continue;
+    const invested = Number(raw?.invested ?? raw?.size);
+    const size = invested > 0 ? invested : 0;
+    if (!held.has(wallet)) held.set(wallet, { record, sides: new Map() });
+    const sides = held.get(wallet).sides;
+    sides.set(rowSide, Math.max(sides.get(rowSide) ?? -1, size));
+  }
+  for (const { record, sides } of held.values()) {
+    let top = null;
+    let topSize = -1;
+    for (const [s, size] of sides) {
+      if (size > topSize) {
+        top = s;
+        topSize = size;
+      }
+    }
+    if (top === mySide) {
+      out.for += record;
+      out.walletsFor += 1;
+    } else {
+      out.against += record;
+      out.walletsAgainst += 1;
+    }
+  }
+  out.lead = out.for - out.against;
+  return out;
+}
+
+/** Wallets with a stored record, per market. */
+export function trustedRecordSizes(list = null) {
+  const index = list instanceof Map ? list : listIndex;
+  const out = { ML: 0, SPREAD: 0, TOTAL: 0 };
+  for (const [key, info] of index) {
+    if (!Number.isFinite(info?.record)) continue;
+    const market = String(key).split('|')[0];
+    if (market in out) out[market] += 1;
+  }
   return out;
 }
 
