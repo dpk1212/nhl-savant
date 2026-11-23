@@ -1086,6 +1086,7 @@ export const AGS_V12_STAKE_PATH = {
   'PRESS-R6':    'press ladder · two veterans',
   'V13-ML':      'moneyline ladder · trusted list ahead, edge 0 or more, steam not against · 4u, 3u, 2.5u, 2u, or 1u by price, profitable wallets ahead, and edge',
   'LIST-SPREAD': 'trusted list · spread, every sport: trusted spread wallets ahead and their spread records ahead · 3u at a price shorter than +100 with the records ahead by 4, 1u under that, 1u at +100 or longer on a line of 7 or under',
+  'LIST-TOTAL':  'trusted list · total, every sport: wallets up on this sport\'s totals ahead and the price shortened 1% up to 8% since the open when they were first seen · 3u with no tracked wallet on the other side, 2u against wallets when the sport records are ahead by 1 or more',
   MONITORING:    'watch',
   FADE:          'muted',
 };
@@ -1098,7 +1099,7 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6', 'TRUST-G', 'TRUST-S', 'TRUST-T', 'V13-ML', 'LIST-SPREAD'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER', 'HARD-UNOPP', 'PRESS', 'PRESS-X', 'PRESS-N', 'PRESS-U', 'STEAM-C', 'STEAM-S', 'FADE-F', 'PRESS-R6', 'TRUST-G', 'TRUST-S', 'TRUST-T', 'V13-ML', 'LIST-SPREAD', 'LIST-TOTAL'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
   { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT', 'SOLO-Q', 'PRESS-M'] },
 ];
@@ -1229,6 +1230,10 @@ export const AGS_V12_STAKE_TIER_META = {
   // count ahead and the wallets' spread records ahead is 3u, 2u, or 1u.
   // The card shows cron finalUnits. `units` is the middle rung.
   'LIST-SPREAD': { label: 'SHARP PLAY', short: 'LIST',  color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 2,                     ribbon: null, stars: 2.5 },
+  // 2026-11-23: trusted total path, every sport. 3u with no tracked wallet
+  // on the other side, 2u against wallets with the sport records ahead.
+  // The card shows cron finalUnits. `units` is between the two rungs.
+  'LIST-TOTAL':  { label: 'SHARP PLAY', short: 'LIST',  color: '#22C55E', bg: 'rgba(34,197,94,0.12)',   units: 2.5,                   ribbon: null, stars: 3 },
   MONITORING:    { label: 'MONITORING', short: 'WATCH', color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 0,                     ribbon: null, stars: 0 },
   FADE:          { label: 'PASS',      short: 'PASS',   color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   units: 0,                     ribbon: null, stars: 0 },
 };
