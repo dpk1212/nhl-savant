@@ -1,24 +1,24 @@
 # Wallet Profiles Summary
 
-Generated: 11/22/2026, 10:40:26 PM ET · V8 cutover: 2026-04-18 · whitelistVersion: 5
+Generated: 11/23/2026, 10:46:13 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 5
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
-**Population**: 1534 wallets · 42609 graded picks · 79508 graded positions.
+**Population**: 1536 wallets · 42777 graded picks · 79759 graded positions.
 
 ## Population by verdict
 
 | Verdict | Wallets |
 |---|---|
-| INCONCLUSIVE | 423 |
+| INCONCLUSIVE | 422 |
 | CONFIRMED_WINNER | 299 |
 | CONFIRMED_BLEEDER | 270 |
-| MIXED_PICKS_GOOD_$_BAD | 166 |
-| MIXED_PICKS_BAD_$_GOOD | 133 |
-| POSITIONS_ONLY_NEGATIVE | 111 |
+| MIXED_PICKS_GOOD_$_BAD | 168 |
+| MIXED_PICKS_BAD_$_GOOD | 134 |
+| POSITIONS_ONLY_NEGATIVE | 110 |
 | POSITIONS_ONLY_POSITIVE | 109 |
 | PICKS_ONLY_NEGATIVE | 13 |
-| PICKS_ONLY_POSITIVE | 10 |
+| PICKS_ONLY_POSITIVE | 11 |
 
 ## Whitelist tiers per sport
 
@@ -26,15 +26,15 @@ Door 2 Proven = Source B n≥6 WR≥55 $ROI>3. A-only cannot be Proven. FLAT is 
 
 | Sport | CONFIRMED | FLAT-or-better | WR50-only | Active (≥2 bets) | Any activity |
 |---|---|---|---|---|---|
-| ATP | 22 | 22 | 49 | 148 | 216 |
-| CBB | 9 | 9 | 13 | 60 | 108 |
+| ATP | 22 | 22 | 49 | 149 | 216 |
+| CBB | 9 | 9 | 13 | 60 | 109 |
 | CFB | 42 | 42 | 96 | 224 | 299 |
-| CS2 | 34 | 34 | 73 | 211 | 272 |
+| CS2 | 33 | 33 | 75 | 211 | 273 |
 | LOL | 12 | 12 | 50 | 127 | 194 |
 | MLB | 50 | 50 | 131 | 308 | 451 |
-| NBA | 89 | 89 | 235 | 552 | 696 |
-| NFL | 57 | 57 | 169 | 373 | 493 |
-| NHL | 31 | 31 | 88 | 222 | 299 |
+| NBA | 91 | 91 | 238 | 554 | 701 |
+| NFL | 55 | 55 | 169 | 374 | 493 |
+| NHL | 31 | 31 | 89 | 222 | 299 |
 | SOC | 81 | 81 | 187 | 427 | 597 |
 | UFC | 16 | 16 | 82 | 195 | 303 |
 | WNBA | 13 | 13 | 36 | 104 | 164 |
@@ -48,11 +48,11 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 | ATP | 0 | 18 | 4 | 22 | 18.2% |
 | CBB | 0 | 9 | 0 | 9 | 0% |
 | CFB | 0 | 42 | 0 | 42 | 0% |
-| CS2 | 0 | 33 | 1 | 34 | 2.9% |
+| CS2 | 0 | 32 | 1 | 33 | 3% |
 | LOL | 0 | 10 | 2 | 12 | 16.7% |
 | MLB | 0 | 46 | 4 | 50 | 8% |
-| NBA | 0 | 86 | 3 | 89 | 3.4% |
-| NFL | 0 | 57 | 0 | 57 | 0% |
+| NBA | 0 | 86 | 5 | 91 | 5.5% |
+| NFL | 0 | 55 | 0 | 55 | 0% |
 | NHL | 0 | 27 | 4 | 31 | 12.9% |
 | SOC | 0 | 80 | 1 | 81 | 1.2% |
 | UFC | 0 | 16 | 0 | 16 | 0% |
@@ -82,7 +82,7 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 | 1 | 3f8a61 | CONFIRMED | 2 | 100% | +139.6% | +2.79 | +78.4% | +2150 |
 | 2 | 8e6753 | CONFIRMED | 3 | 66.7% | +39.1% | +1.17 | +5.2% | +698 |
 | 3 | 04c524 | CONFIRMED | 3 | 66.7% | +34.4% | +1.03 | +10.9% | +340 |
-| 4 | 11f1d2 | CONFIRMED | 62 | 61.3% | +23.4% | +14.51 | +41.2% | +3875 |
+| 4 | 11f1d2 | CONFIRMED | 62 | 61.3% | +23.4% | +14.51 | +40.9% | +3855 |
 | 5 | ef68ca | CONFIRMED | 24 | 58.3% | +15.2% | +3.64 | +41.7% | +8537 |
 | 6 | 9bc9a1 | CONFIRMED | 8 | 100% | +13.1% | +1.05 | +9.6% | +1579 |
 | 7 | bc44b0 | CONFIRMED | 9 | 55.6% | +7% | +0.63 | +39.2% | +6328 |
@@ -114,10 +114,10 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 | 4 | 348973 | CONFIRMED | 11 | 72.7% | +43.7% | +4.81 | +27.4% | +14352 |
 | 5 | ba658e | CONFIRMED | 4 | 50% | +42% | +1.68 | +55.3% | +1567 |
 | 6 | 03c168 | CONFIRMED | 5 | 100% | +41% | +2.05 | +31.7% | +4074 |
-| 7 | 326f79 | CONFIRMED | 11 | 72.7% | +33.8% | +3.72 | +6.6% | +474 |
-| 8 | 2a4176 | CONFIRMED | 11 | 72.7% | +33.8% | +3.72 | +5.2% | +369 |
-| 9 | ae0200 | CONFIRMED | 9 | 88.9% | +27.7% | +2.50 | +41% | +24239 |
-| 10 | 98ebc2 | CONFIRMED | 6 | 66.7% | +26.9% | +1.61 | +74.3% | +1212290 |
+| 7 | ae0200 | CONFIRMED | 9 | 88.9% | +27.7% | +2.50 | +41% | +24239 |
+| 8 | 98ebc2 | CONFIRMED | 6 | 66.7% | +26.9% | +1.61 | +74.3% | +1212290 |
+| 9 | 326f79 | CONFIRMED | 13 | 69.2% | +26.7% | +3.47 | +9.6% | +858 |
+| 10 | 2a4176 | CONFIRMED | 13 | 69.2% | +26.7% | +3.47 | +8.5% | +753 |
 
 ### LOL
 
@@ -154,8 +154,8 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 | # | Wallet | Tier | N | WR% | Flat ROI | Flat PnL (u) | $ ROI | $ PnL |
 |---|---|---|---|---|---|---|---|---|
 | 1 | 4ab0f8 | CONFIRMED | 6 | 100% | +167.1% | +10.02 | +21.9% | +3537 |
-| 2 | 268176 | CONFIRMED | 6 | 83.3% | +167.1% | +10.03 | +13.5% | +590 |
-| 3 | 0889ba | CONFIRMED | 8 | 100% | +122.8% | +9.82 | +49% | +16672 |
+| 2 | 0889ba | CONFIRMED | 8 | 100% | +122.8% | +9.82 | +49% | +16672 |
+| 3 | 46eedb | CONFIRMED | 1 | 100% | +82% | +0.82 | +51.8% | +19631 |
 | 4 | 11b032 | CONFIRMED | 7 | 85.7% | +77.1% | +5.40 | +78.1% | +338234 |
 | 5 | 241915 | CONFIRMED | 3 | 100% | +77.1% | +2.31 | +33.6% | +565 |
 | 6 | b69900 | CONFIRMED | 6 | 83.3% | +63.6% | +3.81 | +79.9% | +13317 |
@@ -175,7 +175,7 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 | 5 | 0642b9 | CONFIRMED | 10 | 70% | +56% | +5.60 | +40.9% | +19251 |
 | 6 | 411018 | CONFIRMED | 20 | 70% | +55.7% | +11.13 | +42.9% | +22679 |
 | 7 | 95618e | CONFIRMED | 2 | 100% | +55.6% | +1.11 | +860% | +989 |
-| 8 | 918f62 | CONFIRMED | 27 | 74.1% | +53.8% | +14.53 | +35.6% | +13961 |
+| 8 | 918f62 | CONFIRMED | 28 | 75% | +53.7% | +15.02 | +35.6% | +13961 |
 | 9 | b7f4da | CONFIRMED | 14 | 71.4% | +52.6% | +7.37 | +4.8% | +1820 |
 | 10 | bf28eb | CONFIRMED | 11 | 81.8% | +49.6% | +5.45 | +26.1% | +6259 |
 
@@ -243,7 +243,7 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 
 Definition: `causalPctPos` from `src/lib/walletClvSkill.js` — % of graded positions since **2026-04-01** with CLV > 0, requiring ≥ **5** events. Stored on every profile as `clvSkill` and upserted to `sharpWalletProfiles` each `grade-sharp-actions` run.
 
-**Coverage:** 509 / 1534 wallets scored · mean pctPos **61.5%**.
+**Coverage:** 509 / 1536 wallets scored · mean pctPos **61.5%**.
 
 | # | Wallet | Beats close % | n (CLV grades) | nPos | Verdict |
 |---|---|---|---|---|---|
@@ -265,58 +265,35 @@ Definition: `causalPctPos` from `src/lib/walletClvSkill.js` — % of graded posi
 
 ## Churn since last run
 
-**48** wallet-sport tier changes since the prior run.
+**25** wallet-sport tier changes since the prior run.
 
 | Wallet | Sport | From | To | Notes |
 |---|---|---|---|---|
-| 06d0e4 | NBA | — | WR50 |  |
-| 138d9b | NBA | WR50 | CONFIRMED |  |
-| 1e462e | NFL | WR50 | CONFIRMED |  |
-| 332c23 | NFL | WR50 | CONFIRMED |  |
-| 346c8a | NFL | — | WR50 |  |
-| 36b57a | NHL | WR50 | — |  |
-| 3f8a61 | NBA | WR50 | — |  |
-| 40d814 | NBA | CONFIRMED | WR50 |  |
-| 415b58 | NBA | WR50 | CONFIRMED |  |
-| 417b88 | NBA | WR50 | CONFIRMED |  |
-| 417b88 | NFL | — | WR50 |  |
-| 42014a | NBA | — | WR50 |  |
-| 44d55f | NBA | — | WR50 |  |
-| 472ee7 | NFL | — | WR50 |  |
-| 5b1e50 | CBB | WR50 | — |  |
-| 5c2194 | NFL | WR50 | — |  |
-| 720df6 | NFL | — | WR50 |  |
-| 8366f5 | NBA | WR50 | CONFIRMED |  |
-| 921288 | NBA | WR50 | — |  |
-| 95618e | NFL | WR50 | CONFIRMED |  |
-| 97f826 | NHL | — | WR50 |  |
-| aa894c | NFL | — | WR50 |  |
-| aa894c | NHL | WR50 | — |  |
-| aaedcd | NBA | — | WR50 |  |
-| af081e | NFL | WR50 | CONFIRMED |  |
-| afcaf7 | CBB | WR50 | — |  |
-| b2a00b | NBA | — | WR50 |  |
-| b8128d | ATP | — | WR50 |  |
-| bb823a | NBA | — | WR50 |  |
-| c10f2b | NBA | CONFIRMED | WR50 |  |
-| c911a4 | NFL | CONFIRMED | WR50 |  |
-| c91c58 | NBA | CONFIRMED | WR50 |  |
-| caca29 | NBA | WR50 | CONFIRMED |  |
-| cbff8c | NBA | WR50 | CONFIRMED |  |
-| cc9f80 | NBA | — | WR50 |  |
-| cf76ed | NBA | WR50 | — |  |
-| d3948b | NFL | — | WR50 |  |
-| d6ca9b | NBA | WR50 | CONFIRMED |  |
-| d780f4 | NFL | WR50 | CONFIRMED |  |
-| e05134 | NBA | — | WR50 | new wallet |
-| e3dcd3 | NBA | WR50 | — |  |
-| e47e66 | NFL | CONFIRMED | WR50 |  |
-| ee60d6 | NBA | WR50 | CONFIRMED |  |
-| f10782 | NBA | WR50 | — |  |
-| f9a112 | NBA | WR50 | CONFIRMED |  |
-| fc0491 | NHL | WR50 | CONFIRMED |  |
-| fdd34f | NBA | WR50 | — |  |
-| fe6a11 | NBA | — | WR50 |  |
+| 199296 | CS2 | CONFIRMED | WR50 |  |
+| 268176 | NBA | CONFIRMED | WR50 |  |
+| 3102d7 | NFL | CONFIRMED | WR50 |  |
+| 346c8a | NFL | WR50 | — |  |
+| 378b15 | NBA | WR50 | CONFIRMED |  |
+| 3f8a61 | NBA | — | WR50 |  |
+| 462687 | CS2 | — | WR50 |  |
+| 46eedb | NBA | WR50 | CONFIRMED |  |
+| 6da2b4 | NBA | — | WR50 |  |
+| 720df6 | NFL | WR50 | — |  |
+| 7caac5 | NBA | WR50 | CONFIRMED |  |
+| 7d395d | NBA | CONFIRMED | WR50 |  |
+| 7d395d | NFL | CONFIRMED | WR50 |  |
+| 9214c2 | NFL | CONFIRMED | WR50 |  |
+| aa9fb4 | NFL | WR50 | CONFIRMED |  |
+| cf76ed | NBA | — | CONFIRMED |  |
+| d3567c | NBA | WR50 | CONFIRMED |  |
+| d633d1 | NBA | — | WR50 |  |
+| d6ca9b | NBA | CONFIRMED | WR50 |  |
+| e98a97 | NBA | — | WR50 |  |
+| f1a030 | NBA | WR50 | CONFIRMED |  |
+| f2f960 | NBA | CONFIRMED | WR50 |  |
+| f3b109 | NBA | CONFIRMED | WR50 |  |
+| faee11 | NHL | — | WR50 |  |
+| fe6a11 | NBA | WR50 | CONFIRMED |  |
 
 ---
 *Generated by `scripts/exportWalletProfiles.js`.*
