@@ -57,15 +57,14 @@
  *   Edge under 0: stays, and is 0 the same way.
  *   Steam against: 0.
  *
- * NHL, NBA, NFL, and CFB, edge 0 or more:
+ * Every sport, edge 0 or more (Dale's call; the fit was NHL, NBA, NFL,
+ * and CFB):
  *   4    −110 to −199, profitable wallets ahead, edge 5 up to 10
  *   3    −110 to −199, profitable wallets ahead, edge 0 up to 5
  *   2.5  longer than −110, profitable wallets ahead
  *   2    −110 to −199, profitable wallets not ahead
  *   1    −200 to −425; edge 10 or more at any price; longer than −110
  *        with profitable wallets not ahead
- *
- * Every other sport: 1 on the same gate.
  *
  * Profitable wallets ahead is the second count: trusted wallets that are
  * up in units on moneylines in the sport, ahead by 1. On a morning the
@@ -102,7 +101,6 @@ export const V13_ML_LIST_TIER = 'tier';
 export const V13_ML_TRUSTED_AHEAD = 1;
 /** The ladder. From this date it is the only size on a moneyline. */
 export const V13_ML_LADDER_FROM = '2026-11-23';
-export const V13_ML_LADDER_SPORTS = Object.freeze(['NHL', 'NBA', 'NFL', 'CFB']);
 export const V13_ML_LADDER_HEAVY_ODDS = -200;
 export const V13_ML_LADDER_EDGE_SPLIT = 5;
 export const V13_ML_LADDER_TOP_UNITS = 4;
@@ -119,10 +117,6 @@ export function isV13MlLive(pickDate) {
 
 export function isV13MlLadderLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= V13_ML_LADDER_FROM;
-}
-
-export function v13MlLadderSport(sport) {
-  return V13_ML_LADDER_SPORTS.includes(normMlMiniSport(sport));
 }
 
 export function setV13MlBook(index) {
@@ -252,7 +246,7 @@ export function v13LadderZone(odds, price) {
  * The ladder, from V13_ML_LADDER_FROM. `armed` already passed the wallet
  * gate. `lead` is the profitable count ahead by 1.
  */
-function ladderSize(armed, { sport, odds, price, move, lead }) {
+function ladderSize(armed, { odds, price, move, lead }) {
   if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
   const zone = v13LadderZone(odds, price);
   if (zone === 'juice') return { ...armed, action: 'PASS', zone, reason: 'juice' };
@@ -260,9 +254,6 @@ function ladderSize(armed, { sport, odds, price, move, lead }) {
   if (armed.edge < 0) return { ...armed, action: 'PASS', zone, reason: 'edge_under' };
   if (move != null && move < 0) {
     return { ...armed, action: 'MUTE', units: 0, zone: 'against', reason: 'against' };
-  }
-  if (!v13MlLadderSport(sport)) {
-    return sized(armed, V13_ML_LADDER_BASE_UNITS, zone, 'other_sport');
   }
   if (armed.edge >= V13_ML_EDGE_MAX) {
     return sized(armed, V13_ML_LADDER_BASE_UNITS, zone, 'edge10');
@@ -501,7 +492,7 @@ export function applyV13MlPath({
     };
     if (against > 0) return { ...armed, action: 'PASS', reason: 'qualified_against' };
   }
-  if (ladder) return ladderSize(armed, { sport, odds, price, move, lead });
+  if (ladder) return ladderSize(armed, { odds, price, move, lead });
   if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
   if (armed.edge < 0) {
     const under = v13HighPriceZone(odds, price);

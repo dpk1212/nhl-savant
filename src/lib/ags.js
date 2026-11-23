@@ -1075,7 +1075,7 @@ export const AGS_V12_STAKE_PATH = {
   'PRESS-X':     'press ladder · informed dissent under size',
   'PRESS-U':     'press ladder · dissent under size, no press',
   'PRESS-N':     'press ladder · deep-book press, no Door-2 either side',
-  'STEAM-C':     'press ladder · steam overrules a small dissent',
+  'STEAM-C':     'press ladder · steam overrules a small dissent · 3u on a moneyline from 2026-11-23',
   'STEAM-S':     'press ladder · steam overrules a seasoned ordinary bet',
   'SOLO-Q':      'press ladder · quiet unopposed favourite',
   'FADE-F':      'press ladder · a streaking floor wallet is on the other side',

@@ -225,7 +225,7 @@ test('the stamp says which list the side read and the count on it', () => {
   }
 });
 
-test('on the ladder a side the path passes is 0 whatever old rung staked it', () => {
+test('on the ladder a side the path passes is 0, or 3u when STEAM-C staked it', () => {
   const prev = process.env.V12PLUS_ML_DISABLED;
   process.env.V12PLUS_ML_DISABLED = '1';
   const pickDate = '2026-11-23';
@@ -235,13 +235,19 @@ test('on the ladder a side the path passes is 0 whatever old rung staked it', ()
     ['ML|tttt02', { trusted: true, sports: IN, played: IN }],
   ]);
   const args = { pickDate, list, positions: [pos('tttt01')], odds: -150, steam: 3, edge: 6 };
-  // LAK @ OTT, Nov 21: the list was not ahead and STEAM-C kept 4u.
+  // LAK @ OTT, Nov 21: the list was not ahead and STEAM-C kept 4u at −173.
   const notAhead = run({ ...args, units: 4, positions: [pos('tttt01'), pos('tttt02', 'away')] });
   assert.equal(notAhead.action, 'PASS');
   assert.equal(notAhead.reason, 'trusted_not_ahead');
-  for (const stakeTier of ['STEAM-C', 'TRUST-G', 'GAP-LEAD']) {
+  const steamC = applyV12plusMlStakeDisable({
+    market: 'ML', units: notAhead.units, v13Action: notAhead.action, stakeTier: 'STEAM-C', pickDate, odds: -173,
+  });
+  assert.equal(steamC.applied, false);
+  assert.equal(steamC.resized, true);
+  assert.equal(steamC.units, 3);
+  for (const stakeTier of ['TRUST-G', 'GAP-LEAD']) {
     const out = applyV12plusMlStakeDisable({
-      market: 'ML', units: notAhead.units, v13Action: notAhead.action, stakeTier, pickDate,
+      market: 'ML', units: notAhead.units, v13Action: notAhead.action, stakeTier, pickDate, odds: -173,
     });
     assert.equal(out.applied, true, stakeTier);
     assert.equal(out.units, 0, stakeTier);

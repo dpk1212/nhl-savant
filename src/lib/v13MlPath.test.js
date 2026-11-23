@@ -8,7 +8,6 @@ import {
   v13HighPriceZone,
   v13HalfStake,
   v13LadderZone,
-  v13MlLadderSport,
   v13MlStamp,
   v13OpensSide,
   v13PriceZone,
@@ -600,10 +599,6 @@ test('the ladder price read: −110 to −199, −200 to −425, and everything 
   assert.equal(v13LadderZone(null, 0.5), 'plus');
   assert.equal(v13LadderZone(null, 0.85), 'juice');
   assert.equal(v13LadderZone(null, null), null);
-  for (const sport of ['NHL', 'NBA', 'NFL', 'CFB', 'NCAAF', 'nba']) assert.equal(v13MlLadderSport(sport), true, sport);
-  for (const sport of ['SOC', 'CS2', 'ATP', 'CBB', 'NCAAB', 'MLB', 'UFC', 'LOL', 'WNBA', '']) {
-    assert.equal(v13MlLadderSport(sport), false, sport);
-  }
 });
 
 test('4: −110 to −199, profitable wallets ahead, edge 5 up to 10', () => {
@@ -745,24 +740,34 @@ test('the wallet gate is unchanged on the ladder', () => {
   assert.equal(spread.units, 2);
 });
 
-test('every other sport is 1 on the same gate', () => {
-  for (const sport of ['SOC', 'CS2', 'ATP', 'CBB', 'NCAAB', 'LOL', 'UFC', 'MLB', 'WNBA']) {
-    for (const [odds, edge, positions] of [
-      [-150, 6, [pos('tttt01')]], [-150, 2, [pos('tttt01')]], [110, 3, [pos('tttt01')]],
-      [-300, 3, [pos('tttt01')]], [-150, 14, [pos('tttt01')]], [200, 3, [pos('tttt01')]],
-    ]) {
-      const out = runLadder({ sport, list: LIST, positions, odds, edge });
-      assert.equal(out.action, 'STAKE', `${sport} ${odds} ${edge}`);
-      assert.equal(out.units, 1, `${sport} ${odds} ${edge}`);
-      assert.equal(out.reason, 'other_sport');
-    }
-    assert.equal(runLadder({ sport, list: LIST, positions: [pos('tttt01')], edge: -1 }).action, 'PASS', sport);
-    assert.equal(runLadder({ sport, list: LIST, positions: [pos('tttt01')], odds: 240 }).action, 'MUTE', sport);
-    assert.equal(runLadder({ sport, list: LIST, positions: [pos('tttt01')], odds: -450 }).action, 'PASS', sport);
+test('every sport takes the same ladder', () => {
+  const up = [pos('tttt01')];
+  for (const sport of ['NHL', 'NBA', 'NFL', 'CFB', 'NCAAF', 'SOC', 'CS2', 'ATP', 'CBB', 'NCAAB', 'LOL', 'UFC', 'MLB', 'WNBA']) {
+    const at = (over) => runLadder({ sport, list: LIST, positions: up, ...over });
+    assert.equal(at({ odds: -150, edge: 6 }).units, 4, sport);
+    assert.equal(at({ odds: -150, edge: 6 }).reason, 'band_lead_edge5', sport);
+    assert.equal(at({ odds: -150, edge: 2 }).units, 3, sport);
+    assert.equal(at({ odds: 110, edge: 3 }).units, 2.5, sport);
+    assert.equal(at({ odds: -300, edge: 3 }).units, 1, sport);
+    assert.equal(at({ odds: -150, edge: 14 }).units, 1, sport);
+    assert.equal(at({ odds: 200, edge: 3 }).units, 1, sport);
+    assert.equal(at({ edge: -1 }).action, 'PASS', sport);
+    assert.equal(at({ odds: 240 }).action, 'MUTE', sport);
+    assert.equal(at({ odds: -450 }).action, 'PASS', sport);
+    assert.equal(at({ steam: -2 }).action, 'MUTE', sport);
   }
-  for (const sport of ['NHL', 'NFL', 'CFB', 'NCAAF']) {
-    assert.equal(runLadder({ sport, list: LIST, positions: [pos('tttt01')], odds: -150, edge: 6 }).units, 4, sport);
-  }
+  // Profitable wallets not ahead, in a sport outside the fit.
+  const soc = new Map([
+    ['ML|up0001', { trusted: true, sports: ['SOC'], played: ['SOC'] }],
+    ['ML|down01', { trusted: true, sports: [], played: ['SOC'] }],
+  ]);
+  assert.equal(runLadder({ sport: 'SOC', list: soc, positions: THIN, odds: -150, edge: 6 }).units, 2);
+  assert.equal(runLadder({ sport: 'SOC', list: soc, positions: THIN, odds: 120, edge: 6 }).units, 1);
+  assert.equal(runLadder({ sport: 'SOC', list: soc, odds: -150, edge: 6 }).units, 4);
+  // Three-way: a trusted wallet on the draw counts against home.
+  const draw = runLadder({ sport: 'SOC', list: soc, positions: [pos('up0001'), pos('down01', 'draw')] });
+  assert.equal(draw.action, 'PASS');
+  assert.equal(draw.reason, 'trusted_not_ahead');
 });
 
 test('a morning with no list opens on the tier book and sizes without the profitable lead', () => {
