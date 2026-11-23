@@ -12,6 +12,7 @@ import {
   trustedTotalRung,
   trustedTotalStamp,
 } from './trustedTotalPath.js';
+import { splitFullGameTotalPositions } from '../../scripts/lib/totalMarketFilter.js';
 
 const DAY = TRUSTED_TOTAL_FROM;
 
@@ -361,4 +362,106 @@ test('a side that carries the path\'s stake from an earlier scan and no longer e
   assert.equal(run({ positions: [pos('aaaaa1', 'over'), pos('ccccc1', 'under')], staked: true }).units, 2);
   // Manual and killed sides are still left alone.
   assert.equal(run({ manual: true, staked: true, units: 3 }).action, 'EXEMPT');
+});
+
+// ── Every line a wallet holds on the full game ─────────────────────────
+// The sync takes tickets more than 2.5 points off the main line off the
+// board and hands them back to this path, with the board's positions.
+
+/** A position with a line and a market title, as the sync holds it. */
+function lined(wallet, side, line, { steam = 3, title = null, invested = 500 } = {}) {
+  return { ...pos(wallet, side, steam, { invested }), entryLine: line, title: title ?? `Thunder vs. Pacers: O/U ${line}` };
+}
+
+/** What the sync hands the path: the board's rows, then the far lines. */
+function ladderRows(rows, mainLine) {
+  const split = splitFullGameTotalPositions(rows, { mainLine, sport: 'NBA' });
+  return { board: split.kept, everyLine: [...split.kept, ...split.farLine] };
+}
+
+test('every line: list wallets on a far line count for the side', () => {
+  const { board, everyLine } = ladderRows([
+    lined('aaaaa1', 'under', 224.5),
+    lined('aaaaa2', 'under', 221.5),
+    lined('bbbbb1', 'under', 221.5),
+  ], 224.5);
+  assert.equal(trustedTotalRead({ side: 'under', positions: board, sport: 'NBA', list: LIST }).margin, 1);
+  const p = run({ side: 'under', positions: everyLine });
+  assert.equal(p.margin, 3);
+  assert.deepEqual(p.wallets, ['aaaaa1', 'aaaaa2', 'bbbbb1']);
+  assert.equal(p.action, 'STAKE');
+  assert.equal(p.units, 3);
+});
+
+test('every line: a side whose only list wallet is on a far line is staked', () => {
+  const { board, everyLine } = ladderRows([lined('aaaaa1', 'over', 228.5)], 224.5);
+  assert.equal(board.length, 0);
+  assert.equal(run({ positions: board }).units, 0);
+  assert.equal(trustedTotalOpensSide({ pickDate: DAY, sport: 'NBA', side: 'over', positions: everyLine, list: LIST }), true);
+  const p = run({ positions: everyLine });
+  assert.equal(p.action, 'STAKE');
+  assert.equal(p.reason, 'unopposed');
+  assert.equal(p.units, 3);
+});
+
+test('every line: a list wallet against on a far line takes the stake away', () => {
+  const { board, everyLine } = ladderRows([
+    lined('aaaaa1', 'over', 224.5),
+    lined('bbbbb1', 'under', 228.5),
+  ], 224.5);
+  assert.equal(run({ positions: board }).units, 3);
+  const p = run({ positions: everyLine });
+  assert.equal(p.margin, 0);
+  assert.equal(p.units, 0);
+  assert.equal(p.reason, 'not_ahead_no_stake');
+  // A side the path staked on an earlier scan is muted, not left standing.
+  const muted = run({ positions: everyLine, units: 3, staked: true });
+  assert.equal(muted.action, 'MUTE');
+  assert.equal(muted.units, 0);
+});
+
+test('every line: a tracked wallet against on a far line takes 3u to the opposed rungs', () => {
+  const { everyLine } = ladderRows([
+    lined('aaaaa1', 'over', 224.5),
+    lined('zzzzz9', 'under', 219.5),
+  ], 224.5);
+  const p = run({ positions: everyLine });
+  assert.equal(p.walletsAgainst, 1);
+  assert.equal(p.reason, 'opposed_records_ahead');
+  assert.equal(p.units, 2);
+});
+
+test('every line: steam is read on the far-line ticket of the wallet that holds it', () => {
+  const { everyLine } = ladderRows([
+    lined('aaaaa1', 'over', 224.5, { steam: 0.2 }),
+    lined('aaaaa2', 'over', 228.5, { steam: 4 }),
+    lined('bbbbb1', 'over', 228.5, { steam: 5 }),
+  ], 224.5);
+  const p = run({ positions: everyLine });
+  assert.equal(p.steamReads, 3);
+  assert.equal(p.steam, 4);
+  assert.equal(p.units, 3);
+});
+
+test('every line: a wallet on both sides across lines counts once, on its larger ticket', () => {
+  const { everyLine } = ladderRows([
+    lined('aaaaa1', 'over', 224.5, { invested: 200 }),
+    lined('aaaaa1', 'under', 228.5, { invested: 900 }),
+  ], 224.5);
+  const over = trustedTotalRead({ side: 'over', positions: everyLine, sport: 'NBA', list: LIST });
+  assert.equal(over.walletsFor, 0);
+  assert.deepEqual(over.listAgainst, ['aaaaa1']);
+  assert.equal(run({ side: 'under', positions: everyLine }).units, 3);
+});
+
+test('every line: a first-half or team total never reaches the path, near or far', () => {
+  const { everyLine } = ladderRows([
+    lined('aaaaa1', 'over', 112.5, { title: 'Thunder vs. Pacers: 1H O/U 112.5' }),
+    lined('aaaaa2', 'over', 224.5, { title: 'Thunder vs. Pacers: 1st Half O/U 224.5' }),
+    lined('bbbbb1', 'over', 115.5, { title: 'Thunder Team Total: O/U 115.5' }),
+  ], 224.5);
+  assert.equal(everyLine.length, 0);
+  const p = run({ positions: everyLine });
+  assert.equal(p.units, 0);
+  assert.equal(p.reason, 'no_list_wallet_no_stake');
 });

@@ -14,6 +14,7 @@ import {
   pickFullGameMlMarket,
   pickFullGameSpreadMarket,
   rejectNonFullGameBoardPosition,
+  splitFullGameTotalPositions,
 } from '../scripts/lib/totalMarketFilter.js';
 
 let passed = 0;
@@ -227,5 +228,38 @@ ok(
   ),
   'keep full-game ML',
 );
+
+// OKC@IND 2026-11-23 — main 224.5, list wallets on Under 221.5.
+{
+  const rows = [
+    { walletShort: 'main01', side: 'under', entryLine: 224.5, title: 'Thunder vs. Pacers: O/U 224.5' },
+    { walletShort: 'near01', side: 'under', entryLine: 222.5, title: 'Thunder vs. Pacers: O/U 222.5' },
+    { walletShort: 'far001', side: 'under', entryLine: 221.5, title: 'Thunder vs. Pacers: O/U 221.5' },
+    { walletShort: 'far002', side: 'over', totalLine: 228.5, title: 'Thunder vs. Pacers: O/U 228.5' },
+    { walletShort: 'half01', side: 'under', entryLine: 112.5, title: 'Thunder vs. Pacers: 1H O/U 112.5' },
+    { walletShort: 'team01', side: 'over', entryLine: 115.5, title: 'Thunder Team Total: O/U 115.5' },
+    { walletShort: 'half02', side: 'over', entryLine: 221.5, title: 'Thunder vs. Pacers: 1st Half O/U 221.5' },
+  ];
+  const split = splitFullGameTotalPositions(rows, { mainLine: 224.5, sport: 'NBA' });
+  const names = (list) => list.map((p) => p.walletShort).join(',');
+  ok(names(split.kept) === 'main01,near01', 'split: within 2.5 of the main stays on the board');
+  ok(names(split.farLine) === 'far001,far002', 'split: full-game tickets on far lines are set aside, not lost');
+  ok(names(split.dropped) === 'half01,team01,half02', 'split: 1H and team totals are dropped, on any line');
+  ok(split.kept.length + split.farLine.length + split.dropped.length === rows.length, 'split: every row lands once');
+  ok(split.farLine[0] === rows[2], 'split: rows pass through untouched');
+
+  const noMain = splitFullGameTotalPositions(rows, { mainLine: null, sport: 'NBA' });
+  ok(noMain.farLine.length === 0 && noMain.kept.length === 4, 'split: no main line → no far line, all full-game rows kept');
+  ok(noMain.dropped.length === 3, 'split: no main line still drops 1H and team totals');
+
+  const empty = splitFullGameTotalPositions(null, { mainLine: 224.5 });
+  ok(empty.kept.length === 0 && empty.farLine.length === 0 && empty.dropped.length === 0, 'split: no rows');
+
+  const f5 = splitFullGameTotalPositions(
+    [{ walletShort: 'f5', side: 'over', entryLine: 3.5 }],
+    { mainLine: 8.5, sport: 'MLB' },
+  );
+  ok(f5.dropped.length === 1 && f5.farLine.length === 0, 'split: a titleless MLB F5 line is dropped, not a far line');
+}
 
 console.log(`OK — ${passed} assertions`);
