@@ -4964,6 +4964,10 @@ async function createMissingLockedPicks({
       // book. The dog cap still rules a sized bet: longer than +200 is 0.
       // Manual stake and an operator kill stay. The T-15 freeze
       // already returned. Always evaluate every ML side so the stamp is current.
+      // From 2026-11-23 those sizes are retired and the ladder in
+      // v13MlPath.js is the size: 4 / 3 / 2.5 / 2 / 1 in NHL, NBA, NFL, and
+      // CFB, 1 in every other sport, 0 on an edge under 0 or steam against.
+      // The half rule, the steam sizes, and the 2 on an edge under 0 are gone.
       if (marketType === 'ML') {
         const killedCreate = isOperatorKilled({ _id: docId }, side, null);
         v13MlCreate = applyV13MlPath({
@@ -5755,13 +5759,15 @@ async function createMissingLockedPicks({
       }
       // V12+ ML stake disable — AFTER V12+ rungs and V13. V13 STAKE/MUTE
       // keep their result. Every other ML side → 0u muted with flag marker.
-      // Manual stake / operator kill stay. Never raises a stake.
+      // Manual stake / operator kill stay. Never raises a stake. From
+      // 2026-11-23 TRUST-G, STEAM-C, and GAP-LEAD no longer keep a stake here.
       const mlStakeDisableCreate = applyV12plusMlStakeDisable({
         market: marketType,
         units: peakUnitsApplied,
         operatorKilled: isOperatorKilled({ _id: docId }, side, null),
         v13Action: v13MlCreate?.action ?? null,
         stakeTier: hcStakeTierCreate,
+        pickDate: TARGET_DATE,
       });
       if (mlStakeDisableCreate.applied) {
         peakUnitsApplied = 0;
@@ -8033,6 +8039,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // longer than +200 is 0. Manual stake and an operator kill
   // stay. The T-15 freeze already returned. Always evaluate every ML side
   // so the stamp is current (PASS/EXEMPT overwrite prior STAKE fields).
+  // From 2026-11-23 those sizes are retired and the ladder in v13MlPath.js
+  // is the size: 4 / 3 / 2.5 / 2 / 1 in NHL, NBA, NFL, and CFB, 1 in every
+  // other sport, 0 on an edge under 0 or steam against. The half rule, the
+  // steam sizes, and the 2 on an edge under 0 are gone. This is the last
+  // write to a moneyline stake before the V12+ ML disable, and from that
+  // date the disable keeps no old rung, so the stake is this path's or 0.
   let v13MlPolicy = null;
   if (mkt === 'ML') {
     v13MlPolicy = applyV13MlPath({
@@ -10175,6 +10187,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // STAKE/MUTE keep their result. Every other ML → 0u muted with flag
   // marker. Manual stake / operator kill stay. Never raises a stake.
   // Spreads/totals skip. lockStage and policy stamps stay as computed.
+  // From 2026-11-23 TRUST-G, STEAM-C, and GAP-LEAD no longer keep a
+  // moneyline stake here: the stake is the V13 path's or 0.
   const mlStakeDisable = applyV12plusMlStakeDisable({
     market: mkt,
     units: finalUnitsApplied,
@@ -10182,6 +10196,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     manual: skipManualFlinch,
     v13Action: v13MlPolicy?.action ?? null,
     stakeTier: hcStakeTier,
+    pickDate,
   });
   if (mlStakeDisable.applied) {
     const unitsPreDisable = mlStakeDisable.unitsPre;

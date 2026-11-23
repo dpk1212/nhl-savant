@@ -69,24 +69,70 @@ test('V13-staked side is untouched (keeps V13 units)', () => {
   else process.env.V12PLUS_ML_DISABLED = prev;
 });
 
-test('Trust-G, steam-C, and gap lead keep a moneyline stake', () => {
+test('before the ladder, Trust-G, steam-C, and gap lead kept a moneyline stake', () => {
   const prev = process.env.V12PLUS_ML_DISABLED;
   process.env.V12PLUS_ML_DISABLED = '1';
-  assert.equal(isV12plusMlRungKept('TRUST-G'), true);
-  assert.equal(isV12plusMlRungKept('PRESS'), false);
+  const pickDate = '2026-11-22';
+  assert.equal(isV12plusMlRungKept('TRUST-G', pickDate), true);
+  assert.equal(isV12plusMlRungKept('PRESS', pickDate), false);
   for (const stakeTier of ['TRUST-G', 'STEAM-C', 'GAP-LEAD']) {
     const out = applyV12plusMlStakeDisable({
-      market: 'ML', units: 2, v13Action: 'PASS', stakeTier,
+      market: 'ML', units: 2, v13Action: 'PASS', stakeTier, pickDate,
     });
     assert.equal(out.applied, false);
     assert.equal(out.units, 2);
     assert.equal(out.preservedBy, stakeTier);
   }
   const muted = applyV12plusMlStakeDisable({
-    market: 'ML', units: 2, v13Action: 'PASS', stakeTier: 'PRESS',
+    market: 'ML', units: 2, v13Action: 'PASS', stakeTier: 'PRESS', pickDate,
   });
   assert.equal(muted.applied, true);
   assert.equal(muted.units, 0);
+  if (prev == null) delete process.env.V12PLUS_ML_DISABLED;
+  else process.env.V12PLUS_ML_DISABLED = prev;
+});
+
+test('from the ladder day no old rung keeps a moneyline stake', () => {
+  const prev = process.env.V12PLUS_ML_DISABLED;
+  process.env.V12PLUS_ML_DISABLED = '1';
+  for (const pickDate of ['2026-11-23', '2026-12-01', null]) {
+    for (const stakeTier of ['TRUST-G', 'STEAM-C', 'GAP-LEAD', 'PRESS', 'ML-MINI', 'TOP3']) {
+      assert.equal(isV12plusMlRungKept(stakeTier, pickDate), false, `${stakeTier} ${pickDate}`);
+      for (const v13Action of ['PASS', 'EXEMPT', null]) {
+        const out = applyV12plusMlStakeDisable({
+          market: 'ML', units: 4, v13Action, stakeTier, pickDate,
+        });
+        assert.equal(out.applied, true, `${stakeTier} ${pickDate} ${v13Action}`);
+        assert.equal(out.units, 0);
+        assert.equal(out.unitsPre, 4);
+        assert.equal(out.mutedBy, V12PLUS_ML_DISABLED_MUTED_BY);
+      }
+    }
+  }
+  // The path's own stake and mute, a manual stake, and an operator kill stay.
+  const pickDate = '2026-11-23';
+  const path = applyV12plusMlStakeDisable({
+    market: 'ML', units: 3, v13Action: 'STAKE', stakeTier: 'V13-ML', pickDate,
+  });
+  assert.equal(path.applied, false);
+  assert.equal(path.units, 3);
+  const manual = applyV12plusMlStakeDisable({
+    market: 'ML', units: 5, v13Action: 'EXEMPT', stakeTier: 'TRUST-G', manual: true, pickDate,
+  });
+  assert.equal(manual.units, 5);
+  assert.equal(manual.preservedBy, 'manual');
+  const killed = applyV12plusMlStakeDisable({
+    market: 'ML', units: 0, v13Action: 'EXEMPT', operatorKilled: true, pickDate,
+  });
+  assert.equal(killed.preservedBy, 'operator');
+  // Spreads and totals are not read.
+  for (const market of ['SPREAD', 'TOTAL']) {
+    const out = applyV12plusMlStakeDisable({
+      market, units: 3, v13Action: null, stakeTier: 'TRUST-S', pickDate,
+    });
+    assert.equal(out.applied, false);
+    assert.equal(out.units, 3);
+  }
   if (prev == null) delete process.env.V12PLUS_ML_DISABLED;
   else process.env.V12PLUS_ML_DISABLED = prev;
 });

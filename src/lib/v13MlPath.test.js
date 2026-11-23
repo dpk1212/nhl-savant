@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  V13_ML_LADDER_FROM,
   applyV13MlPath,
   buildV13MlBook,
+  isV13MlLadderLive,
   v13HighPriceZone,
   v13HalfStake,
+  v13LadderZone,
+  v13MlLadderSport,
+  v13MlStamp,
   v13OpensSide,
   v13PriceZone,
   v13UsesTrustedList,
@@ -539,4 +544,259 @@ test('half of every v13 size, to the quarter unit, and the dog cap comes first',
   // Longer than +200 is still 0, and steam against is still 0.
   assert.equal(runList({ list: MIXED, positions, odds: 240 }).units, 0);
   assert.equal(runList({ list: MIXED, positions, steam: -2 }).action, 'MUTE');
+});
+
+// ─── The ladder, from 2026-11-23 ─────────────────────────────
+
+const LADDER_DAY = '2026-11-23';
+
+/** up1, up2 lead with the profitable count. down01 leads on the wide count only. */
+function runLadder(over = {}) {
+  return applyV13MlPath({
+    units: 1,
+    pickDate: LADDER_DAY,
+    sport: 'NBA',
+    market: 'ML',
+    side: 'home',
+    positions: [pos('up0001')],
+    odds: -150,
+    steam: 0,
+    edge: 6,
+    book: book(),
+    list: MIXED,
+    ...over,
+  });
+}
+
+const THIN = [pos('down01')];
+
+test('the ladder starts on its day, and the day before keeps the old sizes', () => {
+  assert.equal(V13_ML_LADDER_FROM, LADDER_DAY);
+  assert.equal(isV13MlLadderLive('2026-11-22'), false);
+  assert.equal(isV13MlLadderLive(LADDER_DAY), true);
+  assert.equal(isV13MlLadderLive(null), false);
+  const before = runLadder({ pickDate: '2026-11-22', odds: -150, edge: 6, steam: 0 });
+  assert.equal(before.units, 4);
+  assert.equal(before.reason, 'favorite');
+  const half = runLadder({ pickDate: '2026-11-22', positions: THIN });
+  assert.equal(half.half, true);
+  assert.equal(half.units, 2);
+  const rescue = runLadder({ pickDate: '2026-11-22', edge: -3, odds: -160 });
+  assert.equal(rescue.reason, 'rescue');
+  assert.equal(rescue.units, 2);
+});
+
+test('the ladder price read: −110 to −199, −200 to −425, and everything longer', () => {
+  assert.equal(v13LadderZone(-110), 'band');
+  assert.equal(v13LadderZone(-199), 'band');
+  assert.equal(v13LadderZone(-200), 'heavy');
+  assert.equal(v13LadderZone(-425), 'heavy');
+  assert.equal(v13LadderZone(-426), 'juice');
+  assert.equal(v13LadderZone(-109), 'plus');
+  assert.equal(v13LadderZone(100), 'plus');
+  assert.equal(v13LadderZone(200), 'plus');
+  assert.equal(v13LadderZone(null, 0.6), 'band');
+  assert.equal(v13LadderZone(null, 0.7), 'heavy');
+  assert.equal(v13LadderZone(null, 0.5), 'plus');
+  assert.equal(v13LadderZone(null, 0.85), 'juice');
+  assert.equal(v13LadderZone(null, null), null);
+  for (const sport of ['NHL', 'NBA', 'NFL', 'CFB', 'NCAAF', 'nba']) assert.equal(v13MlLadderSport(sport), true, sport);
+  for (const sport of ['SOC', 'CS2', 'ATP', 'CBB', 'NCAAB', 'MLB', 'UFC', 'LOL', 'WNBA', '']) {
+    assert.equal(v13MlLadderSport(sport), false, sport);
+  }
+});
+
+test('4: −110 to −199, profitable wallets ahead, edge 5 up to 10', () => {
+  for (const [odds, edge] of [[-110, 5], [-150, 6], [-199, 9.99]]) {
+    const out = runLadder({ odds, edge });
+    assert.equal(out.action, 'STAKE', `${odds} ${edge}`);
+    assert.equal(out.units, 4, `${odds} ${edge}`);
+    assert.equal(out.zone, 'band');
+    assert.equal(out.reason, 'band_lead_edge5');
+    assert.equal(out.half, false);
+  }
+  // Two profitable for and a down wallet against is still ahead on both counts.
+  const both = runLadder({ positions: [pos('up0001'), pos('up0002'), pos('down01', 'away')] });
+  assert.equal(both.units, 4);
+});
+
+test('3: the same band and wallets with an edge of 0 up to 5', () => {
+  for (const [odds, edge] of [[-110, 0], [-150, 2.5], [-199, 4.99]]) {
+    const out = runLadder({ odds, edge });
+    assert.equal(out.action, 'STAKE', `${odds} ${edge}`);
+    assert.equal(out.units, 3, `${odds} ${edge}`);
+    assert.equal(out.reason, 'band_lead');
+  }
+});
+
+test('2.5: longer than −110 with profitable wallets ahead, under the dog cap', () => {
+  for (const odds of [-109, -105, 100, 110, 120, 150]) {
+    const out = runLadder({ odds, edge: 3 });
+    assert.equal(out.action, 'STAKE', `${odds}`);
+    assert.equal(out.units, 2.5, `${odds}`);
+    assert.equal(out.zone, 'plus');
+    assert.equal(out.reason, 'plus_lead');
+  }
+  assert.equal(runLadder({ odds: 151, edge: 3 }).units, 1.5);
+  assert.equal(runLadder({ odds: 199, edge: 3 }).units, 1.5);
+  assert.equal(runLadder({ odds: 200, edge: 3 }).units, 1);
+  const longDog = runLadder({ odds: 201, edge: 3, units: 2 });
+  assert.equal(longDog.action, 'MUTE');
+  assert.equal(longDog.units, 0);
+  assert.equal(longDog.reason, 'dog');
+  // The edge does not move this level.
+  assert.equal(runLadder({ odds: 110, edge: 9 }).units, 2.5);
+});
+
+test('2: −110 to −199 when profitable wallets are not ahead, and it is not a half', () => {
+  for (const [odds, edge] of [[-110, 0], [-150, 6], [-199, 9.9]]) {
+    const out = runLadder({ positions: THIN, odds, edge });
+    assert.equal(out.action, 'STAKE', `${odds} ${edge}`);
+    assert.equal(out.units, 2, `${odds} ${edge}`);
+    assert.equal(out.reason, 'band');
+    assert.equal(out.half, false);
+    assert.equal(v13MlStamp(out, { now: 1 }).v8_v13MlHalf, false);
+  }
+  // Two down wallets for and a profitable one against: ahead on the wide count only.
+  const mixed = runLadder({ positions: [pos('down01'), pos('down02'), pos('up0001', 'away')] });
+  assert.equal(mixed.units, 2);
+});
+
+test('1: heavy favorites, an edge of 10 or more, and plus prices without the profitable lead', () => {
+  for (const odds of [-200, -300, -425]) {
+    const heavy = runLadder({ odds, edge: 6 });
+    assert.equal(heavy.action, 'STAKE', `${odds}`);
+    assert.equal(heavy.units, 1, `${odds}`);
+    assert.equal(heavy.zone, 'heavy');
+    assert.equal(heavy.reason, 'heavy_favorite');
+    assert.equal(runLadder({ odds, edge: 6, positions: THIN }).units, 1);
+  }
+  for (const odds of [-300, -150, -110, 110, 150, 199, 200]) {
+    const high = runLadder({ odds, edge: 10 });
+    assert.equal(high.action, 'STAKE', `${odds}`);
+    assert.equal(high.units, 1, `${odds}`);
+    assert.equal(high.reason, 'edge10');
+    assert.equal(runLadder({ odds, edge: 22, positions: THIN }).units, 1);
+  }
+  for (const odds of [-109, 100, 150, 199, 200]) {
+    const thin = runLadder({ odds, edge: 4, positions: THIN });
+    assert.equal(thin.action, 'STAKE', `${odds}`);
+    assert.equal(thin.units, 1, `${odds}`);
+    assert.equal(thin.reason, 'plus');
+  }
+});
+
+test('0: an edge under 0, a missing edge, juice, no price, steam against, and a long dog', () => {
+  // The old 2u on an edge under 0 at −150 or shorter is gone.
+  for (const odds of [-300, -150, -120, 110]) {
+    const under = runLadder({ units: 3, odds, edge: -0.1, steam: null });
+    assert.equal(under.action, 'PASS', `${odds}`);
+    assert.equal(under.reason, 'edge_under');
+    assert.equal(under.units, 3);
+    assert.equal(v13MlStamp(under, { now: 1 }).v8_v13MlUnits, 0);
+  }
+  const noEdge = runLadder({ edge: null });
+  assert.equal(noEdge.action, 'PASS');
+  assert.equal(noEdge.reason, 'missing_edge');
+  const juice = runLadder({ odds: -426 });
+  assert.equal(juice.action, 'PASS');
+  assert.equal(juice.reason, 'juice');
+  const juiceUnder = runLadder({ odds: -500, edge: -4 });
+  assert.equal(juiceUnder.reason, 'juice');
+  const noPrice = runLadder({ odds: null, price: null });
+  assert.equal(noPrice.action, 'PASS');
+  assert.equal(noPrice.reason, 'no_price');
+  const against = runLadder({ units: 4, steam: -0.1 });
+  assert.equal(against.action, 'MUTE');
+  assert.equal(against.units, 0);
+  assert.equal(against.reason, 'against');
+  assert.equal(runLadder({ edge: 14, steam: -2 }).action, 'MUTE');
+  assert.equal(runLadder({ sport: 'SOC', list: LIST, positions: [pos('tttt01')], steam: -2 }).action, 'MUTE');
+  assert.equal(runLadder({ odds: 240 }).action, 'MUTE');
+});
+
+test('steam does not size the ladder, and a missing steam is not a move against', () => {
+  for (const steam of [null, 0, 2, 4.5, 6, 10, 15]) {
+    assert.equal(runLadder({ steam, odds: -150, edge: 6 }).units, 4, `steam ${steam}`);
+    assert.equal(runLadder({ steam, odds: -150, edge: 2 }).units, 3, `steam ${steam}`);
+    assert.equal(runLadder({ steam, odds: 110, edge: 2 }).units, 2.5, `steam ${steam}`);
+    assert.equal(runLadder({ steam, odds: -150, edge: 2, positions: THIN }).units, 2, `steam ${steam}`);
+    assert.equal(runLadder({ steam, odds: -250, edge: 2 }).units, 1, `steam ${steam}`);
+  }
+});
+
+test('the wallet gate is unchanged on the ladder', () => {
+  const none = runLadder({ positions: [pos('thin01')] });
+  assert.equal(none.action, 'PASS');
+  assert.equal(none.reason, 'no_trusted_wallet');
+  const even = runLadder({ positions: [pos('up0001'), pos('down01', 'away')] });
+  assert.equal(even.action, 'PASS');
+  assert.equal(even.reason, 'trusted_not_ahead');
+  const behind = runLadder({ positions: [pos('up0001'), pos('up0002', 'away'), pos('down01', 'away')] });
+  assert.equal(behind.reason, 'trusted_not_ahead');
+  const manual = runLadder({ units: 5, manual: true });
+  assert.equal(manual.action, 'EXEMPT');
+  assert.equal(manual.units, 5);
+  const killed = runLadder({ units: 0, killed: true });
+  assert.equal(killed.action, 'EXEMPT');
+  const spread = runLadder({ market: 'SPREAD', units: 2 });
+  assert.equal(spread.action, 'PASS');
+  assert.equal(spread.reason, 'not_ml');
+  assert.equal(spread.units, 2);
+});
+
+test('every other sport is 1 on the same gate', () => {
+  for (const sport of ['SOC', 'CS2', 'ATP', 'CBB', 'NCAAB', 'LOL', 'UFC', 'MLB', 'WNBA']) {
+    for (const [odds, edge, positions] of [
+      [-150, 6, [pos('tttt01')]], [-150, 2, [pos('tttt01')]], [110, 3, [pos('tttt01')]],
+      [-300, 3, [pos('tttt01')]], [-150, 14, [pos('tttt01')]], [200, 3, [pos('tttt01')]],
+    ]) {
+      const out = runLadder({ sport, list: LIST, positions, odds, edge });
+      assert.equal(out.action, 'STAKE', `${sport} ${odds} ${edge}`);
+      assert.equal(out.units, 1, `${sport} ${odds} ${edge}`);
+      assert.equal(out.reason, 'other_sport');
+    }
+    assert.equal(runLadder({ sport, list: LIST, positions: [pos('tttt01')], edge: -1 }).action, 'PASS', sport);
+    assert.equal(runLadder({ sport, list: LIST, positions: [pos('tttt01')], odds: 240 }).action, 'MUTE', sport);
+    assert.equal(runLadder({ sport, list: LIST, positions: [pos('tttt01')], odds: -450 }).action, 'PASS', sport);
+  }
+  for (const sport of ['NHL', 'NFL', 'CFB', 'NCAAF']) {
+    assert.equal(runLadder({ sport, list: LIST, positions: [pos('tttt01')], odds: -150, edge: 6 }).units, 4, sport);
+  }
+});
+
+test('a morning with no list opens on the tier book and sizes without the profitable lead', () => {
+  const band = runLadder({ list: new Map(), positions: [pos('aaaaaa')], odds: -150, edge: 6 });
+  assert.equal(band.list, 'tier');
+  assert.equal(band.action, 'STAKE');
+  assert.equal(band.units, 2);
+  assert.equal(band.reason, 'band');
+  const plus = runLadder({ list: new Map(), positions: [pos('aaaaaa')], odds: 110, edge: 6 });
+  assert.equal(plus.units, 1);
+  const opposed = runLadder({ list: new Map(), positions: [pos('aaaaaa'), pos('bbbbbb', 'away')] });
+  assert.equal(opposed.action, 'PASS');
+  assert.equal(opposed.reason, 'qualified_against');
+});
+
+test('no ladder size is outside 0, 1, 1.5, 2, 2.5, 3, 4', () => {
+  const sizes = new Set();
+  for (const sport of ['NBA', 'SOC']) {
+    for (const positions of [[pos('up0001')], THIN]) {
+      for (const odds of [-430, -426, -425, -300, -201, -200, -199, -150, -111, -110, -109, -100,
+        100, 120, 121, 150, 151, 199, 200, 201, 210]) {
+        for (const edge of [-2, 0, 4.9, 5, 9.9, 10, 30]) {
+          for (const steam of [null, -1, 0, 5, 12]) {
+            const list = sport === 'NBA' ? MIXED : new Map([
+              ['ML|up0001', { trusted: true, sports: ['SOC'], played: ['SOC'] }],
+              ['ML|down01', { trusted: true, sports: [], played: ['SOC'] }],
+            ]);
+            const out = runLadder({ sport, list, positions, odds, edge, steam, units: 0 });
+            if (out.action === 'STAKE') sizes.add(out.units);
+            else assert.equal(out.units, 0);
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual([...sizes].sort((a, b) => a - b), [1, 1.5, 2, 2.5, 3, 4]);
 });

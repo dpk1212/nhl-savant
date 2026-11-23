@@ -7,7 +7,9 @@
  * Stake rule (after V12+ rungs, ML-MINI, juice, and the full V13 path
  * including #484 / #486 edge10+ / #487 rescue):
  *   • V13 action STAKE or MUTE → keep that exact V13 result
- *   • TRUST-G, STEAM-C, and GAP-LEAD keep the stake they already wrote
+ *   • Before 2026-11-23, TRUST-G, STEAM-C, and GAP-LEAD kept the stake
+ *     they already wrote. From 2026-11-23 (the moneyline ladder) no old
+ *     rung keeps a moneyline stake: the stake is the V13 path's or 0.
  *   • Every other ML side (PASS / EXEMPT) → 0u muted with
  *     mutedBy / marker naming this flag as the mute source
  *   • Manual stake and operator kill still win
@@ -19,6 +21,8 @@
  * Default ON in this PR. Rollback: set V12PLUS_ML_DISABLED_DEFAULT to false,
  * or run with env V12PLUS_ML_DISABLED=0 / false / off.
  */
+
+import { isV13MlLadderLive } from './v13MlPath.js';
 
 /** Default ON. Flip to false to roll back without an env override. */
 export const V12PLUS_ML_DISABLED_DEFAULT = true;
@@ -85,10 +89,16 @@ export function isV13MlStakeKept(v13Action) {
   return a === 'STAKE' || a === 'MUTE';
 }
 
-/** Rungs that still stake a moneyline after the flag. Everything else goes to 0. */
+/**
+ * Rungs that kept a moneyline stake after the flag, on pick dates before
+ * the moneyline ladder. From the ladder's first day none of them does.
+ */
 const V12PLUS_ML_KEEP_TIERS = new Set(['TRUST-G', 'STEAM-C', 'GAP-LEAD']);
 
-export function isV12plusMlRungKept(stakeTier) {
+/** A pick date is required. With none, or from the ladder's first day, no rung is kept. */
+export function isV12plusMlRungKept(stakeTier, pickDate = null) {
+  if (typeof pickDate !== 'string' || pickDate.length < 10) return false;
+  if (isV13MlLadderLive(pickDate)) return false;
   return V12PLUS_ML_KEEP_TIERS.has(String(stakeTier || ''));
 }
 
@@ -104,6 +114,7 @@ export function applyV12plusMlStakeDisable({
   manual = false,
   v13Action = null,
   stakeTier = null,
+  pickDate = null,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const base = {
@@ -122,7 +133,7 @@ export function applyV12plusMlStakeDisable({
   if (isV13MlStakeKept(v13Action)) {
     return { ...base, preservedBy: 'v13' };
   }
-  if (pre > 0 && isV12plusMlRungKept(stakeTier)) {
+  if (pre > 0 && isV12plusMlRungKept(stakeTier, pickDate)) {
     return { ...base, preservedBy: String(stakeTier) };
   }
   // V13 PASS / EXEMPT / absent → strip the V12+ stake; mute with flag marker.
