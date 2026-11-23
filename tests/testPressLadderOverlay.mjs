@@ -110,7 +110,12 @@ import {
   TRUST_MIN_AGE_DAYS,
   isTrustAgeLive,
   t4Bucket,
+  R6_SKILL_FROM,
+  isR6SkillLive,
 } from '../src/lib/pressLadderOverlay.js';
+import { setMlMiniBook } from '../src/lib/mlMiniRung.js';
+import { setSpreadSteamBook } from '../src/lib/spreadSteamRung.js';
+import { setTotalMiniBook } from '../src/lib/totalMiniRung.js';
 
 let n = 0;
 function ok(cond, msg) { assert.ok(cond, msg); n++; }
@@ -486,6 +491,84 @@ const wd = (wallet, side, invested) => ({ wallet, side, invested });
     side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profiles, sideOdds: -110,
   });
   eq(vetoed.rung, null, 'Door-2 against blocks R6');
+}
+
+// 7b. From 2026-11-17 R6 is two skill-8 wallets and nobody at 1.5×.
+{
+  const DAY = R6_SKILL_FROM;
+  const SP = 'NHL';
+  const bookProfiles = new Map([
+    profile('aaaaaa', SP, { n: 20, wr: 48, dollarRoi: -5, usual: 1000 }),
+    profile('bbbbbb', SP, { n: 20, wr: 48, dollarRoi: -5, usual: 1000 }),
+    profile('cccccc', SP, { n: 20, wr: 48, dollarRoi: -5, usual: 1000 }),
+  ]);
+  const hot = [4, 4, 1.6];
+  const cold = [4, 2, 2.2];
+  const mlBook = new Map([
+    ['NHL|aaaaaa', { good: true, bands: [hot, hot, hot, hot, hot, hot, hot] }],
+    ['NHL|bbbbbb', { good: true, bands: [hot, hot, hot, hot, hot, hot, hot] }],
+    ['NHL|cccccc', { good: true, bands: [cold, cold, cold, cold, cold, cold, cold] }],
+  ]);
+  const spreadBook = new Map([
+    ['NHL|aaaaaa', { good: true, cells: { 'laying|1.5': hot } }],
+    ['NHL|bbbbbb', { good: true, cells: { 'laying|1.5': hot } }],
+  ]);
+  const totalBook = new Map([
+    ['NHL|aaaaaa', { good: true, cells: { 'over|to 5.5': hot } }],
+    ['NHL|bbbbbb', { good: true, cells: { 'over|to 5.5': hot } }],
+  ]);
+  setMlMiniBook(mlBook);
+  setSpreadSteamBook(spreadBook);
+  setTotalMiniBook(totalBook);
+  eq(isR6SkillLive('2026-11-16'), false, 'skill R6 off on the 16th');
+  eq(isR6SkillLive(DAY), true, 'skill R6 on from the 17th');
+  const oldShape = evaluatePressLadder({
+    walletDetails: [wd('bbbbbb', 'over', 600), wd('eeeeee', 'over', 900), wd('dddddd', 'under', 100)],
+    side: 'over', sport: SPORT, marketType: 'TOTAL', walletProfiles: profiles, sideOdds: -110, pickDate: DAY,
+  });
+  eq(oldShape.rung, null, 'the veteran rule stands down on the 17th');
+  const both = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 400), wd('bbbbbb', 'home', 200), wd('cccccc', 'away', 50)],
+    side: 'home', sport: SP, marketType: 'ML', walletProfiles: bookProfiles, sideOdds: -130, pickDate: DAY,
+    positions: [
+      { wallet: 'aaaaaa', side: 'home', avgPrice: 0.55 },
+      { wallet: 'bbbbbb', side: 'home', avgPrice: 0.55 },
+    ],
+  });
+  eq(both.rung, PRESS_R6_STAKE_TIER, 'two skill-8 wallets, nobody pressing');
+  eq(both.units, R6_UNITS, 'still 2u');
+  ok(String(both.reason).startsWith('r6_skill_'), both.reason);
+  const one = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 400), wd('cccccc', 'home', 200), wd('cccccc', 'away', 50)],
+    side: 'home', sport: SP, marketType: 'ML', walletProfiles: bookProfiles, sideOdds: -130, pickDate: DAY,
+  });
+  eq(one.rung, null, 'one skill-8 wallet is not R6');
+  const pressed = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 400), wd('bbbbbb', 'home', 2000)],
+    side: 'home', sport: SP, marketType: 'ML', walletProfiles: bookProfiles, sideOdds: -130, pickDate: DAY,
+  });
+  eq(pressed.rung, null, 'a 2× wallet blocks the skill rung');
+  const spread = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 400), wd('bbbbbb', 'home', 200)],
+    side: 'home', sport: SP, marketType: 'SPREAD', walletProfiles: bookProfiles, sideOdds: -110, pickDate: DAY,
+    line: -1.5,
+  });
+  eq(spread.rung, PRESS_R6_STAKE_TIER, 'spread cell at skill 8');
+  eq(spread.units, 2, 'spread stays 2u');
+  const total = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'over', 400), wd('bbbbbb', 'over', 200)],
+    side: 'over', sport: SP, marketType: 'TOTAL', walletProfiles: bookProfiles, sideOdds: -110, pickDate: DAY,
+    line: 5.5,
+  });
+  eq(total.rung, PRESS_R6_STAKE_TIER, 'total cell at skill 8');
+  const other = evaluatePressLadder({
+    walletDetails: [wd('aaaaaa', 'home', 400), wd('bbbbbb', 'home', 200), wd('cccccc', 'away', 50)],
+    side: 'home', sport: 'MLB', marketType: 'ML', walletProfiles: bookProfiles, sideOdds: -130, pickDate: DAY,
+  });
+  eq(other.rung, null, 'the cell is the four sports');
+  setMlMiniBook(new Map());
+  setSpreadSteamBook(new Map());
+  setTotalMiniBook(new Map());
 }
 
 // 9. Fail-closed on missing inputs

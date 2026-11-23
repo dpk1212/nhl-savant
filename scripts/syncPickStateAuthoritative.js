@@ -4446,6 +4446,8 @@ async function createMissingLockedPicks({
           // Legacy chain's stake before the ladder overrides — TRUST-G input.
           legacyUnits: trustMirrorYieldCreate ? 0 : peakUnitsApplied,
           steam: ladderSteam(liveTapeCreate, null),
+          positions,
+          line,
         });
       }
       if (isPressLadderLive(TARGET_DATE)) {
@@ -7577,6 +7579,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       // Legacy chain's stake before the ladder overrides — TRUST-G input.
       legacyUnits: trustMirrorYield ? 0 : finalUnitsApplied,
       steam: ladderSteam(liveTapeSnap, sd?.v8_steam || null),
+      positions: group,
+      line: tapeCtxLive?.ticketLine ?? sd.lock?.line ?? sd.peak?.line ?? null,
     });
   }
   const pressLive = isPressLadderLive(pickDate);
