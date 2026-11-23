@@ -199,7 +199,7 @@ import {
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { cleanStoredTeam, stripPlayerPropsSuffix } from './lib/playerPropsEvent.js';
 import { adoptedCommenceMs, commenceMoveReopensLock } from './lib/commenceFollow.js';
-import { acceptFullGameSidePosition, acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
+import { acceptFullGameSidePosition, splitFullGameTotalPositions } from './lib/totalMarketFilter.js';
 import { flipUFCGameKey, remapUFCPinnSides, canonicalUFCKey, isUFCFlipAlias } from './lib/ufcFighters.js';
 import { slugDatesAreBoardLeftovers } from './lib/positionEventMatch.js';
 import {
@@ -2692,32 +2692,46 @@ function buildPositionGroupsFromFirestore(positions) {
 }
 
 /**
+ * Full-game total tickets more than 2.5 points off the main line, by
+ * group key. The scrub takes them off the board; the trusted total path
+ * still counts them. Rebuilt on every scrub.
+ */
+const farLineTotalsByGroup = new Map();
+
+/**
  * Drop F5 / team-total / 1H / far-alt rows from TOTAL clusters so AGS/HC
  * never stakes on derivative Over/Under contracts (DET@SEA 2026-08-06).
+ * Full-game rows on a far line are set aside for the trusted total path.
  * Returns count removed.
  */
 function scrubNonFullGameTotals(groups, gameMeta) {
   let removed = 0;
+  farLineTotalsByGroup.clear();
   for (const [gk, list] of groups.entries()) {
     const [sport, gameKey, mkt] = gk.split('|');
     if (mkt !== 'TOTAL') continue;
     const gm = gameMeta.get(`${sport}|${gameKey}`);
     const mainLine = mainTotalLine(gm) ?? gm?.polyTotalLine ?? null;
-    const kept = [];
-    for (const p of list) {
-      const gate = acceptFullGameTotalPosition({
-        title: p.title || '',
-        slug: p.slug || '',
-        entryLine: p.entryLine ?? p.totalLine ?? null,
-        mainLine,
-        sport,
-      });
-      if (gate.ok) kept.push(p);
-      else removed++;
-    }
+    const { kept, farLine, dropped } = splitFullGameTotalPositions(list, { mainLine, sport });
+    removed += farLine.length + dropped.length;
+    if (farLine.length) farLineTotalsByGroup.set(gk, farLine);
     groups.set(gk, kept);
   }
   return removed;
+}
+
+/**
+ * The positions the trusted total path reads on one game: the board's
+ * positions plus the full-game tickets on far lines. Its record was
+ * graded on every line a wallet held, so the live count reads the same
+ * tickets (OKC@IND 2026-11-23: list wallets on Under 221.5 with the main
+ * at 224.5 left the Under's count at 1 where every line reads 3).
+ * First-half, quarter, and team totals stay out. Nothing else reads the
+ * far lines.
+ */
+function totalLadderPositions(sport, gameKey, positions) {
+  const far = farLineTotalsByGroup.get(`${sport}|${gameKey}|TOTAL`);
+  return far && far.length ? [...(positions || []), ...far] : positions;
 }
 
 /**
@@ -3409,7 +3423,10 @@ async function createMissingLockedPicks({
       );
       const listTotalOpens = marketType === 'TOTAL'
         && !manualAgainstCreate
-        && trustedTotalOpensSide({ pickDate: TARGET_DATE, sport, market: marketType, side, positions });
+        && trustedTotalOpensSide({
+          pickDate: TARGET_DATE, sport, market: marketType, side,
+          positions: totalLadderPositions(sport, gameKey, positions),
+        });
       if (docAlready && !top3Early.fires && !gapEarly.fires && !listTotalOpens) continue;
       const live = computeWalletConsensus(positions, side, sport, walletProfiles);
       // Quick-skip: no Door-2, no HC, and no trusted wallet on this game.
@@ -5081,7 +5098,8 @@ async function createMissingLockedPicks({
           sport,
           market: marketType,
           side,
-          positions,
+          // Every line a wallet holds on the full game, far alts included.
+          positions: totalLadderPositions(sport, gameKey, positions),
           odds: stakeOdds ?? odds ?? null,
           killed: killedCreate,
           manualAgainst: manualAgainstCreate,
@@ -8223,7 +8241,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       sport: pick.sport,
       market: mkt,
       side,
-      positions: group,
+      // Every line a wallet holds on the full game, far alts included.
+      positions: totalLadderPositions(pick.sport, pick.gameKey, group),
       odds: stakeOdds,
       manual: skipManualFlinch,
       killed: operatorKilled,
@@ -11244,6 +11263,11 @@ async function main() {
   const scrubbedTotals = scrubNonFullGameTotals(groups, gameMeta);
   if (scrubbedTotals > 0) {
     console.log(`  ↳ scrubbed ${scrubbedTotals} non-full-game / far-alt TOTAL position(s) (F5, team total, 1H, …)`);
+    let farLineKept = 0;
+    for (const rows of farLineTotalsByGroup.values()) farLineKept += rows.length;
+    if (farLineKept > 0) {
+      console.log(`  ↳ ${farLineKept} of them full-game on a far line: off the board, counted by the trusted total path`);
+    }
   }
   const scrubbedSides = scrubNonFullGameSides(groups, gameMeta);
   if (scrubbedSides > 0) {

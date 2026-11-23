@@ -250,3 +250,34 @@ export function acceptFullGameTotalPosition({
   }
   return { ok: true };
 }
+
+/**
+ * Sort one game's total positions three ways.
+ *
+ *   kept     full-game totals within `maxDiff` of the main line. The
+ *            board, the score, and the cards read these.
+ *   farLine  full-game totals more than `maxDiff` off the main line.
+ *            Off the board; the trusted total path still counts them,
+ *            because its record was graded on every line.
+ *   dropped  not a full-game total: first half, quarter, team total, F5.
+ *            Nothing reads these.
+ *
+ * @returns {{ kept: object[], farLine: object[], dropped: object[] }}
+ */
+export function splitFullGameTotalPositions(list, { mainLine = null, sport = null, maxDiff = 2.5 } = {}) {
+  const out = { kept: [], farLine: [], dropped: [] };
+  for (const p of list || []) {
+    const gate = acceptFullGameTotalPosition({
+      title: p?.title || '',
+      slug: p?.slug || '',
+      entryLine: p?.entryLine ?? p?.totalLine ?? null,
+      mainLine,
+      sport,
+      maxDiff,
+    });
+    if (gate.ok) out.kept.push(p);
+    else if (gate.reason === 'alt_line_off_main') out.farLine.push(p);
+    else out.dropped.push(p);
+  }
+  return out;
+}
