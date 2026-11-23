@@ -62,6 +62,7 @@ import {
   trustedListReady,
   trustedListSizes,
   trustedRecordSizes,
+  trustedSportRecordSizes,
   TRUSTED_LIST_VERSION,
 } from '../../src/lib/trustedList.js';
 
@@ -299,6 +300,7 @@ async function ensureMorningSkillBooks(db, asOf, persist, { force = false } = {}
 function trustedStats(index, source) {
   const sizes = trustedListSizes(index);
   const counting = trustedListCounting(index);
+  const totalSport = trustedSportRecordSizes('TOTAL', index);
   return {
     trustedSource: source,
     trustedMl: sizes.ML,
@@ -307,6 +309,8 @@ function trustedStats(index, source) {
     countingMl: counting.ML,
     countingSpread: counting.SPREAD,
     recordsSpread: trustedRecordSizes(index).SPREAD,
+    recordsTotalSport: totalSport.wallets,
+    listTotalSport: totalSport.up,
   };
 }
 

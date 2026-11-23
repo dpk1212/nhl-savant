@@ -20,6 +20,9 @@ import {
   trustedRecordSizes,
   trustedRecordsReady,
   trustedSideCount,
+  trustedSportRecord,
+  trustedSportRecordSizes,
+  trustedSportRecordsReady,
 } from './trustedList.js';
 
 function day(n) {
@@ -504,4 +507,107 @@ test('the record lead is the records for minus the records against', () => {
   // A moneyline position and a moneyline ask add nothing.
   assert.equal(trustedRecordLead({ market: 'SPREAD', side: 'home', positions: [p(50, 'home', 500, 'ML')], list }).lead, 0);
   assert.equal(trustedRecordLead({ market: 'ML', side: 'home', positions: [p(50, 'home')], list }).lead, 0);
+});
+
+// ─── Totals sport records ────────────────────────────────────────────────
+
+/**
+ * Totals at a price of 0.5, one bet a day. Wallet 60 wins 9 of 12 on NBA
+ * totals and loses 10 of 10 on NHL totals. Wallet 61 wins 3 of 12 on NBA
+ * totals. Wallet 62 has 9 NBA totals, all wins.
+ */
+function totalSeason() {
+  const rows = [];
+  for (let d = 0; d < 12; d += 1) {
+    rows.push(row({ w: 60, date: day(d), game: `t${d}_60`, marketType: 'TOTAL', side: 'over', line: 220.5, result: d < 9 ? 'WIN' : 'LOSS' }));
+    if (d < 10) rows.push(row({ w: 60, date: day(d), game: `tn${d}_60`, marketType: 'TOTAL', side: 'under', line: 5.5, sport: 'NHL', result: 'LOSS' }));
+    rows.push(row({ w: 61, date: day(d), game: `t${d}_61`, marketType: 'TOTAL', side: 'under', line: 220.5, result: d < 3 ? 'WIN' : 'LOSS' }));
+    if (d < 9) rows.push(row({ w: 62, date: day(d), game: `t${d}_62`, marketType: 'TOTAL', side: 'over', line: 220.5, result: 'WIN' }));
+  }
+  return rows;
+}
+
+const W60 = wallet(60).slice(-6);
+const W61 = wallet(61).slice(-6);
+const W62 = wallet(62).slice(-6);
+
+test('a totals sport record is the results in that sport against the wallet\'s own prices, from 10 bets', () => {
+  const list = buildTrustedList([...ROWS, ...totalSeason()], MORNING);
+  const nba = trustedSportRecord('TOTAL', wallet(60), 'NBA', list);
+  // 9 wins in 12 at 0.5: (9 − 6) / sqrt(12 × 0.25) = 1.732, and up 6 units.
+  assert.ok(Math.abs(nba.z - 3 / Math.sqrt(3)) < 1e-9);
+  assert.equal(nba.n, 12);
+  assert.equal(nba.up, true);
+  // The same wallet on NHL totals: 0 wins in 10, (0 − 5) / sqrt(2.5), and down.
+  const nhl = trustedSportRecord('TOTAL', wallet(60), 'NHL', list);
+  assert.ok(Math.abs(nhl.z + 5 / Math.sqrt(2.5)) < 1e-9);
+  assert.equal(nhl.up, false);
+  // A losing wallet has a record and is not up.
+  const low = trustedSportRecord('TOTAL', W61, 'NBA', list);
+  assert.ok(Math.abs(low.z + 3 / Math.sqrt(3)) < 1e-9);
+  assert.equal(low.up, false);
+  // 9 bets: no record. A sport never bet: none. Another market: none.
+  assert.equal(trustedSportRecord('TOTAL', W62, 'NBA', list), null);
+  assert.equal(trustedSportRecord('TOTAL', W60, 'CFB', list), null);
+  assert.equal(trustedSportRecord('ML', W60, 'NBA', list), null);
+  assert.equal(trustedSportRecord('SPREAD', W60, 'NBA', list), null);
+  // NCAAF and CFB are one sport; a moneyline wallet has no totals record.
+  assert.equal(trustedSportRecord('TOTAL', wallet(0), 'NBA', list), null);
+  // A sport record does not make a wallet trusted.
+  assert.equal(list.get(`TOTAL|${W60}`).trusted, false);
+});
+
+test('a totals sport record reads only bets dated before the morning', () => {
+  const rows = [...ROWS, ...totalSeason()];
+  assert.equal(trustedSportRecord('TOTAL', W60, 'NBA', buildTrustedList(rows, day(9))), null);
+  // Days 0–9: 9 wins and 1 loss. Day 10 itself is not read.
+  const tenth = trustedSportRecord('TOTAL', W60, 'NBA', buildTrustedList(rows, day(10)));
+  assert.ok(Math.abs(tenth.z - 4 / Math.sqrt(2.5)) < 1e-9);
+  assert.equal(tenth.n, 10);
+  const tags = scoreTrustedListBets(rows).filter((t) => t.market === 'TOTAL' && t.sport === 'NBA' && t.w6 === W60);
+  assert.deepEqual(tags.map((t) => t.sportRecord == null), [...Array(10).fill(true), false, false]);
+  assert.ok(Math.abs(tags[10].sportRecord - tenth.z) < 1e-9);
+});
+
+test('the stored morning carries every totals sport record and reads back the same', () => {
+  const list = buildTrustedList([...ROWS, ...totalSeason()], MORNING);
+  const stored = serializeTrustedList(list, MORNING);
+  assert.equal(stored.listVersion, TRUSTED_LIST_VERSION);
+  assert.deepEqual(
+    stored.sportRecords.map((r) => `${r.market}|${r.wallet}|${r.sport}`).sort(),
+    [`TOTAL|${W60}|NBA`, `TOTAL|${W60}|NHL`, `TOTAL|${W61}|NBA`].sort(),
+  );
+  // The moneyline rows are as they were.
+  assert.equal(stored.rows.length, 8);
+  const back = hydrateTrustedList(JSON.parse(JSON.stringify(stored)));
+  assert.deepEqual(trustedSportRecord('TOTAL', W60, 'NBA', back), { z: 1.732, n: 12, up: true });
+  assert.deepEqual(trustedSportRecord('TOTAL', W60, 'NHL', back), { z: -3.162, n: 10, up: false });
+  assert.deepEqual(trustedSportRecord('TOTAL', W61, 'NBA', back), { z: -1.732, n: 12, up: false });
+  assert.equal(trustedSportRecord('TOTAL', W62, 'NBA', back), null);
+  assert.equal(trustedSportRecordsReady('TOTAL', back), true);
+  assert.equal(trustedSportRecordsReady('SPREAD', back), false);
+  assert.equal(trustedSportRecordsReady('ML', back), false);
+  assert.deepEqual(trustedSportRecordSizes('TOTAL', back), { wallets: 2, up: 1 });
+  // A sport-record name is not a trusted name: the list sizes and the count do not move.
+  assert.deepEqual(trustedListSizes(back), trustedListSizes(hydrateTrustedList({ rows: stored.rows })));
+  assert.equal(isTrustedWalletOn('TOTAL', wallet(60), 'NBA', back), false);
+  assert.equal(trustedListReady(back), true);
+  // A morning stored before sport records were kept has none.
+  const old = hydrateTrustedList({ rows: stored.rows, records: stored.records });
+  assert.equal(trustedSportRecordsReady('TOTAL', old), false);
+  assert.deepEqual(trustedSportRecordSizes('TOTAL', old), { wallets: 0, up: 0 });
+  // Sport records with no trusted wallet are not a list.
+  assert.equal(trustedListReady(hydrateTrustedList({ rows: [], sportRecords: stored.sportRecords })), false);
+});
+
+test('the paths read the stored sport records when no list is passed', () => {
+  const list = hydrateTrustedList(serializeTrustedList(buildTrustedList([...ROWS, ...totalSeason()], MORNING), MORNING));
+  setTrustedList(list);
+  try {
+    assert.equal(trustedSportRecord('TOTAL', W60, 'NBA').z, 1.732);
+    assert.equal(trustedSportRecordsReady('TOTAL'), true);
+  } finally {
+    setTrustedList(null);
+  }
+  assert.equal(trustedSportRecordsReady('TOTAL'), false);
 });
