@@ -1085,7 +1085,7 @@ export const AGS_V12_STAKE_PATH = {
   'TRUST-T':     'press ladder · total: two or more wallets trusted in this totals market are for, none against',
   'PRESS-R6':    'press ladder · two veterans',
   'V13-ML':      'moneyline ladder · trusted list ahead, edge 0 or more, steam not against · 4u, 3u, 2.5u, 2u, or 1u by price, profitable wallets ahead, and edge',
-  'LIST-SPREAD': 'trusted list · spread: trusted spread wallets ahead and their spread records ahead · 3u, 2u, or 1u by count, records, and price',
+  'LIST-SPREAD': 'trusted list · spread, every sport: trusted spread wallets ahead and their spread records ahead · 3u at a price shorter than +100 with the records ahead by 4, 1u under that, 1u at +100 or longer on a line of 7 or under',
   MONITORING:    'watch',
   FADE:          'muted',
 };

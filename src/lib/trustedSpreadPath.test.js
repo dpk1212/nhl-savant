@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  TRUSTED_SPREAD_LADDER_FROM,
   TRUSTED_SPREAD_OWNS_FROM,
   TRUSTED_SPREAD_STAMP_FIELDS,
   TRUSTED_SPREAD_UNITS,
   applyTrustedSpreadPath,
+  trustedSpreadLadderLive,
   trustedSpreadLive,
   trustedSpreadOwns,
   trustedSpreadStamp,
@@ -423,4 +425,195 @@ test('the stamp carries the rule and the records on every action', () => {
   assert.equal(stamp.v8_trustedSpreadRecordFor, 2.5);
   assert.equal(stamp.v8_trustedSpreadRecordAgainst, 0);
   assert.equal(trustedSpreadStamp(run()).v8_trustedSpreadRecordLead, null);
+});
+
+// ─── From 2026-11-23: the ladder, on every sport ─────────────────────────
+
+const LADDER = '2026-11-23';
+
+/** Like ownList, with every wallet profitable in every sport named. */
+function ladderList({ trusted = [], records = {}, sports = ['NBA', 'NFL', 'CFB', 'NHL', 'CBB', 'MLB'] } = {}) {
+  const index = ownList({ trusted, records });
+  for (const w of trusted) index.get(`SPREAD|${w}`).sports = sports;
+  return index;
+}
+
+function lad(over = {}) {
+  return applyTrustedSpreadPath({
+    units: 0, pickDate: LADDER, sport: 'NBA', market: 'SPREAD', side: 'home',
+    positions: [pos('aaaaa1', 'home')], odds: -110, line: -4.5, score: null,
+    list: ladderList({ trusted: ['aaaaa1'], records: { aaaaa1: 2.5 } }), ...over,
+  });
+}
+
+const LEAD4 = ladderList({ trusted: ['aaaaa1'], records: { aaaaa1: 4 } });
+
+test('the ladder starts 2026-11-23, and the day before still reads the first ladder', () => {
+  assert.equal(TRUSTED_SPREAD_LADDER_FROM, '2026-11-23');
+  assert.equal(trustedSpreadLadderLive('2026-11-22'), false);
+  assert.equal(trustedSpreadLadderLive('2026-11-23'), true);
+  assert.equal(trustedSpreadLadderLive(null), false);
+  assert.equal(lad().rule, 'ladder');
+  assert.equal(lad({ pickDate: OWN }).rule, 'gate');
+  assert.equal(lad({ pickDate: OWN }).units, 2);
+});
+
+test('a short price with the records ahead by 4 is 3u, on a count of 1', () => {
+  const p = lad({ list: LEAD4 });
+  assert.equal(p.action, 'STAKE');
+  assert.equal(p.reason, 'records_4');
+  assert.equal(p.units, 3);
+  assert.equal(p.margin, 1);
+  for (const score of [null, 0, -0.8, 0.9]) assert.equal(lad({ list: LEAD4, score }).units, 3);
+  // The line is not read at a short price.
+  for (const line of [null, -1.5, -14.5, 21]) assert.equal(lad({ list: LEAD4, line }).units, 3);
+});
+
+test('a short price with the records ahead by 2 up to 4 is 1u', () => {
+  const p = lad();
+  assert.equal(p.action, 'STAKE');
+  assert.equal(p.reason, 'records_2');
+  assert.equal(p.units, 1);
+  const near = lad({ list: ladderList({ trusted: ['aaaaa1'], records: { aaaaa1: 3.99 } }) });
+  assert.equal(near.units, 1);
+  // A count of 2 does not lift it: only the records set the size.
+  const two = lad({
+    list: ladderList({ trusted: ['aaaaa1', 'aaaaa2'], records: { aaaaa1: 2, aaaaa2: 1.5 } }),
+    positions: [pos('aaaaa1', 'home'), pos('aaaaa2', 'home')],
+  });
+  assert.equal(two.margin, 2);
+  assert.equal(two.units, 1);
+});
+
+test('the ladder sets the stake whatever arrived', () => {
+  for (const units of [0, 0.75, 1, 2, 3, 4, 6]) {
+    assert.equal(lad({ units }).units, 1);
+    assert.equal(lad({ units }).unitsPre, units);
+    assert.equal(lad({ units, list: LEAD4 }).units, 3);
+  }
+});
+
+test('+100 or longer: 1u on a line of 7 or under, 0 over 7, laying or taking', () => {
+  for (const line of [-7, 7, 3.5, -1.5, 0]) {
+    const p = lad({ odds: 102, line, list: LEAD4 });
+    assert.equal(p.action, 'STAKE');
+    assert.equal(p.reason, 'plus_short_line');
+    assert.equal(p.units, 1);
+    assert.equal(p.line, line);
+  }
+  for (const line of [7.5, -7.5, 13.5, -21]) {
+    const staked = lad({ odds: 102, line, units: 3 });
+    assert.equal(staked.action, 'MUTE');
+    assert.equal(staked.reason, 'plus_long_line');
+    assert.equal(staked.units, 0);
+    const flat = lad({ odds: 102, line });
+    assert.equal(flat.action, 'PASS');
+    assert.equal(flat.reason, 'plus_long_line_no_stake');
+    assert.equal(flat.units, 0);
+  }
+  assert.equal(lad({ odds: 100, line: 3 }).units, 1);
+  assert.equal(lad({ odds: 100, line: 9, units: 2 }).units, 0);
+  assert.equal(lad({ odds: -101, line: 9 }).units, 1);
+  assert.equal(lad({ odds: null, price: 0.5, line: 9, units: 2 }).units, 0);
+  assert.equal(lad({ odds: null, price: 0.52, line: 9 }).units, 1);
+});
+
+test('+100 or longer with no line is 0', () => {
+  for (const line of [null, undefined, '', 'x']) {
+    const p = lad({ odds: 105, line, units: 2 });
+    assert.equal(p.action, 'MUTE');
+    assert.equal(p.reason, 'plus_no_line');
+    assert.equal(p.units, 0);
+  }
+});
+
+test('inside the gate with no price, or a price juicier than −425, is 0', () => {
+  const noPrice = lad({ units: 3, odds: null, price: null });
+  assert.equal(noPrice.action, 'MUTE');
+  assert.equal(noPrice.reason, 'no_price');
+  assert.equal(noPrice.units, 0);
+  assert.equal(lad({ odds: null, price: null }).reason, 'no_price_no_stake');
+  const juice = lad({ units: 3, odds: -450, list: LEAD4 });
+  assert.equal(juice.action, 'MUTE');
+  assert.equal(juice.reason, 'juice');
+  assert.equal(juice.units, 0);
+  assert.equal(lad({ odds: -425, list: LEAD4 }).units, 3);
+});
+
+test('outside the gate is 0: behind, level, nobody trusted, and records under 2', () => {
+  const list = ladderList({ trusted: ['aaaaa1', 'bbbbb1'], records: { aaaaa1: 5, zzzzz9: 5, bbbbb1: 0.5 } });
+  const behind = lad({ list, units: 4, positions: [pos('bbbbb1', 'away'), pos('zzzzz9', 'home')] });
+  assert.equal(behind.action, 'MUTE');
+  assert.equal(behind.reason, 'behind');
+  const level = lad({ list, units: 4, positions: [pos('aaaaa1', 'home'), pos('bbbbb1', 'away')] });
+  assert.equal(level.reason, 'not_ahead');
+  assert.equal(level.units, 0);
+  const none = lad({ list, units: 4, positions: [pos('zzzzz9', 'home')] });
+  assert.equal(none.reason, 'no_trusted_wallet');
+  assert.equal(none.units, 0);
+  const records = lad({ list: ladderList({ trusted: ['aaaaa1'], records: { aaaaa1: 1.9 } }), units: 4 });
+  assert.equal(records.reason, 'records_not_ahead');
+  assert.equal(records.units, 0);
+  assert.equal(lad({ list, positions: [pos('zzzzz9', 'home')] }).action, 'PASS');
+});
+
+test('every sport reads the ladder: a stake outside the gate goes to 0 on NHL, CBB, and the rest', () => {
+  const stray = [pos('zzzzz9', 'home')];
+  for (const sport of ['NHL', 'CBB', 'NCAAB', 'MLB', 'SOC', 'NBA', 'NFL', 'CFB', 'NCAAF']) {
+    const p = lad({ sport, units: 3, positions: stray });
+    assert.equal(p.action, 'MUTE', sport);
+    assert.equal(p.units, 0);
+  }
+  for (const sport of ['NHL', 'CBB', 'MLB']) {
+    const p = lad({ sport, list: LEAD4 });
+    assert.equal(p.action, 'STAKE', sport);
+    assert.equal(p.units, 3);
+  }
+  // A wallet that is not profitable in the sport does not open the gate there.
+  const nbaOnly = ladderList({ trusted: ['aaaaa1'], records: { aaaaa1: 5 }, sports: ['NBA'] });
+  assert.equal(lad({ sport: 'NHL', list: nbaOnly, units: 2 }).action, 'MUTE');
+  assert.equal(lad({ sport: 'NBA', list: nbaOnly }).units, 3);
+  assert.equal(trustedSpreadLive(LADDER, 'NHL', LEAD4), true);
+  assert.equal(trustedSpreadLive(OWN, 'NHL', LEAD4), false);
+});
+
+test('a morning with no list, or a list with no records, is 0 from 2026-11-23', () => {
+  const noList = lad({ list: new Map(), units: 3 });
+  assert.equal(noList.action, 'MUTE');
+  assert.equal(noList.reason, 'no_list');
+  assert.equal(noList.units, 0);
+  assert.equal(lad({ list: new Map() }).reason, 'no_list_no_stake');
+  const noRecords = lad({ list: ladderList({ trusted: ['aaaaa1'] }), units: 3 });
+  assert.equal(noRecords.action, 'MUTE');
+  assert.equal(noRecords.reason, 'no_records');
+  assert.equal(noRecords.units, 0);
+});
+
+test('another market, manual, and a kill change nothing on the ladder', () => {
+  const stray = [pos('zzzzz9', 'home')];
+  assert.equal(lad({ market: 'TOTAL', units: 3, positions: stray }).units, 3);
+  assert.equal(lad({ market: 'ML', units: 3, positions: stray }).units, 3);
+  assert.equal(lad({ market: 'ML', units: 3, list: new Map() }).units, 3);
+  const manual = lad({ manual: true, units: 5, positions: stray });
+  assert.equal(manual.action, 'EXEMPT');
+  assert.equal(manual.units, 5);
+  const killed = lad({ killed: true, units: 0, list: LEAD4 });
+  assert.equal(killed.action, 'EXEMPT');
+  assert.equal(killed.units, 0);
+});
+
+test('the ladder stamp carries the line and every field on every action', () => {
+  const cases = [
+    lad(), lad({ list: LEAD4 }), lad({ odds: 110, line: 9, units: 2 }), lad({ odds: 110, line: 3 }),
+    lad({ list: new Map(), units: 2 }), lad({ manual: true }), own(),
+  ];
+  for (const p of cases) {
+    const stamp = trustedSpreadStamp(p);
+    assert.deepEqual(Object.keys(stamp).sort(), [...TRUSTED_SPREAD_STAMP_FIELDS].sort());
+    assert.equal(stamp.v8_trustedSpreadRule, p.rule);
+    assert.equal(stamp.v8_trustedSpreadUnits, p.units);
+    assert.equal(stamp.v8_trustedSpread, p.action === 'STAKE' || p.action === 'MUTE');
+  }
+  assert.equal(trustedSpreadStamp(lad({ odds: 110, line: 3 })).v8_trustedSpreadLine, 3);
+  assert.equal(trustedSpreadStamp(lad({ line: null })).v8_trustedSpreadLine, null);
 });

@@ -4999,13 +4999,13 @@ async function createMissingLockedPicks({
         }
       }
 
-      // Trusted spread path. Last on a spread. NBA, NFL, and CFB. From
-      // 2026-11-22 it owns the stake: the trusted count ahead by 1 or more
-      // and the wallets' spread records ahead by 2 or more is 3u, 2u, or
+      // Trusted spread path. Last on a spread, every sport from
+      // 2026-11-23. It owns the stake: the trusted count ahead by 1 or
+      // more and the wallets' spread records ahead by 2 or more is 3u or
       // 1u by its ladder, and every other side is 0, whatever the rungs
-      // before it wrote. The v12 score is not read. An operator kill
-      // stays. The T-15 freeze already returned. Always evaluated so the
-      // stamp is current.
+      // before it wrote. A morning with no list is 0. The v12 score is
+      // not read. An operator kill stays. The T-15 freeze already
+      // returned. Always evaluated so the stamp is current.
       if (marketType === 'SPREAD') {
         const killedCreate = isOperatorKilled({ _id: docId }, side, null);
         trustedSpreadCreate = applyTrustedSpreadPath({
@@ -5016,6 +5016,7 @@ async function createMissingLockedPicks({
           side,
           positions,
           odds: stakeOdds ?? odds ?? null,
+          line,
           score: scoreV12,
           killed: killedCreate,
         });
@@ -8080,13 +8081,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       if (!(finalUnitsApplied > 0)) hcStakeTier = 'MONITORING';
     }
   }
-  // Trusted spread path. Last on a spread. NBA, NFL, and CFB. From
-  // 2026-11-22 it owns the stake: the trusted count ahead by 1 or more
-  // and the wallets' spread records ahead by 2 or more is 3u, 2u, or 1u
-  // by its ladder, and every other side is 0, whatever the rungs before
-  // it wrote. The v12 score is not read. Manual stake and an operator
-  // kill stay. The T-15 freeze already returned. Always evaluated so the
-  // stamp is current.
+  // Trusted spread path. Last on a spread, every sport from 2026-11-23.
+  // It owns the stake: the trusted count ahead by 1 or more and the
+  // wallets' spread records ahead by 2 or more is 3u or 1u by its
+  // ladder, and every other side is 0, whatever the rungs before it
+  // wrote. A morning with no list is 0. The line is the ticket's: the
+  // lock line, else the peak line. The v12 score is not read. Manual
+  // stake and an operator kill stay. The T-15 freeze already returned.
+  // Always evaluated so the stamp is current.
   let trustedSpreadPolicy = null;
   if (mkt === 'SPREAD') {
     trustedSpreadPolicy = applyTrustedSpreadPath({
@@ -8097,6 +8099,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       side,
       positions: group,
       odds: stakeOdds,
+      line: sd?.lock?.line ?? sd?.peak?.line ?? null,
       score: scoreV12Live,
       manual: skipManualFlinch,
       killed: operatorKilled,
@@ -8133,7 +8136,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const listSpreadShips = !operatorKilled
     && finalUnitsApplied > 0
     && trustedSpreadPolicy?.action === 'STAKE'
-    && trustedSpreadPolicy?.rule === 'gate';
+    && (trustedSpreadPolicy?.rule === 'gate' || trustedSpreadPolicy?.rule === 'ladder');
   const listShips = v13Ships || listSpreadShips;
   const passesShipFloor = (
     appliedStatus === 'ACTIVE'
