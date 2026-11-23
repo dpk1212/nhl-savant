@@ -45,6 +45,31 @@
  * Manual stake, an operator kill, the T-15 freeze, and a graded ticket
  * stay at the caller. The fit was NHL, NBA, NFL, and CFB. The path is
  * every sport's moneyline from 2026-11-19.
+ *
+ * From 2026-11-23 the sizes above are retired and the ladder below is
+ * the size. The wallet gate does not change: ahead by 1 on the wide
+ * count. The half rule, the steam sizes, and the 2 on an edge under 0
+ * are gone. Steam is read one way only: a move against is 0. A missing
+ * steam is not a move against.
+ *
+ *   No edge number, no price, or juicier than −425: stays, which the
+ *   V12+ moneyline disable turns into 0.
+ *   Edge under 0: stays, and is 0 the same way.
+ *   Steam against: 0.
+ *
+ * Every sport, edge 0 or more (Dale's call; the fit was NHL, NBA, NFL,
+ * and CFB):
+ *   4    −110 to −199, profitable wallets ahead, edge 5 up to 10
+ *   3    −110 to −199, profitable wallets ahead, edge 0 up to 5
+ *   2.5  longer than −110, profitable wallets ahead
+ *   2    −110 to −199, profitable wallets not ahead
+ *   1    −200 to −425; edge 10 or more at any price; longer than −110
+ *        with profitable wallets not ahead
+ *
+ * Profitable wallets ahead is the second count: trusted wallets that are
+ * up in units on moneylines in the sport, ahead by 1. On a morning the
+ * list did not build, the tier book opens the side and it sizes as
+ * profitable wallets not ahead. The dog cap still rules every size.
  */
 
 import { oddsCap } from './oddsCap.js';
@@ -74,11 +99,24 @@ export const V13_ML_BOOK_VERSION = 3;
 export const V13_ML_LIST_TRUSTED = 'trusted';
 export const V13_ML_LIST_TIER = 'tier';
 export const V13_ML_TRUSTED_AHEAD = 1;
+/** The ladder. From this date it is the only size on a moneyline. */
+export const V13_ML_LADDER_FROM = '2026-11-23';
+export const V13_ML_LADDER_HEAVY_ODDS = -200;
+export const V13_ML_LADDER_EDGE_SPLIT = 5;
+export const V13_ML_LADDER_TOP_UNITS = 4;
+export const V13_ML_LADDER_LEAD_UNITS = 3;
+export const V13_ML_LADDER_PLUS_UNITS = 2.5;
+export const V13_ML_LADDER_BAND_UNITS = 2;
+export const V13_ML_LADDER_BASE_UNITS = 1;
 
 let bookIndex = new Map();
 
 export function isV13MlLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= V13_ML_FROM;
+}
+
+export function isV13MlLadderLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= V13_ML_LADDER_FROM;
 }
 
 export function setV13MlBook(index) {
@@ -183,6 +221,53 @@ export function v13HighPriceZone(odds, price) {
   }
   if (implied >= shortAt) return 'short';
   return 'longer';
+}
+
+/**
+ * The ladder's price read. band is −110 to −199. heavy is −200 to −425.
+ * plus is every price longer than −110. juice is past −425.
+ */
+export function v13LadderZone(odds, price) {
+  const { american, hasAmerican, implied } = americanAndImplied(odds, price);
+  if (hasAmerican && american < V13_ML_JUICE_ODDS) return 'juice';
+  if (implied == null) return null;
+  if (!hasAmerican && implied > (425 / 525)) return 'juice';
+  if (hasAmerican) {
+    if (american <= V13_ML_LADDER_HEAVY_ODDS) return 'heavy';
+    if (american <= V13_ML_FAVORITE_ODDS) return 'band';
+    return 'plus';
+  }
+  if (implied >= impliedOf(V13_ML_LADDER_HEAVY_ODDS)) return 'heavy';
+  if (implied >= impliedOf(V13_ML_FAVORITE_ODDS)) return 'band';
+  return 'plus';
+}
+
+/**
+ * The ladder, from V13_ML_LADDER_FROM. `armed` already passed the wallet
+ * gate. `lead` is the profitable count ahead by 1.
+ */
+function ladderSize(armed, { odds, price, move, lead }) {
+  if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
+  const zone = v13LadderZone(odds, price);
+  if (zone === 'juice') return { ...armed, action: 'PASS', zone, reason: 'juice' };
+  if (zone == null) return { ...armed, action: 'PASS', reason: 'no_price' };
+  if (armed.edge < 0) return { ...armed, action: 'PASS', zone, reason: 'edge_under' };
+  if (move != null && move < 0) {
+    return { ...armed, action: 'MUTE', units: 0, zone: 'against', reason: 'against' };
+  }
+  if (armed.edge >= V13_ML_EDGE_MAX) {
+    return sized(armed, V13_ML_LADDER_BASE_UNITS, zone, 'edge10');
+  }
+  if (zone === 'heavy') return sized(armed, V13_ML_LADDER_BASE_UNITS, zone, 'heavy_favorite');
+  if (zone === 'band') {
+    if (!lead) return sized(armed, V13_ML_LADDER_BAND_UNITS, zone, 'band');
+    return armed.edge >= V13_ML_LADDER_EDGE_SPLIT
+      ? sized(armed, V13_ML_LADDER_TOP_UNITS, zone, 'band_lead_edge5')
+      : sized(armed, V13_ML_LADDER_LEAD_UNITS, zone, 'band_lead');
+  }
+  return lead
+    ? sized(armed, V13_ML_LADDER_PLUS_UNITS, zone, 'plus_lead')
+    : sized(armed, V13_ML_LADDER_BASE_UNITS, zone, 'plus');
 }
 
 /**
@@ -373,6 +458,8 @@ export function applyV13MlPath({
   if (normMlMiniMarket(market) !== 'ML' || !normMlMiniSport(sport)) {
     return { ...base, action: 'PASS', reason: 'not_ml' };
   }
+  const ladder = isV13MlLadderLive(pickDate);
+  let lead = false;
   let armed;
   if (onList) {
     // Wide: trusted with 10 or more moneyline bets in the sport, up or down.
@@ -389,8 +476,10 @@ export function applyV13MlPath({
     if (count.margin < V13_ML_TRUSTED_AHEAD) {
       return { ...armed, action: 'PASS', reason: 'trusted_not_ahead' };
     }
-    // Ahead only with the wallets that are down in units: half the size.
-    if (kept.margin < V13_ML_TRUSTED_AHEAD) armed.half = true;
+    lead = kept.margin >= V13_ML_TRUSTED_AHEAD;
+    // Before the ladder: ahead only with the wallets that are down in
+    // units is half the size. On the ladder that is its own level.
+    if (!lead && !ladder) armed.half = true;
   } else {
     const index = bookOf(book);
     const wallets = qualifyingV13Wallets({ sport, side, positions, book: index });
@@ -403,6 +492,7 @@ export function applyV13MlPath({
     };
     if (against > 0) return { ...armed, action: 'PASS', reason: 'qualified_against' };
   }
+  if (ladder) return ladderSize(armed, { odds, price, move, lead });
   if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
   if (armed.edge < 0) {
     const under = v13HighPriceZone(odds, price);

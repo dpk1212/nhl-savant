@@ -7,11 +7,15 @@
  * Stake rule (after V12+ rungs, ML-MINI, juice, and the full V13 path
  * including #484 / #486 edge10+ / #487 rescue):
  *   • V13 action STAKE or MUTE → keep that exact V13 result
- *   • TRUST-G, STEAM-C, and GAP-LEAD keep the stake they already wrote
+ *   • Before 2026-11-23, TRUST-G, STEAM-C, and GAP-LEAD kept the stake
+ *     they already wrote. From 2026-11-23 (the moneyline ladder) TRUST-G
+ *     and GAP-LEAD no longer keep a stake. STEAM-C still does, and its
+ *     stake is 3u whatever arrived, under the dog cap, and 0 past −425.
  *   • Every other ML side (PASS / EXEMPT) → 0u muted with
  *     mutedBy / marker naming this flag as the mute source
  *   • Manual stake and operator kill still win
- *   • Never raises any stake; juice only lowers
+ *   • Never raises any stake, except that a kept STEAM-C stake under
+ *     3u becomes 3u from 2026-11-23; juice only lowers
  *
  * Spreads and totals are unchanged. V13 stamps every ML side each sync
  * (STAKE/MUTE/PASS) in v13MlPath.js — this flag only changes stake/mute.
@@ -19,6 +23,9 @@
  * Default ON in this PR. Rollback: set V12PLUS_ML_DISABLED_DEFAULT to false,
  * or run with env V12PLUS_ML_DISABLED=0 / false / off.
  */
+
+import { oddsCap } from './oddsCap.js';
+import { V13_ML_JUICE_ODDS, isV13MlLadderLive } from './v13MlPath.js';
 
 /** Default ON. Flip to false to roll back without an env override. */
 export const V12PLUS_ML_DISABLED_DEFAULT = true;
@@ -85,17 +92,33 @@ export function isV13MlStakeKept(v13Action) {
   return a === 'STAKE' || a === 'MUTE';
 }
 
-/** Rungs that still stake a moneyline after the flag. Everything else goes to 0. */
+/** Rungs that kept a moneyline stake after the flag, on pick dates before the ladder. */
 const V12PLUS_ML_KEEP_TIERS = new Set(['TRUST-G', 'STEAM-C', 'GAP-LEAD']);
+/** The one rung that still keeps a moneyline stake from the ladder's first day, and its size. */
+export const V12PLUS_ML_LADDER_KEEP_TIER = 'STEAM-C';
+export const V12PLUS_ML_STEAM_C_UNITS = 3;
 
-export function isV12plusMlRungKept(stakeTier) {
-  return V12PLUS_ML_KEEP_TIERS.has(String(stakeTier || ''));
+/** A pick date is required. With none, no rung is kept. */
+export function isV12plusMlRungKept(stakeTier, pickDate = null) {
+  if (typeof pickDate !== 'string' || pickDate.length < 10) return false;
+  const tier = String(stakeTier || '');
+  if (isV13MlLadderLive(pickDate)) return tier === V12PLUS_ML_LADDER_KEEP_TIER;
+  return V12PLUS_ML_KEEP_TIERS.has(tier);
+}
+
+/** A kept STEAM-C stake on the ladder: 3u, the dog cap, and 0 past −425. */
+export function steamCLadderUnits(odds = null) {
+  const american = odds == null || odds === '' ? NaN : Number(odds);
+  if (Number.isFinite(american) && american < V13_ML_JUICE_ODDS) return 0;
+  return oddsCap(V12PLUS_ML_STEAM_C_UNITS, american);
 }
 
 /**
  * Final ML stake/mute override.
  * Call AFTER V12+ rungs and AFTER applyV13MlPath.
- * Does not change lockStage or policy stamps. Never raises units.
+ * Does not change lockStage or policy stamps. Never raises units, except
+ * a kept STEAM-C stake from the ladder's first day, which is 3u: `resized`
+ * is true when that differs from the units that arrived.
  */
 export function applyV12plusMlStakeDisable({
   market = null,
@@ -104,10 +127,13 @@ export function applyV12plusMlStakeDisable({
   manual = false,
   v13Action = null,
   stakeTier = null,
+  pickDate = null,
+  odds = null,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const base = {
     applied: false,
+    resized: false,
     units: pre,
     unitsPre: pre,
     mutedBy: null,
@@ -122,12 +148,17 @@ export function applyV12plusMlStakeDisable({
   if (isV13MlStakeKept(v13Action)) {
     return { ...base, preservedBy: 'v13' };
   }
-  if (pre > 0 && isV12plusMlRungKept(stakeTier)) {
-    return { ...base, preservedBy: String(stakeTier) };
+  if (pre > 0 && isV12plusMlRungKept(stakeTier, pickDate)) {
+    if (!isV13MlLadderLive(pickDate)) return { ...base, preservedBy: String(stakeTier) };
+    const kept = steamCLadderUnits(odds);
+    if (kept > 0) {
+      return { ...base, units: kept, resized: kept !== pre, preservedBy: String(stakeTier) };
+    }
   }
   // V13 PASS / EXEMPT / absent → strip the V12+ stake; mute with flag marker.
   return {
     applied: true,
+    resized: false,
     units: 0,
     unitsPre: pre,
     mutedBy: V12PLUS_ML_DISABLED_MUTED_BY,

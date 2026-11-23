@@ -1075,7 +1075,7 @@ export const AGS_V12_STAKE_PATH = {
   'PRESS-X':     'press ladder · informed dissent under size',
   'PRESS-U':     'press ladder · dissent under size, no press',
   'PRESS-N':     'press ladder · deep-book press, no Door-2 either side',
-  'STEAM-C':     'press ladder · steam overrules a small dissent',
+  'STEAM-C':     'press ladder · steam overrules a small dissent · 3u on a moneyline from 2026-11-23',
   'STEAM-S':     'press ladder · steam overrules a seasoned ordinary bet',
   'SOLO-Q':      'press ladder · quiet unopposed favourite',
   'FADE-F':      'press ladder · a streaking floor wallet is on the other side',
@@ -1084,7 +1084,7 @@ export const AGS_V12_STAKE_PATH = {
   'TRUST-S':     'press ladder · spread: wallet trusted in this spread market is for, none against',
   'TRUST-T':     'press ladder · total: two or more wallets trusted in this totals market are for, none against',
   'PRESS-R6':    'press ladder · two veterans',
-  'V13-ML':      'v13 moneyline · trusted list ahead · edge under 0 at −150 or shorter, edge 0–10 by steam, edge 10+ by price',
+  'V13-ML':      'moneyline ladder · trusted list ahead, edge 0 or more, steam not against · 4u, 3u, 2.5u, 2u, or 1u by price, profitable wallets ahead, and edge',
   'LIST-SPREAD': 'trusted list · spread: trusted spread wallets ahead and their spread records ahead · 3u, 2u, or 1u by count, records, and price',
   MONITORING:    'watch',
   FADE:          'muted',
@@ -1221,9 +1221,9 @@ export const AGS_V12_STAKE_TIER_META = {
   // 2026-10-29: ML-DOOR — press-gate favorite, steam never, Door-2 even or
   // +2, rescued to 1u. The card shows cron finalUnits.
   'ML-DOOR':     { label: 'LEAN',      short: 'DOOR',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
-  // 2026-11-19: v13 moneyline. The card shows cron finalUnits
-  // (4, 3, 2, 1.5, or 0.75). `units` is the 0–10 favorite size.
-  // An edge under 0 at −150 or shorter is 2.
+  // 2026-11-19: v13 moneyline. The card shows cron finalUnits.
+  // From 2026-11-23 that is the ladder: 4, 3, 2.5, 2, or 1 (1.5 under the
+  // dog cap). `units` is the top level.
   'V13-ML':      { label: 'SHARP PLAY', short: 'V13',   color: '#22C55E', bg: 'rgba(34,197,94,0.14)',   units: 4,                     ribbon: null, stars: 4 },
   // 2026-11-22: trusted spread path. NBA, NFL, CFB. The trusted spread
   // count ahead and the wallets' spread records ahead is 3u, 2u, or 1u.

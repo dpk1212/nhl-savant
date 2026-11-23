@@ -224,3 +224,59 @@ test('the stamp says which list the side read and the count on it', () => {
     assert.ok(Object.prototype.hasOwnProperty.call(passStamp, field), `missing ${field}`);
   }
 });
+
+test('on the ladder a side the path passes is 0, or 3u when STEAM-C staked it', () => {
+  const prev = process.env.V12PLUS_ML_DISABLED;
+  process.env.V12PLUS_ML_DISABLED = '1';
+  const pickDate = '2026-11-23';
+  const IN = ['NHL', 'NBA', 'NFL', 'CFB', 'SOC'];
+  const list = new Map([
+    ['ML|tttt01', { trusted: true, sports: IN, played: IN }],
+    ['ML|tttt02', { trusted: true, sports: IN, played: IN }],
+  ]);
+  const args = { pickDate, list, positions: [pos('tttt01')], odds: -150, steam: 3, edge: 6 };
+  // LAK @ OTT, Nov 21: the list was not ahead and STEAM-C kept 4u at −173.
+  const notAhead = run({ ...args, units: 4, positions: [pos('tttt01'), pos('tttt02', 'away')] });
+  assert.equal(notAhead.action, 'PASS');
+  assert.equal(notAhead.reason, 'trusted_not_ahead');
+  const steamC = applyV12plusMlStakeDisable({
+    market: 'ML', units: notAhead.units, v13Action: notAhead.action, stakeTier: 'STEAM-C', pickDate, odds: -173,
+  });
+  assert.equal(steamC.applied, false);
+  assert.equal(steamC.resized, true);
+  assert.equal(steamC.units, 3);
+  for (const stakeTier of ['TRUST-G', 'GAP-LEAD']) {
+    const out = applyV12plusMlStakeDisable({
+      market: 'ML', units: notAhead.units, v13Action: notAhead.action, stakeTier, pickDate, odds: -173,
+    });
+    assert.equal(out.applied, true, stakeTier);
+    assert.equal(out.units, 0, stakeTier);
+    assert.equal(out.unitsPre, 4);
+  }
+  // An edge under 0 passes, and the stake that arrived goes to 0.
+  const under = run({ ...args, units: 2, edge: -3, odds: -180 });
+  assert.equal(under.action, 'PASS');
+  assert.equal(under.reason, 'edge_under');
+  const underOut = applyV12plusMlStakeDisable({
+    market: 'ML', units: under.units, v13Action: under.action, stakeTier: 'TRUST-G', pickDate,
+  });
+  assert.equal(underOut.units, 0);
+  const stamp = v13MlStamp(under, { now: 1 });
+  assert.equal(stamp.v8_v13MlAction, 'PASS');
+  assert.equal(stamp.v8_v13MlUnits, 0);
+  for (const field of V13_ML_STAMP_FIELDS) {
+    assert.ok(Object.prototype.hasOwnProperty.call(stamp, field), `missing ${field}`);
+  }
+  // The path's stake is the bet.
+  const stake = run(args);
+  assert.equal(stake.action, 'STAKE');
+  assert.equal(stake.units, 4);
+  const kept = applyV12plusMlStakeDisable({
+    market: 'ML', units: stake.units, v13Action: stake.action, stakeTier: 'V13-ML', pickDate,
+  });
+  assert.equal(kept.applied, false);
+  assert.equal(kept.units, 4);
+  assert.equal(v13MlStamp(stake, { now: 1 }).v8_v13MlReason, 'band_lead_edge5');
+  if (prev == null) delete process.env.V12PLUS_ML_DISABLED;
+  else process.env.V12PLUS_ML_DISABLED = prev;
+});
