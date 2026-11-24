@@ -1,17 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  V13_ML_COUNT_OPENS_FROM,
+  V13_ML_COUNT_OPENS_PROMOTED_BY,
   V13_ML_LADDER_FROM,
+  V13_ML_OPENED_BY_COUNT,
+  V13_ML_OPENED_BY_FIELD,
   V13_ML_SPREAD_DOOR_FROM,
   V13_ML_STAMP_FIELDS,
   applyV13MlPath,
   buildV13MlBook,
+  isV13MlCountOpensLive,
   isV13MlLadderLive,
   isV13MlSpreadDoorLive,
   v13HighPriceZone,
   v13HalfStake,
   v13LadderZone,
   v13MlStamp,
+  v13CountOpensSide,
   v13OpensSide,
   v13PriceZone,
   v13UsesTrustedList,
@@ -1033,4 +1039,71 @@ test('no door size is outside the ladder sizes', () => {
     }
   }
   assert.deepEqual([...sizes].sort((a, b) => a - b), [1, 1.5, 2, 2.5, 3, 4]);
+});
+
+// ─── The count opens the card, from 2026-11-24 ───
+
+function opens(over = {}) {
+  return v13CountOpensSide({
+    pickDate: DOOR_DAY, sport: 'NBA', side: 'home', positions: [pos('up0001')], list: DOOR_LIST, ...over,
+  });
+}
+
+test('the count opens the card from its day', () => {
+  assert.equal(V13_ML_COUNT_OPENS_FROM, '2026-11-24');
+  assert.equal(isV13MlCountOpensLive('2026-11-23'), false);
+  assert.equal(isV13MlCountOpensLive('2026-11-24'), true);
+  assert.equal(isV13MlCountOpensLive(null), false);
+  assert.equal(opens(), true);
+  assert.equal(opens({ pickDate: '2026-11-23' }), false);
+  assert.equal(V13_ML_COUNT_OPENS_PROMOTED_BY, 'v13-count-open');
+  assert.equal(V13_ML_OPENED_BY_FIELD, 'v8_v13MlOpenedBy');
+  assert.equal(V13_ML_OPENED_BY_COUNT, 'count');
+});
+
+test('the side opens only with the profitable count and the wide count both ahead', () => {
+  // One profitable wallet, nobody against.
+  assert.equal(opens(), true);
+  // Ahead on the wide count only: a wallet that is down in units does not open it.
+  assert.equal(opens({ positions: [pos('down01')] }), false);
+  // Profitable count ahead, wide count level.
+  assert.equal(opens({ positions: [pos('up0001'), pos('down01', 'away')] }), false);
+  // Profitable count level.
+  assert.equal(opens({ positions: [pos('up0001'), pos('up0002', 'away')] }), false);
+  // Two against one.
+  assert.equal(opens({ positions: [pos('up0001'), pos('up0002'), pos('down01', 'away')] }), true);
+  // The other side, a wallet with under 10 bets, an empty game.
+  assert.equal(opens({ side: 'away' }), false);
+  assert.equal(opens({ positions: [pos('thin01')] }), false);
+  assert.equal(opens({ positions: [] }), false);
+  // A spread name does not open a moneyline.
+  assert.equal(opens({ positions: [{ wallet: 'sp0001', side: 'home', marketType: 'ML' }] }), false);
+});
+
+test('a live staked play on another side of the game keeps the card shut', () => {
+  assert.equal(opens({ competingUnits: 1 }), false);
+  assert.equal(opens({ competingUnits: 0.5 }), false);
+  assert.equal(opens({ competingUnits: 0 }), true);
+  assert.equal(opens({ competingUnits: null }), true);
+});
+
+test('no list that morning, or a sport the wallet is not up in, does not open the card', () => {
+  assert.equal(opens({ list: new Map() }), false);
+  assert.equal(opens({ sport: 'NHL' }), false);
+  assert.equal(opens({ sport: 'CBB' }), false);
+});
+
+test('the ladder sizes a side the count opened like any card', () => {
+  // The create pass passes the same positions to the ladder: the size is the ladder's.
+  const at = (over) => runDoor({ positions: [pos('up0001')], spreadPositions: [], ...over });
+  assert.equal(opens(), true);
+  assert.equal(at({}).units, 4);
+  assert.equal(at({ edge: 2 }).units, 3);
+  assert.equal(at({ odds: 110 }).units, 2.5);
+  assert.equal(at({ odds: -372 }).units, 1);
+  assert.equal(at({ odds: -372 }).reason, 'heavy_favorite');
+  assert.equal(at({ edge: -1 }).action, 'PASS');
+  assert.equal(at({ edge: null }).action, 'PASS');
+  assert.equal(at({ steam: -1 }).action, 'MUTE');
+  assert.equal(at({ odds: -426 }).action, 'PASS');
 });
