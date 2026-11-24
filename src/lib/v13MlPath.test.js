@@ -6,12 +6,15 @@ import {
   V13_ML_LADDER_FROM,
   V13_ML_OPENED_BY_COUNT,
   V13_ML_OPENED_BY_FIELD,
+  V13_ML_SPREAD_AGREE_FROM,
   V13_ML_SPREAD_DOOR_FROM,
+  V13_ML_SPREAD_WIDE_PROMOTED_BY,
   V13_ML_STAMP_FIELDS,
   applyV13MlPath,
   buildV13MlBook,
   isV13MlCountOpensLive,
   isV13MlLadderLive,
+  isV13MlSpreadAgreeLive,
   isV13MlSpreadDoorLive,
   v13HighPriceZone,
   v13HalfStake,
@@ -20,6 +23,7 @@ import {
   v13CountOpensSide,
   v13OpensSide,
   v13PriceZone,
+  v13SpreadWideOpensSide,
   v13UsesTrustedList,
 } from './v13MlPath.js';
 
@@ -965,21 +969,23 @@ test('a moneyline count that is behind stays shut, and one that is ahead does no
   assert.equal(behind.action, 'PASS');
   assert.equal(behind.reason, 'no_trusted_wallet');
   assert.equal(behind.door, null);
-  assert.equal(behind.spreadMargin, null);
+  // From spread agreement the spread count is stamped on every side.
+  assert.equal(behind.spreadMargin, 2);
   assert.equal(behind.units, 3);
   const behind2 = runDoor({ positions: [pos('up0001'), pos('down01', 'away'), pos('down02', 'away')], spreadPositions: [sp('sp0001')] });
   assert.equal(behind2.reason, 'trusted_not_ahead');
   assert.equal(behind2.door, null);
-  // Ahead on the moneyline count: the same stake with the spread against it or with it.
+  // Ahead on the moneyline count: the ladder's stake with the spread against it or level.
   const ahead = runDoor({ positions: [pos('up0001')], spreadPositions: [sp('sp0001', 'away'), sp('sp0002', 'away')] });
   assert.equal(ahead.action, 'STAKE');
   assert.equal(ahead.units, 4);
   assert.equal(ahead.door, null);
-  assert.equal(ahead.spreadMargin, null);
-  assert.deepEqual(
-    runDoor({ positions: [pos('up0001')], spreadPositions: [sp('sp0001')] }),
-    runDoor({ positions: [pos('up0001')], spreadPositions: [] }),
-  );
+  assert.equal(ahead.spreadMargin, -2);
+  assert.equal(ahead.bump, 0);
+  const flat = runDoor({ positions: [pos('up0001')], spreadPositions: [] });
+  assert.equal(flat.units, 4);
+  assert.equal(flat.door, null);
+  assert.equal(flat.bump, 0);
 });
 
 test('manual, a kill, another market, and a morning with no list do not read the door', () => {
@@ -1017,11 +1023,20 @@ test('the stamp says the door, the spread count, and the spread wallets on every
   assert.equal(shut.v8_v13MlDoor, null);
   assert.equal(shut.v8_v13MlSpreadMargin, -1);
   assert.deepEqual(shut.v8_v13MlSpreadWallets, []);
-  // A side that never read the door clears the fields.
+  // Ahead on the moneyline count with the spread count ahead: no door, the count, and the bump.
   const ahead = v13MlStamp(runDoor({ positions: [pos('up0001')] }), { now: 1 });
   assert.equal(ahead.v8_v13MlDoor, null);
-  assert.equal(ahead.v8_v13MlSpreadMargin, null);
-  assert.deepEqual(ahead.v8_v13MlSpreadWallets, []);
+  assert.equal(ahead.v8_v13MlSpreadMargin, 1);
+  assert.deepEqual(ahead.v8_v13MlSpreadWallets, ['sp0001']);
+  assert.equal(ahead.v8_v13MlBump, 1);
+  assert.equal(ahead.v8_v13MlUnits, 5);
+  assert.equal(open.v8_v13MlBump, 0);
+  assert.equal(shut.v8_v13MlBump, 0);
+  // A side before the door's day clears the fields.
+  const early = v13MlStamp(runDoor({ pickDate: '2026-11-23', positions: [pos('up0001')] }), { now: 1 });
+  assert.equal(early.v8_v13MlSpreadMargin, null);
+  assert.deepEqual(early.v8_v13MlSpreadWallets, []);
+  assert.equal(early.v8_v13MlBump, 0);
   for (const f of V13_ML_STAMP_FIELDS) assert.ok(f in open, f);
 });
 
@@ -1106,4 +1121,231 @@ test('the ladder sizes a side the count opened like any card', () => {
   assert.equal(at({ edge: null }).action, 'PASS');
   assert.equal(at({ steam: -1 }).action, 'MUTE');
   assert.equal(at({ odds: -426 }).action, 'PASS');
+});
+
+// ─── Spread agreement, from 2026-11-24: the bump and the wide door ───
+
+/** One trusted moneyline wallet that is up (up0001) on the home side, one profitable spread wallet on the home spread. */
+function runAgree(over = {}) {
+  return runDoor({ positions: [pos('up0001')], spreadPositions: [sp('sp0001')], ...over });
+}
+
+const TWO_SPREAD = [sp('sp0001'), sp('sp0002')];
+
+test('spread agreement starts on its day', () => {
+  assert.equal(V13_ML_SPREAD_AGREE_FROM, '2026-11-24');
+  assert.equal(isV13MlSpreadAgreeLive('2026-11-23'), false);
+  assert.equal(isV13MlSpreadAgreeLive('2026-11-24'), true);
+  assert.equal(isV13MlSpreadAgreeLive(null), false);
+  const before = runAgree({ pickDate: '2026-11-23' });
+  assert.equal(before.action, 'STAKE');
+  assert.equal(before.units, 4);
+  assert.equal(before.bump, 0);
+  assert.equal(before.spreadMargin, null);
+  const beforeWide = runAgree({ pickDate: '2026-11-23', edge: -1, spreadPositions: TWO_SPREAD });
+  assert.equal(beforeWide.action, 'PASS');
+  assert.equal(beforeWide.reason, 'edge_under');
+});
+
+test('a ladder stake takes 1u more when the spread count is ahead on the team', () => {
+  const top = runAgree();
+  assert.equal(top.action, 'STAKE');
+  assert.equal(top.reason, 'band_lead_edge5');
+  assert.equal(top.units, 5);
+  assert.equal(top.bump, 1);
+  assert.equal(top.door, null);
+  assert.equal(top.spreadMargin, 1);
+  assert.equal(runAgree({ edge: 2 }).units, 4);
+  assert.equal(runAgree({ odds: 110 }).units, 3.5);
+  assert.equal(runAgree({ odds: -250 }).units, 2);
+  assert.equal(runAgree({ edge: 12 }).units, 2);
+  // Ahead on the wide count only (down01 is down in units): 2 at −110 to −199, plus 1.
+  const wideOnly = runAgree({ positions: [pos('down01')] });
+  assert.equal(wideOnly.reason, 'band');
+  assert.equal(wideOnly.units, 3);
+  // A spread count of 2 or more is the same 1u.
+  assert.equal(runAgree({ spreadPositions: TWO_SPREAD }).units, 5);
+  assert.equal(runAgree({ spreadPositions: TWO_SPREAD }).bump, 1);
+});
+
+test('the bump is added after the dog cap, and a capped-out dog gets nothing', () => {
+  assert.equal(runAgree({ odds: 150 }).units, 3.5);
+  assert.equal(runAgree({ odds: 151 }).units, 2.5);
+  assert.equal(runAgree({ odds: 200 }).units, 2);
+  const dog = runAgree({ odds: 201 });
+  assert.equal(dog.action, 'MUTE');
+  assert.equal(dog.units, 0);
+  assert.equal(dog.bump, 0);
+});
+
+test('no bump when the spread count is level or behind, or the ladder has no stake', () => {
+  assert.equal(runAgree({ spreadPositions: [] }).units, 4);
+  assert.equal(runAgree({ spreadPositions: [sp('sp0001'), sp('sp0002', 'away')] }).units, 4);
+  assert.equal(runAgree({ spreadPositions: [sp('sp0001', 'away')] }).units, 4);
+  assert.equal(runAgree({ spreadPositions: [sp('spdn01')] }).units, 4);
+  assert.equal(runAgree({ spreadPositions: null }).units, 4);
+  const under = runAgree({ edge: -1 });
+  assert.equal(under.action, 'PASS');
+  assert.equal(under.reason, 'edge_under');
+  assert.equal(under.bump, 0);
+  const against = runAgree({ steam: -1 });
+  assert.equal(against.action, 'MUTE');
+  assert.equal(against.units, 0);
+  assert.equal(against.bump, 0);
+  assert.equal(runAgree({ odds: -426 }).action, 'PASS');
+  assert.equal(runAgree({ edge: null }).reason, 'missing_edge');
+});
+
+test('a side the spread door let in does not take the bump', () => {
+  const door = runDoor();
+  assert.equal(door.door, 'spread');
+  assert.equal(door.units, 2);
+  assert.equal(door.bump, 0);
+  const two = runDoor({ spreadPositions: TWO_SPREAD });
+  assert.equal(two.door, 'spread');
+  assert.equal(two.units, 2);
+  assert.equal(two.bump, 0);
+});
+
+test('the wide door: spread count ahead by 2 and the moneyline count not behind takes the price size on an edge under 0', () => {
+  // Moneyline count ahead, edge under 0.
+  const ahead = runAgree({ edge: -3, spreadPositions: TWO_SPREAD });
+  assert.equal(ahead.action, 'STAKE');
+  assert.equal(ahead.door, 'spread2');
+  assert.equal(ahead.reason, 'spread2_band');
+  assert.equal(ahead.units, 2);
+  assert.equal(ahead.bump, 0);
+  assert.equal(ahead.spreadMargin, 2);
+  // Moneyline count level, edge under 0.
+  const level = runDoor({ edge: -3, spreadPositions: TWO_SPREAD });
+  assert.equal(level.action, 'STAKE');
+  assert.equal(level.door, 'spread2');
+  assert.equal(level.units, 2);
+  // No edge number.
+  const none = runAgree({ edge: null, spreadPositions: TWO_SPREAD });
+  assert.equal(none.action, 'STAKE');
+  assert.equal(none.reason, 'spread2_band');
+  // The price sizes: 2 at −110 to −199, 1 at −200 to −425, 1 longer than −110.
+  const at = (odds) => runAgree({ edge: -3, spreadPositions: TWO_SPREAD, odds });
+  assert.equal(at(-199).units, 2);
+  assert.equal(at(-110).units, 2);
+  assert.equal(at(-200).units, 1);
+  assert.equal(at(-200).reason, 'spread2_heavy');
+  assert.equal(at(-425).units, 1);
+  assert.equal(at(-109).units, 1);
+  assert.equal(at(-109).reason, 'spread2_plus');
+  assert.equal(at(150).units, 1);
+  assert.equal(at(200).units, 1);
+  // The profitable moneyline count does not change a price size.
+  assert.equal(runAgree({ edge: -3, spreadPositions: TWO_SPREAD, positions: [pos('down01')] }).units, 2);
+});
+
+test('the wide door keeps the price gates: juice, no price, steam against, and the dog cap', () => {
+  const at = (over) => runAgree({ edge: -3, spreadPositions: TWO_SPREAD, ...over });
+  assert.equal(at({ odds: -426 }).action, 'PASS');
+  assert.equal(at({ odds: -426 }).reason, 'juice');
+  assert.equal(at({ odds: null, price: null }).reason, 'no_price');
+  const against = at({ steam: -0.1 });
+  assert.equal(against.action, 'MUTE');
+  assert.equal(against.units, 0);
+  assert.equal(at({ steam: null }).action, 'STAKE');
+  const dog = at({ odds: 201 });
+  assert.equal(dog.action, 'MUTE');
+  assert.equal(dog.reason, 'dog');
+  assert.equal(dog.units, 0);
+});
+
+test('the wide door needs 2 on the spread count and a moneyline count that is not behind', () => {
+  // Spread count of 1: the ladder's answer.
+  assert.equal(runAgree({ edge: -3 }).reason, 'edge_under');
+  assert.equal(runDoor({ edge: -3 }).reason, 'edge_under');
+  // Two for and one against is 1.
+  assert.equal(runAgree({ edge: -3, spreadPositions: [...TWO_SPREAD, sp('spdn01', 'away')] }).action, 'STAKE');
+  assert.equal(runAgree({ edge: -3, spreadPositions: [sp('sp0001'), sp('spdn01')] }).reason, 'edge_under');
+  // Moneyline count behind stays shut whatever the spread count is.
+  const behind = runDoor({ edge: -3, positions: [pos('down01', 'away')], spreadPositions: TWO_SPREAD });
+  assert.equal(behind.action, 'PASS');
+  assert.equal(behind.door, null);
+  // On an edge of 0 or more the ladder sizes it: the bump when the moneyline count is ahead, the spread door when level.
+  const ladder = runAgree({ edge: 6, spreadPositions: TWO_SPREAD });
+  assert.equal(ladder.door, null);
+  assert.equal(ladder.units, 5);
+  const levelLadder = runDoor({ edge: 6, spreadPositions: TWO_SPREAD });
+  assert.equal(levelLadder.door, 'spread');
+  assert.equal(levelLadder.units, 2);
+});
+
+test('the wide door opens a side on the create pass, and v13OpensSide is unchanged', () => {
+  const at = (over) => v13SpreadWideOpensSide({
+    pickDate: DOOR_DAY, sport: 'NBA', side: 'home', positions: [], spreadPositions: TWO_SPREAD, list: DOOR_LIST, ...over,
+  });
+  assert.equal(at(), true);
+  assert.equal(at({ positions: [pos('up0001')] }), true);
+  assert.equal(at({ positions: [pos('down01'), pos('down02', 'away')] }), true);
+  assert.equal(at({ positions: [pos('down01', 'away')] }), false);
+  assert.equal(at({ spreadPositions: [sp('sp0001')] }), false);
+  assert.equal(at({ spreadPositions: [] }), false);
+  assert.equal(at({ spreadPositions: null }), false);
+  assert.equal(at({ side: 'away' }), false);
+  assert.equal(at({ pickDate: '2026-11-23' }), false);
+  assert.equal(at({ list: new Map() }), false);
+  assert.equal(at({ sport: 'NHL' }), false);
+  assert.equal(v13OpensSide({ pickDate: DOOR_DAY, sport: 'NBA', side: 'home', positions: [], list: DOOR_LIST }), false);
+  assert.equal(V13_ML_SPREAD_WIDE_PROMOTED_BY, 'v13-spread-door');
+  assert.equal(V13_ML_OPENED_BY_FIELD, 'v8_v13MlOpenedBy');
+});
+
+test('a side the wide door opened is the price size whatever the edge, and no stake once the door shuts', () => {
+  const opened = (over) => runDoor({ opened: true, spreadPositions: TWO_SPREAD, ...over });
+  // An edge the ladder would size at 4 is still the price size.
+  const up = opened({ positions: [pos('up0001')], edge: 6 });
+  assert.equal(up.action, 'STAKE');
+  assert.equal(up.door, 'spread2');
+  assert.equal(up.units, 2);
+  assert.equal(up.bump, 0);
+  assert.equal(opened({ edge: 6 }).units, 2);
+  assert.equal(opened({ edge: null }).units, 2);
+  assert.equal(opened({ edge: 30, odds: -250 }).units, 1);
+  assert.equal(opened({ edge: 6, odds: 130 }).units, 1);
+  assert.equal(opened({ odds: -426 }).action, 'PASS');
+  assert.equal(opened({ steam: -1 }).action, 'MUTE');
+  // The spread count falls to 1, or the moneyline count falls behind: no stake.
+  const shut = opened({ units: 2, positions: [pos('up0001')], edge: 6, spreadPositions: [sp('sp0001')] });
+  assert.equal(shut.action, 'PASS');
+  assert.equal(shut.reason, 'spread_door_shut');
+  assert.equal(shut.door, null);
+  assert.equal(shut.bump, 0);
+  assert.equal(opened({ positions: [pos('down01', 'away')] }).reason, 'spread_door_shut');
+  assert.equal(opened({ spreadPositions: [] }).reason, 'spread_door_shut');
+  // The flag is not read before the day or on a morning with no list.
+  assert.equal(runDoor({ opened: true, pickDate: '2026-11-23', positions: [pos('up0001')], spreadPositions: [] }).units, 4);
+  assert.equal(runDoor({ opened: true, list: new Map() }).reason, 'no_qualified_wallet');
+});
+
+test('the largest size with the bump is 5, and a price size is 1 or 2', () => {
+  const sizes = new Set();
+  const doorSizes = new Set();
+  for (const positions of [[], [pos('up0001')], [pos('down01')], [pos('up0001'), pos('down01', 'away')]]) {
+    for (const spreadPositions of [[], [sp('sp0001')], TWO_SPREAD]) {
+      for (const odds of [-430, -425, -200, -199, -150, -110, -109, 100, 120, 121, 151, 200, 201]) {
+        for (const edge of [null, -2, 0, 4.9, 5, 9.9, 10, 30]) {
+          for (const steam of [null, -1, 0, 5]) {
+            for (const opened of [false, true]) {
+              const out = runDoor({ positions, spreadPositions, odds, edge, steam, opened });
+              if (out.action === 'STAKE') {
+                sizes.add(out.units);
+                if (out.door === 'spread2') doorSizes.add(out.units);
+                if (opened) assert.equal(out.door, 'spread2');
+              } else {
+                assert.equal(out.units, 0);
+                assert.equal(out.bump, 0);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual([...sizes].sort((a, b) => a - b), [1, 1.5, 2, 2.5, 3, 3.5, 4, 5]);
+  assert.deepEqual([...doorSizes].sort((a, b) => a - b), [1, 2]);
 });

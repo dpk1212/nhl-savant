@@ -82,6 +82,27 @@
  * dog cap are the ladder's, and the size reads the profitable moneyline
  * count as before. A moneyline count that is behind stays shut. The door
  * sizes a side that is on the board; it does not open one.
+ *
+ * Spread agreement, from 2026-11-24 (second change that day). The spread
+ * count on the team is read on every moneyline side, and it does two
+ * more things.
+ *
+ * The bump. A side the ladder stakes on its own moneyline count (ahead
+ * by 1 on the wide count) takes 1u more when the spread count is ahead
+ * by 1 or more on the same team. The 1u is added after the dog cap. A
+ * side the spread door let in does not take it.
+ *
+ * The wide door. The spread count ahead by 2 or more on the team, and
+ * the wide moneyline count not behind. A side the ladder leaves without
+ * a stake because the edge is under 0 or there is no edge number takes
+ * the price size instead: 2 at −110 to −199, 1 at −200 to −425, 1 longer
+ * than −110. Past −425 and no price still stay, steam against is still
+ * 0, and the dog cap still rules. No bump on a price size.
+ *
+ * The wide door opens a side (v13SpreadWideOpensSide), and the sync
+ * marks that side v8_v13MlOpenedBy. A side it opened is the price size
+ * for as long as the door holds, whatever the edge reads, and stays
+ * without a stake once the door shuts.
  */
 
 import { oddsCap } from './oddsCap.js';
@@ -135,8 +156,18 @@ export const V13_ML_DOOR_SPREAD = 'spread';
 export const V13_ML_COUNT_OPENS_FROM = '2026-11-24';
 export const V13_ML_COUNT_OPENS_AHEAD = 1;
 export const V13_ML_COUNT_OPENS_PROMOTED_BY = 'v13-count-open';
+/** Side field: which door put this side on the board (count, or spread2 for the wide door). */
 export const V13_ML_OPENED_BY_FIELD = 'v8_v13MlOpenedBy';
 export const V13_ML_OPENED_BY_COUNT = 'count';
+/** Spread agreement: the bump and the wide door. */
+export const V13_ML_SPREAD_AGREE_FROM = '2026-11-24';
+export const V13_ML_SPREAD_AGREE_AHEAD = 1;
+export const V13_ML_SPREAD_AGREE_UNITS = 1;
+export const V13_ML_SPREAD_WIDE_AHEAD = 2;
+export const V13_ML_SPREAD_WIDE_BAND_UNITS = 2;
+export const V13_ML_SPREAD_WIDE_BASE_UNITS = 1;
+export const V13_ML_DOOR_SPREAD_WIDE = 'spread2';
+export const V13_ML_SPREAD_WIDE_PROMOTED_BY = 'v13-spread-door';
 
 let bookIndex = new Map();
 
@@ -154,6 +185,10 @@ export function isV13MlCountOpensLive(pickDate) {
 
 export function isV13MlSpreadDoorLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= V13_ML_SPREAD_DOOR_FROM;
+}
+
+export function isV13MlSpreadAgreeLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= V13_ML_SPREAD_AGREE_FROM;
 }
 
 export function setV13MlBook(index) {
@@ -283,9 +318,21 @@ export function v13LadderZone(odds, price) {
  * The ladder, from V13_ML_LADDER_FROM. `armed` already passed the wallet
  * gate. `lead` is the profitable count ahead by 1.
  */
-function ladderSize(armed, { odds, price, move, lead }) {
-  if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
+function ladderSize(armed, { odds, price, move, lead, wide = false, opened = false }) {
   const zone = v13LadderZone(odds, price);
+  // The wide door. The price size on a side the ladder has no stake for
+  // (edge under 0, or no edge number), and on every side the door opened.
+  if (wide && (opened || armed.edge == null || armed.edge < 0)) {
+    const door = { ...armed, door: V13_ML_DOOR_SPREAD_WIDE };
+    if (zone === 'juice') return { ...door, action: 'PASS', zone, reason: 'juice' };
+    if (zone == null) return { ...door, action: 'PASS', reason: 'no_price' };
+    if (move != null && move < 0) {
+      return { ...door, action: 'MUTE', units: 0, zone: 'against', reason: 'against' };
+    }
+    const units = zone === 'band' ? V13_ML_SPREAD_WIDE_BAND_UNITS : V13_ML_SPREAD_WIDE_BASE_UNITS;
+    return sized(door, units, zone, `spread2_${zone}`);
+  }
+  if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
   if (zone === 'juice') return { ...armed, action: 'PASS', zone, reason: 'juice' };
   if (zone == null) return { ...armed, action: 'PASS', reason: 'no_price' };
   if (armed.edge < 0) return { ...armed, action: 'PASS', zone, reason: 'edge_under' };
@@ -467,13 +514,33 @@ function againstWallets(positions, sport, side, book) {
 }
 
 /**
+ * Does the wide door open this side for the create pass: the trusted
+ * spread count ahead by 2 or more on the team and the wide moneyline
+ * count not behind, on a morning the list built.
+ */
+export function v13SpreadWideOpensSide({
+  pickDate, sport, side, positions, spreadPositions, list = null,
+} = {}) {
+  if (!isV13MlLadderLive(pickDate) || !isV13MlSpreadAgreeLive(pickDate)) return false;
+  if (!v13UsesTrustedList(pickDate, sport, list)) return false;
+  const count = trustedSideCount({
+    market: 'ML', side, positions, sport, list, wide: true,
+  });
+  if (count.margin < 0) return false;
+  return trustedSideCount({
+    market: 'SPREAD', side, positions: spreadPositions, sport, list,
+  }).margin >= V13_ML_SPREAD_WIDE_AHEAD;
+}
+
+/**
  * @returns {{
  *   fires: boolean, action: 'STAKE'|'MUTE'|'PASS'|'EXEMPT',
  *   reason: string, units: number, unitsPre: number, zone: string|null,
  *   steam: number|null, edge: number|null, against: number, wallets: string[],
  *   margin: number, half: boolean, list: 'trusted'|'tier',
  *   odds: number|null, price: number|null,
- *   door: 'spread'|null, spreadMargin: number|null, spreadWallets: string[],
+ *   door: 'spread'|'spread2'|null, spreadMargin: number|null, spreadWallets: string[],
+ *   bump: number,
  * }}
  */
 export function applyV13MlPath({
@@ -492,6 +559,7 @@ export function applyV13MlPath({
   killed = false,
   book = null,
   list = null,
+  opened = false,
 } = {}) {
   const pre = Number.isFinite(Number(units)) ? Math.max(0, Number(units)) : 0;
   const move = roundTenth(steam);
@@ -515,6 +583,7 @@ export function applyV13MlPath({
     door: null,
     spreadMargin: null,
     spreadWallets: [],
+    bump: 0,
   };
   if (manual === true) return { ...base, action: 'EXEMPT', reason: 'manual' };
   if (killed === true) return { ...base, action: 'EXEMPT', reason: 'operator_kill' };
@@ -523,7 +592,11 @@ export function applyV13MlPath({
     return { ...base, action: 'PASS', reason: 'not_ml' };
   }
   const ladder = isV13MlLadderLive(pickDate);
+  const agree = ladder && isV13MlSpreadAgreeLive(pickDate);
+  const doorOpened = agree && opened === true;
   let lead = false;
+  let wide = false;
+  let bumps = false;
   let armed;
   if (onList) {
     // Wide: trusted with 10 or more moneyline bets in the sport, up or down.
@@ -535,15 +608,28 @@ export function applyV13MlPath({
     const read = {
       ...base, wallets: count.for, against: count.against.length, margin: count.margin,
     };
-    // The spread door. Read only on a level moneyline count: ahead needs
-    // no door, and behind stays shut.
-    if (ladder && isV13MlSpreadDoorLive(pickDate) && count.margin === 0) {
+    // The spread count on the team. Before spread agreement it is read
+    // only on a level moneyline count, for the door. From spread
+    // agreement it is read on every side.
+    if (ladder && isV13MlSpreadDoorLive(pickDate) && (agree || count.margin === 0)) {
       const spread = trustedSideCount({
         market: 'SPREAD', side, positions: spreadPositions, sport, list,
       });
       read.spreadMargin = spread.margin;
       read.spreadWallets = spread.for;
-      if (spread.margin >= V13_ML_SPREAD_DOOR_AHEAD) read.door = V13_ML_DOOR_SPREAD;
+      // The spread door: a level moneyline count. Ahead needs no door,
+      // and behind stays shut.
+      if (count.margin === 0 && spread.margin >= V13_ML_SPREAD_DOOR_AHEAD) {
+        read.door = V13_ML_DOOR_SPREAD;
+      }
+      if (agree) {
+        wide = count.margin >= 0 && spread.margin >= V13_ML_SPREAD_WIDE_AHEAD;
+        bumps = count.margin >= V13_ML_TRUSTED_AHEAD && spread.margin >= V13_ML_SPREAD_AGREE_AHEAD;
+      }
+    }
+    // A side the wide door opened is on the board for the door alone.
+    if (doorOpened && !wide) {
+      return { ...read, door: null, action: 'PASS', reason: 'spread_door_shut' };
     }
     if (!read.door) {
       if (!count.for.length) return { ...read, action: 'PASS', reason: 'no_trusted_wallet' };
@@ -568,7 +654,17 @@ export function applyV13MlPath({
     };
     if (against > 0) return { ...armed, action: 'PASS', reason: 'qualified_against' };
   }
-  if (ladder) return ladderSize(armed, { odds, price, move, lead });
+  if (ladder) {
+    const out = ladderSize(armed, {
+      odds, price, move, lead, wide, opened: doorOpened,
+    });
+    // The bump: the ladder's own stake on a moneyline count that is
+    // ahead, with the spread count ahead on the team. After the dog cap.
+    if (bumps && !doorOpened && out.action === 'STAKE' && out.door == null && out.units > 0) {
+      return { ...out, units: out.units + V13_ML_SPREAD_AGREE_UNITS, bump: V13_ML_SPREAD_AGREE_UNITS };
+    }
+    return out;
+  }
   if (armed.edge == null) return { ...armed, action: 'PASS', reason: 'missing_edge' };
   if (armed.edge < 0) {
     const under = v13HighPriceZone(odds, price);
@@ -618,6 +714,7 @@ export const V13_ML_STAMP_FIELDS = Object.freeze([
   'v8_v13MlDoor',
   'v8_v13MlSpreadMargin',
   'v8_v13MlSpreadWallets',
+  'v8_v13MlBump',
   'v8_v13MlEvaluatedAt',
   'v8_unitsPreV13Ml',
 ]);
@@ -652,6 +749,7 @@ export function v13MlStamp(policy, { now = Date.now() } = {}) {
     v8_v13MlSpreadMargin: Number.isFinite(Number(policy.spreadMargin)) && policy.spreadMargin != null
       ? Number(policy.spreadMargin) : null,
     v8_v13MlSpreadWallets: Array.isArray(policy.spreadWallets) ? policy.spreadWallets : [],
+    v8_v13MlBump: action === 'STAKE' && Number(policy.bump) > 0 ? Number(policy.bump) : 0,
     v8_v13MlEvaluatedAt: now,
     v8_unitsPreV13Ml: policy.unitsPre,
   };
