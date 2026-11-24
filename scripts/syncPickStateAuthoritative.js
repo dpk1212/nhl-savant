@@ -2742,8 +2742,8 @@ function totalLadderPositions(sport, gameKey, positions) {
 let scanPositionGroups = new Map();
 
 /**
- * The positions on the same game in another market. The moneyline
- * ladder's spread door reads the game's spread positions this way.
+ * The positions on the same game in another market, for a ladder that
+ * reads its sister market: the moneyline and the spread on one team.
  */
 function gameMarketPositions(sport, gameKey, market) {
   return scanPositionGroups.get(`${sport}|${gameKey}|${market}`) || [];
