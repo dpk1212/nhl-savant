@@ -2735,6 +2735,21 @@ function totalLadderPositions(sport, gameKey, positions) {
 }
 
 /**
+ * Every game-market cluster of this scan, by sport|gameKey|market. The
+ * same map the scrubs write to, so a read after them sees what the
+ * board sees. Set once per scan.
+ */
+let scanPositionGroups = new Map();
+
+/**
+ * The positions on the same game in another market. The moneyline
+ * ladder's spread door reads the game's spread positions this way.
+ */
+function gameMarketPositions(sport, gameKey, market) {
+  return scanPositionGroups.get(`${sport}|${gameKey}|${market}`) || [];
+}
+
+/**
  * Drop 1Q/4Q/1H/2H ML and spread rows so AGS/HC never stakes a period
  * contract as the game (Toledo@MSU 4Q ML, 2026-09-01).
  */
@@ -5017,6 +5032,9 @@ async function createMissingLockedPicks({
       // v13MlPath.js is the size: 4 / 3 / 2.5 / 2 / 1 in every sport, 0 on
       // an edge under 0 or steam against.
       // The half rule, the steam sizes, and the 2 on an edge under 0 are gone.
+      // From 2026-11-24 the wallet gate has a second way in, the spread
+      // door: a level moneyline count and the trusted spread count ahead
+      // by 1 or more on this team, read from the game's spread positions.
       if (marketType === 'ML') {
         const killedCreate = isOperatorKilled({ _id: docId }, side, null);
         v13MlCreate = applyV13MlPath({
@@ -5026,6 +5044,7 @@ async function createMissingLockedPicks({
           market: marketType,
           side,
           positions,
+          spreadPositions: gameMarketPositions(sport, gameKey, 'SPREAD'),
           odds: stakeOdds ?? odds ?? null,
           steam: steamBookCreate?.mute?.m ?? null,
           edge: waCreateEdge?.edge ?? null,
@@ -5043,6 +5062,7 @@ async function createMissingLockedPicks({
             + ` edge=${v13MlCreate.edge ?? '—'} steam=${v13MlCreate.steam ?? '—'}`
             + ` against=${v13MlCreate.against}`
             + ` list=${v13MlCreate.list} margin=${v13MlCreate.margin}${v13MlCreate.half ? ' half' : ''}`
+            + `${v13MlCreate.door ? ` door=${v13MlCreate.door} spreadMargin=${v13MlCreate.spreadMargin}` : ''}`
             + ` ${v13MlCreate.unitsPre}u → ${v13MlCreate.units}u`,
           );
         }
@@ -8164,6 +8184,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // under 0 are gone. This is the last write to a moneyline stake before
   // the V12+ ML disable. From that date the disable keeps one old rung,
   // STEAM-C at 3u, so the stake is this path's, STEAM-C's 3u, or 0.
+  // From 2026-11-24 the wallet gate has a second way in, the spread door:
+  // a level moneyline count and the trusted spread count ahead by 1 or
+  // more on this team, read from the game's spread positions.
   let v13MlPolicy = null;
   if (mkt === 'ML') {
     v13MlPolicy = applyV13MlPath({
@@ -8173,6 +8196,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       market: mkt,
       side,
       positions: group,
+      spreadPositions: gameMarketPositions(pick.sport, pick.gameKey, 'SPREAD'),
       odds: stakeOdds,
       steam: steamBookPolicy?.mute?.m ?? null,
       edge: winnerAlign?.edge ?? null,
@@ -9698,6 +9722,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + ` edge=${v13MlPolicy.edge ?? '—'} steam=${v13MlPolicy.steam ?? '—'}`
         + ` against=${v13MlPolicy.against}`
         + ` list=${v13MlPolicy.list} margin=${v13MlPolicy.margin}${v13MlPolicy.half ? ' half' : ''}`
+        + `${v13MlPolicy.door ? ` door=${v13MlPolicy.door} spreadMargin=${v13MlPolicy.spreadMargin}` : ''}`
         + ` ${v13MlPolicy.unitsPre}u → ${v13MlPolicy.units}u`,
       );
     } else if (sd.v8_v13MlAction != null && sd.v8_v13MlAction !== v13MlPolicy.action) {
@@ -11218,6 +11243,7 @@ async function main() {
   }
 
   const groups = buildPositionGroupsFromFirestore(positions);
+  scanPositionGroups = groups;
   console.log(`Loaded ${positions.length} sharp_action_positions in ${groups.size} game-market clusters`);
   const morning = await loadMorningRanks(db, TARGET_DATE, { write: !DRY_RUN });
   console.log(`SPREAD-STEAM book: ${morning.spreadSteam ?? 0} wallets`);
