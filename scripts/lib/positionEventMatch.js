@@ -47,6 +47,58 @@ export const WRONG_GAME_EXIT_REASONS = new Set([
  * @param {string} boardDate ET YYYY-MM-DD
  * @returns {boolean}
  */
+function utcDatePlus(iso, days) {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+function instantMs(value) {
+  const ms = typeof value === 'number' ? value : Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function etCalendarDate(value) {
+  const ms = instantMs(value);
+  if (ms == null) return null;
+  return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function utcCalendarDate(value) {
+  const ms = instantMs(value);
+  if (ms == null) return null;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function slugTeamPair(slug) {
+  const m = String(slug || '').toLowerCase().match(
+    /^[a-z0-9]+-([a-z0-9]+)-([a-z0-9]+)-20\d{2}-\d{2}-\d{2}/,
+  );
+  return m ? [m[1], m[2]] : null;
+}
+
+/**
+ * An 8:15pm ET kickoff is already the next day in UTC, so Polymarket's slug
+ * is dated tomorrow while the ticket is filed on tonight's ET board. That is
+ * this game, not a leftover. Tomorrow's commence on today's board still fails.
+ */
+export function isUtcSlugOfThisKick(pos, boardDate, gameKey = null) {
+  const board = String(boardDate || pos?.date || '').slice(0, 10);
+  const slug = String(pos?.eventSlug || pos?.slug || '');
+  const slugDate = (slug.match(/(20\d{2}-\d{2}-\d{2})/) || [])[1] || null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(board) || !slugDate) return false;
+  if (slugDate !== utcDatePlus(board, 1)) return false;
+  const kick = pos?.commenceTime ?? pos?.commence ?? pos?.startTime;
+  if (etCalendarDate(kick) !== board) return false;
+  // The slug day has to be this kickoff's own UTC date. A morning timestamp
+  // on the board date does not explain a tomorrow slug.
+  if (utcCalendarDate(kick) !== slugDate) return false;
+  const pair = slugTeamPair(slug);
+  const gk = String(gameKey || pos?.gameKey || '').toLowerCase();
+  if (!pair || !gk) return false;
+  return gk === `${pair[0]}_${pair[1]}` || gk === `${pair[1]}_${pair[0]}`;
+}
+
 export function slugDatesAreBoardLeftovers(slugDates, boardDate) {
   const target = String(boardDate || '').slice(0, 10);
   if (!/^20\d{2}-\d{2}-\d{2}$/.test(target)) return false;
@@ -96,6 +148,9 @@ export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {
     // Hard reject other-day markets when poly cache is missing (WNBA overnight
     // leftovers: wnba-atl-wsh-2026-08-07 sitting on the 2026-08-08 board).
     if (boardDate && slugDate && slugDate !== boardDate) {
+      if (isUtcSlugOfThisKick(pos, boardDate, gameKey)) {
+        return { ok: true, reason: 'utc_slug_same_kick' };
+      }
       return { ok: false, reason: 'slug_date_vs_board' };
     }
     return { ok: false, reason: 'no_poly_game' };
@@ -116,6 +171,9 @@ export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {
   if (boardDate && slugDate && slugDate !== boardDate) {
     const reusedOnBoard = !!(posEventId && gameEventId && posEventId === gameEventId);
     if (!reusedOnBoard) {
+      if (isUtcSlugOfThisKick(pos, boardDate, gameKey)) {
+        return { ok: true, reason: 'utc_slug_same_kick' };
+      }
       return { ok: false, reason: 'slug_date_vs_board' };
     }
   }
