@@ -31,6 +31,16 @@
  * From that date a morning with no list, or a list with no records, is
  * 0 on every spread: the older rungs do not stake in its place.
  *
+ * The moneyline bump, from 2026-11-24. A side the ladder stakes takes 1u
+ * more when the trusted moneyline wallets are ahead on the same team:
+ * 3u is 4u and 1u is 2u. The moneyline count is the one the moneyline
+ * ladder's gate reads, the wide count: trusted moneyline wallets with 10
+ * or more graded moneyline bets in the sport, up or down, this team
+ * minus the other team, ahead by 1 or more, from the moneyline positions
+ * on the same game. A count that is level or behind leaves the stake as
+ * the ladder set it. The gate does not read the moneyline: a side the
+ * ladder leaves at 0 stays 0.
+ *
  * On 2026-11-22 the first ladder ran, NBA, NFL, and CFB only: 3u with
  * the count ahead by 2 or more, the records ahead by 4 or more, and a
  * price shorter than +100; 2u for the rest of the gate at a price
@@ -73,6 +83,10 @@ export const TRUSTED_SPREAD_LADDER_TOP_RECORDS = 4;
 export const TRUSTED_SPREAD_LADDER_TOP_UNITS = 3;
 export const TRUSTED_SPREAD_LADDER_BASE_UNITS = 1;
 export const TRUSTED_SPREAD_LADDER_MAX_LINE = 7;
+/** The moneyline bump on a ladder stake. */
+export const TRUSTED_SPREAD_ML_BUMP_FROM = '2026-11-24';
+export const TRUSTED_SPREAD_ML_BUMP_AHEAD = 1;
+export const TRUSTED_SPREAD_ML_BUMP_UNITS = 1;
 export const TRUSTED_SPREAD_STAKE_TIER = 'LIST-SPREAD';
 export const TRUSTED_SPREAD_RESCUED_BY = 'list-spread';
 export const TRUSTED_SPREAD_MUTED_BY = 'list-spread';
@@ -82,6 +96,11 @@ const SPORTS = new Set(['NBA', 'NFL', 'CFB']);
 /** True from the first pick date of the ladder on every sport. */
 export function trustedSpreadLadderLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= TRUSTED_SPREAD_LADDER_FROM;
+}
+
+/** True from the first pick date of the moneyline bump. */
+export function trustedSpreadMlBumpLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TRUSTED_SPREAD_ML_BUMP_FROM;
 }
 
 /** NBA, NFL, and CFB before the ladder date. Every sport from it. */
@@ -124,6 +143,7 @@ function priceRead(odds, price) {
  *   odds: number|null, price: number|null,
  *   rule: 'ladder'|'gate'|'ahead_3', line: number|null,
  *   recordFor: number|null, recordAgainst: number|null, recordLead: number|null,
+ *   mlMargin: number|null, mlWallets: string[], bump: number,
  * }}
  */
 export function applyTrustedSpreadPath({
@@ -133,6 +153,7 @@ export function applyTrustedSpreadPath({
   market = null,
   side = null,
   positions = null,
+  mlPositions = null,
   odds = null,
   price = null,
   line = null,
@@ -160,6 +181,9 @@ export function applyTrustedSpreadPath({
     recordFor: null,
     recordAgainst: null,
     recordLead: null,
+    mlMargin: null,
+    mlWallets: [],
+    bump: 0,
   };
   if (manual === true) return { ...base, action: 'EXEMPT', reason: 'manual' };
   if (killed === true) return { ...base, action: 'EXEMPT', reason: 'killed' };
@@ -174,7 +198,10 @@ export function applyTrustedSpreadPath({
     ...base, margin: count.margin, wallets: count.for, against: count.against,
   };
   if (trustedSpreadOwns(pickDate)) {
-    return ownedStake({ read, pre, side, positions, odds, price, list, ladder });
+    const staked = ownedStake({ read, pre, side, positions, odds, price, list, ladder });
+    return ladder && trustedSpreadMlBumpLive(pickDate)
+      ? mlBump(staked, { side, sport, mlPositions, list })
+      : staked;
   }
   if (count.margin < 0) {
     if (pre > 0) return { ...read, fires: true, action: 'MUTE', reason: 'behind', units: 0 };
@@ -257,6 +284,20 @@ function ladderStake({ out, pre, p, lead }) {
   };
 }
 
+/**
+ * From 2026-11-24, on a side the ladder staked. The trusted moneyline
+ * wallets ahead on the same team is 1u more. Anything else is unchanged.
+ */
+function mlBump(out, { side, sport, mlPositions, list }) {
+  if (out.action !== 'STAKE' || !(out.units > 0)) return out;
+  const ml = trustedSideCount({
+    market: 'ML', side, positions: mlPositions, sport, list, wide: true,
+  });
+  const read = { ...out, mlMargin: ml.margin, mlWallets: ml.for };
+  if (ml.margin < TRUSTED_SPREAD_ML_BUMP_AHEAD) return read;
+  return { ...read, units: out.units + TRUSTED_SPREAD_ML_BUMP_UNITS, bump: TRUSTED_SPREAD_ML_BUMP_UNITS };
+}
+
 export const TRUSTED_SPREAD_STAMP_FIELDS = Object.freeze([
   'v8_trustedSpread',
   'v8_trustedSpreadAction',
@@ -272,6 +313,9 @@ export const TRUSTED_SPREAD_STAMP_FIELDS = Object.freeze([
   'v8_trustedSpreadRecordAgainst',
   'v8_trustedSpreadRecordLead',
   'v8_trustedSpreadLine',
+  'v8_trustedSpreadMlMargin',
+  'v8_trustedSpreadMlWallets',
+  'v8_trustedSpreadBump',
 ]);
 
 function round2(v) {
@@ -300,5 +344,8 @@ export function trustedSpreadStamp(policy) {
     v8_trustedSpreadRecordAgainst: round2(policy.recordAgainst),
     v8_trustedSpreadRecordLead: round2(policy.recordLead),
     v8_trustedSpreadLine: policy.line ?? null,
+    v8_trustedSpreadMlMargin: policy.mlMargin ?? null,
+    v8_trustedSpreadMlWallets: Array.isArray(policy.mlWallets) ? policy.mlWallets : [],
+    v8_trustedSpreadBump: Number(policy.bump) > 0 ? Number(policy.bump) : 0,
   };
 }

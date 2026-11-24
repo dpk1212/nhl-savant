@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   TRUSTED_SPREAD_LADDER_FROM,
+  TRUSTED_SPREAD_ML_BUMP_FROM,
   TRUSTED_SPREAD_OWNS_FROM,
   TRUSTED_SPREAD_STAMP_FIELDS,
   TRUSTED_SPREAD_UNITS,
   applyTrustedSpreadPath,
   trustedSpreadLadderLive,
   trustedSpreadLive,
+  trustedSpreadMlBumpLive,
   trustedSpreadOwns,
   trustedSpreadStamp,
 } from './trustedSpreadPath.js';
@@ -616,4 +618,183 @@ test('the ladder stamp carries the line and every field on every action', () => 
   }
   assert.equal(trustedSpreadStamp(lad({ odds: 110, line: 3 })).v8_trustedSpreadLine, 3);
   assert.equal(trustedSpreadStamp(lad({ line: null })).v8_trustedSpreadLine, null);
+});
+
+// ─── From 2026-11-24: the moneyline bump on a ladder stake ───────────────
+
+const BUMP = '2026-11-24';
+
+/** A ladder list plus moneyline names: mlup01 and mlup02 are up on NBA moneylines, mldn01 is down, mlthin has under 10 bets. */
+function bumpList({ records = { aaaaa1: 2.5 }, trusted = ['aaaaa1'] } = {}) {
+  const index = ladderList({ trusted, records });
+  index.set('ML|mlup01', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NBA'], played: ['NBA'] });
+  index.set('ML|mlup02', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: ['NBA'], played: ['NBA'] });
+  index.set('ML|mldn01', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [], played: ['NBA'] });
+  index.set('ML|mlthin', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [], played: [] });
+  index.set('ML|mloff1', { trusted: false, standing: 0.3, score: -0.02, n: 40, sports: ['NBA'], played: ['NBA'] });
+  return index;
+}
+
+function ml(wallet, side = 'home', invested = 500) {
+  return pos(wallet, side, invested, 'ML');
+}
+
+function bump(over = {}) {
+  return applyTrustedSpreadPath({
+    units: 0, pickDate: BUMP, sport: 'NBA', market: 'SPREAD', side: 'home',
+    positions: [pos('aaaaa1', 'home')], mlPositions: [ml('mlup01')], odds: -110, line: -4.5, score: null,
+    list: bumpList(), ...over,
+  });
+}
+
+const BUMP4 = bumpList({ records: { aaaaa1: 4 } });
+
+test('the moneyline bump starts on its day', () => {
+  assert.equal(TRUSTED_SPREAD_ML_BUMP_FROM, BUMP);
+  assert.equal(trustedSpreadMlBumpLive('2026-11-23'), false);
+  assert.equal(trustedSpreadMlBumpLive(BUMP), true);
+  assert.equal(trustedSpreadMlBumpLive(null), false);
+  const before = bump({ pickDate: '2026-11-23', list: BUMP4 });
+  assert.equal(before.units, 3);
+  assert.equal(before.bump, 0);
+  assert.equal(before.mlMargin, null);
+});
+
+test('a ladder stake takes 1u more when the trusted moneyline wallets are ahead on the team', () => {
+  const one = bump();
+  assert.equal(one.action, 'STAKE');
+  assert.equal(one.reason, 'records_2');
+  assert.equal(one.units, 2);
+  assert.equal(one.bump, 1);
+  assert.equal(one.mlMargin, 1);
+  assert.deepEqual(one.mlWallets, ['mlup01']);
+  const top = bump({ list: BUMP4 });
+  assert.equal(top.reason, 'records_4');
+  assert.equal(top.units, 4);
+  assert.equal(top.bump, 1);
+  // +100 or longer on a line of 7 or under: 1u is 2u.
+  const plus = bump({ odds: 105, line: 3.5 });
+  assert.equal(plus.reason, 'plus_short_line');
+  assert.equal(plus.units, 2);
+  // Ahead by more than 1 is still 1u more.
+  assert.equal(bump({ list: BUMP4, mlPositions: [ml('mlup01'), ml('mlup02')] }).units, 4);
+  // The wide count: a trusted moneyline wallet that is down in the sport counts.
+  const down = bump({ mlPositions: [ml('mldn01')] });
+  assert.equal(down.units, 2);
+  assert.equal(down.mlMargin, 1);
+  // Whatever arrived, the ladder and the bump set the stake.
+  for (const units of [0, 1, 3, 6]) {
+    assert.equal(bump({ units }).units, 2);
+    assert.equal(bump({ units, list: BUMP4 }).units, 4);
+    assert.equal(bump({ units }).unitsPre, units);
+  }
+});
+
+test('a moneyline count that is level or behind leaves the ladder stake alone', () => {
+  const none = bump({ mlPositions: [] });
+  assert.equal(none.units, 1);
+  assert.equal(none.bump, 0);
+  assert.equal(none.mlMargin, 0);
+  assert.equal(bump({ mlPositions: null, list: BUMP4 }).units, 3);
+  assert.equal(bump({ mlPositions: undefined }).units, 1);
+  const level = bump({ list: BUMP4, mlPositions: [ml('mlup01'), ml('mlup02', 'away')] });
+  assert.equal(level.units, 3);
+  assert.equal(level.mlMargin, 0);
+  const behind = bump({ list: BUMP4, mlPositions: [ml('mlup01', 'away'), ml('mldn01', 'away')] });
+  assert.equal(behind.action, 'STAKE');
+  assert.equal(behind.units, 3);
+  assert.equal(behind.mlMargin, -2);
+  assert.equal(behind.bump, 0);
+  // Under 10 moneyline bets in the sport, not trusted, unknown, and a spread name: none count.
+  for (const w of ['mlthin', 'mloff1', 'nobody', 'aaaaa1']) {
+    const out = bump({ mlPositions: [ml(w)] });
+    assert.equal(out.units, 1, w);
+    assert.equal(out.mlMargin, 0, w);
+  }
+  // A spread row is not a moneyline row, and another sport's moneyline record is not this sport's.
+  assert.equal(bump({ mlPositions: [pos('mlup01', 'home')] }).units, 1);
+  assert.equal(bump({ sport: 'NHL', mlPositions: [ml('mlup01')] }).units, 1);
+  // The other team's moneyline.
+  assert.equal(bump({ mlPositions: [ml('mlup01', 'away')] }).units, 1);
+  // A wallet on both moneylines counts on its larger ticket.
+  const both = bump({ mlPositions: [ml('mlup01', 'home', 100), ml('mlup01', 'away', 900)] });
+  assert.equal(both.units, 1);
+  assert.equal(both.mlMargin, -1);
+});
+
+test('the bump never opens the gate: a side the ladder leaves at 0 stays 0', () => {
+  const mlAhead = [ml('mlup01'), ml('mlup02')];
+  // Records under 2.
+  const thin = bump({ units: 2, mlPositions: mlAhead, list: bumpList({ records: { aaaaa1: 1.5 } }) });
+  assert.equal(thin.action, 'MUTE');
+  assert.equal(thin.reason, 'records_not_ahead');
+  assert.equal(thin.units, 0);
+  assert.equal(thin.bump, 0);
+  assert.equal(thin.mlMargin, null);
+  // No trusted spread wallet, level, and behind.
+  assert.equal(bump({ mlPositions: mlAhead, positions: [] }).units, 0);
+  assert.equal(bump({ mlPositions: mlAhead, positions: [pos('aaaaa1', 'away')] }).units, 0);
+  // +100 or longer on a long line, no line, no price, and juice.
+  assert.equal(bump({ mlPositions: mlAhead, odds: 110, line: 9 }).units, 0);
+  assert.equal(bump({ mlPositions: mlAhead, odds: 110, line: null }).units, 0);
+  assert.equal(bump({ mlPositions: mlAhead, odds: null }).units, 0);
+  assert.equal(bump({ mlPositions: mlAhead, odds: -430 }).units, 0);
+  // No list and no records.
+  assert.equal(bump({ mlPositions: mlAhead, list: new Map() }).units, 0);
+});
+
+test('manual, a kill, and another market are not bumped', () => {
+  const manual = bump({ manual: true, units: 3 });
+  assert.equal(manual.action, 'EXEMPT');
+  assert.equal(manual.units, 3);
+  assert.equal(manual.bump, 0);
+  const killed = bump({ killed: true, units: 0 });
+  assert.equal(killed.action, 'EXEMPT');
+  assert.equal(killed.units, 0);
+  const total = bump({ market: 'TOTAL', units: 2 });
+  assert.equal(total.action, 'PASS');
+  assert.equal(total.units, 2);
+});
+
+test('every sport takes the bump, and no bumped size is outside 2 and 4', () => {
+  const sizes = new Set();
+  for (const sport of ['NBA', 'NFL', 'CFB', 'NHL', 'CBB', 'MLB']) {
+    const list = ladderList({ trusted: ['aaaaa1'], records: { aaaaa1: 4 } });
+    list.set('ML|mlup01', { trusted: true, standing: 0.9, score: 0.02, n: 40, sports: [sport], played: [sport] });
+    for (const odds of [-430, -200, -110, 100, 130]) {
+      for (const line of [null, -3, 9]) {
+        const out = bump({ sport, list, odds, line });
+        if (out.bump > 0) sizes.add(out.units);
+        if (out.action === 'STAKE') assert.equal(out.bump, 1, `${sport} ${odds} ${line}`);
+        else assert.equal(out.units, 0);
+      }
+    }
+    assert.equal(bump({ sport, list }).units, 4, sport);
+  }
+  assert.deepEqual([...sizes].sort((a, b) => a - b), [2, 4]);
+});
+
+test('the stamp carries the moneyline count, the wallets, and the bump on every action', () => {
+  for (const f of ['v8_trustedSpreadMlMargin', 'v8_trustedSpreadMlWallets', 'v8_trustedSpreadBump']) {
+    assert.ok(TRUSTED_SPREAD_STAMP_FIELDS.includes(f), f);
+  }
+  const up = trustedSpreadStamp(bump({ list: BUMP4 }));
+  assert.equal(up.v8_trustedSpreadUnits, 4);
+  assert.equal(up.v8_trustedSpreadBump, 1);
+  assert.equal(up.v8_trustedSpreadMlMargin, 1);
+  assert.deepEqual(up.v8_trustedSpreadMlWallets, ['mlup01']);
+  assert.equal(up.v8_trustedSpreadReason, 'records_4');
+  const flat = trustedSpreadStamp(bump({ list: BUMP4, mlPositions: [ml('mlup01', 'away')] }));
+  assert.equal(flat.v8_trustedSpreadUnits, 3);
+  assert.equal(flat.v8_trustedSpreadBump, 0);
+  assert.equal(flat.v8_trustedSpreadMlMargin, -1);
+  assert.deepEqual(flat.v8_trustedSpreadMlWallets, []);
+  // A side the ladder left at 0 clears the fields.
+  const zeroed = trustedSpreadStamp(bump({ positions: [] }));
+  assert.equal(zeroed.v8_trustedSpreadBump, 0);
+  assert.equal(zeroed.v8_trustedSpreadMlMargin, null);
+  assert.deepEqual(zeroed.v8_trustedSpreadMlWallets, []);
+  for (const p of [bump(), bump({ positions: [] }), bump({ manual: true }), bump({ list: new Map() })]) {
+    assert.deepEqual(Object.keys(trustedSpreadStamp(p)).sort(), [...TRUSTED_SPREAD_STAMP_FIELDS].sort());
+  }
 });
