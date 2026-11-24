@@ -70,6 +70,18 @@
  * up in units on moneylines in the sport, ahead by 1. On a morning the
  * list did not build, the tier book opens the side and it sizes as
  * profitable wallets not ahead. The dog cap still rules every size.
+ *
+ * The spread door, from 2026-11-24. The wallet gate has a second way in.
+ * When the wide moneyline count is level (no trusted moneyline wallet on
+ * the game, or as many on one side as the other) and the trusted spread
+ * count is ahead by 1 or more on this team, the side goes to the ladder.
+ * The spread count is the one the spread ladder reads: trusted spread
+ * wallets that are up in units on spreads in the sport, this team's
+ * spread against the other team's, from the spread positions on the
+ * same game. Nothing else changes. The price gates, the sizes, and the
+ * dog cap are the ladder's, and the size reads the profitable moneyline
+ * count as before. A moneyline count that is behind stays shut. The door
+ * sizes a side that is on the board; it does not open one.
  */
 
 import { oddsCap } from './oddsCap.js';
@@ -108,6 +120,10 @@ export const V13_ML_LADDER_LEAD_UNITS = 3;
 export const V13_ML_LADDER_PLUS_UNITS = 2.5;
 export const V13_ML_LADDER_BAND_UNITS = 2;
 export const V13_ML_LADDER_BASE_UNITS = 1;
+/** The spread door. A level moneyline count and the spread count ahead on the team. */
+export const V13_ML_SPREAD_DOOR_FROM = '2026-11-24';
+export const V13_ML_SPREAD_DOOR_AHEAD = 1;
+export const V13_ML_DOOR_SPREAD = 'spread';
 
 let bookIndex = new Map();
 
@@ -117,6 +133,10 @@ export function isV13MlLive(pickDate) {
 
 export function isV13MlLadderLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= V13_ML_LADDER_FROM;
+}
+
+export function isV13MlSpreadDoorLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= V13_ML_SPREAD_DOOR_FROM;
 }
 
 export function setV13MlBook(index) {
@@ -414,6 +434,7 @@ function againstWallets(positions, sport, side, book) {
  *   steam: number|null, edge: number|null, against: number, wallets: string[],
  *   margin: number, half: boolean, list: 'trusted'|'tier',
  *   odds: number|null, price: number|null,
+ *   door: 'spread'|null, spreadMargin: number|null, spreadWallets: string[],
  * }}
  */
 export function applyV13MlPath({
@@ -423,6 +444,7 @@ export function applyV13MlPath({
   market = null,
   side = null,
   positions = null,
+  spreadPositions = null,
   odds = null,
   price = null,
   steam = null,
@@ -451,6 +473,9 @@ export function applyV13MlPath({
     list: onList ? V13_ML_LIST_TRUSTED : V13_ML_LIST_TIER,
     odds: oddsN,
     price: priceN,
+    door: null,
+    spreadMargin: null,
+    spreadWallets: [],
   };
   if (manual === true) return { ...base, action: 'EXEMPT', reason: 'manual' };
   if (killed === true) return { ...base, action: 'EXEMPT', reason: 'operator_kill' };
@@ -471,11 +496,23 @@ export function applyV13MlPath({
     const read = {
       ...base, wallets: count.for, against: count.against.length, margin: count.margin,
     };
-    if (!count.for.length) return { ...read, action: 'PASS', reason: 'no_trusted_wallet' };
-    armed = { ...read, fires: true };
-    if (count.margin < V13_ML_TRUSTED_AHEAD) {
-      return { ...armed, action: 'PASS', reason: 'trusted_not_ahead' };
+    // The spread door. Read only on a level moneyline count: ahead needs
+    // no door, and behind stays shut.
+    if (ladder && isV13MlSpreadDoorLive(pickDate) && count.margin === 0) {
+      const spread = trustedSideCount({
+        market: 'SPREAD', side, positions: spreadPositions, sport, list,
+      });
+      read.spreadMargin = spread.margin;
+      read.spreadWallets = spread.for;
+      if (spread.margin >= V13_ML_SPREAD_DOOR_AHEAD) read.door = V13_ML_DOOR_SPREAD;
     }
+    if (!read.door) {
+      if (!count.for.length) return { ...read, action: 'PASS', reason: 'no_trusted_wallet' };
+      if (count.margin < V13_ML_TRUSTED_AHEAD) {
+        return { ...read, fires: true, action: 'PASS', reason: 'trusted_not_ahead' };
+      }
+    }
+    armed = { ...read, fires: true };
     lead = kept.margin >= V13_ML_TRUSTED_AHEAD;
     // Before the ladder: ahead only with the wallets that are down in
     // units is half the size. On the ladder that is its own level.
@@ -539,6 +576,9 @@ export const V13_ML_STAMP_FIELDS = Object.freeze([
   'v8_v13MlHalf',
   'v8_v13MlOdds',
   'v8_v13MlPrice',
+  'v8_v13MlDoor',
+  'v8_v13MlSpreadMargin',
+  'v8_v13MlSpreadWallets',
   'v8_v13MlEvaluatedAt',
   'v8_unitsPreV13Ml',
 ]);
@@ -569,6 +609,10 @@ export function v13MlStamp(policy, { now = Date.now() } = {}) {
     v8_v13MlHalf: action === 'STAKE' && policy.half === true,
     v8_v13MlOdds: policy.odds ?? null,
     v8_v13MlPrice: policy.price ?? null,
+    v8_v13MlDoor: policy.door ?? null,
+    v8_v13MlSpreadMargin: Number.isFinite(Number(policy.spreadMargin)) && policy.spreadMargin != null
+      ? Number(policy.spreadMargin) : null,
+    v8_v13MlSpreadWallets: Array.isArray(policy.spreadWallets) ? policy.spreadWallets : [],
     v8_v13MlEvaluatedAt: now,
     v8_unitsPreV13Ml: policy.unitsPre,
   };
