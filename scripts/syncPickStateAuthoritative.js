@@ -448,12 +448,16 @@ import {
   qualifyingPresses,
 } from '../src/lib/mlPressRung.js';
 import {
+  V13_ML_DOOR_SPREAD_WIDE,
   V13_ML_MUTED_BY,
+  V13_ML_OPENED_BY_FIELD,
   V13_ML_RESCUED_BY,
+  V13_ML_SPREAD_WIDE_PROMOTED_BY,
   V13_ML_STAKE_TIER,
   applyV13MlPath,
   v13MlStamp,
   v13OpensSide,
+  v13SpreadWideOpensSide,
 } from '../src/lib/v13MlPath.js';
 import {
   TRUSTED_SPREAD_MUTED_BY,
@@ -3442,7 +3446,20 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE, sport, market: marketType, side,
           positions: totalLadderPositions(sport, gameKey, positions),
         });
-      if (docAlready && !top3Early.fires && !gapEarly.fires && !listTotalOpens) continue;
+      // The moneyline wide door (from 2026-11-24): the trusted spread count
+      // ahead by 2 or more on this team and the moneyline count not behind.
+      // It opens a side the score did not pick, and adds one to a doc that
+      // already holds the other side. A side that is here for the door
+      // alone is marked, and takes the price size only.
+      const v13WideOpens = marketType === 'ML'
+        && !manualAgainstCreate
+        && v13SpreadWideOpensSide({
+          pickDate: TARGET_DATE, sport, side, positions,
+          spreadPositions: gameMarketPositions(sport, gameKey, 'SPREAD'),
+        });
+      const v13WideDocOpen = v13WideOpens
+        && docAlready && !top3Early.fires && !gapEarly.fires && !listTotalOpens;
+      if (docAlready && !top3Early.fires && !gapEarly.fires && !listTotalOpens && !v13WideOpens) continue;
       const live = computeWalletConsensus(positions, side, sport, walletProfiles);
       // Quick-skip: no Door-2, no HC, and no trusted wallet on this game.
       // Door-2 misses a market-trusted total (Houston 2026-10-30, 2a8409 / a1be00).
@@ -3457,7 +3474,7 @@ async function createMissingLockedPicks({
       // when the list is ahead on it. On a morning with no list, one
       // tier-book wallet.
       const v13Opens = marketType === 'ML' && v13OpensSide({ pickDate: TARGET_DATE, sport, side, positions });
-      if (!top3Early.fires && !gapEarly.fires && !mlMiniOpens && !spreadSteamOpens && !totalMiniOpens && !pressOpens && !v13Opens && !listTotalOpens && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
+      if (!top3Early.fires && !gapEarly.fires && !mlMiniOpens && !spreadSteamOpens && !totalMiniOpens && !pressOpens && !v13Opens && !v13WideOpens && !listTotalOpens && live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0 && !trustedOnGame) continue;
 
       // Build walletDetails for AGS-U (sport-local size — Action parity).
       const walletDetails = mapPositionsToStakeWalletDetails(positions, sport, walletProfiles, marketType);
@@ -3530,6 +3547,9 @@ async function createMissingLockedPicks({
       const listTotalForceCreate = listTotalOpens
         && !pressMirrorForceCreate
         && !(Number.isFinite(scoreV12) && scoreV12 > 0);
+      // The moneyline wide door is the last way past the score: it forces
+      // a side only when no other bypass built it.
+      let v13WideForceCreate = false;
       if (pressMirrorForceCreate) {
         // handled above — falls through to build the side
       } else if (listTotalForceCreate) {
@@ -3550,6 +3570,9 @@ async function createMissingLockedPicks({
           // so the decision waits for the ladder call that has the ticket price.
           trustProbeCreate = true;
           console.log(`  TRUST probe: ${docId} ${side} (agsv12_no_signal · trusted wallet on ${marketType})`);
+        } else if (v13WideOpens) {
+          v13WideForceCreate = true;
+          console.log(`  V13-ML wide door bypass: ${docId} ${side} (agsv12_no_signal → the spread count opens the side)`);
         } else {
           skipped.push({ docId, side, reason: 'agsv12_no_signal' });
           continue;
@@ -3572,6 +3595,9 @@ async function createMissingLockedPicks({
         } else if (trustedOnGame) {
           trustProbeCreate = true;
           console.log(`  TRUST probe: ${docId} ${side} (agsv12_mute score=${scoreV12} · trusted wallet on ${marketType})`);
+        } else if (v13WideOpens) {
+          v13WideForceCreate = true;
+          console.log(`  V13-ML wide door bypass: ${docId} ${side} (agsv12_mute score=${scoreV12} → the spread count opens the side)`);
         } else {
           skipped.push({ docId, side, reason: 'agsv12_mute_below_zero', score: scoreV12 });
           continue;
@@ -3591,15 +3617,20 @@ async function createMissingLockedPicks({
         && !q1ForceBypassAgs
         && !unoppForceBypassAgs
         && !(Number.isFinite(scoreV12) && scoreV12 > 0);
+      // On the board for the wide door alone: the score gate, or a doc that
+      // already held the other side.
+      const v13WideOpened = v13WideForceCreate || v13WideDocOpen;
       const promotedBy = listTotalForceCreate
         ? TRUSTED_TOTAL_PROMOTED_BY
-        : (top3ForceCreate
-          ? TOP3_PICK_PROMOTED_BY
-          : (gapForceCreate
-            ? GAP_LEAD_PROMOTED_BY
-            : (q1ForceBypassAgs
-              ? 'confirmed-q1-force'
-              : (unoppForceBypassAgs ? 'confirmed-unopp-force' : 'ags-unified-v12'))));
+        : (v13WideForceCreate
+          ? V13_ML_SPREAD_WIDE_PROMOTED_BY
+          : (top3ForceCreate
+            ? TOP3_PICK_PROMOTED_BY
+            : (gapForceCreate
+              ? GAP_LEAD_PROMOTED_BY
+              : (q1ForceBypassAgs
+                ? 'confirmed-q1-force'
+                : (unoppForceBypassAgs ? 'confirmed-unopp-force' : 'ags-unified-v12')))));
       const finalTier = agsV12Res?.tier || 'FADE';
       const peakStars = starsFromTierV12(finalTier);
       // ── Pinnacle odds + line. ML uses live mlOdds; SPREAD uses the
@@ -5035,6 +5066,12 @@ async function createMissingLockedPicks({
       // From 2026-11-24 the wallet gate has a second way in, the spread
       // door: a level moneyline count and the trusted spread count ahead
       // by 1 or more on this team, read from the game's spread positions.
+      // Spread agreement, the same date: a ladder stake on a moneyline
+      // count that is ahead takes 1u more when the spread count is ahead
+      // on the team. The spread count ahead by 2 or more with the
+      // moneyline count not behind is the wide door: the price size (2 at
+      // −110 to −199, 1 elsewhere) on an edge under 0 or no edge number,
+      // and on every side the door opened.
       if (marketType === 'ML') {
         const killedCreate = isOperatorKilled({ _id: docId }, side, null);
         v13MlCreate = applyV13MlPath({
@@ -5049,6 +5086,7 @@ async function createMissingLockedPicks({
           steam: steamBookCreate?.mute?.m ?? null,
           edge: waCreateEdge?.edge ?? null,
           killed: killedCreate,
+          opened: v13WideOpened,
         });
         if (!killedCreate && (v13MlCreate.action === 'STAKE' || v13MlCreate.action === 'MUTE')) {
           peakUnitsApplied = v13MlCreate.units;
@@ -5062,7 +5100,9 @@ async function createMissingLockedPicks({
             + ` edge=${v13MlCreate.edge ?? '—'} steam=${v13MlCreate.steam ?? '—'}`
             + ` against=${v13MlCreate.against}`
             + ` list=${v13MlCreate.list} margin=${v13MlCreate.margin}${v13MlCreate.half ? ' half' : ''}`
-            + `${v13MlCreate.door ? ` door=${v13MlCreate.door} spreadMargin=${v13MlCreate.spreadMargin}` : ''}`
+            + `${v13MlCreate.door ? ` door=${v13MlCreate.door}` : ''}`
+            + `${v13MlCreate.spreadMargin == null ? '' : ` spreadMargin=${v13MlCreate.spreadMargin}`}`
+            + `${v13MlCreate.bump > 0 ? ` bump=+${v13MlCreate.bump}u` : ''}${v13WideOpened ? ' opened' : ''}`
             + ` ${v13MlCreate.unitsPre}u → ${v13MlCreate.units}u`,
           );
         }
@@ -5324,6 +5364,8 @@ async function createMissingLockedPicks({
       if (totalMiniCreate) Object.assign(v8Stamps, totalMiniStamp(totalMiniCreate));
       if (mlPressCreate) Object.assign(v8Stamps, mlPressStamp(mlPressCreate));
       if (v13MlCreate) Object.assign(v8Stamps, v13MlStamp(v13MlCreate, { now }));
+      // Sticky: the update pass reads it and keeps this side on the price size.
+      if (v13WideOpened) v8Stamps[V13_ML_OPENED_BY_FIELD] = V13_ML_DOOR_SPREAD_WIDE;
       if (trustedSpreadCreate) Object.assign(v8Stamps, trustedSpreadStamp(trustedSpreadCreate));
       if (trustedTotalCreate) Object.assign(v8Stamps, trustedTotalStamp(trustedTotalCreate));
       // The trusted list's count on this side, every market, for the record.
@@ -5847,6 +5889,13 @@ async function createMissingLockedPicks({
       if (listTotalForceCreate && trustedTotalCreate?.action !== 'STAKE') {
         skipped.push({ docId, side, reason: 'list_total_no_stake', why: trustedTotalCreate?.reason || null });
         console.log(`  LIST-TOTAL no stake: ${docId} ${side} (${trustedTotalCreate?.reason || 'none'})`);
+        continue;
+      }
+      // The moneyline wide door opened this side. Written only when the
+      // path stakes it at the real ticket price.
+      if (v13WideOpened && v13MlCreate?.action !== 'STAKE') {
+        skipped.push({ docId, side, reason: 'v13_ml_wide_door_no_stake', why: v13MlCreate?.reason || null });
+        console.log(`  V13-ML wide door no stake: ${docId} ${side} (${v13MlCreate?.reason || 'none'})`);
         continue;
       }
       const pressDoorOnly = pressOpens
@@ -8192,6 +8241,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // From 2026-11-24 the wallet gate has a second way in, the spread door:
   // a level moneyline count and the trusted spread count ahead by 1 or
   // more on this team, read from the game's spread positions.
+  // Spread agreement, the same date: +1u on a ladder stake when the
+  // moneyline count is ahead and the spread count is ahead on the team;
+  // the wide door (spread count ahead by 2, moneyline count not behind)
+  // is the price size on an edge under 0 or no edge number. A side the
+  // wide door opened (v8_v13MlOpenedBy) stays on the price size, and is
+  // 0 once the door shuts.
   let v13MlPolicy = null;
   if (mkt === 'ML') {
     v13MlPolicy = applyV13MlPath({
@@ -8207,6 +8262,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       edge: winnerAlign?.edge ?? null,
       manual: skipManualFlinch,
       killed: operatorKilled,
+      opened: sd[V13_ML_OPENED_BY_FIELD] === V13_ML_DOOR_SPREAD_WIDE,
     });
     if (!skipManualFlinch && !operatorKilled
         && (v13MlPolicy.action === 'STAKE' || v13MlPolicy.action === 'MUTE')) {
@@ -9731,7 +9787,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + ` edge=${v13MlPolicy.edge ?? '—'} steam=${v13MlPolicy.steam ?? '—'}`
         + ` against=${v13MlPolicy.against}`
         + ` list=${v13MlPolicy.list} margin=${v13MlPolicy.margin}${v13MlPolicy.half ? ' half' : ''}`
-        + `${v13MlPolicy.door ? ` door=${v13MlPolicy.door} spreadMargin=${v13MlPolicy.spreadMargin}` : ''}`
+        + `${v13MlPolicy.door ? ` door=${v13MlPolicy.door}` : ''}`
+        + `${v13MlPolicy.spreadMargin == null ? '' : ` spreadMargin=${v13MlPolicy.spreadMargin}`}`
+        + `${v13MlPolicy.bump > 0 ? ` bump=+${v13MlPolicy.bump}u` : ''}`
         + ` ${v13MlPolicy.unitsPre}u → ${v13MlPolicy.units}u`,
       );
     } else if (sd.v8_v13MlAction != null && sd.v8_v13MlAction !== v13MlPolicy.action) {
