@@ -5075,6 +5075,9 @@ async function createMissingLockedPicks({
       // before it wrote. A morning with no list is 0. The v12 score is
       // not read. An operator kill stays. The T-15 freeze already
       // returned. Always evaluated so the stamp is current.
+      // From 2026-11-24 a ladder stake takes 1u more when the trusted
+      // moneyline wallets are ahead on the same team, read from the
+      // game's moneyline positions.
       if (marketType === 'SPREAD') {
         const killedCreate = isOperatorKilled({ _id: docId }, side, null);
         trustedSpreadCreate = applyTrustedSpreadPath({
@@ -5084,6 +5087,7 @@ async function createMissingLockedPicks({
           market: marketType,
           side,
           positions,
+          mlPositions: gameMarketPositions(sport, gameKey, 'ML'),
           odds: stakeOdds ?? odds ?? null,
           line,
           score: scoreV12,
@@ -5098,6 +5102,7 @@ async function createMissingLockedPicks({
             `  LIST-SPREAD: ${docId} ${side} ${trustedSpreadCreate.action}/${trustedSpreadCreate.reason}`
             + ` margin=${trustedSpreadCreate.margin}`
             + ` records=${trustedSpreadCreate.recordLead == null ? '—' : trustedSpreadCreate.recordLead.toFixed(1)}`
+            + `${trustedSpreadCreate.mlMargin == null ? '' : ` ml=${trustedSpreadCreate.mlMargin}${trustedSpreadCreate.bump > 0 ? ` bump=+${trustedSpreadCreate.bump}u` : ''}`}`
             + ` ${trustedSpreadCreate.unitsPre}u → ${trustedSpreadCreate.units}u`,
           );
         }
@@ -8220,6 +8225,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // lock line, else the peak line. The v12 score is not read. Manual
   // stake and an operator kill stay. The T-15 freeze already returned.
   // Always evaluated so the stamp is current.
+  // From 2026-11-24 a ladder stake takes 1u more when the trusted
+  // moneyline wallets are ahead on the same team, read from the game's
+  // moneyline positions.
   let trustedSpreadPolicy = null;
   if (mkt === 'SPREAD') {
     trustedSpreadPolicy = applyTrustedSpreadPath({
@@ -8229,6 +8237,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       market: mkt,
       side,
       positions: group,
+      mlPositions: gameMarketPositions(pick.sport, pick.gameKey, 'ML'),
       odds: stakeOdds,
       line: sd?.lock?.line ?? sd?.peak?.line ?? null,
       score: scoreV12Live,
@@ -9746,6 +9755,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         `LIST-SPREAD: ${trustedSpreadPolicy.action}/${trustedSpreadPolicy.reason}`
         + ` margin=${trustedSpreadPolicy.margin}`
         + ` records=${trustedSpreadPolicy.recordLead == null ? '—' : trustedSpreadPolicy.recordLead.toFixed(1)}`
+        + `${trustedSpreadPolicy.mlMargin == null ? '' : ` ml=${trustedSpreadPolicy.mlMargin}${trustedSpreadPolicy.bump > 0 ? ` bump=+${trustedSpreadPolicy.bump}u` : ''}`}`
         + ` ${trustedSpreadPolicy.unitsPre}u → ${trustedSpreadPolicy.units}u`,
       );
     } else if (spreadStamp.v8_trustedSpreadAction != null
