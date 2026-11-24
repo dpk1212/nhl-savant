@@ -14,6 +14,19 @@ Researcher appends; never delete without logging why in research_log.
 | [psych_arsenal.md](psych_arsenal.md) | Psych levers mapped to algo actions |
 | [cross_niche_wins.md](cross_niche_wins.md) | Stealable mechanics from outside niche |
 | [kill_list.md](kill_list.md) | Patterns that die / Learn auto-kills |
+| [hormozi_ingest.md](hormozi_ingest.md) | **Hormozi transcript ingest** — max-leverage synthesize → canon + leverage card |
+| [analytics_csv_ingest.md](analytics_csv_ingest.md) | **Analytics ingest** — content CSV → attention timeline; GA4 overlay → `trial_overlay.md` |
+| [trial_overlay.md](trial_overlay.md) | **Trial overlay (compliance)** — X wording that starts trials. Proof + invite in-hero. `$5.35` / buried codes die. |
+| [hormozi_tweet_process.md](hormozi_tweet_process.md) | **Mandatory tweet pathway** — Timeline→WHO→PURPOSE→ONE→1–2 SPCL→HOOK QA→draft |
+| [hormozi_rule_of_one.md](hormozi_rule_of_one.md) | **Rule of One** (Masterson / *Great Leads*) — one big idea; kill toss salad copy |
+| [hormozi_spcl.md](hormozi_spcl.md) | **Hormozi SPCL canon** — Status·Power·Credibility·Likeness + influence laws |
+| [hormozi_qual_algorithm.md](hormozi_qual_algorithm.md) | **Qual · Algorithm · Trust economy** — quality volume, manufacturing order, show-me times. **9/19 full paste:** varied conditions · whole-truth origin · comprehension cost |
+| [hormozi_brand_pairing.md](hormozi_brand_pairing.md) | **2026 pairing** (Ep 958) — brand = deliberate pairing through an outcome; yum ≠ advertising |
+| [hormozi_proof_machine.md](hormozi_proof_machine.md) | **2026 proof machine** (Ep 976 + 990) — demonstrate/document · start free · proof over promise · pain first |
+
+## RETIRED gates (fossils — do not require)
+
+`angle_architecture.md`, idea_queue factory, 4-agent scorecard chain — superseded by `TWITTER.md` Hormozi OS (2026-08-23).
 
 ## Closed-loop inputs (every sprint)
 - `SHARED/learn_brief_latest.md` + `SHARED/learning_ledger.json`
@@ -41,3 +54,15 @@ Researcher appends; never delete without logging why in research_log.
 - 2026-07-14 Spain@France civil war (Dale MAX engagement): named **civil_war_sizing** — confession_costly variant where cost = highest-conviction path sized to 1u because tracked sharps fight across outcomes ($2.53M France / $944K Draw / $328K Spain); beat Tigers OVER on this one variable; invert Trent certainty MEGA MAX teacher; kill tipster_secret / scoreboard menus / soft process — see `SHARED/researcher_brief_latest.md`, `idea_queue.json`
 - 2026-07-18 Sharp Vault shock reveal (Dale spine OVERRIDE): named **vault_shock_reveal** — receipt_proof variant: fund-scale shock (147 / +$107.5M / +7.7%) → product room named → Alpha Field (MLB) mute screenshot → one crown jewel (***3987 +$1.6M / 78% beat close / 68% WR) → forced verified-field vs tipster-vibes camp; confession_costly only if it serves reveal tension; kill tipster_secret / scoreboard_ledger / slate/we're-back / best kept secret — see `SHARED/researcher_brief_latest.md`, `idea_queue.json`
 - 2026-07-18 Dale catalog: **whale_battle_receipt** — house gold style from Rays `2077806487376650339` (**2220v/2r**). Not “size dump.” Full recipe: proven-wallet $ interrupt → Nx usual → wallet teeth → opposing proven honesty → unfinished hold → dual-pane Battle + wallet media. Sub under receipt_proof; distinct from vault_shock_reveal / civil_war_sizing. See viral_patterns, hook_patterns, visual_construction, inspiration_board `ib_whale_battle_receipt`, coach craft #86
+- 2026-08-23 **Hormozi OS cutover**: old Twitter loop retired. Canon = SPCL + Qual/Algorithm/Trust. See `TWITTER.md`, `hormozi_spcl.md`, `hormozi_qual_algorithm.md`
+- 2026-08-26 **Rule of One** locked (Masterson via Hormozi transcript): one big idea = easy to understand + believe + interesting/unique; kill toss salad — see `hormozi_rule_of_one.md`
+- 2026-08-27 **Tweet pathway** locked after Dale override: no jump-to-copy; WHO/PURPOSE first; own 1–2 SPCL; hook QA; stuff > container — see `hormozi_tweet_process.md`
+- 2026-08-27 **Timeline review** added: every run refreshes `SHARED/recent_timeline_latest.md` (analytics + recent posts → SPCL mix, spent themes, ask temperature) before PURPOSE/hook
+- 2026-08-27 **Ingest pipelines** locked: `hormozi_ingest.md` (transcript → max synthesize → canon) · `analytics_csv_ingest.md` (CSV → timeline) · desk trigger rule `hormozi-ingest-triggers.mdc`
+- 2026-09-01 **CSV Aug 26–Sep 1** ingested: `$120K at 2×` #1 · anti-sexy printer PV king (49) · `DOWN 76` 8R · lost-on-site 9R · **convert-as-open = 1 eng** · thankful Dom QT = 35 · pathway living window + ask/hook laws patched — see `hormozi_tweet_process.md`, `recent_timeline_latest.md`, `kill_list.md`
+- 2026-09-06 **Hormozi 2026 brand stack** (desk fetch, not Dale paste): Ep 958 pairing · Ep 976 demonstrate/document · Ep 990 start-free + proof-over-promise + pain-first — see `hormozi_brand_pairing.md`, `hormozi_proof_machine.md`, `sources/hormozi_brand_2026-09-06_notes.md`
+- 2026-09-10 **Account-overview CSV** Jun 13–Sep 10: daily totals (no post text). Sep 2–9 **+85% replies/day** vs Aug 26–Sep 1. Sep 7 = 89-day max (**398 eng / 48R / 1 post**). Ask still cold-warm. NFL Thursday = next give. Post-level hook law still Aug 26–Sep 1 content CSV. See `recent_timeline_latest.md`, `sources/account_overview_2026-09-10_notes.md`
+- 2026-09-11 **Content CSV Sep 5–11** (32 heroes): post-level hook law updates. Eng king = `+60u` + four plays **540**. Conversation = `+125u` need-a-comment **21R**. PV = `$79.5k` Over 44.5 **52**. TNF `$51K` fade-Trent **posted 227**. Ask **cold**. Next = Saturday live give. Deaths: grind-EV **5** · better-way tease **43** · convert **54** · Camden **0R**. See `recent_timeline_latest.md`, `sources/account_analytics_content_2026-09-05_2026-09-11_notes.md`
+- 2026-09-14 **Trial overlay + content CSV Sep 8–14**: GA4 211 `trial_started` / 181 users. t.co **89 users / 49% / 2.4% sess→trial**. Ask law rewrite: proof + invite **in the hero**; `$5.35` and buried MVP25 die; seats > storefront; honest L + month green converts. Attention CSV: `$79.5k` **305** · UFC **10R** · `+99u` **6752** · MVP25 **9/296**. Canon `trial_overlay.md`. Do not wipe overlay on the next content CSV.
+- 2026-09-19 **Hormozi Qual video (Dale full paste):** same Algorithm skeleton as 8/23, new leverage = **varied conditions** as the week’s show-me calendar · **whole-truth origin** (agency/imposter → we don’t handicap) · **comprehension cost** on Hook QA · waste = calendar − time-on-task · 1.5@95% · automate last. Overlay ask still wins. See `hormozi_qual_algorithm.md`, `sources/hormozi_qual_algorithm_2026-09-19_notes.md`.
+
