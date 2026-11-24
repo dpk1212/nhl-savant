@@ -104,15 +104,15 @@ All  Sportsbooks  Prediction Markets  DFS
 
 ![Swipe icon](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20)Swipe across to view more offers
 
-![logo](https://cdn.cosmicjs.com/c5917820-16b6-11f1-a07f-ffa45b2cae93-Draftkings-TCIY-White.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
 
 FEATURED
 
 T&Cs apply.
 
-[Claim now](https://affiliates.routy.app/route/320036?affId=10466&ts=5015351&src=main-column&promo=true)
+[Claim Now](https://affiliates.routy.app/route/319978?affId=10466&ts=5015351&src=main-column&promo=true)
 
-[Read review](https://www.dimers.com/betting/draftkings-sportsbook)
+[Read review](https://www.dimers.com/betting/bet365-sportsbook)
 
 How to claim
 
@@ -138,15 +138,15 @@ T&Cs apply.
 
 How to claim
 
-![logo](https://cdn.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
+![logo](https://cdn.cosmicjs.com/c5917820-16b6-11f1-a07f-ffa45b2cae93-Draftkings-TCIY-White.svg?auto=format,compress&h=200)
 
-TRENDING
+FEATURED
 
 T&Cs apply.
 
-[Claim Now](https://affiliates.routy.app/route/319978?affId=10466&ts=5015351&src=main-column&promo=true)
+[Claim now](https://affiliates.routy.app/route/320036?affId=10466&ts=5015351&src=main-column&promo=true)
 
-[Read review](https://www.dimers.com/betting/bet365-sportsbook)
+[Read review](https://www.dimers.com/betting/draftkings-sportsbook)
 
 How to claim
 
