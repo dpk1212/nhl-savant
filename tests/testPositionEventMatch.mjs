@@ -143,4 +143,61 @@ assert.equal(
   'no slug dates do not block',
 );
 
+// Bengals @ Commanders, Mon Nov 23 8:15pm ET. Kickoff is already Nov 24 in UTC,
+// the cache is gone, and the slug is dated the next day. That is still this game.
+const bengals = {
+  slug: 'nfl-cin-was-2026-11-24',
+  eventId: '1307694',
+  commenceTime: 1795482900000,
+  gameKey: 'cin_was',
+  date: '2026-11-23',
+};
+const bengalsBoard = { boardDate: '2026-11-23', sport: 'NFL' };
+const bengalsKept = positionMatchesPolyEvent(bengals, null, 'cin_was', bengalsBoard);
+assert.equal(bengalsKept.ok, true, 'next-UTC-day slug of tonight ET kickoff stays');
+assert.equal(bengalsKept.reason, 'utc_slug_same_kick');
+assert.equal(WRONG_GAME_EXIT_REASONS.has(bengalsKept.reason), false);
+
+const bengalsOtherEvent = positionMatchesPolyEvent(
+  bengals,
+  { eventId: '999', polyGameDate: '2026-11-24' },
+  'cin_was',
+  bengalsBoard,
+);
+assert.equal(bengalsOtherEvent.ok, true, 'same kickoff stays even when the cache event id moved');
+assert.equal(bengalsOtherEvent.reason, 'utc_slug_same_kick');
+
+const tomorrow = positionMatchesPolyEvent(
+  { slug: 'nfl-cin-was-2026-11-24', eventId: '1', commenceTime: Date.parse('2026-11-24T18:00:00-05:00') },
+  null,
+  'cin_was',
+  bengalsBoard,
+);
+assert.equal(tomorrow.ok, false, 'a game whose ET date is the slug date is still a leftover');
+assert.equal(tomorrow.reason, 'slug_date_vs_board');
+
+const noKick = positionMatchesPolyEvent(
+  { slug: 'nfl-cin-was-2026-11-24', eventId: '1' },
+  null,
+  'cin_was',
+  bengalsBoard,
+);
+assert.equal(noKick.reason, 'slug_date_vs_board', 'missing kickoff still comes off');
+
+const otherTeams = positionMatchesPolyEvent(
+  { slug: 'nfl-phi-dal-2026-11-24', eventId: '1', commenceTime: 1795482900000 },
+  null,
+  'cin_was',
+  bengalsBoard,
+);
+assert.equal(otherTeams.reason, 'slug_date_vs_board', 'next-day slug for other teams still comes off');
+
+const morningStamp = positionMatchesPolyEvent(
+  { slug: 'nba-phx-por-2026-10-21', eventId: '1', commenceTime: Date.parse('2026-10-20T11:51:58Z') },
+  null,
+  'phx_por',
+  { boardDate: '2026-10-20', sport: 'NBA' },
+);
+assert.equal(morningStamp.reason, 'slug_date_vs_board', 'a morning timestamp does not keep a next-day slug');
+
 console.log('testPositionEventMatch: ok');
