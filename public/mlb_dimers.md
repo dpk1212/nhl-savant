@@ -6,6 +6,14 @@ MLB predictions for Monday, November 16, 2026, powered by advanced data science.
 
 Date: Oct 28 2026Oct 28
 
+[![bet365](https://cdn.ciphersports.io/images/bookmaker-logos/bet365-icon.svg)](https://www.bet365.com/olp/open-account?affiliate=365_02310779)
+
+Odds shown from bet365
+
+You're currently viewing bet365 odds. Dimers Pro shows the best available odds across supported sportsbooks and prediction markets.
+
+Get Dimers Pro
+
 [Oct 28, 8:00 PM ET\\
 \\
 R\\
@@ -38,29 +46,9 @@ FINAL\\
 \\
 See Game Recap](https://www.dimers.com/mlb/predictions/2026_218_tb_mil)
 
-![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
+Lines & odds powered by
 
-![BetMGM logo](https://cdn.ciphersports.io/images/bookmaker-logos/betmgm-icon.svg)BetMGM
-
-![Caesars logo](https://cdn.ciphersports.io/images/bookmaker-logos/william-hill-icon.svg)Caesars
-
-![DraftKings logo](https://cdn.ciphersports.io/images/bookmaker-logos/draftkings-icon.svg)DraftKings
-
-![bet365 logo](https://cdn.ciphersports.io/images/bookmaker-logos/bet365-icon.svg)bet365
-
-![BetRivers logo](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)BetRivers
-
-![Fanatics logo](https://cdn.ciphersports.io/images/bookmaker-images/fanatics-icon.svg)Fanatics
-
-![theScore Bet logo](https://cdn.ciphersports.io/images/bookmaker-images/thescorebet-icon.png)theScore Bet
-
-![Hard Rock Bet logo](https://cdn.ciphersports.io/images/bookmaker-logos/hardrock-icon.png)Hard Rock Bet
-
-![Kalshi logo](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)Kalshi
-
-![Novig logo](https://cdn.ciphersports.io/images/novig-small.png)Novig
-
-![Polymarket logo](https://cdn.ciphersports.io/images/polymarket-small.png)Polymarket
+[![bet365](https://imgix.cosmicjs.com/5e8af260-ad3d-11f0-9a9f-8120f5e50ee7-bet365-full-logo.svg?auto=format,compress)](https://www.bet365.com/olp/open-account?affiliate=365_02310779)
 
 ![Dimers Pro logo](https://cdn.ciphersports.io/assets/dimers-pro-full-logo.svg)
 
