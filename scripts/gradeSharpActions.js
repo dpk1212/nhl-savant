@@ -38,6 +38,7 @@ import {
 } from './lib/atpPlayers.js';
 import { resolveEsportsTeam, esportsTeamsMatch, isGradableEsportsMainML, isMainEsportsMatchSlug, teamsFromBo3Slug } from './lib/esportsTeams.js';
 import { settledMoneyline } from './lib/settledMoneyline.js';
+import { isUtcSlugOfThisKick } from './lib/positionEventMatch.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { rebuildMorningRanks } from './lib/morningRankCache.js';
 import { shouldGradeExited } from '../src/lib/actionLockPin.js';
@@ -193,8 +194,10 @@ const ESPN_NFL_TO_CODE = {
 
 function initFirebase() {
   if (!admin.apps.length) {
-    const sakPath = join(__dirname, '../serviceAccountKey.json');
-    if (existsSync(sakPath)) {
+    const localSak = join(__dirname, '../serviceAccountKey.json');
+    const envSak = process.env.GOOGLE_APPLICATION_CREDENTIALS || '';
+    const sakPath = existsSync(localSak) ? localSak : (envSak && existsSync(envSak) ? envSak : null);
+    if (sakPath) {
       admin.initializeApp({ credential: admin.credential.cert(JSON.parse(readFileSync(sakPath, 'utf8'))) });
     } else {
       admin.initializeApp({
@@ -1770,6 +1773,164 @@ async function alignMiskeyedCbb(pos) {
   return next;
 }
 
+function gradeLine(pos, pinnacleHistory) {
+  let line = pos.marketType === 'SPREAD' ? (pos.spreadLine ?? pos.entryLine ?? null)
+    : pos.marketType === 'TOTAL' ? (pos.totalLine ?? pos.entryLine ?? null)
+    : null;
+  if (line == null && (pos.marketType === 'SPREAD' || pos.marketType === 'TOTAL')) {
+    const pinnFallback = lookupPinnGame(pinnacleHistory, pos.sport, pos.gameKey);
+    if (pinnFallback) {
+      if (pos.marketType === 'SPREAD') {
+        const sc = pinnFallback.spreadCurrent || pinnFallback.spreadOpener;
+        line = pos.side === 'away' ? sc?.awayLine : sc?.homeLine;
+        if (line == null) line = pos.side === 'away' ? pinnFallback.awaySpread : pinnFallback.homeSpread;
+      } else {
+        const tc = pinnFallback.totalCurrent || pinnFallback.totalOpener;
+        line = tc?.line ?? pinnFallback.totalLine ?? null;
+      }
+    }
+  }
+  return line;
+}
+
+/**
+ * One-time grade of EXITED slug_date_vs_board tickets whose slug is the next
+ * UTC day of this ET kickoff. The nightly job skips that exit reason, and it
+ * only fetches two days of finals, so these have to be scored here.
+ */
+async function repairUtcSlugExits() {
+  const db = initFirebase();
+  const preview = PREVIEW;
+  console.log(`\n=== repair utc slug grades${preview ? ' (preview)' : ''} ===\n`);
+
+  const pinnacleHistory = (() => {
+    const p = join(PUBLIC, 'pinnacle_history.json');
+    if (!existsSync(p)) return {};
+    return JSON.parse(readFileSync(p, 'utf8'));
+  })();
+
+  const snap = await db.collection(COLLECTION).where('exitReason', '==', 'slug_date_vs_board').get();
+  const docs = [];
+  let otherDay = 0;
+  for (const doc of snap.docs) {
+    const pos = doc.data();
+    if (pos.status === 'GRADED') continue;
+    if (!isUtcSlugOfThisKick(pos, pos.date, pos.gameKey)) {
+      otherDay++;
+      continue;
+    }
+    docs.push(doc);
+  }
+  console.log(`slug_date_vs_board: ${snap.size}. Same ET kickoff: ${docs.length}. Left as leftovers: ${otherDay}.`);
+
+  const datesBySport = new Map();
+  for (const doc of docs) {
+    const pos = doc.data();
+    if (!datesBySport.has(pos.sport)) datesBySport.set(pos.sport, new Set());
+    datesBySport.get(pos.sport).add(pos.date);
+  }
+
+  const buckets = {
+    nhlFinals: [], cbbFinals: [], mlbFinals: [], nbaFinals: [], socFinals: [],
+    ufcFinals: [], wnbaFinals: [], nflFinals: [], cfbFinals: [], atpFinals: [],
+    cs2Finals: [], lolFinals: [],
+  };
+  const fetchers = {
+    NHL: ['nhlFinals', fetchNHLFinalGames],
+    CBB: ['cbbFinals', fetchESPNCBBFinalGames],
+    MLB: ['mlbFinals', fetchMLBFinalGames],
+    NBA: ['nbaFinals', fetchNBAFinalGames],
+    WNBA: ['wnbaFinals', fetchWNBAFinalGames],
+    NFL: ['nflFinals', fetchNFLFinalGames],
+    CFB: ['cfbFinals', fetchCFBFinalGames],
+    SOC: ['socFinals', fetchSOCFinalGames],
+  };
+  for (const [sport, dates] of datesBySport) {
+    const spec = fetchers[sport];
+    if (!spec) {
+      console.warn(`No score fetch for ${sport} (${dates.size} dates)`);
+      continue;
+    }
+    const [key, fetchFinals] = spec;
+    for (const date of [...dates].sort()) {
+      const games = await fetchFinals(date);
+      buckets[key].push(...games);
+      console.log(`${sport} ${date}: ${games.length} finals`);
+    }
+  }
+
+  const bySport = new Map();
+  const misses = [];
+  let graded = 0;
+  let noGame = 0;
+  let noLine = 0;
+  const BATCH_SIZE = 400;
+
+  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+    const chunk = docs.slice(i, i + BATCH_SIZE);
+    const batch = db.batch();
+    let batchOps = 0;
+    for (const doc of chunk) {
+      const pos = doc.data();
+      const sportKey = pos.sport || '?';
+      if (!bySport.has(sportKey)) bySport.set(sportKey, { n: 0, win: 0, loss: 0, push: 0, pnl: 0, invested: 0 });
+      const row = bySport.get(sportKey);
+      let game = findMatchingGame(
+        pos,
+        buckets.nhlFinals, buckets.cbbFinals, buckets.mlbFinals, buckets.nbaFinals,
+        buckets.socFinals, buckets.ufcFinals, buckets.wnbaFinals, buckets.nflFinals,
+        buckets.cfbFinals, buckets.atpFinals, buckets.cs2Finals, buckets.lolFinals,
+      );
+      if (!game) game = await polymarketSettledGame(pos);
+      if (!game) {
+        noGame++;
+        if (misses.length < 40) misses.push(`${pos.date} ${pos.sport} ${pos.gameKey} ${pos.marketType}`);
+        continue;
+      }
+      const line = gradeLine(pos, pinnacleHistory);
+      const outcome = calculateOutcome(game, pos.marketType, pos.side, line, pos.sport);
+      if (!outcome) {
+        noLine++;
+        if (misses.length < 40) misses.push(`${pos.date} ${pos.sport} ${pos.gameKey} ${pos.marketType} line=null`);
+        continue;
+      }
+      const entryPrice = pos.avgPrice || 0;
+      const settledPrice = Number.isFinite(game.settledPrice)
+        ? game.settledPrice
+        : (outcome === 'WIN' ? 1.0 : outcome === 'LOSS' ? 0.0 : entryPrice);
+      const settledPnl = Math.round((settledPrice - entryPrice) * (pos.size || 0));
+      row.n++;
+      row.invested += Number(pos.invested) || 0;
+      row.pnl += settledPnl;
+      if (outcome === 'WIN') row.win++;
+      else if (outcome === 'LOSS') row.loss++;
+      else row.push++;
+      graded++;
+      if (!preview) {
+        batch.update(doc.ref, {
+          status: 'GRADED',
+          result: outcome,
+          'score.away': game.awayScore,
+          'score.home': game.homeScore,
+          settledPnl,
+          settledPrice,
+          gradedAt: admin.firestore.FieldValue.serverTimestamp(),
+          gradeRepair: 'utc_slug_same_kick',
+        });
+        batchOps++;
+      }
+    }
+    if (batchOps > 0) await batch.commit();
+  }
+
+  for (const [sport, row] of [...bySport.entries()].sort()) {
+    console.log(`${sport}: ${row.win}-${row.loss}${row.push ? `-${row.push}` : ''} n=${row.n} pnl=${row.pnl} invested=${Math.round(row.invested)}`);
+  }
+  console.log(`Graded: ${graded}. No final: ${noGame}. No line: ${noLine}.`);
+  if (misses.length) console.log(`Misses:\n${misses.join('\n')}`);
+  console.log(preview ? 'Preview only. Nothing written.' : 'Wrote GRADED.');
+}
+
 async function main() {
   const db = initFirebase();
   console.log('\n=== gradeSharpActions ===\n');
@@ -2189,7 +2350,8 @@ export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, sh
 // tests can import the helpers without triggering a live grading pass.
 const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isDirectRun) {
-  main().catch(err => {
+  const run = process.argv.includes('--repair-utc-slug') ? repairUtcSlugExits : main;
+  run().catch(err => {
     console.error('Fatal error:', err);
     process.exit(1);
   });

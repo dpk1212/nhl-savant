@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-11-22T15:48:05.870Z",
-  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3/4 reinstates hardened with fuller history (maxClosed 1500–2000) and broad sport filter after classifier gaps undercounted both-sides on some names. 2026-08-12: MLB CONFIRMED coverage audit reinstated dv-pm / ndb1 / AV23IUa / 33aa70 / wapol. + fcc12b/dfa240/aa9fb4/10c684 (suspicion dig); 95618e intentionally NOT included (tiny-bet spray). 2026-11-22: reinstated 5fcee5/bc44b0/4c8ed9/aaedcd, directional, tripped both-sides count on tiny opposite legs.",
+  "updatedAt": "2026-11-24T23:45:00.000Z",
+  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3/4 reinstates hardened with fuller history (maxClosed 1500–2000) and broad sport filter after classifier gaps undercounted both-sides on some names. 2026-08-12: MLB CONFIRMED coverage audit reinstated dv-pm / ndb1 / AV23IUa / 33aa70 / wapol. + fcc12b/dfa240/aa9fb4/10c684 (suspicion dig); 95618e intentionally NOT included (tiny-bet spray). 2026-11-22: reinstated 5fcee5/bc44b0/4c8ed9/aaedcd, directional, tripped both-sides count on tiny opposite legs. 2026-11-24: reinstated 10 wallets that are on the morning trusted list (2f2a9e/388d4c/3bdd7e/4f821d/7b895d/ab4b6e/11f1d2/70be3f/a10ff5/bc35e3): the trader tag was dropping their positions before the trusted count. Excluded trusted wallets were 43-26 on moneylines Oct 31-Nov 22.",
   "wallets": [
     {
       "addr": "0xbddf61af533ff524d27154e589d2d7a81510c684",
@@ -205,6 +205,66 @@
       "name": "aaedcd",
       "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
       "auditedAt": "2026-11-22"
+    },
+    {
+      "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+      "name": "2f2a9e",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML list (NBA, NFL, NHL). Fall ML 105-88, spread 49-39 at 1u; their $ +164k.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x076daa87c4fe1a85402a9b6b8e0a866224388d4c",
+      "name": "388d4c",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML and spread list. Fall ML 22-14, spread 6-2 at 1u.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
+      "name": "3bdd7e",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML list (CFB, NBA, SOC and others). Fall ML 25-18 at 1u; their $ +103k.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0xa38a455bbdd4b68486548b7e19da99903f4f821d",
+      "name": "4f821d",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML list (NFL). Fall ML 3-1, spread 2-2 at 1u; their $ +300k.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x1f3a646ce5cbe2c70270e7a46161d89b7c7b895d",
+      "name": "7b895d",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML list (CFB, NFL). Fall ML 20-12 at 1u, spread 16-17; their $ is down.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x6ac5bb06a9eb05641fd5e82640268b92f3ab4b6e",
+      "name": "ab4b6e",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML and spread list (NBA, CS2, LOL). Fall ML 139-96, spread 21-13 at 1u; their $ +1.7M.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x5c5454940c679b99513a67bf08af752b2011f1d2",
+      "name": "11f1d2",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. Spread list (CBB, CFB, NFL, NHL). Fall spread 92-71, ML 229-174 at 1u.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0xe5502f3b033ebcd64233b5ffc43c44c24170be3f",
+      "name": "70be3f",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. Spread list (NBA, NFL). Fall spread 25-15, ML 31-28 at 1u.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x9770ca178764cdca1271934ad613ad7ab4a10ff5",
+      "name": "a10ff5",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. Spread list. No graded fall bets in the research set.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3",
+      "name": "bc35e3",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. Spread list (CFB, MLB, NBA, NFL). Fall spread 44-37, ML 48-51 at 1u.",
+      "auditedAt": "2026-11-24"
     }
   ]
 }
