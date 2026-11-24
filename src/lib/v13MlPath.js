@@ -124,6 +124,19 @@ export const V13_ML_LADDER_BASE_UNITS = 1;
 export const V13_ML_SPREAD_DOOR_FROM = '2026-11-24';
 export const V13_ML_SPREAD_DOOR_AHEAD = 1;
 export const V13_ML_DOOR_SPREAD = 'spread';
+/**
+ * The count opens the card, from 2026-11-24 (Dale's call). A moneyline
+ * side with the trusted count ahead (the wide count and the profitable
+ * count, each by 1 or more) is put on the board when the v12 score did
+ * not put it there, and when no other side of the game is a live staked
+ * play. The ladder sizes it as it sizes any card. Nothing is written
+ * unless the ladder stakes it.
+ */
+export const V13_ML_COUNT_OPENS_FROM = '2026-11-24';
+export const V13_ML_COUNT_OPENS_AHEAD = 1;
+export const V13_ML_COUNT_OPENS_PROMOTED_BY = 'v13-count-open';
+export const V13_ML_OPENED_BY_FIELD = 'v8_v13MlOpenedBy';
+export const V13_ML_OPENED_BY_COUNT = 'count';
 
 let bookIndex = new Map();
 
@@ -133,6 +146,10 @@ export function isV13MlLive(pickDate) {
 
 export function isV13MlLadderLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= V13_ML_LADDER_FROM;
+}
+
+export function isV13MlCountOpensLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= V13_ML_COUNT_OPENS_FROM;
 }
 
 export function isV13MlSpreadDoorLive(pickDate) {
@@ -412,6 +429,28 @@ export function v13OpensSide({ pickDate, sport, side, positions, book = null, li
     }).margin >= V13_ML_TRUSTED_AHEAD;
   }
   return qualifyingV13Wallets({ sport, side, positions, book }).length > 0;
+}
+
+/**
+ * Does the trusted count open this moneyline side on its own, whatever
+ * the v12 score says. The wide count and the profitable count are each
+ * ahead by 1 or more, and no other side of the game is a live staked
+ * play (`competingUnits`: the largest stake on another moneyline side
+ * or on the other team's spread). Only on a morning the list built.
+ */
+export function v13CountOpensSide({
+  pickDate, sport, side, positions, competingUnits = 0, list = null,
+} = {}) {
+  if (!isV13MlLadderLive(pickDate) || !isV13MlCountOpensLive(pickDate)) return false;
+  if (!v13UsesTrustedList(pickDate, sport, list)) return false;
+  if (Number(competingUnits) > 0) return false;
+  const wide = trustedSideCount({
+    market: 'ML', side, positions, sport, list, wide: true,
+  });
+  if (wide.margin < V13_ML_COUNT_OPENS_AHEAD) return false;
+  return trustedSideCount({
+    market: 'ML', side, positions, sport, list,
+  }).margin >= V13_ML_COUNT_OPENS_AHEAD;
 }
 
 function againstWallets(positions, sport, side, book) {
