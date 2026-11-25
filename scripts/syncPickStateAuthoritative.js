@@ -478,7 +478,7 @@ import {
   trustedTotalOpensSide,
   trustedTotalStamp,
 } from '../src/lib/trustedTotalPath.js';
-import { trustedCountStamp } from '../src/lib/trustedList.js';
+import { isSportDoorLive, trustedCountStamp } from '../src/lib/trustedList.js';
 import {
   T5_EDGE_BAND_RESCUED_BY,
   T5_EDGE_BAND_STAKE_TIER,
@@ -11385,6 +11385,14 @@ async function main() {
       + ` · profitable on 10+ bets in a sport: ML ${morning.countingMl ?? 0} · spread ${morning.countingSpread ?? 0}`
       + ` · spread records: ${morning.recordsSpread ?? 0} wallets`
       + ` · total sport records: ${morning.recordsTotalSport ?? 0} wallets, ${morning.listTotalSport ?? 0} up`);
+    if (isSportDoorLive(TARGET_DATE)) {
+      const bySport = Object.entries(morning.sportDoorSports || {})
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([sport, n]) => `${sport} ${n}`)
+        .join(', ');
+      console.log(`SPORT DOOR: ${morning.sportDoor ?? 0} wallets through, ${morning.sportDoorAdded ?? 0} the list had not trusted`
+        + `${bySport ? ` (${bySport})` : ''}`);
+    }
     if (morning.trustedMl > 0 && !(morning.recordsTotalSport > 0)) {
       console.warn('TRUSTED list carries no totals sport records. The trusted total path stakes no total this scan.');
     }

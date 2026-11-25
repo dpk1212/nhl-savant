@@ -56,10 +56,26 @@
  * record there: the same sum as the record, on that sport's totals only,
  * and whether it is up in units on them. Every such wallet is stored,
  * trusted or not (trustedTotalPath.js).
+ *
+ * Sport door. From 2026-11-25, moneylines outside NHL, NBA, NFL, and CFB.
+ * The standing is set on those four sports and the price read needs a
+ * sharp book, so a wallet that only bets tennis, CS2, LoL, UFC, CBB, MLB,
+ * WNBA, or soccer could not get on the list however well it beat its own
+ * market. The door reads that market instead. On each of the wallet's
+ * earlier moneyline and spread bets in the sport that we first saw before
+ * the start, its closing read is the price the last other tracked wallet
+ * paid on that same market before the start, turned to the wallet's side,
+ * minus the price the wallet paid, held to 10 points either way. The
+ * sport score is the average of those reads times reads / (reads + 25).
+ * With 12 or more reads and a score of 0.45 points or more, the wallet
+ * counts on that sport's moneylines exactly as a trusted wallet does: it
+ * still needs 10 graded moneylines there to count and has to be up in
+ * units there to count as profitable. A wallet whose stored price is a
+ * flat 50 cents on nearly every bet has no reads and gives none.
  */
 
 export const TRUSTED_LIST_FROM = '2026-11-20';
-export const TRUSTED_LIST_VERSION = 5;
+export const TRUSTED_LIST_VERSION = 6;
 export const TRUSTED_LIST_BAR = 0.8;
 export const TRUSTED_LIST_MIN_PRIOR = 300;
 /** Graded bets in the sport and market before a trusted wallet counts there. */
@@ -82,10 +98,29 @@ const SLOPE_MIN = 500;
 const SLOPE_DEFAULT = 0.8;
 const SLOPE_MAX = 1.2;
 
+/** First morning the sport door counts a wallet. */
+export const SPORT_DOOR_FROM = '2026-11-25';
+/** The sport score a wallet needs, as a share of a dollar: 0.45 points. */
+export const SPORT_DOOR_BAR = 0.0045;
+/** Closing reads in the sport before the score is read at all. */
+export const SPORT_DOOR_MIN_READS = 12;
+/** The only market the door opens. */
+export const SPORT_DOOR_MARKET = 'ML';
+const SPORT_DOOR_HALF_WEIGHT = 25;
+const SPORT_DOOR_CLIP = 0.1;
+/** A later ticket has to be this many seconds after the wallet's own. */
+const SPORT_DOOR_GAP_SECONDS = 60;
+const FLAT_PRICE_MIN_ROWS = 10;
+const FLAT_PRICE_SHARE = 0.9;
+
 let listIndex = new Map();
 
 export function isTrustedListLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= TRUSTED_LIST_FROM;
+}
+
+export function isSportDoorLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= SPORT_DOOR_FROM;
 }
 
 export function setTrustedList(index) {
@@ -156,15 +191,123 @@ function dayNumber(date) {
   return Number.isFinite(t) ? Math.round(t / 86400000) : null;
 }
 
+/** A stored time as seconds: an ISO string, seconds, milliseconds, or a Firestore timestamp. */
+function toSeconds(v) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') {
+    if (!Number.isFinite(v) || v <= 0) return null;
+    return v > 1e11 ? v / 1000 : v;
+  }
+  if (typeof v === 'string') {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n > 0 ? (n > 1e11 ? n / 1000 : n) : null;
+    const t = Date.parse(v);
+    return Number.isFinite(t) ? t / 1000 : null;
+  }
+  if (typeof v.toMillis === 'function') {
+    const ms = v.toMillis();
+    return Number.isFinite(ms) ? ms / 1000 : null;
+  }
+  return num(v.seconds) ?? num(v._seconds);
+}
+
+function walletSix(d) {
+  return String(d?.walletShort || d?.wallet || '').slice(-6).toLowerCase();
+}
+
+/** The price the wallet paid when we first saw the ticket: the first gate's offer, else the stored price. */
+function firstSightPrice(d) {
+  const log = Array.isArray(d?.ticketTapeLog) ? d.ticketTapeLog : null;
+  const first = log ? log.find((g) => g && g.gate === 'first') : null;
+  const offer = first ? americanToProb(num(first.offer)) : null;
+  if (offer) return offer;
+  if (d?.avgPrice == null || d.avgPrice === '') return null;
+  const ap = Number(d.avgPrice);
+  return Number.isFinite(ap) ? ap : null;
+}
+
+function inPriceRange(p) {
+  return p != null && p > 0.02 && p < 0.98;
+}
+
+/**
+ * Our own price path on every market: each tracked ticket first seen
+ * before the start, in the order we saw them. Also the wallets whose
+ * stored price is a flat 50 cents on nearly every row. They are not
+ * taking a side at a price, so they neither set a close nor get a read.
+ */
+function houseTape(rows, cut) {
+  const priced = new Map();
+  for (const d of rows || []) {
+    if (!d || d.postponed === true) continue;
+    if (cut && String(d.date || '') >= cut) continue;
+    if (d.avgPrice == null || d.avgPrice === '') continue;
+    const w6 = walletSix(d);
+    if (!w6) continue;
+    const c = priced.get(w6) || { n: 0, flat: 0 };
+    c.n += 1;
+    if (Math.abs(Number(d.avgPrice) - 0.5) < 1e-9) c.flat += 1;
+    priced.set(w6, c);
+  }
+  const flat = new Set();
+  for (const [w6, c] of priced) {
+    if (c.n >= FLAT_PRICE_MIN_ROWS && c.flat / c.n >= FLAT_PRICE_SHARE) flat.add(w6);
+  }
+  const tape = new Map();
+  for (const d of rows || []) {
+    if (!d || d.postponed === true) continue;
+    if (cut && String(d.date || '') >= cut) continue;
+    const cond = d.conditionId ? String(d.conditionId) : null;
+    const asset = d.asset ? String(d.asset) : null;
+    if (!cond || !asset) continue;
+    const w6 = walletSix(d);
+    if (!w6 || flat.has(w6)) continue;
+    const fs = toSeconds(d.firstSeen);
+    const ct = toSeconds(d.commenceTime);
+    if (fs == null || ct == null || fs >= ct) continue;
+    const p1 = firstSightPrice(d);
+    if (!inPriceRange(p1)) continue;
+    if (!tape.has(cond)) tape.set(cond, []);
+    tape.get(cond).push({ fs, asset, p1, w6 });
+  }
+  for (const list of tape.values()) {
+    list.sort((a, b) => a.fs - b.fs
+      || (a.asset < b.asset ? -1 : a.asset > b.asset ? 1 : 0)
+      || a.p1 - b.p1
+      || (a.w6 < b.w6 ? -1 : a.w6 > b.w6 ? 1 : 0));
+  }
+  return { tape, flat };
+}
+
+/**
+ * The closing read on one kept bet: the price the last other tracked
+ * wallet paid on that market before the start, turned to this side,
+ * minus the price this wallet paid. Null when we first saw the ticket at
+ * or after the start, when no other wallet came later, or on a flat wallet.
+ */
+function houseRead(b, house) {
+  if (!b.cond || !b.asset || b.fs == null || b.ct == null || b.fs >= b.ct) return null;
+  if (!inPriceRange(b.p1) || house.flat.has(b.w6)) return null;
+  let last = null;
+  for (const t of house.tape.get(b.cond) || []) {
+    if (t.fs > b.fs + SPORT_DOOR_GAP_SECONDS && t.w6 !== b.w6) last = t;
+  }
+  if (!last) return null;
+  return (last.asset === b.asset ? last.p1 : 1 - last.p1) - b.p1;
+}
+
 /**
  * Graded position rows to bets. Rows need wallet, date, sport, marketType,
- * gameKey, side, avgPrice, invested, result, and ticketTapeLog. With
- * `asOf`, a row dated that morning or later is not read at all, so a
- * later ticket cannot change which earlier ticket is kept.
+ * gameKey, side, avgPrice, invested, result, and ticketTapeLog. The sport
+ * door also reads conditionId, asset, firstSeen, and commenceTime; a row
+ * without them has no closing read. With `asOf`, a row dated that morning
+ * or later is not read at all, so a later ticket cannot change which
+ * earlier ticket is kept.
  */
 export function trustedListBets(rows, asOf = null) {
   const raw = [];
   const cut = typeof asOf === 'string' && asOf.length >= 10 ? asOf : null;
+  const house = houseTape(rows, cut);
   for (const d of rows || []) {
     if (!d || d.postponed === true) continue;
     if (cut && String(d.date || '') >= cut) continue;
@@ -227,6 +370,11 @@ export function trustedListBets(rows, asOf = null) {
       h0,
       fairC,
       hC,
+      cond: d.conditionId ? String(d.conditionId) : null,
+      asset: d.asset ? String(d.asset) : null,
+      fs: toSeconds(d.firstSeen),
+      ct: toSeconds(d.commenceTime),
+      p1: firstSightPrice(d),
     });
   }
   raw.sort((a, b) => byDate(a, b) || b.invested - a.invested);
@@ -269,6 +417,7 @@ export function trustedListBets(rows, asOf = null) {
       b.lead = b.fairC - b.fair0;
       b.ev0 = b.fair0 - b.p0;
     }
+    b.house = houseRead(b, house);
   }
   out.sort((a, b) => byDate(a, b) || (a.gameKey < b.gameKey ? -1 : 1));
   return out;
@@ -345,7 +494,8 @@ function keptLine(w) {
 
 function newState() {
   const state = {
-    cells: new Map(), line: new Map(), ids: new Map(), sport: new Map(), rec: {}, slope: {}, prior: {},
+    cells: new Map(), line: new Map(), ids: new Map(), sport: new Map(), house: new Map(),
+    rec: {}, slope: {}, prior: {},
   };
   for (const m of TRUSTED_LIST_MARKETS) {
     state.rec[m] = new Map();
@@ -500,7 +650,35 @@ function absorbDay(state, par, todays, onBet) {
     sr.S += b.won - b.price;
     sr.V += b.price * (1 - b.price);
     state.sport.get(b.wallet).set(sk, sr);
+    if (b.house != null && LINE_MARKETS.has(b.market)) {
+      const sp = normTrustedSport(b.sport);
+      if (!state.house.has(b.wallet)) state.house.set(b.wallet, new Map());
+      const h = state.house.get(b.wallet).get(sp) || { n: 0, sum: 0 };
+      h.n += 1;
+      h.sum += Math.max(-SPORT_DOOR_CLIP, Math.min(SPORT_DOOR_CLIP, b.house));
+      state.house.get(b.wallet).set(sp, h);
+    }
   }
+}
+
+/** The sport score from a wallet's closing reads in one sport. Null under the minimum reads. */
+function sportDoorScore(h) {
+  if (!h || h.n < SPORT_DOOR_MIN_READS) return null;
+  return (h.sum / h.n) * (h.n / (h.n + SPORT_DOOR_HALF_WEIGHT));
+}
+
+/**
+ * The sports where this wallet clears the door: `{ SPORT: { score, n } }`.
+ * NHL, NBA, NFL, and CFB are never here. Those read the standing.
+ */
+function sportDoors(state, wallet) {
+  const out = {};
+  for (const [sport, h] of state.house.get(wallet) || []) {
+    if (!sport || STANDING_SPORTS.has(sport)) continue;
+    const score = sportDoorScore(h);
+    if (score != null && score >= SPORT_DOOR_BAR) out[sport] = { score, n: h.n };
+  }
+  return out;
 }
 
 function walk(bets, asOf, onBet) {
@@ -586,6 +764,30 @@ export function buildTrustedList(rows, asOf) {
       });
     }
   }
+  if (isSportDoorLive(asOf)) {
+    for (const wallet of state.house.keys()) {
+      const reads = sportDoors(state, wallet);
+      const door = Object.keys(reads).sort();
+      if (!door.length) continue;
+      const id = state.ids.get(wallet) || wallet.slice(-6);
+      const key = listKey(SPORT_DOOR_MARKET, id);
+      if (!index.has(key)) {
+        index.set(key, {
+          trusted: false,
+          standing: null,
+          score: null,
+          n: state.rec[SPORT_DOOR_MARKET].get(wallet)?.n ?? 0,
+          sports: profitableSports(state, wallet, SPORT_DOOR_MARKET),
+          played: playedSports(state, wallet, SPORT_DOOR_MARKET),
+          record: null,
+          bySport: {},
+        });
+      }
+      const info = index.get(key);
+      info.door = door;
+      info.doorReads = reads;
+    }
+  }
   return index;
 }
 
@@ -605,8 +807,26 @@ export function serializeTrustedList(index, asOf) {
   const rows = [];
   const records = [];
   const sportRecords = [];
+  const doors = [];
   for (const [key, info] of index?.entries?.() || []) {
     const [market, wallet] = String(key).split('|');
+    if (market === SPORT_DOOR_MARKET && Array.isArray(info?.door) && info.door.length > 0) {
+      const reads = {};
+      for (const sport of info.door) {
+        const r = info.doorReads?.[sport];
+        reads[sport] = { score: round(r?.score, 5), n: r?.n ?? 0 };
+      }
+      doors.push({
+        market,
+        wallet,
+        door: [...info.door],
+        reads,
+        trusted: info.trusted === true,
+        n: info.n ?? 0,
+        sports: Array.isArray(info.sports) ? info.sports : [],
+        played: Array.isArray(info.played) ? info.played : [],
+      });
+    }
     if (TRUSTED_RECORD_MARKETS.includes(market) && Number.isFinite(info?.record)) {
       records.push({ market, wallet, z: round(info.record, 3), n: info.n ?? 0 });
     }
@@ -633,7 +853,8 @@ export function serializeTrustedList(index, asOf) {
   rows.sort(order);
   records.sort(order);
   sportRecords.sort((a, b) => order(a, b) || a.sport.localeCompare(b.sport));
-  return { asOf, listVersion: TRUSTED_LIST_VERSION, rows, records, sportRecords };
+  doors.sort(order);
+  return { asOf, listVersion: TRUSTED_LIST_VERSION, rows, records, sportRecords, doors };
 }
 
 export function hydrateTrustedList(payload) {
@@ -679,17 +900,53 @@ export function hydrateTrustedList(payload) {
     if (!info.bySport) info.bySport = {};
     info.bySport[normTrustedSport(row.sport)] = { z, n: Number(row.n) || 0, up: row.up === true };
   }
+  for (const row of payload?.doors || []) {
+    if (row?.market !== SPORT_DOOR_MARKET || !row?.wallet || !Array.isArray(row.door)) continue;
+    const door = row.door.map((x) => normTrustedSport(x)).filter((x) => x && !STANDING_SPORTS.has(x));
+    if (!door.length) continue;
+    const key = listKey(row.market, row.wallet);
+    if (!index.has(key)) {
+      index.set(key, {
+        trusted: false,
+        standing: null,
+        score: null,
+        n: Number(row.n) || 0,
+        sports: Array.isArray(row.sports) ? row.sports.map((x) => normTrustedSport(x)) : [],
+        played: Array.isArray(row.played) ? row.played.map((x) => normTrustedSport(x)) : [],
+        record: null,
+        bySport: {},
+      });
+    }
+    const info = index.get(key);
+    info.door = door;
+    info.doorReads = {};
+    for (const sport of door) {
+      const r = row.reads?.[sport];
+      info.doorReads[sport] = {
+        score: Number.isFinite(Number(r?.score)) ? Number(r.score) : null,
+        n: Number(r?.n) || 0,
+      };
+    }
+  }
   return index;
+}
+
+/** True when the wallet clears the sport door in this sport. Moneyline entries only carry one. */
+function throughDoor(info, sport) {
+  const sp = normTrustedSport(sport);
+  return !!sp && Array.isArray(info?.door) && info.door.includes(sp);
 }
 
 /**
  * Trusted, and profitable on 10 or more bets in this sport and market.
- * `wide` drops the profit: trusted with 10 or more bets there.
+ * `wide` drops the profit: trusted with 10 or more bets there. A wallet
+ * through the sport door in this sport stands where a trusted one does.
  */
 function countsIn(info, sport, wide = false) {
   const sp = normTrustedSport(sport);
   const where = wide ? info?.played : info?.sports;
-  return info?.trusted === true && !!sp && Array.isArray(where) && where.includes(sp);
+  if (!sp || !Array.isArray(where) || !where.includes(sp)) return false;
+  return info?.trusted === true || throughDoor(info, sp);
 }
 
 export function isTrustedWalletOn(market, wallet, sport, list = null) {
@@ -880,6 +1137,29 @@ export function trustedListCounting(list = null) {
   return out;
 }
 
+/**
+ * Wallets through the sport door: `all` is every one, `added` is the ones
+ * the standing had not already trusted, and `sports` is added wallets per sport.
+ */
+export function sportDoorSizes(list = null) {
+  const index = list instanceof Map ? list : listIndex;
+  const out = { all: 0, added: 0, sports: {} };
+  for (const info of index.values()) {
+    if (!Array.isArray(info?.door) || !info.door.length) continue;
+    out.all += 1;
+    if (info.trusted === true) continue;
+    out.added += 1;
+    for (const sport of info.door) out.sports[sport] = (out.sports[sport] || 0) + 1;
+  }
+  return out;
+}
+
+/** Written with the count on a moneyline outside the four standing sports, from the door's first day. */
+export const SPORT_DOOR_STAMP_FIELDS = Object.freeze([
+  'v8_sportDoorFor',
+  'v8_sportDoorAgainst',
+]);
+
 export const TRUSTED_COUNT_STAMP_FIELDS = Object.freeze([
   'v8_trustedListFor',
   'v8_trustedListAgainst',
@@ -898,9 +1178,20 @@ export function trustedCountStamp({ pickDate, sport, market, side, positions, li
   if (!normTrustedSport(sport)) return {};
   if (mkt !== 'ML' && !trustedListSport(sport)) return {};
   const count = trustedSideCount({ market, side, positions, sport, list });
-  return {
+  const stamp = {
     v8_trustedListFor: count.for,
     v8_trustedListAgainst: count.against,
     v8_trustedListMargin: count.margin,
   };
+  if (mkt === SPORT_DOOR_MARKET && !trustedListSport(sport) && isSportDoorLive(pickDate)) {
+    // The wallets on the wider count that are there through the door alone.
+    const index = list instanceof Map ? list : listIndex;
+    const wide = trustedSideCount({
+      market, side, positions, sport, list, wide: true,
+    });
+    const doorOnly = (w) => index.get(listKey(mkt, w))?.trusted !== true;
+    stamp.v8_sportDoorFor = wide.for.filter(doorOnly);
+    stamp.v8_sportDoorAgainst = wide.against.filter(doorOnly);
+  }
+  return stamp;
 }

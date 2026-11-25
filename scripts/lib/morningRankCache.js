@@ -58,6 +58,7 @@ import {
   isTrustedListLive,
   serializeTrustedList,
   setTrustedList,
+  sportDoorSizes,
   trustedListCounting,
   trustedListReady,
   trustedListSizes,
@@ -80,6 +81,9 @@ const TRUSTED_FIELDS = [
   'wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice',
   'result', 'postponed', 'gameKey', 'side', 'entryLine', 'spreadLine', 'totalLine',
   'ticketTapeLog',
+  // The sport door's closing read: which market, which side of it, when we
+  // first saw the ticket, and when the game started.
+  'conditionId', 'asset', 'firstSeen', 'commenceTime',
 ];
 const SKILL_FIELDS = [
   'wallet', 'walletShort', 'date', 'sport', 'marketType', 'invested', 'avgPrice',
@@ -301,6 +305,7 @@ function trustedStats(index, source) {
   const sizes = trustedListSizes(index);
   const counting = trustedListCounting(index);
   const totalSport = trustedSportRecordSizes('TOTAL', index);
+  const door = sportDoorSizes(index);
   return {
     trustedSource: source,
     trustedMl: sizes.ML,
@@ -311,14 +316,17 @@ function trustedStats(index, source) {
     recordsSpread: trustedRecordSizes(index).SPREAD,
     recordsTotalSport: totalSport.wallets,
     listTotalSport: totalSport.up,
+    sportDoor: door.all,
+    sportDoorAdded: door.added,
+    sportDoorSports: door.sports,
   };
 }
 
 /**
  * The trusted list for this morning. The first scan of the day reads
  * every graded position with its price tape and stores the trusted
- * wallets and every wallet's spread record. Later scans read that one
- * document. A grade run rebuilds it.
+ * wallets, every wallet's spread record, and the wallets through the
+ * sport door. Later scans read that one document. A grade run rebuilds it.
  *
  * A failed read, a failed build, or an empty result leaves the list
  * empty. The paths that read it then change nothing: moneylines go back

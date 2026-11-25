@@ -1,16 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  SPORT_DOOR_BAR,
+  SPORT_DOOR_FROM,
+  SPORT_DOOR_MIN_READS,
+  SPORT_DOOR_STAMP_FIELDS,
   TRUSTED_COUNT_STAMP_FIELDS,
   TRUSTED_LIST_FROM,
   TRUSTED_LIST_VERSION,
   buildTrustedList,
   hydrateTrustedList,
+  isSportDoorLive,
   isTrustedListLive,
   isTrustedWalletOn,
   scoreTrustedListBets,
   serializeTrustedList,
   setTrustedList,
+  sportDoorSizes,
   trustedCountStamp,
   trustedListBets,
   trustedListReady,
@@ -610,4 +616,253 @@ test('the paths read the stored sport records when no list is passed', () => {
     setTrustedList(null);
   }
   assert.equal(trustedSportRecordsReady('TOTAL'), false);
+});
+
+// ─── Sport door ──────────────────────────────────────────────────────────
+
+/** Game `d` starts at 23:00 UTC on day(d), in milliseconds as the scan stores it. */
+function startMs(d) {
+  return Date.UTC(2026, 8, 1 + d, 23, 0, 0);
+}
+
+/**
+ * One tracked ticket with the fields the closing read needs. No sharp
+ * line on it: the offer is the price paid and there is no fair.
+ */
+function ticket({
+  w, d, game, side = 'home', price = 0.5, hoursOut = 6, sport = 'CS2', marketType = 'ML',
+  result = 'WIN', invested = 500,
+}) {
+  return {
+    wallet: wallet(w),
+    walletShort: wallet(w).slice(-6),
+    date: day(d),
+    sport,
+    marketType,
+    gameKey: game,
+    side,
+    result,
+    avgPrice: price,
+    invested,
+    spreadLine: marketType === 'SPREAD' ? -1.5 : null,
+    totalLine: null,
+    conditionId: `c_${game}`,
+    asset: `${game}_${side}`,
+    firstSeen: new Date(startMs(d) - hoursOut * 3600000).toISOString(),
+    commenceTime: startMs(d),
+    ticketTapeLog: [{ gate: 'first', hoursOut, offer: american(price), fair: null }],
+  };
+}
+
+/**
+ * Wallet `w` buys a side at 48 cents six hours out on `games` games, one
+ * a day, and wins `wins` of them. Wallet `closer` buys the same side an
+ * hour out at `close`. The first wallet's closing read is `close` − 0.48.
+ * (Not 50 cents: a wallet stored at a flat 0.5 on every row is left out.)
+ */
+function doorSeason({
+  w, closer = 90, games = 12, wins = 8, close = 0.51, sport = 'CS2', marketType = 'ML', tag = 'd',
+}) {
+  const rows = [];
+  for (let d = 0; d < games; d += 1) {
+    const game = `${tag}${w}_${d}`;
+    const result = d < wins ? 'WIN' : 'LOSS';
+    rows.push(ticket({ w, d, game, sport, marketType, result, price: 0.48 }));
+    rows.push(ticket({ w: closer, d, game, sport, marketType, result, price: close, hoursOut: 1 }));
+  }
+  return rows;
+}
+
+const D60 = wallet(60).slice(-6);
+const onSide = (list, id, sport, wide = false, market = 'ML') => trustedSideCount({
+  sport, market, side: 'home', positions: [pos(id, 'home', 100, market)], list, wide,
+}).margin;
+
+test('the sport door: 12 closing reads at a score of 0.45 points count a CS2 wallet on CS2 moneylines', () => {
+  assert.equal(isSportDoorLive(SPORT_DOOR_FROM), true);
+  assert.equal(isSportDoorLive('2026-11-24'), false);
+  assert.equal(isSportDoorLive(null), false);
+  const list = buildTrustedList(doorSeason({ w: 60 }), SPORT_DOOR_FROM);
+  const info = list.get(`ML|${D60}`);
+  // Nobody has a standing here: the wallet is on through the door alone.
+  assert.equal(info.trusted, false);
+  assert.deepEqual(info.door, ['CS2']);
+  assert.equal(info.doorReads.CS2.n, 12);
+  // Twelve reads of about 3 points, held at 12 / (12 + 25).
+  assert.ok(Math.abs(info.doorReads.CS2.score - 0.03 * (12 / 37)) < 0.0005);
+  assert.ok(info.doorReads.CS2.score >= SPORT_DOOR_BAR);
+  // 8-4 at 48 cents on 12 moneylines: it counts on the wide count and the profitable one.
+  assert.equal(onSide(list, D60, 'CS2', true), 1);
+  assert.equal(onSide(list, D60, 'CS2', false), 1);
+  assert.equal(isTrustedWalletOn('ML', wallet(60), 'CS2', list), true);
+  // Only that sport, and only moneylines.
+  assert.equal(onSide(list, D60, 'ATP', true), 0);
+  assert.equal(onSide(list, D60, 'NBA', true), 0);
+  assert.equal(onSide(list, D60, 'CS2', true, 'SPREAD'), 0);
+  // The wallet that set the close had nobody after it: no reads, no door.
+  assert.equal(list.get(`ML|${wallet(90).slice(-6)}`)?.door, undefined);
+  assert.deepEqual(sportDoorSizes(list), { all: 1, added: 1, sports: { CS2: 1 } });
+});
+
+test('the door needs 12 reads, and a smaller edge needs a longer record', () => {
+  assert.equal(SPORT_DOOR_MIN_READS, 12);
+  const short = buildTrustedList(doorSeason({ w: 60, games: 11, wins: 8 }), SPORT_DOOR_FROM);
+  assert.equal(short.get(`ML|${D60}`)?.door, undefined);
+  assert.equal(onSide(short, D60, 'CS2', true), 0);
+  // About 1 point a bet: 12 reads score 0.32, under the bar. 30 reads score 0.53.
+  const thin = buildTrustedList(doorSeason({ w: 60, games: 12, close: 0.49 }), SPORT_DOOR_FROM);
+  assert.equal(thin.get(`ML|${D60}`)?.door, undefined);
+  const long = buildTrustedList(doorSeason({ w: 60, games: 30, wins: 20, close: 0.49 }), SPORT_DOOR_FROM);
+  assert.deepEqual(long.get(`ML|${D60}`).door, ['CS2']);
+  // A wallet the market moved away from never gets through.
+  const behind = buildTrustedList(doorSeason({ w: 60, games: 30, wins: 20, close: 0.45 }), SPORT_DOOR_FROM);
+  assert.equal(behind.get(`ML|${D60}`)?.door, undefined);
+});
+
+test('the door never opens NHL, NBA, NFL, or CFB, and nothing changes before its first morning', () => {
+  for (const sport of ['NHL', 'NBA', 'NFL', 'CFB', 'NCAAF']) {
+    const list = buildTrustedList(doorSeason({ w: 60, sport }), SPORT_DOOR_FROM);
+    assert.equal(list.get(`ML|${D60}`)?.door, undefined, sport);
+    assert.equal(sportDoorSizes(list).all, 0, sport);
+  }
+  const rows = [...ROWS, ...doorSeason({ w: 60 })];
+  const before = buildTrustedList(rows, '2026-11-24');
+  assert.equal(sportDoorSizes(before).all, 0);
+  assert.equal(serializeTrustedList(before, '2026-11-24').doors.length, 0);
+  // The standing list is the same list with the door on.
+  const after = buildTrustedList(rows, SPORT_DOOR_FROM);
+  assert.deepEqual(
+    serializeTrustedList(after, SPORT_DOOR_FROM).rows,
+    serializeTrustedList(before, SPORT_DOOR_FROM).rows,
+  );
+  assert.equal(sportDoorSizes(after).all, 1);
+});
+
+test('a door wallet still needs 10 moneylines in the sport to count, and to be up to count as profitable', () => {
+  // 4-8 at 48 cents: on the wide count, not the profitable one.
+  const down = buildTrustedList(doorSeason({ w: 60, wins: 4 }), SPORT_DOOR_FROM);
+  assert.deepEqual(down.get(`ML|${D60}`).door, ['CS2']);
+  assert.equal(onSide(down, D60, 'CS2', true), 1);
+  assert.equal(onSide(down, D60, 'CS2', false), 0);
+  // Twelve spread reads and five moneylines: through the door, counted nowhere.
+  const rows = [
+    ...doorSeason({ w: 60, marketType: 'SPREAD', tag: 's' }),
+    ...doorSeason({ w: 60, games: 5, wins: 5, close: 0.48, tag: 'm' }),
+  ];
+  const few = buildTrustedList(rows, SPORT_DOOR_FROM);
+  assert.deepEqual(few.get(`ML|${D60}`).door, ['CS2']);
+  assert.equal(onSide(few, D60, 'CS2', true), 0);
+  assert.equal(onSide(few, D60, 'CS2', false), 0);
+});
+
+test('the closing read is the last other ticket before the start, turned to the wallet\'s side', () => {
+  const mine = ticket({ w: 60, d: 0, game: 'g' });
+  const read = (others, own = mine) => trustedListBets([own, ...others])
+    .find((b) => b.w6 === D60).house;
+  // Nobody after: no read.
+  assert.equal(read([]), null);
+  assert.equal(read([ticket({ w: 91, d: 0, game: 'g', price: 0.6, hoursOut: 8 })]), null);
+  // Same side later at 53 cents: +3 points.
+  assert.ok(Math.abs(read([ticket({ w: 91, d: 0, game: 'g', price: 0.53, hoursOut: 1 })]) - 0.0305) < 0.0002);
+  // The other side later at 45 cents puts this side at 55.
+  assert.ok(Math.abs(read([ticket({ w: 91, d: 0, game: 'g', side: 'away', price: 0.45, hoursOut: 1 })]) - 0.0505) < 0.002);
+  // The last one before the start is the close, not the best one.
+  const two = [
+    ticket({ w: 91, d: 0, game: 'g', price: 0.6, hoursOut: 3 }),
+    ticket({ w: 92, d: 0, game: 'g', price: 0.47, hoursOut: 1 }),
+  ];
+  assert.ok(read(two) < 0);
+  // A ticket first seen at or after the start, the wallet's own later
+  // ticket, and one inside the same minute are not a close.
+  assert.equal(read([ticket({ w: 91, d: 0, game: 'g', price: 0.7, hoursOut: -1 })]), null);
+  assert.equal(read([{ ...ticket({ w: 60, d: 0, game: 'g', price: 0.7, hoursOut: 1 }), invested: 10 }]), null);
+  assert.equal(read([ticket({ w: 91, d: 0, game: 'g', price: 0.7, hoursOut: 6 - 30 / 3600 })]), null);
+  // A different market is a different tape.
+  assert.equal(read([{ ...ticket({ w: 91, d: 0, game: 'g', price: 0.7, hoursOut: 1 }), conditionId: 'other' }]), null);
+  // The wallet's own ticket first seen after the start has no read.
+  const late = ticket({ w: 60, d: 0, game: 'g', hoursOut: -0.5 });
+  assert.equal(read([ticket({ w: 91, d: 0, game: 'g', price: 0.7, hoursOut: -1 })], late), null);
+  // Stored times read the same as seconds, an ISO start, or a Firestore timestamp.
+  const closer = ticket({ w: 91, d: 0, game: 'g', price: 0.53, hoursOut: 1 });
+  const base = read([closer]);
+  const forms = [
+    { ...mine, commenceTime: startMs(0) / 1000 },
+    { ...mine, commenceTime: new Date(startMs(0)).toISOString() },
+    { ...mine, firstSeen: { seconds: Date.parse(mine.firstSeen) / 1000, nanoseconds: 0 } },
+    { ...mine, firstSeen: { toMillis: () => Date.parse(mine.firstSeen) } },
+  ];
+  for (const f of forms) assert.equal(read([closer], f), base);
+  // No market id, no side id, or no start: no read.
+  for (const gone of ['conditionId', 'asset', 'firstSeen', 'commenceTime']) {
+    assert.equal(read([closer], { ...mine, [gone]: null }), null, gone);
+  }
+});
+
+test('a wallet with a flat 50-cent stored price sets no close and gets no read', () => {
+  // Wallet 93 carries 0.5 on all 12 rows. It is not on the tape, so wallet 60 has no closes.
+  const rows = doorSeason({ w: 60, closer: 93, close: 0.5 })
+    .map((r) => (r.walletShort === wallet(93).slice(-6)
+      ? { ...r, ticketTapeLog: [{ gate: 'first', hoursOut: 1, offer: american(0.6), fair: null }] }
+      : r));
+  const bets = trustedListBets(rows);
+  assert.ok(bets.filter((b) => b.w6 === D60).every((b) => b.house === null));
+  // And a flat wallet that came first gets no read off a real close.
+  const flipped = doorSeason({ w: 93, closer: 60, close: 0.51 }).map((r) => (r.walletShort === D60 ? r : { ...r, avgPrice: 0.5 }));
+  const list = buildTrustedList(flipped, SPORT_DOOR_FROM);
+  assert.equal(sportDoorSizes(list).all, 0);
+});
+
+test('one read is held to 10 points either way', () => {
+  // A 42-point jump on one game cannot carry a wallet: 12 reads, eleven flat and one at +42.
+  const rows = doorSeason({ w: 60, close: 0.48 });
+  const jump = rows.map((r) => (r.gameKey === 'd60_0' && r.walletShort !== D60
+    ? { ...r, avgPrice: 0.9, ticketTapeLog: [{ gate: 'first', hoursOut: 1, offer: american(0.9), fair: null }] }
+    : r));
+  const list = buildTrustedList(jump, SPORT_DOOR_FROM);
+  // Held: 0.10 / 12 x 12 / 37 = 0.27 points. Unheld it would be 1.14 and through.
+  assert.equal(list.get(`ML|${D60}`)?.door, undefined);
+});
+
+test('the stored morning carries the door and reads back the same', () => {
+  const list = buildTrustedList([...ROWS, ...doorSeason({ w: 60 })], SPORT_DOOR_FROM);
+  const stored = serializeTrustedList(list, SPORT_DOOR_FROM);
+  assert.equal(stored.listVersion, TRUSTED_LIST_VERSION);
+  assert.equal(stored.doors.length, 1);
+  assert.deepEqual(stored.doors[0].door, ['CS2']);
+  assert.equal(stored.doors[0].wallet, D60);
+  assert.equal(stored.doors[0].reads.CS2.n, 12);
+  const back = hydrateTrustedList(JSON.parse(JSON.stringify(stored)));
+  assert.deepEqual(back.get(`ML|${D60}`).door, ['CS2']);
+  assert.equal(onSide(back, D60, 'CS2', true), onSide(list, D60, 'CS2', true));
+  assert.equal(onSide(back, D60, 'CS2', false), onSide(list, D60, 'CS2', false));
+  assert.equal(onSide(back, D60, 'CS2', true), 1);
+  assert.deepEqual(sportDoorSizes(back), sportDoorSizes(list));
+  assert.equal(trustedListSizes(back).ML, trustedListSizes(list).ML);
+  // A stored morning from before the door reads back with nobody through it.
+  const old = hydrateTrustedList({ ...JSON.parse(JSON.stringify(stored)), doors: undefined });
+  assert.equal(sportDoorSizes(old).all, 0);
+  // A stored door row can never name one of the four standing sports.
+  const bad = hydrateTrustedList({ ...stored, doors: [{ ...stored.doors[0], door: ['NBA'] }] });
+  assert.equal(sportDoorSizes(bad).all, 0);
+});
+
+test('the stamp names the wallets on a side through the door alone', () => {
+  const list = listOf('ML', 'aaaaa1');
+  list.get('ML|aaaaa1').sports = ['CS2'];
+  list.get('ML|aaaaa1').played = ['CS2'];
+  list.set('ML|ddddd1', { trusted: false, standing: null, score: null, n: 14, sports: ['CS2'], played: ['CS2'], door: ['CS2'] });
+  list.set('ML|ddddd2', { trusted: false, standing: null, score: null, n: 14, sports: [], played: ['CS2'], door: ['CS2'] });
+  list.set('ML|zzzzz1', { trusted: false, standing: 0.4, score: 0, n: 30, sports: ['CS2'], played: ['CS2'] });
+  const positions = [pos('aaaaa1', 'home'), pos('ddddd1', 'home'), pos('ddddd2', 'away'), pos('zzzzz1', 'away')];
+  const args = { pickDate: SPORT_DOOR_FROM, sport: 'CS2', market: 'ML', side: 'home', positions, list };
+  const stamp = trustedCountStamp(args);
+  assert.deepEqual(Object.keys(stamp).sort(), [...TRUSTED_COUNT_STAMP_FIELDS, ...SPORT_DOOR_STAMP_FIELDS].sort());
+  // Profitable count: the trusted wallet and the door wallet that is up. The down one is on the wide count only.
+  assert.deepEqual(stamp.v8_trustedListFor, ['aaaaa1', 'ddddd1']);
+  assert.deepEqual(stamp.v8_trustedListAgainst, []);
+  assert.deepEqual(stamp.v8_sportDoorFor, ['ddddd1']);
+  assert.deepEqual(stamp.v8_sportDoorAgainst, ['ddddd2']);
+  // Before the door's first day, and on the four standing sports, the stamp is the old three fields.
+  assert.deepEqual(Object.keys(trustedCountStamp({ ...args, pickDate: '2026-11-24' })).sort(), [...TRUSTED_COUNT_STAMP_FIELDS].sort());
+  assert.deepEqual(Object.keys(trustedCountStamp({ ...args, sport: 'NBA' })).sort(), [...TRUSTED_COUNT_STAMP_FIELDS].sort());
 });
