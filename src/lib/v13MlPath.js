@@ -15,6 +15,11 @@
  * takes half the size, to the nearest quarter unit, never under 0.25.
  * A trusted wallet with under 10 bets there counts on neither.
  *
+ * From 2026-11-25, outside NHL, NBA, NFL, and CFB, a wallet through the
+ * sport door in that sport (trustedList.js: house CLV score of 0.45
+ * points on 12 or more reads) stands on both counts where a trusted
+ * wallet does, under the same 10-bet and up-in-units rules.
+ *
  * On every date before that, and on a morning the list did not build, a
  * wallet qualifies on the bets dated before this morning. Confirmed comes first, on the sport: 6 or more graded bets, a
  * win rate of at least 55, and dollar ROI above 3. Then the moneyline
