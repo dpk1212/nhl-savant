@@ -1,22 +1,22 @@
 # Sharp Wallet Roster
 
-Generated: 11/25/2026, 7:13:54 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 5
+Generated: 11/25/2026, 3:43:53 PM ET · V8 cutover: 2026-04-18 · whitelistVersion: 5
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
 > **Promotion policy (v5, Door 2, from 2026-09-26)**: rebuilt every 2h via `grade-sharp-actions`. CONFIRMED = Source B n≥6 AND WR≥55 AND $ROI>3. Source A cannot confer Proven. FLAT is not assigned. WR50 if WR≥50 on A (n≥2) or B (n≥4). Recent-dollar / size-skill rescues do not grant CONFIRMED. HARD+ (sport×market n≥4 WR≥62 $ROI≥10) is a separate overlay. Roll-back: revert `src/lib/whitelistTier.js` to v4.
 
-> **TAPE / beats-the-close**: every profile carries `clvSkill.pctPos` — causal % of graded positions with CLV > 0 since 2026-04-01 (min n=5). Same definition as `walletClvSkill.js` / netCLV. Rebuilt every cycle. Coverage this run: **517/1573** wallets scored · mean **61.4%**.
+> **TAPE / beats-the-close**: every profile carries `clvSkill.pctPos` — causal % of graded positions with CLV > 0 since 2026-04-01 (min n=5). Same definition as `walletClvSkill.js` / netCLV. Rebuilt every cycle. Coverage this run: **520/1580** wallets scored · mean **61.6%**.
 
 **Roster breakdown by verdict:**
 
-- INCONCLUSIVE: 421
-- CONFIRMED_WINNER: 314
-- CONFIRMED_BLEEDER: 290
-- MIXED_PICKS_GOOD_$_BAD: 168
-- MIXED_PICKS_BAD_$_GOOD: 138
+- INCONCLUSIVE: 426
+- CONFIRMED_WINNER: 313
+- CONFIRMED_BLEEDER: 292
+- MIXED_PICKS_GOOD_$_BAD: 174
+- MIXED_PICKS_BAD_$_GOOD: 136
 - POSITIONS_ONLY_NEGATIVE: 116
-- POSITIONS_ONLY_POSITIVE: 113
+- POSITIONS_ONLY_POSITIVE: 110
 - PICKS_ONLY_NEGATIVE: 10
 - PICKS_ONLY_POSITIVE: 3
 
@@ -29,80 +29,80 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 2d2ca8 | CONFIRMED_WINNER | ELITE | 74 | 72 | 65.3% | +62.2% | +44.76 | 179 | 53.1% | +11.9% | +3108868 | 24.1 | 0 | 0% |
 | 7b895d | CONFIRMED_WINNER | ELITE | 109 | 89 | 52.8% | +5.4% | +4.77 | 197 | 56.9% | +24.9% | +2465211 | 44.3 | 16.2 | 1.4% |
 | c41842 | CONFIRMED_WINNER | ELITE | 13 | 5 | 80% | +43.3% | +2.16 | 5 | 60% | +32.7% | +2157060 | 94 | 91.2 | 20.1% |
-| ab4b6e | CONFIRMED_WINNER | ELITE | 310 | 223 | 57.8% | +14.7% | +32.72 | 304 | 59.9% | +5.6% | +1338644 | 32.1 | 0.9 | 0.3% |
+| ab4b6e | CONFIRMED_WINNER | ELITE | 310 | 224 | 58% | +15.1% | +33.77 | 305 | 60% | +6% | +1438928 | 32.1 | 0.9 | 0.3% |
 | e4ec62 | CONFIRMED_WINNER | ELITE | 111 | 11 | 63.6% | +25.8% | +2.83 | 16 | 56.3% | +40.1% | +1489597 | 78.8 | 73.5 | 7.3% |
 | 28658e | CONFIRMED_WINNER | ELITE | 44 | 139 | 56.1% | +11.9% | +16.60 | 179 | 55.9% | +10.3% | +1223882 | 72.6 | 56.4 | 4.4% |
 | bfe3bc | CONFIRMED_WINNER | ELITE | 49 | 156 | 52.6% | +17.6% | +27.40 | 252 | 54% | +9.5% | +903804 | 51.1 | 21 | 1.7% |
 | 98ebc2 | CONFIRMED_WINNER | ELITE | 1095 | 8 | 62.5% | +54.6% | +4.37 | 10 | 50% | +55.5% | +1095364 | 13.3 | 0 | -0.4% |
 | 913987 | CONFIRMED_WINNER | ELITE | 44 | 44 | 68.2% | +32.2% | +14.19 | 67 | 61.2% | +25.5% | +977957 | 84.1 | 80.5 | 12% |
 | 3ace7b | CONFIRMED_WINNER | ELITE | 1 | 35 | 51.4% | +1.2% | +0.44 | 87 | 54% | +5.4% | +1115083 | 25 | 0 | -0.6% |
-| c911a4 | CONFIRMED_WINNER | PROVEN | — | 194 | 58.2% | +25.4% | +49.28 | 594 | 55.4% | +8.7% | +421944 | 50 | 0 | -1.4% |
+| c911a4 | CONFIRMED_WINNER | PROVEN | — | 195 | 58.5% | +25.3% | +49.37 | 596 | 55.4% | +8.7% | +421824 | 50 | 0 | -1.4% |
 | 880232 | CONFIRMED_WINNER | ELITE | 58 | 7 | 57.1% | +5.2% | +0.36 | 22 | 59.1% | +30.4% | +898783 | 60.2 | 81.3 | 12.5% |
-| 8bbab3 | CONFIRMED_WINNER | ELITE | 55 | 12 | 66.7% | +68.8% | +8.25 | 39 | 48.7% | +31.2% | +708078 | 56.7 | 30.6 | 2.3% |
-| 69f882 | CONFIRMED_WINNER | PROVEN | — | 754 | 54.5% | +8.3% | +62.85 | 1796 | 52.5% | +7.5% | +156629 | 50 | 0 | -2.7% |
+| a1be00 | CONFIRMED_WINNER | ELITE | 259 | 168 | 51.8% | +6.7% | +11.31 | 256 | 54.7% | +20.1% | +682757 | 48.9 | 27.5 | 2.2% |
+| 8bbab3 | CONFIRMED_WINNER | ELITE | 55 | 12 | 66.7% | +68.8% | +8.25 | 40 | 50% | +31.2% | +710401 | 56.7 | 30.6 | 2.3% |
 | 799fad | CONFIRMED_WINNER | ELITE | 323 | 5 | 80% | +130.8% | +6.54 | 9 | 77.8% | +63.1% | +714883 | 22.8 | 16 | 1% |
+| 69f882 | CONFIRMED_WINNER | PROVEN | — | 755 | 54.4% | +8.2% | +61.85 | 1798 | 52.5% | +7.5% | +156123 | 50 | 0 | -2.7% |
 | c94998 | CONFIRMED_WINNER | ELITE | 417 | 106 | 52.8% | +3.2% | +3.35 | 147 | 54.4% | +13% | +710579 | 28.6 | 4.8 | 0.9% |
 | 7923c4 | CONFIRMED_WINNER | ELITE | 78 | 321 | 55.5% | +8% | +25.58 | 430 | 53.7% | +3.2% | +462946 | 49.2 | 19.8 | 1.6% |
 | 54d977 | CONFIRMED_WINNER | ELITE | 178 | 8 | 62.5% | +45.3% | +3.62 | 11 | 36.4% | +12.8% | +680376 | 59.3 | 41.5 | 2.9% |
-| a1be00 | CONFIRMED_WINNER | ELITE | 259 | 167 | 51.5% | +3.9% | +6.43 | 255 | 54.5% | +18.5% | +623257 | 48.9 | 27.5 | 2.2% |
 | ccbe3d | CONFIRMED_WINNER | ELITE | 128 | 6 | 66.7% | +8.8% | +0.53 | 14 | 71.4% | +33.1% | +673926 | 62.4 | 56.9 | 4.9% |
 | ba8492 | CONFIRMED_WINNER | ELITE | 30 | 331 | 56.2% | +11.8% | +38.99 | 308 | 57.1% | +6.1% | +244974 | 50 | 0 | -0.9% |
 | 8366f5 | CONFIRMED_WINNER | ELITE | 16 | 41 | 56.1% | +20.4% | +8.37 | 91 | 57.1% | +6.3% | +537567 | 24.7 | 0 | -0.5% |
-| 5fcee5 | CONFIRMED_WINNER | ELITE | 265 | 262 | 64.9% | +18.6% | +48.61 | 439 | 64.9% | +7.5% | +129172 | 65 | 54.4 | 4.2% |
-| a0cff6 | CONFIRMED_WINNER | PROVEN | — | 689 | 53.3% | +5.2% | +35.55 | 1730 | 52.5% | +3.8% | +242709 | 50 | 0 | -1.3% |
-| 11f1d2 | CONFIRMED_WINNER | ELITE | 305 | 393 | 54.7% | +14.8% | +58.14 | 1008 | 51.5% | +9% | +14001 | 30.8 | 0 | 0% |
+| 5fcee5 | CONFIRMED_WINNER | ELITE | 265 | 263 | 65% | +18.5% | +48.70 | 440 | 65% | +7.5% | +129982 | 65 | 54.4 | 4.2% |
+| a0cff6 | CONFIRMED_WINNER | PROVEN | — | 690 | 53.2% | +5% | +34.55 | 1731 | 52.5% | +3.8% | +242344 | 50 | 0 | -1.3% |
 | 52aeeb | CONFIRMED_WINNER | ELITE | 75 | 102 | 56.9% | +10.8% | +10.98 | 182 | 48.9% | +13.3% | +477787 | 51.2 | 22.8 | 1.8% |
-| 120215 | CONFIRMED_WINNER | ELITE | — | 903 | 51.2% | +5.1% | +45.75 | 2388 | 48.8% | +1.8% | +35016 | 50 | 0 | 0% |
+| 11f1d2 | CONFIRMED_WINNER | ELITE | 305 | 396 | 54.5% | +14.4% | +57.14 | 1016 | 51.5% | +9.5% | +14997 | 30.8 | 0 | 0% |
+| 120215 | CONFIRMED_WINNER | ELITE | — | 904 | 51.1% | +5% | +44.75 | 2390 | 48.8% | +1.8% | +36017 | 50 | 0 | 0% |
 | c7935a | CONFIRMED_WINNER | ELITE | 14 | 4 | 75% | +24.8% | +0.99 | 8 | 37.5% | +4.3% | +451732 | 89.4 | 83 | 11.5% |
 | 955c26 | CONFIRMED_WINNER | ELITE | 26 | 213 | 53.5% | +7.7% | +16.45 | 398 | 55.8% | +9.1% | +295296 | 50 | 0 | -1.9% |
-| 4c8ed9 | CONFIRMED_WINNER | ELITE | 499 | 390 | 55.9% | +11.4% | +44.44 | 659 | 52.5% | +1.3% | +9171 | 53.6 | 45.4 | 3.5% |
+| 4c8ed9 | CONFIRMED_WINNER | ELITE | 478 | 391 | 55.8% | +11.1% | +43.44 | 663 | 52.5% | +1.4% | +9569 | 50 | 0 | 3.5% |
 | bc44b0 | CONFIRMED_WINNER | ELITE | 252 | 266 | 56.8% | +14.7% | +38.90 | 532 | 54.3% | +0.4% | +14167 | 39.5 | 11 | 1.2% |
 | 11b032 | CONFIRMED_WINNER | ELITE | 85 | 7 | 85.7% | +77.1% | +5.40 | 13 | 69.2% | +78.1% | +338234 | 83.2 | 84.7 | 14.9% |
-| 8fda40 | CONFIRMED_WINNER | SHARP | 385 | 174 | 65.5% | +22% | +38.24 | 224 | 63.4% | +2.8% | +5304 | 39.5 | 27.5 | 2.3% |
-| bc35e3 | CONFIRMED_WINNER | ELITE | 357 | 483 | 53.2% | +5.6% | +27.10 | 909 | 49.9% | +2.4% | +102959 | 30.4 | 2.5 | 0.6% |
+| 8fda40 | CONFIRMED_WINNER | SHARP | 385 | 176 | 65.9% | +21.9% | +38.57 | 226 | 63.7% | +2.9% | +5524 | 39 | 27.3 | 2.3% |
 | fea6f5 | CONFIRMED_WINNER | ELITE | 322 | 25 | 48% | +13.8% | +3.44 | 52 | 51.9% | +55.8% | +329531 | 69.5 | 67.4 | 5.9% |
 | 33aa70 | CONFIRMED_WINNER | ELITE | 13 | 4 | 50% | +25.5% | +1.02 | 14 | 35.7% | +43.1% | +353493 | 50 | 0 | -2.8% |
+| bc35e3 | CONFIRMED_WINNER | ELITE | 372 | 484 | 53.1% | +5.4% | +26.10 | 911 | 49.8% | +2.3% | +98635 | 31.4 | 4.3 | 0.6% |
 | 7b4652 | CONFIRMED_WINNER | ELITE | — | 9 | 100% | +380.7% | +34.27 | 34 | 61.8% | +8.7% | +3320 | 59.6 | 88.6 | 24.4% |
 | 946418 | CONFIRMED_WINNER | ELITE | — | 24 | 75% | +141.6% | +34.00 | 28 | 71.4% | +7.7% | +5177 | 76.8 | 91.3 | 25.5% |
 | 12f826 | CONFIRMED_WINNER | ELITE | 201 | 56 | 62.5% | +21% | +11.77 | 79 | 63.3% | +16.9% | +220157 | 85.3 | 86.2 | 13.4% |
 | f83ab0 | CONFIRMED_WINNER | ELITE | 153 | 8 | 75% | +52.8% | +4.23 | 15 | 66.7% | +37.4% | +295063 | 77.1 | 85.1 | 16% |
+| 85aa98 | CONFIRMED_WINNER | ELITE | 45 | 68 | 52.9% | +12% | +8.15 | 221 | 48.9% | +5.9% | +242079 | 54.4 | 26.3 | 2% |
 | f0fec8 | CONFIRMED_WINNER | ELITE | 135 | 5 | 80% | +39.6% | +1.98 | 7 | 85.7% | +56.1% | +294865 | 68.5 | 68.6 | 7.2% |
-| 5b1e50 | CONFIRMED_WINNER | ELITE | — | 589 | 52.1% | +4% | +23.33 | 1127 | 50.4% | +5% | +64290 | 25.5 | 0.6 | 0.2% |
-| 85aa98 | CONFIRMED_WINNER | ELITE | 45 | 68 | 52.9% | +12% | +8.15 | 220 | 48.6% | +5.3% | +215353 | 54.4 | 26.3 | 2% |
 | d200f2 | CONFIRMED_WINNER | ELITE | 132 | 4 | 75% | +70.2% | +2.81 | 11 | 72.7% | +43.7% | +268642 | 63.1 | 54.8 | 4.3% |
 | 308a06 | CONFIRMED_WINNER | ELITE | 46 | 5 | 100% | +128.2% | +6.41 | 7 | 71.4% | +35.9% | +230042 | 85.2 | 84.7 | 15.7% |
 | 96aa1a | CONFIRMED_WINNER | ELITE | 812 | 95 | 62.1% | +18.3% | +17.40 | 147 | 55.1% | +13.7% | +116901 | 41.2 | 28 | 2.1% |
 | ab74fe | CONFIRMED_WINNER | ELITE | 11 | 4 | 100% | +101.9% | +4.08 | 4 | 100% | +51.6% | +247114 | 24.7 | 0 | -1.1% |
+| 5b1e50 | CONFIRMED_WINNER | ELITE | — | 590 | 52% | +3.8% | +22.33 | 1129 | 50.4% | +4.9% | +62799 | 25.5 | 0.6 | 0.2% |
 | 2f2a9e | CONFIRMED_WINNER | ELITE | 47 | 523 | 52.4% | +1.8% | +9.40 | 977 | 51% | +1.8% | +181786 | 24 | 0 | -2.7% |
 | e2e279 | CONFIRMED_WINNER | ELITE | 64 | 4 | 100% | +159.9% | +6.39 | 8 | 75% | +48.7% | +210510 | 79.7 | 73 | 8.8% |
-| 469a4a | CONFIRMED_WINNER | ELITE | 570 | 40 | 50% | +10.6% | +4.22 | 78 | 46.2% | +16.3% | +226227 | 47 | 35.4 | 2.7% |
 | dfa240 | CONFIRMED_WINNER | ELITE | 444 | 223 | 54.7% | +8.1% | +18.09 | 374 | 51.9% | +7.3% | +84546 | 53.8 | 45.4 | 3.4% |
+| 469a4a | CONFIRMED_WINNER | ELITE | 570 | 40 | 50% | +10.6% | +4.22 | 79 | 45.6% | +13.6% | +192742 | 47 | 35.4 | 2.7% |
 | c4c933 | CONFIRMED_WINNER | ELITE | 172 | 3 | 100% | +79.4% | +2.38 | 3 | 100% | +66.3% | +210191 | 81.8 | 90.3 | 20.3% |
 | 7f00bc | CONFIRMED_WINNER | SHARP | 1463 | 95 | 54.7% | +17% | +16.17 | 177 | 50.3% | +15.5% | +71388 | 37.7 | 28 | 2.1% |
-| a9769e | CONFIRMED_WINNER | ELITE | 322 | 8 | 62.5% | +16.5% | +1.32 | 15 | 53.3% | +17.4% | +219377 | 83.8 | 93.6 | 22% |
 | daf4de | CONFIRMED_WINNER | ELITE | 52 | 59 | 57.6% | +38.8% | +22.88 | 108 | 71.3% | +0.2% | +2700 | 23.9 | 0 | 0% |
 | 6b1e01 | CONFIRMED_WINNER | ELITE | 215 | 8 | 75% | +44.4% | +3.55 | 10 | 70% | +25.3% | +193674 | 61.4 | 67.9 | 6.9% |
 | a10ff5 | CONFIRMED_WINNER | ELITE | 408 | 96 | 54.2% | +7.1% | +6.84 | 123 | 57.7% | +15.4% | +160563 | 15.1 | 16.6 | 1.2% |
+| b839b3 | CONFIRMED_WINNER | SHARP | 3874 | 191 | 55% | +11.4% | +21.78 | 301 | 55.1% | +4.3% | +9267 | 20 | 5.5 | 1% |
 | 8d3672 | CONFIRMED_WINNER | SHARP | 12033 | 156 | 59.6% | +13.7% | +21.30 | 188 | 59% | +3.5% | +5231 | 5.7 | 0 | -1.3% |
 | e05213 | CONFIRMED_WINNER | ELITE | 531 | 15 | 73.3% | +40.5% | +6.08 | 40 | 60% | +9% | +152647 | 26.5 | 37.4 | 2.4% |
 | b05143 | CONFIRMED_WINNER | ELITE | 64 | 23 | 56.5% | +15.4% | +3.53 | 49 | 63.3% | +5.4% | +173229 | 28.8 | 14.2 | 1.1% |
 | 2dc4f6 | CONFIRMED_WINNER | SHARP | 2708 | 318 | 56% | +6.2% | +19.87 | 366 | 57.7% | +6.2% | +7755 | 33.3 | 25.2 | 1.8% |
 | 51176e | CONFIRMED_WINNER | ELITE | 171 | 400 | 52.3% | +3.4% | +13.61 | 468 | 54.1% | +6.6% | +67510 | 33.6 | 6.5 | 1.4% |
+| 3102d7 | CONFIRMED_WINNER | ELITE | 1375 | 123 | 55.3% | +14.4% | +17.69 | 193 | 52.3% | +11% | +16267 | 56.9 | 56.7 | 4.7% |
 | d633d1 | CONFIRMED_WINNER | ELITE | 325 | 10 | 60% | +26.5% | +2.65 | 19 | 68.4% | +32% | +163980 | 67.2 | 62.2 | 5.3% |
-| 3102d7 | CONFIRMED_WINNER | ELITE | 1347 | 121 | 55.4% | +14.4% | +17.40 | 191 | 52.4% | +10.9% | +16119 | 57.5 | 57.9 | 5.1% |
 | 4f821d | CONFIRMED_WINNER | ELITE | 197 | 29 | 48.3% | +5.2% | +1.51 | 49 | 46.9% | +12.6% | +173438 | 50 | 0 | 0% |
 | 7395c4 | CONFIRMED_WINNER | SHARP | 11774 | 24 | 58.3% | +74.1% | +17.78 | 27 | 55.6% | +37.4% | +9146 | 5.8 | 0 | -1.9% |
 | 4417bc | CONFIRMED_WINNER | SHARP | 7052 | 257 | 56% | +6.8% | +17.37 | 157 | 63.7% | +18.3% | +10035 | 40.9 | 43.1 | 3.2% |
 | d5017f | CONFIRMED_WINNER | ELITE | 427 | 31 | 48.4% | +2.3% | +0.72 | 82 | 46.3% | +12.7% | +172650 | 63.1 | 72.7 | 8.5% |
+| eca4ae | CONFIRMED_WINNER | SHARP | 8277 | 39 | 71.8% | +45.3% | +17.67 | 36 | 66.7% | +7.1% | +1894 | 59.5 | 72.9 | 7.6% |
 | aa9fb4 | CONFIRMED_WINNER | ELITE | 109 | 29 | 65.5% | +25.3% | +7.34 | 71 | 54.9% | +10.4% | +104322 | 23 | 0 | -0.5% |
-| cc63b8 | CONFIRMED_WINNER | SHARP | 1457 | 204 | 55.9% | +6.9% | +14.01 | 330 | 55.2% | +6.4% | +34488 | 30.2 | 13.7 | 1.5% |
 | 806c4a | CONFIRMED_WINNER | SHARP | 24783 | 31 | 74.2% | +47.4% | +14.69 | 40 | 72.5% | +33.6% | +25357 | 15.3 | 17.5 | 1.6% |
 | 2c5fde | CONFIRMED_WINNER | SHARP | 9243 | 125 | 60.8% | +12% | +15.03 | 158 | 63.9% | +7.3% | +20546 | 4.2 | 0 | -1.1% |
 | fd4653 | CONFIRMED_WINNER | SHARP | 10112 | 24 | 83.3% | +69.5% | +16.68 | 28 | 71.4% | +25% | +3951 | 57.3 | 75.4 | 8.4% |
 | c668b3 | CONFIRMED_WINNER | ELITE | 404 | 61 | 54.1% | +26.1% | +15.95 | 99 | 56.6% | +3.6% | +7467 | 11.6 | 17.8 | 1.2% |
-| b839b3 | CONFIRMED_WINNER | SHARP | 3874 | 189 | 54.5% | +8.4% | +15.85 | 299 | 54.8% | +3.8% | +8245 | 20 | 5.5 | 1% |
-| eca4ae | CONFIRMED_WINNER | SHARP | 8277 | 38 | 71.1% | +43.1% | +16.38 | 35 | 65.7% | +5.8% | +1516 | 59.6 | 73.4 | 7.6% |
+| cc63b8 | CONFIRMED_WINNER | SHARP | 1457 | 206 | 55.8% | +6.4% | +13.10 | 332 | 55.1% | +6.2% | +33465 | 27.4 | 9.4 | 1.2% |
 | 79c052 | CONFIRMED_WINNER | ELITE | 196 | 13 | 53.8% | +7.8% | +1.02 | 28 | 50% | +13% | +153441 | 71.6 | 62.7 | 5.3% |
+| 8a5c63 | CONFIRMED_WINNER | ELITE | 635 | 3 | 100% | +15.2% | +0.46 | 5 | 100% | +17.8% | +157217 | 47 | 35.3 | 2.7% |
 | 4ab0f8 | CONFIRMED_WINNER | SHARP | 3030 | 29 | 82.8% | +49.7% | +14.41 | 41 | 82.9% | +30.9% | +17674 | 49.3 | 50.8 | 3.9% |
 | c6c4d6 | CONFIRMED_WINNER | SHARP | 20166 | 79 | 67.1% | +20% | +15.77 | 148 | 67.6% | +1% | +1418 | 14.9 | 11.4 | 1.1% |
 | e54fcb | CONFIRMED_WINNER | ELITE | 565 | 11 | 54.5% | +8.6% | +0.94 | 44 | 63.6% | +30.9% | +146918 | 65.8 | 66.2 | 5.9% |
@@ -114,17 +114,17 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 268176 | CONFIRMED_WINNER | SHARP | 61862 | 9 | 77.8% | +160.1% | +14.41 | 12 | 83.3% | +2.7% | +174 | 0.7 | 0 | 0% |
 | 6b3269 | CONFIRMED_WINNER | SHARP | 301 | 19 | 68.4% | +59.8% | +11.37 | 20 | 60% | +19.2% | +30423 | 70.1 | 75.6 | 0.1% |
 | c772ae | CONFIRMED_WINNER | ELITE | 1113 | 33 | 60.6% | +19.3% | +6.37 | 46 | 67.4% | +36.4% | +76663 | 33 | 17.8 | 1.5% |
-| 01fb1a | CONFIRMED_WINNER | PROVEN | — | 197 | 52.8% | +6.1% | +11.95 | 354 | 48% | +2.6% | +18640 | 24.6 | 0.5 | 0.1% |
 | 5a3e7a | CONFIRMED_WINNER | SHARP | 3167 | 59 | 64.4% | +22.4% | +13.24 | 89 | 60.7% | +4.9% | +3529 | 20.1 | 4.7 | 0.7% |
 | 918f62 | CONFIRMED_WINNER | SHARP | 387 | 31 | 67.7% | +38.8% | +12.02 | 47 | 61.7% | +20.8% | +15280 | 53.9 | 53.2 | 4.1% |
-| f2d71d | CONFIRMED_WINNER | PROVEN | — | 46 | 50% | +24.8% | +11.39 | 71 | 53.5% | +40.1% | +21026 | 24 | 4.8 | 0.6% |
-| 0889ba | CONFIRMED_WINNER | SHARP | 9151 | 27 | 77.8% | +41.2% | +11.12 | 55 | 76.4% | +10.3% | +18619 | 6.8 | 0 | -0.5% |
+| 01fb1a | CONFIRMED_WINNER | PROVEN | — | 198 | 52.5% | +5.5% | +10.95 | 356 | 48% | +2.7% | +19028 | 26.2 | 2.4 | 0.2% |
 | 4a1eeb | CONFIRMED_WINNER | ELITE | 704 | 30 | 86.7% | +12.9% | +3.86 | 48 | 83.3% | +12.3% | +87278 | 52.1 | 44.3 | 3.4% |
+| f2d71d | CONFIRMED_WINNER | PROVEN | — | 47 | 48.9% | +22.1% | +10.39 | 72 | 52.8% | +40% | +20969 | 22.8 | 2.6 | 0.6% |
 | 3102c3 | CONFIRMED_WINNER | ELITE | 49 | 6 | 33.3% | +12.5% | +0.75 | 7 | 28.6% | +7.2% | +114343 | 79.5 | 75.1 | 9.1% |
 | 931964 | CONFIRMED_WINNER | ELITE | 963 | 15 | 53.3% | +62.1% | +9.32 | 19 | 52.6% | +23.6% | +26913 | 49.1 | 40.7 | 3% |
 | c19b3c | CONFIRMED_WINNER | ELITE | — | 3 | 66.7% | +19.2% | +0.58 | 18 | 66.7% | +65.1% | +113904 | 50 | 0 | -0.3% |
 | 182fef | CONFIRMED_WINNER | ELITE | 283 | 5 | 80% | +24.8% | +1.24 | 8 | 75% | +33.6% | +106657 | 82 | 87.5 | 14.1% |
 | fc0491 | CONFIRMED_WINNER | ELITE | 642 | 4 | 100% | +111.5% | +4.46 | 6 | 83.3% | +83.7% | +73828 | 81.2 | 93.3 | 22.6% |
+| 0889ba | CONFIRMED_WINNER | SHARP | 9151 | 28 | 75% | +36.1% | +10.12 | 56 | 75% | +9.4% | +17139 | 6.8 | 0 | -0.7% |
 | 42e7c7 | CONFIRMED_WINNER | SHARP | 391 | 17 | 88.2% | +66.1% | +11.24 | 22 | 68.2% | +3% | +4416 | 22.8 | 3.4 | 0.4% |
 | d66e28 | CONFIRMED_WINNER | SHARP | 7222 | 116 | 56.9% | +9.5% | +11.04 | 100 | 61% | +6.1% | +4184 | 9.6 | 3.4 | 0.6% |
 | d6b257 | CONFIRMED_WINNER | SHARP | 239 | 27 | 66.7% | +37.7% | +10.19 | 26 | 65.4% | +45.4% | +12367 | 82.5 | 91 | 17.1% |
@@ -133,7 +133,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | e11302 | CONFIRMED_WINNER | SHARP | 37682 | 59 | 59.3% | +16.4% | +9.65 | 87 | 60.9% | +18.5% | +9348 | 52.6 | 74 | 7.8% |
 | 472ee7 | CONFIRMED_WINNER | SHARP | 13278 | 3 | 100% | +345.3% | +10.36 | 3 | 100% | +16.7% | +1832 | 46.1 | 62.2 | 5.2% |
 | 7cf76a | CONFIRMED_WINNER | ELITE | 922 | 3 | 100% | +275.2% | +8.26 | 3 | 100% | +12.6% | +19491 | 51.6 | 45 | 3.3% |
-| 653a9d | CONFIRMED_WINNER | SHARP | 9439 | 40 | 80% | +23% | +9.19 | 57 | 77.2% | +14.4% | +6849 | 14.7 | 4.7 | 0.9% |
+| 653a9d | CONFIRMED_WINNER | SHARP | 9439 | 41 | 80.5% | +22.6% | +9.28 | 58 | 77.6% | +14.4% | +6882 | 15.4 | 5.6 | 1% |
 | 8e0aa1 | CONFIRMED_WINNER | ELITE | 890 | 6 | 50% | +27.8% | +1.67 | 12 | 75% | +138.2% | +80948 | 11.5 | 0 | -0.2% |
 | 7ce829 | CONFIRMED_WINNER | SHARP | 332 | 22 | 77.3% | +38.2% | +8.39 | 31 | 71% | +20.2% | +13487 | 16.9 | 0 | -0.9% |
 | 332c23 | CONFIRMED_WINNER | ELITE | 881 | 22 | 81.8% | +20.8% | +4.58 | 66 | 81.8% | +6.1% | +50603 | 22.6 | 2.5 | 0.2% |
@@ -142,6 +142,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 62941a | CONFIRMED_WINNER | SHARP | 3531 | 194 | 52.1% | +4.6% | +8.86 | 238 | 52.9% | +3.1% | +4118 | 10.4 | 0 | -0.1% |
 | 74fd47 | CONFIRMED_WINNER | ELITE | 1451 | 7 | 100% | +41.3% | +2.89 | 15 | 100% | +37.4% | +63160 | 21.6 | 2.7 | 0.6% |
 | 91718b | CONFIRMED_WINNER | SHARP | 51074 | 16 | 68.8% | +53.7% | +8.59 | 21 | 71.4% | +21.4% | +6128 | 42.6 | 63 | 4.9% |
+| 2cbcf8 | CONFIRMED_WINNER | ELITE | — | 103 | 51.5% | +2.7% | +2.77 | 158 | 51.9% | +7.4% | +62681 | 50 | 0 | -0.5% |
 | 04709e | CONFIRMED_WINNER | ELITE | 1348 | 4 | 100% | +139% | +5.56 | 5 | 100% | +215.6% | +34396 | 83.3 | 99.5 | 56.8% |
 | 99059d | CONFIRMED_WINNER | ELITE | 270 | 7 | 71.4% | +112.4% | +7.87 | 8 | 62.5% | +1.5% | +10673 | 68.9 | 85.3 | 16% |
 | 90617d | CONFIRMED_WINNER | ELITE | 1452 | 56 | 55.4% | +14% | +7.85 | 99 | 50.5% | +6.3% | +10132 | 31.9 | 17.1 | 1.5% |
@@ -150,26 +151,25 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 1ee9c5 | CONFIRMED_WINNER | ELITE | 449 | 5 | 60% | +21.2% | +1.06 | 8 | 75% | +59.9% | +75982 | 71.5 | 79.1 | 9.4% |
 | e70853 | CONFIRMED_WINNER | ELITE | 75 | 18 | 61.1% | +7.5% | +1.35 | 59 | 57.6% | +3.4% | +72939 | 41.5 | 22.4 | 1.5% |
 | 30935c | CONFIRMED_WINNER | ELITE | — | 32 | 59.4% | +26.4% | +8.46 | 53 | 62.3% | +1.1% | +1136 | 21.3 | 4.5 | 0.7% |
+| c4d2b1 | CONFIRMED_WINNER | SHARP | 350 | 9 | 88.9% | +35.4% | +3.19 | 12 | 91.7% | +17.1% | +51959 | 17.3 | 0 | -0.8% |
 | b0d23a | CONFIRMED_WINNER | SHARP | 13910 | 11 | 63.6% | +57.5% | +6.32 | 18 | 55.6% | +34% | +19728 | 5 | 0 | -4.8% |
 | 4f5ac7 | CONFIRMED_WINNER | ELITE | 794 | 7 | 57.1% | +4.3% | +0.30 | 16 | 62.5% | +55.4% | +79561 | 79.6 | 92.9 | 20.6% |
 | 5ad542 | CONFIRMED_WINNER | ELITE | 1086 | 16 | 68.8% | +40.3% | +6.45 | 19 | 63.2% | +10.7% | +16572 | 51.7 | 46.5 | 2.9% |
+| 415b58 | CONFIRMED_WINNER | SHARP | 268 | 3 | 66.7% | +41.7% | +1.25 | 7 | 71.4% | +60.9% | +68093 | 72.3 | 73.3 | 8% |
+| 199296 | CONFIRMED_WINNER | ELITE | 1413 | 92 | 54.3% | +4.3% | +3.97 | 140 | 58.6% | +32.6% | +39781 | 36.8 | 23.8 | 1.9% |
 | 95618e | CONFIRMED_WINNER | ELITE | 179 | 16 | 62.5% | +38.3% | +6.12 | 65 | 53.8% | +6.8% | +18002 | 68.2 | 55.3 | 4.3% |
-| 2cbcf8 | CONFIRMED_WINNER | ELITE | — | 102 | 51% | +1.7% | +1.72 | 157 | 51.6% | +7.3% | +61526 | 50 | 0 | -0.5% |
 | 2d024e | CONFIRMED_WINNER | ELITE | 756 | 7 | 71.4% | +54.5% | +3.82 | 14 | 50% | +3.9% | +40194 | 50 | 0 | -0.3% |
 | 94aadd | CONFIRMED_WINNER | SHARP | 2683 | 55 | 54.5% | +11% | +6.05 | 56 | 53.6% | +36.2% | +16969 | 19.6 | 4 | 0.8% |
 | 4a7808 | CONFIRMED_WINNER | SHARP | 5194 | 8 | 75% | +92% | +7.36 | 9 | 66.7% | +5.2% | +2490 | 48.4 | 55.6 | 4.4% |
-| c4d2b1 | CONFIRMED_WINNER | SHARP | 350 | 8 | 87.5% | +38.8% | +3.10 | 11 | 90.9% | +20.2% | +45036 | 23.4 | 2.7 | 0.3% |
 | e51246 | CONFIRMED_WINNER | SHARP | 2096 | 51 | 58.8% | +11.7% | +5.96 | 82 | 61% | +10.4% | +15815 | 12 | 0 | 0% |
 | d780f4 | CONFIRMED_WINNER | SHARP | 332 | 143 | 53.1% | +4.9% | +7.07 | 209 | 49.3% | +2% | +4491 | 30 | 9.4 | 1.3% |
 | cf8a59 | CONFIRMED_WINNER | SHARP | 46399 | 24 | 66.7% | +30.8% | +7.39 | 38 | 57.9% | +4.3% | +925 | 1.2 | 0 | -1.6% |
 | 980077 | CONFIRMED_WINNER | ELITE | 788 | 14 | 64.3% | +32.2% | +4.51 | 9 | 66.7% | +15.4% | +29099 | 17.7 | 2.7 | 1.7% |
-| cdc76f | CONFIRMED_WINNER | SHARP | 4924 | 41 | 65.9% | +16.1% | +6.62 | 56 | 58.9% | +13.8% | +7427 | 30.1 | 23.9 | 1.9% |
 | 45232f | CONFIRMED_WINNER | ELITE | 1175 | 54 | 55.6% | +9.1% | +4.94 | 76 | 61.8% | +22% | +22353 | 41.1 | 28.8 | 2.1% |
 | f9f262 | CONFIRMED_WINNER | SHARP | 9752 | 28 | 60.7% | +19.6% | +5.48 | 38 | 60.5% | +27.1% | +16303 | 18.9 | 13.6 | 1.3% |
 | 0d443f | CONFIRMED_WINNER | SHARP | 337 | 22 | 63.6% | +25.4% | +5.60 | 24 | 58.3% | +27.4% | +14872 | 52.3 | 49.7 | 4.2% |
 | 533c67 | CONFIRMED_WINNER | SHARP | 438 | 19 | 57.9% | +34.5% | +6.56 | 31 | 54.8% | +4% | +3763 | 15.2 | 0 | -4.4% |
 | 7d6465 | CONFIRMED_WINNER | SHARP | 9917 | 15 | 73.3% | +41.8% | +6.26 | 13 | 76.9% | +72.5% | +6209 | 49.3 | 76.5 | 8.4% |
-| 199296 | CONFIRMED_WINNER | ELITE | 1413 | 91 | 53.8% | +3.2% | +2.92 | 139 | 58.3% | +32.3% | +39169 | 36.8 | 23.8 | 1.9% |
 | bbaa3a | CONFIRMED_WINNER | SHARP | 295 | 23 | 60.9% | +19.8% | +4.54 | 37 | 64.9% | +23.4% | +22795 | 14.7 | 0 | -0.8% |
 | a7a9cc | CONFIRMED_WINNER | ELITE | 114 | 9 | 55.6% | +35.1% | +3.16 | 19 | 63.2% | +11.4% | +35828 | 45.4 | 63.2 | 5.9% |
 | d5de59 | CONFIRMED_WINNER | SHARP | 2852 | 14 | 57.1% | +37% | +5.17 | 22 | 68.2% | +68.5% | +15494 | 15.8 | 2 | 0.5% |
@@ -177,7 +177,8 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 0642b9 | CONFIRMED_WINNER | ELITE | 1297 | 20 | 60% | +24.1% | +4.82 | 25 | 52% | +29.5% | +17670 | 75.2 | 91.7 | 18.7% |
 | fec67e | CONFIRMED_WINNER | ELITE | — | 8 | 87.5% | +67% | +5.36 | 31 | 54.8% | +8.4% | +11709 | 55.8 | 84.6 | 15.4% |
 | 42af9e | CONFIRMED_WINNER | SHARP | 7878 | 14 | 71.4% | +46.2% | +6.47 | 25 | 68% | +2% | +225 | 15.5 | 7.2 | 1.1% |
-| 60606b | CONFIRMED_WINNER | SHARP | 9708 | 28 | 85.7% | +18.5% | +5.18 | 29 | 82.8% | +20.7% | +11500 | 33.7 | 35.5 | 2.5% |
+| 60606b | CONFIRMED_WINNER | SHARP | 9708 | 29 | 86.2% | +18.1% | +5.26 | 30 | 83.3% | +19.7% | +11935 | 34.5 | 36.4 | 2.5% |
+| cdc76f | CONFIRMED_WINNER | SHARP | 4924 | 42 | 64.3% | +13.4% | +5.62 | 57 | 57.9% | +13.3% | +7194 | 31.8 | 26.2 | 2% |
 | 03c168 | CONFIRMED_WINNER | SHARP | 176977 | 7 | 100% | +84.3% | +5.90 | 7 | 100% | +31.4% | +4273 | 59 | 98.3 | 46% |
 | 4b80f8 | CONFIRMED_WINNER | SHARP | 27832 | 3 | 100% | +205.7% | +6.17 | 4 | 75% | +34% | +1530 | 63.4 | 95.3 | 24.6% |
 | 5c2194 | CONFIRMED_WINNER | ELITE | 1225 | 105 | 54.3% | +5.5% | +5.76 | 152 | 54.6% | +4.8% | +5130 | 32.7 | 15.6 | 1.3% |
@@ -193,7 +194,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 0b0329 | CONFIRMED_WINNER | ELITE | 465 | 9 | 44.4% | +23.7% | +2.13 | 13 | 53.8% | +118.9% | +33772 | 44.5 | 66.6 | 6.2% |
 | af178e | CONFIRMED_WINNER | SHARP | 34605 | 5 | 100% | +106.4% | +5.32 | 6 | 83.3% | +61.7% | +1869 | 3.9 | 2.5 | 0.6% |
 | e3a2c3 | CONFIRMED_WINNER | SHARP | 53925 | 17 | 64.7% | +31.5% | +5.35 | 29 | 65.5% | +13.1% | +1208 | 0.7 | 0 | -8.4% |
-| 241915 | CONFIRMED_WINNER | SHARP | 5449 | 8 | 75% | +67.6% | +5.41 | 19 | 57.9% | +7.7% | +522 | 17.2 | 4 | 0.9% |
 | 579e12 | CONFIRMED_WINNER | SHARP | 254 | 390 | 52.1% | +1% | +3.96 | 549 | 52.8% | +2.3% | +13855 | 20.5 | 0 | -0.7% |
 | d6d290 | CONFIRMED_WINNER | SHARP | 40332 | 3 | 100% | +98.2% | +2.95 | 3 | 100% | +84.9% | +23618 | 58.5 | 90.2 | 17% |
 | 0fc767 | CONFIRMED_WINNER | SHARP | 389 | 21 | 57.1% | +24.3% | +5.11 | 37 | 56.8% | +5.8% | +2006 | 26.9 | 8.6 | 1.1% |
@@ -205,7 +205,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 4a752c | CONFIRMED_WINNER | ELITE | 72 | 6 | 66.7% | +17.9% | +1.07 | 7 | 57.1% | +25.8% | +40012 | 65.5 | 54 | 4.2% |
 | 3fc89d | CONFIRMED_WINNER | SHARP | 63774 | 20 | 55% | +24.9% | +4.97 | 21 | 57.1% | +23.7% | +733 | 36.5 | 55.9 | 3.7% |
 | 64411a | CONFIRMED_WINNER | ELITE | 311 | 36 | 52.8% | +8% | +2.89 | 52 | 53.8% | +6.6% | +21228 | 78.3 | 81.8 | 10.6% |
-| ae0200 | CONFIRMED_WINNER | SHARP | 312 | 19 | 68.4% | +8% | +1.53 | 23 | 78.3% | +32% | +34323 | 18.4 | 0 | -0.7% |
 | df510b | CONFIRMED_WINNER | SHARP | 43125 | 22 | 59.1% | +20% | +4.40 | 28 | 60.7% | +43.2% | +5382 | 17.8 | 25.6 | 2% |
 | 67afc3 | CONFIRMED_WINNER | SHARP | 2559 | 15 | 66.7% | +31.6% | +4.75 | 30 | 56.7% | +1.7% | +1227 | 11.5 | 0 | -0.7% |
 | 2e8da5 | CONFIRMED_WINNER | ELITE | 599 | 28 | 53.6% | +13.4% | +3.76 | 53 | 58.5% | +0.7% | +10880 | 39.8 | 34.8 | 2.4% |
@@ -235,12 +234,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 43907e | CONFIRMED_WINNER | SHARP | 7143 | 10 | 70% | +36.7% | +3.67 | 16 | 62.5% | +7.2% | +1968 | 39.5 | 45.2 | 3.2% |
 | ee60d6 | CONFIRMED_WINNER | SHARP | 10505 | 9 | 66.7% | +27.5% | +2.48 | 10 | 60% | +31.1% | +13721 | 63.4 | 86.3 | 13.8% |
 | 0dfb9b | CONFIRMED_WINNER | ELITE | 1419 | 10 | 60% | +27.2% | +2.72 | 13 | 69.2% | +42.6% | +10608 | 49.4 | 45.3 | 3.3% |
-| f7c21b | CONFIRMED_WINNER | SHARP | 37526 | 38 | 81.6% | +7.7% | +2.91 | 46 | 82.6% | +17.3% | +6719 | 5.3 | 3.4 | 0.4% |
-| 65d9ac | CONFIRMED_WINNER | SHARP | 15000 | 10 | 100% | +20.8% | +2.08 | 12 | 100% | +20.8% | +14913 | 42.6 | 50.8 | 3.9% |
+| 65d9ac | CONFIRMED_WINNER | SHARP | 15000 | 11 | 100% | +19.7% | +2.16 | 13 | 100% | +19.4% | +15981 | 43.2 | 51.2 | 4.1% |
+| ae0200 | CONFIRMED_WINNER | SHARP | 312 | 20 | 65% | +2.6% | +0.53 | 24 | 75% | +29% | +31828 | 18.4 | 0 | -0.7% |
+| f7c21b | CONFIRMED_WINNER | SHARP | 37526 | 38 | 81.6% | +7.7% | +2.91 | 47 | 83% | +17.6% | +6858 | 5.3 | 3.4 | 0.4% |
 | 4f814c | CONFIRMED_WINNER | SHARP | 3608 | 64 | 57.8% | +5.1% | +3.29 | 36 | 69.4% | +37.3% | +2521 | 7.1 | 0 | -1.4% |
 | 78e8f1 | CONFIRMED_WINNER | ELITE | 142 | 35 | 45.7% | +8.7% | +3.06 | 56 | 30.4% | +0.3% | +4701 | 61.4 | 57.7 | 4.9% |
 | 958882 | CONFIRMED_WINNER | ELITE | — | 11 | 63.6% | +26.4% | +2.91 | 16 | 50% | +4.7% | +5949 | 50 | 0 | -0.2% |
 | efb5a7 | CONFIRMED_WINNER | SHARP | 6622 | 6 | 83.3% | +58.1% | +3.49 | 5 | 80% | +0.2% | +7 | 10.9 | 4.9 | 0.8% |
+| 241915 | CONFIRMED_WINNER | SHARP | 5449 | 10 | 60% | +34.1% | +3.41 | 21 | 52.4% | +3.4% | +244 | 17.2 | 4.1 | 0.9% |
 | 7dbea3 | CONFIRMED_WINNER | SHARP | 2024 | 15 | 60% | +15.8% | +2.37 | 28 | 60.7% | +8.5% | +10184 | 11.2 | 0 | -3.1% |
 | 24994f | CONFIRMED_WINNER | SHARP | 13416 | 12 | 75% | +26.9% | +3.23 | 21 | 76.2% | +7.5% | +928 | 39.4 | 50.1 | 3.7% |
 | 295976 | CONFIRMED_WINNER | SHARP | 35869 | 3 | 100% | +107.2% | +3.22 | 7 | 71.4% | +24.3% | +1008 | 36.7 | 55.2 | 4.2% |
@@ -248,7 +249,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 5589e8 | CONFIRMED_WINNER | SHARP | 308 | 5 | 80% | +45.1% | +2.25 | 11 | 63.6% | +15.5% | +10388 | 73.4 | 80.3 | 9.8% |
 | 390f9a | CONFIRMED_WINNER | ELITE | 1374 | 7 | 71.4% | +42.9% | +3.01 | 14 | 57.1% | +51.3% | +2097 | 41.9 | 39.5 | 2.7% |
 | 75371b | CONFIRMED_WINNER | ELITE | 1211 | 17 | 58.8% | +15.8% | +2.69 | 22 | 68.2% | +5% | +5279 | 22.6 | 5.2 | 0.9% |
-| 70be3f | CONFIRMED_WINNER | SHARP | 267 | 61 | 50.8% | +2.9% | +1.75 | 248 | 51.6% | +4.8% | +14360 | 19.6 | 0 | -0.5% |
 | 6da2b4 | CONFIRMED_WINNER | SHARP | 8850 | 4 | 50% | +60% | +2.40 | 5 | 60% | +112.4% | +7467 | 57.2 | 74.4 | 7.9% |
 | d3948b | CONFIRMED_WINNER | ELITE | 209 | 101 | 54.5% | +2.7% | +2.68 | 146 | 47.9% | +2.4% | +3842 | 63.3 | 55.5 | 4.4% |
 | f17ece | CONFIRMED_WINNER | SHARP | 2159 | 3 | 66.7% | +47.2% | +1.42 | 3 | 66.7% | +61.6% | +16062 | 42.3 | 41.7 | 3.3% |
@@ -256,7 +256,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 4a9953 | CONFIRMED_WINNER | ELITE | 426 | 3 | 66.7% | +38.8% | +1.16 | 9 | 66.7% | +33.9% | +17997 | 34.5 | 51.1 | 3.9% |
 | 239b65 | CONFIRMED_WINNER | SHARP | 5933 | 6 | 83.3% | +41.3% | +2.48 | 5 | 80% | +97.6% | +4758 | 25.3 | 17.5 | 1.6% |
 | 1e462e | CONFIRMED_WINNER | SHARP | 423 | 35 | 57.1% | +6.3% | +2.19 | 78 | 60.3% | +11.5% | +7337 | 17.7 | 2.3 | 0.7% |
-| 4dd3c7 | CONFIRMED_WINNER | ELITE | 1123 | 17 | 58.8% | +15.6% | +2.66 | 20 | 60% | +8% | +2347 | 62.3 | 63.8 | 5.5% |
 | b69900 | CONFIRMED_WINNER | SHARP | 29339 | 8 | 62.5% | +22.7% | +1.81 | 7 | 71.4% | +56.3% | +10795 | 56 | 86.1 | 13.2% |
 | ffa0f3 | CONFIRMED_WINNER | SHARP | 57655 | 5 | 80% | +47.2% | +2.36 | 11 | 90.9% | +41.4% | +5137 | 0.4 | 0 | -4.3% |
 | 0f7795 | CONFIRMED_WINNER | SHARP | 26821 | 13 | 61.5% | +21.7% | +2.81 | 41 | 53.7% | +2.7% | +313 | 8.7 | 7.1 | 0.9% |
@@ -266,6 +265,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | a62792 | CONFIRMED_WINNER | SHARP | 402 | 4 | 75% | +36.1% | +1.45 | 6 | 66.7% | +92% | +13324 | 71.9 | 81.2 | 10.9% |
 | 46eedb | CONFIRMED_WINNER | ELITE | 1230 | 3 | 66.7% | +25.7% | +0.77 | 8 | 62.5% | +38.9% | +19881 | 43.1 | 32.8 | 2.4% |
 | 7b136b | CONFIRMED_WINNER | SHARP | 7187 | 10 | 70% | +22.3% | +2.23 | 18 | 66.7% | +41.2% | +5024 | 19.1 | 9.4 | 1.2% |
+| 2d9192 | CONFIRMED_WINNER | SHARP | 424 | 23 | 52.2% | +9.6% | +2.20 | 40 | 57.5% | +11.4% | +4903 | 34.8 | 23.9 | 1.9% |
 | def183 | CONFIRMED_WINNER | SHARP | 56523 | 4 | 75% | +64.9% | +2.59 | 3 | 100% | +50.9% | +466 | 13.9 | 20 | 1.6% |
 | 42014a | CONFIRMED_WINNER | SHARP | 341 | 5 | 80% | +46.1% | +2.31 | 12 | 75% | +31.2% | +3193 | 31.7 | 8.9 | 1.1% |
 | 18e2a0 | CONFIRMED_WINNER | ELITE | 1281 | 4 | 75% | +52.5% | +2.10 | 6 | 100% | +12.1% | +4773 | 23.7 | 3.2 | 0.7% |
@@ -279,6 +279,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 7fbc38 | CONFIRMED_WINNER | SHARP | 26110 | 3 | 66.7% | +68.3% | +2.05 | 4 | 50% | +65.4% | +2112 | 58.3 | 91.9 | 18.6% |
 | 2b7a69 | CONFIRMED_WINNER | SHARP | 374 | 49 | 53.1% | +0.7% | +0.34 | 124 | 37.9% | +27.3% | +19004 | 35.7 | 19.3 | 1.1% |
 | d54715 | CONFIRMED_WINNER | SHARP | 19537 | 5 | 100% | +42.9% | +2.15 | 6 | 100% | +23.4% | +443 | 2 | 0 | -0.8% |
+| 70be3f | CONFIRMED_WINNER | SHARP | 267 | 62 | 50% | +1.2% | +0.75 | 251 | 51.4% | +4.8% | +14355 | 19.6 | 0 | -0.5% |
 | 3fe770 | CONFIRMED_WINNER | SHARP | 343 | 3 | 66.7% | +42.7% | +1.28 | 5 | 80% | +71.3% | +8866 | 45.6 | 38.1 | 2.9% |
 | 63672a | CONFIRMED_WINNER | SHARP | 8116 | 4 | 75% | +46.7% | +1.87 | 21 | 52.4% | +9.8% | +2874 | 21.6 | 15.6 | 1.5% |
 | 55b8be | CONFIRMED_WINNER | SHARP | 54167 | 4 | 100% | +36% | +1.44 | 11 | 90.9% | +25.6% | +6943 | 0.4 | 0 | -0.5% |
@@ -299,7 +300,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 59ec66 | CONFIRMED_WINNER | SHARP | 27632 | 6 | 66.7% | +27% | +1.62 | 8 | 50% | +11.1% | +1494 | 38.8 | 55.5 | 5.4% |
 | 46824b | CONFIRMED_WINNER | SHARP | 6877 | 25 | 48% | +6.9% | +1.72 | 28 | 57.1% | +0.2% | +66 | 22.1 | 16 | 1.4% |
 | 7dec7d | CONFIRMED_WINNER | SHARP | 12064 | 3 | 100% | +30.1% | +0.90 | 4 | 100% | +36% | +7476 | 30 | 31.1 | 2.3% |
-| eba48d | CONFIRMED_WINNER | SHARP | 10389 | 6 | 50% | +11.8% | +0.71 | 7 | 57.1% | +14.6% | +9029 | 67.7 | 95.9 | 27.8% |
 | 88e90f | CONFIRMED_WINNER | SHARP | 11997 | 4 | 75% | +38.2% | +1.53 | 4 | 75% | +47% | +355 | 42.2 | 53.2 | 4.1% |
 | 57c7bb | CONFIRMED_WINNER | SHARP | 77846 | 3 | 100% | +50.9% | +1.53 | 4 | 75% | +7.3% | +289 | 46.2 | 76.2 | 8.5% |
 | 4cc7f1 | CONFIRMED_WINNER | SHARP | 24056 | 7 | 42.9% | +13.7% | +0.96 | 16 | 50% | +27.4% | +5884 | 56.3 | 85.1 | 12.3% |
@@ -315,7 +315,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | dc406e | CONFIRMED_WINNER | SHARP | 7825 | 5 | 60% | +26.9% | +1.34 | 6 | 50% | +6.4% | +275 | 70.9 | 98 | 43.6% |
 | 3b3e28 | CONFIRMED_WINNER | SHARP | 22333 | 3 | 100% | +30.9% | +0.93 | 5 | 100% | +37.6% | +4356 | 3.4 | 0 | -0.3% |
 | afcaf7 | CONFIRMED_WINNER | ELITE | 1346 | 26 | 53.8% | +1.4% | +0.36 | 52 | 48.1% | +11.5% | +9397 | 67.2 | 73.8 | 8% |
-| 2d9192 | CONFIRMED_WINNER | SHARP | 424 | 22 | 50% | +4.1% | +0.91 | 39 | 56.4% | +9.1% | +3823 | 32.8 | 21.5 | 1.6% |
 | bf1aaf | CONFIRMED_WINNER | ELITE | 1284 | 13 | 76.9% | +4% | +0.52 | 15 | 73.3% | +13.2% | +7626 | 44.7 | 37.6 | 2.6% |
 | e25b13 | CONFIRMED_WINNER | SHARP | 39437 | 11 | 81.8% | +6.8% | +0.74 | 13 | 84.6% | +24.8% | +3872 | 1.8 | 0 | 0% |
 | fe2383 | CONFIRMED_WINNER | SHARP | 11412 | 3 | 100% | +35.1% | +1.05 | 3 | 100% | +26% | +772 | 50.7 | 72.4 | 9.7% |
@@ -323,9 +322,9 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 66d4d1 | CONFIRMED_WINNER | SHARP | 63758 | 5 | 60% | +16.3% | +0.81 | 7 | 71.4% | +53.4% | +1955 | 36.8 | 59.7 | 4.7% |
 | f3bf3a | CONFIRMED_WINNER | SHARP | 21561 | 7 | 57.1% | +6.5% | +0.46 | 12 | 58.3% | +5.4% | +4623 | 9.7 | 5.5 | 1% |
 | e95547 | CONFIRMED_WINNER | SHARP | 6509 | 3 | 66.7% | +26.7% | +0.80 | 3 | 100% | +33.6% | +1017 | 58.1 | 73.3 | 7.6% |
+| 0cebbc | CONFIRMED_WINNER | SHARP | 31027 | 5 | 100% | +15.8% | +0.79 | 5 | 100% | +17.5% | +1034 | 2.5 | 0 | -1.5% |
 | dfbdea | CONFIRMED_WINNER | SHARP | 381 | 6 | 66.7% | +9.5% | +0.57 | 6 | 66.7% | +18.3% | +3001 | 43 | 35.7 | 2.6% |
 | 40ac40 | CONFIRMED_WINNER | SHARP | 7600 | 4 | 50% | +17.5% | +0.70 | 6 | 50% | +16.7% | +1170 | 6.9 | 0 | -1.3% |
-| 0cebbc | CONFIRMED_WINNER | SHARP | 31027 | 4 | 100% | +17.5% | +0.70 | 4 | 100% | +18% | +1002 | 2.5 | 0 | -1.5% |
 | 666f49 | CONFIRMED_WINNER | SHARP | 148 | 6 | 50% | +3.8% | +0.23 | 7 | 57.1% | +11.2% | +5592 | 22.2 | 0 | -3.5% |
 | ec43b4 | CONFIRMED_WINNER | SHARP | 3546 | 5 | 60% | +11.8% | +0.59 | 5 | 60% | +11.5% | +1463 | 61.8 | 83 | 11.5% |
 | f0b756 | CONFIRMED_WINNER | SHARP | 29544 | 3 | 100% | +23.4% | +0.70 | 3 | 100% | +23.3% | +216 | 3.3 | 0.8 | 0.3% |
@@ -353,12 +352,10 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | eff402 | POSITIONS_ONLY_POSITIVE | ELITE | 130 | 0 | — | — | +0.00 | 3 | 100% | +94.6% | +194542 | — | — | — |
 | a9e5f3 | POSITIONS_ONLY_POSITIVE | ELITE | 161 | 0 | — | — | +0.00 | 5 | 60% | +37.1% | +194194 | — | — | — |
 | 7b9ccf | POSITIONS_ONLY_POSITIVE | ELITE | 166 | 2 | 100% | +67.7% | +1.35 | 4 | 75% | +10.7% | +149146 | 76.8 | 77.7 | 9.8% |
-| 8a5c63 | POSITIONS_ONLY_POSITIVE | ELITE | 933 | 2 | 100% | +18.5% | +0.37 | 4 | 100% | +20.5% | +139932 | 35.1 | 17.5 | 1.6% |
 | 570ae7 | POSITIONS_ONLY_POSITIVE | ELITE | 297 | 2 | 100% | +186.5% | +3.73 | 4 | 50% | +16.5% | +87189 | 56.1 | 41.7 | 3.1% |
 | c5fefa | POSITIONS_ONLY_POSITIVE | ELITE | 268 | 1 | 100% | +69% | +0.69 | 3 | 33.3% | +36.7% | +84642 | 57.2 | 69.7 | 7.7% |
 | e6bde0 | POSITIONS_ONLY_POSITIVE | ELITE | 543 | 1 | 0% | -100% | -1.00 | 3 | 66.7% | +54.6% | +87698 | 31.8 | 24.1 | 1.6% |
 | f3ec43 | POSITIONS_ONLY_POSITIVE | ELITE | 67 | 0 | — | — | +0.00 | 8 | 62.5% | +32.6% | +73824 | — | — | — |
-| 415b58 | POSITIONS_ONLY_POSITIVE | SHARP | 408 | 2 | 50% | -1.9% | -0.04 | 6 | 66.7% | +59.4% | +65193 | 75 | 81.8 | 11% |
 | 67fd63 | POSITIONS_ONLY_POSITIVE | ELITE | 43 | 0 | — | — | +0.00 | 3 | 66.7% | +40.8% | +52085 | — | — | — |
 | 8cdee1 | POSITIONS_ONLY_POSITIVE | ELITE | 860 | 1 | 100% | +261% | +2.61 | 7 | 42.9% | +52.5% | +19206 | 42.9 | 32.5 | 2.2% |
 | 11bf5d | POSITIONS_ONLY_POSITIVE | ELITE | 272 | 1 | 100% | +315% | +3.15 | 3 | 33.3% | +42% | +11300 | 31.6 | 38.5 | 2.4% |
@@ -436,8 +433,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 0c04a3 | POSITIONS_ONLY_POSITIVE | ELITE | 569 | 0 | — | — | +0.00 | 12 | 50% | +12.7% | +36 | — | — | — |
 | 55d7a7 | POSITIONS_ONLY_POSITIVE | SHARP | 7754 | 2 | 50% | -5.4% | -0.11 | 3 | 33.3% | +35.5% | +1100 | 27.2 | 36 | 2.4% |
 | c71ce4 | POSITIONS_ONLY_POSITIVE | PROVEN | — | 1 | 0% | -100% | -1.00 | 3 | 66.7% | +31.9% | +9378 | 14.1 | 21.8 | 1.4% |
-| c585b1 | POSITIONS_ONLY_POSITIVE | ELITE | 292 | 2 | 50% | -10% | -0.20 | 6 | 50% | +9.5% | +690 | 49.7 | 32.6 | 2.3% |
-| af9367 | POSITIONS_ONLY_POSITIVE | ELITE | 642 | 1 | 0% | -100% | -1.00 | 50 | 60% | +3.1% | +7890 | 84.7 | 96.1 | 28.3% |
 | c3f547 | POSITIONS_ONLY_POSITIVE | SHARP | 26486 | 1 | 0% | -100% | -1.00 | 4 | 25% | +105.5% | +6047 | 42.8 | 63.5 | 5.4% |
 | fffc82 | POSITIONS_ONLY_POSITIVE | SHARP | 5804 | 1 | 0% | -100% | -1.00 | 6 | 50% | +32.6% | +5642 | 34.5 | 40.7 | 2.1% |
 | ff8f18 | POSITIONS_ONLY_POSITIVE | SHARP | 21837 | 2 | 50% | -40.9% | -0.82 | 7 | 71.4% | +16.6% | +3709 | 3.1 | 0 | 0% |
@@ -448,6 +443,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | f42de3 | POSITIONS_ONLY_POSITIVE | SHARP | 13452 | 1 | 0% | -100% | -1.00 | 3 | 66.7% | +35.5% | +2770 | 24.7 | 31.4 | 2.2% |
 | e2e904 | POSITIONS_ONLY_POSITIVE | SHARP | 6635 | 1 | 0% | -100% | -1.00 | 3 | 66.7% | +61.9% | +2703 | 29.2 | 29.1 | 2.1% |
 | 48d6ee | POSITIONS_ONLY_POSITIVE | SHARP | 15343 | 1 | 0% | -100% | -1.00 | 5 | 80% | +15.1% | +2385 | 50.7 | 68.3 | 6% |
+| af9367 | POSITIONS_ONLY_POSITIVE | ELITE | 642 | 1 | 0% | -100% | -1.00 | 51 | 58.8% | +0.8% | +2228 | 84.7 | 96.1 | 28.3% |
 | e45bd2 | POSITIONS_ONLY_POSITIVE | SHARP | 4185 | 1 | 0% | -100% | -1.00 | 3 | 66.7% | +21.7% | +249 | 27.2 | 22.4 | 1.8% |
 | b329dc | POSITIONS_ONLY_POSITIVE | SHARP | 31776 | 1 | 0% | -100% | -1.00 | 3 | 33.3% | +4.2% | +125 | 16.8 | 22.3 | 1.8% |
 | 154dea | POSITIONS_ONLY_POSITIVE | ELITE | — | 1 | 0% | -100% | -1.00 | 3 | 33.3% | +0.1% | +1 | 6.7 | 8.1 | 0.6% |
@@ -455,30 +451,32 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | d1ed2b | POSITIONS_ONLY_POSITIVE | SHARP | 1734 | 2 | 0% | -100% | -2.00 | 13 | 23.1% | +14.4% | +2135 | 40 | 33.2 | 2.3% |
 | fe044a | POSITIONS_ONLY_POSITIVE | SHARP | 25330 | 2 | 0% | -100% | -2.00 | 3 | 33.3% | +67.3% | +1215 | 3.2 | 0 | -0.7% |
 | 12c933 | MIXED_PICKS_GOOD_$_BAD | ELITE | 565 | 18 | 77.8% | +202.6% | +36.47 | 39 | 61.5% | -1.5% | -2722 | 44.8 | 31.8 | 2.3% |
-| 487b8b | MIXED_PICKS_GOOD_$_BAD | PROVEN | — | 499 | 55.5% | +7.2% | +36.02 | 1026 | 54.4% | -1.4% | -6690 | 50 | 0 | -1.2% |
 | c9bba3 | MIXED_PICKS_GOOD_$_BAD | ELITE | 21 | 102 | 55.9% | +37.1% | +37.89 | 219 | 53.9% | -0.5% | -28120 | 0 | 0 | -2.7% |
-| fe18eb | MIXED_PICKS_GOOD_$_BAD | SHARP | 19404 | 39 | 79.5% | +61.6% | +24.02 | 49 | 75.5% | -9.6% | -2525 | 4 | 0 | -1.1% |
-| 2a3180 | MIXED_PICKS_GOOD_$_BAD | SHARP | 1498 | 10 | 80% | +122.4% | +12.24 | 17 | 64.7% | -2.2% | -405 | 50 | 0 | 1.5% |
+| 487b8b | MIXED_PICKS_GOOD_$_BAD | PROVEN | — | 500 | 55.4% | +7% | +35.02 | 1027 | 54.3% | -1.4% | -6727 | 50 | 0 | -1.2% |
+| fe18eb | MIXED_PICKS_GOOD_$_BAD | SHARP | 19404 | 41 | 80.5% | +61.9% | +25.39 | 51 | 76.5% | -6.9% | -1892 | 4.1 | 0 | -0.5% |
+| 2a3180 | MIXED_PICKS_GOOD_$_BAD | SHARP | 1498 | 11 | 81.8% | +112% | +12.32 | 18 | 66.7% | -0.2% | -42 | 32.2 | 17.5 | 1.6% |
 | 67fe71 | MIXED_PICKS_GOOD_$_BAD | SHARP | 16473 | 14 | 57.1% | +86.6% | +12.12 | 30 | 53.3% | -19% | -765 | 4.5 | 0 | -0.7% |
 | bf28eb | MIXED_PICKS_GOOD_$_BAD | SHARP | 425 | 80 | 57.5% | +15.2% | +12.17 | 128 | 53.1% | -1.4% | -1967 | 22.3 | 4 | 0.6% |
 | 718cd6 | MIXED_PICKS_GOOD_$_BAD | ELITE | 960 | 54 | 61.1% | +24.1% | +13.02 | 68 | 50% | -4.1% | -10939 | 20.8 | 3.6 | 0.6% |
 | 04c524 | MIXED_PICKS_GOOD_$_BAD | SHARP | 61575 | 107 | 58.9% | +11.1% | +11.86 | 168 | 58.9% | -1.6% | -2437 | 0.6 | 0 | -1.7% |
 | 041aea | MIXED_PICKS_GOOD_$_BAD | SHARP | 16200 | 109 | 58.7% | +10.7% | +11.70 | 235 | 54.9% | -1.2% | -1255 | 4.4 | 0 | -0.7% |
+| f10782 | MIXED_PICKS_GOOD_$_BAD | SHARP | 7500 | 23 | 43.5% | +53% | +12.18 | 33 | 45.5% | -14.6% | -7030 | 8 | 0 | 0% |
 | cf55b8 | MIXED_PICKS_GOOD_$_BAD | SHARP | 441 | 28 | 82.1% | +45.5% | +12.74 | 34 | 76.5% | -14.3% | -22151 | 15.4 | 0 | -2.6% |
 | 59f0d4 | MIXED_PICKS_GOOD_$_BAD | ELITE | 1443 | 8 | 62.5% | +128.1% | +10.25 | 9 | 66.7% | -11.4% | -3485 | 31.3 | 15.8 | 1.5% |
-| 41ce5c | MIXED_PICKS_GOOD_$_BAD | ELITE | 1051 | 10 | 70% | +107.1% | +10.71 | 14 | 50% | -36.2% | -10255 | 34.8 | 17.5 | 1.6% |
+| 41ce5c | MIXED_PICKS_GOOD_$_BAD | ELITE | 1021 | 11 | 72.7% | +98.2% | +10.80 | 15 | 53.3% | -33.5% | -10095 | 35 | 17.5 | 1.6% |
 | 2e259c | MIXED_PICKS_GOOD_$_BAD | SHARP | 163 | 122 | 53.3% | +9% | +11.00 | 178 | 55.6% | -5% | -16949 | 21.4 | 0 | -3.6% |
 | 99a3d8 | MIXED_PICKS_GOOD_$_BAD | SHARP | 10962 | 5 | 100% | +186.2% | +9.31 | 8 | 75% | -26.6% | -5770 | 61.2 | 81.3 | 10.7% |
 | b46680 | MIXED_PICKS_GOOD_$_BAD | SHARP | 25804 | 8 | 87.5% | +106.7% | +8.54 | 12 | 75% | -3.7% | -509 | 63.5 | 97.7 | 38.3% |
 | 6a3364 | MIXED_PICKS_GOOD_$_BAD | SHARP | 5117 | 13 | 53.8% | +66.2% | +8.60 | 17 | 52.9% | -9.7% | -2845 | 17 | 5.5 | 1% |
-| b77626 | MIXED_PICKS_GOOD_$_BAD | SHARP | 22894 | 128 | 55.5% | +6.5% | +8.37 | 168 | 56.5% | -0.7% | -1226 | 3.4 | 0 | -0.4% |
 | 92df91 | MIXED_PICKS_GOOD_$_BAD | ELITE | 243 | 37 | 62.2% | +27.1% | +10.03 | 55 | 52.7% | -25.4% | -18208 | 41.7 | 42.5 | 2.9% |
 | e8eb95 | MIXED_PICKS_GOOD_$_BAD | SHARP | 7813 | 45 | 62.2% | +19.3% | +8.68 | 18 | 55.6% | -30.2% | -5277 | 5.4 | 1.5 | 0.1% |
 | 353a6c | MIXED_PICKS_GOOD_$_BAD | SHARP | 7896 | 20 | 75% | +41.3% | +8.26 | 29 | 75.9% | -9.9% | -3535 | 26.5 | 27.5 | 2.1% |
 | 7a4cdf | MIXED_PICKS_GOOD_$_BAD | ELITE | 414 | 58 | 63.8% | +26.3% | +15.24 | 109 | 54.1% | -8.4% | -75215 | 50 | 0 | -1% |
+| 7fea7c | MIXED_PICKS_GOOD_$_BAD | SHARP | 25708 | 3 | 100% | +254.1% | +7.62 | 3 | 66.7% | -0.3% | -6 | 3.2 | 0 | -0.6% |
 | 60db79 | MIXED_PICKS_GOOD_$_BAD | SHARP | 2919 | 13 | 69.2% | +59% | +7.68 | 16 | 75% | -5.3% | -3971 | 21.8 | 7.6 | 1% |
 | c65a1c | MIXED_PICKS_GOOD_$_BAD | SHARP | 1481 | 25 | 64% | +31.9% | +7.97 | 44 | 54.5% | -22.7% | -8797 | 55.9 | 58 | 4.6% |
 | 35dd0f | MIXED_PICKS_GOOD_$_BAD | SHARP | 3705 | 9 | 66.7% | +92.5% | +8.33 | 13 | 69.2% | -38.2% | -12460 | 37.5 | 36.9 | 2.6% |
+| b77626 | MIXED_PICKS_GOOD_$_BAD | SHARP | 22894 | 129 | 55% | +5.7% | +7.37 | 169 | 56.2% | -1.9% | -3226 | 3.5 | 0 | -0.6% |
 | 685aed | MIXED_PICKS_GOOD_$_BAD | SHARP | 19937 | 3 | 66.7% | +236.1% | +7.08 | 5 | 80% | -5.9% | -752 | 29.7 | 39.7 | 2.8% |
 | e55973 | MIXED_PICKS_GOOD_$_BAD | SHARP | 4636 | 94 | 61.7% | +8.2% | +7.70 | 86 | 61.6% | -6.5% | -9680 | 9.8 | 0 | -2.3% |
 | 3d3b21 | MIXED_PICKS_GOOD_$_BAD | SHARP | 5297 | 33 | 66.7% | +20.2% | +6.68 | 44 | 56.8% | -11.6% | -716 | 13.1 | 1.4 | 0.4% |
@@ -490,7 +488,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 655cc8 | MIXED_PICKS_GOOD_$_BAD | ELITE | 1225 | 51 | 54.9% | +12.7% | +6.46 | 73 | 53.4% | -2.1% | -3762 | 30 | 12.4 | 1.2% |
 | 4edc5b | MIXED_PICKS_GOOD_$_BAD | ELITE | 115 | 49 | 61.2% | +15.6% | +7.62 | 71 | 64.8% | -2.4% | -15671 | 50 | 0 | -2.5% |
 | 8b0e4c | MIXED_PICKS_GOOD_$_BAD | SHARP | 9689 | 53 | 58.5% | +11.3% | +5.99 | 127 | 55.1% | -3% | -3816 | 6.6 | 0 | -1% |
-| f10782 | MIXED_PICKS_GOOD_$_BAD | SHARP | 7500 | 21 | 38.1% | +29.8% | +6.25 | 31 | 41.9% | -17.5% | -8247 | 8 | 0 | 0% |
 | 1e8f33 | MIXED_PICKS_GOOD_$_BAD | ELITE | 264 | 201 | 54.2% | +5.5% | +11.06 | 335 | 51% | -2.3% | -57956 | 51.3 | 56.5 | 4.7% |
 | e34527 | MIXED_PICKS_GOOD_$_BAD | ELITE | 386 | 7 | 100% | +115.6% | +8.09 | 16 | 68.8% | -17.8% | -29528 | 32.9 | 9.1 | 1.1% |
 | 533820 | MIXED_PICKS_GOOD_$_BAD | SHARP | 50661 | 20 | 65% | +25.9% | +5.19 | 28 | 64.3% | -3.9% | -1684 | 45.1 | 63.7 | 5.8% |
@@ -500,6 +497,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 32e3ca | MIXED_PICKS_GOOD_$_BAD | SHARP | 239 | 12 | 91.7% | +40.8% | +4.90 | 18 | 72.2% | -7.5% | -3624 | 19.9 | 0 | -0.4% |
 | b09ba2 | MIXED_PICKS_GOOD_$_BAD | SHARP | 29329 | 17 | 76.5% | +24.9% | +4.23 | 24 | 75% | -3.4% | -1041 | 50.4 | 69.6 | 6.6% |
 | b41d90 | MIXED_PICKS_GOOD_$_BAD | SHARP | 9002 | 8 | 62.5% | +57.2% | +4.58 | 11 | 36.4% | -74.8% | -5391 | 8.5 | 2.7 | 0.2% |
+| ccc63a | MIXED_PICKS_GOOD_$_BAD | SHARP | 13424 | 7 | 57.1% | +58.5% | +4.09 | 32 | 50% | -10% | -858 | 8.3 | 2 | 1% |
 | 705ba1 | MIXED_PICKS_GOOD_$_BAD | ELITE | 11 | 341 | 51.6% | +3.2% | +10.77 | 271 | 50.9% | -0.4% | -67936 | 50 | 0 | -1.4% |
 | 1aef79 | MIXED_PICKS_GOOD_$_BAD | ELITE | 1011 | 18 | 61.1% | +51.8% | +9.32 | 36 | 36.1% | -26.8% | -54948 | 21.1 | 0.6 | 0.2% |
 | f2f960 | MIXED_PICKS_GOOD_$_BAD | ELITE | 88 | 165 | 55.2% | +5.4% | +8.88 | 276 | 49.6% | -8.2% | -50958 | 67.4 | 49.6 | 3.7% |
@@ -514,10 +512,9 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 89298f | MIXED_PICKS_GOOD_$_BAD | SHARP | 13766 | 10 | 60% | +28.3% | +2.83 | 16 | 56.3% | -1.8% | -642 | 5 | 0 | -2.7% |
 | 27a618 | MIXED_PICKS_GOOD_$_BAD | SHARP | 251 | 7 | 71.4% | +40.1% | +2.81 | 11 | 72.7% | -4.2% | -2142 | 73.7 | 84.6 | 12.3% |
 | 5f4c6c | MIXED_PICKS_GOOD_$_BAD | SHARP | 7123 | 3 | 100% | +88.1% | +2.64 | 5 | 60% | -26.6% | -938 | 27.3 | 23.4 | 1.8% |
+| 4dd3c7 | MIXED_PICKS_GOOD_$_BAD | ELITE | 1123 | 17 | 58.8% | +15.6% | +2.66 | 21 | 57.1% | -4.8% | -1580 | 62.3 | 63.8 | 5.5% |
 | 7d395d | MIXED_PICKS_GOOD_$_BAD | ELITE | 566 | 438 | 51.8% | +1.4% | +6.00 | 564 | 52.3% | -3.2% | -36197 | 37.6 | 19.3 | 1.8% |
 | 6f67bc | MIXED_PICKS_GOOD_$_BAD | SHARP | 9620 | 10 | 50% | +22.9% | +2.29 | 37 | 45.9% | -25.5% | -1317 | 8.5 | 2.4 | 0.3% |
-| 326f79 | MIXED_PICKS_GOOD_$_BAD | SHARP | 24063 | 20 | 60% | +11.2% | +2.24 | 24 | 45.8% | -9% | -1194 | 5.7 | 2 | 0.5% |
-| 2a4176 | MIXED_PICKS_GOOD_$_BAD | SHARP | 19728 | 20 | 60% | +11.2% | +2.24 | 24 | 45.8% | -9.8% | -1300 | 8.8 | 5.5 | 1% |
 | 61526f | MIXED_PICKS_GOOD_$_BAD | ELITE | 1210 | 30 | 60% | +20.2% | +6.05 | 52 | 53.8% | -11.1% | -40139 | 26.8 | 5.8 | 0.9% |
 | c698b9 | MIXED_PICKS_GOOD_$_BAD | ELITE | 888 | 6 | 66.7% | +34.6% | +2.08 | 25 | 52% | -1% | -661 | 55.5 | 55.7 | 4.9% |
 | 9c0e0c | MIXED_PICKS_GOOD_$_BAD | SHARP | 18332 | 3 | 66.7% | +68.8% | +2.06 | 4 | 50% | -6.7% | -756 | 28.4 | 37 | 2.6% |
@@ -530,6 +527,8 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 6254a7 | MIXED_PICKS_GOOD_$_BAD | SHARP | 5573 | 9 | 55.6% | +33.5% | +3.01 | 17 | 64.7% | -23.8% | -17257 | 39.5 | 42.4 | 3% |
 | 1fa2d1 | MIXED_PICKS_GOOD_$_BAD | ELITE | 1081 | 8 | 62.5% | +19% | +1.52 | 7 | 71.4% | -3.9% | -4015 | 62.7 | 66.3 | 5.8% |
 | d5175d | MIXED_PICKS_GOOD_$_BAD | SHARP | 31647 | 3 | 66.7% | +43.3% | +1.30 | 4 | 75% | -9.3% | -1993 | 45.4 | 68.5 | 8% |
+| 326f79 | MIXED_PICKS_GOOD_$_BAD | SHARP | 24063 | 21 | 57.1% | +5.9% | +1.24 | 25 | 44% | -14.4% | -2025 | 5.7 | 2 | 0.5% |
+| 2a4176 | MIXED_PICKS_GOOD_$_BAD | SHARP | 19728 | 21 | 57.1% | +5.9% | +1.24 | 25 | 44% | -15.2% | -2131 | 8.8 | 5.5 | 1% |
 | c36c00 | MIXED_PICKS_GOOD_$_BAD | ELITE | 1276 | 27 | 55.6% | +12.3% | +3.33 | 44 | 50% | -12.9% | -23474 | 13.5 | 0 | -2.1% |
 | c82c23 | MIXED_PICKS_GOOD_$_BAD | SHARP | 71452 | 3 | 66.7% | +38% | +1.14 | 3 | 66.7% | -22% | -2326 | 37.9 | 60 | 6.1% |
 | 3273f9 | MIXED_PICKS_GOOD_$_BAD | SHARP | 3571 | 3 | 33.3% | +39% | +1.17 | 3 | 33.3% | -76.6% | -3025 | 10.5 | 0 | -0.7% |
@@ -538,10 +537,11 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 7972e4 | MIXED_PICKS_GOOD_$_BAD | SHARP | 58924 | 7 | 71.4% | +14% | +0.98 | 11 | 81.8% | -9.7% | -1663 | 4.6 | 4.7 | 0.7% |
 | 4597af | MIXED_PICKS_GOOD_$_BAD | SHARP | 31520 | 23 | 65.2% | +7% | +1.62 | 31 | 77.4% | -12% | -8943 | 1.4 | 0 | -3.1% |
 | 093ef8 | MIXED_PICKS_GOOD_$_BAD | SHARP | 9750 | 9 | 55.6% | +10.9% | +0.98 | 25 | 44% | -53.2% | -2575 | 6.5 | 0 | -1.2% |
-| 405fde | MIXED_PICKS_GOOD_$_BAD | SHARP | 2233 | 24 | 62.5% | +3.6% | +0.85 | 61 | 50.8% | -5.1% | -1848 | 55 | 57.7 | 4.7% |
+| 405fde | MIXED_PICKS_GOOD_$_BAD | SHARP | 2233 | 24 | 62.5% | +3.6% | +0.85 | 62 | 51.6% | -4.9% | -1761 | 55 | 57.7 | 4.7% |
 | e9563d | MIXED_PICKS_GOOD_$_BAD | SHARP | 4573 | 11 | 54.5% | +12.2% | +1.34 | 19 | 42.1% | -29.9% | -7734 | 42.6 | 44 | 3.2% |
 | a0f5f4 | MIXED_PICKS_GOOD_$_BAD | ELITE | 614 | 3 | 33.3% | +25% | +0.75 | 4 | 50% | -27.9% | -1841 | 39.4 | 23 | 1.8% |
 | 9d268e | MIXED_PICKS_GOOD_$_BAD | SHARP | 4403 | 8 | 62.5% | +7.6% | +0.61 | 15 | 53.3% | -4.9% | -890 | 62.4 | 77.1 | 9% |
+| eba48d | MIXED_PICKS_GOOD_$_BAD | SHARP | 10389 | 6 | 50% | +11.8% | +0.71 | 8 | 50% | -3.2% | -2304 | 67.7 | 95.9 | 27.8% |
 | bb3b57 | MIXED_PICKS_GOOD_$_BAD | SHARP | 16921 | 8 | 75% | +8.6% | +0.69 | 27 | 63% | -18.7% | -2211 | 26.8 | 33.2 | 2.3% |
 | 631f9d | MIXED_PICKS_GOOD_$_BAD | SHARP | 19130 | 3 | 66.7% | +27.5% | +0.83 | 6 | 33.3% | -28.8% | -4241 | 3 | 0 | -0.3% |
 | 5a3c66 | MIXED_PICKS_GOOD_$_BAD | SHARP | 7009 | 3 | 66.7% | +16.6% | +0.50 | 4 | 50% | -14.2% | -996 | 16.5 | 6.5 | 0.9% |
@@ -570,6 +570,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | ccd43c | MIXED_PICKS_GOOD_$_BAD | ELITE | 128 | 33 | 54.5% | +2% | +0.66 | 111 | 53.2% | -27.2% | -11640 | 44.5 | 13.2 | 1.3% |
 | b9eede | MIXED_PICKS_GOOD_$_BAD | ELITE | 1461 | 7 | 57.1% | +10.1% | +0.70 | 16 | 50% | -11.7% | -13463 | 48.1 | 44.1 | 3.4% |
 | 6e0eb4 | MIXED_PICKS_GOOD_$_BAD | SHARP | 198 | 9 | 55.6% | +8.3% | +0.75 | 17 | 41.2% | -22.5% | -14368 | 24.8 | 3.5 | 0.9% |
+| 0d51f3 | MIXED_PICKS_GOOD_$_BAD | SHARP | 272 | 3 | 66.7% | +2.9% | +0.09 | 5 | 60% | -98.3% | -9710 | 47.2 | 34 | 2.5% |
 | 6a7e77 | MIXED_PICKS_GOOD_$_BAD | ELITE | 277 | 5 | 100% | +199.5% | +9.98 | 8 | 87.5% | -8.4% | -109422 | 42.8 | 31.6 | 2.3% |
 | e3363f | MIXED_PICKS_GOOD_$_BAD | SHARP | 51749 | 7 | 85.7% | +16.9% | +1.18 | 20 | 60% | -14.1% | -26069 | 12.5 | 16 | 4.6% |
 | 40d814 | MIXED_PICKS_GOOD_$_BAD | ELITE | 193 | 117 | 52.1% | +1.6% | +1.89 | 216 | 48.6% | -7% | -34056 | 50 | 0 | -0.9% |
@@ -581,29 +582,30 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 786930 | MIXED_PICKS_GOOD_$_BAD | ELITE | 393 | 15 | 53.3% | +1.3% | +0.19 | 19 | 42.1% | -26.3% | -31457 | 71.2 | 72.8 | 7.2% |
 | b6bcf3 | MIXED_PICKS_GOOD_$_BAD | SHARP | — | 7 | 42.9% | +16.8% | +1.18 | 20 | 30% | -13.9% | -44094 | 50 | 0 | 45.6% |
 | 760be3 | MIXED_PICKS_GOOD_$_BAD | SHARP | 94 | 6 | 50% | +4.8% | +0.29 | 11 | 36.4% | -10.3% | -42976 | 18.8 | 0 | -4.4% |
-| bbd49f | MIXED_PICKS_GOOD_$_BAD | ELITE | 191 | 30 | 60% | +17.8% | +5.35 | 54 | 51.9% | -19.4% | -101945 | 50 | 0 | -0.4% |
 | 4fe4c4 | MIXED_PICKS_GOOD_$_BAD | ELITE | 1163 | 36 | 61.1% | +6.3% | +2.28 | 28 | 57.1% | -21.5% | -74180 | 9.4 | 0 | -2.7% |
-| 621848 | MIXED_PICKS_GOOD_$_BAD | ELITE | — | 272 | 52.6% | +1.6% | +4.24 | 411 | 50.6% | -10.4% | -96722 | 50 | 0 | -5.6% |
+| 621848 | MIXED_PICKS_GOOD_$_BAD | ELITE | — | 273 | 52.7% | +1.6% | +4.33 | 413 | 50.8% | -10.4% | -96354 | 50 | 0 | -5.6% |
 | 67285c | MIXED_PICKS_GOOD_$_BAD | ELITE | 372 | 4 | 75% | +45.7% | +1.83 | 5 | 60% | -29.5% | -72878 | 24.6 | 0 | -0.1% |
 | e8e2cc | MIXED_PICKS_GOOD_$_BAD | ELITE | 1434 | 303 | 51.2% | +1.7% | +5.27 | 397 | 50.4% | -6.9% | -112422 | 29.7 | 12.6 | -1.8% |
+| bbd49f | MIXED_PICKS_GOOD_$_BAD | ELITE | 191 | 31 | 58.1% | +14% | +4.35 | 55 | 50.9% | -20% | -105890 | 50 | 0 | -0.3% |
 | c29d59 | MIXED_PICKS_GOOD_$_BAD | ELITE | 231 | 10 | 80% | +12.7% | +1.27 | 14 | 78.6% | -10.9% | -89659 | 55.5 | 55.9 | 4.1% |
 | 63fc82 | MIXED_PICKS_GOOD_$_BAD | ELITE | 479 | 30 | 53.3% | +5.1% | +1.53 | 71 | 46.5% | -7.5% | -101614 | 37.4 | 57.6 | 4.8% |
 | e5da70 | MIXED_PICKS_GOOD_$_BAD | ELITE | 1190 | 18 | 50% | +26.1% | +4.70 | 17 | 41.2% | -38.4% | -136292 | 10.4 | 0 | -2.2% |
 | 162937 | MIXED_PICKS_GOOD_$_BAD | ELITE | — | 5 | 60% | +15.8% | +0.79 | 7 | 57.1% | -16.8% | -105648 | 0.2 | 0 | 0% |
-| 1a6136 | MIXED_PICKS_GOOD_$_BAD | ELITE | 860 | 113 | 59.3% | +2% | +2.26 | 164 | 57.9% | -10.2% | -121222 | 62.6 | 62.7 | 5.8% |
+| 1a6136 | MIXED_PICKS_GOOD_$_BAD | ELITE | 860 | 114 | 58.8% | +1.1% | +1.26 | 165 | 57.6% | -10.9% | -131522 | 62.6 | 62.7 | 5.8% |
 | 981187 | MIXED_PICKS_GOOD_$_BAD | ELITE | 109 | 20 | 55% | +5.9% | +1.17 | 17 | 52.9% | -4% | -140706 | 69.3 | 67.4 | 6.3% |
+| a9769e | MIXED_PICKS_GOOD_$_BAD | ELITE | 322 | 8 | 62.5% | +16.5% | +1.32 | 16 | 50% | -9% | -146856 | 83.8 | 93.6 | 22% |
+| a9bc8a | MIXED_PICKS_GOOD_$_BAD | ELITE | 283 | 11 | 81.8% | +6.3% | +0.69 | 13 | 76.9% | -14.3% | -152323 | 50 | 0 | -4.4% |
 | 143401 | MIXED_PICKS_GOOD_$_BAD | SHARP | 4917 | 25 | 64% | +3.2% | +0.80 | 39 | 56.4% | -29.3% | -153517 | 51.7 | 61.8 | 5.1% |
-| a9bc8a | MIXED_PICKS_GOOD_$_BAD | ELITE | 283 | 10 | 80% | +6.1% | +0.61 | 12 | 75% | -15.9% | -158704 | 50 | 0 | -4.8% |
 | c2aeea | MIXED_PICKS_GOOD_$_BAD | ELITE | 34 | 66 | 51.5% | +29.3% | +19.34 | 586 | 50.2% | -4% | -353847 | 50 | 0 | -1.9% |
 | f9bdb3 | MIXED_PICKS_GOOD_$_BAD | ELITE | 189 | 33 | 54.5% | +2.9% | +0.97 | 58 | 62.1% | -19% | -174733 | 36.1 | 11 | 1.2% |
+| d71233 | MIXED_PICKS_GOOD_$_BAD | ELITE | 318 | 13 | 38.5% | +0.8% | +0.10 | 17 | 35.3% | -44.1% | -172624 | 36.9 | 9.1 | 1.1% |
 | 4c9ada | MIXED_PICKS_GOOD_$_BAD | ELITE | 690 | 12 | 50% | +24.4% | +2.69 | 17 | 23.5% | -47.1% | -208839 | 28.4 | 40.3 | 2.7% |
 | 7cc9a7 | MIXED_PICKS_GOOD_$_BAD | ELITE | 305 | 196 | 52.6% | +0.5% | +0.92 | 329 | 52.9% | -4.6% | -192247 | 43.4 | 21 | 1.7% |
+| 755cfd | MIXED_PICKS_GOOD_$_BAD | SHARP | 339 | 40 | 52.5% | +3.9% | +1.55 | 69 | 46.4% | -15.4% | -198817 | 25.9 | 3.1 | 0.7% |
 | 59266e | MIXED_PICKS_GOOD_$_BAD | ELITE | 459 | 5 | 80% | +364.4% | +18.22 | 16 | 68.8% | -15.8% | -367820 | 15.6 | 22.5 | 1.5% |
 | 81db24 | MIXED_PICKS_GOOD_$_BAD | ELITE | 330 | 14 | 78.6% | +52.4% | +7.33 | 15 | 80% | -34.1% | -260765 | 17.8 | 0 | -4.8% |
 | 34fc99 | MIXED_PICKS_GOOD_$_BAD | SHARP | 42931 | 27 | 48.1% | +9.3% | +2.52 | 44 | 50% | -42.9% | -227152 | 1.4 | 0 | -17.1% |
-| d71233 | MIXED_PICKS_GOOD_$_BAD | ELITE | 318 | 13 | 38.5% | +0.8% | +0.10 | 16 | 31.3% | -57.8% | -208657 | 36.9 | 9.1 | 1.1% |
 | a8c991 | MIXED_PICKS_GOOD_$_BAD | ELITE | 23 | 15 | 53.3% | +9.7% | +1.46 | 37 | 51.4% | -15% | -237761 | 50 | 0 | -0.9% |
-| 755cfd | MIXED_PICKS_GOOD_$_BAD | SHARP | 339 | 39 | 51.3% | +1.3% | +0.50 | 68 | 45.6% | -18.4% | -231746 | 25.7 | 3.2 | 0.7% |
 | 5dc83b | MIXED_PICKS_GOOD_$_BAD | ELITE | 406 | 4 | 75% | +113.5% | +4.54 | 17 | 41.2% | -41.1% | -278678 | 13.7 | 18.7 | 1.3% |
 | 8da2ca | MIXED_PICKS_GOOD_$_BAD | ELITE | 302 | 20 | 55% | +83.4% | +16.68 | 26 | 46.2% | -12.5% | -411438 | 45.6 | 55.2 | 4.7% |
 | b8495f | MIXED_PICKS_GOOD_$_BAD | ELITE | 336 | 29 | 55.2% | +0.4% | +0.11 | 61 | 50.8% | -12.4% | -252398 | 58 | 47.5 | 3.6% |
@@ -615,11 +617,11 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | f2d227 | MIXED_PICKS_GOOD_$_BAD | ELITE | 35 | 91 | 56% | +6.8% | +6.22 | 158 | 51.9% | -8.7% | -639505 | 64.4 | 42.4 | 3% |
 | e077f1 | MIXED_PICKS_GOOD_$_BAD | ELITE | 239 | 22 | 50% | +1.9% | +0.41 | 32 | 37.5% | -45.8% | -586337 | 50 | 0 | -2.4% |
 | f9e3d0 | MIXED_PICKS_GOOD_$_BAD | ELITE | 444 | 33 | 66.7% | +29% | +9.58 | 73 | 65.8% | -23.9% | -806818 | 50 | 0 | -2.7% |
+| 3ac0ae | MIXED_PICKS_GOOD_$_BAD | ELITE | 338 | 5 | 60% | +27.7% | +1.38 | 11 | 36.4% | -58.3% | -784677 | 17.8 | 0 | -9.7% |
 | 57be17 | MIXED_PICKS_GOOD_$_BAD | ELITE | 155 | 6 | 33.3% | +70% | +4.20 | 43 | 34.9% | -35.8% | -870993 | 51.8 | 43.3 | 3.1% |
-| 3ac0ae | MIXED_PICKS_GOOD_$_BAD | ELITE | 338 | 5 | 60% | +27.7% | +1.38 | 10 | 30% | -79.4% | -948925 | 17.8 | 0 | -9.7% |
 | 43020b | MIXED_PICKS_GOOD_$_BAD | ELITE | 115 | 24 | 41.7% | +23.1% | +5.54 | 56 | 35.7% | -43.8% | -1037800 | 47.5 | 17.9 | 1.6% |
 | 84b2f4 | MIXED_PICKS_GOOD_$_BAD | ELITE | 547 | 6 | 50% | +67% | +4.02 | 20 | 45% | -48.5% | -1167152 | 25.2 | 20.5 | 1.4% |
-| e352a5 | MIXED_PICKS_GOOD_$_BAD | PROVEN | — | 46 | 58.7% | +11.7% | +5.38 | 173 | 57.2% | -30.5% | -1288288 | 50 | 0 | -0.5% |
+| e352a5 | MIXED_PICKS_GOOD_$_BAD | PROVEN | — | 47 | 59.6% | +11.6% | +5.47 | 174 | 57.5% | -30.4% | -1287329 | 50 | 0 | -0.5% |
 | cd2f63 | MIXED_PICKS_GOOD_$_BAD | SHARP | 10 | 1449 | 51.7% | +3.6% | +51.93 | 4244 | 51.3% | -4.5% | -1880984 | 50 | 0 | -2.8% |
 | 3db89e | MIXED_PICKS_GOOD_$_BAD | ELITE | 19 | 17 | 70.6% | +36.9% | +6.27 | 64 | 42.2% | -28.2% | -4389805 | 50 | 0 | -5.8% |
 | bd659a | INCONCLUSIVE | ELITE | 51 | 2 | 100% | +54.8% | +1.10 | 2 | 100% | +71.7% | +1516676 | 89.9 | 91.3 | 26.3% |
@@ -632,7 +634,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 3ed033 | INCONCLUSIVE | ELITE | 250 | 0 | — | — | +0.00 | 2 | 50% | +100.1% | +100086 | — | — | — |
 | 676762 | INCONCLUSIVE | ELITE | 409 | 1 | 100% | +57.1% | +0.57 | 1 | 100% | +58.7% | +93882 | 45.5 | 67.1 | 8.1% |
 | 7eac8a | INCONCLUSIVE | ELITE | 205 | 1 | 100% | +251% | +2.51 | 1 | 100% | +115.1% | +73928 | 91.9 | 96 | 31% |
-| 7fea7c | INCONCLUSIVE | SHARP | 25708 | 2 | 100% | +376.8% | +7.54 | 2 | 50% | -3.9% | -41 | 29.3 | 39.5 | 2.8% |
 | cd7624 | INCONCLUSIVE | ELITE | 416 | 1 | 100% | +251% | +2.51 | 1 | 100% | +127.9% | +47124 | 85.6 | 98 | 41.7% |
 | c8a525 | INCONCLUSIVE | SHARP | 7721 | 1 | 100% | +733% | +7.33 | 1 | 0% | -100% | -2450 | 55.3 | 67.9 | 6.3% |
 | 7efc21 | INCONCLUSIVE | ELITE | 215 | 1 | 100% | +120% | +1.20 | 1 | 100% | +132.6% | +56999 | 60.9 | 57.4 | 4.7% |
@@ -685,11 +686,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | f1a114 | INCONCLUSIVE | ELITE | — | 0 | — | — | +0.00 | 1 | 100% | +29% | +16791 | — | — | — |
 | dbe6b8 | INCONCLUSIVE | SHARP | 2183 | 2 | 100% | +30.7% | +0.61 | 2 | 100% | +32.5% | +10438 | 25 | 9.8 | 1.1% |
 | 0fb554 | INCONCLUSIVE | SHARP | 180 | 1 | 100% | +118% | +1.18 | 1 | 100% | +122.2% | +3968 | 17.8 | 0 | -0.2% |
+| a79b8d | INCONCLUSIVE | SHARP | 3576 | 1 | 100% | +105% | +1.05 | 1 | 100% | +108.3% | +5199 | 27.7 | 19.2 | 1.7% |
+| 3e4ae8 | INCONCLUSIVE | SHARP | 8808 | 1 | 100% | +105% | +1.05 | 1 | 100% | +108.3% | +5173 | 66.7 | 92.1 | 19.1% |
 | 5d44b2 | INCONCLUSIVE | SHARP | 6179 | 1 | 100% | +67.1% | +0.67 | 1 | 100% | +66.4% | +8667 | 66.2 | 79.3 | 3.7% |
 | d7d683 | INCONCLUSIVE | ELITE | 336 | 1 | 100% | +49.8% | +0.50 | 1 | 100% | +49.7% | +10176 | 56.2 | 47 | 3.4% |
 | 9b3dd3 | INCONCLUSIVE | SHARP | 28516 | 1 | 100% | +110% | +1.10 | 1 | 100% | +122.2% | +3654 | 0.8 | 0 | 0.1% |
 | 4b2e78 | INCONCLUSIVE | — | — | 1 | 100% | +146% | +1.46 | 0 | — | — | +0 | 56.5 | 86.6 | 14.4% |
 | 6f4108 | INCONCLUSIVE | ELITE | — | 1 | 100% | +90.9% | +0.91 | 1 | 100% | +96.1% | +5390 | 19 | 27.6 | 1.7% |
+| 5e471d | INCONCLUSIVE | SHARP | 3991 | 1 | 100% | +129% | +1.29 | 1 | 100% | +143.4% | +1444 | 22.3 | 9.4 | 1.2% |
 | ad79e0 | INCONCLUSIVE | SHARP | — | 0 | — | — | +0.00 | 1 | 100% | +194.1% | +14295 | — | — | — |
 | 490fb0 | INCONCLUSIVE | SHARP | 6555 | 2 | 100% | +76.6% | +1.53 | 2 | 50% | -27.1% | -1488 | 33.8 | 34.1 | 2.4% |
 | 9505ba | INCONCLUSIVE | SHARP | 3354 | 1 | 100% | +86.2% | +0.86 | 2 | 100% | +73.3% | +4968 | 22.4 | 9.8 | 1.1% |
@@ -735,6 +739,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 53b4de | INCONCLUSIVE | SHARP | 60454 | 1 | 100% | +42.6% | +0.43 | 1 | 100% | +42.9% | +1550 | 11.4 | 15.8 | 1.6% |
 | 22f1ea | INCONCLUSIVE | SHARP | 21261 | 1 | 100% | +57.5% | +0.57 | 2 | 50% | -4% | -33 | 56.9 | 83.6 | 13.1% |
 | b56789 | INCONCLUSIVE | SHARP | 1473 | 1 | 100% | +44.2% | +0.44 | 2 | 100% | +156.6% | +1126 | 45.3 | 49.1 | 3.8% |
+| 9bba45 | INCONCLUSIVE | SHARP | 4308 | 1 | 100% | +17.5% | +0.18 | 2 | 100% | +12% | +3368 | 56.6 | 64.8 | 5.7% |
 | 44e798 | INCONCLUSIVE | SHARP | 2314 | 1 | 100% | +45.5% | +0.45 | 1 | 100% | +45% | +514 | 44.1 | 42.4 | 3% |
 | 59ce1a | INCONCLUSIVE | SHARP | 3170 | 0 | — | — | +0.00 | 1 | 100% | +69.5% | +4920 | — | — | — |
 | 808c2b | INCONCLUSIVE | SHARP | 11498 | 1 | 100% | +36% | +0.36 | 1 | 100% | +35.3% | +1301 | 50 | 0 | -1% |
@@ -750,13 +755,13 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | e13911 | INCONCLUSIVE | SHARP | 6799 | 1 | 100% | +25.6% | +0.26 | 1 | 100% | +37% | +1350 | 16.8 | 5.6 | 1% |
 | 32b337 | INCONCLUSIVE | ELITE | 461 | 0 | — | — | +0.00 | 2 | 50% | +68.3% | +3865 | — | — | — |
 | 14cc59 | INCONCLUSIVE | ELITE | 1401 | 1 | 100% | +36% | +0.36 | 1 | 100% | +35.1% | +260 | 23.9 | 16.9 | 1.4% |
-| 9bba45 | INCONCLUSIVE | SHARP | 4308 | 1 | 100% | +17.5% | +0.18 | 1 | 100% | +16.3% | +1977 | 56.6 | 64.8 | 5.7% |
 | 43b7b3 | INCONCLUSIVE | SHARP | — | 0 | — | — | +0.00 | 1 | 100% | +177.9% | +3556 | — | — | — |
 | f3038d | INCONCLUSIVE | SHARP | 14668 | 1 | 100% | +26.5% | +0.27 | 2 | 100% | +31.3% | +781 | 36.2 | 47.7 | 3.4% |
 | 852c28 | INCONCLUSIVE | SHARP | 19007 | 1 | 100% | +27.9% | +0.28 | 2 | 100% | +14.4% | +675 | 12.4 | 9.4 | 1.2% |
 | cd0197 | INCONCLUSIVE | SHARP | 27339 | 1 | 100% | +27.9% | +0.28 | 1 | 100% | +26.6% | +372 | 21.6 | 31.1 | 2.4% |
 | fb1934 | INCONCLUSIVE | SHARP | 7855 | 2 | 100% | +15.1% | +0.30 | 2 | 100% | +18.8% | +130 | 43.6 | 63.8 | 5.4% |
 | da4534 | INCONCLUSIVE | — | 2497 | 1 | 100% | +30.8% | +0.31 | 0 | — | — | +0 | 13.8 | 1.8 | 0.2% |
+| 9249a2 | INCONCLUSIVE | SHARP | 18298 | 2 | 100% | +14.1% | +0.28 | 2 | 100% | +11.3% | +263 | 4.2 | 0 | -1.7% |
 | fbfb5b | INCONCLUSIVE | ELITE | 663 | 0 | — | — | +0.00 | 1 | 100% | +29.9% | +2987 | — | — | — |
 | ce682e | INCONCLUSIVE | SHARP | 24090 | 1 | 100% | +24.9% | +0.25 | 1 | 100% | +25% | +480 | 51 | 77.9 | 9.9% |
 | cfe2a4 | INCONCLUSIVE | SHARP | 5354 | 0 | — | — | +0.00 | 1 | 100% | +127.9% | +2945 | — | — | — |
@@ -769,13 +774,11 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | adb801 | INCONCLUSIVE | SHARP | 10749 | 0 | — | — | +0.00 | 1 | 100% | +132.6% | +2432 | — | — | — |
 | 3799fb | INCONCLUSIVE | SHARP | 7037 | 2 | 50% | -0.5% | -0.01 | 2 | 50% | +44.3% | +2343 | 65.2 | 85 | 14.2% |
 | 7fe607 | INCONCLUSIVE | SHARP | 4009 | 1 | 100% | +20.5% | +0.20 | 1 | 100% | +19% | +173 | 18.7 | 4.8 | 0.6% |
-| 9249a2 | INCONCLUSIVE | SHARP | 18298 | 1 | 100% | +19.6% | +0.20 | 1 | 100% | +22% | +99 | 4.1 | 0 | 6.8% |
 | 02ec34 | INCONCLUSIVE | SHARP | 24936 | 1 | 100% | +57.8% | +0.58 | 2 | 50% | -43.2% | -3734 | 1.9 | 0 | -1.1% |
 | 6f0620 | INCONCLUSIVE | SHARP | 39457 | 0 | — | — | +0.00 | 1 | 100% | +68.1% | +2046 | — | — | — |
 | 585f0f | INCONCLUSIVE | SHARP | 10269 | 2 | 50% | +9.5% | +0.19 | 2 | 50% | +17.8% | +79 | 41.7 | 53.4 | 4% |
 | 6a59ea | INCONCLUSIVE | SHARP | 17249 | 0 | — | — | +0.00 | 1 | 100% | +37% | +1863 | — | — | — |
 | 7969f2 | INCONCLUSIVE | SHARP | — | 0 | — | — | +0.00 | 1 | 100% | +72.1% | +1812 | — | — | — |
-| 248bf3 | INCONCLUSIVE | SHARP | 17336 | 0 | — | — | +0.00 | 1 | 100% | +29.9% | +1782 | — | — | — |
 | 420f4e | INCONCLUSIVE | SHARP | 40972 | 0 | — | — | +0.00 | 1 | 100% | +233.3% | +1633 | — | — | — |
 | 683c97 | INCONCLUSIVE | SHARP | 2054 | 0 | — | — | +0.00 | 1 | 100% | +81.8% | +1627 | — | — | — |
 | 5c7db2 | INCONCLUSIVE | SHARP | 16166 | 0 | — | — | +0.00 | 1 | 100% | +37% | +1620 | — | — | — |
@@ -786,6 +789,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 5ff8d2 | INCONCLUSIVE | SHARP | 389 | 0 | — | — | +0.00 | 2 | 100% | +72.9% | +1342 | — | — | — |
 | ff80e0 | INCONCLUSIVE | SHARP | 6421 | 0 | — | — | +0.00 | 2 | 100% | +37.7% | +1218 | — | — | — |
 | 8275fa | INCONCLUSIVE | SHARP | 70693 | 0 | — | — | +0.00 | 1 | 100% | +251.2% | +1198 | — | — | — |
+| 0b42c5 | INCONCLUSIVE | SHARP | 51432 | 1 | 100% | +8.6% | +0.09 | 1 | 100% | +8.7% | +280 | 56.8 | 89.9 | 27.9% |
 | 43729a | INCONCLUSIVE | SHARP | 19612 | 0 | — | — | +0.00 | 1 | 100% | +69.5% | +1112 | — | — | — |
 | e5029c | INCONCLUSIVE | SHARP | 5344 | 0 | — | — | +0.00 | 1 | 100% | +49.3% | +1101 | — | — | — |
 | 583ec2 | INCONCLUSIVE | ELITE | 450 | 0 | — | — | +0.00 | 2 | 100% | +468.8% | +1036 | — | — | — |
@@ -842,8 +846,10 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 5cdc6e | INCONCLUSIVE | ELITE | 1158 | 0 | — | — | +0.00 | 2 | 50% | -6.2% | -9 | — | — | — |
 | ca6c45 | INCONCLUSIVE | ELITE | 662 | 0 | — | — | +0.00 | 2 | 50% | -12.4% | -192 | — | — | — |
 | e246ce | INCONCLUSIVE | ELITE | 361 | 0 | — | — | +0.00 | 2 | 50% | -3% | -240 | — | — | — |
+| c0b0d5 | INCONCLUSIVE | SHARP | 12174 | 0 | — | — | +0.00 | 1 | 0% | -100% | -318 | — | — | — |
 | deca73 | INCONCLUSIVE | ELITE | — | 0 | — | — | +0.00 | 1 | 0% | -100% | -391 | — | — | — |
 | c3e9d4 | INCONCLUSIVE | SHARP | 12625 | 0 | — | — | +0.00 | 1 | 0% | -100% | -416 | — | — | — |
+| 4b0719 | INCONCLUSIVE | SHARP | 50715 | 0 | — | — | +0.00 | 1 | 0% | -100% | -453 | — | — | — |
 | 9c46f8 | INCONCLUSIVE | SHARP | 34357 | 0 | — | — | +0.00 | 1 | 0% | -100% | -480 | — | — | — |
 | 883b41 | INCONCLUSIVE | SHARP | 7307 | 0 | — | — | +0.00 | 1 | 0% | -100% | -500 | — | — | — |
 | e0dd18 | INCONCLUSIVE | SHARP | 15460 | 0 | — | — | +0.00 | 1 | 0% | -100% | -758 | — | — | — |
@@ -852,7 +858,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | bb4f65 | INCONCLUSIVE | SHARP | 50434 | 0 | — | — | +0.00 | 1 | 0% | -100% | -1000 | — | — | — |
 | 955820 | INCONCLUSIVE | SHARP | 46954 | 0 | — | — | +0.00 | 1 | 0% | -100% | -1002 | — | — | — |
 | 514f0c | INCONCLUSIVE | ELITE | 805 | 2 | 50% | +2% | +0.04 | 2 | 50% | -61.7% | -1610 | 31.8 | 11.6 | 1.2% |
-| 044af1 | INCONCLUSIVE | SHARP | 2444 | 0 | — | — | +0.00 | 2 | 50% | -33% | -1293 | — | — | — |
 | 460ebd | INCONCLUSIVE | ELITE | 720 | 0 | — | — | +0.00 | 2 | 0% | -100% | -1415 | — | — | — |
 | 7ee995 | INCONCLUSIVE | ELITE | 127 | 0 | — | — | +0.00 | 1 | 0% | -99.7% | -1432 | — | — | — |
 | b68591 | INCONCLUSIVE | SHARP | 388 | 0 | — | — | +0.00 | 1 | 0% | -100.1% | -1500 | — | — | — |
@@ -984,11 +989,13 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 757271 | INCONCLUSIVE | SHARP | 2258 | 1 | 0% | -100% | -1.00 | 1 | 0% | -100% | -7876 | 64.2 | 72.3 | 7.1% |
 | 47f064 | INCONCLUSIVE | SHARP | 4398 | 1 | 0% | -100% | -1.00 | 1 | 0% | -100% | -8381 | 57.8 | 69.5 | 6.7% |
 | a3fa3a | INCONCLUSIVE | SHARP | 7034 | 1 | 0% | -100% | -1.00 | 1 | 0% | -100% | -8570 | 59.3 | 81 | 15.1% |
+| b1a6da | INCONCLUSIVE | SHARP | 7473 | 1 | 0% | -100% | -1.00 | 1 | 0% | -100% | -8875 | 67.1 | 85.4 | 13.1% |
 | f08cd0 | INCONCLUSIVE | SHARP | 7145 | 1 | 0% | -100% | -1.00 | 1 | 0% | -100% | -9256 | 55.4 | 74.7 | 10.5% |
 | 86ce2a | INCONCLUSIVE | SHARP | 5592 | 1 | 0% | -100% | -1.00 | 1 | 0% | -100% | -10000 | 50 | 57.9 | 4.5% |
 | 8a9aa3 | INCONCLUSIVE | ELITE | 284 | 2 | 0% | -100% | -2.00 | 2 | 0% | -99.7% | -353 | 72.4 | 68.4 | 6.2% |
 | 676ac7 | INCONCLUSIVE | SHARP | — | 0 | — | — | +0.00 | 1 | 0% | -100% | -20400 | — | — | — |
 | c88be1 | INCONCLUSIVE | SHARP | 22730 | 2 | 0% | -100% | -2.00 | 2 | 0% | -100% | -601 | 41.8 | 54.3 | 4.3% |
+| 248bf3 | INCONCLUSIVE | SHARP | 17336 | 1 | 0% | -100% | -1.00 | 2 | 50% | -58.2% | -10768 | 40.2 | 55.5 | 4.4% |
 | 2e514a | INCONCLUSIVE | ELITE | 477 | 2 | 0% | -100% | -2.00 | 2 | 0% | -99.6% | -901 | 24.4 | 39.3 | 2.7% |
 | c9b255 | INCONCLUSIVE | SHARP | 13771 | 2 | 0% | -100% | -2.00 | 2 | 0% | -100% | -963 | 2.6 | 0 | -9.2% |
 | f99bb9 | INCONCLUSIVE | SHARP | 34877 | 2 | 0% | -100% | -2.00 | 1 | 0% | -100% | -1000 | 32.9 | 49.3 | 3.7% |
@@ -1048,7 +1055,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 4a0563 | MIXED_PICKS_BAD_$_GOOD | ELITE | 27 | 6 | 33.3% | -35.6% | -2.14 | 55 | 52.7% | +48.1% | +1644237 | 50.9 | 21.8 | 1.5% |
 | 7da3d5 | MIXED_PICKS_BAD_$_GOOD | ELITE | 6 | 459 | 48.1% | -2.6% | -12.00 | 732 | 48% | +6.8% | +1385929 | 24.9 | 0 | -1.3% |
 | b19a27 | MIXED_PICKS_BAD_$_GOOD | ELITE | 21 | 284 | 48.2% | -6.2% | -17.69 | 671 | 53.2% | +9.5% | +1185246 | 60.5 | 37.3 | 2.4% |
-| 388d4c | MIXED_PICKS_BAD_$_GOOD | ELITE | 49 | 50 | 38% | -12.7% | -6.36 | 157 | 43.9% | +26.5% | +591123 | 46.7 | 13.7 | 1.4% |
+| 388d4c | MIXED_PICKS_BAD_$_GOOD | ELITE | 50 | 51 | 39.2% | -11.4% | -5.80 | 162 | 45.1% | +26.6% | +594055 | 46.7 | 13.7 | 1.4% |
 | 3033ee | MIXED_PICKS_BAD_$_GOOD | ELITE | 1 | 9 | 33.3% | -34.5% | -3.10 | 17 | 52.9% | +45.5% | +552470 | 72.8 | 54.6 | 4.3% |
 | b35029 | MIXED_PICKS_BAD_$_GOOD | ELITE | 25 | 160 | 46.9% | -6.4% | -10.32 | 311 | 46.3% | +16.8% | +514906 | 78.2 | 64.8 | 5.7% |
 | c5cea1 | MIXED_PICKS_BAD_$_GOOD | ELITE | 40 | 9 | 33.3% | -32% | -2.88 | 14 | 71.4% | +51% | +429680 | 49.4 | 17.7 | 1.6% |
@@ -1060,7 +1067,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | bc8b21 | MIXED_PICKS_BAD_$_GOOD | ELITE | 21 | 10 | 40% | -6.2% | -0.62 | 36 | 38.9% | +34.4% | +224631 | 42 | 61.3 | 5.2% |
 | ff0abd | MIXED_PICKS_BAD_$_GOOD | ELITE | — | 7 | 28.6% | -11.3% | -0.79 | 62 | 38.7% | +27.1% | +210844 | 0.1 | 0 | 0% |
 | 461220 | MIXED_PICKS_BAD_$_GOOD | ELITE | 45 | 5 | 20% | -50% | -2.50 | 5 | 60% | +118.8% | +203665 | 88.7 | 88.3 | 18.4% |
-| 5ce139 | MIXED_PICKS_BAD_$_GOOD | ELITE | 349 | 111 | 52.3% | -1.6% | -1.72 | 178 | 52.8% | +13% | +190130 | 73.3 | 73.5 | 7.9% |
+| 5ce139 | MIXED_PICKS_BAD_$_GOOD | ELITE | 349 | 112 | 51.8% | -2.4% | -2.72 | 179 | 52.5% | +12.2% | +179930 | 73.3 | 73.5 | 7.9% |
 | 07152f | MIXED_PICKS_BAD_$_GOOD | ELITE | 526 | 56 | 53.6% | -0.2% | -0.12 | 51 | 52.9% | +4% | +134802 | 9.4 | 0 | -1.5% |
 | e06ffd | MIXED_PICKS_BAD_$_GOOD | ELITE | 128 | 56 | 50% | -1.9% | -1.09 | 80 | 53.8% | +7.2% | +132148 | 22.8 | 0 | -0.6% |
 | 4d2125 | MIXED_PICKS_BAD_$_GOOD | ELITE | 197 | 27 | 48.1% | -7% | -1.89 | 74 | 48.6% | +11.2% | +123705 | 34.3 | 17.4 | 1.2% |
@@ -1074,11 +1081,10 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 138d9b | MIXED_PICKS_BAD_$_GOOD | ELITE | 306 | 35 | 51.4% | -11.5% | -4.03 | 93 | 55.9% | +12.6% | +99387 | 52.1 | 35.4 | 2.5% |
 | 27ae49 | MIXED_PICKS_BAD_$_GOOD | ELITE | 326 | 66 | 48.5% | -1.3% | -0.86 | 58 | 48.3% | +6% | +62445 | 24.2 | 1.4 | 0.3% |
 | 77f662 | MIXED_PICKS_BAD_$_GOOD | ELITE | 75 | 3 | 33.3% | -31.3% | -0.94 | 17 | 35.3% | +2.9% | +60581 | 54 | 61.6 | 5.5% |
+| 9214c2 | MIXED_PICKS_BAD_$_GOOD | SHARP | 248 | 537 | 47.9% | -0.1% | -0.48 | 653 | 49.3% | +10% | +46888 | 29.7 | 5.5 | 1% |
 | f1a030 | MIXED_PICKS_BAD_$_GOOD | SHARP | 299 | 6 | 50% | -1.8% | -0.11 | 13 | 61.5% | +38.2% | +34819 | 58.5 | 58.5 | 4.7% |
 | 2ceb9a | MIXED_PICKS_BAD_$_GOOD | ELITE | 185 | 6 | 50% | -6.5% | -0.39 | 12 | 66.7% | +33.6% | +32546 | 73.8 | 70.9 | 6.9% |
 | b31fc6 | MIXED_PICKS_BAD_$_GOOD | ELITE | 34 | 10 | 40% | -15.9% | -1.59 | 20 | 50% | +8.2% | +38839 | 74.9 | 63 | 5.2% |
-| 9214c2 | MIXED_PICKS_BAD_$_GOOD | SHARP | 248 | 535 | 47.7% | -0.5% | -2.82 | 651 | 49.2% | +9.9% | +46180 | 29.7 | 5.5 | 1% |
-| df8add | MIXED_PICKS_BAD_$_GOOD | ELITE | — | 474 | 49.6% | -0.2% | -0.98 | 1093 | 48.1% | +2.3% | +23882 | 25.4 | 0.5 | 0.1% |
 | b74426 | MIXED_PICKS_BAD_$_GOOD | ELITE | 1006 | 23 | 47.8% | -1% | -0.23 | 31 | 58.1% | +14.4% | +12032 | 43.6 | 32.2 | 2.3% |
 | a155d6 | MIXED_PICKS_BAD_$_GOOD | SHARP | 16454 | 24 | 41.7% | -7% | -1.67 | 37 | 64.9% | +31.7% | +25809 | 4.5 | 0 | -4.8% |
 | a87a20 | MIXED_PICKS_BAD_$_GOOD | SHARP | 422 | 42 | 52.4% | -1.1% | -0.47 | 45 | 55.6% | +22.8% | +13514 | 63.3 | 67.7 | 6.1% |
@@ -1088,56 +1094,55 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 7676e9 | MIXED_PICKS_BAD_$_GOOD | SHARP | 214 | 34 | 47.1% | -7.1% | -2.40 | 42 | 47.6% | +5.6% | +29748 | 20.8 | 0 | -1.8% |
 | f9a112 | MIXED_PICKS_BAD_$_GOOD | SHARP | 429 | 9 | 55.6% | -8.9% | -0.80 | 9 | 55.6% | +26% | +13533 | 44.7 | 38.4 | 2.9% |
 | bfd591 | MIXED_PICKS_BAD_$_GOOD | SHARP | 19694 | 3 | 66.7% | -4.2% | -0.13 | 3 | 66.7% | +121.5% | +6741 | 56.8 | 82 | 11.2% |
-| 4b7df1 | MIXED_PICKS_BAD_$_GOOD | SHARP | 1666 | 27 | 59.3% | -5.6% | -1.51 | 47 | 53.2% | +11.1% | +20131 | 38.6 | 29.5 | 2.2% |
+| df8add | MIXED_PICKS_BAD_$_GOOD | ELITE | — | 475 | 49.5% | -0.4% | -1.98 | 1095 | 48.1% | +2.3% | +24451 | 50 | 0 | 0.1% |
 | b4cad6 | MIXED_PICKS_BAD_$_GOOD | ELITE | 523 | 13 | 46.2% | -1.5% | -0.19 | 19 | 31.6% | +13.1% | +6171 | 47.3 | 39.4 | 2.7% |
 | 06d0e4 | MIXED_PICKS_BAD_$_GOOD | ELITE | 643 | 3 | 33.3% | -8.3% | -0.25 | 14 | 28.6% | +121.5% | +5967 | 73.9 | 80.4 | 10.2% |
 | b70f9a | MIXED_PICKS_BAD_$_GOOD | ELITE | 161 | 15 | 60% | -2.9% | -0.43 | 22 | 54.5% | +11.9% | +7602 | 39.9 | 7.2 | 1.1% |
 | 5ba9c8 | MIXED_PICKS_BAD_$_GOOD | SHARP | 317 | 15 | 53.3% | -1.8% | -0.26 | 23 | 60.9% | +7.1% | +5881 | 32.3 | 8.9 | 1.1% |
-| 6ed057 | MIXED_PICKS_BAD_$_GOOD | SHARP | 314 | 4 | 50% | -9.8% | -0.39 | 4 | 50% | +75.9% | +7063 | 72.8 | 81.8 | 12.2% |
 | 5ca785 | MIXED_PICKS_BAD_$_GOOD | SHARP | 289 | 3 | 33.3% | -11.7% | -0.35 | 4 | 50% | +15.5% | +5859 | 80.7 | 91 | 17.2% |
 | c9212e | MIXED_PICKS_BAD_$_GOOD | ELITE | 1286 | 10 | 50% | -0.4% | -0.04 | 19 | 36.8% | +7.2% | +2371 | 42.9 | 34.3 | 2.5% |
-| aa738b | MIXED_PICKS_BAD_$_GOOD | SHARP | 4082 | 243 | 51.4% | -0.2% | -0.47 | 349 | 53% | +3.1% | +6320 | 10.4 | 0 | -0.2% |
 | c89324 | MIXED_PICKS_BAD_$_GOOD | SHARP | 6021 | 9 | 44.4% | -1.3% | -0.12 | 15 | 60% | +19.3% | +2770 | 5.9 | 0 | -1% |
 | d6f5ee | MIXED_PICKS_BAD_$_GOOD | SHARP | 9777 | 10 | 40% | -3.7% | -0.37 | 9 | 44.4% | +49% | +5197 | 4 | 0 | -4.8% |
+| aa738b | MIXED_PICKS_BAD_$_GOOD | SHARP | 4082 | 243 | 51.4% | -0.2% | -0.47 | 351 | 52.7% | +2.7% | +5566 | 10.4 | 0 | -0.2% |
 | c91c58 | MIXED_PICKS_BAD_$_GOOD | SHARP | 5325 | 17 | 58.8% | -0.1% | -0.02 | 33 | 57.6% | +2.4% | +419 | 9.4 | 0 | -1.2% |
 | 429d39 | MIXED_PICKS_BAD_$_GOOD | SHARP | 4525 | 8 | 50% | -1.9% | -0.15 | 5 | 60% | +16.8% | +1331 | 29.7 | 35.5 | 2.4% |
 | d3567c | MIXED_PICKS_BAD_$_GOOD | SHARP | 394 | 10 | 50% | -9.3% | -0.93 | 11 | 54.5% | +30.9% | +8647 | 16 | 0 | -0.3% |
 | 6acd2f | MIXED_PICKS_BAD_$_GOOD | SHARP | 7339 | 4 | 50% | -5.1% | -0.21 | 4 | 50% | +24.8% | +1192 | 66.4 | 90.4 | 4.7% |
 | 11381f | MIXED_PICKS_BAD_$_GOOD | ELITE | 289 | 42 | 50% | -8.3% | -3.49 | 74 | 47.3% | +6.3% | +33664 | 50 | 0 | -0.8% |
+| 760f27 | MIXED_PICKS_BAD_$_GOOD | SHARP | 17496 | 4 | 75% | -6.6% | -0.26 | 4 | 75% | +11% | +505 | 4.3 | 0 | 0% |
 | 089666 | MIXED_PICKS_BAD_$_GOOD | SHARP | 8854 | 3 | 66.7% | -16.7% | -0.50 | 5 | 80% | +20.7% | +2887 | 67.7 | 93.3 | 21% |
 | 43e2f2 | MIXED_PICKS_BAD_$_GOOD | ELITE | 412 | 3 | 66.7% | -17.7% | -0.35 | 5 | 80% | +41.2% | +761 | 45.5 | 68.2 | 10.2% |
 | 624591 | MIXED_PICKS_BAD_$_GOOD | SHARP | 3679 | 4 | 50% | -18.5% | -0.74 | 7 | 71.4% | +28.5% | +4571 | 12.6 | 2.5 | 0.1% |
 | 4f53f7 | MIXED_PICKS_BAD_$_GOOD | SHARP | 382 | 8 | 62.5% | -6.2% | -0.50 | 16 | 68.8% | +28.6% | +1998 | 65.6 | 75.1 | 8.1% |
-| 760f27 | MIXED_PICKS_BAD_$_GOOD | SHARP | 17496 | 3 | 66.7% | -11.7% | -0.35 | 3 | 66.7% | +11.7% | +406 | 4.3 | 0 | -0.1% |
-| cbff8c | MIXED_PICKS_BAD_$_GOOD | SHARP | 32631 | 76 | 50% | -0.7% | -0.51 | 122 | 51.6% | +2.6% | +1837 | 2.3 | 0 | -0.2% |
+| 1f4d39 | MIXED_PICKS_BAD_$_GOOD | SHARP | 4850 | 3 | 66.7% | -17.8% | -0.53 | 4 | 75% | +10.7% | +1591 | 21.7 | 9.4 | 1.2% |
 | 7caac5 | MIXED_PICKS_BAD_$_GOOD | ELITE | 611 | 23 | 43.5% | -15.2% | -3.49 | 43 | 53.5% | +9% | +30876 | 71.7 | 76.3 | 8.5% |
-| 1f4d39 | MIXED_PICKS_BAD_$_GOOD | SHARP | 4850 | 3 | 66.7% | -17.8% | -0.53 | 3 | 66.7% | +11.9% | +1196 | 21.7 | 9.4 | 1.2% |
 | 770f89 | MIXED_PICKS_BAD_$_GOOD | SHARP | 16227 | 4 | 50% | -22.4% | -0.90 | 5 | 100% | +68.7% | +4775 | 60.1 | 82.6 | 11.4% |
 | 27370e | MIXED_PICKS_BAD_$_GOOD | SHARP | 11761 | 3 | 33.3% | -18.3% | -0.55 | 5 | 60% | +29.5% | +979 | 62.1 | 87.9 | 13.8% |
+| 1dbd96 | MIXED_PICKS_BAD_$_GOOD | SHARP | 70087 | 4 | 75% | -13.3% | -0.53 | 5 | 80% | +1.2% | +57 | 0.4 | 0 | -0.5% |
 | 409441 | MIXED_PICKS_BAD_$_GOOD | SHARP | 4253 | 4 | 50% | -16.5% | -0.66 | 4 | 50% | +7.3% | +1175 | 9.6 | 2.3 | 0.3% |
 | 9ee71d | MIXED_PICKS_BAD_$_GOOD | SHARP | 256 | 4 | 25% | -61% | -2.44 | 13 | 76.9% | +11.4% | +18787 | 9.3 | 10.3 | 1.2% |
 | 84bb3b | MIXED_PICKS_BAD_$_GOOD | SHARP | 4576 | 7 | 42.9% | -8.8% | -0.62 | 16 | 56.3% | +0.3% | +85 | 9.8 | 0 | -0.7% |
-| 1dbd96 | MIXED_PICKS_BAD_$_GOOD | SHARP | 70087 | 3 | 66.7% | -20.7% | -0.62 | 4 | 75% | +0.2% | +8 | 0.4 | 0 | -0.7% |
-| 24aff5 | MIXED_PICKS_BAD_$_GOOD | SHARP | 49696 | 3 | 33.3% | -26% | -0.78 | 4 | 50% | +29.1% | +1103 | 1 | 0 | -10.6% |
+| c54389 | MIXED_PICKS_BAD_$_GOOD | SHARP | 72671 | 17 | 52.9% | -3.6% | -0.62 | 22 | 59.1% | +0.1% | +71 | 44.1 | 72.6 | 7.5% |
 | 472b75 | MIXED_PICKS_BAD_$_GOOD | SHARP | 11703 | 4 | 50% | -22.5% | -0.90 | 4 | 50% | +33.3% | +2241 | 43.7 | 56.1 | 4.5% |
-| 0cd77e | MIXED_PICKS_BAD_$_GOOD | ELITE | 518 | 635 | 49.6% | -3.7% | -23.43 | 707 | 50.5% | +9.3% | +227389 | 28.9 | 4.5 | 0.6% |
 | 192f56 | MIXED_PICKS_BAD_$_GOOD | SHARP | 4629 | 17 | 47.1% | -4.4% | -0.75 | 30 | 43.3% | +4.8% | +554 | 38.4 | 38.1 | 2.7% |
 | 37d821 | MIXED_PICKS_BAD_$_GOOD | ELITE | 1260 | 7 | 42.9% | -11% | -0.77 | 16 | 50% | +1.2% | +725 | 39 | 32.9 | 2.4% |
+| fdd34f | MIXED_PICKS_BAD_$_GOOD | ELITE | 179 | 23 | 34.8% | -41.7% | -9.60 | 39 | 53.8% | +53.9% | +88927 | 56.4 | 35.4 | 2.6% |
+| 6ed057 | MIXED_PICKS_BAD_$_GOOD | SHARP | 314 | 5 | 40% | -27.8% | -1.39 | 5 | 40% | +61.9% | +6255 | 72.8 | 81.8 | 12.2% |
 | fece2b | MIXED_PICKS_BAD_$_GOOD | SHARP | 8560 | 6 | 33.3% | -34% | -2.04 | 13 | 53.8% | +19.9% | +11940 | 4.6 | 0 | -7% |
 | a067ff | MIXED_PICKS_BAD_$_GOOD | SHARP | 1867 | 5 | 40% | -30.8% | -1.54 | 16 | 31.3% | +26.8% | +6886 | 58.4 | 64.4 | 5.4% |
 | caca29 | MIXED_PICKS_BAD_$_GOOD | SHARP | 372 | 47 | 48.9% | -2.4% | -1.13 | 81 | 48.1% | +0.4% | +1296 | 38 | 19.5 | 1.7% |
+| 4b7df1 | MIXED_PICKS_BAD_$_GOOD | SHARP | 1666 | 28 | 57.1% | -9% | -2.51 | 48 | 52.1% | +8.1% | +15031 | 38.7 | 29.4 | 2.2% |
 | 6a0cd9 | MIXED_PICKS_BAD_$_GOOD | SHARP | 5489 | 3 | 33.3% | -41.4% | -1.24 | 5 | 60% | +53.8% | +2133 | 23.1 | 13.9 | 1.2% |
 | 7d85ad | MIXED_PICKS_BAD_$_GOOD | ELITE | 886 | 16 | 50% | -7.7% | -1.23 | 24 | 58.3% | +8.1% | +1960 | 16.8 | 9.3 | 0.9% |
 | 3246e8 | MIXED_PICKS_BAD_$_GOOD | SHARP | 1438 | 3 | 33.3% | -39.1% | -1.17 | 9 | 55.6% | +39.5% | +1074 | 52 | 58.4 | 4.6% |
 | cd3dc9 | MIXED_PICKS_BAD_$_GOOD | SHARP | 26290 | 11 | 72.7% | -10.9% | -1.20 | 14 | 71.4% | +9% | +1348 | 7.2 | 8 | 0.9% |
-| d07c65 | MIXED_PICKS_BAD_$_GOOD | SHARP | 7080 | 16 | 50% | -11% | -1.76 | 23 | 52.2% | +37.3% | +6057 | 35 | 35.4 | 2.6% |
 | 2182d6 | MIXED_PICKS_BAD_$_GOOD | SHARP | 3330 | 3 | 33.3% | -45.8% | -1.37 | 3 | 33.3% | +10% | +2146 | 11.9 | 5.3 | 0% |
 | 173d9a | MIXED_PICKS_BAD_$_GOOD | ELITE | 1202 | 11 | 36.4% | -39.5% | -4.34 | 22 | 50% | +37.1% | +30004 | 56.6 | 55.5 | 4.3% |
+| cbff8c | MIXED_PICKS_BAD_$_GOOD | SHARP | 32631 | 77 | 49.4% | -2% | -1.51 | 123 | 51.2% | +1.7% | +1235 | 3.2 | 0.6 | 0.2% |
 | 441d11 | MIXED_PICKS_BAD_$_GOOD | SHARP | 5329 | 3 | 33.3% | -48% | -1.44 | 5 | 40% | +5.7% | +363 | 50 | 57.7 | 4.7% |
 | ca20c3 | MIXED_PICKS_BAD_$_GOOD | SHARP | 24694 | 6 | 33.3% | -26.7% | -1.60 | 12 | 50% | +15.4% | +925 | 38.7 | 56.3 | 4.4% |
 | 2b2b38 | MIXED_PICKS_BAD_$_GOOD | ELITE | 456 | 9 | 33.3% | -22.8% | -2.05 | 19 | 31.6% | +4.3% | +2869 | 21.9 | 6 | 0.6% |
-| ea077b | MIXED_PICKS_BAD_$_GOOD | SHARP | 80961 | 8 | 37.5% | -22.7% | -1.82 | 11 | 36.4% | +4% | +558 | 0.2 | 0 | -9.2% |
-| fdd34f | MIXED_PICKS_BAD_$_GOOD | ELITE | 179 | 22 | 31.8% | -47.3% | -10.40 | 37 | 51.4% | +52.7% | +85728 | 56.4 | 35.7 | 2.6% |
+| 0cd77e | MIXED_PICKS_BAD_$_GOOD | ELITE | 516 | 636 | 49.5% | -3.9% | -24.43 | 709 | 50.4% | +9.2% | +226051 | 27.9 | 2.6 | 0.6% |
 | 0b01a8 | MIXED_PICKS_BAD_$_GOOD | SHARP | 8015 | 30 | 43.3% | -17.9% | -5.36 | 56 | 48.2% | +24.7% | +34097 | 52.6 | 62.4 | 5.4% |
 | a190ea | MIXED_PICKS_BAD_$_GOOD | ELITE | 297 | 23 | 43.5% | -17.6% | -4.05 | 63 | 38.1% | +10% | +20587 | 13.1 | 0 | -3.5% |
 | 7c5bf1 | MIXED_PICKS_BAD_$_GOOD | ELITE | 1057 | 9 | 44.4% | -24% | -2.16 | 25 | 56% | +14.3% | +1385 | 51.5 | 45.4 | 3.4% |
@@ -1147,6 +1152,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | bf6566 | MIXED_PICKS_BAD_$_GOOD | PROVEN | — | 8 | 37.5% | -27.4% | -2.19 | 18 | 38.9% | +51.4% | +635 | 13.3 | 3.8 | 0.6% |
 | bba6f3 | MIXED_PICKS_BAD_$_GOOD | ELITE | 130 | 14 | 42.9% | -26% | -3.64 | 33 | 51.5% | +7.2% | +14755 | 44.4 | 14.9 | 1.4% |
 | 1fa9c7 | MIXED_PICKS_BAD_$_GOOD | SHARP | 13471 | 9 | 33.3% | -25.4% | -2.29 | 11 | 45.5% | +15.4% | +1152 | 34 | 48.6 | 1.1% |
+| d07c65 | MIXED_PICKS_BAD_$_GOOD | SHARP | 7080 | 17 | 47.1% | -16.2% | -2.76 | 24 | 50% | +34.8% | +5758 | 35 | 35.4 | 2.6% |
 | d10319 | MIXED_PICKS_BAD_$_GOOD | ELITE | 102 | 12 | 41.7% | -42.3% | -4.65 | 54 | 46.3% | +0.6% | +23664 | 30.7 | 0.6 | 0.2% |
 | 0eb6ef | MIXED_PICKS_BAD_$_GOOD | ELITE | 367 | 13 | 46.2% | -23.6% | -3.07 | 36 | 55.6% | +0.5% | +3771 | 20.3 | 9.6 | 0.9% |
 | fc7aef | MIXED_PICKS_BAD_$_GOOD | SHARP | 2085 | 13 | 38.5% | -22.5% | -2.93 | 12 | 41.7% | +14.6% | +2158 | 18.5 | 18.9 | 1.4% |
@@ -1167,14 +1173,13 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 209728 | MIXED_PICKS_BAD_$_GOOD | SHARP | 1488 | 133 | 52.6% | -4% | -5.28 | 76 | 57.9% | +5.9% | +5420 | 28.9 | 25.4 | 1.8% |
 | 915c65 | MIXED_PICKS_BAD_$_GOOD | SHARP | 7753 | 7 | 14.3% | -72.4% | -5.07 | 8 | 37.5% | +1.7% | +51 | 59.6 | 80.2 | 9.9% |
 | e47e66 | MIXED_PICKS_BAD_$_GOOD | ELITE | 116 | 29 | 41.4% | -26.7% | -7.74 | 51 | 45.1% | +3.5% | +13452 | 41.1 | 6.9 | 1.1% |
-| 96b465 | MIXED_PICKS_BAD_$_GOOD | SHARP | 41890 | 19 | 31.6% | -38.7% | -7.35 | 23 | 39.1% | +5% | +1716 | 1.6 | 0 | -12.5% |
 | 3d7e7e | MIXED_PICKS_BAD_$_GOOD | ELITE | 193 | 20 | 30% | -43.2% | -8.63 | 24 | 45.8% | +4.9% | +7478 | 29.2 | 4 | 0.5% |
 | 36b57a | MIXED_PICKS_BAD_$_GOOD | SHARP | 10735 | 95 | 42.1% | -9.4% | -8.94 | 58 | 50% | +11.2% | +4142 | 13.4 | 6.5 | 0.9% |
 | 2a8409 | MIXED_PICKS_BAD_$_GOOD | ELITE | 103 | 368 | 48.6% | -3.7% | -13.60 | 517 | 48.7% | +0.5% | +50512 | 59.2 | 36.5 | 2.7% |
 | d1c818 | MIXED_PICKS_BAD_$_GOOD | SHARP | 337 | 47 | 40.4% | -18.3% | -8.61 | 103 | 48.5% | +1.2% | +369 | 17.5 | 0 | 0% |
 | ace430 | MIXED_PICKS_BAD_$_GOOD | SHARP | 7971 | 27 | 37% | -35.1% | -9.48 | 49 | 42.9% | +1.5% | +370 | 21.5 | 16.8 | 1.4% |
-| 4b912c | MIXED_PICKS_BAD_$_GOOD | ELITE | 404 | 1865 | 50.6% | -0.7% | -12.87 | 3007 | 52.1% | +2.4% | +33680 | 30 | 4.7 | 0.9% |
 | a82a75 | MIXED_PICKS_BAD_$_GOOD | ELITE | 252 | 124 | 46.8% | -12.1% | -14.87 | 142 | 47.9% | +8.9% | +45137 | 49.5 | 51 | 3.9% |
+| 4b912c | MIXED_PICKS_BAD_$_GOOD | ELITE | 404 | 1867 | 50.6% | -0.7% | -13.78 | 3009 | 52.1% | +2.4% | +33722 | 30 | 4.7 | 0.9% |
 | 19d0d0 | MIXED_PICKS_BAD_$_GOOD | SHARP | 5996 | 42 | 33.3% | -30% | -12.62 | 81 | 42% | +0.8% | +704 | 15 | 2.5 | 0.6% |
 | 165bf3 | MIXED_PICKS_BAD_$_GOOD | SHARP | 269 | 31 | 29% | -45% | -13.94 | 62 | 53.2% | +5% | +2771 | 63.1 | 61.3 | 4.9% |
 | fb3150 | MIXED_PICKS_BAD_$_GOOD | SHARP | 185 | 113 | 39.8% | -12.8% | -14.50 | 151 | 38.4% | +1% | +1249 | 72.6 | 73.8 | -1.7% |
@@ -1214,7 +1219,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 5e455a | POSITIONS_ONLY_NEGATIVE | SHARP | 11759 | 0 | — | — | +0.00 | 3 | 0% | -99.9% | -6717 | — | — | — |
 | e49fe1 | POSITIONS_ONLY_NEGATIVE | SHARP | 29425 | 2 | 50% | -18.6% | -0.37 | 3 | 33.3% | -58% | -3742 | 58.6 | 91 | 17.2% |
 | e27496 | POSITIONS_ONLY_NEGATIVE | SHARP | 47248 | 2 | 50% | -17.9% | -0.36 | 3 | 0% | -100% | -5707 | 61.9 | 99.9 | 73.1% |
-| 0d51f3 | POSITIONS_ONLY_NEGATIVE | SHARP | 272 | 2 | 50% | +0% | +0.00 | 4 | 50% | -99.7% | -9720 | 50.6 | 39.4 | 3.2% |
 | 7dfbb0 | POSITIONS_ONLY_NEGATIVE | SHARP | 182 | 1 | 0% | -100% | -1.00 | 3 | 66.7% | -4.7% | -42 | 20.5 | 0 | -0.1% |
 | 09004f | POSITIONS_ONLY_NEGATIVE | SHARP | 3616 | 1 | 0% | -100% | -1.00 | 7 | 14.3% | -4.9% | -214 | 33.5 | 27.5 | 2% |
 | ac101d | POSITIONS_ONLY_NEGATIVE | SHARP | 304 | 1 | 0% | -100% | -1.00 | 3 | 33.3% | -2.7% | -257 | 53.4 | 49 | 3.8% |
@@ -1229,6 +1233,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | d8fc0a | POSITIONS_ONLY_NEGATIVE | SHARP | 2847 | 1 | 0% | -100% | -1.00 | 7 | 28.6% | -47.4% | -2795 | 67.1 | 84.9 | 15.2% |
 | 53b215 | POSITIONS_ONLY_NEGATIVE | ELITE | 30 | 2 | 50% | -20.1% | -0.40 | 7 | 42.9% | -1% | -9028 | 75 | 69.6 | 6.3% |
 | ee5896 | POSITIONS_ONLY_NEGATIVE | SHARP | 3621 | 1 | 0% | -100% | -1.00 | 4 | 25% | -59.8% | -3203 | 18.8 | 18.7 | 1.5% |
+| 044af1 | POSITIONS_ONLY_NEGATIVE | SHARP | 2444 | 1 | 0% | -100% | -1.00 | 3 | 33.3% | -58.5% | -3693 | 70.3 | 85.2 | 12.8% |
 | 6e0854 | POSITIONS_ONLY_NEGATIVE | SHARP | 22382 | 2 | 50% | -28% | -0.56 | 6 | 16.7% | -86.7% | -9089 | 19.4 | 21.4 | 1.7% |
 | 209568 | POSITIONS_ONLY_NEGATIVE | SHARP | 8708 | 1 | 0% | -100% | -1.00 | 3 | 33.3% | -76.2% | -4821 | 44.9 | 59 | 4.7% |
 | b4a90f | POSITIONS_ONLY_NEGATIVE | SHARP | 6311 | 1 | 0% | -100% | -1.00 | 3 | 0% | -100% | -5076 | 65 | 82.6 | 10.2% |
@@ -1313,25 +1318,25 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | e68bcd | CONFIRMED_BLEEDER | ELITE | 1090 | 6 | 66.7% | -6.6% | -0.39 | 6 | 66.7% | -0.8% | -3 | 35.1 | 19.5 | 1.7% |
 | 802023 | CONFIRMED_BLEEDER | SHARP | 3209 | 3 | 66.7% | -5.1% | -0.15 | 6 | 50% | -31.6% | -2687 | 20.8 | 8.9 | 1.1% |
 | 2bf702 | CONFIRMED_BLEEDER | SHARP | 31233 | 10 | 50% | -3.9% | -0.39 | 17 | 47.1% | -8.8% | -482 | 60.2 | 93.7 | 21.4% |
-| 420257 | CONFIRMED_BLEEDER | SHARP | 10441 | 6 | 50% | -1.2% | -0.07 | 9 | 33.3% | -31.5% | -3797 | 59 | 78.5 | 9.2% |
-| ccc63a | CONFIRMED_BLEEDER | SHARP | 13424 | 4 | 50% | -8.7% | -0.35 | 25 | 44% | -25.3% | -1609 | 8.9 | 2.6 | 0% |
 | 954fa9 | CONFIRMED_BLEEDER | SHARP | 7979 | 26 | 38.5% | -1.7% | -0.45 | 44 | 50% | -6.6% | -1002 | 7.9 | 0.5 | 0.8% |
+| 420257 | CONFIRMED_BLEEDER | SHARP | 10441 | 6 | 50% | -1.2% | -0.07 | 10 | 30% | -37.5% | -4939 | 59 | 78.5 | 9.2% |
 | 6ac120 | CONFIRMED_BLEEDER | ELITE | 539 | 17 | 58.8% | -1.1% | -0.20 | 24 | 50% | -3.3% | -3974 | 41.1 | 25.4 | 1.8% |
 | fc89aa | CONFIRMED_BLEEDER | ELITE | 1338 | 3 | 33.3% | -9% | -0.27 | 3 | 33.3% | -65.8% | -3373 | 39.6 | 45.3 | 3.1% |
-| ca3b5c | CONFIRMED_BLEEDER | SHARP | 2720 | 19 | 57.9% | -2.3% | -0.43 | 21 | 57.1% | -10.6% | -2328 | 21.9 | 7.6 | 1.1% |
+| ca3b5c | CONFIRMED_BLEEDER | SHARP | 2720 | 19 | 57.9% | -2.3% | -0.43 | 22 | 59.1% | -10.5% | -2319 | 21.9 | 7.6 | 1.1% |
 | ef68f9 | CONFIRMED_BLEEDER | SHARP | 6489 | 6 | 66.7% | -11% | -0.66 | 8 | 62.5% | -18.6% | -705 | 61.8 | 79.7 | 9.7% |
 | 76b487 | CONFIRMED_BLEEDER | SHARP | 11653 | 18 | 50% | -2.2% | -0.40 | 21 | 52.4% | -12.8% | -3388 | 5.8 | 0 | -3.3% |
 | d1ec48 | CONFIRMED_BLEEDER | SHARP | 175 | 4 | 50% | -1.7% | -0.07 | 7 | 28.6% | -44% | -7096 | 64.8 | 67.9 | 6.3% |
+| 24aff5 | CONFIRMED_BLEEDER | SHARP | 49696 | 3 | 33.3% | -26% | -0.78 | 5 | 40% | -3.8% | -196 | 1 | 0 | -10.6% |
+| bb6f95 | CONFIRMED_BLEEDER | SHARP | 8203 | 4 | 75% | -14.6% | -0.59 | 5 | 80% | -33.2% | -2325 | 43.3 | 54.1 | 4.1% |
 | 64f577 | CONFIRMED_BLEEDER | SHARP | 9524 | 5 | 60% | -12.1% | -0.61 | 9 | 55.6% | -34.4% | -2178 | 21.3 | 18.1 | 1.6% |
 | b4ec7d | CONFIRMED_BLEEDER | SHARP | 6351 | 7 | 28.6% | -8.6% | -0.60 | 12 | 33.3% | -13.3% | -2641 | 8.8 | 0 | -1.6% |
 | 594469 | CONFIRMED_BLEEDER | SHARP | 26586 | 5 | 60% | -15.5% | -0.78 | 16 | 56.3% | -2.8% | -905 | 58.2 | 89.2 | 15.5% |
 | d0b9d2 | CONFIRMED_BLEEDER | SHARP | 201 | 16 | 43.8% | -5.2% | -0.83 | 17 | 41.2% | -4.1% | -531 | 84 | 91.3 | 17.3% |
 | c23df5 | CONFIRMED_BLEEDER | SHARP | 46538 | 3 | 33.3% | -29.7% | -0.89 | 4 | 50% | -4.2% | -83 | 15.8 | 23.1 | 1.8% |
-| bb6f95 | CONFIRMED_BLEEDER | SHARP | 8203 | 3 | 66.7% | -22.4% | -0.67 | 4 | 75% | -39.9% | -2392 | 42.6 | 53.2 | 4.1% |
 | 474257 | CONFIRMED_BLEEDER | SHARP | 14023 | 4 | 50% | -9.8% | -0.39 | 10 | 20% | -58.3% | -5231 | 23.8 | 29.3 | 4.9% |
 | fe8192 | CONFIRMED_BLEEDER | SHARP | 2266 | 17 | 47.1% | -2.8% | -0.48 | 21 | 47.6% | -28.4% | -4492 | 22.6 | 12.8 | 1.2% |
 | ab1576 | CONFIRMED_BLEEDER | SHARP | 5981 | 13 | 61.5% | -6.4% | -0.83 | 16 | 62.5% | -9.7% | -1193 | 8.8 | 0 | -1.4% |
-| 234030 | CONFIRMED_BLEEDER | SHARP | 6435 | 20 | 50% | -2% | -0.40 | 41 | 36.6% | -21.4% | -5959 | 13.7 | 5.7 | 0.4% |
+| 234030 | CONFIRMED_BLEEDER | SHARP | 6435 | 20 | 50% | -2% | -0.40 | 42 | 35.7% | -22.6% | -6380 | 13.7 | 5.7 | 0.4% |
 | c00b6e | CONFIRMED_BLEEDER | SHARP | 12862 | 10 | 40% | -3.4% | -0.34 | 22 | 50% | -28.4% | -6994 | 5.4 | 0 | -0.8% |
 | 8a7e43 | CONFIRMED_BLEEDER | ELITE | 1329 | 5 | 60% | -16.3% | -0.82 | 16 | 68.8% | -8.5% | -2248 | 53.9 | 61.5 | 5% |
 | af081e | CONFIRMED_BLEEDER | SHARP | 30549 | 11 | 72.7% | -6.3% | -0.69 | 19 | 68.4% | -19.2% | -3715 | 2.6 | 0 | -4.5% |
@@ -1349,10 +1354,11 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 1895dc | CONFIRMED_BLEEDER | SHARP | 5860 | 96 | 50% | -1.4% | -1.30 | 142 | 52.8% | -1.5% | -1620 | 11.2 | 0.8 | 0.6% |
 | 48beea | CONFIRMED_BLEEDER | SHARP | 2923 | 13 | 46.2% | -2% | -0.27 | 43 | 46.5% | -20.3% | -11977 | 12.6 | 0.5 | 0.1% |
 | eece9b | CONFIRMED_BLEEDER | SHARP | 245 | 4 | 50% | -23.8% | -0.95 | 4 | 50% | -28.6% | -6108 | 28 | 2.7 | 0.6% |
+| c585b1 | CONFIRMED_BLEEDER | ELITE | 297 | 3 | 33.3% | -40% | -1.20 | 7 | 42.9% | -33.4% | -4009 | 49.9 | 31.1 | 2.3% |
 | 4a0d13 | CONFIRMED_BLEEDER | SHARP | 3081 | 8 | 37.5% | -18% | -1.44 | 9 | 44.4% | -21.8% | -2082 | 63.4 | 76.8 | 9% |
+| 74087f | CONFIRMED_BLEEDER | ELITE | 890 | 10 | 50% | -5.5% | -0.55 | 18 | 50% | -37.6% | -11237 | 50.8 | 43.1 | 3.2% |
 | 260fb4 | CONFIRMED_BLEEDER | SHARP | 3464 | 3 | 33.3% | -34.9% | -1.05 | 5 | 20% | -35.7% | -6738 | 66.8 | 91.3 | 19.3% |
 | 2a9738 | CONFIRMED_BLEEDER | SHARP | 3351 | 12 | 50% | -14.4% | -1.72 | 18 | 61.1% | -5.9% | -1198 | 22.4 | 9.8 | 1.1% |
-| c54389 | CONFIRMED_BLEEDER | SHARP | 72671 | 16 | 50% | -10.4% | -1.67 | 21 | 57.1% | -3.3% | -2989 | 44.1 | 72.6 | 7.5% |
 | 9682b8 | CONFIRMED_BLEEDER | SHARP | 8686 | 3 | 33.3% | -55.4% | -1.66 | 5 | 40% | -42% | -3186 | 26.5 | 25.6 | 1.9% |
 | d5d072 | CONFIRMED_BLEEDER | SHARP | 35892 | 4 | 25% | -44.5% | -1.78 | 6 | 33.3% | -26.9% | -2625 | 2.1 | 0 | -5.1% |
 | 529da2 | CONFIRMED_BLEEDER | SHARP | 3745 | 23 | 47.8% | -4.6% | -1.07 | 23 | 43.5% | -36.3% | -9937 | 6.2 | 0 | -2.6% |
@@ -1362,7 +1368,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | fd761d | CONFIRMED_BLEEDER | SHARP | 332 | 65 | 49.2% | -2.3% | -1.50 | 107 | 45.8% | -11.9% | -7355 | 75.4 | 86.1 | 13.3% |
 | 582ec4 | CONFIRMED_BLEEDER | SHARP | 5648 | 5 | 20% | -13.4% | -0.67 | 6 | 33.3% | -66.2% | -16034 | 6.3 | 0 | -8.2% |
 | 55647a | CONFIRMED_BLEEDER | ELITE | 285 | 3 | 33.3% | -57.3% | -1.72 | 5 | 40% | -52.6% | -5849 | 34 | 37.1 | 2.8% |
-| 927bd0 | CONFIRMED_BLEEDER | SHARP | 63517 | 4 | 25% | -52.7% | -2.11 | 5 | 20% | -67.8% | -2022 | 58.8 | 96.5 | 30.5% |
 | ce63a2 | CONFIRMED_BLEEDER | SHARP | 279 | 12 | 50% | -7.4% | -0.88 | 20 | 50% | -14.9% | -14501 | 20.2 | 0 | -0.7% |
 | bc9483 | CONFIRMED_BLEEDER | SHARP | 7746 | 8 | 37.5% | -24.8% | -1.98 | 9 | 44.4% | -30% | -4488 | 4.4 | 0 | -0.6% |
 | 5592d3 | CONFIRMED_BLEEDER | SHARP | 9056 | 45 | 46.7% | -5.3% | -2.36 | 54 | 53.7% | -2.8% | -1058 | 2.3 | 0 | -1% |
@@ -1376,15 +1381,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 1918c1 | CONFIRMED_BLEEDER | SHARP | 116271 | 4 | 25% | -57.6% | -2.31 | 14 | 28.6% | -49.3% | -2524 | 0.1 | 0 | -12.2% |
 | 5b409f | CONFIRMED_BLEEDER | SHARP | 6475 | 4 | 25% | -59.8% | -2.39 | 7 | 42.9% | -38.4% | -1866 | 13.2 | 0 | 0% |
 | 936218 | CONFIRMED_BLEEDER | ELITE | 1378 | 27 | 44.4% | -1.7% | -0.45 | 44 | 38.6% | -38% | -21289 | 24.5 | 9.4 | 1.3% |
-| ef98ad | CONFIRMED_BLEEDER | SHARP | 13325 | 4 | 25% | -54.5% | -2.18 | 9 | 22.2% | -69.8% | -4320 | 5.3 | 0 | -8.1% |
+| ef98ad | CONFIRMED_BLEEDER | SHARP | 13325 | 4 | 25% | -54.5% | -2.18 | 10 | 20% | -72% | -4809 | 5.3 | 0 | -8.1% |
 | 8f5c48 | CONFIRMED_BLEEDER | SHARP | 13661 | 8 | 37.5% | -25.2% | -2.02 | 11 | 45.5% | -56.5% | -6582 | 4.9 | 0 | -3.2% |
 | cc9f80 | CONFIRMED_BLEEDER | ELITE | 537 | 48 | 50% | -3.7% | -1.77 | 64 | 50% | -1.9% | -9954 | 54.3 | 46.7 | 3.6% |
 | 16ca12 | CONFIRMED_BLEEDER | ELITE | 866 | 3 | 33.3% | -50.3% | -1.51 | 12 | 50% | -16.5% | -12692 | 44.3 | 32.3 | 2.3% |
-| 26256c | CONFIRMED_BLEEDER | SHARP | 250 | 36 | 47.2% | -6.6% | -2.36 | 86 | 44.2% | -8.2% | -4509 | 32.6 | 5.5 | 1% |
 | 669a1b | CONFIRMED_BLEEDER | ELITE | 1262 | 6 | 50% | -24.7% | -1.48 | 8 | 37.5% | -41.9% | -13712 | 61.6 | 76.8 | 8.7% |
 | 59475b | CONFIRMED_BLEEDER | ELITE | 1417 | 5 | 40% | -28.4% | -1.42 | 10 | 40% | -36.2% | -14312 | 43.6 | 34.3 | 1.9% |
 | 816aa1 | CONFIRMED_BLEEDER | ELITE | 301 | 11 | 36.4% | -20.4% | -2.24 | 15 | 40% | -5.7% | -6398 | 57.1 | 73.1 | 8.1% |
-| 74087f | CONFIRMED_BLEEDER | ELITE | 966 | 9 | 44.4% | -17.8% | -1.60 | 17 | 47.1% | -45% | -12808 | 50.7 | 43.2 | 3.2% |
+| ea077b | CONFIRMED_BLEEDER | SHARP | 80961 | 9 | 33.3% | -31.3% | -2.82 | 12 | 33.3% | -9.3% | -1482 | 0.2 | 0 | -9.2% |
 | 5e5e30 | CONFIRMED_BLEEDER | ELITE | 202 | 3 | 33.3% | -44.4% | -1.33 | 4 | 25% | -66.5% | -16629 | 32 | 19.6 | 1.3% |
 | 07252b | CONFIRMED_BLEEDER | SHARP | 16216 | 4 | 25% | -71.6% | -2.86 | 8 | 12.5% | -13.4% | -1579 | 4.8 | 0.4 | 0% |
 | d7aa80 | CONFIRMED_BLEEDER | SHARP | 15823 | 10 | 40% | -29% | -2.90 | 14 | 42.9% | -9.4% | -2272 | 49.5 | 66.2 | 5.8% |
@@ -1394,6 +1398,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | ad53ae | CONFIRMED_BLEEDER | SHARP | 2709 | 6 | 33.3% | -32.7% | -1.96 | 11 | 27.3% | -36.2% | -13204 | 8.4 | 0 | -0.6% |
 | d9dcb1 | CONFIRMED_BLEEDER | SHARP | 7973 | 158 | 53.8% | -1.8% | -2.87 | 209 | 53.1% | -4.7% | -4359 | 7.5 | 0 | -0.7% |
 | 6dedd0 | CONFIRMED_BLEEDER | SHARP | 16699 | 5 | 20% | -48.8% | -2.44 | 8 | 25% | -60.5% | -9105 | 4.4 | 0 | -7.2% |
+| 927bd0 | CONFIRMED_BLEEDER | SHARP | 63517 | 5 | 20% | -62.1% | -3.11 | 6 | 16.7% | -72.4% | -2522 | 58.8 | 96.5 | 30.5% |
 | ce3efc | CONFIRMED_BLEEDER | SHARP | 231 | 6 | 50% | -9.9% | -0.59 | 9 | 55.6% | -19.8% | -27743 | 86.5 | 97.3 | 37.1% |
 | bca7e4 | CONFIRMED_BLEEDER | SHARP | 1395 | 18 | 55.6% | -7.9% | -1.41 | 32 | 56.3% | -12.2% | -20214 | 60.1 | 64.4 | 5.4% |
 | b6fe12 | CONFIRMED_BLEEDER | SHARP | 6655 | 5 | 20% | -54.6% | -2.73 | 4 | 25% | -88.9% | -7121 | 3.6 | 0 | -3.5% |
@@ -1409,17 +1414,17 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 932d3c | CONFIRMED_BLEEDER | SHARP | 2314 | 13 | 30.8% | -27.6% | -3.59 | 13 | 23.1% | -53.5% | -2525 | 37.4 | 31.4 | 2.2% |
 | a94ac3 | CONFIRMED_BLEEDER | SHARP | 6343 | 4 | 50% | -36.8% | -1.47 | 11 | 45.5% | -47.2% | -23867 | 8.8 | 0 | -0.6% |
 | d5876f | CONFIRMED_BLEEDER | SHARP | 373 | 26 | 50% | -10.3% | -2.68 | 34 | 52.9% | -5% | -11769 | 16.2 | 0 | -2.2% |
+| 26256c | CONFIRMED_BLEEDER | SHARP | 250 | 37 | 45.9% | -9.1% | -3.36 | 87 | 43.7% | -9.6% | -5312 | 32.6 | 5.5 | 1% |
 | dd1be6 | CONFIRMED_BLEEDER | SHARP | 28166 | 29 | 44.8% | -13.7% | -3.96 | 43 | 44.2% | -0.2% | -51 | 2.9 | 0 | -0.4% |
 | 7b44b4 | CONFIRMED_BLEEDER | SHARP | 8749 | 14 | 42.9% | -23.6% | -3.30 | 26 | 42.3% | -25.2% | -6679 | 7 | 0 | -3% |
-| cb8d9f | CONFIRMED_BLEEDER | ELITE | 596 | 5 | 20% | -65.7% | -3.29 | 20 | 70% | -7.2% | -6814 | 74.5 | 81 | 10.5% |
 | f7d32b | CONFIRMED_BLEEDER | SHARP | 2235 | 3 | 33.3% | -63.1% | -1.89 | 4 | 25% | -65.9% | -21019 | 55.5 | 60.2 | 4.9% |
 | fe790c | CONFIRMED_BLEEDER | SHARP | 3827 | 5 | 20% | -72.8% | -3.64 | 5 | 20% | -70.2% | -3945 | 25.4 | 16.1 | 1.6% |
 | 11e314 | CONFIRMED_BLEEDER | SHARP | 31294 | 5 | 20% | -77.8% | -3.89 | 9 | 44.4% | -28.3% | -2136 | 16 | 19.3 | 1.6% |
 | 64dcc6 | CONFIRMED_BLEEDER | SHARP | 37841 | 4 | 25% | -52.7% | -2.11 | 6 | 16.7% | -80.2% | -20162 | 35.6 | 54.3 | 4.1% |
-| f5eb5b | CONFIRMED_BLEEDER | SHARP | 15374 | 6 | 16.7% | -70.1% | -4.21 | 10 | 30% | -5.1% | -582 | 47.8 | 61.9 | 5.3% |
 | 0a5407 | CONFIRMED_BLEEDER | SHARP | 71334 | 4 | 0% | -100% | -4.00 | 10 | 20% | -90.7% | -2811 | 0.3 | 0 | -1.7% |
 | 398fa4 | CONFIRMED_BLEEDER | ELITE | 207 | 3 | 0% | -100% | -3.00 | 3 | 0% | -100% | -13285 | 45.8 | 41.1 | 3% |
 | 621ced | CONFIRMED_BLEEDER | SHARP | 4219 | 5 | 40% | -30.1% | -1.50 | 6 | 33.3% | -75.9% | -28541 | 6 | 0 | -2.5% |
+| f5eb5b | CONFIRMED_BLEEDER | SHARP | 15374 | 6 | 16.7% | -70.1% | -4.21 | 11 | 27.3% | -12.6% | -1557 | 47.8 | 61.9 | 5.3% |
 | 6a853b | CONFIRMED_BLEEDER | SHARP | 4199 | 11 | 36.4% | -39.7% | -4.36 | 13 | 30.8% | -3.4% | -129 | 41.7 | 54.4 | 5.2% |
 | d9ecb8 | CONFIRMED_BLEEDER | SHARP | 440 | 3 | 0% | -100% | -3.00 | 4 | 25% | -77.4% | -13913 | 23.9 | 6.1 | 1.5% |
 | 5f1041 | CONFIRMED_BLEEDER | SHARP | 2097 | 9 | 33.3% | -42.2% | -3.80 | 11 | 36.4% | -52.2% | -5943 | 27.8 | 15.2 | 1.4% |
@@ -1470,9 +1475,9 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | b2a00b | CONFIRMED_BLEEDER | ELITE | 1215 | 7 | 14.3% | -81.6% | -5.72 | 12 | 25% | -9.7% | -7062 | 13.5 | 0 | -1.6% |
 | 29d2f5 | CONFIRMED_BLEEDER | SHARP | 2747 | 13 | 30.8% | -41% | -5.32 | 19 | 42.1% | -45% | -11520 | 10.6 | 0 | 0% |
 | 566015 | CONFIRMED_BLEEDER | ELITE | 417 | 3 | 33.3% | -51.5% | -1.55 | 3 | 33.3% | -20.3% | -50869 | 81.6 | 95.2 | 37.9% |
-| 346c8a | CONFIRMED_BLEEDER | SHARP | 13535 | 8 | 12.5% | -76.1% | -6.09 | 11 | 27.3% | -66.9% | -6926 | 5.2 | 0 | -0.3% |
-| 8eb5c3 | CONFIRMED_BLEEDER | SHARP | 34948 | 30 | 40% | -21.9% | -6.57 | 38 | 42.1% | -9.3% | -2729 | 2.1 | 0 | -1.5% |
 | 9d58c1 | CONFIRMED_BLEEDER | SHARP | 1417 | 13 | 30.8% | -45.9% | -5.97 | 12 | 41.7% | -14.6% | -8928 | 59 | 56 | 4.5% |
+| 346c8a | CONFIRMED_BLEEDER | SHARP | 13535 | 8 | 12.5% | -76.1% | -6.09 | 12 | 25% | -69.7% | -7873 | 5.2 | 0 | -0.3% |
+| 8eb5c3 | CONFIRMED_BLEEDER | SHARP | 34948 | 30 | 40% | -21.9% | -6.57 | 39 | 41% | -10.5% | -3144 | 2.1 | 0 | -1.5% |
 | d3f7ad | CONFIRMED_BLEEDER | SHARP | — | 8 | 37.5% | -44.4% | -3.55 | 40 | 30% | -39.5% | -34079 | 55 | 75.4 | 8.6% |
 | b59504 | CONFIRMED_BLEEDER | ELITE | 1362 | 33 | 42.4% | -16.5% | -5.43 | 43 | 39.5% | -16% | -15423 | 64.2 | 70.7 | 6.6% |
 | ffc8b9 | CONFIRMED_BLEEDER | SHARP | 1815 | 6 | 0% | -100% | -6.00 | 9 | 11.1% | -65.7% | -10526 | 41.1 | 34 | 2.4% |
@@ -1488,13 +1493,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | ef68ca | CONFIRMED_BLEEDER | SHARP | 212 | 131 | 48.1% | -4.3% | -5.63 | 203 | 52.2% | -7.7% | -19176 | 20.8 | 0 | -2.5% |
 | 2e29e2 | CONFIRMED_BLEEDER | SHARP | 2145 | 10 | 10% | -74.2% | -7.42 | 7 | 14.3% | -92.6% | -2414 | 25.7 | 32.4 | 2.1% |
 | 43594f | CONFIRMED_BLEEDER | SHARP | 234 | 7 | 28.6% | -50% | -3.50 | 15 | 26.7% | -59.1% | -43917 | 19.6 | 0 | -0.9% |
-| 55cea5 | CONFIRMED_BLEEDER | SHARP | 10985 | 12 | 25% | -58.6% | -7.03 | 13 | 30.8% | -38.6% | -9337 | 62 | 87.3 | 14.4% |
 | 232095 | CONFIRMED_BLEEDER | SHARP | 1432 | 3 | 33.3% | -53.1% | -1.59 | 6 | 33.3% | -93% | -63982 | 74.4 | 88.5 | 14.9% |
 | bae82a | CONFIRMED_BLEEDER | SHARP | 11225 | 3 | 33.3% | -58.3% | -1.75 | 14 | 57.1% | -16.5% | -62520 | 31.5 | 34.1 | 2.4% |
 | 1088a1 | CONFIRMED_BLEEDER | SHARP | 12004 | 25 | 36% | -32.1% | -8.03 | 33 | 39.4% | -13.5% | -687 | 7.4 | 2.5 | 0.3% |
 | 19cf12 | CONFIRMED_BLEEDER | SHARP | 302 | 39 | 43.6% | -13.6% | -5.29 | 69 | 49.3% | -25% | -28408 | 29.6 | 7.6 | 1.1% |
+| cb8d9f | CONFIRMED_BLEEDER | ELITE | 598 | 6 | 16.7% | -71.4% | -4.29 | 21 | 66.7% | -30.9% | -39458 | 73.6 | 79.3 | 10.6% |
 | b51a56 | CONFIRMED_BLEEDER | ELITE | 519 | 35 | 48.6% | -4.4% | -1.55 | 78 | 52.6% | -14% | -67308 | 50 | 42 | 3.1% |
 | b20078 | CONFIRMED_BLEEDER | SHARP | 9822 | 19 | 42.1% | -24.9% | -4.74 | 30 | 50% | -25.5% | -35905 | 6.4 | 0 | -6.7% |
+| 96b465 | CONFIRMED_BLEEDER | SHARP | 41890 | 20 | 30% | -41.8% | -8.35 | 24 | 37.5% | -3.7% | -1374 | 1.6 | 0 | -12.5% |
 | 7340ec | CONFIRMED_BLEEDER | SHARP | 10506 | 11 | 27.3% | -60.3% | -6.64 | 38 | 42.1% | -16.5% | -19540 | 62.2 | 87.9 | 14.8% |
 | c289a0 | CONFIRMED_BLEEDER | ELITE | 297 | 15 | 26.7% | -50.3% | -7.54 | 41 | 46.3% | -18.2% | -10741 | 40.7 | 18.3 | 1.5% |
 | a378a3 | CONFIRMED_BLEEDER | ELITE | 1218 | 3 | 0% | -100% | -3.00 | 5 | 20% | -71% | -56380 | 47 | 41 | 3% |
@@ -1504,13 +1510,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 0a322b | CONFIRMED_BLEEDER | SHARP | 2376 | 46 | 41.3% | -17.2% | -7.92 | 44 | 47.7% | -16.7% | -8778 | 23.9 | 11.4 | 1.2% |
 | 7eb989 | CONFIRMED_BLEEDER | ELITE | 357 | 4 | 50% | -10.5% | -0.42 | 22 | 36.4% | -47.5% | -84261 | 17 | 12.3 | 1% |
 | b2ef2c | CONFIRMED_BLEEDER | SHARP | 365 | 22 | 27.3% | -32.5% | -7.14 | 26 | 30.8% | -28% | -17500 | 70.6 | 79.9 | 9.8% |
+| a85031 | CONFIRMED_BLEEDER | SHARP | 20398 | 34 | 41.2% | -25.6% | -8.70 | 64 | 35.9% | -14.7% | -2036 | 3.8 | 0 | -1.8% |
 | fb433f | CONFIRMED_BLEEDER | ELITE | 337 | 6 | 16.7% | -77.3% | -4.64 | 23 | 39.1% | -6.8% | -42828 | 62.3 | 67.1 | 6.1% |
-| a85031 | CONFIRMED_BLEEDER | SHARP | 20398 | 33 | 39.4% | -26.6% | -8.79 | 63 | 34.9% | -15.5% | -2076 | 3.8 | 0 | -1.6% |
 | 12ad50 | CONFIRMED_BLEEDER | ELITE | 39 | 46 | 41.3% | -19% | -8.75 | 102 | 51% | -0.1% | -3056 | 50 | 0 | -0.9% |
 | 53a0be | CONFIRMED_BLEEDER | SHARP | 436 | 60 | 41.7% | -15% | -9.00 | 91 | 41.8% | -9.3% | -1216 | 20.5 | 6.6 | 0.9% |
+| 55cea5 | CONFIRMED_BLEEDER | SHARP | 10985 | 13 | 23.1% | -61.8% | -8.03 | 14 | 28.6% | -42.8% | -11151 | 62.2 | 87.3 | 14.4% |
 | b24586 | CONFIRMED_BLEEDER | SHARP | 11703 | 83 | 48.2% | -9.7% | -8.08 | 142 | 43.7% | -11.2% | -10890 | 5.7 | 0 | -1.1% |
-| cf76ed | CONFIRMED_BLEEDER | ELITE | 326 | 36 | 47.2% | -12.9% | -4.64 | 52 | 46.2% | -45.2% | -46199 | 55.1 | 41.7 | 3.1% |
 | 6b853d | CONFIRMED_BLEEDER | ELITE | 412 | 62 | 50% | -6.2% | -3.82 | 138 | 46.4% | -8.9% | -54688 | 32.9 | 46.6 | 3.2% |
+| cf76ed | CONFIRMED_BLEEDER | ELITE | 327 | 36 | 47.2% | -12.9% | -4.64 | 53 | 45.3% | -45.4% | -46615 | 55.1 | 41.7 | 3.1% |
 | 5e3a0c | CONFIRMED_BLEEDER | SHARP | 49671 | 27 | 33.3% | -35.4% | -9.55 | 34 | 35.3% | -44.2% | -3953 | 1 | 0 | -9% |
 | 3a72c1 | CONFIRMED_BLEEDER | ELITE | 1097 | 118 | 49.2% | -5.3% | -6.26 | 159 | 49.1% | -2.2% | -37592 | 37.3 | 21.4 | 2.1% |
 | d9a42a | CONFIRMED_BLEEDER | SHARP | 4379 | 20 | 35% | -40.4% | -8.08 | 22 | 50% | -49% | -19604 | 9.8 | 0 | -2.3% |
@@ -1525,6 +1532,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | d3381b | CONFIRMED_BLEEDER | ELITE | 203 | 15 | 33.3% | -35.4% | -5.30 | 25 | 40% | -16.8% | -65869 | 60 | 62.8 | 5.4% |
 | a24815 | CONFIRMED_BLEEDER | ELITE | 572 | 12 | 33.3% | -41% | -4.92 | 20 | 40% | -24.2% | -70760 | 42.1 | 39.2 | 2.6% |
 | d50c53 | CONFIRMED_BLEEDER | ELITE | — | 8 | 37.5% | -43.1% | -3.45 | 15 | 33.3% | -48.5% | -89467 | 47.3 | 70.9 | 6.8% |
+| 09873e | CONFIRMED_BLEEDER | ELITE | 661 | 4 | 50% | -32.7% | -1.31 | 5 | 40% | -17.7% | -113971 | 47.5 | 36.4 | 2.8% |
 | e3ca79 | CONFIRMED_BLEEDER | SHARP | 1475 | 57 | 42.1% | -19.6% | -11.18 | 84 | 40.5% | -13.5% | -17294 | 43.6 | 36.9 | 2.6% |
 | fbc6a0 | CONFIRMED_BLEEDER | SHARP | 290 | 38 | 42.1% | -20.4% | -7.76 | 35 | 42.9% | -15.1% | -55055 | 18.9 | 0 | -3.8% |
 | 7703d4 | CONFIRMED_BLEEDER | ELITE | 455 | 70 | 50% | -4.4% | -3.00 | 277 | 45.1% | -15% | -102846 | 10.9 | 15.4 | 1.1% |
@@ -1537,7 +1545,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | ce5c8c | CONFIRMED_BLEEDER | SHARP | 245 | 30 | 33.3% | -34.7% | -10.40 | 22 | 40.9% | -44% | -36606 | 19.8 | 0 | -0.7% |
 | 24029c | CONFIRMED_BLEEDER | SHARP | 189 | 10 | 30% | -56% | -5.60 | 36 | 55.6% | -33.8% | -87694 | 53.6 | 41 | 3% |
 | 89bd08 | CONFIRMED_BLEEDER | SHARP | 1456 | 51 | 37.3% | -27.3% | -13.91 | 161 | 39.1% | -12% | -7605 | 19.6 | 1.4 | 0.4% |
-| 09873e | CONFIRMED_BLEEDER | ELITE | 398 | 3 | 33.3% | -46.5% | -1.39 | 4 | 25% | -33% | -132951 | 69.7 | 70 | 7.8% |
 | 32e7e0 | CONFIRMED_BLEEDER | ELITE | 957 | 80 | 55% | -5.2% | -4.15 | 177 | 54.2% | -8.6% | -107081 | 14.3 | 0 | -1.1% |
 | dd64af | CONFIRMED_BLEEDER | SHARP | 214 | 21 | 23.8% | -53% | -11.13 | 15 | 40% | -12% | -37441 | 21.2 | 0.4 | 0.1% |
 | 468c33 | CONFIRMED_BLEEDER | ELITE | 94 | 9 | 44.4% | -14.4% | -1.29 | 13 | 38.5% | -49.1% | -139046 | 46.8 | 68.7 | 7.2% |
@@ -1555,9 +1562,9 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 2e1ca7 | CONFIRMED_BLEEDER | SHARP | 1387 | 19 | 26.3% | -42.7% | -8.11 | 28 | 35.7% | -31.5% | -103658 | 12.3 | 0 | -7.2% |
 | 825598 | CONFIRMED_BLEEDER | SHARP | 355 | 12 | 16.7% | -63.2% | -7.58 | 21 | 19% | -77.1% | -111336 | 17.5 | 0 | 0% |
 | 733c1a | CONFIRMED_BLEEDER | SHARP | 225 | 151 | 47% | -6.4% | -9.74 | 448 | 40.6% | -15.5% | -91480 | 20 | 0 | -0.3% |
-| ea2104 | CONFIRMED_BLEEDER | ELITE | 1142 | 60 | 40% | -24.4% | -14.63 | 81 | 44.4% | -13.2% | -49641 | 34.6 | 17.5 | 1.5% |
 | 47cab2 | CONFIRMED_BLEEDER | ELITE | 149 | 3 | 0% | -100% | -3.00 | 10 | 30% | -78.2% | -175609 | 52.5 | 43.5 | 3.1% |
 | 22e2ca | CONFIRMED_BLEEDER | SHARP | 5832 | 59 | 37.3% | -31.9% | -18.80 | 98 | 34.7% | -18.5% | -20309 | 44.2 | 50.5 | 3.7% |
+| ea2104 | CONFIRMED_BLEEDER | ELITE | 1142 | 61 | 39.3% | -25.6% | -15.63 | 82 | 43.9% | -14.4% | -54641 | 34.6 | 17.5 | 1.6% |
 | 972768 | CONFIRMED_BLEEDER | ELITE | 81 | 60 | 48.3% | -2.9% | -1.70 | 75 | 48% | -22.1% | -204767 | 37.3 | 53.7 | 4.3% |
 | 6b0288 | CONFIRMED_BLEEDER | ELITE | 302 | 10 | 50% | -1% | -0.10 | 17 | 35.3% | -39.4% | -222100 | 19.7 | 0.6 | 0.2% |
 | 348973 | CONFIRMED_BLEEDER | ELITE | 337 | 78 | 50% | -0.1% | -0.08 | 142 | 47.9% | -13.3% | -223809 | 48 | 30.7 | 2.2% |
@@ -1567,16 +1574,16 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 720df6 | CONFIRMED_BLEEDER | ELITE | 33 | 64 | 45.3% | -8.8% | -5.65 | 111 | 48.6% | -13% | -189919 | 50 | 0 | -1.8% |
 | a09a17 | CONFIRMED_BLEEDER | ELITE | 26 | 4 | 25% | -70.2% | -2.81 | 7 | 42.9% | -21.6% | -244356 | 76.7 | 85.4 | 16.2% |
 | ba234f | CONFIRMED_BLEEDER | ELITE | 32 | 134 | 47.8% | -3.7% | -5.02 | 195 | 47.7% | -8.1% | -232507 | 24.3 | 0 | -0.6% |
+| ca4059 | CONFIRMED_BLEEDER | SHARP | 4150 | 69 | 37.7% | -20% | -13.82 | 113 | 43.4% | -25% | -147750 | 10.4 | 0 | -1.7% |
 | e82793 | CONFIRMED_BLEEDER | ELITE | 562 | 5 | 0% | -100% | -5.00 | 9 | 0% | -100% | -266568 | 29.8 | 7.9 | 1% |
-| ca4059 | CONFIRMED_BLEEDER | SHARP | 4150 | 67 | 37.3% | -26.4% | -17.70 | 111 | 43.2% | -24.2% | -140349 | 10.4 | 0 | -1.7% |
 | 8e06f6 | CONFIRMED_BLEEDER | ELITE | 208 | 16 | 43.8% | -12.5% | -1.99 | 27 | 40.7% | -12.7% | -307700 | 54.4 | 36.1 | 2.6% |
 | 67f462 | CONFIRMED_BLEEDER | ELITE | 146 | 79 | 53.2% | -1.1% | -0.88 | 115 | 48.7% | -10.9% | -323831 | 22.3 | 0 | -2.3% |
 | 0f9786 | CONFIRMED_BLEEDER | ELITE | — | 32 | 0% | -100% | -32.00 | 110 | 12.7% | -6.5% | -17193 | 50 | 0 | -0.2% |
 | 0336b0 | CONFIRMED_BLEEDER | ELITE | 314 | 16 | 43.8% | -33.1% | -5.30 | 35 | 51.4% | -55.2% | -289596 | 47 | 59 | 5.2% |
 | 676fac | CONFIRMED_BLEEDER | ELITE | — | 14 | 0% | -100% | -14.00 | 94 | 34% | -48.9% | -236937 | 86.3 | 96.9 | 48.5% |
+| 7381c0 | CONFIRMED_BLEEDER | SHARP | — | 80 | 40% | -21.6% | -17.29 | 160 | 51.9% | -9.2% | -204975 | 4.2 | 0 | 0% |
 | 9e5034 | CONFIRMED_BLEEDER | ELITE | 452 | 10 | 20% | -70.9% | -7.09 | 40 | 17.5% | -73.1% | -343978 | 31.1 | 10.3 | 1.2% |
 | 641ebf | CONFIRMED_BLEEDER | ELITE | 204 | 7 | 42.9% | -15.2% | -1.06 | 14 | 28.6% | -38.9% | -408489 | 42.6 | 38.4 | 2.6% |
-| 7381c0 | CONFIRMED_BLEEDER | SHARP | — | 79 | 39.2% | -23.2% | -18.34 | 159 | 51.6% | -11.8% | -255677 | 4.2 | 0 | 0% |
 | eb52f9 | CONFIRMED_BLEEDER | ELITE | 152 | 9 | 11.1% | -79.4% | -7.15 | 25 | 24% | -40.5% | -369887 | 54 | 72.5 | 7.5% |
 | 8ce2ce | CONFIRMED_BLEEDER | ELITE | 234 | 10 | 40% | -19% | -1.90 | 41 | 46.3% | -20.2% | -460392 | 38.4 | 33.6 | 2.1% |
 | 8ec926 | CONFIRMED_BLEEDER | ELITE | 418 | 238 | 44.5% | -12.9% | -30.60 | 542 | 45.6% | -10.7% | -184752 | 30.2 | 6.9 | 1.1% |
@@ -1584,8 +1591,8 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 73f5b0 | CONFIRMED_BLEEDER | ELITE | 88 | 23 | 47.8% | -6.7% | -1.54 | 52 | 42.3% | -27.8% | -515869 | 51.1 | 29.1 | 1.8% |
 | 854487 | CONFIRMED_BLEEDER | ELITE | 543 | 5 | 20% | -67.1% | -3.35 | 7 | 14.3% | -61.1% | -502798 | 50.8 | 48.3 | 3.6% |
 | 8996d3 | CONFIRMED_BLEEDER | ELITE | 34 | 145 | 46.2% | -12.6% | -18.20 | 280 | 43.2% | -6.5% | -391846 | 24.2 | 0 | -2.9% |
-| 779ef0 | CONFIRMED_BLEEDER | ELITE | 174 | 121 | 34.7% | -29.8% | -36.00 | 247 | 36% | -15.7% | -284337 | 25.4 | 2.3 | 0.1% |
 | d322e1 | CONFIRMED_BLEEDER | ELITE | 243 | 9 | 44.4% | -23.7% | -2.13 | 7 | 28.6% | -75.9% | -626803 | 18.4 | 0 | -4.8% |
+| 779ef0 | CONFIRMED_BLEEDER | ELITE | 174 | 123 | 34.1% | -30.9% | -38.00 | 249 | 35.7% | -16% | -291523 | 24.2 | 0.5 | 0.1% |
 | 9a69c2 | CONFIRMED_BLEEDER | ELITE | 173 | 184 | 42.9% | -17.8% | -32.67 | 125 | 41.6% | -29.3% | -359490 | 19 | 3.3 | 0.4% |
 | 710c2e | CONFIRMED_BLEEDER | ELITE | 428 | 33 | 51.5% | -0.1% | -0.03 | 102 | 44.1% | -16.5% | -751924 | 50 | 0 | -5.1% |
 | fcc12b | CONFIRMED_BLEEDER | ELITE | 362 | 174 | 48.9% | -4.6% | -8.03 | 245 | 50.2% | -9% | -995139 | 15.9 | 0 | -0.4% |
@@ -1608,80 +1615,80 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 2d2ca8 | 72 | +62.2% | 179 | +11.9% | +3108868 | 24.1 | 0% |
 | 7b895d | 89 | +5.4% | 197 | +24.9% | +2465211 | 44.3 | 1.4% |
 | c41842 | 5 | +43.3% | 5 | +32.7% | +2157060 | 94 | 20.1% |
-| ab4b6e | 223 | +14.7% | 304 | +5.6% | +1338644 | 32.1 | 0.3% |
+| ab4b6e | 224 | +15.1% | 305 | +6% | +1438928 | 32.1 | 0.3% |
 | e4ec62 | 11 | +25.8% | 16 | +40.1% | +1489597 | 78.8 | 7.3% |
 | 28658e | 139 | +11.9% | 179 | +10.3% | +1223882 | 72.6 | 4.4% |
 | bfe3bc | 156 | +17.6% | 252 | +9.5% | +903804 | 51.1 | 1.7% |
 | 98ebc2 | 8 | +54.6% | 10 | +55.5% | +1095364 | 13.3 | -0.4% |
 | 913987 | 44 | +32.2% | 67 | +25.5% | +977957 | 84.1 | 12% |
 | 3ace7b | 35 | +1.2% | 87 | +5.4% | +1115083 | 25 | -0.6% |
-| c911a4 | 194 | +25.4% | 594 | +8.7% | +421944 | 50 | -1.4% |
+| c911a4 | 195 | +25.3% | 596 | +8.7% | +421824 | 50 | -1.4% |
 | 880232 | 7 | +5.2% | 22 | +30.4% | +898783 | 60.2 | 12.5% |
-| 8bbab3 | 12 | +68.8% | 39 | +31.2% | +708078 | 56.7 | 2.3% |
-| 69f882 | 754 | +8.3% | 1796 | +7.5% | +156629 | 50 | -2.7% |
+| a1be00 | 168 | +6.7% | 256 | +20.1% | +682757 | 48.9 | 2.2% |
+| 8bbab3 | 12 | +68.8% | 40 | +31.2% | +710401 | 56.7 | 2.3% |
 | 799fad | 5 | +130.8% | 9 | +63.1% | +714883 | 22.8 | 1% |
+| 69f882 | 755 | +8.2% | 1798 | +7.5% | +156123 | 50 | -2.7% |
 | c94998 | 106 | +3.2% | 147 | +13% | +710579 | 28.6 | 0.9% |
 | 7923c4 | 321 | +8% | 430 | +3.2% | +462946 | 49.2 | 1.6% |
 | 54d977 | 8 | +45.3% | 11 | +12.8% | +680376 | 59.3 | 2.9% |
-| a1be00 | 167 | +3.9% | 255 | +18.5% | +623257 | 48.9 | 2.2% |
 | ccbe3d | 6 | +8.8% | 14 | +33.1% | +673926 | 62.4 | 4.9% |
 | ba8492 | 331 | +11.8% | 308 | +6.1% | +244974 | 50 | -0.9% |
 | 8366f5 | 41 | +20.4% | 91 | +6.3% | +537567 | 24.7 | -0.5% |
-| 5fcee5 | 262 | +18.6% | 439 | +7.5% | +129172 | 65 | 4.2% |
-| a0cff6 | 689 | +5.2% | 1730 | +3.8% | +242709 | 50 | -1.3% |
-| 11f1d2 | 393 | +14.8% | 1008 | +9% | +14001 | 30.8 | 0% |
+| 5fcee5 | 263 | +18.5% | 440 | +7.5% | +129982 | 65 | 4.2% |
+| a0cff6 | 690 | +5% | 1731 | +3.8% | +242344 | 50 | -1.3% |
 | 52aeeb | 102 | +10.8% | 182 | +13.3% | +477787 | 51.2 | 1.8% |
-| 120215 | 903 | +5.1% | 2388 | +1.8% | +35016 | 50 | 0% |
+| 11f1d2 | 396 | +14.4% | 1016 | +9.5% | +14997 | 30.8 | 0% |
+| 120215 | 904 | +5% | 2390 | +1.8% | +36017 | 50 | 0% |
 | c7935a | 4 | +24.8% | 8 | +4.3% | +451732 | 89.4 | 11.5% |
 | 955c26 | 213 | +7.7% | 398 | +9.1% | +295296 | 50 | -1.9% |
-| 4c8ed9 | 390 | +11.4% | 659 | +1.3% | +9171 | 53.6 | 3.5% |
+| 4c8ed9 | 391 | +11.1% | 663 | +1.4% | +9569 | 50 | 3.5% |
 | bc44b0 | 266 | +14.7% | 532 | +0.4% | +14167 | 39.5 | 1.2% |
 | 11b032 | 7 | +77.1% | 13 | +78.1% | +338234 | 83.2 | 14.9% |
-| 8fda40 | 174 | +22% | 224 | +2.8% | +5304 | 39.5 | 2.3% |
-| bc35e3 | 483 | +5.6% | 909 | +2.4% | +102959 | 30.4 | 0.6% |
+| 8fda40 | 176 | +21.9% | 226 | +2.9% | +5524 | 39 | 2.3% |
 | fea6f5 | 25 | +13.8% | 52 | +55.8% | +329531 | 69.5 | 5.9% |
 | 33aa70 | 4 | +25.5% | 14 | +43.1% | +353493 | 50 | -2.8% |
+| bc35e3 | 484 | +5.4% | 911 | +2.3% | +98635 | 31.4 | 0.6% |
 | 7b4652 | 9 | +380.7% | 34 | +8.7% | +3320 | 59.6 | 24.4% |
 | 946418 | 24 | +141.6% | 28 | +7.7% | +5177 | 76.8 | 25.5% |
 | 12f826 | 56 | +21% | 79 | +16.9% | +220157 | 85.3 | 13.4% |
 | f83ab0 | 8 | +52.8% | 15 | +37.4% | +295063 | 77.1 | 16% |
+| 85aa98 | 68 | +12% | 221 | +5.9% | +242079 | 54.4 | 2% |
 | f0fec8 | 5 | +39.6% | 7 | +56.1% | +294865 | 68.5 | 7.2% |
-| 5b1e50 | 589 | +4% | 1127 | +5% | +64290 | 25.5 | 0.2% |
-| 85aa98 | 68 | +12% | 220 | +5.3% | +215353 | 54.4 | 2% |
 | d200f2 | 4 | +70.2% | 11 | +43.7% | +268642 | 63.1 | 4.3% |
 | 308a06 | 5 | +128.2% | 7 | +35.9% | +230042 | 85.2 | 15.7% |
 | 96aa1a | 95 | +18.3% | 147 | +13.7% | +116901 | 41.2 | 2.1% |
 | ab74fe | 4 | +101.9% | 4 | +51.6% | +247114 | 24.7 | -1.1% |
+| 5b1e50 | 590 | +3.8% | 1129 | +4.9% | +62799 | 25.5 | 0.2% |
 | 2f2a9e | 523 | +1.8% | 977 | +1.8% | +181786 | 24 | -2.7% |
 | e2e279 | 4 | +159.9% | 8 | +48.7% | +210510 | 79.7 | 8.8% |
-| 469a4a | 40 | +10.6% | 78 | +16.3% | +226227 | 47 | 2.7% |
 | dfa240 | 223 | +8.1% | 374 | +7.3% | +84546 | 53.8 | 3.4% |
+| 469a4a | 40 | +10.6% | 79 | +13.6% | +192742 | 47 | 2.7% |
 | c4c933 | 3 | +79.4% | 3 | +66.3% | +210191 | 81.8 | 20.3% |
 | 7f00bc | 95 | +17% | 177 | +15.5% | +71388 | 37.7 | 2.1% |
-| a9769e | 8 | +16.5% | 15 | +17.4% | +219377 | 83.8 | 22% |
 | daf4de | 59 | +38.8% | 108 | +0.2% | +2700 | 23.9 | 0% |
 | 6b1e01 | 8 | +44.4% | 10 | +25.3% | +193674 | 61.4 | 6.9% |
 | a10ff5 | 96 | +7.1% | 123 | +15.4% | +160563 | 15.1 | 1.2% |
+| b839b3 | 191 | +11.4% | 301 | +4.3% | +9267 | 20 | 1% |
 | 8d3672 | 156 | +13.7% | 188 | +3.5% | +5231 | 5.7 | -1.3% |
 | e05213 | 15 | +40.5% | 40 | +9% | +152647 | 26.5 | 2.4% |
 | b05143 | 23 | +15.4% | 49 | +5.4% | +173229 | 28.8 | 1.1% |
 | 2dc4f6 | 318 | +6.2% | 366 | +6.2% | +7755 | 33.3 | 1.8% |
 | 51176e | 400 | +3.4% | 468 | +6.6% | +67510 | 33.6 | 1.4% |
+| 3102d7 | 123 | +14.4% | 193 | +11% | +16267 | 56.9 | 4.7% |
 | d633d1 | 10 | +26.5% | 19 | +32% | +163980 | 67.2 | 5.3% |
-| 3102d7 | 121 | +14.4% | 191 | +10.9% | +16119 | 57.5 | 5.1% |
 | 4f821d | 29 | +5.2% | 49 | +12.6% | +173438 | 50 | 0% |
 | 7395c4 | 24 | +74.1% | 27 | +37.4% | +9146 | 5.8 | -1.9% |
 | 4417bc | 257 | +6.8% | 157 | +18.3% | +10035 | 40.9 | 3.2% |
 | d5017f | 31 | +2.3% | 82 | +12.7% | +172650 | 63.1 | 8.5% |
+| eca4ae | 39 | +45.3% | 36 | +7.1% | +1894 | 59.5 | 7.6% |
 | aa9fb4 | 29 | +25.3% | 71 | +10.4% | +104322 | 23 | -0.5% |
-| cc63b8 | 204 | +6.9% | 330 | +6.4% | +34488 | 30.2 | 1.5% |
 | 806c4a | 31 | +47.4% | 40 | +33.6% | +25357 | 15.3 | 1.6% |
 | 2c5fde | 125 | +12% | 158 | +7.3% | +20546 | 4.2 | -1.1% |
 | fd4653 | 24 | +69.5% | 28 | +25% | +3951 | 57.3 | 8.4% |
 | c668b3 | 61 | +26.1% | 99 | +3.6% | +7467 | 11.6 | 1.2% |
-| b839b3 | 189 | +8.4% | 299 | +3.8% | +8245 | 20 | 1% |
-| eca4ae | 38 | +43.1% | 35 | +5.8% | +1516 | 59.6 | 7.6% |
+| cc63b8 | 206 | +6.4% | 332 | +6.2% | +33465 | 27.4 | 1.2% |
 | 79c052 | 13 | +7.8% | 28 | +13% | +153441 | 71.6 | 5.3% |
+| 8a5c63 | 3 | +15.2% | 5 | +17.8% | +157217 | 47 | 2.7% |
 | 4ab0f8 | 29 | +49.7% | 41 | +30.9% | +17674 | 49.3 | 3.9% |
 | c6c4d6 | 79 | +20% | 148 | +1% | +1418 | 14.9 | 1.1% |
 | e54fcb | 11 | +8.6% | 44 | +30.9% | +146918 | 65.8 | 5.9% |
@@ -1693,17 +1700,17 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 268176 | 9 | +160.1% | 12 | +2.7% | +174 | 0.7 | 0% |
 | 6b3269 | 19 | +59.8% | 20 | +19.2% | +30423 | 70.1 | 0.1% |
 | c772ae | 33 | +19.3% | 46 | +36.4% | +76663 | 33 | 1.5% |
-| 01fb1a | 197 | +6.1% | 354 | +2.6% | +18640 | 24.6 | 0.1% |
 | 5a3e7a | 59 | +22.4% | 89 | +4.9% | +3529 | 20.1 | 0.7% |
 | 918f62 | 31 | +38.8% | 47 | +20.8% | +15280 | 53.9 | 4.1% |
-| f2d71d | 46 | +24.8% | 71 | +40.1% | +21026 | 24 | 0.6% |
-| 0889ba | 27 | +41.2% | 55 | +10.3% | +18619 | 6.8 | -0.5% |
+| 01fb1a | 198 | +5.5% | 356 | +2.7% | +19028 | 26.2 | 0.2% |
 | 4a1eeb | 30 | +12.9% | 48 | +12.3% | +87278 | 52.1 | 3.4% |
+| f2d71d | 47 | +22.1% | 72 | +40% | +20969 | 22.8 | 0.6% |
 | 3102c3 | 6 | +12.5% | 7 | +7.2% | +114343 | 79.5 | 9.1% |
 | 931964 | 15 | +62.1% | 19 | +23.6% | +26913 | 49.1 | 3% |
 | c19b3c | 3 | +19.2% | 18 | +65.1% | +113904 | 50 | -0.3% |
 | 182fef | 5 | +24.8% | 8 | +33.6% | +106657 | 82 | 14.1% |
 | fc0491 | 4 | +111.5% | 6 | +83.7% | +73828 | 81.2 | 22.6% |
+| 0889ba | 28 | +36.1% | 56 | +9.4% | +17139 | 6.8 | -0.7% |
 | 42e7c7 | 17 | +66.1% | 22 | +3% | +4416 | 22.8 | 0.4% |
 | d66e28 | 116 | +9.5% | 100 | +6.1% | +4184 | 9.6 | 0.6% |
 | d6b257 | 27 | +37.7% | 26 | +45.4% | +12367 | 82.5 | 17.1% |
@@ -1712,7 +1719,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | e11302 | 59 | +16.4% | 87 | +18.5% | +9348 | 52.6 | 7.8% |
 | 472ee7 | 3 | +345.3% | 3 | +16.7% | +1832 | 46.1 | 5.2% |
 | 7cf76a | 3 | +275.2% | 3 | +12.6% | +19491 | 51.6 | 3.3% |
-| 653a9d | 40 | +23% | 57 | +14.4% | +6849 | 14.7 | 0.9% |
+| 653a9d | 41 | +22.6% | 58 | +14.4% | +6882 | 15.4 | 1% |
 | 8e0aa1 | 6 | +27.8% | 12 | +138.2% | +80948 | 11.5 | -0.2% |
 | 7ce829 | 22 | +38.2% | 31 | +20.2% | +13487 | 16.9 | -0.9% |
 | 332c23 | 22 | +20.8% | 66 | +6.1% | +50603 | 22.6 | 0.2% |
@@ -1721,6 +1728,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 62941a | 194 | +4.6% | 238 | +3.1% | +4118 | 10.4 | -0.1% |
 | 74fd47 | 7 | +41.3% | 15 | +37.4% | +63160 | 21.6 | 0.6% |
 | 91718b | 16 | +53.7% | 21 | +21.4% | +6128 | 42.6 | 4.9% |
+| 2cbcf8 | 103 | +2.7% | 158 | +7.4% | +62681 | 50 | -0.5% |
 | 04709e | 4 | +139% | 5 | +215.6% | +34396 | 83.3 | 56.8% |
 | 99059d | 7 | +112.4% | 8 | +1.5% | +10673 | 68.9 | 16% |
 | 90617d | 56 | +14% | 99 | +6.3% | +10132 | 31.9 | 1.5% |
@@ -1729,26 +1737,25 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 1ee9c5 | 5 | +21.2% | 8 | +59.9% | +75982 | 71.5 | 9.4% |
 | e70853 | 18 | +7.5% | 59 | +3.4% | +72939 | 41.5 | 1.5% |
 | 30935c | 32 | +26.4% | 53 | +1.1% | +1136 | 21.3 | 0.7% |
+| c4d2b1 | 9 | +35.4% | 12 | +17.1% | +51959 | 17.3 | -0.8% |
 | b0d23a | 11 | +57.5% | 18 | +34% | +19728 | 5 | -4.8% |
 | 4f5ac7 | 7 | +4.3% | 16 | +55.4% | +79561 | 79.6 | 20.6% |
 | 5ad542 | 16 | +40.3% | 19 | +10.7% | +16572 | 51.7 | 2.9% |
+| 415b58 | 3 | +41.7% | 7 | +60.9% | +68093 | 72.3 | 8% |
+| 199296 | 92 | +4.3% | 140 | +32.6% | +39781 | 36.8 | 1.9% |
 | 95618e | 16 | +38.3% | 65 | +6.8% | +18002 | 68.2 | 4.3% |
-| 2cbcf8 | 102 | +1.7% | 157 | +7.3% | +61526 | 50 | -0.5% |
 | 2d024e | 7 | +54.5% | 14 | +3.9% | +40194 | 50 | -0.3% |
 | 94aadd | 55 | +11% | 56 | +36.2% | +16969 | 19.6 | 0.8% |
 | 4a7808 | 8 | +92% | 9 | +5.2% | +2490 | 48.4 | 4.4% |
-| c4d2b1 | 8 | +38.8% | 11 | +20.2% | +45036 | 23.4 | 0.3% |
 | e51246 | 51 | +11.7% | 82 | +10.4% | +15815 | 12 | 0% |
 | d780f4 | 143 | +4.9% | 209 | +2% | +4491 | 30 | 1.3% |
 | cf8a59 | 24 | +30.8% | 38 | +4.3% | +925 | 1.2 | -1.6% |
 | 980077 | 14 | +32.2% | 9 | +15.4% | +29099 | 17.7 | 1.7% |
-| cdc76f | 41 | +16.1% | 56 | +13.8% | +7427 | 30.1 | 1.9% |
 | 45232f | 54 | +9.1% | 76 | +22% | +22353 | 41.1 | 2.1% |
 | f9f262 | 28 | +19.6% | 38 | +27.1% | +16303 | 18.9 | 1.3% |
 | 0d443f | 22 | +25.4% | 24 | +27.4% | +14872 | 52.3 | 4.2% |
 | 533c67 | 19 | +34.5% | 31 | +4% | +3763 | 15.2 | -4.4% |
 | 7d6465 | 15 | +41.8% | 13 | +72.5% | +6209 | 49.3 | 8.4% |
-| 199296 | 91 | +3.2% | 139 | +32.3% | +39169 | 36.8 | 1.9% |
 | bbaa3a | 23 | +19.8% | 37 | +23.4% | +22795 | 14.7 | -0.8% |
 | a7a9cc | 9 | +35.1% | 19 | +11.4% | +35828 | 45.4 | 5.9% |
 | d5de59 | 14 | +37% | 22 | +68.5% | +15494 | 15.8 | 0.5% |
@@ -1756,7 +1763,8 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 0642b9 | 20 | +24.1% | 25 | +29.5% | +17670 | 75.2 | 18.7% |
 | fec67e | 8 | +67% | 31 | +8.4% | +11709 | 55.8 | 15.4% |
 | 42af9e | 14 | +46.2% | 25 | +2% | +225 | 15.5 | 1.1% |
-| 60606b | 28 | +18.5% | 29 | +20.7% | +11500 | 33.7 | 2.5% |
+| 60606b | 29 | +18.1% | 30 | +19.7% | +11935 | 34.5 | 2.5% |
+| cdc76f | 42 | +13.4% | 57 | +13.3% | +7194 | 31.8 | 2% |
 | 03c168 | 7 | +84.3% | 7 | +31.4% | +4273 | 59 | 46% |
 | 4b80f8 | 3 | +205.7% | 4 | +34% | +1530 | 63.4 | 24.6% |
 | 5c2194 | 105 | +5.5% | 152 | +4.8% | +5130 | 32.7 | 1.3% |
@@ -1772,7 +1780,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 0b0329 | 9 | +23.7% | 13 | +118.9% | +33772 | 44.5 | 6.2% |
 | af178e | 5 | +106.4% | 6 | +61.7% | +1869 | 3.9 | 0.6% |
 | e3a2c3 | 17 | +31.5% | 29 | +13.1% | +1208 | 0.7 | -8.4% |
-| 241915 | 8 | +67.6% | 19 | +7.7% | +522 | 17.2 | 0.9% |
 | 579e12 | 390 | +1% | 549 | +2.3% | +13855 | 20.5 | -0.7% |
 | d6d290 | 3 | +98.2% | 3 | +84.9% | +23618 | 58.5 | 17% |
 | 0fc767 | 21 | +24.3% | 37 | +5.8% | +2006 | 26.9 | 1.1% |
@@ -1784,7 +1791,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 4a752c | 6 | +17.9% | 7 | +25.8% | +40012 | 65.5 | 4.2% |
 | 3fc89d | 20 | +24.9% | 21 | +23.7% | +733 | 36.5 | 3.7% |
 | 64411a | 36 | +8% | 52 | +6.6% | +21228 | 78.3 | 10.6% |
-| ae0200 | 19 | +8% | 23 | +32% | +34323 | 18.4 | -0.7% |
 | df510b | 22 | +20% | 28 | +43.2% | +5382 | 17.8 | 2% |
 | 67afc3 | 15 | +31.6% | 30 | +1.7% | +1227 | 11.5 | -0.7% |
 | 2e8da5 | 28 | +13.4% | 53 | +0.7% | +10880 | 39.8 | 2.4% |
@@ -1814,12 +1820,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 43907e | 10 | +36.7% | 16 | +7.2% | +1968 | 39.5 | 3.2% |
 | ee60d6 | 9 | +27.5% | 10 | +31.1% | +13721 | 63.4 | 13.8% |
 | 0dfb9b | 10 | +27.2% | 13 | +42.6% | +10608 | 49.4 | 3.3% |
-| f7c21b | 38 | +7.7% | 46 | +17.3% | +6719 | 5.3 | 0.4% |
-| 65d9ac | 10 | +20.8% | 12 | +20.8% | +14913 | 42.6 | 3.9% |
+| 65d9ac | 11 | +19.7% | 13 | +19.4% | +15981 | 43.2 | 4.1% |
+| ae0200 | 20 | +2.6% | 24 | +29% | +31828 | 18.4 | -0.7% |
+| f7c21b | 38 | +7.7% | 47 | +17.6% | +6858 | 5.3 | 0.4% |
 | 4f814c | 64 | +5.1% | 36 | +37.3% | +2521 | 7.1 | -1.4% |
 | 78e8f1 | 35 | +8.7% | 56 | +0.3% | +4701 | 61.4 | 4.9% |
 | 958882 | 11 | +26.4% | 16 | +4.7% | +5949 | 50 | -0.2% |
 | efb5a7 | 6 | +58.1% | 5 | +0.2% | +7 | 10.9 | 0.8% |
+| 241915 | 10 | +34.1% | 21 | +3.4% | +244 | 17.2 | 0.9% |
 | 7dbea3 | 15 | +15.8% | 28 | +8.5% | +10184 | 11.2 | -3.1% |
 | 24994f | 12 | +26.9% | 21 | +7.5% | +928 | 39.4 | 3.7% |
 | 295976 | 3 | +107.2% | 7 | +24.3% | +1008 | 36.7 | 4.2% |
@@ -1827,7 +1835,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 5589e8 | 5 | +45.1% | 11 | +15.5% | +10388 | 73.4 | 9.8% |
 | 390f9a | 7 | +42.9% | 14 | +51.3% | +2097 | 41.9 | 2.7% |
 | 75371b | 17 | +15.8% | 22 | +5% | +5279 | 22.6 | 0.9% |
-| 70be3f | 61 | +2.9% | 248 | +4.8% | +14360 | 19.6 | -0.5% |
 | 6da2b4 | 4 | +60% | 5 | +112.4% | +7467 | 57.2 | 7.9% |
 | d3948b | 101 | +2.7% | 146 | +2.4% | +3842 | 63.3 | 4.4% |
 | f17ece | 3 | +47.2% | 3 | +61.6% | +16062 | 42.3 | 3.3% |
@@ -1835,7 +1842,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 4a9953 | 3 | +38.8% | 9 | +33.9% | +17997 | 34.5 | 3.9% |
 | 239b65 | 6 | +41.3% | 5 | +97.6% | +4758 | 25.3 | 1.6% |
 | 1e462e | 35 | +6.3% | 78 | +11.5% | +7337 | 17.7 | 0.7% |
-| 4dd3c7 | 17 | +15.6% | 20 | +8% | +2347 | 62.3 | 5.5% |
 | b69900 | 8 | +22.7% | 7 | +56.3% | +10795 | 56 | 13.2% |
 | ffa0f3 | 5 | +47.2% | 11 | +41.4% | +5137 | 0.4 | -4.3% |
 | 0f7795 | 13 | +21.7% | 41 | +2.7% | +313 | 8.7 | 0.9% |
@@ -1845,6 +1851,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | a62792 | 4 | +36.1% | 6 | +92% | +13324 | 71.9 | 10.9% |
 | 46eedb | 3 | +25.7% | 8 | +38.9% | +19881 | 43.1 | 2.4% |
 | 7b136b | 10 | +22.3% | 18 | +41.2% | +5024 | 19.1 | 1.2% |
+| 2d9192 | 23 | +9.6% | 40 | +11.4% | +4903 | 34.8 | 1.9% |
 | def183 | 4 | +64.9% | 3 | +50.9% | +466 | 13.9 | 1.6% |
 | 42014a | 5 | +46.1% | 12 | +31.2% | +3193 | 31.7 | 1.1% |
 | 18e2a0 | 4 | +52.5% | 6 | +12.1% | +4773 | 23.7 | 0.7% |
@@ -1858,6 +1865,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 7fbc38 | 3 | +68.3% | 4 | +65.4% | +2112 | 58.3 | 18.6% |
 | 2b7a69 | 49 | +0.7% | 124 | +27.3% | +19004 | 35.7 | 1.1% |
 | d54715 | 5 | +42.9% | 6 | +23.4% | +443 | 2 | -0.8% |
+| 70be3f | 62 | +1.2% | 251 | +4.8% | +14355 | 19.6 | -0.5% |
 | 3fe770 | 3 | +42.7% | 5 | +71.3% | +8866 | 45.6 | 2.9% |
 | 63672a | 4 | +46.7% | 21 | +9.8% | +2874 | 21.6 | 1.5% |
 | 55b8be | 4 | +36% | 11 | +25.6% | +6943 | 0.4 | -0.5% |
@@ -1878,7 +1886,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 59ec66 | 6 | +27% | 8 | +11.1% | +1494 | 38.8 | 5.4% |
 | 46824b | 25 | +6.9% | 28 | +0.2% | +66 | 22.1 | 1.4% |
 | 7dec7d | 3 | +30.1% | 4 | +36% | +7476 | 30 | 2.3% |
-| eba48d | 6 | +11.8% | 7 | +14.6% | +9029 | 67.7 | 27.8% |
 | 88e90f | 4 | +38.2% | 4 | +47% | +355 | 42.2 | 4.1% |
 | 57c7bb | 3 | +50.9% | 4 | +7.3% | +289 | 46.2 | 8.5% |
 | 4cc7f1 | 7 | +13.7% | 16 | +27.4% | +5884 | 56.3 | 12.3% |
@@ -1894,7 +1901,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | dc406e | 5 | +26.9% | 6 | +6.4% | +275 | 70.9 | 43.6% |
 | 3b3e28 | 3 | +30.9% | 5 | +37.6% | +4356 | 3.4 | -0.3% |
 | afcaf7 | 26 | +1.4% | 52 | +11.5% | +9397 | 67.2 | 8% |
-| 2d9192 | 22 | +4.1% | 39 | +9.1% | +3823 | 32.8 | 1.6% |
 | bf1aaf | 13 | +4% | 15 | +13.2% | +7626 | 44.7 | 2.6% |
 | e25b13 | 11 | +6.8% | 13 | +24.8% | +3872 | 1.8 | 0% |
 | fe2383 | 3 | +35.1% | 3 | +26% | +772 | 50.7 | 9.7% |
@@ -1902,9 +1908,9 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 66d4d1 | 5 | +16.3% | 7 | +53.4% | +1955 | 36.8 | 4.7% |
 | f3bf3a | 7 | +6.5% | 12 | +5.4% | +4623 | 9.7 | 1% |
 | e95547 | 3 | +26.7% | 3 | +33.6% | +1017 | 58.1 | 7.6% |
+| 0cebbc | 5 | +15.8% | 5 | +17.5% | +1034 | 2.5 | -1.5% |
 | dfbdea | 6 | +9.5% | 6 | +18.3% | +3001 | 43 | 2.6% |
 | 40ac40 | 4 | +17.5% | 6 | +16.7% | +1170 | 6.9 | -1.3% |
-| 0cebbc | 4 | +17.5% | 4 | +18% | +1002 | 2.5 | -1.5% |
 | 666f49 | 6 | +3.8% | 7 | +11.2% | +5592 | 22.2 | -3.5% |
 | ec43b4 | 5 | +11.8% | 5 | +11.5% | +1463 | 61.8 | 11.5% |
 | f0b756 | 3 | +23.4% | 3 | +23.3% | +216 | 3.3 | 0.3% |
@@ -1928,25 +1934,25 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | e68bcd | 6 | -6.6% | 6 | -0.8% | -3 | 35.1 | 1.7% |
 | 802023 | 3 | -5.1% | 6 | -31.6% | -2687 | 20.8 | 1.1% |
 | 2bf702 | 10 | -3.9% | 17 | -8.8% | -482 | 60.2 | 21.4% |
-| 420257 | 6 | -1.2% | 9 | -31.5% | -3797 | 59 | 9.2% |
-| ccc63a | 4 | -8.7% | 25 | -25.3% | -1609 | 8.9 | 0% |
 | 954fa9 | 26 | -1.7% | 44 | -6.6% | -1002 | 7.9 | 0.8% |
+| 420257 | 6 | -1.2% | 10 | -37.5% | -4939 | 59 | 9.2% |
 | 6ac120 | 17 | -1.1% | 24 | -3.3% | -3974 | 41.1 | 1.8% |
 | fc89aa | 3 | -9% | 3 | -65.8% | -3373 | 39.6 | 3.1% |
-| ca3b5c | 19 | -2.3% | 21 | -10.6% | -2328 | 21.9 | 1.1% |
+| ca3b5c | 19 | -2.3% | 22 | -10.5% | -2319 | 21.9 | 1.1% |
 | ef68f9 | 6 | -11% | 8 | -18.6% | -705 | 61.8 | 9.7% |
 | 76b487 | 18 | -2.2% | 21 | -12.8% | -3388 | 5.8 | -3.3% |
 | d1ec48 | 4 | -1.7% | 7 | -44% | -7096 | 64.8 | 6.3% |
+| 24aff5 | 3 | -26% | 5 | -3.8% | -196 | 1 | -10.6% |
+| bb6f95 | 4 | -14.6% | 5 | -33.2% | -2325 | 43.3 | 4.1% |
 | 64f577 | 5 | -12.1% | 9 | -34.4% | -2178 | 21.3 | 1.6% |
 | b4ec7d | 7 | -8.6% | 12 | -13.3% | -2641 | 8.8 | -1.6% |
 | 594469 | 5 | -15.5% | 16 | -2.8% | -905 | 58.2 | 15.5% |
 | d0b9d2 | 16 | -5.2% | 17 | -4.1% | -531 | 84 | 17.3% |
 | c23df5 | 3 | -29.7% | 4 | -4.2% | -83 | 15.8 | 1.8% |
-| bb6f95 | 3 | -22.4% | 4 | -39.9% | -2392 | 42.6 | 4.1% |
 | 474257 | 4 | -9.8% | 10 | -58.3% | -5231 | 23.8 | 4.9% |
 | fe8192 | 17 | -2.8% | 21 | -28.4% | -4492 | 22.6 | 1.2% |
 | ab1576 | 13 | -6.4% | 16 | -9.7% | -1193 | 8.8 | -1.4% |
-| 234030 | 20 | -2% | 41 | -21.4% | -5959 | 13.7 | 0.4% |
+| 234030 | 20 | -2% | 42 | -22.6% | -6380 | 13.7 | 0.4% |
 | c00b6e | 10 | -3.4% | 22 | -28.4% | -6994 | 5.4 | -0.8% |
 | 8a7e43 | 5 | -16.3% | 16 | -8.5% | -2248 | 53.9 | 5% |
 | af081e | 11 | -6.3% | 19 | -19.2% | -3715 | 2.6 | -4.5% |
@@ -1964,10 +1970,11 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 1895dc | 96 | -1.4% | 142 | -1.5% | -1620 | 11.2 | 0.6% |
 | 48beea | 13 | -2% | 43 | -20.3% | -11977 | 12.6 | 0.1% |
 | eece9b | 4 | -23.8% | 4 | -28.6% | -6108 | 28 | 0.6% |
+| c585b1 | 3 | -40% | 7 | -33.4% | -4009 | 49.9 | 2.3% |
 | 4a0d13 | 8 | -18% | 9 | -21.8% | -2082 | 63.4 | 9% |
+| 74087f | 10 | -5.5% | 18 | -37.6% | -11237 | 50.8 | 3.2% |
 | 260fb4 | 3 | -34.9% | 5 | -35.7% | -6738 | 66.8 | 19.3% |
 | 2a9738 | 12 | -14.4% | 18 | -5.9% | -1198 | 22.4 | 1.1% |
-| c54389 | 16 | -10.4% | 21 | -3.3% | -2989 | 44.1 | 7.5% |
 | 9682b8 | 3 | -55.4% | 5 | -42% | -3186 | 26.5 | 1.9% |
 | d5d072 | 4 | -44.5% | 6 | -26.9% | -2625 | 2.1 | -5.1% |
 | 529da2 | 23 | -4.6% | 23 | -36.3% | -9937 | 6.2 | -2.6% |
@@ -1977,7 +1984,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | fd761d | 65 | -2.3% | 107 | -11.9% | -7355 | 75.4 | 13.3% |
 | 582ec4 | 5 | -13.4% | 6 | -66.2% | -16034 | 6.3 | -8.2% |
 | 55647a | 3 | -57.3% | 5 | -52.6% | -5849 | 34 | 2.8% |
-| 927bd0 | 4 | -52.7% | 5 | -67.8% | -2022 | 58.8 | 30.5% |
 | ce63a2 | 12 | -7.4% | 20 | -14.9% | -14501 | 20.2 | -0.7% |
 | bc9483 | 8 | -24.8% | 9 | -30% | -4488 | 4.4 | -0.6% |
 | 5592d3 | 45 | -5.3% | 54 | -2.8% | -1058 | 2.3 | -1% |
@@ -1991,15 +1997,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 1918c1 | 4 | -57.6% | 14 | -49.3% | -2524 | 0.1 | -12.2% |
 | 5b409f | 4 | -59.8% | 7 | -38.4% | -1866 | 13.2 | 0% |
 | 936218 | 27 | -1.7% | 44 | -38% | -21289 | 24.5 | 1.3% |
-| ef98ad | 4 | -54.5% | 9 | -69.8% | -4320 | 5.3 | -8.1% |
+| ef98ad | 4 | -54.5% | 10 | -72% | -4809 | 5.3 | -8.1% |
 | 8f5c48 | 8 | -25.2% | 11 | -56.5% | -6582 | 4.9 | -3.2% |
 | cc9f80 | 48 | -3.7% | 64 | -1.9% | -9954 | 54.3 | 3.6% |
 | 16ca12 | 3 | -50.3% | 12 | -16.5% | -12692 | 44.3 | 2.3% |
-| 26256c | 36 | -6.6% | 86 | -8.2% | -4509 | 32.6 | 1% |
 | 669a1b | 6 | -24.7% | 8 | -41.9% | -13712 | 61.6 | 8.7% |
 | 59475b | 5 | -28.4% | 10 | -36.2% | -14312 | 43.6 | 1.9% |
 | 816aa1 | 11 | -20.4% | 15 | -5.7% | -6398 | 57.1 | 8.1% |
-| 74087f | 9 | -17.8% | 17 | -45% | -12808 | 50.7 | 3.2% |
+| ea077b | 9 | -31.3% | 12 | -9.3% | -1482 | 0.2 | -9.2% |
 | 5e5e30 | 3 | -44.4% | 4 | -66.5% | -16629 | 32 | 1.3% |
 | 07252b | 4 | -71.6% | 8 | -13.4% | -1579 | 4.8 | 0% |
 | d7aa80 | 10 | -29% | 14 | -9.4% | -2272 | 49.5 | 5.8% |
@@ -2009,6 +2014,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | ad53ae | 6 | -32.7% | 11 | -36.2% | -13204 | 8.4 | -0.6% |
 | d9dcb1 | 158 | -1.8% | 209 | -4.7% | -4359 | 7.5 | -0.7% |
 | 6dedd0 | 5 | -48.8% | 8 | -60.5% | -9105 | 4.4 | -7.2% |
+| 927bd0 | 5 | -62.1% | 6 | -72.4% | -2522 | 58.8 | 30.5% |
 | ce3efc | 6 | -9.9% | 9 | -19.8% | -27743 | 86.5 | 37.1% |
 | bca7e4 | 18 | -7.9% | 32 | -12.2% | -20214 | 60.1 | 5.4% |
 | b6fe12 | 5 | -54.6% | 4 | -88.9% | -7121 | 3.6 | -3.5% |
@@ -2024,17 +2030,17 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 932d3c | 13 | -27.6% | 13 | -53.5% | -2525 | 37.4 | 2.2% |
 | a94ac3 | 4 | -36.8% | 11 | -47.2% | -23867 | 8.8 | -0.6% |
 | d5876f | 26 | -10.3% | 34 | -5% | -11769 | 16.2 | -2.2% |
+| 26256c | 37 | -9.1% | 87 | -9.6% | -5312 | 32.6 | 1% |
 | dd1be6 | 29 | -13.7% | 43 | -0.2% | -51 | 2.9 | -0.4% |
 | 7b44b4 | 14 | -23.6% | 26 | -25.2% | -6679 | 7 | -3% |
-| cb8d9f | 5 | -65.7% | 20 | -7.2% | -6814 | 74.5 | 10.5% |
 | f7d32b | 3 | -63.1% | 4 | -65.9% | -21019 | 55.5 | 4.9% |
 | fe790c | 5 | -72.8% | 5 | -70.2% | -3945 | 25.4 | 1.6% |
 | 11e314 | 5 | -77.8% | 9 | -28.3% | -2136 | 16 | 1.6% |
 | 64dcc6 | 4 | -52.7% | 6 | -80.2% | -20162 | 35.6 | 4.1% |
-| f5eb5b | 6 | -70.1% | 10 | -5.1% | -582 | 47.8 | 5.3% |
 | 0a5407 | 4 | -100% | 10 | -90.7% | -2811 | 0.3 | -1.7% |
 | 398fa4 | 3 | -100% | 3 | -100% | -13285 | 45.8 | 3% |
 | 621ced | 5 | -30.1% | 6 | -75.9% | -28541 | 6 | -2.5% |
+| f5eb5b | 6 | -70.1% | 11 | -12.6% | -1557 | 47.8 | 5.3% |
 | 6a853b | 11 | -39.7% | 13 | -3.4% | -129 | 41.7 | 5.2% |
 | d9ecb8 | 3 | -100% | 4 | -77.4% | -13913 | 23.9 | 1.5% |
 | 5f1041 | 9 | -42.2% | 11 | -52.2% | -5943 | 27.8 | 1.4% |
@@ -2085,9 +2091,9 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | b2a00b | 7 | -81.6% | 12 | -9.7% | -7062 | 13.5 | -1.6% |
 | 29d2f5 | 13 | -41% | 19 | -45% | -11520 | 10.6 | 0% |
 | 566015 | 3 | -51.5% | 3 | -20.3% | -50869 | 81.6 | 37.9% |
-| 346c8a | 8 | -76.1% | 11 | -66.9% | -6926 | 5.2 | -0.3% |
-| 8eb5c3 | 30 | -21.9% | 38 | -9.3% | -2729 | 2.1 | -1.5% |
 | 9d58c1 | 13 | -45.9% | 12 | -14.6% | -8928 | 59 | 4.5% |
+| 346c8a | 8 | -76.1% | 12 | -69.7% | -7873 | 5.2 | -0.3% |
+| 8eb5c3 | 30 | -21.9% | 39 | -10.5% | -3144 | 2.1 | -1.5% |
 | d3f7ad | 8 | -44.4% | 40 | -39.5% | -34079 | 55 | 8.6% |
 | b59504 | 33 | -16.5% | 43 | -16% | -15423 | 64.2 | 6.6% |
 | ffc8b9 | 6 | -100% | 9 | -65.7% | -10526 | 41.1 | 2.4% |
@@ -2103,13 +2109,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | ef68ca | 131 | -4.3% | 203 | -7.7% | -19176 | 20.8 | -2.5% |
 | 2e29e2 | 10 | -74.2% | 7 | -92.6% | -2414 | 25.7 | 2.1% |
 | 43594f | 7 | -50% | 15 | -59.1% | -43917 | 19.6 | -0.9% |
-| 55cea5 | 12 | -58.6% | 13 | -38.6% | -9337 | 62 | 14.4% |
 | 232095 | 3 | -53.1% | 6 | -93% | -63982 | 74.4 | 14.9% |
 | bae82a | 3 | -58.3% | 14 | -16.5% | -62520 | 31.5 | 2.4% |
 | 1088a1 | 25 | -32.1% | 33 | -13.5% | -687 | 7.4 | 0.3% |
 | 19cf12 | 39 | -13.6% | 69 | -25% | -28408 | 29.6 | 1.1% |
+| cb8d9f | 6 | -71.4% | 21 | -30.9% | -39458 | 73.6 | 10.6% |
 | b51a56 | 35 | -4.4% | 78 | -14% | -67308 | 50 | 3.1% |
 | b20078 | 19 | -24.9% | 30 | -25.5% | -35905 | 6.4 | -6.7% |
+| 96b465 | 20 | -41.8% | 24 | -3.7% | -1374 | 1.6 | -12.5% |
 | 7340ec | 11 | -60.3% | 38 | -16.5% | -19540 | 62.2 | 14.8% |
 | c289a0 | 15 | -50.3% | 41 | -18.2% | -10741 | 40.7 | 1.5% |
 | a378a3 | 3 | -100% | 5 | -71% | -56380 | 47 | 3% |
@@ -2119,13 +2126,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 0a322b | 46 | -17.2% | 44 | -16.7% | -8778 | 23.9 | 1.2% |
 | 7eb989 | 4 | -10.5% | 22 | -47.5% | -84261 | 17 | 1% |
 | b2ef2c | 22 | -32.5% | 26 | -28% | -17500 | 70.6 | 9.8% |
+| a85031 | 34 | -25.6% | 64 | -14.7% | -2036 | 3.8 | -1.8% |
 | fb433f | 6 | -77.3% | 23 | -6.8% | -42828 | 62.3 | 6.1% |
-| a85031 | 33 | -26.6% | 63 | -15.5% | -2076 | 3.8 | -1.6% |
 | 12ad50 | 46 | -19% | 102 | -0.1% | -3056 | 50 | -0.9% |
 | 53a0be | 60 | -15% | 91 | -9.3% | -1216 | 20.5 | 0.9% |
+| 55cea5 | 13 | -61.8% | 14 | -42.8% | -11151 | 62.2 | 14.4% |
 | b24586 | 83 | -9.7% | 142 | -11.2% | -10890 | 5.7 | -1.1% |
-| cf76ed | 36 | -12.9% | 52 | -45.2% | -46199 | 55.1 | 3.1% |
 | 6b853d | 62 | -6.2% | 138 | -8.9% | -54688 | 32.9 | 3.2% |
+| cf76ed | 36 | -12.9% | 53 | -45.4% | -46615 | 55.1 | 3.1% |
 | 5e3a0c | 27 | -35.4% | 34 | -44.2% | -3953 | 1 | -9% |
 | 3a72c1 | 118 | -5.3% | 159 | -2.2% | -37592 | 37.3 | 2.1% |
 | d9a42a | 20 | -40.4% | 22 | -49% | -19604 | 9.8 | -2.3% |
@@ -2140,6 +2148,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | d3381b | 15 | -35.4% | 25 | -16.8% | -65869 | 60 | 5.4% |
 | a24815 | 12 | -41% | 20 | -24.2% | -70760 | 42.1 | 2.6% |
 | d50c53 | 8 | -43.1% | 15 | -48.5% | -89467 | 47.3 | 6.8% |
+| 09873e | 4 | -32.7% | 5 | -17.7% | -113971 | 47.5 | 2.8% |
 | e3ca79 | 57 | -19.6% | 84 | -13.5% | -17294 | 43.6 | 2.6% |
 | fbc6a0 | 38 | -20.4% | 35 | -15.1% | -55055 | 18.9 | -3.8% |
 | 7703d4 | 70 | -4.4% | 277 | -15% | -102846 | 10.9 | 1.1% |
@@ -2152,7 +2161,6 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | ce5c8c | 30 | -34.7% | 22 | -44% | -36606 | 19.8 | -0.7% |
 | 24029c | 10 | -56% | 36 | -33.8% | -87694 | 53.6 | 3% |
 | 89bd08 | 51 | -27.3% | 161 | -12% | -7605 | 19.6 | 0.4% |
-| 09873e | 3 | -46.5% | 4 | -33% | -132951 | 69.7 | 7.8% |
 | 32e7e0 | 80 | -5.2% | 177 | -8.6% | -107081 | 14.3 | -1.1% |
 | dd64af | 21 | -53% | 15 | -12% | -37441 | 21.2 | 0.1% |
 | 468c33 | 9 | -14.4% | 13 | -49.1% | -139046 | 46.8 | 7.2% |
@@ -2170,9 +2178,9 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 2e1ca7 | 19 | -42.7% | 28 | -31.5% | -103658 | 12.3 | -7.2% |
 | 825598 | 12 | -63.2% | 21 | -77.1% | -111336 | 17.5 | 0% |
 | 733c1a | 151 | -6.4% | 448 | -15.5% | -91480 | 20 | -0.3% |
-| ea2104 | 60 | -24.4% | 81 | -13.2% | -49641 | 34.6 | 1.5% |
 | 47cab2 | 3 | -100% | 10 | -78.2% | -175609 | 52.5 | 3.1% |
 | 22e2ca | 59 | -31.9% | 98 | -18.5% | -20309 | 44.2 | 3.7% |
+| ea2104 | 61 | -25.6% | 82 | -14.4% | -54641 | 34.6 | 1.6% |
 | 972768 | 60 | -2.9% | 75 | -22.1% | -204767 | 37.3 | 4.3% |
 | 6b0288 | 10 | -1% | 17 | -39.4% | -222100 | 19.7 | 0.2% |
 | 348973 | 78 | -0.1% | 142 | -13.3% | -223809 | 48 | 2.2% |
@@ -2182,16 +2190,16 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 720df6 | 64 | -8.8% | 111 | -13% | -189919 | 50 | -1.8% |
 | a09a17 | 4 | -70.2% | 7 | -21.6% | -244356 | 76.7 | 16.2% |
 | ba234f | 134 | -3.7% | 195 | -8.1% | -232507 | 24.3 | -0.6% |
+| ca4059 | 69 | -20% | 113 | -25% | -147750 | 10.4 | -1.7% |
 | e82793 | 5 | -100% | 9 | -100% | -266568 | 29.8 | 1% |
-| ca4059 | 67 | -26.4% | 111 | -24.2% | -140349 | 10.4 | -1.7% |
 | 8e06f6 | 16 | -12.5% | 27 | -12.7% | -307700 | 54.4 | 2.6% |
 | 67f462 | 79 | -1.1% | 115 | -10.9% | -323831 | 22.3 | -2.3% |
 | 0f9786 | 32 | -100% | 110 | -6.5% | -17193 | 50 | -0.2% |
 | 0336b0 | 16 | -33.1% | 35 | -55.2% | -289596 | 47 | 5.2% |
 | 676fac | 14 | -100% | 94 | -48.9% | -236937 | 86.3 | 48.5% |
+| 7381c0 | 80 | -21.6% | 160 | -9.2% | -204975 | 4.2 | 0% |
 | 9e5034 | 10 | -70.9% | 40 | -73.1% | -343978 | 31.1 | 1.2% |
 | 641ebf | 7 | -15.2% | 14 | -38.9% | -408489 | 42.6 | 2.6% |
-| 7381c0 | 79 | -23.2% | 159 | -11.8% | -255677 | 4.2 | 0% |
 | eb52f9 | 9 | -79.4% | 25 | -40.5% | -369887 | 54 | 7.5% |
 | 8ce2ce | 10 | -19% | 41 | -20.2% | -460392 | 38.4 | 2.1% |
 | 8ec926 | 238 | -12.9% | 542 | -10.7% | -184752 | 30.2 | 1.1% |
@@ -2199,8 +2207,8 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 73f5b0 | 23 | -6.7% | 52 | -27.8% | -515869 | 51.1 | 1.8% |
 | 854487 | 5 | -67.1% | 7 | -61.1% | -502798 | 50.8 | 3.6% |
 | 8996d3 | 145 | -12.6% | 280 | -6.5% | -391846 | 24.2 | -2.9% |
-| 779ef0 | 121 | -29.8% | 247 | -15.7% | -284337 | 25.4 | 0.1% |
 | d322e1 | 9 | -23.7% | 7 | -75.9% | -626803 | 18.4 | -4.8% |
+| 779ef0 | 123 | -30.9% | 249 | -16% | -291523 | 24.2 | 0.1% |
 | 9a69c2 | 184 | -17.8% | 125 | -29.3% | -359490 | 19 | 0.4% |
 | 710c2e | 33 | -0.1% | 102 | -16.5% | -751924 | 50 | -5.1% |
 | fcc12b | 174 | -4.6% | 245 | -9% | -995139 | 15.9 | -0.4% |
