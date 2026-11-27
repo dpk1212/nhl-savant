@@ -242,16 +242,18 @@ const Pricing = () => {
       period: 'week',
       trial: '5-day free trial',
       description: 'Follow the sharps, week to week',
-      featured: flashLive,
-      featuredLabel: activeDiscount?.label || 'Thanksgiving',
-      priceAnchor: flashLive
+      featured: flashLive && (activeDiscount?.tiers || []).includes('scout'),
+      featuredLabel: activeDiscount?.label || 'Black Friday',
+      priceAnchor: flashLive && (activeDiscount?.tiers || []).includes('scout')
         ? `${activeDiscount.discount}% off your first week with code ${activeDiscount.code}`
         : 'Less than one stadium beer',
       pricePerDay: '$1.14/day',
-      savings: flashLive ? `Save ${activeDiscount.discount}% your first week` : null,
+      savings: flashLive && (activeDiscount?.tiers || []).includes('scout') ? `Save ${activeDiscount.discount}% your first week` : null,
       saleBadge: ' FIRST WEEK',
       cta: 'Start 5-Day Trial',
-      highlight: flashLive ? `${activeDiscount.label} — first week` : 'No commitment — cancel any week'
+      highlight: flashLive && (activeDiscount?.tiers || []).includes('scout')
+        ? `${activeDiscount.label} — first week`
+        : 'No commitment — cancel any week'
     },
     {
       id: 'pro',
@@ -264,7 +266,7 @@ const Pricing = () => {
       popular: false,
       popularLabel: 'Best Value',
       priceAnchor: flashLive
-        ? 'Flash sale is monthly & weekly only'
+        ? 'Black Friday is the monthly plan'
         : 'Cheaper per month than Netflix',
       pricePerDay: '41¢/day',
       savings: 'Save $161.88/year',
@@ -319,7 +321,7 @@ const Pricing = () => {
               color: 'rgba(241,245,249,0.8)',
               lineHeight: 1.5,
             }}>
-              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off {activeDiscount.durationLabel || 'your first week or month'}</strong> on Monthly & Weekly — through {PAYWALL_PROMO.endCopy}, for {PAYWALL_PROMO.seasonCopy}. Annual excluded.
+              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off {activeDiscount.durationLabel || 'your first month'}</strong> on Monthly — ends {PAYWALL_PROMO.endCopy}. Weekly and annual stay full price.
               <br />Use code <strong style={{
                 color: '#D4AF37',
                 padding: '0.1rem 0.4rem',
@@ -447,7 +449,7 @@ const Pricing = () => {
               fontSize: window.innerWidth < 640 ? '0.938rem' : '1rem',
               color: 'rgba(241,245,249,0.8)', marginBottom: '0.75rem', lineHeight: 1.5,
             }}>
-              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is {activeDiscount.discount}% off your first week (Weekly) or first month (Monthly). Through {PAYWALL_PROMO.endCopy}. Annual excluded.
+              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is {activeDiscount.discount}% off your first month on the Monthly plan. Ends {PAYWALL_PROMO.endCopy}.
             </p>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
@@ -818,7 +820,7 @@ const Pricing = () => {
             lineHeight: '1.6'
           }}>
             {flashLive
-              ? `Every plan includes everything. Code ${activeDiscount.code} = ${activeDiscount.discount}% off your first week (Weekly) or first month (Monthly). Annual stays full price.`
+              ? `Every plan includes everything. Code ${activeDiscount.code} = ${activeDiscount.discount}% off your first month on Monthly. Weekly and annual stay full price.`
               : 'Every plan includes everything — pick the commitment that fits.'}
           </p>
           <div style={{
