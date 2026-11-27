@@ -165,8 +165,8 @@ const Pricing = () => {
 
   // Calculate discounted price
   const getDiscountedPrice = (originalPrice, discount) => {
-    const price = parseFloat(originalPrice.replace('$', ''));
-    const discounted = price * (1 - discount / 100);
+    const cents = Math.round(parseFloat(originalPrice.replace('$', '')) * 100);
+    const discounted = Math.round(cents * (1 - discount / 100)) / 100;
     return `$${discounted.toFixed(2)}`;
   };
 
@@ -442,7 +442,7 @@ const Pricing = () => {
                 background: 'linear-gradient(135deg, #10B981 0%, #D4AF37 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0,
               }}>
-                {activeDiscount.discount}% Off Your First Week or Month
+                {activeDiscount.discount}% Off Your First Month
               </h3>
             </div>
             <p style={{
