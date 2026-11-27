@@ -1071,12 +1071,10 @@ function computeRecentWindowStats(picks, daysBack = 7) {
   return { ready: true, w, l, pu, total, profit, record: `${w}-${l}${pu ? `-${pu}` : ''}` };
 }
 
-// Sharp Flow paywall — Thanksgiving (src/lib/paywallPromo.js).
-// THANKSGIVING is monthly/weekly only — annual stays full price. Stripe coupon
-// is 33% once (first week on weekly, first month on monthly).
+// Sharp Flow paywall — Black Friday (src/lib/paywallPromo.js).
+// BF50 is the monthly plan only. Stripe coupon is 50% once, the first paid month.
 const PAYWALL_PROMO_PCT = Math.round((PAYWALL_PROMO.discount || 0) * 100);
 const ELITE_PROMO = promoPrice(25.99);
-const SCOUT_PROMO = promoPrice(7.99);
 
 // Plan order + default selection push Monthly/Weekly. Annual stays available
 // at the bottom — just not the preselected "BEST VALUE" anchor that was
@@ -1103,15 +1101,15 @@ const PAYWALL_PLANS = [
     name: 'Weekly',
     trialDays: 5,
     badge: null,
-    badgePromo: `${PAYWALL_PROMO_PCT}% · 1 WEEK`,
+    badgePromo: null,
     save: null,
-    savePromo: `SAVE ${PAYWALL_PROMO_PCT}%`,
-    promoEligible: true,
-    heroFull: '$7.99', heroPromo: SCOUT_PROMO, heroPer: '/wk',
+    savePromo: null,
+    promoEligible: false,
+    heroFull: '$7.99', heroPromo: '$7.99', heroPer: '/wk',
     billFull: null, billPromo: null,
-    chargeFull: '$7.99/wk', chargePromo: `${SCOUT_PROMO}/wk`,
+    chargeFull: '$7.99/wk', chargePromo: '$7.99/wk',
     sub: 'Less than one stadium beer',
-    subPromo: `${PAYWALL_PROMO_PCT}% off your first week`,
+    subPromo: 'Black Friday is the monthly plan',
     winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
   },
   {
@@ -1127,7 +1125,7 @@ const PAYWALL_PLANS = [
     billFull: 'billed $150/yr', billPromo: 'billed $150/yr',
     chargeFull: '$150/yr', chargePromo: '$150/yr',
     sub: 'Cheaper per month than Netflix',
-    subPromo: `Full year at $12.50/mo — ${PAYWALL_PROMO_PCT}% off is weekly & monthly`,
+    subPromo: 'Full year — Black Friday is the first month',
     winMath: 'One 1u win (+$91 at $100/unit) covers 90% of your entire year',
   },
 ];
@@ -14524,7 +14522,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           textAlign: 'center',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase', lineHeight: 1.35 }}>
-            {promoLabel.toUpperCase()} · CODE {promoCode} · {promoPct}% OFF YOUR FIRST WEEK OR MONTH — THROUGH {PAYWALL_PROMO.endCopy.toUpperCase()}
+            {promoLabel.toUpperCase()} · CODE {promoCode} · {promoPct}% OFF YOUR FIRST MONTH — ENDS {PAYWALL_PROMO.endCopy.toUpperCase()}
           </span>
         </div>
       )}
@@ -15098,13 +15096,13 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                           padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'rgba(212,175,55,0.16)',
                         }}>{promoCode}</span>
                         <span style={{ color: B.green, fontWeight: 800 }}>
-                          {' '}locks {plan.id === 'scout' ? `${promoPct}% off your first week` : `${promoPct}% off your first month`}
+                          {' '}locks {promoPct}% off your first month
                         </span>
                       </>
                     )}
                     {promoActive && !plan.promoEligible && (
                       <span style={{ color: B.textMuted, fontWeight: 600 }}>
-                        {` · ${promoPct}% off the first week or month is on weekly and monthly`}
+                        {' · 50% off the first month is on the monthly plan'}
                       </span>
                     )}
                   </span>
@@ -15211,7 +15209,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     {plan.trialDays} days free — grade it yourself
                   </div>
                   <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(241,245,249,0.55)', marginTop: '0.1rem', fontFeatureSettings: "'tnum'" }}>
-                    then {charge}{planOnSale ? (plan.id === 'scout' ? ` · ${promoPct}% off first week` : ` · ${promoPct}% off first month`) : ''}
+                    then {charge}{planOnSale ? ` · ${promoPct}% off your first month` : ''}
                   </div>
                 </div>
                 <button

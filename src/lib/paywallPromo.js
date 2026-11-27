@@ -1,23 +1,34 @@
 /**
- * Live flash promo — Thanksgiving.
- * First invoice only: first week on Weekly (scout), first month on Monthly
- * (elite). Annual stays full price. Stripe promotion code must match `code`
- * and stay restricted to those two prices.
+ * Live flash promo — Black Friday.
+ * 50% off the first paid month on Monthly (elite). Weekly and annual
+ * stay full price. Stripe promotion code must match `code` and stay
+ * restricted to the monthly price.
  *
- * Window: through Thanksgiving night, Thu Nov 26 ET
- * (Fri Nov 27, 12:00am ET). DST ended Nov 1, so that midnight is 05:00 UTC.
+ * Window: through Friday night, Nov 27 ET
+ * (Sat Nov 28, 12:00am ET). DST ended Nov 1, so that midnight is 05:00 UTC.
  */
 export const PAYWALL_PROMO = {
-  code: 'THANKSGIVING',
-  discount: 0.33,
-  label: 'Thanksgiving',
-  endMs: Date.parse('2026-11-27T05:00:00Z'),
-  endCopy: 'Thursday, November 26',
-  seasonCopy: 'Thanksgiving',
-  tiers: ['elite', 'scout'],
+  code: 'BF50',
+  discount: 0.5,
+  label: 'Black Friday',
+  endMs: Date.parse('2026-11-28T05:00:00Z'),
+  endCopy: 'midnight tonight ET',
+  seasonCopy: 'Black Friday',
+  tiers: ['elite'],
 };
 
 export const PROMO_CODES = {
+  BF50: {
+    code: 'BF50',
+    discount: 50,
+    label: 'Black Friday',
+    forLife: false,
+    flash: true,
+    durationLabel: 'your first month',
+    expires: new Date(PAYWALL_PROMO.endMs),
+    tiers: ['elite'],
+  },
+  // Expired holiday code — old ?promo=THANKSGIVING links fail closed.
   THANKSGIVING: {
     code: 'THANKSGIVING',
     discount: 33,
@@ -25,7 +36,7 @@ export const PROMO_CODES = {
     forLife: false,
     flash: true,
     durationLabel: 'your first week (Weekly) or first month (Monthly)',
-    expires: new Date(PAYWALL_PROMO.endMs),
+    expires: new Date('2026-11-27T05:00:00Z'),
     tiers: ['scout', 'elite'],
   },
   // Expired tip-off code — old ?promo=FALL50 links fail closed.
