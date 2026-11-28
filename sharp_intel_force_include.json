@@ -1,0 +1,270 @@
+{
+  "updatedAt": "2026-11-24T23:45:00.000Z",
+  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3/4 reinstates hardened with fuller history (maxClosed 1500–2000) and broad sport filter after classifier gaps undercounted both-sides on some names. 2026-08-12: MLB CONFIRMED coverage audit reinstated dv-pm / ndb1 / AV23IUa / 33aa70 / wapol. + fcc12b/dfa240/aa9fb4/10c684 (suspicion dig); 95618e intentionally NOT included (tiny-bet spray). 2026-11-22: reinstated 5fcee5/bc44b0/4c8ed9/aaedcd, directional, tripped both-sides count on tiny opposite legs. 2026-11-24: reinstated 10 wallets that are on the morning trusted list (2f2a9e/388d4c/3bdd7e/4f821d/7b895d/ab4b6e/11f1d2/70be3f/a10ff5/bc35e3): the trader tag was dropping their positions before the trusted count. Excluded trusted wallets were 43-26 on moneylines Oct 31-Nov 22.",
+  "wallets": [
+    {
+      "addr": "0xbddf61af533ff524d27154e589d2d7a81510c684",
+      "name": "10c684",
+      "reason": "2026-08-12 suspicion dig: MLB med $19k, both 2.4%, game-both 1%, ROI +95% — fat one-way tickets",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0x6157d529ae129fe08f22a27ed42e741d2eaa9fb4",
+      "name": "aa9fb4",
+      "reason": "2026-08-12 suspicion dig: 0% both across sports, med $2.5k MLB, ROI +78% — directional",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xfb681e23db8d1cca8a6b7e2a70a29e000ddfa240",
+      "name": "dfa240",
+      "reason": "2026-08-12 suspicion dig: selective MLB 22 mkts, 0% both, med $600, ROI +113% — false MM (mmScore 42)",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xc8075693f48668a264b9fa313b47f52712fcc12b",
+      "name": "fcc12b",
+      "reason": "2026-08-12 suspicion dig: 344 MLB mkts over 139d (2.5/day), med $16k, game-both 0%, WR 77%, ROI +38% — volume grind not MM spray",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
+      "name": "dv-pm",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: both-sides 0%, hold 100%, sport ROI +11% — directional, not MM",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xfea31bc088000ff909be1dfd8d0e3f2c7ef2d227",
+      "name": "ndb1",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: both-sides ~11%, hold ~81%, sport ROI +41% — directional (batch2 also DIRECTIONAL_SHARP)",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xdb859a551fcf56e49416160911476bea7307152f",
+      "name": "AV23IUa",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: both-sides 0%, hold 99%, sport ROI +88% — directional, not MM/trader",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0x4be1fa92e6ceaf886aac0bbec3be6c527133aa70",
+      "name": "33aa70",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: both-sides ~2%, hold 98%, sport ROI +29% — directional, not trader",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
+      "name": "wapol",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: official MIXED/REVIEW (~16% both); recheck both~8% hold 99% — reinstate pending clearer hedge signal",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926",
+      "name": "Bagwell306",
+      "reason": "Batch1: both-sides ~3%, directional + edge",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x6a72f61820b26b1fe4d956e17b6dc2a1ea3033ee",
+      "name": "kch123",
+      "reason": "Batch1: both-sides ~4%, directional + edge",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xdb27bf2ac5d428a9c63dbc914611036855a6c56e",
+      "name": "DrPufferfish",
+      "reason": "Batch2 revalidated: both-sides 3.9%, one-sided 290-5, ROI +108%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x2652dd1140c3b9e69c8852264cf8dbe727672a1d",
+      "name": "Punisher2022",
+      "reason": "Batch2 revalidated: both-sides 0%, one-sided only, ROI +34.5%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x8c818a866e6a4e5821a4faac8418903e33e3dcd3",
+      "name": "Sharkbets.pro",
+      "reason": "Batch2 revalidated: both-sides 10.5%, one-sided 129-15, ROI +45%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x57a8d63731277200ed26cfde9a8a830d94f36933",
+      "name": "statwC00KS",
+      "reason": "Batch2 revalidated: both-sides 8.4%, one-sided 335-2, ROI +48%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xea2b4224411e723499a803ce3f4758779fb31fc6",
+      "name": "frankfrankfrank",
+      "reason": "Batch2 revalidated: both-sides 2.7%, one-sided 162-53, ROI +53%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xc8b438e4a1c10643ea0ea3e59bcaadc73174f05d",
+      "name": "gamblingdebt",
+      "reason": "Batch2 revalidated: both-sides 3.9%, one-sided 159-86, ROI +14%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x26437896ed9dfeb2f69765edcafe8fdceaab39ae",
+      "name": "Latina",
+      "reason": "Batch3 hardened: both-sides 0% (full history), MLB/SOC/WNBA ROI ~40-57%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x8f037a2e4fd49d11267f4ab874ab7ba745ac64d6",
+      "name": "Anointed-Connect",
+      "reason": "Batch3 hardened: both-sides ~5% at 1154 closes, NBA-heavy ROI ~62-68%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xdbade4c82fb72780a0db9a38f821d8671aba9c95",
+      "name": "SwissMiss",
+      "reason": "Batch3 hardened: both-sides ~1-3% fuller history, UFC grinder ROI ~6-9%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x339a0e5aea39a7db5cea5b0003abab33c78c1eae",
+      "name": "Tokidoki",
+      "reason": "Batch3 hardened: both-sides ~3-4% fuller history, MLB/NBA ROI ~5-8%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xf5f232033c51448e17ced9f2ff7c91b78b620234",
+      "name": "GP18",
+      "reason": "Batch3 hardened: both-sides ~1-2% fuller history, directional ROI ~2-6%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xe5efd6543002653b2eef940d8254911862ad9e7a",
+      "name": "0xE5ef…9e7A",
+      "reason": "Batch4 recheck: both 0.6%, game 290-230 ROI ~91% via sizing; strong WNBA",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xd38ad20037839959d89165cf448568d584b28d26",
+      "name": "johnny234",
+      "reason": "Batch4 recheck: both 1.1%, game 138-28 ROI ~58%, both time-halves green",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x1bc0d88ca86b9049cf05d642e634836d5ddf4429",
+      "name": "212121212121212121212",
+      "reason": "Batch4 recheck: both 2%, NBA-heavy game ROI ~79%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xa974826f82380f9bb3d5b9c722c50f82fb1aef79",
+      "name": "tmoneeey",
+      "reason": "Batch4 recheck: both 1.1%, game 227-46 ROI ~62%, MLB/WNBA",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x2c57db9e442ef5ffb2651f03afd551171738c94d",
+      "name": "ZerOptimist",
+      "reason": "Batch4 recheck: both 2.5%, game 201-40 ROI ~39%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x5d58e38cd0a7e6f5fa67b7f9c2f70dd70df09a15",
+      "name": "Dhdhsjsj",
+      "reason": "Batch4 recheck: both 2.5%; tennis-heavy but non-tennis still ~41% ROI",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x161a7f666ca49d592848cf415b42f49a84714103",
+      "name": "torta.tech",
+      "reason": "Batch4 recheck: both 2.8%, game-day directional (anomalous WR/Under specialist; short hot window)",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x777d9f00c2b4f7b829c9de0049ca3e707db05143",
+      "name": "05143",
+      "reason": "Batch4 recheck: both 1.1%, overall game ROI ~29% (recent hot / older half negative)",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x0235dc24b38772bf3339a9e5ec5db3d3a05fcee5",
+      "name": "5fcee5",
+      "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
+      "auditedAt": "2026-11-22"
+    },
+    {
+      "addr": "0x27f738fe203827445690339104aae35b20bc44b0",
+      "name": "bc44b0",
+      "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
+      "auditedAt": "2026-11-22"
+    },
+    {
+      "addr": "0x885ffdf360e5b0b6e6acb963fb3f8ba2344c8ed9",
+      "name": "4c8ed9",
+      "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
+      "auditedAt": "2026-11-22"
+    },
+    {
+      "addr": "0xddb993dbaee76440dbb42408a1925e38b7aaedcd",
+      "name": "aaedcd",
+      "reason": "2026-11-22: directional (~0-1% sells, ~100% held); both-sides-today count tripped on tiny opposite legs (0.3-3% $)",
+      "auditedAt": "2026-11-22"
+    },
+    {
+      "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+      "name": "2f2a9e",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML list (NBA, NFL, NHL). Fall ML 105-88, spread 49-39 at 1u; their $ +164k.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x076daa87c4fe1a85402a9b6b8e0a866224388d4c",
+      "name": "388d4c",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML and spread list. Fall ML 22-14, spread 6-2 at 1u.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
+      "name": "3bdd7e",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML list (CFB, NBA, SOC and others). Fall ML 25-18 at 1u; their $ +103k.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0xa38a455bbdd4b68486548b7e19da99903f4f821d",
+      "name": "4f821d",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML list (NFL). Fall ML 3-1, spread 2-2 at 1u; their $ +300k.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x1f3a646ce5cbe2c70270e7a46161d89b7c7b895d",
+      "name": "7b895d",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML list (CFB, NFL). Fall ML 20-12 at 1u, spread 16-17; their $ is down.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x6ac5bb06a9eb05641fd5e82640268b92f3ab4b6e",
+      "name": "ab4b6e",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. ML and spread list (NBA, CS2, LOL). Fall ML 139-96, spread 21-13 at 1u; their $ +1.7M.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x5c5454940c679b99513a67bf08af752b2011f1d2",
+      "name": "11f1d2",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. Spread list (CBB, CFB, NFL, NHL). Fall spread 92-71, ML 229-174 at 1u.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0xe5502f3b033ebcd64233b5ffc43c44c24170be3f",
+      "name": "70be3f",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. Spread list (NBA, NFL). Fall spread 25-15, ML 31-28 at 1u.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x9770ca178764cdca1271934ad613ad7ab4a10ff5",
+      "name": "a10ff5",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. Spread list. No graded fall bets in the research set.",
+      "auditedAt": "2026-11-24"
+    },
+    {
+      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3",
+      "name": "bc35e3",
+      "reason": "2026-11-24 (Dale's call): on the morning trusted list and tagged trader by the scan heuristic, so the ladders never counted it. No both-sides game on the 2026-11-24 board. Spread list (CFB, MLB, NBA, NFL). Fall spread 44-37, ML 48-51 at 1u.",
+      "auditedAt": "2026-11-24"
+    }
+  ]
+}

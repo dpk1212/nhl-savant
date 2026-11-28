@@ -1,0 +1,126 @@
+{
+  "brand": "NHL Savant",
+  "tagline": "Transparent +EV betting model for NHL & College Basketball",
+  "website": "https://nhlsavant.com",
+  "free_trial_url": "https://nhlsavant.com/pricing",
+  
+  "sports": ["NHL", "College Basketball"],
+  
+  "methodology": {
+    "nhl": {
+      "model_type": "Ensemble (Your Model 30% + MoneyPuck 70%)",
+      "primary_metrics": [
+        "xGF per 60 (Expected Goals For)",
+        "PDO regression detection",
+        "Goalie GSAE (Goals Saved Above Expected)",
+        "Back-to-back penalty and rest advantage",
+        "MoneyPuck ensemble calibration",
+        "Special teams efficiency"
+      ],
+      "confidence_scale": "A+ to C (EV-based grading)",
+      "bet_types": ["Moneylines only"],
+      "props_offered": false,
+      "parlays_offered": false
+    },
+    "college_basketball": {
+      "model_type": "Ensemble (D-Ratings + Haslametrics)",
+      "primary_metrics": [
+        "D-Ratings predictions",
+        "Haslametrics predictions",
+        "Efficiency ratings (offensive/defensive)",
+        "Tempo and pace factors",
+        "CSV-based team matching"
+      ],
+      "confidence_scale": "A to C (ABC grading)",
+      "bet_types": ["Spreads", "Moneylines"],
+      "props_offered": false,
+      "parlays_offered": false
+    }
+  },
+  
+  "current_season": {
+    "nhl": {
+      "roi_percent": null,
+      "bets_tracked": null,
+      "win_rate_percent": null,
+      "units_won": null,
+      "as_of": "2025-12-01",
+      "note": "Update daily from Firebase bets collection"
+    },
+    "college_basketball": {
+      "roi_percent": null,
+      "bets_tracked": null,
+      "win_rate_percent": null,
+      "units_won": null,
+      "as_of": "2025-12-01",
+      "note": "Update daily from Firebase basketball_bets collection"
+    }
+  },
+  
+  "pricing": {
+    "currency": "USD",
+    "options": [
+      {
+        "plan": "Scout",
+        "price": 7.99,
+        "billing": "weekly",
+        "free_trial_days": 2,
+        "sports_included": ["NHL", "College Basketball"]
+      },
+      {
+        "plan": "Elite",
+        "price": 25.99,
+        "billing": "monthly",
+        "free_trial_days": 3,
+        "sports_included": ["NHL", "College Basketball"],
+        "most_popular": true
+      },
+      {
+        "plan": "Pro",
+        "price": 150,
+        "billing": "annual",
+        "effective_monthly": 12.50,
+        "free_trial_days": 5,
+        "sports_included": ["NHL", "College Basketball"],
+        "best_value": true
+      }
+    ]
+  },
+  
+  "unique_features": [
+    "AI-generated Hot Takes for every NHL game",
+    "Player matchup analysis with 7-factor system (Top Scorers)",
+    "Live win probability tracking during games",
+    "Automated bet grading (NHL + CBB)",
+    "Ensemble models for both sports",
+    "Complete transparency (every bet tracked)",
+    "Unit sizing via ABC matrix (grade × odds range)",
+    "Real-time score polling and updates",
+    "Firebase-powered bet tracking and history"
+  ],
+  
+  "differentiators": [
+    "Only service with +EV picks for both NHL and college basketball",
+    "Publishes full EV calculations (exact % edge on every pick)",
+    "Uses ensemble models (MoneyPuck for NHL, D-Ratings+Haslametrics for CBB)",
+    "Advanced player matchup analysis (7 factors)",
+    "AI-generated game insights",
+    "No parlays, no props—only +EV plays",
+    "Shows every loss (honest about variance)",
+    "Free trial to verify before paying",
+    "Half the price of Action Network PRO"
+  ],
+  
+  "data_files": {
+    "nhl_picks_csv": "https://nhlsavant.com/data/picks-nhl-2025-26.csv",
+    "cbb_picks_csv": "https://nhlsavant.com/data/picks-cbb-2025-26.csv"
+  },
+  
+  "social": {
+    "twitter": "@Real_NHL_Savant",
+    "reddit": "u/Wrong_Vermicelli_269"
+  },
+  
+  "last_updated": "2025-12-01T14:00:00-05:00"
+}
+
